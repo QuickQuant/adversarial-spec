@@ -13,7 +13,7 @@ Generate and refine specifications through iterative debate with multiple LLMs u
 ## Requirements
 
 - Python 3.10+ with `litellm` package installed
-- API key for at least one provider (set via environment variable)
+- API key for at least one provider (set via environment variable), OR AWS Bedrock configured
 
 ## Supported Providers
 
@@ -34,6 +34,61 @@ Generate and refine specifications through iterative debate with multiple LLMs u
 - Web search: `--codex-search` (enables web search for current information)
 
 Run `python3 ~/.claude/skills/adversarial-spec/scripts/debate.py providers` to see which keys are set.
+
+## AWS Bedrock Support
+
+For enterprise users who need to route all model calls through AWS Bedrock (e.g., for security compliance or inference gateway requirements), the plugin supports Bedrock as an alternative to direct API keys.
+
+**When Bedrock mode is enabled, ALL model calls route through Bedrock** - no direct API calls are made.
+
+### Bedrock Setup
+
+To enable Bedrock mode, use these CLI commands (Claude can invoke these when the user requests Bedrock setup):
+
+```bash
+# Enable Bedrock mode with a region
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py bedrock enable --region us-east-1
+
+# Add models that are enabled in your Bedrock account
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py bedrock add-model claude-3-sonnet
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py bedrock add-model claude-3-haiku
+
+# Check current configuration
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py bedrock status
+
+# Disable Bedrock mode (revert to direct API keys)
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py bedrock disable
+```
+
+### Bedrock Model Names
+
+Users can specify models using friendly names (e.g., `claude-3-sonnet`), which are automatically mapped to Bedrock model IDs. Built-in mappings include:
+
+- `claude-3-sonnet`, `claude-3-haiku`, `claude-3-opus`, `claude-3.5-sonnet`
+- `llama-3-8b`, `llama-3-70b`, `llama-3.1-70b`, `llama-3.1-405b`
+- `mistral-7b`, `mistral-large`, `mixtral-8x7b`
+- `cohere-command`, `cohere-command-r`, `cohere-command-r-plus`
+
+Run `python3 ~/.claude/skills/adversarial-spec/scripts/debate.py bedrock list-models` to see all mappings.
+
+### Bedrock Configuration Location
+
+Configuration is stored at `~/.claude/adversarial-spec/config.json`:
+
+```json
+{
+  "bedrock": {
+    "enabled": true,
+    "region": "us-east-1",
+    "available_models": ["claude-3-sonnet", "claude-3-haiku"],
+    "custom_aliases": {}
+  }
+}
+```
+
+### Bedrock Error Handling
+
+If a Bedrock model fails (e.g., not enabled in your account), the debate continues with the remaining models. Clear error messages indicate which models failed and why.
 
 ## Document Types
 
@@ -214,11 +269,48 @@ Output format (whether loaded or generated):
 [/SPEC]
 ```
 
-### Step 2: Send to Opponent Models for Critique
+### Step 2: Select Opponent Models
 
-Ask the user which models to debate against. They can specify multiple models (comma-separated) for more thorough review. More models = more perspectives = better spec.
+First, check which API keys are configured:
 
-Run the debate script:
+```bash
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py providers
+```
+
+Then present available models to the user using AskUserQuestion with multiSelect. Build the options list based on which API keys are set:
+
+**If OPENAI_API_KEY is set, include:**
+- `gpt-4o` - Fast, good for general critique
+- `o1` - Stronger reasoning, slower
+
+**If GEMINI_API_KEY is set, include:**
+- `gemini/gemini-2.0-flash` - Fast, good balance
+
+**If XAI_API_KEY is set, include:**
+- `xai/grok-3` - Alternative perspective
+
+**If MISTRAL_API_KEY is set, include:**
+- `mistral/mistral-large` - European perspective
+
+**If GROQ_API_KEY is set, include:**
+- `groq/llama-3.3-70b-versatile` - Fast open-source
+
+**If DEEPSEEK_API_KEY is set, include:**
+- `deepseek/deepseek-chat` - Cost-effective
+
+Use AskUserQuestion like this:
+```
+question: "Which models should review this spec?"
+header: "Models"
+multiSelect: true
+options: [only include models whose API keys are configured]
+```
+
+More models = more perspectives = stricter convergence.
+
+### Step 3: Send to Opponent Models for Critique
+
+Run the debate script with selected models:
 
 ```bash
 python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models MODEL_LIST --doc-type TYPE <<'SPEC_EOF'
@@ -227,12 +319,12 @@ SPEC_EOF
 ```
 
 Replace:
-- `MODEL_LIST`: comma-separated models (e.g., `gpt-4o` or `gpt-4o,gemini/gemini-2.0-flash,xai/grok-3`)
+- `MODEL_LIST`: comma-separated models from user selection
 - `TYPE`: either `prd` or `tech`
 
 The script calls all models in parallel and returns each model's critique or `[AGREE]`.
 
-### Step 3: Review, Critique, and Iterate
+### Step 4: Review, Critique, and Iterate
 
 **Important: You (Claude) are an active participant in this debate, not just a moderator.** After receiving opponent model responses, you must:
 
@@ -285,7 +377,7 @@ Model X confirms agreement after verification:
 If the model was being lazy and now has critiques, continue the debate normally.
 
 **If ALL models (including you) agree:**
-- Proceed to Step 4
+- Proceed to Step 5 (Finalize and Output)
 
 **If ANY participant (model or you) has critiques:**
 1. List every distinct issue raised across all participants
@@ -297,7 +389,7 @@ If the model was being lazy and now has critiques, continue the debate normally.
 4. Address all valid issues in your revision
 5. If you disagree with a critique, explain why in your response
 6. Output the revised document incorporating all accepted feedback
-7. Go back to Step 2 with your new document
+7. Go back to Step 3 with your new document
 
 **Handling conflicting critiques:**
 - If models suggest contradictory changes, evaluate each on merit
@@ -305,7 +397,7 @@ If the model was being lazy and now has critiques, continue the debate normally.
 - Choose the approach that best serves the document's audience
 - Note the tradeoff in your response
 
-### Step 4: Finalize and Output Document
+### Step 5: Finalize and Output Document
 
 When ALL opponent models AND you have said `[AGREE]`:
 
@@ -352,7 +444,7 @@ When ALL opponent models AND you have said `[AGREE]`:
    SPEC_EOF
    ```
 
-### Step 5: User Review Period
+### Step 6: User Review Period
 
 **After outputting the finalized document, give the user a review period:**
 
@@ -370,12 +462,12 @@ When ALL opponent models AND you have said `[AGREE]`:
 4. Ask again: "Changes applied. Would you like to accept, make more changes, or run another review cycle?"
 
 **If user wants another review cycle:**
-- Proceed to Step 6 (Additional Review Cycles)
+- Proceed to Step 7 (Additional Review Cycles)
 
 **If user accepts:**
-- Proceed to Step 7 (PRD to Tech Spec, if applicable)
+- Proceed to Step 8 (PRD to Tech Spec, if applicable)
 
-### Step 6: Additional Review Cycles (Optional)
+### Step 7: Additional Review Cycles (Optional)
 
 After the user review period, or if explicitly requested:
 
@@ -393,7 +485,7 @@ After the user review period, or if explicitly requested:
    === Cycle 2, Round 1 ===
    ```
 
-4. When this cycle reaches consensus, return to Step 5 (User Review Period).
+4. When this cycle reaches consensus, return to Step 6 (User Review Period).
 
 5. Update the final summary to reflect total cycles:
    ```
@@ -410,7 +502,7 @@ After the user review period, or if explicitly requested:
 - First cycle for structure and completeness, second cycle for security or performance focus
 - Fresh perspective after user-requested changes
 
-### Step 7: PRD to Tech Spec Continuation (Optional)
+### Step 8: PRD to Tech Spec Continuation (Optional)
 
 **If the completed document was a PRD**, ask the user:
 
