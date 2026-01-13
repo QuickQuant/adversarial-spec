@@ -279,6 +279,11 @@ def list_providers():
         ("Mistral", "MISTRAL_API_KEY", "mistral/mistral-large, mistral/codestral"),
         ("Groq", "GROQ_API_KEY", "groq/llama-3.3-70b-versatile"),
         ("Together", "TOGETHER_API_KEY", "together_ai/meta-llama/Llama-3-70b"),
+        (
+            "OpenRouter",
+            "OPENROUTER_API_KEY",
+            "openrouter/openai/gpt-4o, openrouter/anthropic/claude-3.5-sonnet",
+        ),
         ("Deepseek", "DEEPSEEK_API_KEY", "deepseek/deepseek-chat"),
         ("Zhipu", "ZHIPUAI_API_KEY", "zhipu/glm-4, zhipu/glm-4-plus"),
     ]
@@ -350,6 +355,7 @@ def get_available_providers() -> list[tuple[str, Optional[str], str]]:
         ("xAI", "XAI_API_KEY", "xai/grok-3"),
         ("Mistral", "MISTRAL_API_KEY", "mistral/mistral-large"),
         ("Groq", "GROQ_API_KEY", "groq/llama-3.3-70b-versatile"),
+        ("OpenRouter", "OPENROUTER_API_KEY", "openrouter/openai/gpt-4o"),
         ("Deepseek", "DEEPSEEK_API_KEY", "deepseek/deepseek-chat"),
         ("Zhipu", "ZHIPUAI_API_KEY", "zhipu/glm-4"),
     ]
