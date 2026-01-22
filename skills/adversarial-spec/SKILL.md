@@ -21,13 +21,13 @@ Generate and refine specifications through iterative debate with multiple LLMs u
 
 | Provider   | API Key Env Var        | Example Models                              |
 |------------|------------------------|---------------------------------------------|
-| OpenAI     | `OPENAI_API_KEY`       | `gpt-5.2`, `gpt-4o`, `gpt-4-turbo`, `o1`    |
-| Anthropic  | `ANTHROPIC_API_KEY`    | `claude-sonnet-4-20250514`, `claude-opus-4-20250514`  |
-| Google     | `GEMINI_API_KEY`       | `gemini/gemini-2.0-flash`, `gemini/gemini-pro` |
+| OpenAI     | `OPENAI_API_KEY`       | `gpt-5.2`, `o3-mini`, `gpt-5.2-mini`        |
+| Anthropic  | `ANTHROPIC_API_KEY`    | `claude-sonnet-4-5-20250929`, `claude-opus-4-5-20251124`  |
+| Google     | `GEMINI_API_KEY`       | `gemini/gemini-3-pro`, `gemini/gemini-3-flash` |
 | xAI        | `XAI_API_KEY`          | `xai/grok-3`, `xai/grok-beta`               |
 | Mistral    | `MISTRAL_API_KEY`      | `mistral/mistral-large`, `mistral/codestral`|
 | Groq       | `GROQ_API_KEY`         | `groq/llama-3.3-70b-versatile`              |
-| OpenRouter | `OPENROUTER_API_KEY`   | `openrouter/openai/gpt-4o`, `openrouter/anthropic/claude-3.5-sonnet` |
+| OpenRouter | `OPENROUTER_API_KEY`   | `openrouter/openai/gpt-5.2`, `openrouter/anthropic/claude-sonnet-4.5` |
 | Deepseek   | `DEEPSEEK_API_KEY`     | `deepseek/deepseek-chat`                    |
 | Zhipu      | `ZHIPUAI_API_KEY`      | `zhipu/glm-4`, `zhipu/glm-4-plus`           |
 | Codex CLI  | (ChatGPT subscription) | `codex/gpt-5.2-codex`, `codex/gpt-5.1-codex-max` |
@@ -184,9 +184,162 @@ Engineering-focused document for developers and architects.
 7. Deployment is repeatable and reversible
 8. No ambiguity an engineer would need to resolve
 
+### Debug Investigation
+
+Structured investigation document for diagnosing and fixing bugs in existing systems. Uses adversarial debate to ensure evidence-based diagnosis and proportional fixes.
+
+**When to use:**
+- Bug reports with unclear root cause
+- Performance issues requiring investigation
+- Intermittent failures needing systematic diagnosis
+- Any situation where you need to understand and fix existing code
+
+**Philosophy: Evidence → Hypothesis → Fix**
+
+The fix might be 1 line or 100 lines—what matters is that it's proportional to the actual problem and justified by evidence. A 1-line bug deserves a 1-line fix. A systemic issue may genuinely need architectural changes. The debate ensures we don't skip steps.
+
+**Structure (Formal Schema):**
+- **Symptoms**: User-visible behavior, timing (always/intermittent/under load), when it started, blast radius
+- **Expected vs Actual Behavior**: Table comparing expected vs actual for each scenario
+- **Evidence Gathered**: Logs with timestamps and interpretation, timings, error messages, reproduction steps
+- **Hypotheses**: Ranked by (likelihood × ease of verification), with evidence for/against each
+- **Diagnostic Plan**: Immediate checks (<5 min), targeted logging to add, tests to run
+- **Root Cause**: File, line, issue description, why it happened, why initial hypotheses were wrong (if applicable)
+- **Proposed Fix**: Changes required (table with file, change, lines), before/after code, justification for approach
+- **Verification**: Steps to confirm fix, regression checks, log confirmation
+- **Prevention**: Test case to add, documentation updates, similar bugs to check
+
+**Critique Criteria:**
+1. Evidence before hypothesis - no guessing without data
+2. Simple explanations ruled out first - check basics before redesigning
+3. Targeted diagnostics - each log answers a specific question
+4. Proportional fix - justified by evidence, not by habit
+5. Root cause identified - not just symptom masking
+6. Verification plan - specific steps to confirm fix
+
+**Anti-patterns flagged:**
+- Premature Architecture - proposing abstractions before ruling out simple bugs
+- Shotgun Debugging - logging everywhere without hypotheses
+- Untested Assumptions - claiming cause without measurement
+- Disproportionate Fix - complexity doesn't match evidence
+- Scope Creep - "while we're here" improvements
+
+**Security Warning:**
+Debug investigations often contain sensitive data. Before submission:
+- Scrub logs of PII, API keys, passwords, and credentials
+- Remove internal hostnames, IP addresses, and network topology
+- Redact customer data
+- Follow your organization's data handling policies
+
+Content is sent to LLM providers (OpenAI, Google, etc.). Do not include data that violates corporate policies or regulatory requirements.
+
+**Context Window Guidance:**
+Large log files may exceed model context limits. Best practices:
+- Include targeted log snippets, not full files
+- Focus on logs around the time of the error
+- Summarize repetitive patterns rather than including all instances
+- Use `grep` or similar to extract relevant lines before inclusion
+
+**Example Debate Flow:**
+
+Round 1 - Initial Investigation:
+> User submits: "Orders page takes 60+ seconds to load, sometimes blank"
+>
+> Model A (codex/gpt-5.2-codex) suggests: "We need a caching layer with TTL and circuit breaker pattern"
+>
+> Model B (claude) challenges: "Before designing infrastructure, what do the logs show? Have we measured where the 60 seconds is spent?"
+>
+> Model C (gemini) adds: "The blank page suggests a different issue than slowness. Are these the same bug or two bugs?"
+
+Round 2 - Evidence Gathering:
+> Investigation adds: Log shows ORDERS_CB_COMPLETE took 67234ms, breakdown shows AADriver call: 64 seconds
+>
+> Model A revises: "The 64 seconds is retry overhead. We should add a circuit breaker for AADriver."
+>
+> Model B challenges: "A full circuit breaker registry is overkill. A simple timestamp check would work. What's the minimal fix?"
+>
+> Model C adds: "Why is AADriver failing? Is it actually down, or is there a configuration issue?"
+
+Round 3 - Proportional Fix:
+> Investigation finds: urllib3 default retry policy causes 3 retries × 10+ seconds = 30+ seconds
+>
+> Consensus: Proportional fix - disable retries for AADriver (fail fast), add simple timestamp-based skip. ~10 lines total.
+
+**Example invocation:**
+```bash
+python3 debate.py critique --models codex/gpt-5.2-codex,gemini-cli/gemini-3-pro-preview --doc-type debug <<'SPEC_EOF'
+# Debug Investigation: Orders Page 60s Load Time
+
+## Symptoms
+- Orders page takes 60+ seconds to load
+- Sometimes blank entirely
+- Started after recent deploy
+- Affects all users
+
+## Expected vs Actual Behavior
+| Scenario | Expected | Actual |
+|----------|----------|--------|
+| Load orders page | <2s load time | 60+ seconds |
+| Display orders list | Shows all orders | Sometimes blank |
+
+## Evidence Gathered
+### Logs
+- [10:23:45] ORDERS_CB_COMPLETE took 67234ms
+- [10:23:45] "Max retries exceeded connecting to AADriver"
+
+### Timings
+- Exchange API calls: 3 seconds total
+- AADriver call: 64 seconds (timeout + retries)
+
+## Hypotheses
+| # | Hypothesis | Evidence For | Evidence Against | Verification | Effort |
+|---|------------|--------------|------------------|--------------|--------|
+| 1 | AADriver retry storm | Log shows 64s, retry message | None | Check retry config | 5 min |
+| 2 | Database slow | General slowness | Logs show DB queries fast | Query timing | 15 min |
+...
+SPEC_EOF
+```
+
 ## Process
 
-### Step 0: Gather Input and Offer Interview Mode
+### Step 0: Auto-Detect Project Context Files
+
+**Before starting any debate, automatically check for and include these context files if they exist in the current working directory:**
+
+1. **`.active_context.md`** - Dynamic context file (often generated by context builders)
+2. **`CLAUDE.md`** - Project-specific instructions and context
+
+**How to check and include:**
+```bash
+# Build the context flags
+CONTEXT_FLAGS=""
+[ -f ".active_context.md" ] && CONTEXT_FLAGS="$CONTEXT_FLAGS --context .active_context.md"
+[ -f "CLAUDE.md" ] && CONTEXT_FLAGS="$CONTEXT_FLAGS --context CLAUDE.md"
+```
+
+**When running the debate script, always include detected context files:**
+```bash
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
+  --models MODEL_LIST \
+  --doc-type TYPE \
+  $CONTEXT_FLAGS \
+  <<'SPEC_EOF'
+<spec here>
+SPEC_EOF
+```
+
+**Inform the user what context was detected:**
+```
+Detected project context files:
+- .active_context.md ✓ (will be included)
+- CLAUDE.md ✓ (will be included)
+
+These files will be provided to all opponent models for additional context.
+```
+
+If no context files are found, proceed normally without mentioning it.
+
+### Step 1: Gather Input and Offer Interview Mode
 
 Ask the user:
 
@@ -197,7 +350,7 @@ Ask the user:
 3. **Interview mode** (optional):
    > "Would you like to start with an in-depth interview session before the adversarial debate? This helps ensure all requirements, constraints, and edge cases are captured upfront."
 
-### Step 0.5: Interview Mode (If Selected)
+### Step 1.5: Interview Mode (If Selected)
 
 If the user opts for interview mode, conduct a comprehensive interview using the AskUserQuestion tool. This is NOT a quick Q&A; it's a thorough requirements gathering session.
 
@@ -268,7 +421,7 @@ If the user opts for interview mode, conduct a comprehensive interview using the
 2. Write the spec to file
 3. Show the user the generated spec and confirm before proceeding to debate
 
-### Step 1: Load or Generate Initial Document
+### Step 2: Load or Generate Initial Document
 
 **If user provided a file path:**
 - Read the file using the Read tool
@@ -302,7 +455,7 @@ Output format (whether loaded or generated):
 [/SPEC]
 ```
 
-### Step 2: Select Opponent Models
+### Step 3: Select Opponent Models
 
 First, check which API keys are configured:
 
@@ -313,15 +466,16 @@ python3 ~/.claude/skills/adversarial-spec/scripts/debate.py providers
 Then present available models to the user using AskUserQuestion with multiSelect. Build the options list based on which API keys are set:
 
 **If OPENAI_API_KEY is set, include:**
-- `gpt-4o` - Fast, good for general critique
-- `o1` - Stronger reasoning, slower
+- `gpt-5.2` - Frontier reasoning
+- `o3-mini` - Good reasoning at lower cost
 
 **If ANTHROPIC_API_KEY is set, include:**
-- `claude-sonnet-4-20250514` - Claude 3.5 Sonnet v2, excellent reasoning
-- `claude-opus-4-20250514` - Claude 3 Opus, highest capability
+- `claude-sonnet-4-5-20250929` - Claude Sonnet 4.5, excellent reasoning
+- `claude-opus-4-5-20251124` - Claude Opus 4.5, highest capability
 
 **If GEMINI_API_KEY is set, include:**
-- `gemini/gemini-2.0-flash` - Fast, good balance
+- `gemini/gemini-3-pro` - Top LMArena score (1501 Elo)
+- `gemini/gemini-3-flash` - Fast, pro-level quality
 
 **If XAI_API_KEY is set, include:**
 - `xai/grok-3` - Alternative perspective
@@ -356,7 +510,7 @@ options: [only include models whose API keys are configured]
 
 More models = more perspectives = stricter convergence.
 
-### Step 3: Send to Opponent Models for Critique
+### Step 4: Send to Opponent Models for Critique
 
 Run the debate script with selected models:
 
@@ -372,7 +526,7 @@ Replace:
 
 The script calls all models in parallel and returns each model's critique or `[AGREE]`.
 
-### Step 4: Review, Critique, and Iterate
+### Step 5: Review, Critique, and Iterate
 
 **Important: You (Claude) are an active participant in this debate, not just a moderator.** After receiving opponent model responses, you must:
 
@@ -425,7 +579,7 @@ Model X confirms agreement after verification:
 If the model was being lazy and now has critiques, continue the debate normally.
 
 **If ALL models (including you) agree:**
-- Proceed to Step 5 (Finalize and Output)
+- Proceed to Step 6 (Finalize and Output)
 
 **If ANY participant (model or you) has critiques:**
 1. List every distinct issue raised across all participants
@@ -437,7 +591,7 @@ If the model was being lazy and now has critiques, continue the debate normally.
 4. Address all valid issues in your revision
 5. If you disagree with a critique, explain why in your response
 6. Output the revised document incorporating all accepted feedback
-7. Go back to Step 3 with your new document
+7. Go back to Step 4 with your new document
 
 **Handling conflicting critiques:**
 - If models suggest contradictory changes, evaluate each on merit
@@ -445,7 +599,7 @@ If the model was being lazy and now has critiques, continue the debate normally.
 - Choose the approach that best serves the document's audience
 - Note the tradeoff in your response
 
-### Step 5: Finalize and Output Document
+### Step 6: Finalize and Output Document
 
 When ALL opponent models AND you have said `[AGREE]`:
 
@@ -492,7 +646,7 @@ When ALL opponent models AND you have said `[AGREE]`:
    SPEC_EOF
    ```
 
-### Step 6: User Review Period
+### Step 7: User Review Period
 
 **After outputting the finalized document, give the user a review period:**
 
@@ -510,12 +664,12 @@ When ALL opponent models AND you have said `[AGREE]`:
 4. Ask again: "Changes applied. Would you like to accept, make more changes, or run another review cycle?"
 
 **If user wants another review cycle:**
-- Proceed to Step 7 (Additional Review Cycles)
+- Proceed to Step 8 (Additional Review Cycles)
 
 **If user accepts:**
-- Proceed to Step 8 (PRD to Tech Spec, if applicable)
+- Proceed to Step 9 (PRD to Tech Spec, if applicable)
 
-### Step 7: Additional Review Cycles (Optional)
+### Step 8: Additional Review Cycles (Optional)
 
 After the user review period, or if explicitly requested:
 
@@ -526,14 +680,14 @@ After the user review period, or if explicitly requested:
 1. Ask if they want to use the same models or different ones:
    > "Use the same models (MODEL_LIST), or specify different models for this cycle?"
 
-2. Run the adversarial debate again from Step 2 with the current document as input.
+2. Run the adversarial debate again from Step 3 with the current document as input.
 
 3. Track cycle count separately from round count:
    ```
    === Cycle 2, Round 1 ===
    ```
 
-4. When this cycle reaches consensus, return to Step 6 (User Review Period).
+4. When this cycle reaches consensus, return to Step 7 (User Review Period).
 
 5. Update the final summary to reflect total cycles:
    ```
@@ -546,11 +700,11 @@ After the user review period, or if explicitly requested:
    ```
 
 **Use cases for additional cycles:**
-- First cycle with faster/cheaper models (gpt-4o), second cycle with stronger models (o1, claude-opus)
+- First cycle with faster models (gemini-cli/gemini-3-flash-preview), second cycle with stronger models (codex/gpt-5.2-codex, gemini-cli/gemini-3-pro-preview)
 - First cycle for structure and completeness, second cycle for security or performance focus
 - Fresh perspective after user-requested changes
 
-### Step 8: PRD to Tech Spec Continuation (Optional)
+### Step 9: PRD to Tech Spec Continuation (Optional)
 
 **If the completed document was a PRD**, ask the user:
 
@@ -604,7 +758,7 @@ Enable real-time notifications and human-in-the-loop feedback. Only active with 
 ### Usage
 
 ```bash
-python3 debate.py critique --model gpt-4o --doc-type tech --telegram <<'SPEC_EOF'
+python3 debate.py critique --model codex/gpt-5.2-codex --doc-type tech --telegram <<'SPEC_EOF'
 <document here>
 SPEC_EOF
 ```
@@ -622,7 +776,7 @@ After each round:
 Direct models to prioritize specific concerns using `--focus`:
 
 ```bash
-python3 debate.py critique --models gpt-4o --focus security --doc-type tech <<'SPEC_EOF'
+python3 debate.py critique --models codex/gpt-5.2-codex --focus security --doc-type tech <<'SPEC_EOF'
 <spec here>
 SPEC_EOF
 ```
@@ -642,7 +796,7 @@ Run `python3 debate.py focus-areas` to see all options.
 Have models critique from specific professional perspectives using `--persona`:
 
 ```bash
-python3 debate.py critique --models gpt-4o --persona "security-engineer" --doc-type tech <<'SPEC_EOF'
+python3 debate.py critique --models codex/gpt-5.2-codex --persona "security-engineer" --doc-type tech <<'SPEC_EOF'
 <spec here>
 SPEC_EOF
 ```
@@ -668,7 +822,7 @@ Custom personas also work: `--persona "fintech compliance officer"`
 Include existing documents as context for the critique using `--context`:
 
 ```bash
-python3 debate.py critique --models gpt-4o --context ./existing-api.md --context ./schema.sql --doc-type tech <<'SPEC_EOF'
+python3 debate.py critique --models codex/gpt-5.2-codex --context ./existing-api.md --context ./schema.sql --doc-type tech <<'SPEC_EOF'
 <spec here>
 SPEC_EOF
 ```
@@ -685,7 +839,7 @@ Long debates can crash or need to pause. Sessions save state automatically:
 
 ```bash
 # Start a named session
-python3 debate.py critique --models gpt-4o --session my-feature-spec --doc-type tech <<'SPEC_EOF'
+python3 debate.py critique --models codex/gpt-5.2-codex --session my-feature-spec --doc-type tech <<'SPEC_EOF'
 <spec here>
 SPEC_EOF
 
@@ -722,7 +876,7 @@ Use these to rollback if a revision makes things worse.
 API calls automatically retry with exponential backoff (1s, 2s, 4s) up to 3 times. If a model times out or rate-limits, you'll see:
 
 ```
-Warning: gpt-4o failed (attempt 1/3): rate limit exceeded. Retrying in 1.0s...
+Warning: codex/gpt-5.2-codex failed (attempt 1/3): rate limit exceeded. Retrying in 1.0s...
 ```
 
 If all retries fail, the error is reported and other models continue.
@@ -732,7 +886,7 @@ If all retries fail, the error is reported and other models continue.
 If a model provides critique but doesn't include proper `[SPEC]` tags, a warning is displayed:
 
 ```
-Warning: gpt-4o provided critique but no [SPEC] tags found. Response may be malformed.
+Warning: codex/gpt-5.2-codex provided critique but no [SPEC] tags found. Response may be malformed.
 ```
 
 This catches cases where models forget to format their revised spec correctly.
@@ -742,7 +896,7 @@ This catches cases where models forget to format their revised spec correctly.
 Convergence can collapse toward lowest-common-denominator interpretations, sanding off novel design choices. The `--preserve-intent` flag makes removals expensive:
 
 ```bash
-python3 debate.py critique --models gpt-4o --preserve-intent --doc-type tech <<'SPEC_EOF'
+python3 debate.py critique --models codex/gpt-5.2-codex --preserve-intent --doc-type tech <<'SPEC_EOF'
 <spec here>
 SPEC_EOF
 ```
@@ -777,8 +931,8 @@ Total tokens: 12,543 in / 3,221 out
 Total cost: $0.0847
 
 By model:
-  gpt-4o: $0.0523 (8,234 in / 2,100 out)
-  gemini/gemini-2.0-flash: $0.0324 (4,309 in / 1,121 out)
+  codex/gpt-5.2-codex: $0.00 (8,234 in / 2,100 out) [subscription]
+  gemini-cli/gemini-3-pro-preview: $0.00 (4,309 in / 1,121 out) [free tier]
 ```
 
 Cost is also included in JSON output and Telegram notifications.
@@ -789,7 +943,7 @@ Save frequently used configurations as profiles:
 
 **Create a profile:**
 ```bash
-python3 debate.py save-profile strict-security --models gpt-4o,gemini/gemini-2.0-flash --focus security --doc-type tech
+python3 debate.py save-profile strict-security --models codex/gpt-5.2-codex,gemini-cli/gemini-3-pro-preview --focus security --doc-type tech
 ```
 
 **Use a profile:**
@@ -826,7 +980,7 @@ Use this to see exactly what changed between rounds. Helpful for:
 Extract actionable tasks from a finalized spec:
 
 ```bash
-cat spec-output.md | python3 debate.py export-tasks --models gpt-4o --doc-type prd
+cat spec-output.md | python3 debate.py export-tasks --models codex/gpt-5.2-codex --doc-type prd
 ```
 
 Output includes:
@@ -839,7 +993,7 @@ Output includes:
 Use `--json` for structured output suitable for importing into issue trackers:
 
 ```bash
-cat spec-output.md | python3 debate.py export-tasks --models gpt-4o --doc-type prd --json > tasks.json
+cat spec-output.md | python3 debate.py export-tasks --models codex/gpt-5.2-codex --doc-type prd --json > tasks.json
 ```
 
 ## Script Reference

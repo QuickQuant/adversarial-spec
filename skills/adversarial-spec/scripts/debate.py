@@ -4,15 +4,15 @@ Adversarial spec debate script.
 Sends specs to multiple LLMs for critique using LiteLLM.
 
 Usage:
-    echo "spec" | python3 debate.py critique --models gpt-4o
-    echo "spec" | python3 debate.py critique --models gpt-4o,gemini/gemini-2.0-flash,xai/grok-3 --doc-type prd
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex,gemini/gemini-2.0-flash --doc-type tech
-    echo "spec" | python3 debate.py critique --models gpt-4o --focus security
-    echo "spec" | python3 debate.py critique --models gpt-4o --persona "security engineer"
-    echo "spec" | python3 debate.py critique --models gpt-4o --context ./api.md --context ./schema.sql
-    echo "spec" | python3 debate.py critique --models gpt-4o --profile strict-security
-    echo "spec" | python3 debate.py critique --models gpt-4o --preserve-intent
-    echo "spec" | python3 debate.py critique --models gpt-4o --session my-debate
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex,gemini-cli/gemini-3-pro-preview --doc-type prd
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex,gemini-cli/gemini-3-flash-preview --doc-type tech
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --focus security
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --persona "security engineer"
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --context ./api.md --context ./schema.sql
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --profile strict-security
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --preserve-intent
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --session my-debate
     python3 debate.py critique --resume my-debate
     echo "spec" | python3 debate.py diff --previous prev.md --current current.md
     echo "spec" | python3 debate.py export-tasks --doc-type prd
@@ -21,13 +21,13 @@ Usage:
     python3 debate.py sessions
 
 Supported providers (set corresponding API key):
-    OpenAI:     OPENAI_API_KEY       models: gpt-4o, gpt-4-turbo, o1, etc.
-    Anthropic:  ANTHROPIC_API_KEY    models: claude-sonnet-4-20250514, claude-opus-4-20250514, etc.
-    Google:     GEMINI_API_KEY       models: gemini/gemini-2.0-flash, gemini/gemini-pro, etc.
-    xAI:        XAI_API_KEY          models: xai/grok-3, xai/grok-beta, etc.
-    Mistral:    MISTRAL_API_KEY      models: mistral/mistral-large, etc.
-    Groq:       GROQ_API_KEY         models: groq/llama-3.3-70b, etc.
-    OpenRouter: OPENROUTER_API_KEY   models: openrouter/openai/gpt-4o, openrouter/anthropic/claude-3.5-sonnet, etc.
+    OpenAI:     OPENAI_API_KEY       models: gpt-5.2, o3-mini, gpt-5.2-mini
+    Anthropic:  ANTHROPIC_API_KEY    models: claude-opus-4-5-20251124, claude-sonnet-4-5-20250929
+    Google:     GEMINI_API_KEY       models: gemini/gemini-3-pro, gemini/gemini-3-flash
+    xAI:        XAI_API_KEY          models: xai/grok-4, xai/grok-4.1-fast
+    Mistral:    MISTRAL_API_KEY      models: mistral/mistral-large-3, mistral/mistral-medium-3
+    Groq:       GROQ_API_KEY         models: groq/llama-4-maverick, groq/llama-3.3-70b-versatile
+    OpenRouter: OPENROUTER_API_KEY   models: openrouter/openai/gpt-5.2, openrouter/anthropic/claude-sonnet-4.5
     Codex CLI:  (ChatGPT subscription) models: codex/gpt-5.2-codex, codex/gpt-5.1-codex-max
                 Install: npm install -g @openai/codex && codex login
                 Reasoning: --codex-reasoning xhigh (minimal, low, medium, high, xhigh)
@@ -35,6 +35,7 @@ Supported providers (set corresponding API key):
 Document types:
     prd   - Product Requirements Document (business/product focus)
     tech  - Technical Specification / Architecture Document (engineering focus)
+    debug - Debug Investigation (evidence-based diagnosis, proportional fixes)
 
 Exit codes:
     0 - Success
@@ -91,6 +92,12 @@ from providers import (  # noqa: E402
     validate_model_credentials,
 )
 from session import SESSIONS_DIR, SessionState, save_checkpoint  # noqa: E402
+from gauntlet import (  # noqa: E402
+    ADVERSARIES,
+    format_gauntlet_report,
+    get_adversary_leaderboard,
+    run_gauntlet,
+)
 
 
 def send_telegram_notification(
@@ -224,14 +231,14 @@ def add_core_arguments(parser: argparse.ArgumentParser) -> None:
         "--models",
         "-m",
         default=None,
-        help="Comma-separated list of models (e.g., gpt-4o,gemini/gemini-2.0-flash,xai/grok-3)",
+        help="Comma-separated list of models (e.g., codex/gpt-5.2-codex,gemini-cli/gemini-3-pro-preview)",
     )
     parser.add_argument(
         "--doc-type",
         "-d",
-        choices=["prd", "tech"],
+        choices=["prd", "tech", "debug"],
         default="tech",
-        help="Document type: prd or tech (default: tech)",
+        help="Document type: prd, tech, or debug (default: tech)",
     )
     parser.add_argument(
         "--round", "-r", type=int, default=1, help="Current round number"
@@ -355,6 +362,39 @@ def add_misc_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def add_gauntlet_arguments(parser: argparse.ArgumentParser) -> None:
+    """Add adversarial gauntlet arguments to parser."""
+    parser.add_argument(
+        "--gauntlet",
+        "-g",
+        action="store_true",
+        help="Run adversarial gauntlet before/during debate",
+    )
+    parser.add_argument(
+        "--gauntlet-adversaries",
+        default="all",
+        help="Comma-separated adversaries or 'all' (paranoid_security,burned_oncall,lazy_developer,pedantic_nitpicker,asshole_loner)",
+    )
+    parser.add_argument(
+        "--gauntlet-model",
+        help="Model for adversary attacks (default: auto-select free model)",
+    )
+    parser.add_argument(
+        "--gauntlet-frontier",
+        help="Model for evaluation (default: auto-select frontier model)",
+    )
+    parser.add_argument(
+        "--no-rebuttals",
+        action="store_true",
+        help="Skip adversary rebuttal phase in gauntlet",
+    )
+    parser.add_argument(
+        "--final-boss",
+        action="store_true",
+        help="Run Phase 5 Final Boss UX review (uses Opus 4.5, expensive but thorough)",
+    )
+
+
 def create_parser() -> argparse.ArgumentParser:
     """Create and configure the argument parser.
 
@@ -366,10 +406,10 @@ def create_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  echo "spec" | python3 debate.py critique --models gpt-4o
-  echo "spec" | python3 debate.py critique --models gpt-4o --focus security
-  echo "spec" | python3 debate.py critique --models gpt-4o --persona "security engineer"
-  echo "spec" | python3 debate.py critique --models gpt-4o --context ./api.md
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --focus security
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --persona "security engineer"
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --context ./api.md
   echo "spec" | python3 debate.py critique --profile my-security-profile
   python3 debate.py diff --previous old.md --current new.md
   echo "spec" | python3 debate.py export-tasks --doc-type prd
@@ -377,7 +417,12 @@ Examples:
   python3 debate.py focus-areas
   python3 debate.py personas
   python3 debate.py profiles
-  python3 debate.py save-profile myprofile --models gpt-4o,gemini/gemini-2.0-flash --focus security
+  python3 debate.py save-profile myprofile --models codex/gpt-5.2-codex,gemini-cli/gemini-3-pro-preview --focus security
+
+Gauntlet commands (adversarial attack on specs):
+  echo "spec" | python3 debate.py gauntlet                   # Run gauntlet with all adversaries
+  echo "spec" | python3 debate.py gauntlet --gauntlet-adversaries paranoid_security,burned_oncall
+  python3 debate.py gauntlet-adversaries                     # List available adversaries
 
 Bedrock commands:
   python3 debate.py bedrock status                           # Show Bedrock config
@@ -390,6 +435,7 @@ Bedrock commands:
 Document types:
   prd   - Product Requirements Document (business/product focus)
   tech  - Technical Specification / Architecture Document (engineering focus)
+  debug - Debug Investigation (evidence-based diagnosis, proportional fixes)
         """,
     )
 
@@ -398,6 +444,9 @@ Document types:
         "action",
         choices=[
             "critique",
+            "gauntlet",
+            "gauntlet-adversaries",
+            "adversary-stats",
             "providers",
             "send-final",
             "diff",
@@ -427,6 +476,7 @@ Document types:
     add_diff_arguments(parser)
     add_codex_arguments(parser)
     add_bedrock_arguments(parser)
+    add_gauntlet_arguments(parser)
     add_misc_arguments(parser)
 
     return parser
@@ -472,6 +522,20 @@ def handle_info_command(args: argparse.Namespace) -> bool:
                     f"    updated: {s['updated_at'][:19] if s['updated_at'] else 'unknown'}"
                 )
                 print()
+        return True
+
+    if args.action == "gauntlet-adversaries":
+        print("Available Gauntlet Adversaries:\n")
+        for name, desc in ADVERSARIES.items():
+            first_line = desc.strip().split("\n")[0][:60]
+            print(f"  {name:20} {first_line}...")
+        print()
+        print("Use with: --gauntlet-adversaries paranoid_security,burned_oncall")
+        print("Or use all: --gauntlet-adversaries all")
+        return True
+
+    if args.action == "adversary-stats":
+        print(get_adversary_leaderboard())
         return True
 
     return False
@@ -569,34 +633,40 @@ def parse_models(args: argparse.Namespace) -> list[str]:
             )
             print("\nAvailable providers:", file=sys.stderr)
             print(
-                "  OpenAI:    Set OPENAI_API_KEY for gpt-4o, o1, etc.", file=sys.stderr
+                "  Codex CLI: Install codex CLI for codex/gpt-5.2-codex (FREE with ChatGPT subscription)", file=sys.stderr
             )
             print(
-                "  Anthropic: Set ANTHROPIC_API_KEY for claude-sonnet-4-20250514, etc.",
+                "  Gemini CLI: Install gemini CLI for gemini-cli/gemini-3-pro-preview (FREE)", file=sys.stderr
+            )
+            print(
+                "  OpenAI:    Set OPENAI_API_KEY for gpt-5.2, o3-mini", file=sys.stderr
+            )
+            print(
+                "  Anthropic: Set ANTHROPIC_API_KEY for claude-opus-4-5, claude-sonnet-4-5",
                 file=sys.stderr,
             )
             print(
-                "  Google:    Set GEMINI_API_KEY for gemini/gemini-2.0-flash, etc.",
+                "  Google:    Set GEMINI_API_KEY for gemini/gemini-3-pro, gemini/gemini-3-flash",
                 file=sys.stderr,
             )
-            print("  xAI:       Set XAI_API_KEY for xai/grok-3, etc.", file=sys.stderr)
+            print("  xAI:       Set XAI_API_KEY for xai/grok-4", file=sys.stderr)
             print(
-                "  Mistral:   Set MISTRAL_API_KEY for mistral/mistral-large, etc.",
-                file=sys.stderr,
-            )
-            print(
-                "  Groq:      Set GROQ_API_KEY for groq/llama-3.3-70b-versatile, etc.",
+                "  Mistral:   Set MISTRAL_API_KEY for mistral/mistral-large-3",
                 file=sys.stderr,
             )
             print(
-                "  Deepseek:  Set DEEPSEEK_API_KEY for deepseek/deepseek-chat, etc.",
+                "  Groq:      Set GROQ_API_KEY for groq/llama-4-maverick",
                 file=sys.stderr,
             )
             print(
-                "  Zhipu:     Set ZHIPUAI_API_KEY for zhipu/glm-4, etc.",
+                "  Deepseek:  Set DEEPSEEK_API_KEY for deepseek/deepseek-r1",
                 file=sys.stderr,
             )
-            print("\nOr specify models explicitly: --models gpt-4o", file=sys.stderr)
+            print(
+                "  Zhipu:     Set ZHIPUAI_API_KEY for zhipu/glm-4-plus",
+                file=sys.stderr,
+            )
+            print("\nOr specify models explicitly: --models codex/gpt-5.2-codex", file=sys.stderr)
             print(
                 "\nRun 'python3 debate.py providers' to see which keys are set.",
                 file=sys.stderr,
@@ -732,6 +802,83 @@ def handle_export_tasks(args: argparse.Namespace, models: list[str]) -> None:
                     )
                 print()
     except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def handle_gauntlet(args: argparse.Namespace) -> None:
+    """Handle gauntlet action - run adversarial gauntlet on a spec.
+
+    Args:
+        args: Parsed command-line arguments.
+    """
+    spec = sys.stdin.read().strip()
+    if not spec:
+        print("Error: No spec provided via stdin", file=sys.stderr)
+        sys.exit(1)
+
+    # Parse adversaries
+    adversaries = None
+    if args.gauntlet_adversaries != "all":
+        adversaries = [a.strip() for a in args.gauntlet_adversaries.split(",")]
+        # Validate adversary names
+        invalid = [a for a in adversaries if a not in ADVERSARIES]
+        if invalid:
+            print(f"Error: Unknown adversaries: {', '.join(invalid)}", file=sys.stderr)
+            print(
+                f"Available: {', '.join(ADVERSARIES.keys())}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+    try:
+        # Parse eval models (can be comma-separated for multi-model)
+        eval_models = None
+        if args.gauntlet_frontier:
+            eval_models = [m.strip() for m in args.gauntlet_frontier.split(",")]
+
+        result = run_gauntlet(
+            spec=spec,
+            adversaries=adversaries,
+            adversary_model=args.gauntlet_model,
+            eval_models=eval_models,
+            allow_rebuttals=not args.no_rebuttals,
+            run_final_boss=args.final_boss,
+            timeout=args.timeout,
+        )
+
+        if args.json:
+            output = {
+                "concerns": [
+                    {"adversary": c.adversary, "text": c.text}
+                    for c in result.concerns
+                ],
+                "evaluations": [
+                    {
+                        "concern": {
+                            "adversary": e.concern.adversary,
+                            "text": e.concern.text,
+                        },
+                        "verdict": e.verdict,
+                        "reasoning": e.reasoning,
+                    }
+                    for e in result.evaluations
+                ],
+                "final_concerns": [
+                    {"adversary": c.adversary, "text": c.text}
+                    for c in result.final_concerns
+                ],
+                "adversary_model": result.adversary_model,
+                "eval_model": result.eval_model,
+                "total_time": result.total_time,
+                "total_cost": result.total_cost,
+            }
+            print(json.dumps(output, indent=2))
+        else:
+            print()
+            print(format_gauntlet_report(result))
+
+    except RuntimeError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
@@ -1031,6 +1178,11 @@ def main() -> None:
         return
 
     if handle_utility_command(args):
+        return
+
+    # Gauntlet action has its own model selection, handle before parse_models
+    if args.action == "gauntlet":
+        handle_gauntlet(args)
         return
 
     apply_profile(args)

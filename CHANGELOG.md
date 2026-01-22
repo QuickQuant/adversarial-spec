@@ -4,6 +4,38 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Adversarial Gauntlet System** (`gauntlet.py`) - Multi-phase adversarial review pipeline
+  - 5 adversary personas: paranoid_security, burned_oncall, lazy_developer, pedantic_nitpicker, asshole_loner
+  - Multi-model consensus evaluation (2-3 models vote, majority wins, ties favor acceptance)
+  - Self-filtering against resolved concerns database (prevents repeated concerns)
+  - Rebuttal phase where adversaries can challenge dismissals
+  - Final Boss UX Architect review (Phase 5) - uses Opus 4.5 for user story validation
+  - Confidence decay model for cached explanations (age decay, spec change penalty, usage boost)
+  - Per-adversary performance tracking (signal score, acceptance rate, dismissal effort)
+  - CLI commands: `gauntlet`, `gauntlet-adversaries`, `adversary-stats`
+
+- **Scope Management System** (`scope.py`) - Detect and manage scope expansion during refinement
+  - ScopeDiscovery dataclass for tracking tangential features and scope expansions
+  - Mini-spec template generation for discovered features
+  - Heuristic keyword detection for scope implications
+  - User checkpoints for scope decisions (stub, expand, defer, reject)
+  - Persistence of scope reports and mini-specs
+
+- **Gemini CLI Integration** - Free Google Gemini access via CLI tool
+  - Models: `gemini-cli/gemini-3-pro-preview`, `gemini-cli/gemini-3-flash-preview`
+  - No API key needed - uses Google account authentication
+  - Install: `npm install -g @google/gemini-cli && gemini auth`
+
+- **Free-First Model Selection** - Prioritizes free CLI tools over paid APIs
+  - Codex CLI (ChatGPT subscription) and Gemini CLI checked first
+  - Falls back to API models only when CLI tools unavailable
+
+- Gauntlet CLI arguments: `--gauntlet`, `--gauntlet-adversaries`, `--gauntlet-model`, `--gauntlet-frontier`, `--no-rebuttals`, `--final-boss`
+- Adversary response protocols with valid/invalid dismissal criteria
+- Cost-weighted signal score metric for adversary effectiveness
+
 ### Fixed
 
 - Replaced hardcoded `gpt-4o` default model with dynamic detection based on available API keys
