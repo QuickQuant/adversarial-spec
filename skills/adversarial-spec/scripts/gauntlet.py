@@ -360,7 +360,7 @@ class Rebuttal:
 class GauntletResult:
     """Complete result of running the gauntlet."""
 
-    concerns: list[Concern]
+    concerns: list[Concern]  # Post-filtering concerns that were evaluated
     evaluations: list[Evaluation]
     rebuttals: list[Rebuttal]
     final_concerns: list[Concern]  # Concerns that survived (technical + UX)
@@ -369,6 +369,9 @@ class GauntletResult:
     total_time: float
     total_cost: float
     final_boss_result: Optional["FinalBossResult"] = None  # Phase 5 result
+    raw_concerns: Optional[list[Concern]] = None  # Pre-filtering concerns (all generated)
+    dropped_concerns: Optional[list[Concern]] = None  # Concerns dropped by filtering
+    spec_hash: Optional[str] = None  # Hash of the spec that was reviewed
 
     def get_adversary_stats(self) -> dict[str, dict]:
         """Get per-adversary statistics from this run.
@@ -427,6 +430,60 @@ class GauntletResult:
 
         return stats
 
+    def to_dict(self) -> dict:
+        """Serialize the gauntlet result to a dictionary for JSON storage."""
+
+        def concern_to_dict(c: Concern) -> dict:
+            return {"adversary": c.adversary, "text": c.text, "severity": c.severity}
+
+        def eval_to_dict(e: Evaluation) -> dict:
+            return {
+                "concern": concern_to_dict(e.concern),
+                "verdict": e.verdict,
+                "reasoning": e.reasoning,
+            }
+
+        def rebuttal_to_dict(r: Rebuttal) -> dict:
+            return {
+                "evaluation": eval_to_dict(r.evaluation),
+                "response": r.response,
+                "sustained": r.sustained,
+            }
+
+        result = {
+            "adversary_model": self.adversary_model,
+            "eval_model": self.eval_model,
+            "total_time": self.total_time,
+            "total_cost": self.total_cost,
+            "spec_hash": self.spec_hash,
+            "raw_concerns": (
+                [concern_to_dict(c) for c in self.raw_concerns]
+                if self.raw_concerns
+                else None
+            ),
+            "dropped_concerns": (
+                [concern_to_dict(c) for c in self.dropped_concerns]
+                if self.dropped_concerns
+                else None
+            ),
+            "concerns": [concern_to_dict(c) for c in self.concerns],
+            "evaluations": [eval_to_dict(e) for e in self.evaluations],
+            "rebuttals": [rebuttal_to_dict(r) for r in self.rebuttals],
+            "final_concerns": [concern_to_dict(c) for c in self.final_concerns],
+            "adversary_stats": self.get_adversary_stats(),
+        }
+
+        if self.final_boss_result:
+            result["final_boss"] = {
+                "approved": self.final_boss_result.approved,
+                "response": self.final_boss_result.response,
+                "concerns": self.final_boss_result.concerns,
+                "model": self.final_boss_result.model,
+                "tokens_used": self.final_boss_result.tokens_used,
+            }
+
+        return result
+
 
 # =============================================================================
 # ADVERSARY STATS PERSISTENCE
@@ -437,6 +494,7 @@ from datetime import datetime
 
 STATS_DIR = Path.home() / ".adversarial-spec"
 STATS_FILE = STATS_DIR / "adversary_stats.json"
+RUNS_DIR = STATS_DIR / "runs"  # Directory for full run logs
 
 
 def load_adversary_stats() -> dict:
@@ -546,6 +604,112 @@ def update_adversary_stats(result: GauntletResult) -> dict:
 
     save_adversary_stats(stats)
     return stats
+
+
+def save_gauntlet_run(result: GauntletResult, spec: str) -> str:
+    """
+    Save a full gauntlet run to disk for analysis and debugging.
+
+    Saves to ~/.adversarial-spec/runs/<timestamp>_<spec_hash>.json
+
+    Args:
+        result: The complete gauntlet result
+        spec: The original specification text
+
+    Returns:
+        Path to the saved file
+    """
+    RUNS_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Create filename with timestamp and spec hash
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    spec_hash = result.spec_hash or get_spec_hash(spec)[:8]
+    filename = f"{timestamp}_{spec_hash}.json"
+    filepath = RUNS_DIR / filename
+
+    # Build full run data
+    run_data = {
+        "timestamp": datetime.now().isoformat(),
+        "spec_hash": spec_hash,
+        "spec_preview": spec[:500] + "..." if len(spec) > 500 else spec,
+        "spec_length": len(spec),
+        "result": result.to_dict(),
+    }
+
+    filepath.write_text(json.dumps(run_data, indent=2))
+
+    # Also update the index file for quick lookups
+    index_file = STATS_DIR / "runs_index.json"
+    try:
+        index = json.loads(index_file.read_text()) if index_file.exists() else {"runs": []}
+    except (json.JSONDecodeError, OSError):
+        index = {"runs": []}
+
+    # Add summary to index
+    raw_count = len(result.raw_concerns) if result.raw_concerns else len(result.concerns)
+    index["runs"].append({
+        "file": filename,
+        "timestamp": run_data["timestamp"],
+        "spec_hash": spec_hash,
+        "raw_concerns": raw_count,
+        "final_concerns": len(result.final_concerns),
+        "adversary_model": result.adversary_model,
+        "eval_model": result.eval_model,
+        "total_cost": result.total_cost,
+        "total_time": result.total_time,
+    })
+
+    # Keep last 100 runs in index
+    index["runs"] = index["runs"][-100:]
+    index_file.write_text(json.dumps(index, indent=2))
+
+    return str(filepath)
+
+
+def list_gauntlet_runs(limit: int = 10) -> str:
+    """List recent gauntlet runs with summary stats."""
+    index_file = STATS_DIR / "runs_index.json"
+
+    if not index_file.exists():
+        return "No gauntlet runs recorded yet."
+
+    try:
+        index = json.loads(index_file.read_text())
+    except (json.JSONDecodeError, OSError):
+        return "Error reading runs index."
+
+    if not index.get("runs"):
+        return "No gauntlet runs recorded yet."
+
+    runs = index["runs"][-limit:][::-1]  # Most recent first
+
+    lines = [f"=== Recent Gauntlet Runs (last {len(runs)}) ===", ""]
+
+    for run in runs:
+        ts = run.get("timestamp", "unknown")[:19]
+        raw = run.get("raw_concerns", "?")
+        final = run.get("final_concerns", "?")
+        cost = run.get("total_cost", 0)
+        time_s = run.get("total_time", 0)
+
+        lines.append(f"{ts}  [{run.get('spec_hash', '?')[:8]}]")
+        lines.append(f"  Concerns: {raw} raw → {final} final")
+        lines.append(f"  Time: {time_s:.1f}s  Cost: ${cost:.4f}")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def load_gauntlet_run(filename: str) -> Optional[dict]:
+    """Load a specific gauntlet run by filename."""
+    filepath = RUNS_DIR / filename
+    if not filepath.exists():
+        return None
+
+    try:
+        return json.loads(filepath.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
 
 
 def get_adversary_leaderboard() -> str:
@@ -1131,24 +1295,30 @@ If you have concerns: List them with user impact and suggested reconsideration."
 # =============================================================================
 
 def get_available_eval_models() -> list[str]:
-    """Get list of available evaluation models (prioritize free)."""
+    """Get list of available evaluation models (prioritize free).
+
+    Returns up to 3 models for multi-model consensus evaluation.
+    Prefers free CLI tools over paid APIs.
+    """
     import os
 
     models = []
 
-    # Free CLI tools first
+    # Free CLI tools first (prefer these over paid APIs)
     if CODEX_AVAILABLE:
         models.append("codex/gpt-5.2-codex")
     if GEMINI_CLI_AVAILABLE:
         models.append("gemini-cli/gemini-3-pro-preview")
 
-    # API models as backup
-    if os.environ.get("OPENAI_API_KEY"):
-        models.append("gpt-4o")
-    if os.environ.get("ANTHROPIC_API_KEY"):
-        models.append("claude-sonnet-4-5-20250929")
-    if os.environ.get("GEMINI_API_KEY"):
-        models.append("gemini/gemini-3-pro")
+    # Only add paid API models if we need more models for consensus
+    # We want 2-3 models for good consensus, but free is better
+    if len(models) < 2:
+        if os.environ.get("OPENAI_API_KEY"):
+            models.append("gpt-4o")
+        if len(models) < 2 and os.environ.get("ANTHROPIC_API_KEY"):
+            models.append("claude-sonnet-4-5-20250929")
+        if len(models) < 2 and os.environ.get("GEMINI_API_KEY"):
+            models.append("gemini/gemini-3-pro")
 
     return models
 
@@ -1835,8 +2005,11 @@ def run_gauntlet(
 
     # Phase 1: Attack Generation (parallel)
     print("Phase 1: Generating attacks...", file=sys.stderr)
-    concerns = generate_attacks(spec, adversaries, adversary_model, timeout)
-    print(f"  Generated {len(concerns)} raw concerns", file=sys.stderr)
+    raw_concerns = generate_attacks(spec, adversaries, adversary_model, timeout)
+    print(f"  Generated {len(raw_concerns)} raw concerns", file=sys.stderr)
+
+    # Save raw concerns before any filtering
+    concerns = raw_concerns  # Will be replaced if filtering is enabled
 
     # Phase 1.5: Self-Filtering (NEW)
     dropped_concerns: list[Concern] = []
@@ -1950,7 +2123,7 @@ Technical concerns requiring revision: {len(technical_concerns)}
     print(f"Total cost: ${total_cost:.4f}", file=sys.stderr)
 
     result = GauntletResult(
-        concerns=concerns,  # Note: this is post-filtering
+        concerns=concerns,  # Post-filtering concerns that were evaluated
         evaluations=evaluations,
         rebuttals=rebuttals,
         final_concerns=final_concerns,
@@ -1959,6 +2132,9 @@ Technical concerns requiring revision: {len(technical_concerns)}
         total_time=total_time,
         total_cost=total_cost,
         final_boss_result=final_boss_result,
+        raw_concerns=raw_concerns,  # All concerns before filtering
+        dropped_concerns=dropped_concerns,  # Concerns dropped by filtering
+        spec_hash=spec_hash,
     )
 
     # Auto-save dismissed concerns to resolved database (for future filtering)
@@ -1983,6 +2159,10 @@ Technical concerns requiring revision: {len(technical_concerns)}
 
     # Update adversary statistics for continuous improvement
     update_adversary_stats(result)
+
+    # Save full run log for analysis and debugging
+    run_file = save_gauntlet_run(result, spec)
+    print(f"Run log saved: {run_file}", file=sys.stderr)
 
     return result
 
@@ -2117,11 +2297,37 @@ def main():
         action="store_true",
         help="Show adversary performance statistics and exit",
     )
+    parser.add_argument(
+        "--list-runs",
+        type=int,
+        nargs="?",
+        const=10,
+        metavar="N",
+        help="List recent gauntlet runs (default: 10) and exit",
+    )
+    parser.add_argument(
+        "--show-run",
+        metavar="FILENAME",
+        help="Show details of a specific run by filename",
+    )
 
     args = parser.parse_args()
 
     if args.stats:
         print(get_adversary_leaderboard())
+        return
+
+    if args.list_runs is not None:
+        print(list_gauntlet_runs(args.list_runs))
+        return
+
+    if args.show_run:
+        run_data = load_gauntlet_run(args.show_run)
+        if run_data:
+            print(json.dumps(run_data, indent=2))
+        else:
+            print(f"Run not found: {args.show_run}", file=sys.stderr)
+            sys.exit(1)
         return
 
     if args.list_adversaries:
