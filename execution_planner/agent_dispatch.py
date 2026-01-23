@@ -92,10 +92,31 @@ class DispatchResult:
 
     def to_json(self) -> str:
         """Serialize to JSON string."""
-        data = asdict(self)
-        data["status"] = self.status.value
-        # Remove non-serializable fields
-        data.pop("process_handle", None)
+        # Manual serialization to avoid deepcopy issues with Popen
+        data = {
+            "agent_id": self.agent_id,
+            "task_id": self.task_id,
+            "agent_number": self.agent_number,
+            "cli_used": self.cli_used,
+            "context_passed": self.context_passed,
+            "spec_length_passed": self.spec_length_passed,
+            "status": self.status.value,
+            "success": self.success,
+            "crashed": self.crashed,
+            "timed_out": self.timed_out,
+            "failure_reason": self.failure_reason,
+            "process_id": self.process_id,
+            # process_handle excluded - not serializable
+            "session_dir": self.session_dir,
+            "workspace_id": self.workspace_id,
+            "started_at": self.started_at,
+            "file_reservation_created": self.file_reservation_created,
+            "file_reservation_released": self.file_reservation_released,
+            "reserved_files": self.reserved_files,
+            "reservation_reason": self.reservation_reason,
+            "reservation_conflict": self.reservation_conflict,
+            "redaction_applied": self.redaction_applied,
+        }
         return json.dumps(data, indent=2)
 
 
@@ -122,11 +143,13 @@ class AgentDispatcher:
         max_concurrent: int = 1,
         timeout_seconds: int = 3600,
         model: str = "claude-3-opus",
+        dry_run: bool = True,  # Default to dry-run for safety
     ) -> None:
         self._agent_counter = 0
         self._max_concurrent = max_concurrent
         self._timeout_seconds = timeout_seconds
         self._model = model
+        self._dry_run = dry_run
         self._status_map: dict[str, AgentStatus] = {}
         self._task_queue: dict[str, Task] = {}
         self._file_reservations: dict[str, list[str]] = {}  # agent_id -> files
@@ -334,8 +357,60 @@ class AgentDispatcher:
             self._status_map[task.id] = AgentStatus.FAILED
             return result
 
-        # Simulate successful completion if waiting
-        if wait:
+        # Launch actual Claude Code CLI process (unless dry-run)
+        if not self._dry_run:
+            try:
+                process = self._launch_claude_process(full_context, session_dir)
+                result.process_id = process.pid
+                result.process_handle = process
+                self._processes[agent_id] = process
+            except Exception as e:
+                result.status = AgentStatus.FAILED
+                result.failure_reason = f"Failed to launch agent: {e}"
+                self._status_map[task.id] = AgentStatus.FAILED
+                return result
+
+        # If wait=True, block until completion
+        if wait and not self._dry_run:
+            try:
+                stdout, stderr = process.communicate(
+                    timeout=self._timeout_seconds
+                )
+                exit_code = process.returncode
+
+                if exit_code == 0:
+                    result.status = AgentStatus.COMPLETED
+                    result.success = True
+                    self._status_map[task.id] = AgentStatus.COMPLETED
+                else:
+                    result.status = AgentStatus.FAILED
+                    result.success = False
+                    result.failure_reason = f"Agent exited with code {exit_code}"
+                    if stderr:
+                        result.failure_reason += f": {stderr.decode()[:500]}"
+                    self._status_map[task.id] = AgentStatus.FAILED
+
+            except subprocess.TimeoutExpired:
+                process.kill()
+                result.timed_out = True
+                result.status = AgentStatus.FAILED
+                result.failure_reason = "Agent timed out"
+                self._status_map[task.id] = AgentStatus.FAILED
+
+            except Exception as e:
+                result.crashed = True
+                result.status = AgentStatus.FAILED
+                result.failure_reason = f"Agent crashed: {e}"
+                self._status_map[task.id] = AgentStatus.FAILED
+
+            # Release file reservations on completion
+            if file_reservation_created:
+                result.file_reservation_released = True
+                if agent_id in self._file_reservations:
+                    del self._file_reservations[agent_id]
+
+        # Dry-run mode: simulate successful completion if wait=True
+        elif wait and self._dry_run:
             result.status = AgentStatus.COMPLETED
             result.success = True
             self._status_map[task.id] = AgentStatus.COMPLETED
@@ -345,6 +420,37 @@ class AgentDispatcher:
                     del self._file_reservations[agent_id]
 
         return result
+
+    def _launch_claude_process(
+        self, prompt: str, session_dir: str
+    ) -> subprocess.Popen:
+        """Launch a Claude Code CLI process with the given prompt."""
+        # Ensure session directory exists
+        os.makedirs(session_dir, exist_ok=True)
+
+        # Write prompt to a temp file to avoid shell escaping issues
+        prompt_file = os.path.join(session_dir, "prompt.md")
+        with open(prompt_file, "w", encoding="utf-8") as f:
+            f.write(prompt)
+
+        # Build claude command
+        cmd = [
+            "claude",
+            "--print",  # Non-interactive mode
+            "--output-format", "text",
+            "-p", f"@{prompt_file}",  # Read prompt from file
+        ]
+
+        # Launch process
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=os.getcwd(),
+            env={**os.environ, "CLAUDE_CODE_SESSION_DIR": session_dir},
+        )
+
+        return process
 
     def dispatch_batch(
         self,
