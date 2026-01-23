@@ -1,0 +1,153 @@
+{
+  "generated_at": "2026-01-23T03:12:51.503218+00:00",
+  "generator": "execution_planner (dogfood)",
+  "spec": {
+    "title": "PRD: Execution Planning System",
+    "source": "spec-output.md",
+    "content_hash": "f599a5960d64f65e",
+    "frs": 10,
+    "nfrs": 5,
+    "user_stories": 15,
+    "risks": 7
+  },
+  "assessment": {
+    "recommendation": "decomposition-required",
+    "confidence": "high",
+    "effort": "XL",
+    "explanation": "Found 10 functional requirement(s). 5 external dependency/integration(s). 7 risk(s) identified (1 high severity). Task decomposition required for this scope."
+  },
+  "summary": {
+    "total_tasks": 10,
+    "completed": 3,
+    "in_progress": 1,
+    "pending": 6
+  },
+  "tasks": [
+    {
+      "id": "task-3ea91508",
+      "fr": "FR-1",
+      "title": "Implement FR-1: Spec Intake",
+      "status": "completed",
+      "effort": "L",
+      "risk": "medium",
+      "validation_strategy": "test-after",
+      "dependencies": [],
+      "notes": null
+    },
+    {
+      "id": "task-1dde345e",
+      "fr": "FR-2",
+      "title": "Implement FR-2: Scope Assessment",
+      "status": "completed",
+      "effort": "L",
+      "risk": "medium",
+      "validation_strategy": "test-after",
+      "dependencies": [],
+      "notes": null
+    },
+    {
+      "id": "task-c111405c",
+      "fr": "FR-3",
+      "title": "Implement FR-3: Task Plan Generation",
+      "status": "completed",
+      "effort": "L",
+      "risk": "low",
+      "validation_strategy": "test-after",
+      "dependencies": [],
+      "notes": null
+    },
+    {
+      "id": "task-ec6ef768",
+      "fr": "FR-4",
+      "title": "Implement FR-4: Test Strategy Configuration",
+      "status": "pending",
+      "effort": "L",
+      "risk": "medium",
+      "validation_strategy": "test-first",
+      "dependencies": [
+        "FR-3"
+      ],
+      "notes": null
+    },
+    {
+      "id": "task-966b5dbe",
+      "fr": "FR-5",
+      "title": "Implement FR-5: Over-Decomposition Guards",
+      "status": "pending",
+      "effort": "M",
+      "risk": "low",
+      "validation_strategy": "test-after",
+      "dependencies": [
+        "FR-3"
+      ],
+      "notes": null
+    },
+    {
+      "id": "task-4eaad9fe",
+      "fr": "FR-6",
+      "title": "Implement FR-6: Parallelization Guidance",
+      "status": "pending",
+      "effort": "L",
+      "risk": "medium",
+      "validation_strategy": "test-first",
+      "dependencies": [
+        "FR-3"
+      ],
+      "notes": null
+    },
+    {
+      "id": "task-2d0b8c03",
+      "fr": "FR-7",
+      "title": "Implement FR-7: Agent Dispatch & Status",
+      "status": "in_progress",
+      "effort": "L",
+      "risk": "medium",
+      "validation_strategy": "test-first",
+      "dependencies": [
+        "FR-1",
+        "FR-3"
+      ],
+      "notes": "Orchestration logic complete. Needs actual subprocess.Popen() call to claude CLI."
+    },
+    {
+      "id": "task-45204b1d",
+      "fr": "FR-8",
+      "title": "Implement FR-8: Execution Control",
+      "status": "pending",
+      "effort": "L",
+      "risk": "low",
+      "validation_strategy": "test-after",
+      "dependencies": [
+        "FR-7"
+      ],
+      "notes": "Module execution_control.py not created. Tests are stubs."
+    },
+    {
+      "id": "task-03310ba7",
+      "fr": "FR-9",
+      "title": "Implement FR-9: Progress Visibility",
+      "status": "pending",
+      "effort": "L",
+      "risk": "medium",
+      "validation_strategy": "test-first",
+      "dependencies": [
+        "FR-7",
+        "FR-8"
+      ],
+      "notes": "Module progress.py not created. Tests are stubs."
+    },
+    {
+      "id": "task-6e66b06c",
+      "fr": "FR-10",
+      "title": "Implement FR-10: Beads + mcp_agent_mail Integration",
+      "status": "pending",
+      "effort": "L",
+      "risk": "medium",
+      "validation_strategy": "test-after",
+      "dependencies": [
+        "FR-7"
+      ],
+      "notes": "File reservations are in-memory only. Need mcp_agent_mail integration or equivalent."
+    }
+  ]
+}
