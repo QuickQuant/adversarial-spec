@@ -2431,7 +2431,7 @@ def main():
         spec=spec,
         adversaries=adversaries,
         adversary_model=args.adversary_model,
-        eval_model=args.eval_model,
+        eval_models=[args.eval_model] if args.eval_model else None,
         allow_rebuttals=not args.no_rebuttals,
         timeout=args.timeout,
     )
