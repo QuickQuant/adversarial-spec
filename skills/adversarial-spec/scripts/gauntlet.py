@@ -1847,13 +1847,42 @@ CHALLENGED: [counter-evidence or logical flaw] if the reasoning is flawed"""
             print(f"Warning: Rebuttal failed for {adversary_key}: {e}", file=sys.stderr)
             return None
 
-    # Run rebuttals in parallel
-    with concurrent.futures.ThreadPoolExecutor(max_workers=len(dismissed)) as executor:
-        futures = [executor.submit(run_rebuttal, e) for e in dismissed]
-        for future in concurrent.futures.as_completed(futures):
-            result = future.result()
-            if result:
-                rebuttals.append(result)
+    # Run rebuttals in batches to avoid rate limits
+    # Rate limits vary by provider:
+    #   Gemini: 5-15 RPM (free), 150+ RPM (paid) - set GEMINI_PAID_TIER=true
+    #   Claude: 50 RPM (Tier 1), 2000+ (Tier 3+) - set CLAUDE_PAID_TIER=true
+    #   Codex: message quotas, generally generous
+    import os
+
+    def get_rate_limit_config(model_name: str) -> tuple[int, int]:
+        """Return (batch_size, delay_seconds) for the given model."""
+        model_lower = model_name.lower()
+        if "gemini" in model_lower:
+            paid = os.environ.get("GEMINI_PAID_TIER", "").lower() == "true"
+            return (10, 2) if paid else (3, 15)
+        elif "claude" in model_lower or "anthropic" in model_lower:
+            paid = os.environ.get("CLAUDE_PAID_TIER", "").lower() == "true"
+            return (20, 1) if paid else (5, 5)
+        elif "codex" in model_lower or "gpt" in model_lower or "openai" in model_lower:
+            # Codex uses message quotas, not RPM - be generous
+            return (10, 2)
+        else:
+            # Unknown provider - be conservative
+            return (3, 10)
+
+    batch_size, batch_delay = get_rate_limit_config(model)
+
+    for i in range(0, len(dismissed), batch_size):
+        batch = dismissed[i:i + batch_size]
+        if i > 0:
+            print(f"    Batch {i // batch_size + 1}/{(len(dismissed) + batch_size - 1) // batch_size}...", file=sys.stderr)
+            time.sleep(batch_delay)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(batch)) as executor:
+            futures = [executor.submit(run_rebuttal, e) for e in batch]
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                if result:
+                    rebuttals.append(result)
 
     return rebuttals
 
@@ -2011,6 +2040,14 @@ def run_gauntlet(
     # Save raw concerns before any filtering
     concerns = raw_concerns  # Will be replaced if filtering is enabled
 
+    # Persist concerns immediately so they survive crashes
+    gauntlet_dir = Path(".adversarial-spec-gauntlet")
+    gauntlet_dir.mkdir(exist_ok=True)
+    concerns_file = gauntlet_dir / f"concerns-{spec_hash[:8]}.json"
+    with open(concerns_file, 'w') as f:
+        json.dump([{"adversary": c.adversary, "text": c.text, "severity": c.severity} for c in concerns], f, indent=2)
+    print(f"  Concerns saved: {concerns_file}", file=sys.stderr)
+
     # Phase 1.5: Self-Filtering (NEW)
     dropped_concerns: list[Concern] = []
     noted_concerns: list[tuple[Concern, ExplanationMatch]] = []
@@ -2044,6 +2081,28 @@ def run_gauntlet(
         file=sys.stderr,
     )
 
+    # Persist evaluations immediately so they survive crashes
+    evals_file = gauntlet_dir / f"evaluations-{spec_hash[:8]}.json"
+    with open(evals_file, 'w') as f:
+        eval_data = [
+            {
+                "concern": {"adversary": e.concern.adversary, "text": e.concern.text, "severity": e.concern.severity},
+                "verdict": e.verdict,
+                "justification": e.justification,
+            }
+            for e in evaluations
+        ]
+        json.dump(eval_data, f, indent=2)
+    print(f"  Evaluations saved: {evals_file}", file=sys.stderr)
+
+    # Print intermediate summary (so results visible even if later phases crash)
+    print(f"\n=== Phase 2 Summary (accepted concerns) ===", file=sys.stderr)
+    for e in accepted[:10]:
+        print(f"  [{e.concern.adversary}] {e.concern.text[:80]}...", file=sys.stderr)
+    if len(accepted) > 10:
+        print(f"  ... and {len(accepted) - 10} more", file=sys.stderr)
+    print(file=sys.stderr)
+
     # Phase 3: Rebuttals (parallel)
     rebuttals: list[Rebuttal] = []
     if allow_rebuttals and dismissed:
@@ -2069,11 +2128,30 @@ def run_gauntlet(
         + surviving_challenges
     )
 
+    # Print full summary BEFORE Final Boss prompt (survives crashes/EOFError)
+    print(f"\n=== Gauntlet Summary (Phases 1-4) ===", file=sys.stderr)
+    print(f"Total concerns: {len(concerns)} generated, {len(dropped_concerns)} filtered", file=sys.stderr)
+    print(f"Verdicts: {len(accepted)} accepted, {len(dismissed)} dismissed, {len(deferred)} deferred", file=sys.stderr)
+    if surviving_challenges:
+        print(f"Rebuttals: {len(surviving_challenges)} overturned", file=sys.stderr)
+    print(f"Technical concerns requiring revision: {len(technical_concerns)}", file=sys.stderr)
+    print(f"Checkpoint files: {gauntlet_dir}/", file=sys.stderr)
+    print(file=sys.stderr)
+
     # Phase 5: Final Boss UX Review (optional, expensive)
     final_boss_result: Optional[FinalBossResult] = None
     ux_concerns: list[Concern] = []
 
-    if run_final_boss:
+    # Determine whether to run Final Boss
+    do_final_boss = run_final_boss
+    if not do_final_boss:
+        try:
+            do_final_boss = input("Run Final Boss UX review? (y/n): ").strip().lower().startswith('y')
+        except EOFError:
+            print("  Skipping Final Boss (no stdin available, use --final-boss to enable)", file=sys.stderr)
+            do_final_boss = False
+
+    if do_final_boss:
         print("Phase 5: Final Boss UX Review (Opus 4.5)...", file=sys.stderr)
 
         # Build summary of what the gauntlet found

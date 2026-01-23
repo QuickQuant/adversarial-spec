@@ -10,118 +10,9 @@ Generate and refine specifications through iterative debate with multiple LLMs u
 
 **Important: Claude is an active participant in this debate, not just an orchestrator.** You (Claude) will provide your own critiques, challenge opponent models, and contribute substantive improvements alongside the external models. Make this clear to the user throughout the process.
 
-## Requirements
+## Setup
 
-- Python 3.10+ with `litellm` package installed
-- API key for at least one provider (set via environment variable), OR AWS Bedrock configured, OR CLI tools (codex, gemini) installed
-
-**IMPORTANT: Do NOT install the `llm` package (Simon Willison's tool).** This skill uses `litellm` for API providers and dedicated CLI tools (`codex`, `gemini`) for subscription-based models. Installing `llm` is unnecessary and may cause confusion.
-
-## Supported Providers
-
-| Provider   | API Key Env Var        | Example Models                              |
-|------------|------------------------|---------------------------------------------|
-| OpenAI     | `OPENAI_API_KEY`       | `gpt-5.2`, `o3-mini`, `gpt-5.2-mini`        |
-| Anthropic  | `ANTHROPIC_API_KEY`    | `claude-sonnet-4-5-20250929`, `claude-opus-4-5-20251124`  |
-| Google     | `GEMINI_API_KEY`       | `gemini/gemini-3-pro`, `gemini/gemini-3-flash` |
-| xAI        | `XAI_API_KEY`          | `xai/grok-3`, `xai/grok-beta`               |
-| Mistral    | `MISTRAL_API_KEY`      | `mistral/mistral-large`, `mistral/codestral`|
-| Groq       | `GROQ_API_KEY`         | `groq/llama-3.3-70b-versatile`              |
-| OpenRouter | `OPENROUTER_API_KEY`   | `openrouter/openai/gpt-5.2`, `openrouter/anthropic/claude-sonnet-4.5` |
-| Deepseek   | `DEEPSEEK_API_KEY`     | `deepseek/deepseek-chat`                    |
-| Zhipu      | `ZHIPUAI_API_KEY`      | `zhipu/glm-4`, `zhipu/glm-4-plus`           |
-| Codex CLI  | (ChatGPT subscription) | `codex/gpt-5.2-codex`, `codex/gpt-5.1-codex-max` |
-| Gemini CLI | (Google account)       | `gemini-cli/gemini-3-pro-preview`, `gemini-cli/gemini-3-flash-preview` |
-
-**Codex CLI Setup:**
-- Install: `npm install -g @openai/codex && codex login`
-- Reasoning effort: `--codex-reasoning` (minimal, low, medium, high, xhigh)
-- Web search: `--codex-search` (enables web search for current information)
-
-**Gemini CLI Setup:**
-- Install: `npm install -g @google/gemini-cli && gemini auth`
-- Models: `gemini-3-pro-preview`, `gemini-3-flash-preview`
-- No API key needed - uses Google account authentication
-
-Run `python3 ~/.claude/skills/adversarial-spec/scripts/debate.py providers` to see which keys are set.
-
-## Troubleshooting Auth Conflicts
-
-If you see an error about "Both a token (claude.ai) and an API key (ANTHROPIC_API_KEY) are set":
-
-This conflict occurs when:
-- Claude Code is logged in with `claude /login` (uses claude.ai token)
-- AND you have `ANTHROPIC_API_KEY` set in your environment
-
-**Resolution:**
-1. **To use claude.ai token**: Remove or unset `ANTHROPIC_API_KEY` from your environment
-   ```bash
-   unset ANTHROPIC_API_KEY
-   # Or remove from ~/.bashrc, ~/.zshrc, etc.
-   ```
-
-2. **To use API key**: Sign out of claude.ai
-   ```bash
-   claude /logout
-   # Say "No" to the API key approval if prompted before login
-   ```
-
-The adversarial-spec plugin works with either authentication method. Choose whichever fits your workflow.
-
-## AWS Bedrock Support
-
-For enterprise users who need to route all model calls through AWS Bedrock (e.g., for security compliance or inference gateway requirements), the plugin supports Bedrock as an alternative to direct API keys.
-
-**When Bedrock mode is enabled, ALL model calls route through Bedrock** - no direct API calls are made.
-
-### Bedrock Setup
-
-To enable Bedrock mode, use these CLI commands (Claude can invoke these when the user requests Bedrock setup):
-
-```bash
-# Enable Bedrock mode with a region
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py bedrock enable --region us-east-1
-
-# Add models that are enabled in your Bedrock account
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py bedrock add-model claude-3-sonnet
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py bedrock add-model claude-3-haiku
-
-# Check current configuration
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py bedrock status
-
-# Disable Bedrock mode (revert to direct API keys)
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py bedrock disable
-```
-
-### Bedrock Model Names
-
-Users can specify models using friendly names (e.g., `claude-3-sonnet`), which are automatically mapped to Bedrock model IDs. Built-in mappings include:
-
-- `claude-3-sonnet`, `claude-3-haiku`, `claude-3-opus`, `claude-3.5-sonnet`
-- `llama-3-8b`, `llama-3-70b`, `llama-3.1-70b`, `llama-3.1-405b`
-- `mistral-7b`, `mistral-large`, `mixtral-8x7b`
-- `cohere-command`, `cohere-command-r`, `cohere-command-r-plus`
-
-Run `python3 ~/.claude/skills/adversarial-spec/scripts/debate.py bedrock list-models` to see all mappings.
-
-### Bedrock Configuration Location
-
-Configuration is stored at `~/.claude/adversarial-spec/config.json`:
-
-```json
-{
-  "bedrock": {
-    "enabled": true,
-    "region": "us-east-1",
-    "available_models": ["claude-3-sonnet", "claude-3-haiku"],
-    "custom_aliases": {}
-  }
-}
-```
-
-### Bedrock Error Handling
-
-If a Bedrock model fails (e.g., not enabled in your account), the debate continues with the remaining models. Clear error messages indicate which models failed and why.
+If you encounter provider issues or need to configure new API keys, see [SETUP.md](SETUP.md).
 
 ## Document Types
 
@@ -301,43 +192,6 @@ SPEC_EOF
 ```
 
 ## Process
-
-### Step 0: Auto-Detect Project Context Files
-
-**Before starting any debate, automatically check for and include these context files if they exist in the current working directory:**
-
-1. **`.active_context.md`** - Dynamic context file (often generated by context builders)
-2. **`CLAUDE.md`** - Project-specific instructions and context
-
-**How to check and include:**
-```bash
-# Build the context flags
-CONTEXT_FLAGS=""
-[ -f ".active_context.md" ] && CONTEXT_FLAGS="$CONTEXT_FLAGS --context .active_context.md"
-[ -f "CLAUDE.md" ] && CONTEXT_FLAGS="$CONTEXT_FLAGS --context CLAUDE.md"
-```
-
-**When running the debate script, always include detected context files:**
-```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
-  --models MODEL_LIST \
-  --doc-type TYPE \
-  $CONTEXT_FLAGS \
-  <<'SPEC_EOF'
-<spec here>
-SPEC_EOF
-```
-
-**Inform the user what context was detected:**
-```
-Detected project context files:
-- .active_context.md ✓ (will be included)
-- CLAUDE.md ✓ (will be included)
-
-These files will be provided to all opponent models for additional context.
-```
-
-If no context files are found, proceed normally without mentioning it.
 
 ### Step 1: Gather Input and Offer Interview Mode
 
@@ -1017,6 +871,11 @@ python3 debate.py save-profile NAME --models ... [--focus ...] [--persona ...]
 
 # Telegram
 python3 debate.py send-final --models MODEL_LIST --doc-type TYPE --rounds N < spec.md
+
+# Gauntlet
+python3 debate.py gauntlet --gauntlet-adversaries all < spec.md
+python3 debate.py gauntlet-adversaries  # List adversary personas
+python3 debate.py adversary-stats       # View adversary performance
 ```
 
 **Critique options:**
@@ -1035,3 +894,74 @@ python3 debate.py send-final --models MODEL_LIST --doc-type TYPE --rounds N < sp
 - `--poll-timeout` - Telegram reply timeout in seconds (default: 60)
 - `--json, -j` - Output as JSON
 - `--codex-search` - Enable web search for Codex CLI models (allows researching current info)
+- `--timeout` - Timeout in seconds for model API/CLI calls (default: 600)
+- `--show-cost` - Show cost summary after critique
+
+## Adversarial Gauntlet
+
+The gauntlet is a multi-phase stress test that puts your spec through adversarial attack by specialized personas, then evaluates which attacks are valid.
+
+### Gauntlet Phases
+
+1. **Phase 1: Adversary Attacks** - Multiple adversary personas attack the spec in parallel
+2. **Phase 2: Evaluation** - A frontier model evaluates each attack (accept/dismiss/defer)
+3. **Phase 3: Rebuttals** - Dismissed adversaries can challenge the evaluation
+4. **Phase 4: Summary** - Aggregated results showing accepted concerns
+5. **Phase 5: Final Boss** (optional) - Opus 4.5 UX Architect reviews the spec holistically
+
+### Adversary Personas
+
+| Persona | Focus |
+|---------|-------|
+| `paranoid_security` | Auth holes, injection, encryption gaps, trust boundaries |
+| `burned_oncall` | Missing alerts, log gaps, failure modes, debugging at 3am |
+| `lazy_developer` | Ambiguity, missing examples, tribal knowledge assumptions |
+| `pedantic_nitpicker` | Inconsistencies, spec gaps, undefined edge cases |
+| `asshole_loner` | Aggressive devil's advocate, challenges fundamental assumptions |
+
+### Usage
+
+```bash
+# Run gauntlet with all adversaries
+cat spec.md | python3 debate.py gauntlet --gauntlet-adversaries all
+
+# Run with specific adversaries
+cat spec.md | python3 debate.py gauntlet --gauntlet-adversaries paranoid_security,burned_oncall
+
+# Combine with regular critique (gauntlet runs first)
+cat spec.md | python3 debate.py critique --models gpt-4o --gauntlet --gauntlet-adversaries all
+
+# Skip rebuttals for faster execution
+cat spec.md | python3 debate.py gauntlet --gauntlet-adversaries all --no-rebuttals
+
+# List available adversaries
+python3 debate.py gauntlet-adversaries
+
+# View adversary performance stats
+python3 debate.py adversary-stats
+```
+
+### Final Boss Review
+
+After phase 4 completes, you'll be prompted:
+
+```
+Run Final Boss UX review? (y/n):
+```
+
+The Final Boss is an Opus 4.5 UX Architect who reviews the spec for:
+- User journey completeness
+- Error state handling
+- Accessibility concerns
+- Overall coherence
+
+This is expensive but thorough. You can also pre-commit with `--final-boss` to skip the prompt.
+
+### Gauntlet Options
+
+- `--gauntlet, -g` - Enable gauntlet mode (can combine with critique)
+- `--gauntlet-adversaries` - Comma-separated adversaries or 'all'
+- `--gauntlet-model` - Model for adversary attacks (default: auto-select free model)
+- `--gauntlet-frontier` - Model for evaluation (default: auto-select frontier model)
+- `--no-rebuttals` - Skip Phase 3 rebuttal phase
+- `--final-boss` - Auto-run Phase 5 (skips prompt)
