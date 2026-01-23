@@ -57,6 +57,25 @@ from execution_planner.progress import (
     cli_show_status,
     cli_show_logs,
 )
+from execution_planner.test_strategy import (
+    TestStrategyManager,
+    StrategyPlan,
+    StrategyAssignment,
+    StrategyReason,
+    TestTask,
+)
+from execution_planner.over_decomposition import (
+    OverDecompositionGuard,
+    GuardResult,
+    ConsolidationSuggestion,
+)
+from execution_planner.parallelization import (
+    ParallelizationAdvisor,
+    ParallelizationPlan,
+    Workstream,
+    MergePoint,
+    BranchPattern,
+)
 
 __all__ = [
     # spec_intake
@@ -105,4 +124,20 @@ __all__ = [
     "LogLevel",
     "cli_show_status",
     "cli_show_logs",
+    # test_strategy
+    "TestStrategyManager",
+    "StrategyPlan",
+    "StrategyAssignment",
+    "StrategyReason",
+    "TestTask",
+    # over_decomposition
+    "OverDecompositionGuard",
+    "GuardResult",
+    "ConsolidationSuggestion",
+    # parallelization
+    "ParallelizationAdvisor",
+    "ParallelizationPlan",
+    "Workstream",
+    "MergePoint",
+    "BranchPattern",
 ]
