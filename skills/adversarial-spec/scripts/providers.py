@@ -274,21 +274,20 @@ def list_providers():
         print("-" * 60 + "\n")
 
     providers = [
-        ("OpenAI", "OPENAI_API_KEY", "gpt-4o, gpt-4-turbo, o1"),
+        ("OpenAI", "OPENAI_API_KEY", "gpt-5.2, o3-mini, gpt-5.2-mini"),
         (
             "Anthropic",
             "ANTHROPIC_API_KEY",
-            "claude-sonnet-4-20250514, claude-opus-4-20250514",
+            "claude-sonnet-4-5-20250929, claude-opus-4-5-20251124",
         ),
-        ("Google", "GEMINI_API_KEY", "gemini/gemini-2.0-flash, gemini/gemini-pro"),
+        ("Google", "GEMINI_API_KEY", "gemini/gemini-3-pro, gemini/gemini-3-flash"),
         ("xAI", "XAI_API_KEY", "xai/grok-3, xai/grok-beta"),
         ("Mistral", "MISTRAL_API_KEY", "mistral/mistral-large, mistral/codestral"),
         ("Groq", "GROQ_API_KEY", "groq/llama-3.3-70b-versatile"),
-        ("Together", "TOGETHER_API_KEY", "together_ai/meta-llama/Llama-3-70b"),
         (
             "OpenRouter",
             "OPENROUTER_API_KEY",
-            "openrouter/openai/gpt-4o, openrouter/anthropic/claude-3.5-sonnet",
+            "openrouter/openai/gpt-5.2, openrouter/anthropic/claude-sonnet-4.5",
         ),
         ("Deepseek", "DEEPSEEK_API_KEY", "deepseek/deepseek-chat"),
         ("Zhipu", "ZHIPUAI_API_KEY", "zhipu/glm-4, zhipu/glm-4-plus"),
