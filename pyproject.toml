@@ -46,8 +46,8 @@ Repository = "https://github.com/zscole/adversarial-spec"
 Issues = "https://github.com/zscole/adversarial-spec/issues"
 
 [tool.setuptools.packages.find]
-where = ["skills"]
-include = ["adversarial-spec*"]
+where = ["."]
+include = ["adversarial_spec*", "execution_planner*"]
 
 [tool.setuptools.package-data]
 "adversarial-spec" = ["py.typed"]
