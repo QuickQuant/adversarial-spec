@@ -39,6 +39,24 @@ from execution_planner.agent_dispatch import (
     ClaudeCodeNotFoundError,
     SecretDetectedError,
 )
+from execution_planner.execution_control import (
+    ExecutionController,
+    ExecutionState,
+    ControlAction,
+    ControlActionRecord,
+    TaskExecutionState,
+    ApprovalRecord,
+)
+from execution_planner.progress import (
+    ProgressTracker,
+    ProgressReport,
+    TaskStatus,
+    BranchStatus,
+    LogEntry,
+    LogLevel,
+    cli_show_status,
+    cli_show_logs,
+)
 
 __all__ = [
     # spec_intake
@@ -71,4 +89,20 @@ __all__ = [
     "DispatchError",
     "ClaudeCodeNotFoundError",
     "SecretDetectedError",
+    # execution_control
+    "ExecutionController",
+    "ExecutionState",
+    "ControlAction",
+    "ControlActionRecord",
+    "TaskExecutionState",
+    "ApprovalRecord",
+    # progress
+    "ProgressTracker",
+    "ProgressReport",
+    "TaskStatus",
+    "BranchStatus",
+    "LogEntry",
+    "LogLevel",
+    "cli_show_status",
+    "cli_show_logs",
 ]
