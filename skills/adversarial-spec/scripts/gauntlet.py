@@ -28,6 +28,10 @@ import time
 from dataclasses import dataclass
 from typing import Optional
 
+from adversaries import (
+    ADVERSARY_PREFIXES,
+    generate_concern_id,
+)
 from models import (
     call_codex_model,
     call_gemini_cli_model,
@@ -336,6 +340,12 @@ class Concern:
     adversary: str
     text: str
     severity: str = "medium"  # low, medium, high
+    id: str = ""  # Stable ID for linking (auto-generated if empty)
+
+    def __post_init__(self):
+        """Generate ID if not provided."""
+        if not self.id:
+            self.id = generate_concern_id(self.adversary, self.text)
 
 
 @dataclass
@@ -438,7 +448,7 @@ class GauntletResult:
         """Serialize the gauntlet result to a dictionary for JSON storage."""
 
         def concern_to_dict(c: Concern) -> dict:
-            return {"adversary": c.adversary, "text": c.text, "severity": c.severity}
+            return {"id": c.id, "adversary": c.adversary, "text": c.text, "severity": c.severity}
 
         def eval_to_dict(e: Evaluation) -> dict:
             return {
