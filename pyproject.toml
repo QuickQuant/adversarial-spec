@@ -25,6 +25,7 @@ classifiers = [
 ]
 dependencies = [
     "litellm==1.80.13",
+    "mcp>=1.0.0",
 ]
 
 [project.optional-dependencies]
@@ -39,6 +40,7 @@ dev = [
 
 [project.scripts]
 adversarial-spec = "adversarial_spec.debate:main"
+mcp-tasks = "mcp_tasks.server:mcp.run"
 
 [project.urls]
 Homepage = "https://github.com/zscole/adversarial-spec"
@@ -47,10 +49,10 @@ Issues = "https://github.com/zscole/adversarial-spec/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["adversarial_spec*", "execution_planner*"]
+include = ["adversarial_spec*", "execution_planner*", "mcp_tasks*"]
 
 [tool.setuptools.package-data]
-"adversarial-spec" = ["py.typed"]
+"*" = ["py.typed"]
 
 [tool.ruff]
 line-length = 88

@@ -52,10 +52,36 @@ export OPENROUTER_API_KEY="sk-or-..."
 │  9. Final document output                                       │
 │                            ↓                                    │
 │  10. Generate execution plan with tasks linked to concerns      │
+│                            ↓                                    │
+│  11. Track all work via MCP Tasks (cross-project visibility)   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 The gauntlet is where your spec gets stress-tested by personas who are *paid to find problems*. Then multiple LLMs debate until they all agree. Then you review. Then you get an execution plan that links tasks back to the concerns that drove them.
+
+## Task-Driven Workflow
+
+Every adversarial-spec session is tracked via MCP Tasks—replicating the same task system used by Claude Code's built-in CLI task tools (`TaskCreate`, `TaskList`, `TaskGet`, `TaskUpdate`).
+
+> **Note:** This MCP-based approach is a stopgap until Anthropic adds native task support to VSCode Claude Code. The API matches the canonical CLI tools exactly, so switching to official support will be seamless.
+
+Tasks are created automatically as work progresses:
+
+```
+Phase 1: Requirements Gathering    → TaskCreate for each step
+Phase 2: Adversarial Debate        → Round tasks added dynamically
+Phase 3: Gauntlet                  → Adversary attack tasks
+Phase 4: Finalization              → Quality checks
+Phase 5: PRD → Tech Spec           → Continuation tasks
+Phase 6: Execution Planning        → Planning tasks with concern IDs
+Phase 7: Implementation            → Tasks linked to gauntlet concerns
+```
+
+**Concern ID linking:** Implementation tasks include `concern_ids` in metadata (e.g., `BURN-abc123`, `PARA-def456`) linking directly to the gauntlet concerns they address. This creates full traceability from adversary critique → task → implementation.
+
+**Cross-project visibility:** When you invoke `/adversarial-spec` from another project, tasks are stored in *that project's* `.claude/tasks.json`. Use `TaskList` to see progress at any time.
+
+**No setup required.** The MCP Tasks server auto-detects the project root by walking up from your working directory looking for `.git`, `.claude`, `pyproject.toml`, or `package.json`.
 
 ## The Adversarial Gauntlet
 
@@ -669,6 +695,9 @@ adversarial-spec/
 │   ├── task_planner.py           # Generate phased task plans
 │   ├── gauntlet_concerns.py      # Link concerns to plan tasks
 │   └── ...
+├── mcp_tasks/                    # MCP Task Management Server
+│   ├── server.py                 # TaskCreate/List/Get/Update tools
+│   └── __init__.py
 └── skills/
     └── adversarial-spec/
         ├── SKILL.md              # Skill definition and process
@@ -677,6 +706,7 @@ adversarial-spec/
             ├── debate.py         # Multi-model debate orchestration
             ├── gauntlet.py       # Adversarial gauntlet engine
             ├── providers.py      # API key detection
+            ├── task_manager.py   # Python API for task coordination
             └── telegram_bot.py   # Telegram notifications
 ```
 

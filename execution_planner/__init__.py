@@ -9,12 +9,23 @@ from execution_planner.spec_intake import (
     SpecIntake,
     SpecDocument,
     SpecIntakeError,
+    DocType,
+    # PRD types
     UserStory,
     FunctionalRequirement,
     NonFunctionalRequirement,
     Risk,
     Decision,
     Dependencies,
+    # Tech Spec types
+    Goal,
+    DataModel,
+    APIEndpoint,
+    ScheduledFunction,
+    ErrorCode,
+    PerformanceSLA,
+    GauntletDecision,
+    TechSpecSection,
 )
 from execution_planner.scope_assessor import (
     ScopeAssessor,
@@ -30,6 +41,8 @@ from execution_planner.task_planner import (
     TaskPlanError,
     CircularDependencyError,
     ValidationStrategy,
+    SpecReference,
+    ConcernReference,
 )
 from execution_planner.agent_dispatch import (
     AgentDispatcher,
@@ -76,18 +89,36 @@ from execution_planner.parallelization import (
     MergePoint,
     BranchPattern,
 )
+from execution_planner.gauntlet_concerns import (
+    GauntletConcern,
+    GauntletConcernParser,
+    GauntletReport,
+    LinkedConcern,
+    load_concerns_for_spec,
+)
 
 __all__ = [
-    # spec_intake
+    # spec_intake - core
     "SpecIntake",
     "SpecDocument",
     "SpecIntakeError",
+    "DocType",
+    # spec_intake - PRD types
     "UserStory",
     "FunctionalRequirement",
     "NonFunctionalRequirement",
     "Risk",
     "Decision",
     "Dependencies",
+    # spec_intake - Tech Spec types
+    "Goal",
+    "DataModel",
+    "APIEndpoint",
+    "ScheduledFunction",
+    "ErrorCode",
+    "PerformanceSLA",
+    "GauntletDecision",
+    "TechSpecSection",
     # scope_assessor
     "ScopeAssessor",
     "ScopeAssessment",
@@ -101,6 +132,8 @@ __all__ = [
     "TaskPlanError",
     "CircularDependencyError",
     "ValidationStrategy",
+    "SpecReference",
+    "ConcernReference",
     # agent_dispatch
     "AgentDispatcher",
     "DispatchResult",
@@ -140,4 +173,10 @@ __all__ = [
     "Workstream",
     "MergePoint",
     "BranchPattern",
+    # gauntlet_concerns
+    "GauntletConcern",
+    "GauntletConcernParser",
+    "GauntletReport",
+    "LinkedConcern",
+    "load_concerns_for_spec",
 ]

@@ -1,7 +1,7 @@
 ---
 name: adversarial-spec
 description: Iteratively refine a product spec by debating with multiple LLMs (GPT, Gemini, Grok, etc.) until all models agree. Use when user wants to write or refine a specification document using adversarial development.
-allowed-tools: Bash, Read, Write, AskUserQuestion, TodoWrite
+allowed-tools: Bash, Read, Write, AskUserQuestion
 ---
 
 # Adversarial Spec Development
@@ -14,7 +14,27 @@ Generate and refine specifications through iterative debate with multiple LLMs u
 
 **CRITICAL: At the start of every adversarial-spec session, immediately set up Tasks to track the entire workflow.** This ensures you never lose track of where you are in the process.
 
-When `/adversarial-spec` is invoked, use TodoWrite to create the following task structure:
+### Using MCP Tasks
+
+Use these tools throughout the workflow:
+
+| Tool | Purpose | Example |
+|------|---------|---------|
+| `TaskCreate` | Create a new task | `TaskCreate(subject="Run debate round 1", description="...")` |
+| `TaskUpdate` | Update status, add blockers | `TaskUpdate(taskId="3", status="completed", owner="adv-spec:debate")` |
+| `TaskList` | See all tasks and progress | `TaskList()` |
+| `TaskGet` | Get full task details | `TaskGet(taskId="3")` |
+
+**Key fields (via TaskUpdate):**
+- **`owner`** - Who's responsible: `adv-spec:orchestrator`, `adv-spec:debate`, `adv-spec:planner`, `adv-spec:impl:backend`
+- **`addBlockedBy`** - Dependencies: task IDs that must complete first
+- **`metadata`** - Context: `{"phase": "debate", "round": 1, "session_id": "...", "concern_ids": [...]}`
+
+Tasks are stored in `.claude/tasks.json` in the current project.
+
+### Initial Task Structure
+
+When `/adversarial-spec` is invoked, create the following task structure using TaskCreate:
 
 ```
 Phase 1: Requirements Gathering
@@ -115,14 +135,43 @@ Phase 7: Implementation (if proceeding with code execution)
 ```
 
 **Task Management Rules:**
-1. Mark each task `in_progress` when you start it
+1. Mark each task `in_progress` when you start it (use `TaskUpdate` with `status: "in_progress"`)
 2. Mark each task `completed` immediately when done - don't batch completions
 3. Add sub-tasks dynamically as they emerge (e.g., each debate round gets its own tasks)
-4. Remove tasks that don't apply (e.g., if user skips interview, remove interview sub-tasks)
+4. Remove tasks that don't apply (e.g., if user skips interview, mark as completed with note)
 5. When execution planning generates implementation tasks, add them to Phase 7 with effort/risk
-6. Only one task should be `in_progress` at a time
-7. Never skip phases without explicitly marking skipped tasks as N/A or removing them
-8. If user makes a choice that eliminates a phase, remove that phase's tasks entirely
+6. Only one task should be `in_progress` at a time per owner
+7. Never skip phases without explicitly marking skipped tasks
+8. If user makes a choice that eliminates a phase, mark those tasks as completed with "skipped" note
+
+**Ownership Conventions:**
+- `adv-spec:orchestrator` - Main agent running the skill (Phases 1-5)
+- `adv-spec:debate` - Debate round coordination
+- `adv-spec:gauntlet` - Gauntlet execution
+- `adv-spec:planner` - Execution planning (Phase 6)
+- `adv-spec:impl:{workstream}` - Implementation workstreams (e.g., `adv-spec:impl:backend`)
+
+**Dependency Patterns:**
+- **Phase-level:** Each phase's first task is `blockedBy` the previous phase's last task
+- **Round-level:** Debate round N+1 is `blockedBy` round N
+- **Parallel tasks:** Gauntlet adversary attacks can run in parallel (same `blockedBy`)
+- **Implementation:** Use execution plan's dependency graph for `blockedBy`
+
+**Metadata Fields:**
+```json
+{
+  "session_id": "adv-spec-20260124-150000",
+  "phase": "debate",
+  "doc_type": "tech",
+  "round": 3,
+  "models": ["gpt-5.2", "gemini-3-pro"],
+  "concern_ids": ["PARA-abc123"],
+  "spec_refs": ["Section 3.2"],
+  "workstream": "backend",
+  "risk_level": "high",
+  "effort": "M"
+}
+```
 
 **Handling Optional Phases:**
 - **Interview**: If user declines, remove all 8 interview sub-tasks
@@ -132,7 +181,7 @@ Phase 7: Implementation (if proceeding with code execution)
 - **Execution Planning**: If user declines, remove Phase 6
 - **Implementation**: If user just wanted the plan, remove Phase 7
 
-**Why this matters:** Long adversarial sessions can span many rounds and phases. Without explicit task tracking, it's easy to lose context about what phase you're in, what's been completed, and what comes next. The Tasks provide a persistent roadmap visible to both you and the user. A well-maintained task list prevents the agent from getting lost mid-debate or forgetting to offer the gauntlet after convergence.
+**Why this matters:** Long adversarial sessions can span many rounds and phases. Without explicit task tracking, it's easy to lose context about what phase you're in, what's been completed, and what comes next. MCP Tasks provide a persistent roadmap visible to both you and the user, with dependencies ensuring work happens in the right order. The task list persists across sessions - if the user returns later, they can see exactly where they left off. When the skill is used from another project, tasks are stored in that project's `.claude/tasks.json` and visible via `TaskList`.
 
 ## Setup
 
@@ -319,11 +368,17 @@ SPEC_EOF
 
 ### Step 0: Initialize Task Tracking
 
-Before anything else, set up Tasks for the entire workflow (see "Task-Driven Workflow" above). Mark "Determine document type" as `in_progress`.
+Before anything else, set up MCP Tasks for the workflow:
+
+1. **Check for existing session:** Use `TaskList` to see if there's an existing adversarial-spec session in progress
+2. **Create session tasks:** Use `TaskCreate` to create tasks for each phase (see "Task-Driven Workflow" above)
+3. **Set metadata:** Include `session_id`, `phase`, and `doc_type` in each task's metadata
+4. **Set dependencies:** Use `addBlockedBy` to establish the dependency chain
+5. **Start first task:** Mark "Determine document type" as `in_progress` with owner `adv-spec:orchestrator`
 
 ### Step 1: Gather Input and Offer Interview Mode
 
-**Update Tasks:** Mark "Determine document type" as `completed` after the user chooses. Mark "Gather initial input or load existing file" as `in_progress`.
+**Update Tasks:** Use `TaskUpdate` to mark "Determine document type" as `completed`, then mark "Identify starting point" as `in_progress`.
 
 Ask the user:
 
@@ -1156,7 +1211,7 @@ After the spec is finalized (and optionally after gauntlet), offer to generate a
 
 > "Spec is finalized. Would you like me to generate an execution plan for implementation?"
 
-**Update Tasks:** Mark Phase 6 tasks as you progress through each step.
+**Update Tasks:** Use `TaskUpdate` to mark Phase 6 tasks as `in_progress`/`completed` as you progress. Set owner to `adv-spec:planner`.
 
 ### Running the Execution Planning Pipeline
 
@@ -1207,22 +1262,42 @@ After the execution plan is generated, offer to proceed with implementation:
 
 > "Execution plan generated with N tasks. Would you like to proceed with implementation?"
 
-**Update Tasks:** Add each task from the execution plan to the Task list under Phase 7.
+**Update Tasks:** Use `TaskCreate` to add each implementation task from the execution plan. Include metadata for linking:
 
 ### Adding Implementation Tasks
 
-For each task in the execution plan:
+For each task in the execution plan, use `TaskCreate` with:
+- **subject:** Task title
+- **description:** Full task description with acceptance criteria
+- **activeForm:** "Implementing: {title}"
+- **owner:** `adv-spec:impl:{workstream}` (e.g., `adv-spec:impl:backend`)
+- **metadata:** Include `concern_ids`, `spec_refs`, `effort`, `risk_level`, `validation`
+- **blockedBy:** Task IDs from execution plan's dependency graph
 
-```
-- [ ] [Effort] Task title (risk level, N concerns)
+Example task creation:
+```json
+{
+  "subject": "Implement schema: orders",
+  "description": "Create database schema for orders table with fields...",
+  "activeForm": "Implementing: orders schema",
+  "owner": "adv-spec:impl:backend",
+  "metadata": {
+    "phase": "implementation",
+    "concern_ids": ["PARA-abc123", "BURN-def456"],
+    "spec_refs": ["Section 3.2"],
+    "effort": "S",
+    "risk_level": "medium",
+    "validation": "test-after"
+  }
+}
 ```
 
-Example:
+Visual format (for display):
 ```
 Phase 7: Implementation
-- [ ] [S] Implement schema: orders (medium risk, 2 concerns)
-- [ ] [S] Implement schema: order_queue (low risk)
-- [ ] [M] Implement endpoint: orders:placeDma (high risk, 5 concerns)
+- [S] Implement schema: orders (medium risk, 2 concerns)
+- [S] Implement schema: order_queue (low risk)
+- [M] Implement endpoint: orders:placeDma (high risk, 5 concerns)
 - [ ] [M] Implement endpoint: orders:placeArbitrage (high risk, 3 concerns)
 - [ ] [S] Implement scheduled function: syncOrderStatus (low risk)
 ```

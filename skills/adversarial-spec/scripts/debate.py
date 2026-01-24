@@ -99,6 +99,84 @@ from gauntlet import (  # noqa: E402
     run_gauntlet,
 )
 
+# Optional task tracking - only import if needed
+_task_manager = None
+
+
+def get_task_manager():
+    """Lazy-load task manager to avoid import overhead when not used."""
+    global _task_manager
+    if _task_manager is None:
+        try:
+            from task_manager import TaskManager
+            _task_manager = TaskManager()
+        except ImportError:
+            return None
+    return _task_manager
+
+
+def _create_round_task(
+    tm, round_num: int, models: list[str], doc_type: str, session_id: Optional[str]
+) -> Optional[str]:
+    """Create a task for a debate round."""
+    try:
+        task = tm.create_task(
+            subject=f"Debate round {round_num}",
+            description=f"Send spec to {', '.join(models)}, receive critiques, synthesize",
+            active_form=f"Running debate round {round_num}",
+            owner="adv-spec:debate",
+            metadata={
+                "phase": "debate",
+                "round": round_num,
+                "models": models,
+                "doc_type": doc_type,
+                "session_id": session_id or "standalone",
+            },
+        )
+        tm.start_task(task.id, owner="adv-spec:debate")
+        return task.id
+    except Exception as e:
+        print(f"Warning: Failed to create round task: {e}", file=sys.stderr)
+        return None
+
+
+def _complete_round_task(tm, task_id: str, all_agreed: bool) -> None:
+    """Mark a round task as completed."""
+    try:
+        tm.update_task(
+            task_id,
+            status="completed",
+            metadata={"outcome": "consensus" if all_agreed else "continuing"},
+        )
+    except Exception as e:
+        print(f"Warning: Failed to complete round task: {e}", file=sys.stderr)
+
+# Import execution planner if available
+try:
+    from execution_planner import (
+        # FR-1: Spec Intake
+        SpecIntake,
+        DocType,
+        # FR-2: Scope Assessment
+        ScopeAssessor,
+        ScopeRecommendation,
+        # FR-3: Task Plan Generation
+        TaskPlanner,
+        TaskPlan,
+        # FR-4: Test Strategy Configuration
+        TestStrategyManager,
+        # FR-5: Over-Decomposition Guards
+        OverDecompositionGuard,
+        # FR-6: Parallelization Guidance
+        ParallelizationAdvisor,
+        # Gauntlet concerns
+        GauntletConcernParser,
+        load_concerns_for_spec,
+    )
+    EXECUTION_PLANNER_AVAILABLE = True
+except ImportError:
+    EXECUTION_PLANNER_AVAILABLE = False
+
 
 def send_telegram_notification(
     models: list[str], round_num: int, results: list[ModelResponse], poll_timeout: int
@@ -360,6 +438,11 @@ def add_misc_arguments(parser: argparse.ArgumentParser) -> None:
         default=600,
         help="Timeout in seconds for model API/CLI calls (default: 600 = 10 minutes)",
     )
+    parser.add_argument(
+        "--track-tasks",
+        action="store_true",
+        help="Enable MCP Tasks integration: create/update tasks in .claude/tasks.json",
+    )
 
 
 def add_gauntlet_arguments(parser: argparse.ArgumentParser) -> None:
@@ -392,6 +475,28 @@ def add_gauntlet_arguments(parser: argparse.ArgumentParser) -> None:
         "--final-boss",
         action="store_true",
         help="Run Phase 5 Final Boss UX review (uses Opus 4.5, expensive but thorough)",
+    )
+
+
+def add_execution_plan_arguments(parser: argparse.ArgumentParser) -> None:
+    """Add execution plan generation arguments to parser."""
+    parser.add_argument(
+        "--spec-file",
+        help="Path to spec file (alternative to stdin)",
+    )
+    parser.add_argument(
+        "--concerns-file",
+        help="Path to gauntlet concerns JSON (auto-detected if not specified)",
+    )
+    parser.add_argument(
+        "--plan-format",
+        choices=["json", "markdown", "summary"],
+        default="json",
+        help="Output format for execution plan (default: json)",
+    )
+    parser.add_argument(
+        "--plan-output",
+        help="Output path for execution plan (default: stdout)",
     )
 
 
@@ -432,6 +537,13 @@ Bedrock commands:
   python3 debate.py bedrock remove-model claude-3-haiku      # Remove model from list
   python3 debate.py bedrock alias mymodel anthropic.claude-3-sonnet-20240229-v1:0  # Add custom alias
 
+Execution plan commands (generate implementation plans from specs):
+  python3 debate.py execution-plan --spec-file spec.md                              # Generate plan from file
+  echo "spec" | python3 debate.py execution-plan                                    # Generate plan from stdin
+  python3 debate.py execution-plan --spec-file spec.md --concerns-file concerns.json # With gauntlet concerns
+  python3 debate.py execution-plan --spec-file spec.md --plan-format markdown       # As markdown
+  python3 debate.py execution-plan --spec-file spec.md --plan-format summary        # Brief summary
+
 Document types:
   prd   - Product Requirements Document (business/product focus)
   tech  - Technical Specification / Architecture Document (engineering focus)
@@ -451,6 +563,7 @@ Document types:
             "send-final",
             "diff",
             "export-tasks",
+            "execution-plan",
             "focus-areas",
             "personas",
             "profiles",
@@ -477,6 +590,7 @@ Document types:
     add_codex_arguments(parser)
     add_bedrock_arguments(parser)
     add_gauntlet_arguments(parser)
+    add_execution_plan_arguments(parser)
     add_misc_arguments(parser)
 
     return parser
@@ -588,6 +702,599 @@ def handle_utility_command(args: argparse.Namespace) -> bool:
         return True
 
     return False
+
+
+def handle_execution_plan(args: argparse.Namespace) -> bool:
+    """Handle execution-plan command.
+
+    Runs the full execution planning pipeline:
+    1. FR-1: Spec Intake - Parse the specification
+    2. FR-2: Scope Assessment - Recommend single-agent vs multi-agent
+    3. FR-3: Task Plan Generation - Create tasks with concerns linked
+    4. FR-4: Test Strategy Configuration - Assign test strategies
+    5. FR-5: Over-Decomposition Guards - Warn if plan is too granular
+    6. FR-6: Parallelization Guidance - Identify workstreams
+
+    Args:
+        args: Parsed command-line arguments.
+
+    Returns:
+        True if command was handled, False otherwise.
+    """
+    if args.action != "execution-plan":
+        return False
+
+    if not EXECUTION_PLANNER_AVAILABLE:
+        print(
+            "Error: execution_planner module not available.",
+            file=sys.stderr,
+        )
+        print("Install with: pip install -e .", file=sys.stderr)
+        sys.exit(1)
+
+    # Get spec content from stdin or file
+    spec_path = None
+    if args.spec_file:
+        spec_path = Path(args.spec_file)
+        if not spec_path.exists():
+            print(f"Error: Spec file not found: {spec_path}", file=sys.stderr)
+            sys.exit(1)
+        spec_content = spec_path.read_text(encoding="utf-8")
+    elif not sys.stdin.isatty():
+        spec_content = sys.stdin.read()
+    else:
+        print("Error: Provide spec via stdin or --spec-file", file=sys.stderr)
+        sys.exit(1)
+
+    print("=" * 60, file=sys.stderr)
+    print("EXECUTION PLANNING PIPELINE", file=sys.stderr)
+    print("=" * 60, file=sys.stderr)
+
+    # =========================================================================
+    # FR-1: Spec Intake
+    # =========================================================================
+    print("\n[1/6] Spec Intake...", file=sys.stderr)
+    try:
+        doc = SpecIntake.parse(spec_content)
+        if spec_path:
+            doc.source_path = str(spec_path)
+    except Exception as e:
+        print(f"Error parsing spec: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"  Document type: {doc.doc_type.value}", file=sys.stderr)
+    print(f"  Title: {doc.title}", file=sys.stderr)
+    if doc.is_tech_spec():
+        print(f"  Data models: {len(doc.data_models)}", file=sys.stderr)
+        print(f"  API endpoints: {len(doc.api_endpoints)}", file=sys.stderr)
+        print(f"  Scheduled functions: {len(doc.scheduled_functions)}", file=sys.stderr)
+    else:
+        print(f"  Functional requirements: {len(doc.functional_requirements)}", file=sys.stderr)
+        print(f"  User stories: {len(doc.user_stories)}", file=sys.stderr)
+
+    # Load gauntlet concerns if available
+    gauntlet_report = None
+    if args.concerns_file:
+        concerns_path = Path(args.concerns_file)
+        if concerns_path.exists():
+            try:
+                gauntlet_report = GauntletConcernParser.parse_file(concerns_path)
+                GauntletConcernParser.link_to_spec(gauntlet_report, doc)
+                print(f"  Gauntlet concerns: {len(gauntlet_report.concerns)}", file=sys.stderr)
+            except Exception as e:
+                print(f"  Warning: Could not load concerns: {e}", file=sys.stderr)
+    elif spec_path:
+        gauntlet_report = load_concerns_for_spec(spec_path)
+        if gauntlet_report:
+            GauntletConcernParser.link_to_spec(gauntlet_report, doc)
+            print(f"  Gauntlet concerns: {len(gauntlet_report.concerns)} (auto-loaded)", file=sys.stderr)
+
+    # =========================================================================
+    # FR-2: Scope Assessment
+    # =========================================================================
+    print("\n[2/6] Scope Assessment...", file=sys.stderr)
+    scope_assessment = ScopeAssessor.assess(doc)
+    print(f"  Recommendation: {scope_assessment.recommendation.value}", file=sys.stderr)
+    print(f"  Confidence: {scope_assessment.confidence.value}", file=sys.stderr)
+    print(f"  Effort estimate: {scope_assessment.effort_estimate}", file=sys.stderr)
+    if scope_assessment.fast_path_eligible:
+        print(f"  Fast-path eligible: Yes", file=sys.stderr)
+
+    # =========================================================================
+    # FR-3: Task Plan Generation
+    # =========================================================================
+    print("\n[3/6] Task Plan Generation...", file=sys.stderr)
+    if doc.is_tech_spec():
+        plan = TaskPlanner.generate_from_tech_spec(doc, gauntlet_report)
+    else:
+        plan = TaskPlanner.generate(doc)
+    print(f"  Generated {len(plan.tasks)} tasks", file=sys.stderr)
+
+    # =========================================================================
+    # FR-4: Test Strategy Configuration
+    # =========================================================================
+    print("\n[4/6] Test Strategy Configuration...", file=sys.stderr)
+    strategy_plan = TestStrategyManager.assign_strategies(plan)
+    test_first_count = len([a for a in strategy_plan.assignments.values() if a.strategy.value == "test-first"])
+    test_after_count = len([a for a in strategy_plan.assignments.values() if a.strategy.value == "test-after"])
+    print(f"  Test-first: {test_first_count} tasks", file=sys.stderr)
+    print(f"  Test-after: {test_after_count} tasks", file=sys.stderr)
+
+    # =========================================================================
+    # FR-5: Over-Decomposition Guards
+    # =========================================================================
+    print("\n[5/6] Over-Decomposition Check...", file=sys.stderr)
+    guard = OverDecompositionGuard()
+    guard_result = guard.check(plan, doc)
+    if guard_result.exceeds_threshold:
+        print(f"  WARNING: Plan may be over-decomposed!", file=sys.stderr)
+        print(f"  Tasks: {guard_result.task_count}, Threshold: {guard_result.threshold}", file=sys.stderr)
+        if guard_result.suggestions:
+            print(f"  Consolidation suggestions: {len(guard_result.suggestions)}", file=sys.stderr)
+    else:
+        print(f"  OK: {guard_result.task_count} tasks (threshold: {guard_result.threshold})", file=sys.stderr)
+
+    # =========================================================================
+    # FR-6: Parallelization Guidance
+    # =========================================================================
+    print("\n[6/6] Parallelization Analysis...", file=sys.stderr)
+    advisor = ParallelizationAdvisor()
+    parallel_plan = advisor.analyze(plan)
+    print(f"  Workstreams: {len(parallel_plan.streams)}", file=sys.stderr)
+    print(f"  Merge points: {len(parallel_plan.merge_sequence)}", file=sys.stderr)
+    print(f"  Branch pattern: {parallel_plan.branch_pattern.value}", file=sys.stderr)
+
+    # =========================================================================
+    # Output
+    # =========================================================================
+    print("\n" + "=" * 60, file=sys.stderr)
+
+    # Format output
+    output_format = args.plan_format or "json"
+    if output_format == "json":
+        output = _format_full_plan_json(
+            plan, doc, gauntlet_report, scope_assessment,
+            strategy_plan, guard_result, parallel_plan
+        )
+    elif output_format == "markdown":
+        output = _format_full_plan_markdown(
+            plan, doc, gauntlet_report, scope_assessment,
+            strategy_plan, guard_result, parallel_plan
+        )
+    else:  # summary
+        output = _format_full_plan_summary(
+            plan, doc, scope_assessment, guard_result, parallel_plan
+        )
+
+    # Write output
+    if args.plan_output:
+        Path(args.plan_output).write_text(output, encoding="utf-8")
+        print(f"Wrote execution plan to: {args.plan_output}", file=sys.stderr)
+    else:
+        print(output)
+
+    # Export to MCP Tasks if enabled
+    if getattr(args, 'track_tasks', False):
+        tm = get_task_manager()
+        if tm:
+            try:
+                session_id = getattr(args, 'session', None)
+                id_map = plan.export_to_mcp_tasks(tm, session_id=session_id)
+                print(
+                    f"Created {len(id_map)} MCP Tasks in .claude/tasks.json",
+                    file=sys.stderr,
+                )
+            except Exception as e:
+                print(f"Warning: Failed to export to MCP Tasks: {e}", file=sys.stderr)
+
+    # Print final summary
+    high_risk = len([t for t in plan.tasks if t.risk_level == "high"])
+    medium_risk = len([t for t in plan.tasks if t.risk_level == "medium"])
+    with_concerns = len([t for t in plan.tasks if t.concerns])
+    print(
+        f"\nPipeline complete: {len(plan.tasks)} tasks "
+        f"({high_risk} high risk, {medium_risk} medium risk, {with_concerns} with concerns)",
+        file=sys.stderr,
+    )
+
+    return True
+
+
+def _format_full_plan_json(plan, doc, report, scope, strategy, guard, parallel) -> str:
+    """Format full pipeline output as JSON."""
+    import json as json_module
+
+    output = {
+        "spec": {
+            "title": doc.title,
+            "doc_type": doc.doc_type.value,
+            "source_path": doc.source_path,
+        },
+        "scope_assessment": {
+            "recommendation": scope.recommendation.value,
+            "confidence": scope.confidence.value,
+            "explanation": scope.explanation,
+            "estimated_effort": scope.effort_estimate,
+            "fast_path_eligible": scope.fast_path_eligible,
+        },
+        "task_plan": json_module.loads(plan.to_json()),
+        "test_strategy": {
+            "assignments": {
+                task_id: {
+                    "strategy": a.strategy.value,
+                    "reason": a.reason.value,
+                    "confidence": a.confidence,
+                }
+                for task_id, a in strategy.assignments.items()
+            },
+        },
+        "over_decomposition": {
+            "exceeds_threshold": guard.exceeds_threshold,
+            "task_count": guard.task_count,
+            "threshold": guard.threshold,
+            "requires_confirmation": guard.requires_confirmation,
+            "warnings": guard.warnings,
+            "suggestions": [
+                {"task_ids": s.task_ids, "reason": s.reason}
+                for s in guard.suggestions
+            ] if guard.suggestions else [],
+        },
+        "parallelization": {
+            "branch_pattern": parallel.branch_pattern.value,
+            "streams": [
+                {
+                    "stream_id": w.stream_id,
+                    "task_ids": w.task_ids,
+                    "branch_name": w.branch_name,
+                    "depends_on_streams": w.depends_on_streams,
+                }
+                for w in parallel.streams
+            ],
+            "merge_sequence": [
+                {
+                    "source_stream": m.source_stream,
+                    "target_stream": m.target_stream,
+                    "merge_order": m.merge_order,
+                    "conflict_risk": m.expected_conflict_risk,
+                }
+                for m in parallel.merge_sequence
+            ],
+            "execution_order": parallel.execution_order,
+        },
+        "concerns_summary": {
+            "total": len(report.concerns) if report else 0,
+            "high_severity": len(report.by_severity.get("high", [])) if report else 0,
+            "medium_severity": len(report.by_severity.get("medium", [])) if report else 0,
+        } if report else None,
+    }
+
+    return json_module.dumps(output, indent=2, default=str)
+
+
+def _format_full_plan_markdown(plan, doc, report, scope, strategy, guard, parallel) -> str:
+    """Format full pipeline output as markdown."""
+    lines = [
+        f"# Execution Plan: {doc.title}",
+        "",
+        f"**Generated from:** {doc.source_path or 'stdin'}",
+        f"**Document type:** {doc.doc_type.value}",
+        "",
+    ]
+
+    # Scope Assessment
+    lines.extend([
+        "## Scope Assessment",
+        "",
+        f"**Recommendation:** {scope.recommendation.value}",
+        f"**Confidence:** {scope.confidence.value}",
+        f"**Estimated effort:** {scope.effort_estimate}",
+    ])
+    if scope.fast_path_eligible:
+        lines.append(f"**Fast-path eligible:** Yes (can skip decomposition)")
+    lines.extend([
+        "",
+        "**Analysis:**",
+        scope.explanation[:500] if len(scope.explanation) > 500 else scope.explanation,
+        "",
+    ])
+
+    # Over-decomposition warning
+    if guard.exceeds_threshold:
+        lines.extend([
+            "## Over-Decomposition Warning",
+            "",
+            f"**Task count ({guard.task_count}) exceeds threshold ({guard.threshold})**",
+            "",
+        ])
+        if guard.warnings:
+            for w in guard.warnings[:3]:
+                lines.append(f"- {w}")
+        if guard.suggestions:
+            lines.append("")
+            lines.append("Consider consolidating:")
+            for s in guard.suggestions[:3]:
+                lines.append(f"- {s.reason}")
+        lines.append("")
+
+    # Parallelization
+    lines.extend([
+        "## Parallelization",
+        "",
+        f"**Pattern:** {parallel.branch_pattern.value}",
+        f"**Workstreams:** {len(parallel.streams)}",
+        f"**Merge points:** {len(parallel.merge_sequence)}",
+        "",
+    ])
+
+    # Concerns summary
+    if report:
+        high_sev = len(report.by_severity.get("high", []))
+        med_sev = len(report.by_severity.get("medium", []))
+        lines.extend([
+            "## Gauntlet Concerns",
+            "",
+            f"**Total:** {len(report.concerns)}",
+            f"**High severity:** {high_sev}",
+            f"**Medium severity:** {med_sev}",
+            "",
+        ])
+
+    # Summary stats
+    high_risk = len([t for t in plan.tasks if t.risk_level == "high"])
+    medium_risk = len([t for t in plan.tasks if t.risk_level == "medium"])
+    with_concerns = len([t for t in plan.tasks if t.concerns])
+    test_first = len([a for a in strategy.assignments.values() if a.strategy.value == "test-first"])
+
+    lines.extend([
+        "## Task Summary",
+        "",
+        f"- **Total tasks:** {len(plan.tasks)}",
+        f"- **High risk:** {high_risk}",
+        f"- **Medium risk:** {medium_risk}",
+        f"- **With concerns:** {with_concerns}",
+        f"- **Test-first:** {test_first}",
+        "",
+        "## Tasks",
+        "",
+    ])
+
+    # Tasks
+    for i, task in enumerate(plan.tasks, 1):
+        # Find strategy assignment
+        task_strategy = (
+            strategy.assignments[task.id].strategy.value
+            if task.id in strategy.assignments
+            else task.validation_strategy.value
+        )
+
+        lines.extend([
+            f"### {i}. {task.title}",
+            "",
+            f"**Effort:** {task.effort_estimate} | **Risk:** {task.risk_level} | **Validation:** {task_strategy}",
+            "",
+        ])
+
+        if task.spec_refs:
+            refs = ", ".join(f"Section {r.section_number}" for r in task.spec_refs)
+            lines.append(f"**Spec Reference:** {refs}")
+            lines.append("")
+
+        # Truncated description
+        desc = task.description
+        if len(desc) > 500:
+            desc = desc[:500] + "..."
+        lines.append(desc)
+        lines.append("")
+
+        lines.append("**Acceptance Criteria:**")
+        for ac in task.acceptance_criteria.split(" | ")[:5]:
+            lines.append(f"- {ac}")
+        lines.append("")
+
+        if task.concerns:
+            lines.append(f"**Related Concerns ({len(task.concerns)}):**")
+            for c in task.concerns[:3]:
+                lines.append(f"- [{c.severity}] {c.title} ({c.adversary})")
+            if len(task.concerns) > 3:
+                lines.append(f"- ... and {len(task.concerns) - 3} more")
+            lines.append("")
+
+        if task.test_cases:
+            lines.append("**Test Cases:**")
+            for tc in task.test_cases[:3]:
+                lines.append(f"- {tc[:150]}")
+            lines.append("")
+
+        lines.append("---")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def _format_full_plan_summary(plan, doc, scope, guard, parallel) -> str:
+    """Format full pipeline output as brief summary."""
+    lines = [
+        "=" * 60,
+        f"EXECUTION PLAN: {doc.title}",
+        "=" * 60,
+        "",
+        "SCOPE ASSESSMENT",
+        f"  Recommendation: {scope.recommendation.value}",
+        f"  Confidence: {scope.confidence.value}",
+        f"  Effort: {scope.effort_estimate}",
+        "",
+    ]
+
+    if guard.exceeds_threshold:
+        lines.extend([
+            "OVER-DECOMPOSITION WARNING",
+            f"  Tasks: {guard.task_count} (threshold: {guard.threshold})",
+            "",
+        ])
+
+    lines.extend([
+        "PARALLELIZATION",
+        f"  Pattern: {parallel.branch_pattern.value}",
+        f"  Workstreams: {len(parallel.streams)}",
+        "",
+        "TASK BREAKDOWN",
+        f"  Total: {len(plan.tasks)}",
+    ])
+
+    # By effort
+    effort_counts: dict[str, int] = {}
+    for task in plan.tasks:
+        effort_counts[task.effort_estimate] = effort_counts.get(task.effort_estimate, 0) + 1
+    effort_str = ", ".join(f"{k}: {v}" for k, v in sorted(effort_counts.items()))
+    lines.append(f"  By effort: {effort_str}")
+
+    # By risk
+    risk_counts: dict[str, int] = {}
+    for task in plan.tasks:
+        risk_counts[task.risk_level] = risk_counts.get(task.risk_level, 0) + 1
+    risk_str = ", ".join(f"{k}: {v}" for k, v in risk_counts.items())
+    lines.append(f"  By risk: {risk_str}")
+
+    lines.extend([
+        "",
+        "TASKS",
+    ])
+
+    for i, task in enumerate(plan.tasks, 1):
+        risk_marker = "[HIGH]" if task.risk_level == "high" else "[MED]" if task.risk_level == "medium" else "[LOW]"
+        concern_marker = f" ({len(task.concerns)}c)" if task.concerns else ""
+        lines.append(f"  {i:2}. [{task.effort_estimate}] {risk_marker} {task.title}{concern_marker}")
+
+    lines.append("")
+    lines.append("=" * 60)
+
+    return "\n".join(lines)
+
+
+def _format_plan_as_markdown(plan, doc, report) -> str:
+    """Format plan as markdown document."""
+    lines = [
+        f"# Execution Plan: {doc.title}",
+        "",
+        f"Generated from: {doc.source_path or 'stdin'}",
+        f"Document type: {doc.doc_type.value}",
+        f"Total tasks: {len(plan.tasks)}",
+        "",
+    ]
+
+    if report:
+        lines.extend([
+            f"Concerns linked: {len(report.concerns)}",
+            "",
+        ])
+
+    # Summary stats
+    high_risk = len([t for t in plan.tasks if t.risk_level == "high"])
+    medium_risk = len([t for t in plan.tasks if t.risk_level == "medium"])
+    with_concerns = len([t for t in plan.tasks if t.concerns])
+
+    lines.extend([
+        "## Summary",
+        "",
+        f"- High risk tasks: {high_risk}",
+        f"- Medium risk tasks: {medium_risk}",
+        f"- Tasks with linked concerns: {with_concerns}",
+        "",
+        "## Tasks",
+        "",
+    ])
+
+    for i, task in enumerate(plan.tasks, 1):
+        lines.extend([
+            f"### {i}. {task.title}",
+            "",
+            f"**Effort:** {task.effort_estimate} | **Risk:** {task.risk_level} | **Validation:** {task.validation_strategy.value}",
+            "",
+        ])
+
+        if task.spec_refs:
+            refs = ", ".join(f"Section {r.section_number}" for r in task.spec_refs)
+            lines.append(f"**Spec Reference:** {refs}")
+            lines.append("")
+
+        lines.append("**Description:**")
+        lines.append("")
+        # Truncate long descriptions
+        desc = task.description
+        if len(desc) > 500:
+            desc = desc[:500] + "..."
+        lines.append(desc)
+        lines.append("")
+
+        lines.append("**Acceptance Criteria:**")
+        lines.append("")
+        for ac in task.acceptance_criteria.split(" | "):
+            lines.append(f"- {ac}")
+        lines.append("")
+
+        if task.concerns:
+            lines.append(f"**Related Concerns ({len(task.concerns)}):**")
+            lines.append("")
+            for concern in task.concerns[:5]:
+                lines.append(f"- [{concern.severity}] {concern.title} ({concern.adversary})")
+            if len(task.concerns) > 5:
+                lines.append(f"- ... and {len(task.concerns) - 5} more")
+            lines.append("")
+
+        if task.test_cases:
+            lines.append("**Test Cases:**")
+            lines.append("")
+            for tc in task.test_cases[:3]:
+                lines.append(f"- {tc[:200]}")
+            lines.append("")
+
+        lines.append("---")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def _format_plan_as_summary(plan) -> str:
+    """Format plan as brief summary."""
+    lines = [
+        "Execution Plan Summary",
+        "=====================",
+        "",
+        f"Total tasks: {len(plan.tasks)}",
+        "",
+        "By effort:",
+    ]
+
+    effort_counts: dict[str, int] = {}
+    for task in plan.tasks:
+        effort_counts[task.effort_estimate] = effort_counts.get(task.effort_estimate, 0) + 1
+    for effort in ["XS", "S", "M", "L", "XL"]:
+        if effort in effort_counts:
+            lines.append(f"  {effort}: {effort_counts[effort]}")
+
+    lines.extend([
+        "",
+        "By risk:",
+    ])
+
+    risk_counts: dict[str, int] = {}
+    for task in plan.tasks:
+        risk_counts[task.risk_level] = risk_counts.get(task.risk_level, 0) + 1
+    for risk in ["high", "medium", "low"]:
+        if risk in risk_counts:
+            lines.append(f"  {risk}: {risk_counts[risk]}")
+
+    lines.extend([
+        "",
+        "Tasks:",
+    ])
+
+    for i, task in enumerate(plan.tasks, 1):
+        risk_marker = "[HIGH]" if task.risk_level == "high" else "[MED]" if task.risk_level == "medium" else "[LOW]"
+        concern_marker = f" ({len(task.concerns)} concerns)" if task.concerns else ""
+        lines.append(f"  {i}. [{task.effort_estimate}] {risk_marker} {task.title}{concern_marker}")
+
+    return "\n".join(lines)
 
 
 def apply_profile(args: argparse.Namespace) -> None:
@@ -962,6 +1669,16 @@ def run_critique(
         bedrock_mode: Whether Bedrock mode is enabled.
         bedrock_region: AWS region for Bedrock.
     """
+    # Task tracking: create/update round task
+    round_task_id = None
+    if getattr(args, 'track_tasks', False):
+        tm = get_task_manager()
+        if tm:
+            session_id = session_state.session_id if session_state else args.session
+            round_task_id = _create_round_task(
+                tm, args.round, models, args.doc_type, session_id
+            )
+
     mode = "pressing for confirmation" if args.press else "critiquing"
     focus_info = f" (focus: {args.focus})" if args.focus else ""
     persona_info = f" (persona: {args.persona})" if args.persona else ""
@@ -1031,6 +1748,12 @@ def run_critique(
         )
         if user_feedback:
             print(f"Received feedback: {user_feedback}", file=sys.stderr)
+
+    # Task tracking: mark round complete
+    if round_task_id and getattr(args, 'track_tasks', False):
+        tm = get_task_manager()
+        if tm:
+            _complete_round_task(tm, round_task_id, all_agreed)
 
     output_results(args, results, models, all_agreed, user_feedback, session_state)
 
@@ -1178,6 +1901,9 @@ def main() -> None:
         return
 
     if handle_utility_command(args):
+        return
+
+    if handle_execution_plan(args):
         return
 
     # Gauntlet action has its own model selection, handle before parse_models
