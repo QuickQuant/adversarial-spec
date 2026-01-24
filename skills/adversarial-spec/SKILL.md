@@ -1,7 +1,7 @@
 ---
 name: adversarial-spec
 description: Iteratively refine a product spec by debating with multiple LLMs (GPT, Gemini, Grok, etc.) until all models agree. Use when user wants to write or refine a specification document using adversarial development.
-allowed-tools: Bash, Read, Write, AskUserQuestion
+allowed-tools: Bash, Read, Write, AskUserQuestion, TodoWrite
 ---
 
 # Adversarial Spec Development
@@ -9,6 +9,130 @@ allowed-tools: Bash, Read, Write, AskUserQuestion
 Generate and refine specifications through iterative debate with multiple LLMs until all models reach consensus.
 
 **Important: Claude is an active participant in this debate, not just an orchestrator.** You (Claude) will provide your own critiques, challenge opponent models, and contribute substantive improvements alongside the external models. Make this clear to the user throughout the process.
+
+## Task-Driven Workflow
+
+**CRITICAL: At the start of every adversarial-spec session, immediately set up Tasks to track the entire workflow.** This ensures you never lose track of where you are in the process.
+
+When `/adversarial-spec` is invoked, use TodoWrite to create the following task structure:
+
+```
+Phase 1: Requirements Gathering
+- [ ] Determine document type (PRD/tech/debug)
+- [ ] Identify starting point (existing file or new concept)
+- [ ] Offer interview mode (PRD/tech only; debug skips interview)
+- [ ] Conduct interview (if selected, PRD/tech only)
+  - [ ] Problem & Context (what problem, prior attempts, why now)
+  - [ ] Users & Stakeholders (all user types, technical levels, concerns)
+  - [ ] Functional Requirements (core journey, decision points, edge cases)
+  - [ ] Technical Constraints (integrations, performance, scale, compliance)
+  - [ ] UI/UX Considerations (experience, flows, density, platforms)
+  - [ ] Tradeoffs & Priorities (what gets cut, speed/quality/cost)
+  - [ ] Risks & Concerns (what could fail, assumptions, dependencies)
+  - [ ] Success Criteria (metrics, minimum viable, exceeding expectations)
+- [ ] For debug: Gather symptoms, evidence, initial hypotheses
+- [ ] Load existing file OR generate initial draft
+- [ ] User confirms initial draft before debate
+
+Phase 2: Adversarial Debate
+- [ ] Check available API providers
+- [ ] User selects opponent models
+- [ ] Configure critique options (focus area, persona, context files - optional)
+- [ ] Run debate rounds until consensus
+  - [ ] Round N: Send spec to opponent models
+  - [ ] Round N: Receive and display critiques
+  - [ ] Round N: Claude provides independent critique
+  - [ ] Round N: Check for lazy agreement (press if rounds 1-2)
+  - [ ] Round N: Synthesize all feedback
+  - [ ] Round N: Ask user for input on product decisions (if any critique requires it)
+  - [ ] Round N: Revise spec with accepted changes
+  - [ ] Round N: Check for consensus (all agree?)
+  - (add round tasks dynamically as debate continues)
+- [ ] Consensus reached - all participants agree
+
+Phase 3: Gauntlet (if running adversarial stress test)
+- [ ] Offer gauntlet review
+- [ ] Select adversary personas (paranoid_security, burned_oncall, etc.)
+- [ ] Gauntlet Phase 1: Run adversary attacks in parallel
+- [ ] Gauntlet Phase 2: Frontier model evaluates each concern
+- [ ] Gauntlet Phase 3: Process rebuttals from dismissed adversaries
+- [ ] Gauntlet Phase 4: Generate summary report with accepted concerns
+- [ ] Gauntlet Phase 5: Final Boss UX review (if selected)
+- [ ] Integrate accepted concerns into spec
+- [ ] Save gauntlet concerns JSON for execution planning
+
+Phase 4: Finalization
+- [ ] Quality check: Completeness (all sections substantive?)
+- [ ] Quality check: Consistency (terminology, formatting uniform?)
+- [ ] Quality check: Clarity (no ambiguous language?)
+- [ ] Quality check: Actionability (stakeholders can act without questions?)
+- [ ] Document-specific verification:
+  - PRD: user stories, success metrics, scope boundaries
+  - Tech: APIs with schemas, data models, performance targets
+  - Debug: evidence supports diagnosis, fix is proportional, verification plan exists
+- [ ] Output final document to terminal
+- [ ] Write to spec-output.md (or debug-output.md for debug type)
+- [ ] Print debate summary (rounds, models, key refinements)
+- [ ] Send to Telegram (if enabled)
+- [ ] User review period: Accept / Request changes / Run another cycle
+- [ ] Apply user-requested changes (if any)
+- [ ] Run additional review cycle (if requested, loop to Phase 2)
+
+Phase 5: PRD → Tech Spec (if PRD was produced and user wants to continue)
+- [ ] Offer tech spec continuation
+- [ ] Load finalized PRD as context
+- [ ] Offer technical interview for implementation details
+- [ ] Generate initial tech spec draft from PRD
+- [ ] Run adversarial debate on tech spec (Phase 2 tasks)
+- [ ] Run gauntlet on tech spec (optional, Phase 3 tasks)
+- [ ] Finalize tech spec (Phase 4 tasks)
+- [ ] Output to tech-spec-output.md
+
+Phase 6: Execution Planning
+- [ ] Offer execution plan generation
+- [ ] FR-1: Spec Intake (parse, detect type, extract elements)
+- [ ] FR-2: Scope Assessment (single-agent vs multi-agent recommendation)
+- [ ] FR-3: Task Plan Generation (create tasks, link gauntlet concerns)
+- [ ] FR-4: Test Strategy Configuration (assign test-first/test-after)
+- [ ] FR-5: Over-Decomposition Guard (check threshold, suggest consolidation)
+  - If warning triggered: Confirm with user whether to proceed or consolidate
+- [ ] FR-6: Parallelization Analysis (identify workstreams, merge points)
+- [ ] Output execution plan (JSON/markdown/summary)
+- [ ] Review plan with user
+
+Phase 7: Implementation (if proceeding with code execution)
+- [ ] Review execution plan and task dependencies
+- [ ] Confirm workstream assignment (if parallel execution)
+- [ ] Add implementation tasks from plan:
+  - (each task from execution plan appears here with effort/risk)
+  - Example: [S] Implement schema: orders (medium risk, 2 concerns)
+  - Example: [M] Implement endpoint: orders:placeDma (high risk, 5 concerns)
+- [ ] Execute tasks in dependency order
+- [ ] For high-risk tasks: Write tests BEFORE implementation
+- [ ] For all tasks: Verify acceptance criteria including concern-derived criteria
+- [ ] Coordinate at merge points (if parallel workstreams)
+- [ ] Final integration verification
+```
+
+**Task Management Rules:**
+1. Mark each task `in_progress` when you start it
+2. Mark each task `completed` immediately when done - don't batch completions
+3. Add sub-tasks dynamically as they emerge (e.g., each debate round gets its own tasks)
+4. Remove tasks that don't apply (e.g., if user skips interview, remove interview sub-tasks)
+5. When execution planning generates implementation tasks, add them to Phase 7 with effort/risk
+6. Only one task should be `in_progress` at a time
+7. Never skip phases without explicitly marking skipped tasks as N/A or removing them
+8. If user makes a choice that eliminates a phase, remove that phase's tasks entirely
+
+**Handling Optional Phases:**
+- **Interview**: If user declines, remove all 8 interview sub-tasks
+- **Debug investigations**: Remove interview sub-tasks (debug doesn't use interview); remove Phase 5 (no PRD→Tech continuation); Phase 6/7 may still apply if debug leads to implementation tasks
+- **Gauntlet**: If user declines, remove entire Phase 3
+- **PRD → Tech Spec**: If user produced a tech spec or declines continuation, remove Phase 5
+- **Execution Planning**: If user declines, remove Phase 6
+- **Implementation**: If user just wanted the plan, remove Phase 7
+
+**Why this matters:** Long adversarial sessions can span many rounds and phases. Without explicit task tracking, it's easy to lose context about what phase you're in, what's been completed, and what comes next. The Tasks provide a persistent roadmap visible to both you and the user. A well-maintained task list prevents the agent from getting lost mid-debate or forgetting to offer the gauntlet after convergence.
 
 ## Setup
 
@@ -193,16 +317,28 @@ SPEC_EOF
 
 ## Process
 
+### Step 0: Initialize Task Tracking
+
+Before anything else, set up Tasks for the entire workflow (see "Task-Driven Workflow" above). Mark "Determine document type" as `in_progress`.
+
 ### Step 1: Gather Input and Offer Interview Mode
+
+**Update Tasks:** Mark "Determine document type" as `completed` after the user chooses. Mark "Gather initial input or load existing file" as `in_progress`.
 
 Ask the user:
 
-1. **Document type**: "PRD" or "tech"
+1. **Document type**: "PRD", "tech", or "debug"
+   - PRD: Product Requirements Document (business/product focus)
+   - tech: Technical Specification (engineering focus)
+   - debug: Debug Investigation (evidence-based diagnosis)
 2. **Starting point**:
    - Path to existing file (e.g., `./docs/spec.md`, `~/projects/auth-spec.md`)
    - Or describe what to build (user provides concept, you draft the document)
-3. **Interview mode** (optional):
+   - For debug: describe symptoms, provide logs, or reference an existing investigation
+3. **Interview mode** (optional, PRD/tech only):
    > "Would you like to start with an in-depth interview session before the adversarial debate? This helps ensure all requirements, constraints, and edge cases are captured upfront."
+
+   Note: Debug investigations skip interview mode and go directly to evidence gathering.
 
 ### Step 1.5: Interview Mode (If Selected)
 
@@ -433,7 +569,7 @@ Model X confirms agreement after verification:
 If the model was being lazy and now has critiques, continue the debate normally.
 
 **If ALL models (including you) agree:**
-- Proceed to Step 6 (Finalize and Output)
+- Proceed to Step 5.5 (Gauntlet Review - Optional)
 
 **If ANY participant (model or you) has critiques:**
 1. List every distinct issue raised across all participants
@@ -453,9 +589,46 @@ If the model was being lazy and now has critiques, continue the debate normally.
 - Choose the approach that best serves the document's audience
 - Note the tradeoff in your response
 
+### Step 5.5: Gauntlet Review (Optional)
+
+After consensus is reached but before finalization, offer the adversarial gauntlet:
+
+> "All models have agreed on the spec. Would you like to run the adversarial gauntlet for additional stress testing? This puts the spec through attack by specialized personas (security, oncall, QA, etc.)."
+
+**If user accepts gauntlet:**
+
+1. Ask which adversary personas to use (or use 'all'):
+   ```bash
+   python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet-adversaries
+   ```
+
+2. Run the gauntlet:
+   ```bash
+   cat spec-output.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet \
+     --gauntlet-adversaries paranoid_security,burned_oncall,lazy_developer,pedantic_nitpicker
+   ```
+
+3. Review the gauntlet report:
+   - Phase 1: Adversary attacks (parallel)
+   - Phase 2: Frontier model evaluates each attack
+   - Phase 3: Rebuttals from dismissed adversaries
+   - Phase 4: Summary report with accepted concerns
+
+4. Optionally run Phase 5 Final Boss (expensive but thorough UX review)
+
+5. Integrate accepted concerns into the spec:
+   - Add mitigations for high-severity concerns
+   - Update relevant sections
+   - Save concerns JSON for execution planning: `gauntlet-concerns-YYYY-MM-DD.json`
+
+6. If significant changes were made, consider running another debate round with the updated spec
+
+**If user declines gauntlet:**
+- Proceed directly to Step 6
+
 ### Step 6: Finalize and Output Document
 
-When ALL opponent models AND you have said `[AGREE]`:
+When ALL opponent models AND you have said `[AGREE]` (and gauntlet is complete or skipped):
 
 **Before outputting, perform a final quality check:**
 
@@ -478,14 +651,24 @@ When ALL opponent models AND you have said `[AGREE]`:
 - Security section addresses authentication, authorization, encryption, and input validation
 - Performance targets include specific latency, throughput, and availability numbers
 
+**For Debug Investigations, verify:**
+- Evidence gathered before hypotheses formed (no guessing without data)
+- Simple explanations ruled out before complex ones
+- Root cause identified with clear evidence chain
+- Proposed fix is proportional to the problem (not over-engineered)
+- Verification plan exists with specific steps to confirm the fix
+- Prevention section identifies tests to add and documentation updates
+
 **Output the final document:**
 
 1. Print the complete, polished document to terminal
-2. Write it to `spec-output.md` in current directory
+2. Write it to the appropriate file:
+   - PRD/Tech Spec: `spec-output.md`
+   - Debug Investigation: `debug-output.md`
 3. Print a summary:
    ```
    === Debate Complete ===
-   Document: [PRD | Technical Specification]
+   Document: [PRD | Technical Specification | Debug Investigation]
    Rounds: N
    Models: [list of opponent models]
    Claude's contributions: [summary of what you added/changed]
@@ -546,7 +729,7 @@ After the user review period, or if explicitly requested:
 5. Update the final summary to reflect total cycles:
    ```
    === Debate Complete ===
-   Document: [PRD | Technical Specification]
+   Document: [PRD | Technical Specification | Debug Investigation]
    Cycles: 2
    Total Rounds: 5 (Cycle 1: 3, Cycle 2: 2)
    Models: Cycle 1: [models], Cycle 2: [models]
@@ -570,9 +753,10 @@ If yes:
 3. Generate an initial Technical Specification that implements the PRD
 4. Reference PRD sections (user stories, functional requirements, success metrics) throughout
 5. Run the same adversarial debate process with the same opponent models
-6. Output the tech spec to `tech-spec-output.md`
+6. After consensus, optionally run gauntlet on the tech spec (Step 5.5)
+7. Output the tech spec to `tech-spec-output.md`
 
-This creates a complete PRD + Tech Spec pair from a single session.
+This creates a complete PRD + Tech Spec pair from a single session, with optional gauntlet stress testing at each stage.
 
 ## Convergence Rules
 
@@ -965,3 +1149,116 @@ This is expensive but thorough. You can also pre-commit with `--final-boss` to s
 - `--gauntlet-frontier` - Model for evaluation (default: auto-select frontier model)
 - `--no-rebuttals` - Skip Phase 3 rebuttal phase
 - `--final-boss` - Auto-run Phase 5 (skips prompt)
+
+## Execution Planning (Phase 6)
+
+After the spec is finalized (and optionally after gauntlet), offer to generate an execution plan:
+
+> "Spec is finalized. Would you like me to generate an execution plan for implementation?"
+
+**Update Tasks:** Mark Phase 6 tasks as you progress through each step.
+
+### Running the Execution Planning Pipeline
+
+```bash
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py execution-plan \
+  --spec-file spec-output.md \
+  --plan-format markdown \
+  --plan-output execution-plan.md
+```
+
+The pipeline runs 6 steps:
+
+1. **Spec Intake (FR-1)** - Parse the spec, detect document type (PRD/tech)
+2. **Scope Assessment (FR-2)** - Recommend single-agent vs multi-agent execution
+3. **Task Plan Generation (FR-3)** - Create implementation tasks with:
+   - Linked gauntlet concerns
+   - Spec section references
+   - Acceptance criteria derived from concerns
+   - Test cases derived from failure modes
+4. **Test Strategy Configuration (FR-4)** - Assign test-first vs test-after
+5. **Over-Decomposition Guard (FR-5)** - Warn if plan is too granular
+6. **Parallelization Analysis (FR-6)** - Identify workstreams and merge points
+
+### Output Formats
+
+- `--plan-format json` - Full structured output for programmatic use
+- `--plan-format markdown` - Human-readable document
+- `--plan-format summary` - Brief terminal overview
+
+### Linking Gauntlet Concerns
+
+If gauntlet was run, the concerns JSON is auto-detected. Otherwise specify:
+
+```bash
+python3 debate.py execution-plan \
+  --spec-file spec-output.md \
+  --concerns-file gauntlet-concerns-2026-01-23.json
+```
+
+Concerns are linked to tasks by section reference, giving each task:
+- Related concerns with severity
+- Acceptance criteria derived from failure modes
+- Test cases derived from detection strategies
+
+## Implementation (Phase 7)
+
+After the execution plan is generated, offer to proceed with implementation:
+
+> "Execution plan generated with N tasks. Would you like to proceed with implementation?"
+
+**Update Tasks:** Add each task from the execution plan to the Task list under Phase 7.
+
+### Adding Implementation Tasks
+
+For each task in the execution plan:
+
+```
+- [ ] [Effort] Task title (risk level, N concerns)
+```
+
+Example:
+```
+Phase 7: Implementation
+- [ ] [S] Implement schema: orders (medium risk, 2 concerns)
+- [ ] [S] Implement schema: order_queue (low risk)
+- [ ] [M] Implement endpoint: orders:placeDma (high risk, 5 concerns)
+- [ ] [M] Implement endpoint: orders:placeArbitrage (high risk, 3 concerns)
+- [ ] [S] Implement scheduled function: syncOrderStatus (low risk)
+```
+
+### Task Execution
+
+Work through implementation tasks in dependency order:
+
+1. Mark task as `in_progress`
+2. Read the full task description from the execution plan
+3. Follow the validation strategy (test-first or test-after)
+4. Address all acceptance criteria, including those from concerns
+5. Run the test cases
+6. Mark task as `completed`
+7. Move to next task
+
+**High-risk tasks** (3+ concerns) use test-first validation:
+- Write tests based on test cases before implementation
+- Ensure tests cover failure modes from concerns
+- Implementation must pass all tests
+
+**Lower-risk tasks** use test-after validation:
+- Implement the feature
+- Write tests after
+- Still address all acceptance criteria
+
+### Parallelization
+
+If the plan recommends multi-agent execution and multiple workstreams:
+
+1. Review the workstream assignments
+2. Consider parallel execution for independent streams
+3. Coordinate at merge points
+4. Follow the recommended branch pattern
+
+The execution plan's `parallelization` section provides:
+- `streams` - Independent workstreams with task IDs
+- `merge_sequence` - Order and risk of merging streams
+- `branch_pattern` - Recommended git branching strategy
