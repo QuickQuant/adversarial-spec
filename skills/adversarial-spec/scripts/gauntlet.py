@@ -343,7 +343,7 @@ class Evaluation:
     """Frontier model's evaluation of a concern."""
 
     concern: Concern
-    verdict: str  # dismissed, accepted, deferred
+    verdict: str  # dismissed, accepted, acknowledged, deferred
     reasoning: str
 
 
@@ -388,13 +388,16 @@ class GauntletResult:
             adv_rebuttals = [r for r in self.rebuttals if r.evaluation.concern.adversary == adv]
 
             accepted = len([e for e in adv_evals if e.verdict == "accepted"])
+            acknowledged = len([e for e in adv_evals if e.verdict == "acknowledged"])
             dismissed = len([e for e in adv_evals if e.verdict == "dismissed"])
             deferred = len([e for e in adv_evals if e.verdict == "deferred"])
             rebuttals_won = len([r for r in adv_rebuttals if r.sustained])
             rebuttals_lost = len([r for r in adv_rebuttals if not r.sustained])
 
             total = len(adv_concerns)
-            acceptance_rate = accepted / total if total > 0 else 0.0
+            # Valuable concerns = accepted + acknowledged (both credit the adversary)
+            valuable = accepted + acknowledged
+            acceptance_rate = valuable / total if total > 0 else 0.0
 
             # Cost-weighted metrics: how much effort to dismiss?
             # Longer dismissal reasoning = more expensive false positive
@@ -419,9 +422,10 @@ class GauntletResult:
             stats[adv] = {
                 "concerns_raised": total,
                 "accepted": accepted,
+                "acknowledged": acknowledged,
                 "dismissed": dismissed,
                 "deferred": deferred,
-                "acceptance_rate": round(acceptance_rate, 3),
+                "acceptance_rate": round(acceptance_rate, 3),  # includes acknowledged
                 "rebuttals_won": rebuttals_won,
                 "rebuttals_lost": rebuttals_lost,
                 "dismissal_effort": round(dismissal_effort, 0),  # avg chars
@@ -543,6 +547,7 @@ def update_adversary_stats(result: GauntletResult) -> dict:
             stats["adversaries"][adv] = {
                 "concerns_raised": 0,
                 "accepted": 0,
+                "acknowledged": 0,
                 "dismissed": 0,
                 "deferred": 0,
                 "rebuttals_won": 0,
@@ -556,6 +561,7 @@ def update_adversary_stats(result: GauntletResult) -> dict:
         existing = stats["adversaries"][adv]
         existing["concerns_raised"] += adv_run["concerns_raised"]
         existing["accepted"] += adv_run["accepted"]
+        existing["acknowledged"] = existing.get("acknowledged", 0) + adv_run.get("acknowledged", 0)
         existing["dismissed"] += adv_run["dismissed"]
         existing["deferred"] += adv_run["deferred"]
         existing["rebuttals_won"] += adv_run["rebuttals_won"]
@@ -746,6 +752,8 @@ def get_adversary_leaderboard() -> str:
         effort = data.get("avg_dismissal_effort", 0)
         total = data.get("concerns_raised", 0)
         accepted = data.get("accepted", 0)
+        acknowledged = data.get("acknowledged", 0)
+        valuable = accepted + acknowledged
 
         # Color-code signal score interpretation
         if signal > 0.3:
@@ -760,13 +768,18 @@ def get_adversary_leaderboard() -> str:
         lines.append(
             f"  {i}. {adv}: {signal:+.2f} ({quality})"
         )
-        lines.append(
-            f"     {rate:.0f}% accepted ({accepted}/{total}), {effort:.0f} chars avg dismissal"
-        )
+        if acknowledged > 0:
+            lines.append(
+                f"     {rate:.0f}% valuable ({accepted} accepted + {acknowledged} acknowledged = {valuable}/{total})"
+            )
+        else:
+            lines.append(
+                f"     {rate:.0f}% accepted ({accepted}/{total}), {effort:.0f} chars avg dismissal"
+            )
 
     # Acceptance rate for comparison
     lines.append("")
-    lines.append("By Acceptance Rate (raw % of concerns that were valid):")
+    lines.append("By Value Rate (accepted + acknowledged = valuable concerns):")
 
     sorted_acceptance = sorted(
         stats["adversaries"].items(),
@@ -778,7 +791,11 @@ def get_adversary_leaderboard() -> str:
         rate = data.get("acceptance_rate", 0) * 100
         total = data.get("concerns_raised", 0)
         accepted = data.get("accepted", 0)
-        lines.append(f"  {i}. {adv}: {rate:.0f}% ({accepted}/{total})")
+        acknowledged = data.get("acknowledged", 0)
+        if acknowledged > 0:
+            lines.append(f"  {i}. {adv}: {rate:.0f}% ({accepted}+{acknowledged}={accepted+acknowledged}/{total})")
+        else:
+            lines.append(f"  {i}. {adv}: {rate:.0f}% ({accepted}/{total})")
 
     # Dismissal cost (identifies expensive false positives)
     lines.append("")
@@ -824,6 +841,9 @@ def get_adversary_leaderboard() -> str:
     lines.append("  +0.1 to +0.3: Good - useful contributor")
     lines.append("  -0.1 to +0.1: Neutral - consider tuning prompt")
     lines.append("  < -0.1: Needs work - too many expensive false positives")
+    lines.append("")
+    lines.append("Verdicts: accepted (needs spec change), acknowledged (valid but out of scope),")
+    lines.append("          dismissed (invalid), deferred (needs context)")
 
     return "\n".join(lines)
 
@@ -1708,7 +1728,10 @@ def evaluate_concerns(
 For each concern, you must decide:
 - DISMISS: The concern is not valid (must cite specific evidence)
 - ACCEPT: The concern is valid (spec needs revision)
+- ACKNOWLEDGE: The concern is valid and insightful, but won't be addressed due to external constraints (out of scope, known tradeoff, business decision, etc.)
 - DEFER: Need more context to decide
+
+IMPORTANT: Use ACKNOWLEDGE when the adversary raised a GOOD point that you appreciate them thinking about, but you're choosing not to act on it for reasons they couldn't have known. This credits the adversary for valuable thinking without requiring spec changes.
 
 RESPONSE PROTOCOLS:{protocols_text}
 
@@ -1716,12 +1739,13 @@ CRITICAL RULES:
 1. No emotional language - just logic and evidence
 2. For DISMISS: You MUST cite specific reasons from the spec or architecture
 3. For ACCEPT: Briefly note what needs to change
-4. For DEFER: Note what information is missing
+4. For ACKNOWLEDGE: Note why the point is valid AND why it's not being addressed
+5. For DEFER: Note what information is missing
 
 Output your evaluation as JSON with this structure:
 {{
   "evaluations": [
-    {{"concern_index": 0, "verdict": "dismissed|accepted|deferred", "reasoning": "..."}},
+    {{"concern_index": 0, "verdict": "dismissed|accepted|acknowledged|deferred", "reasoning": "..."}},
     ...
   ]
 }}"""
@@ -2075,9 +2099,10 @@ def run_gauntlet(
 
     dismissed = [e for e in evaluations if e.verdict == "dismissed"]
     accepted = [e for e in evaluations if e.verdict == "accepted"]
+    acknowledged = [e for e in evaluations if e.verdict == "acknowledged"]
     deferred = [e for e in evaluations if e.verdict == "deferred"]
     print(
-        f"  Dismissed: {len(dismissed)}, Accepted: {len(accepted)}, Deferred: {len(deferred)}",
+        f"  Dismissed: {len(dismissed)}, Accepted: {len(accepted)}, Acknowledged: {len(acknowledged)}, Deferred: {len(deferred)}",
         file=sys.stderr,
     )
 
@@ -2101,6 +2126,12 @@ def run_gauntlet(
         print(f"  [{e.concern.adversary}] {e.concern.text[:80]}...", file=sys.stderr)
     if len(accepted) > 10:
         print(f"  ... and {len(accepted) - 10} more", file=sys.stderr)
+    if acknowledged:
+        print(f"\n=== Acknowledged (valid but out of scope) ===", file=sys.stderr)
+        for e in acknowledged[:5]:
+            print(f"  [{e.concern.adversary}] {e.concern.text[:80]}...", file=sys.stderr)
+        if len(acknowledged) > 5:
+            print(f"  ... and {len(acknowledged) - 5} more", file=sys.stderr)
     print(file=sys.stderr)
 
     # Phase 3: Rebuttals (parallel)
@@ -2271,11 +2302,13 @@ def format_gauntlet_report(result: GauntletResult) -> str:
     # Phase 2 summary
     dismissed = [e for e in result.evaluations if e.verdict == "dismissed"]
     accepted = [e for e in result.evaluations if e.verdict == "accepted"]
+    acknowledged = [e for e in result.evaluations if e.verdict == "acknowledged"]
     deferred = [e for e in result.evaluations if e.verdict == "deferred"]
 
     lines.append(f"Phase 2 - Evaluation ({result.eval_model}):")
     lines.append(f"  Dismissed: {len(dismissed)} (with justification)")
     lines.append(f"  Accepted: {len(accepted)} (spec revision needed)")
+    lines.append(f"  Acknowledged: {len(acknowledged)} (valid but out of scope)")
     lines.append(f"  Deferred: {len(deferred)} (need more context)")
     lines.append("")
 
