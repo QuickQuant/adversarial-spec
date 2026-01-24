@@ -25,51 +25,37 @@ export OPENROUTER_API_KEY="sk-or-..."
 ## How It Works
 
 ```
-You describe product --> Claude drafts spec --> Gauntlet (optional)
-        |                                            |
-        |                     ┌──────────────────────┘
-        |                     v
-        |              5 Adversary Personas attack the spec
-        |              (paranoid_security, burned_oncall, ...)
-        |                     |
-        |                     v
-        |              Frontier model evaluates each concern
-        |              Adversaries can rebut dismissals
-        |                     |
-        |                     v
-        |              Surviving concerns flagged
-        |                     |
-        +-------------------->|
-                              v
-                   Multiple LLMs critique in parallel
-                              |
-                              v
-                   Claude synthesizes + adds own critique
-                              |
-                              v
-                   Revise and repeat until ALL agree
-                              |
-                              v
-                   User review period
-                              |
-                              v
-                   Final document output
-                              |
-                              v
-                   (Optional) Generate Execution Plan
+┌─────────────────────────────────────────────────────────────────┐
+│  1. You describe product (or provide existing doc)              │
+│                            ↓                                    │
+│  2. Claude drafts spec                                          │
+│                            ↓                                    │
+│  3. THE GAUNTLET: 5 adversary personas attack                   │
+│     • paranoid_security finds threats everywhere                │
+│     • burned_oncall asks "what happens at 3am?"                 │
+│     • lazy_developer says "this is too complicated"             │
+│     • pedantic_nitpicker asks about leap seconds                │
+│     • asshole_loner points out your design is broken            │
+│                            ↓                                    │
+│  4. Frontier model evaluates each concern                       │
+│     Adversaries can rebut if dismissed too easily               │
+│                            ↓                                    │
+│  5. Multiple LLMs critique in parallel                          │
+│     (GPT, Gemini, Grok, etc.)                                   │
+│                            ↓                                    │
+│  6. Claude synthesizes all feedback + adds own critique         │
+│                            ↓                                    │
+│  7. Revise and repeat until ALL models agree                    │
+│                            ↓                                    │
+│  8. User review: accept, request changes, or run another cycle  │
+│                            ↓                                    │
+│  9. Final document output                                       │
+│                            ↓                                    │
+│  10. Generate execution plan with tasks linked to concerns      │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-1. Describe your product concept or provide an existing document
-2. (Optional) Start with an in-depth interview to capture requirements
-3. Claude drafts the initial document (PRD or tech spec)
-4. **(Optional) Gauntlet:** Five adversary personas attack your spec - a paranoid security engineer, a burned-out oncall, a lazy developer, a pedantic nitpicker, and that one brilliant asshole who works alone. A frontier model evaluates their concerns, and they can argue back if dismissed too easily.
-5. Document is sent to opponent models (GPT, Gemini, Grok, etc.) for parallel critique
-6. Claude provides independent critique alongside opponent feedback
-7. Claude synthesizes all feedback and revises
-8. Loop continues until ALL models AND Claude agree
-9. User review period: request changes or run additional cycles
-10. Final converged document is output
-11. **(Optional) Execution Plan:** Extract implementation tasks with dependencies, validation strategies, and links to gauntlet concerns
+The gauntlet is where your spec gets stress-tested by personas who are *paid to find problems*. Then multiple LLMs debate until they all agree. Then you review. Then you get an execution plan that links tasks back to the concerns that drove them.
 
 ## The Adversarial Gauntlet
 
