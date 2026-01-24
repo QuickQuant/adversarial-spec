@@ -2079,7 +2079,7 @@ def run_gauntlet(
     gauntlet_dir.mkdir(exist_ok=True)
     concerns_file = gauntlet_dir / f"concerns-{spec_hash[:8]}.json"
     with open(concerns_file, 'w') as f:
-        json.dump([{"adversary": c.adversary, "text": c.text, "severity": c.severity} for c in concerns], f, indent=2)
+        json.dump([{"id": c.id, "adversary": c.adversary, "text": c.text, "severity": c.severity} for c in concerns], f, indent=2)
     print(f"  Concerns saved: {concerns_file}", file=sys.stderr)
 
     # Phase 1.5: Self-Filtering (NEW)
@@ -2121,9 +2121,9 @@ def run_gauntlet(
     with open(evals_file, 'w') as f:
         eval_data = [
             {
-                "concern": {"adversary": e.concern.adversary, "text": e.concern.text, "severity": e.concern.severity},
+                "concern": {"id": e.concern.id, "adversary": e.concern.adversary, "text": e.concern.text, "severity": e.concern.severity},
                 "verdict": e.verdict,
-                "justification": e.justification,
+                "reasoning": e.reasoning,
             }
             for e in evaluations
         ]
