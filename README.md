@@ -69,7 +69,7 @@ cat spec.md | python3 debate.py gauntlet
 cat spec.md | python3 debate.py gauntlet --gauntlet-adversaries paranoid_security,burned_oncall
 
 # Include the gauntlet in a full debate
-cat spec.md | python3 debate.py critique --models gpt-4o --gauntlet
+cat spec.md | python3 debate.py critique --models codex/gpt-5.2-codex --gauntlet
 ```
 
 ### The Adversaries
@@ -137,18 +137,25 @@ Execution plans include:
 
 ## Supported Models
 
+**CLI tools are FREE and frontier-quality** - use these first:
+
+| Tool       | Requirement            | Models                                       |
+|------------|------------------------|----------------------------------------------|
+| Codex CLI  | ChatGPT Plus/Pro       | `codex/gpt-5.2-codex`, `codex/gpt-5.1-codex-max` |
+| Gemini CLI | Google account         | `gemini-cli/gemini-3-pro-preview`, `gemini-cli/gemini-3-flash-preview` |
+
+**API providers** (pay-per-token fallback):
+
 | Provider   | Env Var                | Example Models                               |
 |------------|------------------------|----------------------------------------------|
-| OpenAI     | `OPENAI_API_KEY`       | `gpt-4o`, `gpt-4-turbo`, `o1`                |
-| Anthropic  | `ANTHROPIC_API_KEY`    | `claude-sonnet-4-20250514`, `claude-opus-4-20250514` |
-| Google     | `GEMINI_API_KEY`       | `gemini/gemini-2.0-flash`, `gemini/gemini-pro` |
-| xAI        | `XAI_API_KEY`          | `xai/grok-3`, `xai/grok-beta`                |
-| Mistral    | `MISTRAL_API_KEY`      | `mistral/mistral-large`, `mistral/codestral` |
-| Groq       | `GROQ_API_KEY`         | `groq/llama-3.3-70b-versatile`               |
-| OpenRouter | `OPENROUTER_API_KEY`   | `openrouter/openai/gpt-4o`, `openrouter/anthropic/claude-3.5-sonnet` |
-| Codex CLI  | ChatGPT subscription   | `codex/gpt-5.2-codex`, `codex/gpt-5.1-codex-max` |
-| Gemini CLI | Google account         | `gemini-cli/gemini-3-pro-preview`, `gemini-cli/gemini-3-flash-preview` |
-| Deepseek   | `DEEPSEEK_API_KEY`     | `deepseek/deepseek-chat`                     |
+| OpenAI     | `OPENAI_API_KEY`       | `gpt-5.2`, `o3-mini`, `gpt-5.2-mini`         |
+| Anthropic  | `ANTHROPIC_API_KEY`    | `claude-opus-4-5-20251124`, `claude-sonnet-4-5-20250929` |
+| Google     | `GEMINI_API_KEY`       | `gemini/gemini-3-pro`, `gemini/gemini-3-flash` |
+| xAI        | `XAI_API_KEY`          | `xai/grok-4`, `xai/grok-4.1-fast`            |
+| Mistral    | `MISTRAL_API_KEY`      | `mistral/mistral-large-3`, `mistral/mistral-medium-3` |
+| Groq       | `GROQ_API_KEY`         | `groq/llama-4-maverick`, `groq/llama-3.3-70b-versatile` |
+| DeepSeek   | `DEEPSEEK_API_KEY`     | `deepseek/deepseek-r1`, `deepseek/deepseek-v3.2-exp` |
+| OpenRouter | `OPENROUTER_API_KEY`   | `openrouter/openai/gpt-5.2`, `openrouter/anthropic/claude-sonnet-4.5` |
 | Zhipu      | `ZHIPUAI_API_KEY`      | `zhipu/glm-4`, `zhipu/glm-4-plus`            |
 
 Check which keys are configured:
@@ -195,15 +202,15 @@ Configuration is stored at `~/.claude/adversarial-spec/config.json`.
 export OPENROUTER_API_KEY="sk-or-..."
 
 # Use OpenRouter models (prefix with openrouter/)
-python3 debate.py critique --models openrouter/openai/gpt-4o,openrouter/anthropic/claude-3.5-sonnet < spec.md
+python3 debate.py critique --models openrouter/openai/gpt-5.2,openrouter/anthropic/claude-sonnet-4.5 < spec.md
 ```
 
 **Popular OpenRouter models:**
-- `openrouter/openai/gpt-4o` - GPT-4o via OpenRouter
-- `openrouter/anthropic/claude-3.5-sonnet` - Claude 3.5 Sonnet
-- `openrouter/google/gemini-2.0-flash` - Gemini 2.0 Flash
-- `openrouter/meta-llama/llama-3.3-70b-instruct` - Llama 3.3 70B
-- `openrouter/qwen/qwen-2.5-72b-instruct` - Qwen 2.5 72B
+- `openrouter/openai/gpt-5.2` - GPT-5.2 via OpenRouter
+- `openrouter/anthropic/claude-sonnet-4.5` - Claude Sonnet 4.5
+- `openrouter/google/gemini-3-pro` - Gemini 3 Pro
+- `openrouter/meta-llama/llama-4-maverick` - Llama 4 Maverick
+- `openrouter/deepseek/deepseek-r1` - DeepSeek R1
 
 See the full model list at [openrouter.ai/models](https://openrouter.ai/models).
 
@@ -218,7 +225,7 @@ See the full model list at [openrouter.ai/models](https://openrouter.ai/models).
 npm install -g @openai/codex
 
 # Use Codex models (prefix with codex/)
-python3 debate.py critique --models codex/gpt-5.2-codex,gemini/gemini-2.0-flash < spec.md
+python3 debate.py critique --models codex/gpt-5.2-codex,gemini-cli/gemini-3-flash-preview < spec.md
 ```
 
 **Reasoning effort:**
@@ -276,7 +283,7 @@ export OPENAI_API_KEY="your-key"
 export OPENAI_API_BASE="https://your-endpoint.com/v1"
 
 # Use with any model name
-python3 debate.py critique --models gpt-4o < spec.md
+python3 debate.py critique --models codex/gpt-5.2-codex < spec.md
 ```
 
 This works with:
@@ -302,7 +309,7 @@ You will be prompted for:
 
 1. **Document type**: PRD (business/product focus) or tech spec (engineering focus)
 2. **Interview mode**: Optional in-depth requirements gathering session
-3. **Opponent models**: Comma-separated list (e.g., `gpt-4o,gemini/gemini-2.0-flash,xai/grok-3`)
+3. **Opponent models**: Comma-separated list (e.g., `codex/gpt-5.2-codex,gemini-cli/gemini-3-pro-preview`)
 
 More models = more perspectives = stricter convergence.
 
@@ -383,7 +390,7 @@ After all models agree, you enter a review period with three options:
 
 Run multiple cycles with different strategies:
 
-- First cycle with fast models (gpt-4o), second with stronger models (o1)
+- First cycle with fast models (gemini-cli/gemini-3-flash-preview), second with frontier (codex/gpt-5.2-codex)
 - First cycle for structure/completeness, second for security focus
 - Fresh perspective after user-requested changes
 
@@ -445,7 +452,7 @@ Long debates can crash or need to pause. Sessions save state automatically:
 
 ```bash
 # Start a named session
-echo "spec" | python3 debate.py critique --models gpt-4o --session my-feature-spec
+echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --session my-feature-spec
 
 # Resume where you left off
 python3 debate.py critique --resume my-feature-spec
@@ -507,8 +514,8 @@ Total tokens: 12,543 in / 3,221 out
 Total cost: $0.0847
 
 By model:
-  gpt-4o: $0.0523 (8,234 in / 2,100 out)
-  gemini/gemini-2.0-flash: $0.0324 (4,309 in / 1,121 out)
+  codex/gpt-5.2-codex: $0.00 (8,234 in / 2,100 out)  # FREE with subscription
+  gemini-cli/gemini-3-pro-preview: $0.00 (4,309 in / 1,121 out)  # FREE
 ```
 
 ### Saved Profiles
@@ -518,7 +525,7 @@ Save frequently used configurations:
 ```bash
 # Create a profile
 python3 debate.py save-profile strict-security \
-  --models gpt-4o,gemini/gemini-2.0-flash \
+  --models codex/gpt-5.2-codex,gemini-cli/gemini-3-pro-preview \
   --focus security \
   --doc-type tech
 
@@ -544,7 +551,7 @@ python3 debate.py diff --previous round1.md --current round2.md
 Extract actionable tasks from a finalized spec:
 
 ```bash
-cat spec-output.md | python3 debate.py export-tasks --models gpt-4o --doc-type prd
+cat spec-output.md | python3 debate.py export-tasks --models codex/gpt-5.2-codex --doc-type prd
 ```
 
 Output includes title, type, priority, description, and acceptance criteria.
