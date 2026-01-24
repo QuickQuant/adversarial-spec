@@ -25,31 +25,123 @@ export OPENROUTER_API_KEY="sk-or-..."
 ## How It Works
 
 ```
-You describe product --> Claude drafts spec --> Multiple LLMs critique in parallel
-        |                                              |
-        |                                              v
-        |                              Claude synthesizes + adds own critique
-        |                                              |
-        |                                              v
-        |                              Revise and repeat until ALL agree
-        |                                              |
-        +--------------------------------------------->|
-                                                       v
-                                            User review period
-                                                       |
-                                                       v
-                                            Final document output
+You describe product --> Claude drafts spec --> Gauntlet (optional)
+        |                                            |
+        |                     ┌──────────────────────┘
+        |                     v
+        |              5 Adversary Personas attack the spec
+        |              (paranoid_security, burned_oncall, ...)
+        |                     |
+        |                     v
+        |              Frontier model evaluates each concern
+        |              Adversaries can rebut dismissals
+        |                     |
+        |                     v
+        |              Surviving concerns flagged
+        |                     |
+        +-------------------->|
+                              v
+                   Multiple LLMs critique in parallel
+                              |
+                              v
+                   Claude synthesizes + adds own critique
+                              |
+                              v
+                   Revise and repeat until ALL agree
+                              |
+                              v
+                   User review period
+                              |
+                              v
+                   Final document output
+                              |
+                              v
+                   (Optional) Generate Execution Plan
 ```
 
 1. Describe your product concept or provide an existing document
 2. (Optional) Start with an in-depth interview to capture requirements
 3. Claude drafts the initial document (PRD or tech spec)
-4. Document is sent to opponent models (GPT, Gemini, Grok, etc.) for parallel critique
-5. Claude provides independent critique alongside opponent feedback
-6. Claude synthesizes all feedback and revises
-7. Loop continues until ALL models AND Claude agree
-8. User review period: request changes or run additional cycles
-9. Final converged document is output
+4. **(Optional) Gauntlet:** Five adversary personas attack your spec - a paranoid security engineer, a burned-out oncall, a lazy developer, a pedantic nitpicker, and that one brilliant asshole who works alone. A frontier model evaluates their concerns, and they can argue back if dismissed too easily.
+5. Document is sent to opponent models (GPT, Gemini, Grok, etc.) for parallel critique
+6. Claude provides independent critique alongside opponent feedback
+7. Claude synthesizes all feedback and revises
+8. Loop continues until ALL models AND Claude agree
+9. User review period: request changes or run additional cycles
+10. Final converged document is output
+11. **(Optional) Execution Plan:** Extract implementation tasks with dependencies, validation strategies, and links to gauntlet concerns
+
+## The Adversarial Gauntlet
+
+The gauntlet is where specs go to get stress-tested by personas who are *paid to find problems*.
+
+```bash
+# Run the gauntlet on any spec
+cat spec.md | python3 debate.py gauntlet
+
+# Pick your adversaries
+cat spec.md | python3 debate.py gauntlet --gauntlet-adversaries paranoid_security,burned_oncall
+
+# Include the gauntlet in a full debate
+cat spec.md | python3 debate.py critique --models gpt-4o --gauntlet
+```
+
+### The Adversaries
+
+| Persona | What They Do | Why They're Annoying (In a Good Way) |
+|---------|--------------|--------------------------------------|
+| `paranoid_security` | Sees threats everywhere. Every input is malicious. Every dependency will be compromised. | Occasionally catches what everyone else missed because they weren't paranoid *enough*. |
+| `burned_oncall` | Has been paged at 3am too many times. Obsessed with failure modes. "What happens when Redis goes down?" | Doesn't trust anything to stay up. Has seen too much. |
+| `lazy_developer` | "This is too complicated. Why can't we just use X?" | Sometimes just lazy, sometimes catches genuine overengineering. |
+| `pedantic_nitpicker` | What if the string is empty? What about 2^31 items? Leap seconds? Unicode? | Most concerns don't matter. Some really do. |
+| `asshole_loner` | Brilliant antisocial engineer who jumps to conclusions. Blunt. Accepts good reasoning without argument. | Trusts logic, not authority. If you can prove it, they'll shut up. |
+
+### The Final Boss
+
+After all technical concerns are addressed and models agree, the **UX Architect** (running on Opus 4.5) asks: *"Did we lose the forest for the trees?"*
+
+```bash
+# Enable the final boss review
+cat spec.md | python3 debate.py gauntlet --final-boss
+```
+
+This catches fundamental UX problems that got lost in technical discussions. User stories that don't add value. Measurement strategies that don't exist. Clever implementations that users didn't ask for.
+
+### Adversary Leaderboard
+
+Track which adversaries are actually useful over time:
+
+```bash
+python3 debate.py adversary-stats
+```
+
+Shows signal score (acceptance rate vs dismissal effort), rebuttal success rates, and which personas consistently find real issues vs which ones cry wolf.
+
+### Concern IDs
+
+Every concern gets a stable ID like `BURN-a3f7c912` (burned_oncall concern, content hash). These IDs let execution plans reference specific concerns that need to be addressed during implementation.
+
+## Execution Plans
+
+Turn a converged spec into an actionable implementation plan:
+
+```bash
+# Generate from spec
+python3 debate.py execution-plan --spec-file spec.md
+
+# Include gauntlet concerns for richer context
+python3 debate.py execution-plan --spec-file spec.md --concerns-file gauntlet-concerns.json
+
+# Output formats
+python3 debate.py execution-plan --spec-file spec.md --plan-format markdown
+python3 debate.py execution-plan --spec-file spec.md --plan-format summary
+```
+
+Execution plans include:
+- **Phases** with clear milestones
+- **Tasks** with dependencies and validation strategies
+- **Concern links** connecting tasks to gauntlet concerns they address
+- **Parallelization analysis** for multi-agent execution
 
 ## Requirements
 
@@ -521,6 +613,18 @@ debate.py critique --resume SESSION_ID
 debate.py diff --previous OLD.md --current NEW.md
 debate.py export-tasks --models MODEL --doc-type TYPE [--json] < spec.md
 
+# Gauntlet commands
+debate.py gauntlet < spec.md                                    # Run full gauntlet
+debate.py gauntlet --gauntlet-adversaries paranoid_security,burned_oncall < spec.md
+debate.py gauntlet --final-boss < spec.md                       # Include UX architect review
+debate.py gauntlet-adversaries                                  # List adversary personas
+debate.py adversary-stats                                       # Show adversary leaderboard
+
+# Execution planning
+debate.py execution-plan --spec-file spec.md                    # Generate implementation plan
+debate.py execution-plan --spec-file spec.md --concerns-file concerns.json
+debate.py execution-plan --plan-format markdown --plan-output plan.md
+
 # Info commands
 debate.py providers      # List providers and API key status
 debate.py focus-areas    # List focus areas
@@ -547,10 +651,14 @@ debate.py bedrock list-models                 # List built-in model mappings
 - `--focus, -f` - Focus area (security, scalability, performance, ux, reliability, cost)
 - `--persona` - Professional persona
 - `--context, -c` - Context file (repeatable)
-- `--profile` - Load saved profile
 - `--preserve-intent` - Require justification for removals
 - `--session, -s` - Session ID for persistence and checkpointing
 - `--resume` - Resume a previous session
+- `--gauntlet, -g` - Run adversarial gauntlet
+- `--gauntlet-adversaries` - Specific adversaries to use
+- `--gauntlet-model` - Model for adversary attacks
+- `--gauntlet-frontier` - Model for evaluation
+- `--final-boss` - Enable UX architect review
 - `--press, -p` - Anti-laziness check
 - `--telegram, -t` - Enable Telegram
 - `--json, -j` - JSON output
@@ -560,14 +668,22 @@ debate.py bedrock list-models                 # List built-in model mappings
 ```
 adversarial-spec/
 ├── .claude-plugin/
-│   └── plugin.json           # Plugin metadata
+│   └── plugin.json               # Plugin metadata
 ├── README.md
 ├── LICENSE
+├── execution_planner/            # Spec → Implementation planning
+│   ├── spec_intake.py            # Parse specs into structured data
+│   ├── task_planner.py           # Generate phased task plans
+│   ├── gauntlet_concerns.py      # Link concerns to plan tasks
+│   └── ...
 └── skills/
     └── adversarial-spec/
-        ├── SKILL.md          # Skill definition and process
+        ├── SKILL.md              # Skill definition and process
         └── scripts/
-            ├── debate.py     # Multi-model debate orchestration
+            ├── adversaries.py    # Centralized adversary personas
+            ├── debate.py         # Multi-model debate orchestration
+            ├── gauntlet.py       # Adversarial gauntlet engine
+            ├── providers.py      # API key detection
             └── telegram_bot.py   # Telegram notifications
 ```
 
