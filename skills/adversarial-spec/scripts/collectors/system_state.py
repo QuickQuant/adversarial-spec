@@ -200,6 +200,7 @@ class SystemStateCollector:
                 duration_ms=result.duration_ms,
                 output_excerpt=output_excerpt,
                 description=val_cmd.description,
+                environment=val_cmd.environment,
             )
             results.append(val_result)
 
@@ -214,16 +215,20 @@ class SystemStateCollector:
     ) -> Concern:
         """Create a concern for validation failure."""
         cmd_str = " ".join(cmd.command)
+        env_note = f" [Environment: {cmd.environment}]" if cmd.environment else " [Environment: UNKNOWN - consider specifying]"
 
         if result.status == BuildStatus.TIMEOUT:
             return Concern(
                 id=self._make_id(f"VALIDATION_TIMEOUT_{cmd.name}"),
                 severity=ConcernSeverity.BLOCKER,
                 category=ConcernCategory.SCHEMA,
-                title=f"Validation Timed Out: {cmd.name}",
+                title=f"Validation Timed Out: {cmd.name}{env_note}",
                 message=(
                     f"Validation command `{cmd_str}` timed out after {cmd.timeout_seconds}s.\n"
-                    f"Description: {cmd.description or 'Schema/data validation'}"
+                    f"Environment: **{cmd.environment or 'NOT SPECIFIED'}**\n"
+                    f"Description: {cmd.description or 'Schema/data validation'}\n\n"
+                    "⚠️ If no environment is specified, verify you are validating against "
+                    "the correct instance (production vs development)."
                 ),
                 evidence_refs=[
                     EvidenceRef(
@@ -239,12 +244,16 @@ class SystemStateCollector:
             id=self._make_id(f"VALIDATION_FAILED_{cmd.name}"),
             severity=ConcernSeverity.BLOCKER,
             category=ConcernCategory.SCHEMA,
-            title=f"Validation Failed: {cmd.name}",
+            title=f"Validation Failed: {cmd.name}{env_note}",
             message=(
                 f"Validation command `{cmd_str}` failed.\n"
+                f"Environment: **{cmd.environment or 'NOT SPECIFIED'}**\n"
                 f"Description: {cmd.description or 'Schema/data validation'}\n\n"
                 "This indicates schema/data drift - the schema definition does not match "
                 "the actual data state. This must be resolved before implementation.\n\n"
+                "⚠️ **IMPORTANT**: Before investigating, verify this validation ran against "
+                "the correct environment. Failures against development instances may be "
+                "false positives if production is the deployment target.\n\n"
                 f"Output:\n```\n{result.output_excerpt}\n```"
             ),
             evidence_refs=[

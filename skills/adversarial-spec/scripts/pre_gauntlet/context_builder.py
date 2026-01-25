@@ -139,9 +139,19 @@ class ContextBuilder:
         if state.validation_results:
             lines.append("")
             lines.append("### Validation Checks")
+
+            # Check if any validations are missing environment specification
+            missing_env = [v for v in state.validation_results if not v.environment]
+            if missing_env:
+                lines.append("")
+                lines.append("⚠️ **WARNING: Some validations have no environment specified.**")
+                lines.append("Verify these are running against the correct instance (production vs development).")
+                lines.append("")
+
             for val in state.validation_results:
-                status_icon = "PASS" if val.status.value == "PASS" else "FAIL"
-                lines.append(f"- **{val.name}**: {status_icon}")
+                status_icon = "✅ PASS" if val.status.value == "PASS" else "❌ FAIL"
+                env_label = f" [{val.environment}]" if val.environment else " [ENV: UNKNOWN]"
+                lines.append(f"- **{val.name}**{env_label}: {status_icon}")
                 if val.description:
                     lines.append(f"  - {val.description}")
                 if val.status.value != "PASS" and val.output_excerpt:

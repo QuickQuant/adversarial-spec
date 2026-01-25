@@ -102,6 +102,7 @@ class ValidationCommand(BaseModel):
     command: list[str]  # e.g., ["npx", "convex", "dev", "--once"]
     timeout_seconds: int = Field(default=60, ge=5, le=300)
     description: str = ""  # What this validates
+    environment: str = ""  # e.g., "production", "development", "staging" - CRITICAL for avoiding false positives
     error_patterns: list[str] = Field(default_factory=list)  # Regex patterns that indicate failure
 
 
@@ -225,6 +226,7 @@ class ValidationResult(BaseModel):
     duration_ms: int = 0
     output_excerpt: str = ""
     description: str = ""
+    environment: str = ""  # Which environment was validated (production, development, staging)
 
 
 class SystemState(BaseModel):

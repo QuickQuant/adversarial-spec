@@ -149,17 +149,20 @@ critical_paths = ["src/api/", "convex/"]
 staleness_threshold_days = 3
 
 # Validation commands for schema/data consistency checks
+# IMPORTANT: Always specify 'environment' to avoid false positives from wrong instance
 [[tool.adversarial-spec.compatibility.validation_commands]]
 name = "convex"
 command = ["npx", "convex", "dev", "--once"]
 timeout_seconds = 90
 description = "Validates Convex schema against production data"
+environment = "production"  # CRITICAL: specify which instance is being validated
 
 [[tool.adversarial-spec.compatibility.validation_commands]]
 name = "prisma"
 command = ["npx", "prisma", "validate"]
 timeout_seconds = 30
 description = "Validates Prisma schema syntax and relations"
+environment = "production"
 
 [tool.adversarial-spec.compatibility.doc_type_rules.tech]
 enabled = true
@@ -181,6 +184,34 @@ Validation commands are separate from the build command and specifically check f
 | Drizzle | `npx drizzle-kit check` | Schema vs database drift |
 
 When a validation command fails, it generates a **BLOCKER** concern that triggers Alignment Mode.
+
+### Environment Awareness
+
+**CRITICAL:** Always specify the `environment` field for validation commands.
+
+```toml
+[[tool.adversarial-spec.compatibility.validation_commands]]
+name = "convex"
+command = ["npx", "convex", "dev", "--once"]
+environment = "production"  # or "development", "staging"
+```
+
+Why this matters:
+- Validation commands often check against a specific database instance
+- Running against development when production is the target causes **false positives**
+- The pre-gauntlet displays environment prominently in output to prevent confusion
+- Missing environment triggers a warning: `[ENV: UNKNOWN]`
+
+Example output:
+```
+### Validation Checks
+
+⚠️ **WARNING: Some validations have no environment specified.**
+Verify these are running against the correct instance (production vs development).
+
+- **convex** [production]: ✅ PASS
+- **prisma** [ENV: UNKNOWN]: ❌ FAIL  ← Which instance failed?
+```
 
 ### Exit Codes
 
