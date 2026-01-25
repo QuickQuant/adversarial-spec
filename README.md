@@ -248,6 +248,7 @@ cat spec.md | python3 debate.py critique --models codex/gpt-5.2-codex --gauntlet
 | `pedantic_nitpicker` | What if the string is empty? What about 2^31 items? Leap seconds? Unicode? | Most concerns don't matter. Some really do. |
 | `asshole_loner` | Brilliant antisocial engineer who jumps to conclusions. Blunt. Accepts good reasoning without argument. | Trusts logic, not authority. If you can prove it, they'll shut up. |
 | `prior_art_scout` | Thinks in patterns. Finds similar concepts in the codebase and proposes implementations that blend with existing abstractions. | Suggests architecture improvements: "This looks like BaseClient - extend it instead of building standalone." |
+| `assumption_auditor` | Challenges domain premises, not just logic. "How do we KNOW this is how it works?" Demands documentation citations. | Catches when all models share the same false assumption about an external system. |
 
 ### The Final Boss
 
@@ -269,6 +270,25 @@ python3 debate.py adversary-stats
 ```
 
 Shows signal score (acceptance rate vs dismissal effort), rebuttal success rates, and which personas consistently find real issues vs which ones cry wolf.
+
+### Known Limitations
+
+**The gauntlet has blind spots.** When all AI models share the same training data, they share similar false assumptions about external systems.
+
+**What the gauntlet catches well:**
+- Logic errors and inconsistencies
+- Missing edge cases
+- Security vulnerabilities
+- Operational gaps
+
+**What the gauntlet can miss:**
+- Shared false assumptions about external APIs ("crypto = on-chain transactions")
+- Domain knowledge gaps common to all models
+- Sophisticated reasoning built on false premises
+
+**Mitigation:** The `assumption_auditor` adversary explicitly challenges domain premises and demands documentation citations. However, human verification of external system assumptions is still valuable - a single "I've used this system" can invalidate hours of AI spec work.
+
+**Rule of thumb:** For external system integrations, cite official documentation or confirm with someone who has used the system.
 
 ### Concern IDs
 
