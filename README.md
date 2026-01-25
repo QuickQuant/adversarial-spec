@@ -83,6 +83,88 @@ Phase 7: Implementation            → Tasks linked to gauntlet concerns
 
 **No setup required.** The MCP Tasks server auto-detects the project root by walking up from your working directory looking for `.git`, `.claude`, `pyproject.toml`, or `package.json`.
 
+## Pre-Gauntlet Compatibility Checks
+
+Before the adversarial gauntlet runs, an optional **pre-gauntlet phase** verifies that your spec is grounded in the actual codebase state. This catches issues like:
+
+- Build baseline is broken (can't deploy current code)
+- Schema/data drift exists
+- Spec is designed against stale codebase understanding
+- Naming conflicts with existing code
+
+```bash
+# Run gauntlet with pre-gauntlet checks
+cat spec.md | python3 gauntlet.py --pre-gauntlet --doc-type tech
+
+# Or read spec from file
+python3 gauntlet.py --pre-gauntlet --doc-type tech --spec-file spec.md
+```
+
+### Why Pre-Gauntlet?
+
+During implementation of a spec that passed the full gauntlet (179 concerns), we discovered the codebase itself was not deployable due to pre-existing schema/data drift. None of the 5 adversarial LLMs caught this because they reviewed the spec in isolation.
+
+The pre-gauntlet ensures your spec is grounded in reality before adversaries start debating it.
+
+### What It Checks
+
+| Check | Tech Spec | PRD | Debug |
+|-------|-----------|-----|-------|
+| Git position (branch staleness) | Yes | No | Yes |
+| Build command (baseline health) | Yes | No | Yes |
+| Schema files (conflicts) | Yes | No | Depends |
+| Directory trees (patterns) | Yes | No | No |
+
+### Alignment Mode
+
+When blockers are detected (build fails, spec-affected files changed on main), the system enters **Alignment Mode**:
+
+```
+ALIGNMENT MODE: Drift detected between spec and codebase
+
+The following issues require resolution before proceeding:
+
+  COMP-a1b2c3d4: Baseline Build Fails [BLOCKER]
+  The build command `npm run type-check` fails with schema validation errors.
+
+Options:
+  [f] Fix codebase - Pause gauntlet, fix the issues, then re-check
+  [u] Update spec  - Edit the spec to match current codebase state
+  [i] Ignore       - Force proceed (DANGEROUS - requires confirmation)
+  [q] Quit         - Exit gauntlet without proceeding
+```
+
+### Configuration
+
+Configure pre-gauntlet in `pyproject.toml`:
+
+```toml
+[tool.adversarial-spec.compatibility]
+enabled = true
+base_branch = "main"
+build_command = ["npm", "run", "type-check"]
+build_timeout_seconds = 60
+schema_files = ["prisma/schema.prisma", "convex/schema.ts"]
+critical_paths = ["src/api/", "convex/"]
+staleness_threshold_days = 3
+
+[tool.adversarial-spec.compatibility.doc_type_rules.tech]
+enabled = true
+require_git = true
+require_build = true
+require_schema = true
+```
+
+### Exit Codes
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| 0 | COMPLETE | No blockers, gauntlet proceeds |
+| 2 | NEEDS_ALIGNMENT | Blockers detected, user action required |
+| 3 | ABORTED | User quit |
+| 4 | CONFIG_ERROR | Invalid pyproject.toml |
+| 5 | INFRA_ERROR | Git/filesystem failure |
+
 ## The Adversarial Gauntlet
 
 The gauntlet is where specs go to get stress-tested by personas who are *paid to find problems*.
@@ -632,8 +714,11 @@ debate.py critique --resume SESSION_ID
 debate.py diff --previous OLD.md --current NEW.md
 debate.py export-tasks --models MODEL --doc-type TYPE [--json] < spec.md
 
-# Gauntlet commands
-debate.py gauntlet < spec.md                                    # Run full gauntlet
+# Gauntlet commands (with optional pre-gauntlet)
+gauntlet.py --pre-gauntlet --doc-type tech < spec.md            # Pre-gauntlet + gauntlet
+gauntlet.py --pre-gauntlet --spec-file spec.md                  # Read spec from file
+gauntlet.py --pre-gauntlet --report-path report.json < spec.md  # Custom report path
+debate.py gauntlet < spec.md                                    # Run full gauntlet (no pre-gauntlet)
 debate.py gauntlet --gauntlet-adversaries paranoid_security,burned_oncall < spec.md
 debate.py gauntlet --final-boss < spec.md                       # Include UX architect review
 debate.py gauntlet-adversaries                                  # List adversary personas
@@ -665,7 +750,7 @@ debate.py bedrock list-models                 # List built-in model mappings
 
 **Options:**
 - `--models, -m` - Comma-separated model list (auto-detects from available API keys if not specified)
-- `--doc-type, -d` - prd or tech
+- `--doc-type, -d` - prd, tech, or debug
 - `--codex-reasoning` - Reasoning effort for Codex models (low, medium, high, xhigh; default: xhigh)
 - `--focus, -f` - Focus area (security, scalability, performance, ux, reliability, cost)
 - `--persona` - Professional persona
@@ -678,6 +763,9 @@ debate.py bedrock list-models                 # List built-in model mappings
 - `--gauntlet-model` - Model for adversary attacks
 - `--gauntlet-frontier` - Model for evaluation
 - `--final-boss` - Enable UX architect review
+- `--pre-gauntlet` - Run pre-gauntlet compatibility checks before gauntlet
+- `--spec-file` - Read spec from file instead of stdin
+- `--report-path` - Path to save pre-gauntlet report JSON
 - `--press, -p` - Anti-laziness check
 - `--telegram, -t` - Enable Telegram
 - `--json, -j` - JSON output
@@ -707,7 +795,20 @@ adversarial-spec/
             ├── gauntlet.py       # Adversarial gauntlet engine
             ├── providers.py      # API key detection
             ├── task_manager.py   # Python API for task coordination
-            └── telegram_bot.py   # Telegram notifications
+            ├── telegram_bot.py   # Telegram notifications
+            ├── integrations/     # External system integrations
+            │   ├── git_cli.py    # Git command wrapper (read-only)
+            │   └── process_runner.py  # Safe command execution
+            ├── collectors/       # Data collectors for pre-gauntlet
+            │   ├── git_position.py    # Branch/commit status
+            │   └── system_state.py    # Build status, schema files
+            ├── extractors/       # Spec analysis
+            │   └── spec_affected_files.py  # File path extraction
+            └── pre_gauntlet/     # Pre-gauntlet compatibility checks
+                ├── models.py     # Pydantic data models
+                ├── context_builder.py  # LLM context generation
+                ├── alignment_mode.py   # Interactive alignment flow
+                └── orchestrator.py     # Main entry point
 ```
 
 ## License

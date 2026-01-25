@@ -166,6 +166,81 @@ Output format:
   - Suggested reconsideration (not necessarily a fix - maybe the whole approach is wrong)"""
 }
 
+
+# =============================================================================
+# PRE-GAUNTLET ADVERSARY (runs BEFORE all others, needs codebase access)
+# =============================================================================
+
+PRE_GAUNTLET = {
+    "existing_system_compatibility": """You don't trust that this spec was written with full
+knowledge of what actually exists in the codebase. Before debating the merits of the proposed
+design, you verify that the implementation environment is ready for these changes.
+
+You need CODEBASE ACCESS to do your job. If you don't have it, your first concern
+should demand it.
+
+Your review focuses on these areas:
+
+1. BASELINE DEPLOYABILITY: Does the build command succeed RIGHT NOW, before any changes?
+   Are there existing schema validation errors, TypeScript errors, or failing tests?
+   If the baseline doesn't build, what must be fixed first?
+
+2. SCHEMA/DATA COMPATIBILITY: What tables/collections already exist? Do any proposed
+   names conflict? What field naming conventions are used? Does the spec follow them?
+   Are there existing fields serving similar purposes? Will changes require data migrations?
+
+3. PATTERN CONSISTENCY: How do existing similar features handle this? Are there
+   existing utilities the spec should reuse instead of creating new ones? Do error
+   code formats match existing conventions?
+
+4. RECENT CHANGE AWARENESS: What PRs/commits have touched the affected files recently?
+   Are there pending migrations that haven't been run? Is there known technical debt
+   or drift in this area?
+
+5. INTEGRATION POINTS: What existing code will call the new functions? Does it exist?
+   What existing code will the new functions call? Is it stable?
+
+Output your concerns as a numbered list. For each concern:
+- State the compatibility issue clearly
+- Explain what you found in the codebase (or couldn't find)
+- Note what must be fixed/migrated before implementation"""
+}
+
+PRE_GAUNTLET_RESPONSE_PROTOCOL = {
+    "existing_system_compatibility": {
+        "valid_dismissal": """
+COMP concerns are RARELY dismissible. You may only dismiss IF:
+- "Verified this exact check passes right now: [show command output]"
+- "False alarm: [field/table] is correctly defined at [file:line]"
+- "Migration not needed: schema matches data (verified with [query])"
+""",
+        "invalid_dismissal": """
+NEVER dismiss with:
+- "We'll fix the baseline later" (blocks all work NOW)
+- "The data is probably fine" (VERIFY it or accept the concern)
+- "Those old fields aren't used" (if they exist, they cause drift)
+- "The issue was fixed after spec work started" -> This is WORSE. It means
+  the spec may be designed against stale codebase understanding. This should
+  TRIGGER ALIGNMENT MODE, not dismiss the concern.
+- "Migration is planned" (not dismissed until executed and verified)
+""",
+        "valid_acceptance": """
+Accept and ESCALATE existing_system_compatibility's concern IF:
+- Build/deploy baseline is broken -> STOP ALL WORK
+- Schema/data drift exists -> TRIGGER ALIGNMENT MODE before proceeding
+- Spec designed against stale codebase -> TRIGGER ALIGNMENT MODE
+- Naming conflicts or pattern violations -> Add to spec as Phase 0 tasks
+
+ALIGNMENT MODE: When drift is discovered, prompt the user to:
+1. Review what the spec assumed vs. actual codebase state
+2. Decide: fix codebase to match spec, OR update spec to match codebase
+3. Re-validate all spec sections affected by the drift
+4. Only then proceed with gauntlet/implementation
+""",
+        "rule": "If drift is discovered, STOP and align before proceeding. Never dismiss drift.",
+    }
+}
+
 FINAL_BOSS_RESPONSE_PROTOCOL = {
     "ux_architect": {
         "valid_dismissal": """
@@ -2431,6 +2506,27 @@ def main():
         metavar="FILENAME",
         help="Show details of a specific run by filename",
     )
+    parser.add_argument(
+        "--pre-gauntlet",
+        action="store_true",
+        help="Run pre-gauntlet compatibility checks before adversary attacks",
+    )
+    parser.add_argument(
+        "--doc-type",
+        choices=["prd", "tech", "debug"],
+        default="tech",
+        help="Document type for pre-gauntlet checks (default: tech)",
+    )
+    parser.add_argument(
+        "--spec-file",
+        metavar="PATH",
+        help="Read spec from file instead of stdin",
+    )
+    parser.add_argument(
+        "--report-path",
+        metavar="PATH",
+        help="Path to save pre-gauntlet report (default: .adversarial-spec/pre_gauntlet_report.json)",
+    )
 
     args = parser.parse_args()
 
@@ -2458,11 +2554,63 @@ def main():
             print(f"  {name:20} {first_line}...")
         return
 
-    # Read spec from stdin
-    spec = sys.stdin.read().strip()
+    # Read spec from file or stdin
+    if args.spec_file:
+        try:
+            with open(args.spec_file, "r") as f:
+                spec = f.read().strip()
+        except FileNotFoundError:
+            print(f"Error: Spec file not found: {args.spec_file}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        spec = sys.stdin.read().strip()
+
     if not spec:
-        print("Error: No spec provided via stdin", file=sys.stderr)
+        print("Error: No spec provided", file=sys.stderr)
         sys.exit(1)
+
+    # Run pre-gauntlet if requested
+    if args.pre_gauntlet:
+        try:
+            from pre_gauntlet import (
+                run_pre_gauntlet,
+                save_report,
+                get_exit_code,
+                PreGauntletStatus,
+            )
+            from pathlib import Path
+
+            print("=== Pre-Gauntlet Compatibility Check ===", file=sys.stderr)
+
+            pre_result = run_pre_gauntlet(
+                spec_text=spec,
+                doc_type=args.doc_type,
+                repo_root=Path.cwd(),
+                interactive=sys.stdin.isatty(),
+            )
+
+            # Save report
+            report_path = Path(args.report_path) if args.report_path else Path(".adversarial-spec/pre_gauntlet_report.json")
+            save_report(pre_result, report_path)
+            print(f"Pre-gauntlet report saved: {report_path}", file=sys.stderr)
+
+            # Print summary
+            print(f"Status: {pre_result.status.value}", file=sys.stderr)
+            print(f"Concerns: {len(pre_result.concerns)} ({len(pre_result.get_blockers())} blockers)", file=sys.stderr)
+            print(f"Timings: git={pre_result.timings.git_ms}ms, build={pre_result.timings.build_ms}ms, total={pre_result.timings.total_ms}ms", file=sys.stderr)
+
+            # Check if we should proceed
+            if pre_result.status != PreGauntletStatus.COMPLETE:
+                print(f"\nPre-gauntlet did not complete successfully. Exiting.", file=sys.stderr)
+                sys.exit(get_exit_code(pre_result.status))
+
+            # Use the context-enriched spec for gauntlet
+            spec = pre_result.context_markdown
+            print("\nProceeding to adversarial gauntlet...\n", file=sys.stderr)
+
+        except ImportError as e:
+            print(f"Warning: Pre-gauntlet module not available: {e}", file=sys.stderr)
+            print("Proceeding without pre-gauntlet checks.", file=sys.stderr)
 
     # Parse adversaries
     adversaries = None

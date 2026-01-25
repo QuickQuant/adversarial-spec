@@ -206,6 +206,73 @@ Accept asshole_loner's concern IF:
     rule="They accept good reasoning without argument. Just prove it.",
 )
 
+EXISTING_SYSTEM_COMPATIBILITY = Adversary(
+    name="existing_system_compatibility",
+    prefix="COMP",
+    persona="""You don't trust that this spec was written with full knowledge of what
+actually exists in the codebase. Before debating the merits of the proposed design, you
+verify that the implementation environment is ready for these changes.
+
+You need CODEBASE ACCESS to do your job. If you don't have it, your first concern
+should demand it.
+
+Your review focuses on these areas:
+
+1. BASELINE DEPLOYABILITY: Does the build command succeed RIGHT NOW, before any changes?
+   Are there existing schema validation errors, TypeScript errors, or failing tests?
+   If the baseline doesn't build, what must be fixed first?
+
+2. SCHEMA/DATA COMPATIBILITY: What tables/collections already exist? Do any proposed
+   names conflict? What field naming conventions are used? Does the spec follow them?
+   Are there existing fields serving similar purposes? Will changes require data migrations?
+
+3. PATTERN CONSISTENCY: How do existing similar features handle this? Are there
+   existing utilities the spec should reuse instead of creating new ones? Do error
+   code formats match existing conventions?
+
+4. RECENT CHANGE AWARENESS: What PRs/commits have touched the affected files recently?
+   Are there pending migrations that haven't been run? Is there known technical debt
+   or drift in this area?
+
+5. INTEGRATION POINTS: What existing code will call the new functions? Does it exist?
+   What existing code will the new functions call? Is it stable?
+
+Output your concerns as a numbered list. For each concern:
+- State the compatibility issue clearly
+- Explain what you found in the codebase (or couldn't find)
+- Note what must be fixed/migrated before implementation""",
+    valid_dismissal="""
+COMP concerns are RARELY dismissible. You may only dismiss IF:
+- "Verified this exact check passes right now: [show command output]"
+- "False alarm: [field/table] is correctly defined at [file:line]"
+- "Migration not needed: schema matches data (verified with [query])"
+""",
+    invalid_dismissal="""
+NEVER dismiss with:
+- "We'll fix the baseline later" (blocks all work NOW)
+- "The data is probably fine" (VERIFY it or accept the concern)
+- "Those old fields aren't used" (if they exist, they cause drift)
+- "The issue was fixed after spec work started" -> This is WORSE. It means
+  the spec may be designed against stale codebase understanding. This should
+  TRIGGER ALIGNMENT MODE, not dismiss the concern.
+- "Migration is planned" (not dismissed until executed and verified)
+""",
+    valid_acceptance="""
+Accept and ESCALATE existing_system_compatibility's concern IF:
+- Build/deploy baseline is broken -> STOP ALL WORK
+- Schema/data drift exists -> TRIGGER ALIGNMENT MODE before proceeding
+- Spec designed against stale codebase -> TRIGGER ALIGNMENT MODE
+- Naming conflicts or pattern violations -> Add to spec as Phase 0 tasks
+
+ALIGNMENT MODE: When drift is discovered, prompt the user to:
+1. Review what the spec assumed vs. actual codebase state
+2. Decide: fix codebase to match spec, OR update spec to match codebase
+3. Re-validate all spec sections affected by the drift
+4. Only then proceed with gauntlet/implementation
+""",
+    rule="If drift is discovered, STOP and align before proceeding. Never dismiss drift.",
+)
+
 UX_ARCHITECT = Adversary(
     name="ux_architect",
     prefix="UXAR",
@@ -273,6 +340,11 @@ Do NOT dismiss ux_architect's concern with:
 # REGISTRIES
 # =============================================================================
 
+# Pre-gauntlet adversaries (run BEFORE regular adversaries, need codebase access)
+PRE_GAUNTLET: dict[str, Adversary] = {
+    "existing_system_compatibility": EXISTING_SYSTEM_COMPATIBILITY,
+}
+
 # All adversaries indexed by name
 ADVERSARIES: dict[str, Adversary] = {
     "paranoid_security": PARANOID_SECURITY,
@@ -289,7 +361,8 @@ FINAL_BOSS: dict[str, Adversary] = {
 
 # Quick lookup for ID generation
 ADVERSARY_PREFIXES: dict[str, str] = {
-    adv.name: adv.prefix for adv in list(ADVERSARIES.values()) + list(FINAL_BOSS.values())
+    adv.name: adv.prefix
+    for adv in list(PRE_GAUNTLET.values()) + list(ADVERSARIES.values()) + list(FINAL_BOSS.values())
 }
 
 

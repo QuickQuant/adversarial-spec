@@ -1,0 +1,72 @@
+"""
+Pre-Gauntlet Module
+
+Provides pre-gauntlet checks for spec/codebase compatibility.
+"""
+
+from .models import (
+    AlignmentIssue,
+    AlignmentResolution,
+    AlignmentStatus,
+    BuildStatus,
+    CompatibilityConfig,
+    Concern,
+    ConcernCategory,
+    ConcernSeverity,
+    ContextSummary,
+    DocType,
+    DocTypeRule,
+    EvidenceRef,
+    EvidenceType,
+    FileSnapshot,
+    GitPosition,
+    PreGauntletResult,
+    PreGauntletStatus,
+    SystemState,
+    Timings,
+)
+from .orchestrator import (
+    EXIT_ABORTED,
+    EXIT_COMPLETE,
+    EXIT_CONFIG_ERROR,
+    EXIT_INFRA_ERROR,
+    EXIT_NEEDS_ALIGNMENT,
+    get_exit_code,
+    load_config_from_pyproject,
+    run_pre_gauntlet,
+    save_report,
+)
+
+__all__ = [
+    # Models
+    "AlignmentIssue",
+    "AlignmentResolution",
+    "AlignmentStatus",
+    "BuildStatus",
+    "CompatibilityConfig",
+    "Concern",
+    "ConcernCategory",
+    "ConcernSeverity",
+    "ContextSummary",
+    "DocType",
+    "DocTypeRule",
+    "EvidenceRef",
+    "EvidenceType",
+    "FileSnapshot",
+    "GitPosition",
+    "PreGauntletResult",
+    "PreGauntletStatus",
+    "SystemState",
+    "Timings",
+    # Functions
+    "get_exit_code",
+    "load_config_from_pyproject",
+    "run_pre_gauntlet",
+    "save_report",
+    # Exit codes
+    "EXIT_ABORTED",
+    "EXIT_COMPLETE",
+    "EXIT_CONFIG_ERROR",
+    "EXIT_INFRA_ERROR",
+    "EXIT_NEEDS_ALIGNMENT",
+]
