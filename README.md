@@ -247,6 +247,7 @@ cat spec.md | python3 debate.py critique --models codex/gpt-5.2-codex --gauntlet
 | `lazy_developer` | "This is too complicated. Why can't we just use X?" | Sometimes just lazy, sometimes catches genuine overengineering. |
 | `pedantic_nitpicker` | What if the string is empty? What about 2^31 items? Leap seconds? Unicode? | Most concerns don't matter. Some really do. |
 | `asshole_loner` | Brilliant antisocial engineer who jumps to conclusions. Blunt. Accepts good reasoning without argument. | Trusts logic, not authority. If you can prove it, they'll shut up. |
+| `prior_art_scout` | Thinks in patterns. Finds similar concepts in the codebase and proposes implementations that blend with existing abstractions. | Suggests architecture improvements: "This looks like BaseClient - extend it instead of building standalone." |
 
 ### The Final Boss
 
