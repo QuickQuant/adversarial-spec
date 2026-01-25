@@ -92,6 +92,17 @@ class DocTypeRule(BaseModel):
     require_build: bool = True
     require_schema: bool = False
     require_trees: bool = False
+    require_validation: bool = True  # Run validation commands
+
+
+class ValidationCommand(BaseModel):
+    """A named validation command for schema/data consistency checks."""
+
+    name: str  # e.g., "convex", "prisma", "typecheck"
+    command: list[str]  # e.g., ["npx", "convex", "dev", "--once"]
+    timeout_seconds: int = Field(default=60, ge=5, le=300)
+    description: str = ""  # What this validates
+    error_patterns: list[str] = Field(default_factory=list)  # Regex patterns that indicate failure
 
 
 class CompatibilityConfig(BaseModel):
@@ -101,6 +112,7 @@ class CompatibilityConfig(BaseModel):
     base_branch: str = "main"
     build_command: list[str] | None = None
     build_timeout_seconds: int = Field(default=60, ge=5, le=300)
+    validation_commands: list[ValidationCommand] = Field(default_factory=list)
     schema_files: list[str] = Field(default_factory=list)
     critical_paths: list[str] = Field(default_factory=list)
     include_untracked: bool = False
@@ -203,6 +215,18 @@ class DirectoryTree(BaseModel):
     truncated: bool = False
 
 
+class ValidationResult(BaseModel):
+    """Result of a validation command execution."""
+
+    name: str  # e.g., "convex", "prisma"
+    command: list[str]
+    status: BuildStatus
+    exit_code: int | None = None
+    duration_ms: int = 0
+    output_excerpt: str = ""
+    description: str = ""
+
+
 class SystemState(BaseModel):
     """Current system/build state."""
 
@@ -210,6 +234,7 @@ class SystemState(BaseModel):
     build_exit_code: int | None = None
     build_duration_ms: int = 0
     build_output_excerpt: str = ""
+    validation_results: list[ValidationResult] = Field(default_factory=list)
     schema_contents: list[FileSnapshot] = Field(default_factory=list)
     directory_trees: list[DirectoryTree] = Field(default_factory=list)
     working_tree_clean: bool = True

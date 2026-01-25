@@ -26,6 +26,8 @@ from pre_gauntlet.models import (
     EvidenceType,
     FileSnapshot,
     SystemState,
+    ValidationCommand,
+    ValidationResult,
 )
 
 
@@ -37,6 +39,7 @@ class SystemStateCollector:
         repo_root: str | Path,
         build_command: list[str] | None = None,
         build_timeout: int = 60,
+        validation_commands: list[ValidationCommand] | None = None,
         schema_files: list[str] | None = None,
         critical_paths: list[str] | None = None,
         file_max_bytes: int = 200_000,
@@ -46,6 +49,7 @@ class SystemStateCollector:
         self.repo_root = Path(repo_root).resolve()
         self.build_command = build_command
         self.build_timeout = build_timeout
+        self.validation_commands = validation_commands or []
         self.schema_files = schema_files or []
         self.critical_paths = critical_paths or []
         self.file_max_bytes = file_max_bytes
@@ -67,6 +71,10 @@ class SystemStateCollector:
         if build_status in (BuildStatus.FAIL, BuildStatus.TIMEOUT):
             concerns.append(self._make_build_concern(build_status, build_output))
 
+        # Run validation commands (schema/data consistency checks)
+        validation_results, validation_concerns = self._run_validations()
+        concerns.extend(validation_concerns)
+
         # Read schema files
         schema_contents, schema_concerns = self._read_schema_files()
         concerns.extend(schema_concerns)
@@ -82,6 +90,7 @@ class SystemStateCollector:
             build_exit_code=build_exit,
             build_duration_ms=build_duration,
             build_output_excerpt=build_output,
+            validation_results=validation_results,
             schema_contents=schema_contents,
             directory_trees=directory_trees,
             working_tree_clean=working_clean,
@@ -154,6 +163,95 @@ class SystemStateCollector:
                     type=EvidenceType.COMMAND_OUTPUT,
                     source=" ".join(self.build_command or []),
                     excerpt=output_excerpt,
+                )
+            ],
+        )
+
+    def _run_validations(self) -> tuple[list[ValidationResult], list[Concern]]:
+        """Run validation commands and generate concerns for failures.
+
+        Returns: (list of ValidationResult, list of Concern)
+        """
+        results = []
+        concerns = []
+
+        for val_cmd in self.validation_commands:
+            result = self.runner.run(val_cmd.command, timeout=val_cmd.timeout_seconds)
+
+            # Determine status
+            if result.timed_out:
+                status = BuildStatus.TIMEOUT
+            elif result.success:
+                status = BuildStatus.PASS
+            else:
+                status = BuildStatus.FAIL
+
+            # Combine output
+            output = result.stdout
+            if result.stderr:
+                output = f"{output}\n{result.stderr}" if output else result.stderr
+            output_excerpt = output[:2000] if len(output) > 2000 else output
+
+            val_result = ValidationResult(
+                name=val_cmd.name,
+                command=val_cmd.command,
+                status=status,
+                exit_code=result.exit_code if not result.timed_out else None,
+                duration_ms=result.duration_ms,
+                output_excerpt=output_excerpt,
+                description=val_cmd.description,
+            )
+            results.append(val_result)
+
+            # Generate concern if failed
+            if status in (BuildStatus.FAIL, BuildStatus.TIMEOUT):
+                concerns.append(self._make_validation_concern(val_cmd, val_result))
+
+        return results, concerns
+
+    def _make_validation_concern(
+        self, cmd: ValidationCommand, result: ValidationResult
+    ) -> Concern:
+        """Create a concern for validation failure."""
+        cmd_str = " ".join(cmd.command)
+
+        if result.status == BuildStatus.TIMEOUT:
+            return Concern(
+                id=self._make_id(f"VALIDATION_TIMEOUT_{cmd.name}"),
+                severity=ConcernSeverity.BLOCKER,
+                category=ConcernCategory.SCHEMA,
+                title=f"Validation Timed Out: {cmd.name}",
+                message=(
+                    f"Validation command `{cmd_str}` timed out after {cmd.timeout_seconds}s.\n"
+                    f"Description: {cmd.description or 'Schema/data validation'}"
+                ),
+                evidence_refs=[
+                    EvidenceRef(
+                        type=EvidenceType.COMMAND_OUTPUT,
+                        source=cmd_str,
+                        excerpt=f"Timeout after {cmd.timeout_seconds}s",
+                    )
+                ],
+            )
+
+        # Validation failed
+        return Concern(
+            id=self._make_id(f"VALIDATION_FAILED_{cmd.name}"),
+            severity=ConcernSeverity.BLOCKER,
+            category=ConcernCategory.SCHEMA,
+            title=f"Validation Failed: {cmd.name}",
+            message=(
+                f"Validation command `{cmd_str}` failed.\n"
+                f"Description: {cmd.description or 'Schema/data validation'}\n\n"
+                "This indicates schema/data drift - the schema definition does not match "
+                "the actual data state. This must be resolved before implementation.\n\n"
+                f"Output:\n```\n{result.output_excerpt}\n```"
+            ),
+            evidence_refs=[
+                EvidenceRef(
+                    type=EvidenceType.COMMAND_OUTPUT,
+                    source=cmd_str,
+                    excerpt=result.output_excerpt,
                 )
             ],
         )

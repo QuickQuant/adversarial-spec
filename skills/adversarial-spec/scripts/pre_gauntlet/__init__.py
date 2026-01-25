@@ -24,6 +24,8 @@ from .models import (
     PreGauntletStatus,
     SystemState,
     Timings,
+    ValidationCommand,
+    ValidationResult,
 )
 from .orchestrator import (
     EXIT_ABORTED,
@@ -58,6 +60,8 @@ __all__ = [
     "PreGauntletStatus",
     "SystemState",
     "Timings",
+    "ValidationCommand",
+    "ValidationResult",
     # Functions
     "get_exit_code",
     "load_config_from_pyproject",

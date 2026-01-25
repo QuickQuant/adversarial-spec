@@ -111,13 +111,14 @@ class PreGauntletOrchestrator:
             timings.git_ms = int((time.monotonic() - git_start) * 1000)
 
         # Collect system state
-        if rules.require_build or rules.require_schema or rules.require_trees:
+        if rules.require_build or rules.require_schema or rules.require_trees or rules.require_validation:
             state_start = time.monotonic()
             try:
                 collector = SystemStateCollector(
                     repo_root=self.repo_root,
                     build_command=self.config.build_command if rules.require_build else None,
                     build_timeout=self.config.build_timeout_seconds,
+                    validation_commands=self.config.validation_commands if rules.require_validation else None,
                     schema_files=self.config.schema_files if rules.require_schema else None,
                     critical_paths=self.config.critical_paths if rules.require_trees else None,
                     file_max_bytes=self.config.file_max_bytes,

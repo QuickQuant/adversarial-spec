@@ -119,12 +119,21 @@ class DocTypeRule(BaseModel):
     require_build: bool = True
     require_schema: bool = False
     require_trees: bool = False
+    require_validation: bool = True  # Run validation commands
+
+class ValidationCommand(BaseModel):
+    """A named validation command for schema/data consistency checks."""
+    name: str  # e.g., "convex", "prisma", "typecheck"
+    command: list[str]  # e.g., ["npx", "convex", "dev", "--once"]
+    timeout_seconds: int = Field(default=60, ge=5, le=300)
+    description: str = ""  # What this validates
 
 class CompatibilityConfig(BaseModel):
     enabled: bool = True
     base_branch: str = "main"
     build_command: list[str] | None = None  # e.g., ["npm", "run", "type-check"]
     build_timeout_seconds: int = Field(default=60, ge=5, le=300)
+    validation_commands: list[ValidationCommand] = []  # Schema/data validation
     schema_files: list[str] = []
     critical_paths: list[str] = []
     include_untracked: bool = False

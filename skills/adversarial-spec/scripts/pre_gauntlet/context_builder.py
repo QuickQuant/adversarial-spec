@@ -135,6 +135,22 @@ class ContextBuilder:
             lines.append(state.build_output_excerpt)
             lines.append("```")
 
+        # Validation results
+        if state.validation_results:
+            lines.append("")
+            lines.append("### Validation Checks")
+            for val in state.validation_results:
+                status_icon = "PASS" if val.status.value == "PASS" else "FAIL"
+                lines.append(f"- **{val.name}**: {status_icon}")
+                if val.description:
+                    lines.append(f"  - {val.description}")
+                if val.status.value != "PASS" and val.output_excerpt:
+                    lines.append("  - Output:")
+                    lines.append("  ```")
+                    for line in val.output_excerpt.split("\n")[:10]:  # First 10 lines
+                        lines.append(f"  {line}")
+                    lines.append("  ```")
+
         lines.append("")
         return "\n".join(lines)
 

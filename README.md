@@ -148,12 +148,39 @@ schema_files = ["prisma/schema.prisma", "convex/schema.ts"]
 critical_paths = ["src/api/", "convex/"]
 staleness_threshold_days = 3
 
+# Validation commands for schema/data consistency checks
+[[tool.adversarial-spec.compatibility.validation_commands]]
+name = "convex"
+command = ["npx", "convex", "dev", "--once"]
+timeout_seconds = 90
+description = "Validates Convex schema against production data"
+
+[[tool.adversarial-spec.compatibility.validation_commands]]
+name = "prisma"
+command = ["npx", "prisma", "validate"]
+timeout_seconds = 30
+description = "Validates Prisma schema syntax and relations"
+
 [tool.adversarial-spec.compatibility.doc_type_rules.tech]
 enabled = true
 require_git = true
 require_build = true
 require_schema = true
+require_validation = true
 ```
+
+### Validation Commands
+
+Validation commands are separate from the build command and specifically check for schema/data consistency:
+
+| Framework | Example Command | What It Catches |
+|-----------|-----------------|-----------------|
+| Convex | `npx convex dev --once` | Schema vs production data drift |
+| Prisma | `npx prisma validate` | Schema syntax and relation errors |
+| TypeORM | `npm run typeorm schema:log` | Entity vs database drift |
+| Drizzle | `npx drizzle-kit check` | Schema vs database drift |
+
+When a validation command fails, it generates a **BLOCKER** concern that triggers Alignment Mode.
 
 ### Exit Codes
 
