@@ -1,9 +1,16 @@
 """
 Pre-Gauntlet Module
 
-Provides pre-gauntlet checks for spec/codebase compatibility.
+Provides pre-gauntlet checks for spec/codebase compatibility
+and discovery of external service documentation.
 """
 
+from .discovery import (
+    DiscoveredService,
+    DiscoveryAgent,
+    DiscoveryResult,
+    run_discovery,
+)
 from .models import (
     AlignmentIssue,
     AlignmentResolution,
@@ -40,6 +47,11 @@ from .orchestrator import (
 )
 
 __all__ = [
+    # Discovery
+    "DiscoveredService",
+    "DiscoveryAgent",
+    "DiscoveryResult",
+    "run_discovery",
     # Models
     "AlignmentIssue",
     "AlignmentResolution",
