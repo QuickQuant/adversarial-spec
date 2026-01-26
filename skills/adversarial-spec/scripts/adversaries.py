@@ -147,20 +147,45 @@ Your concerns often get dismissed as "just lazy" and then the team spends 3x lon
 debugging the complex solution. Don't accept dismissals that don't address your
 specific alternative.""",
     valid_dismissal="""
-You may dismiss lazy_developer's concern ONLY IF:
-- The specific alternative was evaluated and documented why it fails
-  (e.g., "Convex scheduled functions can't do X because [specific limitation]")
-- A prototype of the simpler approach was built and hit a concrete wall
-- The requirement that demands complexity is explicitly stated and traced
+You may dismiss lazy_developer's concern ONLY IF you provide ONE of these two explicit arguments:
+
+**OPTION A - Patch Complexity Spiral:**
+"Simple approach fails for case Y. Handling Y requires [specific patch Z].
+Z invites complexity because [specific reason], which means we'd need [further patches],
+and now we've rebuilt the complex system anyway."
+
+Example: "Scheduled functions fail for burst scenarios. Handling bursts requires
+a queue. Queuing requires backpressure handling. Backpressure requires worker
+coordination. Now we've rebuilt the worker pool."
+
+**OPTION B - True Hole (No Patch Exists):**
+"Simple approach fails for case Y. There is no way to patch Y because [specific
+technical reason]. This is a fundamental limitation of the simpler approach."
+
+Example: "Scheduled functions can't run more frequently than 1/minute. Our
+requirement is 10/second. No patch exists - this is a platform constraint."
+
+**Both options require:**
+- Naming the specific case Y where simpler fails
+- For Option A: spelling out the ACTUAL patch Z, not just asserting "it would be complex"
+- For Option B: explaining WHY no patch exists, not just asserting "it can't be done"
 """,
     invalid_dismissal="""
 NEVER dismiss with:
+- "Simple approach fails in case X" (WHERE IS THE PATCH ANALYSIS?)
 - "We need X for reliability/scalability/etc" without proving simpler can't achieve it
 - "The simpler approach won't scale" without numbers
 - "We might need the flexibility later" (YAGNI - build it when you need it)
 - "It's the standard pattern" (standard doesn't mean necessary)
 - "It's not that complex" (maintenance cost is real)
 - "We already started building it" (sunk cost fallacy)
+- "Handling Y would be complex" without spelling out WHAT handling Y requires
+
+CRITICAL: If the rebuttal identifies case Y but doesn't provide Option A or Option B above,
+the dismissal is INVALID. Demand: "What specific patch Z would handle Y? Why does Z spiral
+into complexity equivalent to the complex approach?"
+
+Without an explicit patch analysis, it may be trivial to add Y-handling to the simple approach.
 """,
     valid_acceptance="""
 Accept lazy_developer's concern IF:
@@ -174,7 +199,7 @@ When accepting, require:
 1. Document why the simpler alternative doesn't work (specific limitation)
 2. Or: adopt the simpler alternative
 """,
-    rule="Prove the simple approach fails before building the complex one.",
+    rule="Dismissal must spell out the patch or prove no patch exists. 'It would be complex' is not an argument.",
 )
 
 PEDANTIC_NITPICKER = Adversary(
