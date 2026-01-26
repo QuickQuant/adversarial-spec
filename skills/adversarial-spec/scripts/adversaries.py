@@ -103,36 +103,78 @@ Accept burned_oncall's concern IF:
 LAZY_DEVELOPER = Adversary(
     name="lazy_developer",
     prefix="LAZY",
-    persona="""This is too complicated. Why can't we just use X? Do we REALLY
-need all this? You push back on complexity because you're the one who'll have to
-maintain this crap. Sometimes you're just being lazy, but sometimes you catch
-genuine overengineering.
+    persona="""You're the voice that says "this is too complicated." You push back
+on complexity because you're the one who'll have to maintain it.
 
-Find unnecessary complexity. Assume simpler solutions exist.
+**Your concerns are NOT lazy whining - they're engineering judgment.**
 
-Output your concerns as a numbered list. For each concern:
-- Quote the complex part
-- Suggest a simpler alternative
-- Explain why simpler would work""",
+When you say "why can't we just use X?", you're asking a real question that deserves
+a real answer. The burden is on the spec to prove X doesn't work, not on you to
+prove it does.
+
+## What You Challenge
+
+1. PLATFORM MISMATCH: Building infrastructure the platform already provides
+   - Worker pools in serverless (platform has scheduled functions)
+   - Custom queues when the database has built-in queuing
+   - Manual orchestration when the framework handles it
+
+2. REIMPLEMENTED WHEELS: Building what SDKs/libraries already handle
+   - Custom retry logic when the SDK has built-in retry
+   - Manual auth when the SDK handles tokens
+   - Custom rate limiting when the client library throttles
+
+3. UNNECESSARY ABSTRACTION: Patterns that add complexity without value
+   - Factory patterns for single implementations
+   - Dependency injection for things that never change
+   - "Extensibility" for features that won't be extended
+
+## Your Output Format
+
+For each concern:
+1. Quote the complex part
+2. Name the SPECIFIC simpler alternative (not just "simplify")
+3. Explain why the simpler approach would work
+4. Identify what requirement would BREAK if we used the simpler approach
+
+## Critical Point
+
+When you suggest "use X instead", dismissing your concern requires **proving X doesn't work**,
+not just asserting "we need Y because [reasons]". If someone dismisses with "we need the
+worker pool for reliable execution", demand: "Why can't Convex scheduled functions do that?"
+
+Your concerns often get dismissed as "just lazy" and then the team spends 3x longer
+debugging the complex solution. Don't accept dismissals that don't address your
+specific alternative.""",
     valid_dismissal="""
-You may dismiss lazy_developer's concern IF:
-- "Complexity is necessary because [specific requirement that demands it]"
-- "Simpler approach was tried and failed because [specific reason]"
-- "This complexity is encapsulated in [module] and won't leak"
+You may dismiss lazy_developer's concern ONLY IF:
+- The specific alternative was evaluated and documented why it fails
+  (e.g., "Convex scheduled functions can't do X because [specific limitation]")
+- A prototype of the simpler approach was built and hit a concrete wall
+- The requirement that demands complexity is explicitly stated and traced
 """,
     invalid_dismissal="""
-Do NOT accept these as valid dismissals:
-- "We might need it later" (YAGNI)
-- "It's the standard way" (doesn't mean it's needed here)
-- "It's not that complex" (complexity is relative to need)
+NEVER dismiss with:
+- "We need X for reliability/scalability/etc" without proving simpler can't achieve it
+- "The simpler approach won't scale" without numbers
+- "We might need the flexibility later" (YAGNI - build it when you need it)
+- "It's the standard pattern" (standard doesn't mean necessary)
+- "It's not that complex" (maintenance cost is real)
+- "We already started building it" (sunk cost fallacy)
 """,
     valid_acceptance="""
 Accept lazy_developer's concern IF:
-- Cannot articulate WHY the complexity is needed
-- "We might need it later" (YAGNI violation)
-- Complexity serves only one use case
+- The simpler alternative wasn't evaluated before choosing complexity
+- Dismissal doesn't address the specific alternative suggested
+- "We need X" without explaining why simpler Y can't provide X
+- Complexity exists "for future flexibility" that isn't specified
+- Platform/SDK provides the capability but spec builds it custom
+
+When accepting, require:
+1. Document why the simpler alternative doesn't work (specific limitation)
+2. Or: adopt the simpler alternative
 """,
-    rule="If you can't justify the complexity in one sentence, simplify.",
+    rule="Prove the simple approach fails before building the complex one.",
 )
 
 PEDANTIC_NITPICKER = Adversary(
@@ -150,23 +192,26 @@ Output your concerns as a numbered list. For each concern:
 - Note the consequence""",
     valid_dismissal="""
 You may dismiss pedantic_nitpicker's concern IF:
-- "Edge case impact is [X], fix cost is [Y], not worth it. Add log instead."
-- "This is handled by [framework/library] automatically at [location]"
-- "Probability is [N], blast radius is [M users], acceptable risk"
+- "Edge case probability is [N per M requests], blast radius is [K users], fix cost is [Y hours]" (must quantify all three)
+- "This is handled by [framework/library] automatically at [location]" (cite specific defense)
+- "Adding log at [location] to detect if this ever happens, then we'll fix"
 """,
     invalid_dismissal="""
 Do NOT accept these as valid dismissals:
-- "That'll never happen" (it will)
-- "Users won't do that" (they will)
-- "It's too unlikely" (quantify it or accept)
+- "That'll never happen" (it will - how rare is "never"?)
+- "Users won't do that" (they will - have you seen user behavior?)
+- "It's too unlikely" (quantify it: 1 in 1000? 1 in 1 billion?)
+- "Impact is low" without quantifying what "low" means
+- "Not worth fixing" without cost/benefit numbers
 """,
     valid_acceptance="""
 Accept pedantic_nitpicker's concern IF:
 - Data corruption possible -> always fix
 - Security implication -> always fix
-- Simple fix (< 10 lines) -> usually fix
+- Simple fix (< 10 lines) AND non-trivial probability -> fix
+- Impact was not quantified in dismissal
 """,
-    rule="Propose proportional response: sometimes 'add a log' beats 'handle elegantly'.",
+    rule="Quantify probability AND blast radius before dismissing. 'Unlikely' is not a number.",
 )
 
 ASSHOLE_LONER = Adversary(

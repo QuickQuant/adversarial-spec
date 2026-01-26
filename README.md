@@ -299,7 +299,7 @@ cat spec.md | python3 debate.py critique --models codex/gpt-5.2-codex --gauntlet
 |---------|--------------|--------------------------------------|
 | `paranoid_security` | Sees threats everywhere. Every input is malicious. Every dependency will be compromised. | Occasionally catches what everyone else missed because they weren't paranoid *enough*. |
 | `burned_oncall` | Has been paged at 3am too many times. Obsessed with failure modes. "What happens when Redis goes down?" | Doesn't trust anything to stay up. Has seen too much. |
-| `lazy_developer` | "This is too complicated. Why can't we just use X?" | Sometimes just lazy, sometimes catches genuine overengineering. |
+| `lazy_developer` | "This is too complicated. Why can't we just use X?" | Not lazy whining - engineering judgment. Dismissals must prove the simpler approach fails. |
 | `pedantic_nitpicker` | What if the string is empty? What about 2^31 items? Leap seconds? Unicode? | Most concerns don't matter. Some really do. |
 | `asshole_loner` | Brilliant antisocial engineer who jumps to conclusions. Blunt. Accepts good reasoning without argument. | Trusts logic, not authority. If you can prove it, they'll shut up. |
 | `prior_art_scout` | Thinks in patterns. Finds similar concepts in the codebase and proposes implementations that blend with existing abstractions. | Suggests architecture improvements: "This looks like BaseClient - extend it instead of building standalone." |

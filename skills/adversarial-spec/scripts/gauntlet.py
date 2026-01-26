@@ -580,6 +580,10 @@ class GauntletResult:
                 "reconsider_reason": self.final_boss_result.reconsider_reason,
                 "model": self.final_boss_result.model,
                 "tokens_used": self.final_boss_result.tokens_used,
+                "dismissal_review_stats": (
+                    self.final_boss_result.dismissal_review_stats.to_dict()
+                    if self.final_boss_result.dismissal_review_stats else None
+                ),
             }
 
         return result
@@ -1293,6 +1297,33 @@ def filter_concerns_with_explanations(
 # =============================================================================
 
 @dataclass
+class DismissalReviewStats:
+    """Tracks efficiency of reviewing dismissed simplification concerns."""
+    dismissed_simplifications_reviewed: int = 0  # How many we showed to Final Boss
+    dismissals_flagged_invalid: int = 0  # How many the Final Boss said were wrong
+    flagged_dismissals: list[str] = None  # Which ones were flagged
+
+    def __post_init__(self):
+        if self.flagged_dismissals is None:
+            self.flagged_dismissals = []
+
+    @property
+    def review_yield_rate(self) -> float:
+        """Percentage of reviewed dismissals that were flagged as invalid."""
+        if self.dismissed_simplifications_reviewed == 0:
+            return 0.0
+        return self.dismissals_flagged_invalid / self.dismissed_simplifications_reviewed
+
+    def to_dict(self) -> dict:
+        return {
+            "dismissed_simplifications_reviewed": self.dismissed_simplifications_reviewed,
+            "dismissals_flagged_invalid": self.dismissals_flagged_invalid,
+            "flagged_dismissals": self.flagged_dismissals,
+            "review_yield_rate": self.review_yield_rate,
+        }
+
+
+@dataclass
 class FinalBossResult:
     """Result from the final boss UX review."""
     verdict: FinalBossVerdict
@@ -1302,6 +1333,11 @@ class FinalBossResult:
     reconsider_reason: str  # Why reconsideration is needed
     model: str
     tokens_used: int
+    dismissal_review_stats: DismissalReviewStats = None  # Telemetry for dismissal review efficiency
+
+    def __post_init__(self):
+        if self.dismissal_review_stats is None:
+            self.dismissal_review_stats = DismissalReviewStats()
 
     @property
     def approved(self) -> bool:
@@ -1313,6 +1349,7 @@ def run_final_boss_review(
     spec: str,
     gauntlet_summary: str,
     accepted_concerns: list[Concern],
+    dismissed_evaluations: list["Evaluation"],
     timeout: int = 600,
 ) -> FinalBossResult:
     """
@@ -1330,6 +1367,7 @@ def run_final_boss_review(
         spec: The specification being reviewed
         gauntlet_summary: Summary of what the gauntlet found
         accepted_concerns: List of accepted concerns for pattern analysis
+        dismissed_evaluations: Dismissed concerns with their reasoning (for reviewing simplification dismissals)
         timeout: Timeout (longer for Opus)
 
     Returns:
@@ -1368,7 +1406,7 @@ def run_final_boss_review(
         for adv, concerns in concern_by_adversary.items()
     ])
 
-    # Check for alternate approaches suggested
+    # Check for alternate approaches suggested in ACCEPTED concerns
     alternate_approaches = []
     for c in accepted_concerns:
         text_lower = c.text.lower()
@@ -1378,16 +1416,56 @@ def run_final_boss_review(
         ]):
             alternate_approaches.append(f"[{c.adversary}] {c.text[:150]}...")
 
+    # CRITICAL: Also check DISMISSED concerns from lazy_developer and prior_art_scout
+    # These often suggest simpler approaches that were dismissed without proper evaluation
+    dismissed_simplifications = []
+    simplification_adversaries = {"lazy_developer", "prior_art_scout", "information_flow_auditor"}
+    for e in dismissed_evaluations:
+        if e.concern.adversary in simplification_adversaries:
+            text_lower = e.concern.text.lower()
+            # Look for "use X instead" or "why not just" patterns
+            if any(phrase in text_lower for phrase in [
+                "why can't", "why not", "just use", "instead", "simpler",
+                "over-engineer", "overengineer", "already", "platform",
+                "scheduled function", "native", "built-in", "sdk"
+            ]):
+                dismissed_simplifications.append({
+                    "concern": f"[{e.concern.adversary}] {e.concern.text[:200]}",
+                    "dismissal": e.reasoning[:200] if e.reasoning else "No reasoning provided",
+                })
+
     alternate_section = ""
     if alternate_approaches:
         alternate_section = f"""
-## ALTERNATE APPROACHES SUGGESTED
+## ALTERNATE APPROACHES SUGGESTED (ACCEPTED)
 
 The following concerns suggested alternate implementations:
 
 {chr(10).join(alternate_approaches[:5])}
 
 Consider whether these alternates would sidestep many of the other concerns.
+"""
+
+    # CRITICAL: Show dismissed simplification concerns - these often contain valid alternatives
+    # that were dismissed without proper evaluation
+    dismissed_section = ""
+    num_dismissed_reviewed = len(dismissed_simplifications[:5])  # Track for telemetry
+    if dismissed_simplifications:
+        dismissed_items = []
+        for i, d in enumerate(dismissed_simplifications[:5], 1):
+            dismissed_items.append(f"D{i}. CONCERN: {d['concern']}\n    DISMISSED WITH: {d['dismissal']}\n")
+        dismissed_section = f"""
+## DISMISSED SIMPLIFICATION CONCERNS (REVIEW THESE!)
+
+The following {num_dismissed_reviewed} concerns suggested simpler approaches but were DISMISSED.
+**Critically evaluate whether these dismissals properly addressed the alternative:**
+
+{chr(10).join(dismissed_items)}
+
+A dismissal is INVALID if it just says "we need X" without proving the simpler approach can't do X.
+
+**If any dismissals are invalid, list them in your output as:**
+INVALID DISMISSALS: D1, D3 (etc.)
 """
 
     user_prompt = f"""## SPECIFICATION TO REVIEW
@@ -1405,7 +1483,7 @@ This spec has passed through the adversarial gauntlet:
 {concern_analysis}
 
 Total accepted concerns: {len(accepted_concerns)}
-{alternate_section}
+{alternate_section}{dismissed_section}
 ## YOUR TASK
 
 Step back from the technical details. Consider:
@@ -1414,6 +1492,7 @@ Step back from the technical details. Consider:
 2. **CONCERN VOLUME**: With {len(accepted_concerns)} accepted concerns, is this spec trying to do too much?
 3. **FUNDAMENTAL CHALLENGES**: Did multiple adversaries challenge the same core assumption?
 4. **ALTERNATE APPROACHES**: Should any suggested alternates have been explored first?
+5. **DISMISSED SIMPLIFICATIONS**: Were any "use simpler X" concerns dismissed without proving X doesn't work?
 
 ## REQUIRED OUTPUT FORMAT
 
@@ -1511,6 +1590,23 @@ Issue your verdict now."""
                     elif line.startswith("```"):
                         break
 
+        # Extract invalid dismissals for telemetry
+        flagged_dismissals = []
+        for line in response.split("\n"):
+            if "INVALID DISMISSALS" in line.upper():
+                # Extract D1, D3, etc.
+                import re
+                matches = re.findall(r'D(\d+)', line, re.IGNORECASE)
+                flagged_dismissals = [f"D{m}" for m in matches]
+                break
+
+        # Build dismissal review stats
+        dismissal_stats = DismissalReviewStats(
+            dismissed_simplifications_reviewed=num_dismissed_reviewed,
+            dismissals_flagged_invalid=len(flagged_dismissals),
+            flagged_dismissals=flagged_dismissals,
+        )
+
         return FinalBossResult(
             verdict=verdict,
             response=response.strip(),
@@ -1519,6 +1615,7 @@ Issue your verdict now."""
             reconsider_reason=reconsider_reason,
             model=model,
             tokens_used=in_tokens + out_tokens,
+            dismissal_review_stats=dismissal_stats,
         )
 
     except Exception as e:
@@ -1532,6 +1629,9 @@ Issue your verdict now."""
             reconsider_reason="",
             model=model,
             tokens_used=0,
+            dismissal_review_stats=DismissalReviewStats(
+                dismissed_simplifications_reviewed=num_dismissed_reviewed,
+            ),
         )
 
 
@@ -2433,6 +2533,7 @@ Technical concerns requiring revision: {len(technical_concerns)}
             spec=spec,
             gauntlet_summary=gauntlet_summary,
             accepted_concerns=accepted_concerns,
+            dismissed_evaluations=dismissed,
             timeout=600,
         )
 
@@ -2587,6 +2688,17 @@ def format_gauntlet_report(result: GauntletResult) -> str:
             for alt in result.final_boss_result.alternate_approaches[:3]:
                 text = alt[:70] + "..." if len(alt) > 70 else alt
                 lines.append(f"    - {text}")
+
+        # Dismissal review telemetry
+        stats = result.final_boss_result.dismissal_review_stats
+        if stats and stats.dismissed_simplifications_reviewed > 0:
+            lines.append(f"  Dismissal Review: {stats.dismissed_simplifications_reviewed} simplifications reviewed")
+            lines.append(f"    Invalid dismissals found: {stats.dismissals_flagged_invalid}")
+            yield_pct = stats.review_yield_rate * 100
+            if yield_pct > 0:
+                lines.append(f"    Yield rate: {yield_pct:.0f}% (>20% suggests dismissal process needs audit)")
+            else:
+                lines.append(f"    Yield rate: 0% (consider skipping dismissal review to save tokens)")
         lines.append("")
 
     # Final verdict

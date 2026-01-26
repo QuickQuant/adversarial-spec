@@ -1233,7 +1233,7 @@ The gauntlet is a multi-phase stress test that puts your spec through adversaria
 |---------|-------|
 | `paranoid_security` | Auth holes, injection, encryption gaps, trust boundaries |
 | `burned_oncall` | Missing alerts, log gaps, failure modes, debugging at 3am |
-| `lazy_developer` | Ambiguity, missing examples, tribal knowledge assumptions |
+| `lazy_developer` | Complexity that the platform/SDK already handles. Dismissals must prove simpler fails. |
 | `pedantic_nitpicker` | Inconsistencies, spec gaps, undefined edge cases |
 | `asshole_loner` | Aggressive devil's advocate, challenges fundamental assumptions |
 | `prior_art_scout` | Finds existing code, SDKs, legacy implementations that spec ignores |
