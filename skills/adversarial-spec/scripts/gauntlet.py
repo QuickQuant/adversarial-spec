@@ -26,7 +26,15 @@ import json
 import sys
 import time
 from dataclasses import dataclass
+from enum import Enum
 from typing import Optional
+
+
+class FinalBossVerdict(str, Enum):
+    """Verdict from the Final Boss review."""
+    PASS = "pass"           # Proceed to implementation
+    REFINE = "refine"       # Address concerns, then proceed
+    RECONSIDER = "reconsider"  # Re-evaluate approach before proceeding
 
 from adversaries import (
     ADVERSARY_PREFIXES,
@@ -564,9 +572,12 @@ class GauntletResult:
 
         if self.final_boss_result:
             result["final_boss"] = {
-                "approved": self.final_boss_result.approved,
+                "verdict": self.final_boss_result.verdict.value,
+                "approved": self.final_boss_result.approved,  # Backwards compat
                 "response": self.final_boss_result.response,
                 "concerns": self.final_boss_result.concerns,
+                "alternate_approaches": self.final_boss_result.alternate_approaches,
+                "reconsider_reason": self.final_boss_result.reconsider_reason,
                 "model": self.final_boss_result.model,
                 "tokens_used": self.final_boss_result.tokens_used,
             }
@@ -1284,31 +1295,45 @@ def filter_concerns_with_explanations(
 @dataclass
 class FinalBossResult:
     """Result from the final boss UX review."""
-    approved: bool
+    verdict: FinalBossVerdict
     response: str
-    concerns: list[str]  # Empty if approved
+    concerns: list[str]  # Concerns to address (for REFINE)
+    alternate_approaches: list[str]  # Suggested alternates (for RECONSIDER)
+    reconsider_reason: str  # Why reconsideration is needed
     model: str
     tokens_used: int
+
+    @property
+    def approved(self) -> bool:
+        """Backwards compatibility - PASS means approved."""
+        return self.verdict == FinalBossVerdict.PASS
 
 
 def run_final_boss_review(
     spec: str,
     gauntlet_summary: str,
+    accepted_concerns: list[Concern],
     timeout: int = 600,
 ) -> FinalBossResult:
     """
-    Phase 5: Final Boss UX/User Story Review.
+    Phase 5: Final Boss UX/User Story Review with Verdict.
 
     Runs AFTER all other adversaries have been satisfied. Uses Opus 4.5 to do
     a high-level sanity check on whether the spec actually serves users.
 
+    The Final Boss can issue three verdicts:
+    - PASS: Proceed to implementation
+    - REFINE: Address listed concerns, then proceed
+    - RECONSIDER: Fundamental issues exist, models should debate re-architecture
+
     Args:
         spec: The specification being reviewed
-        gauntlet_summary: Summary of what the gauntlet found and how it was addressed
+        gauntlet_summary: Summary of what the gauntlet found
+        accepted_concerns: List of accepted concerns for pattern analysis
         timeout: Timeout (longer for Opus)
 
     Returns:
-        FinalBossResult with approval status and any concerns
+        FinalBossResult with verdict and details
     """
     import os
 
@@ -1326,7 +1351,44 @@ def run_final_boss_review(
         else:
             model = select_eval_model()
 
-    system_prompt = FINAL_BOSS["ux_architect"]
+    # Get the updated persona from adversaries.py
+    from adversaries import get_adversary
+    ux_adversary = get_adversary("ux_architect")
+    system_prompt = ux_adversary.persona if ux_adversary else FINAL_BOSS["ux_architect"]
+
+    # Build concern analysis for the prompt
+    concern_by_adversary = {}
+    for c in accepted_concerns:
+        if c.adversary not in concern_by_adversary:
+            concern_by_adversary[c.adversary] = []
+        concern_by_adversary[c.adversary].append(c.text)
+
+    concern_analysis = "\n".join([
+        f"- {adv}: {len(concerns)} concerns"
+        for adv, concerns in concern_by_adversary.items()
+    ])
+
+    # Check for alternate approaches suggested
+    alternate_approaches = []
+    for c in accepted_concerns:
+        text_lower = c.text.lower()
+        if any(phrase in text_lower for phrase in [
+            "alternative", "instead", "could use", "should consider",
+            "existing", "already have", "port", "extend", "reuse"
+        ]):
+            alternate_approaches.append(f"[{c.adversary}] {c.text[:150]}...")
+
+    alternate_section = ""
+    if alternate_approaches:
+        alternate_section = f"""
+## ALTERNATE APPROACHES SUGGESTED
+
+The following concerns suggested alternate implementations:
+
+{chr(10).join(alternate_approaches[:5])}
+
+Consider whether these alternates would sidestep many of the other concerns.
+"""
 
     user_prompt = f"""## SPECIFICATION TO REVIEW
 
@@ -1334,23 +1396,54 @@ def run_final_boss_review(
 
 ## GAUNTLET RESULTS
 
-This spec has already passed through the adversarial gauntlet:
+This spec has passed through the adversarial gauntlet:
 
 {gauntlet_summary}
 
-All technical concerns have been addressed. All models reached consensus.
+## CONCERN DISTRIBUTION BY ADVERSARY
 
+{concern_analysis}
+
+Total accepted concerns: {len(accepted_concerns)}
+{alternate_section}
 ## YOUR TASK
 
-Step back from the technical details. Consider the USER EXPERIENCE.
+Step back from the technical details. Consider:
 
-1. What is the user story? Is this user actually better off?
-2. How does their experience change? Walk through it.
-3. Do we have measurement in place to know if this helps?
-4. Did we get lost in technical weeds and forget the user?
+1. **USER STORY**: Is this user actually better off?
+2. **CONCERN VOLUME**: With {len(accepted_concerns)} accepted concerns, is this spec trying to do too much?
+3. **FUNDAMENTAL CHALLENGES**: Did multiple adversaries challenge the same core assumption?
+4. **ALTERNATE APPROACHES**: Should any suggested alternates have been explored first?
 
-If everything looks good: "APPROVED: [brief reason]"
-If you have concerns: List them with user impact and suggested reconsideration."""
+## REQUIRED OUTPUT FORMAT
+
+You MUST issue one of three verdicts:
+
+```
+VERDICT: PASS
+RATIONALE: [Why the user story is sound and concerns are normal refinements]
+```
+
+OR
+
+```
+VERDICT: REFINE
+CONCERNS TO ADDRESS:
+1. [Concern]
+2. [Concern]
+```
+
+OR
+
+```
+VERDICT: RECONSIDER
+FUNDAMENTAL ISSUE: [What's wrong with the current approach]
+ALTERNATE APPROACHES TO EVALUATE:
+1. [Approach]
+2. [Approach]
+```
+
+Issue your verdict now."""
 
     try:
         response, in_tokens, out_tokens = call_model(
@@ -1361,24 +1454,69 @@ If you have concerns: List them with user impact and suggested reconsideration."
         )
         cost_tracker.add(model, in_tokens, out_tokens)
 
-        # Parse response
+        # Parse verdict from response
         response_upper = response.upper()
-        approved = "APPROVED:" in response_upper
 
+        if "VERDICT: RECONSIDER" in response_upper:
+            verdict = FinalBossVerdict.RECONSIDER
+        elif "VERDICT: REFINE" in response_upper:
+            verdict = FinalBossVerdict.REFINE
+        elif "VERDICT: PASS" in response_upper:
+            verdict = FinalBossVerdict.PASS
+        else:
+            # Legacy format fallback
+            if "APPROVED:" in response_upper:
+                verdict = FinalBossVerdict.PASS
+            else:
+                verdict = FinalBossVerdict.REFINE
+
+        # Extract concerns (for REFINE)
         concerns = []
-        if not approved:
-            # Extract concerns from response
+        if verdict == FinalBossVerdict.REFINE:
+            in_concerns_section = False
             for line in response.split("\n"):
                 line = line.strip()
-                if line and (line[0].isdigit() or line.startswith("-") or line.startswith("•")):
-                    text = line.lstrip("0123456789.-•) ").strip()
-                    if text and len(text) > 20:  # Filter out headers
-                        concerns.append(text)
+                if "CONCERNS TO ADDRESS" in line.upper():
+                    in_concerns_section = True
+                    continue
+                if in_concerns_section and line:
+                    if line[0].isdigit() or line.startswith("-") or line.startswith("•"):
+                        text = line.lstrip("0123456789.-•) ").strip()
+                        if text and len(text) > 10:
+                            concerns.append(text)
+                    elif line.startswith("VERDICT") or line.startswith("```"):
+                        break
+
+        # Extract alternate approaches and reason (for RECONSIDER)
+        alts = []
+        reconsider_reason = ""
+        if verdict == FinalBossVerdict.RECONSIDER:
+            in_alts_section = False
+            for line in response.split("\n"):
+                line = line.strip()
+                if "FUNDAMENTAL ISSUE" in line.upper():
+                    # Extract the issue
+                    parts = line.split(":", 1)
+                    if len(parts) > 1:
+                        reconsider_reason = parts[1].strip()
+                    continue
+                if "ALTERNATE APPROACHES" in line.upper():
+                    in_alts_section = True
+                    continue
+                if in_alts_section and line:
+                    if line[0].isdigit() or line.startswith("-") or line.startswith("•"):
+                        text = line.lstrip("0123456789.-•) ").strip()
+                        if text and len(text) > 10:
+                            alts.append(text)
+                    elif line.startswith("```"):
+                        break
 
         return FinalBossResult(
-            approved=approved,
+            verdict=verdict,
             response=response.strip(),
             concerns=concerns,
+            alternate_approaches=alts,
+            reconsider_reason=reconsider_reason,
             model=model,
             tokens_used=in_tokens + out_tokens,
         )
@@ -1387,9 +1525,11 @@ If you have concerns: List them with user impact and suggested reconsideration."
         print(f"  Warning: Final boss review failed: {e}", file=sys.stderr)
         # On failure, don't block - just note it
         return FinalBossResult(
-            approved=True,
+            verdict=FinalBossVerdict.PASS,
             response=f"Review failed: {e}. Proceeding with caution.",
             concerns=[],
+            alternate_approaches=[],
+            reconsider_reason="",
             model=model,
             tokens_used=0,
         )
@@ -2286,12 +2426,22 @@ Technical concerns requiring revision: {len(technical_concerns)}
             for c in technical_concerns[:5]:  # Show first 5
                 gauntlet_summary += f"- [{c.adversary}] {c.text[:100]}...\n"
 
-        final_boss_result = run_final_boss_review(spec, gauntlet_summary, timeout=600)
+        # Get accepted concerns for pattern analysis
+        accepted_concerns = [e.concern for e in accepted]
 
-        if final_boss_result.approved:
-            print(f"  APPROVED by {final_boss_result.model}", file=sys.stderr)
-        else:
-            print(f"  UX CONCERNS from {final_boss_result.model}:", file=sys.stderr)
+        final_boss_result = run_final_boss_review(
+            spec=spec,
+            gauntlet_summary=gauntlet_summary,
+            accepted_concerns=accepted_concerns,
+            timeout=600,
+        )
+
+        # Handle verdict
+        if final_boss_result.verdict == FinalBossVerdict.PASS:
+            print(f"  VERDICT: PASS by {final_boss_result.model}", file=sys.stderr)
+        elif final_boss_result.verdict == FinalBossVerdict.REFINE:
+            print(f"  VERDICT: REFINE by {final_boss_result.model}", file=sys.stderr)
+            print(f"  Concerns to address:", file=sys.stderr)
             for concern_text in final_boss_result.concerns[:3]:
                 print(f"    - {concern_text[:80]}...", file=sys.stderr)
             # Add UX concerns to final list
@@ -2299,8 +2449,21 @@ Technical concerns requiring revision: {len(technical_concerns)}
                 ux_concerns.append(Concern(
                     adversary="ux_architect",
                     text=concern_text,
-                    severity="high",  # UX concerns at this stage are serious
+                    severity="high",
                 ))
+        elif final_boss_result.verdict == FinalBossVerdict.RECONSIDER:
+            print(f"  VERDICT: RECONSIDER by {final_boss_result.model}", file=sys.stderr)
+            print(f"  Reason: {final_boss_result.reconsider_reason}", file=sys.stderr)
+            print(f"  Alternate approaches to evaluate:", file=sys.stderr)
+            for alt in final_boss_result.alternate_approaches[:3]:
+                print(f"    - {alt[:80]}...", file=sys.stderr)
+            # Add a meta-concern about needing reconsideration
+            ux_concerns.append(Concern(
+                adversary="ux_architect",
+                text=f"RECONSIDER VERDICT: {final_boss_result.reconsider_reason}. "
+                     f"Alternates: {'; '.join(final_boss_result.alternate_approaches[:2])}",
+                severity="critical",
+            ))
 
     # Final concerns = technical + UX
     final_concerns = technical_concerns + ux_concerns
@@ -2407,15 +2570,22 @@ def format_gauntlet_report(result: GauntletResult) -> str:
     # Phase 5 summary (Final Boss)
     if result.final_boss_result:
         lines.append(f"Phase 5 - Final Boss UX Review ({result.final_boss_result.model}):")
-        if result.final_boss_result.approved:
-            lines.append("  APPROVED - User story is sound")
-            # Show first line of approval reason
+        verdict = result.final_boss_result.verdict
+        if verdict == FinalBossVerdict.PASS:
+            lines.append("  VERDICT: PASS - User story is sound")
             first_line = result.final_boss_result.response.split("\n")[0][:80]
             lines.append(f"  {first_line}")
-        else:
-            lines.append(f"  UX CONCERNS: {len(result.final_boss_result.concerns)}")
+        elif verdict == FinalBossVerdict.REFINE:
+            lines.append(f"  VERDICT: REFINE - {len(result.final_boss_result.concerns)} concerns to address")
             for concern in result.final_boss_result.concerns[:3]:
                 text = concern[:70] + "..." if len(concern) > 70 else concern
+                lines.append(f"    - {text}")
+        elif verdict == FinalBossVerdict.RECONSIDER:
+            lines.append("  VERDICT: RECONSIDER - Fundamental issues detected")
+            lines.append(f"  Reason: {result.final_boss_result.reconsider_reason[:80]}")
+            lines.append("  Alternate approaches to evaluate:")
+            for alt in result.final_boss_result.alternate_approaches[:3]:
+                text = alt[:70] + "..." if len(alt) > 70 else alt
                 lines.append(f"    - {text}")
         lines.append("")
 

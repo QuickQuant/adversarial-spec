@@ -500,6 +500,38 @@ Output format (whether loaded or generated):
 [/SPEC]
 ```
 
+### Step 2.5: Information Flow Audit (For Tech Specs)
+
+**CRITICAL**: Before finalizing any tech spec with architecture diagrams, audit every information flow.
+
+Every arrow in an architecture diagram represents a mechanism decision. If you don't make that decision explicitly, you'll default to familiar patterns that may not fit the requirements.
+
+**Example Failure:** A spec showed `Worker -> Exchange (order)` and `Exchange -> Worker (result)`. Everyone assumed "result" meant polling. Reality: the exchange provided real-time WebSocket push. The spec required 200ms latency; polling would have 5000ms. 62 adversary concerns were raised about error handling for the polling implementation - all of which would have been avoided with WebSocket.
+
+**For each arrow/flow in your architecture:**
+
+1. **What mechanism?** REST poll? WebSocket push? Webhook callback? Queue?
+
+2. **What does the source system support?** Before assuming, check:
+   - If Context7 MCP tools are available, query the external system's documentation
+   - Look for: WebSocket channels, webhook endpoints, streaming APIs
+   - Don't assume polling is the only option
+
+3. **Does it meet latency requirements?** If a requirement says "<500ms", polling at 5s intervals won't work.
+
+**Add an Information Flow table to tech specs:**
+
+```markdown
+## Information Flows
+
+| Flow | Source | Destination | Mechanism | Latency | Source Capabilities | Justification |
+|------|--------|-------------|-----------|---------|---------------------|---------------|
+| Order submission | Worker | Exchange | REST POST | ~100ms | REST only | N/A |
+| Fill notification | Exchange | Worker | WebSocket | <50ms | WebSocket USER_CHANNEL, REST poll | Real-time needed for 200ms requirement |
+```
+
+This prevents the gauntlet from flagging unspecified flows after you've already designed around the wrong mechanism.
+
 ### Step 3: Select Opponent Models
 
 First, check which API keys are configured:
@@ -1206,6 +1238,7 @@ The gauntlet is a multi-phase stress test that puts your spec through adversaria
 | `asshole_loner` | Aggressive devil's advocate, challenges fundamental assumptions |
 | `prior_art_scout` | Finds existing code, SDKs, legacy implementations that spec ignores |
 | `assumption_auditor` | Challenges domain premises, demands documentation citations |
+| `information_flow_auditor` | Audits architecture arrows - every unlabeled flow, every assumed mechanism |
 
 ### Usage
 

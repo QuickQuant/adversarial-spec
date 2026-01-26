@@ -304,6 +304,7 @@ cat spec.md | python3 debate.py critique --models codex/gpt-5.2-codex --gauntlet
 | `asshole_loner` | Brilliant antisocial engineer who jumps to conclusions. Blunt. Accepts good reasoning without argument. | Trusts logic, not authority. If you can prove it, they'll shut up. |
 | `prior_art_scout` | Thinks in patterns. Finds similar concepts in the codebase and proposes implementations that blend with existing abstractions. | Suggests architecture improvements: "This looks like BaseClient - extend it instead of building standalone." |
 | `assumption_auditor` | Challenges domain premises, not just logic. "How do we KNOW this is how it works?" Demands documentation citations. | Catches when all models share the same false assumption about an external system. |
+| `information_flow_auditor` | Audits every arrow in architecture diagrams. "What mechanism does 'Result' represent?" | Catches unspecified flows that default to polling when push is available. |
 
 ### The Final Boss
 
@@ -314,7 +315,21 @@ After all technical concerns are addressed and models agree, the **UX Architect*
 cat spec.md | python3 debate.py gauntlet --final-boss
 ```
 
-This catches fundamental UX problems that got lost in technical discussions. User stories that don't add value. Measurement strategies that don't exist. Clever implementations that users didn't ask for.
+The Final Boss issues one of three verdicts:
+
+| Verdict | Meaning |
+|---------|---------|
+| **PASS** | User story is sound, concerns are normal refinements. Proceed to implementation. |
+| **REFINE** | Specific concerns need addressing, but the approach is correct. Address them, then proceed. |
+| **RECONSIDER** | Too many fundamental issues or unexplored alternate approaches. Models should debate re-architecture. |
+
+When **RECONSIDER** is issued:
+1. The Final Boss explains why the current approach is problematic
+2. Lists alternate approaches that should have been explored (often from `prior_art_scout` or `information_flow_auditor`)
+3. Models debate: keep current approach with justification, or re-architect
+4. If re-architecture occurs, the gauntlet runs again on the new spec
+
+This catches cases where adversaries raised dozens of valid concerns that could have been avoided with a different approach - like when 62 concerns about error handling would disappear if the spec used an existing SDK instead of building from scratch.
 
 ### Adversary Leaderboard
 
