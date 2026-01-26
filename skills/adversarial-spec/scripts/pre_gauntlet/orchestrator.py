@@ -22,10 +22,13 @@ from integrations.git_cli import GitCliError
 
 from .alignment_mode import run_alignment_mode
 from .context_builder import build_context
+from .discovery import DiscoveryResult
 from .models import (
     CompatibilityConfig,
     ConcernSeverity,
     ContextSummary,
+    DiscoveredServiceSummary,
+    DiscoverySummary,
     DocType,
     PreGauntletResult,
     PreGauntletStatus,
@@ -50,12 +53,14 @@ class PreGauntletOrchestrator:
         self,
         spec_text: str,
         doc_type: DocType,
+        discovery_result: DiscoveryResult | None = None,
     ) -> PreGauntletResult:
         """Run pre-gauntlet checks.
 
         Args:
             spec_text: The specification document text
             doc_type: Type of document (prd, tech, debug)
+            discovery_result: Optional discovery result with priming context
 
         Returns:
             PreGauntletResult with status, concerns, and context
@@ -146,8 +151,28 @@ class PreGauntletOrchestrator:
             max_chars=self.config.context_max_chars,
         )
 
+        # Prepend discovery priming context if available
+        if discovery_result and discovery_result.priming_context:
+            context_markdown = discovery_result.priming_context + "\n\n" + context_markdown
+
         # Calculate total time
         timings.total_ms = int((time.monotonic() - start_time) * 1000)
+
+        # Build discovery summary if available
+        discovery_summary = None
+        if discovery_result:
+            discovery_summary = DiscoverySummary(
+                services=[
+                    DiscoveredServiceSummary(
+                        name=s.name,
+                        confidence=s.confidence,
+                        doc_fetched=s.doc_fetched,
+                    )
+                    for s in discovery_result.services
+                ],
+                discovery_time_ms=discovery_result.discovery_time_ms,
+                errors=discovery_result.errors,
+            )
 
         # Build initial result
         result = PreGauntletResult(
@@ -156,6 +181,7 @@ class PreGauntletOrchestrator:
             concerns=all_concerns,
             git_position=git_position,
             system_state=system_state,
+            discovery_summary=discovery_summary,
             context_summary=ContextSummary(
                 context_chars=len(context_markdown),
                 truncated_sections=truncated_sections,
@@ -185,6 +211,7 @@ def run_pre_gauntlet(
     repo_root: str | Path | None = None,
     config: CompatibilityConfig | None = None,
     interactive: bool = True,
+    discovery_result: DiscoveryResult | None = None,
 ) -> PreGauntletResult:
     """Run pre-gauntlet checks.
 
@@ -194,6 +221,7 @@ def run_pre_gauntlet(
         repo_root: Path to repository root (default: current directory)
         config: Configuration (default: auto-load from pyproject.toml)
         interactive: Whether to run in interactive mode
+        discovery_result: Optional discovery result with external service documentation
 
     Returns:
         PreGauntletResult with status, concerns, and context
@@ -217,7 +245,11 @@ def run_pre_gauntlet(
         interactive=interactive,
     )
 
-    return orchestrator.run(spec_text=spec_text, doc_type=doc_type)
+    return orchestrator.run(
+        spec_text=spec_text,
+        doc_type=doc_type,
+        discovery_result=discovery_result,
+    )
 
 
 def load_config_from_pyproject(repo_root: Path) -> CompatibilityConfig:

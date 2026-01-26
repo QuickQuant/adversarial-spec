@@ -296,6 +296,22 @@ class Timings(BaseModel):
     total_ms: int = 0
 
 
+class DiscoveredServiceSummary(BaseModel):
+    """Summary of a discovered external service."""
+
+    name: str
+    confidence: float
+    doc_fetched: bool = False
+
+
+class DiscoverySummary(BaseModel):
+    """Summary of discovery phase results."""
+
+    services: list[DiscoveredServiceSummary] = Field(default_factory=list)
+    discovery_time_ms: int = 0
+    errors: list[str] = Field(default_factory=list)
+
+
 class PreGauntletResult(BaseModel):
     """Result of pre-gauntlet execution."""
 
@@ -305,6 +321,7 @@ class PreGauntletResult(BaseModel):
     alignment_issues: list[AlignmentIssue] = Field(default_factory=list)
     git_position: GitPosition | None = None
     system_state: SystemState | None = None
+    discovery_summary: DiscoverySummary | None = None
     context_summary: ContextSummary = Field(default_factory=ContextSummary)
     timings: Timings = Field(default_factory=Timings)
     context_markdown: str = ""  # The generated context for LLM injection

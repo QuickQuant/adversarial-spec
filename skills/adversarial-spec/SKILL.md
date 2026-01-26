@@ -1136,6 +1136,53 @@ python3 debate.py adversary-stats       # View adversary performance
 - `--timeout` - Timeout in seconds for model API/CLI calls (default: 600)
 - `--show-cost` - Show cost summary after critique
 
+## External Documentation Discovery (Context7)
+
+Before the gauntlet runs, the **Discovery Agent** extracts external services from your spec and fetches their official documentation via Context7. This prevents models from making assumptions based on training data patterns.
+
+### Why Discovery Matters
+
+AI models share training data and thus share false assumptions. The classic failure:
+
+> All models assumed "crypto trading = on-chain transactions" when Polymarket's CLOB is actually off-chain with SDK-handled signing. 11 concerns were raised about nonces that don't exist.
+
+### How to Use Discovery
+
+When you have Context7 MCP tools available, run discovery before the gauntlet:
+
+1. **Extract services from spec:**
+   ```python
+   from pre_gauntlet import DiscoveryAgent, run_discovery
+
+   result = run_discovery(spec_text, min_confidence=0.6, max_services=5)
+   print(f"Discovered: {[s.name for s in result.services]}")
+   ```
+
+2. **Fetch documentation via Context7:**
+   - Use `mcp__context7__resolve-library-id` to resolve library names
+   - Use `mcp__context7__query-docs` to fetch relevant documentation
+   - Results are cached locally (24h TTL, `~/.cache/adversarial-spec/knowledge/`)
+
+3. **Inject priming context into gauntlet:**
+   ```python
+   from pre_gauntlet import run_pre_gauntlet
+
+   pre_result = run_pre_gauntlet(
+       spec_text=spec,
+       doc_type="tech",
+       discovery_result=discovery_result,  # Includes priming context
+   )
+   ```
+
+### Integration with Adversaries
+
+The `assumption_auditor` adversary specifically challenges domain assumptions and demands documentation citations. When discovery has fetched docs, claims can be verified against actual documentation:
+
+- **VERIFIED**: Claim matches documentation
+- **REFUTED**: Documentation contradicts claim
+- **UNVERIFIABLE**: No documentation found
+- **PENDING**: Documentation found, needs LLM analysis
+
 ## Adversarial Gauntlet
 
 The gauntlet is a multi-phase stress test that puts your spec through adversarial attack by specialized personas, then evaluates which attacks are valid.
@@ -1157,6 +1204,8 @@ The gauntlet is a multi-phase stress test that puts your spec through adversaria
 | `lazy_developer` | Ambiguity, missing examples, tribal knowledge assumptions |
 | `pedantic_nitpicker` | Inconsistencies, spec gaps, undefined edge cases |
 | `asshole_loner` | Aggressive devil's advocate, challenges fundamental assumptions |
+| `prior_art_scout` | Finds existing code, SDKs, legacy implementations that spec ignores |
+| `assumption_auditor` | Challenges domain premises, demands documentation citations |
 
 ### Usage
 

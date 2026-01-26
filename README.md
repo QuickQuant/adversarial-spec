@@ -223,6 +223,61 @@ Verify these are running against the correct instance (production vs development
 | 4 | CONFIG_ERROR | Invalid pyproject.toml |
 | 5 | INFRA_ERROR | Git/filesystem failure |
 
+## External Documentation Lookup (Context7)
+
+Before the debate begins, the **Discovery Agent** scans your spec for external services and fetches their official documentation via Context7. This grounds the debate in reality rather than letting models pattern-match from training data.
+
+```bash
+# Discovery runs automatically when Context7 MCP tools are available
+# No additional configuration needed
+```
+
+### What It Does
+
+1. **Service extraction**: Scans spec text for SDK patterns (`@polymarket/clob-client`), API mentions, and known service names
+2. **Documentation fetch**: Uses Context7 to retrieve official docs for discovered services
+3. **Priming context**: Injects fetched documentation into the debate context
+
+### Why This Matters
+
+AI models share training data, which means they share false assumptions about external systems. The classic failure mode:
+
+> All models assumed "crypto trading = on-chain transactions" when Polymarket's CLOB is actually off-chain with SDK-handled signing.
+
+By fetching actual documentation first, models debate based on ground truth rather than pattern-matched assumptions.
+
+### Caching
+
+Documentation is cached locally to avoid redundant fetches:
+
+- **Location**: `~/.cache/adversarial-spec/knowledge/`
+- **TTL**: 24 hours (configurable)
+- **Format**: Gzip-compressed JSON
+
+### Token Limits
+
+The system uses **soft token limits** with tracking:
+
+```python
+# Default: 2000 tokens per query
+# Violations are logged but not blocked
+"Soft token limit exceeded: 3500 > 2000 (library=/polymarket/clob-client)"
+```
+
+This allows review of whether limits need adjustment without blocking operations.
+
+### Integration with Adversaries
+
+The `assumption_auditor` adversary uses the evidence log to verify claims:
+
+```
+CLAIM: "Polymarket requires nonces for order submission"
+STATUS: PENDING
+EVIDENCE: [Context7 docs showing SDK handles signing internally]
+```
+
+When documentation contradicts a claim, it's flagged before models build elaborate concerns on false premises.
+
 ## The Adversarial Gauntlet
 
 The gauntlet is where specs go to get stress-tested by personas who are *paid to find problems*.
@@ -877,7 +932,8 @@ adversarial-spec/
             ├── telegram_bot.py   # Telegram notifications
             ├── integrations/     # External system integrations
             │   ├── git_cli.py    # Git command wrapper (read-only)
-            │   └── process_runner.py  # Safe command execution
+            │   ├── process_runner.py  # Safe command execution
+            │   └── knowledge_service.py  # Context7 integration with caching
             ├── collectors/       # Data collectors for pre-gauntlet
             │   ├── git_position.py    # Branch/commit status
             │   └── system_state.py    # Build status, schema files
@@ -885,6 +941,7 @@ adversarial-spec/
             │   └── spec_affected_files.py  # File path extraction
             └── pre_gauntlet/     # Pre-gauntlet compatibility checks
                 ├── models.py     # Pydantic data models
+                ├── discovery.py  # Pre-debate service discovery & doc fetch
                 ├── context_builder.py  # LLM context generation
                 ├── alignment_mode.py   # Interactive alignment flow
                 └── orchestrator.py     # Main entry point
