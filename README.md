@@ -280,30 +280,21 @@ When documentation contradicts a claim, it's flagged before models build elabora
 
 ### API Interface Verification (Constructive Phase)
 
-Discovery runs before the gauntlet, but the constructive phase (where models draft the spec) needs its own verification. When defining TypeScript/Python interfaces for external API responses, models must verify against actual documentation - not pattern-match from training data.
+When defining interfaces for external APIs, models must verify against authoritative sources - not pattern-match.
 
 **Example Failure:**
 ```typescript
 // WHAT 3 FRONTIER MODELS AGREED ON (WRONG):
-interface KalshiOrderResponse {
-  order: {
-    filled_count: number;        // ❌ WRONG - API uses "fill_count"
-    average_fill_price?: number; // ❌ DOESN'T EXIST in API
-  };
-}
+interface KalshiOrder { filled_count: number; }  // ❌ API uses "fill_count"
 ```
 
-Three frontier models all agreed on this interface. None checked the docs. The implementation failed at runtime.
-
-**Required practice:** Every external API interface must cite its documentation source:
-```typescript
-/**
- * Kalshi Order Response
- * Source: https://trading-api.readme.io/reference/getorder
- * Verified: 2026-01-27
- */
-interface KalshiOrderResponse { ... }
+**Solution: Check SDK type definitions first.**
+```bash
+grep "fill_count" node_modules/kalshi-typescript/dist/models/order.d.ts
+# → 'fill_count': number;  ✓
 ```
+
+SDK `.d.ts` files are auto-generated from OpenAPI specs - authoritative, local, grepable.
 
 See SKILL.md Step 2.6 for full guidance.
 

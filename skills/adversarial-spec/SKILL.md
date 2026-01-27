@@ -542,69 +542,52 @@ AI models pattern-match what they think an API "probably" looks like based on tr
 ```typescript
 // WHAT 3 FRONTIER MODELS AGREED ON (WRONG):
 interface KalshiOrderResponse {
-  order: {
-    order_id: string;
-    status: string;
-    filled_count: number;        // ❌ WRONG - API uses "fill_count"
-    remaining_count: number;
-    average_fill_price?: number; // ❌ DOESN'T EXIST in API
-  };
+  filled_count: number;        // ❌ WRONG - API uses "fill_count"
+  average_fill_price?: number; // ❌ DOESN'T EXIST in API
 }
 ```
 
-Three frontier models all agreed on this interface during constructive debate. None checked the actual Kalshi API documentation. The gauntlet can't catch this because `assumption_auditor` runs AFTER the spec is already built on false premises.
+Three frontier models agreed on this interface. None checked. The implementation failed at runtime.
 
-**Before defining ANY external API interface:**
+**Before defining ANY external API interface, check these sources IN ORDER:**
 
-1. **FETCH THE ACTUAL DOCUMENTATION**
-   - If Context7 MCP tools are available, use them: `mcp__context7__resolve-library-id` → `mcp__context7__query-docs`
-   - Otherwise, ask the user for a documentation link
-   - DO NOT proceed with "what it probably looks like"
+1. **SDK TYPE DEFINITIONS (Best Source)**
+   If an official SDK exists, its `.d.ts` files are authoritative:
+   ```bash
+   # Find exact field names:
+   grep -A 50 "export interface Order" node_modules/kalshi-typescript/dist/models/order.d.ts
 
-2. **CITE THE SOURCE**
-   Every external API interface in the spec MUST include:
-   ```typescript
-   /**
-    * Kalshi Order Response
-    * Source: https://trading-api.readme.io/reference/getorder
-    * Verified: 2026-01-27
-    */
-   interface KalshiOrderResponse {
-     // fields exactly as documented
-   }
+   # Search for specific field:
+   grep -rn "fill_count" node_modules/kalshi-typescript/dist/
    ```
+   SDK types are auto-generated from OpenAPI specs - always correct, always up to date.
 
-3. **QUOTE THE ACTUAL RESPONSE**
-   If possible, include an example response from the docs:
-   ```typescript
-   // Example from docs:
-   // { "order": { "order_id": "abc", "fill_count": 5, ... } }
-   ```
+2. **LOCAL API DOCUMENTATION**
+   Check `api_documentation/` or `api-reference/` folders for cached docs.
 
-**Add an External API Interfaces table to tech specs:**
+3. **CONTEXT7 (If SDK unavailable)**
+   Use MCP tools: `mcp__context7__resolve-library-id` → `mcp__context7__query-docs`
 
-```markdown
-## External API Interfaces
+4. **ASK THE USER**
+   If no SDK and no docs found, ask for a documentation link. DO NOT proceed with guesses.
 
-| Interface | API Endpoint | Documentation Link | Verified Date |
-|-----------|--------------|-------------------|---------------|
-| KalshiOrderResponse | GET /orders/{order_id} | https://trading-api.readme.io/reference/getorder | 2026-01-27 |
-| KalshiFillResponse | GET /fills | https://trading-api.readme.io/reference/getfills | 2026-01-27 |
-```
-
-**If documentation is unavailable:**
-Mark the interface as `UNVERIFIED` and flag it for the user:
+**In the spec, cite the source:**
 ```typescript
-/**
- * UNVERIFIED - Documentation not found
- * TODO: Verify field names against actual API before implementation
- */
-interface SomeApiResponse {
-  // best guess - MUST be verified
+// Source: node_modules/kalshi-typescript/dist/models/order.d.ts
+// Verified: 2026-01-27
+interface KalshiOrder {
+  fill_count: number;  // NOT "filled_count"
+  // ... copy exact fields from SDK
 }
 ```
 
-This prevents building an entire implementation on interfaces that don't match reality.
+**If no authoritative source exists:**
+Mark as `UNVERIFIED` and flag for user:
+```typescript
+// ⚠️ UNVERIFIED - No SDK or docs found
+// TODO: Verify against actual API before implementation
+interface SomeApiResponse { ... }
+```
 
 ### Step 3: Select Opponent Models
 
