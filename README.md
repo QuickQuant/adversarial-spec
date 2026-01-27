@@ -278,6 +278,35 @@ EVIDENCE: [Context7 docs showing SDK handles signing internally]
 
 When documentation contradicts a claim, it's flagged before models build elaborate concerns on false premises.
 
+### API Interface Verification (Constructive Phase)
+
+Discovery runs before the gauntlet, but the constructive phase (where models draft the spec) needs its own verification. When defining TypeScript/Python interfaces for external API responses, models must verify against actual documentation - not pattern-match from training data.
+
+**Example Failure:**
+```typescript
+// WHAT 3 FRONTIER MODELS AGREED ON (WRONG):
+interface KalshiOrderResponse {
+  order: {
+    filled_count: number;        // ❌ WRONG - API uses "fill_count"
+    average_fill_price?: number; // ❌ DOESN'T EXIST in API
+  };
+}
+```
+
+Three frontier models all agreed on this interface. None checked the docs. The implementation failed at runtime.
+
+**Required practice:** Every external API interface must cite its documentation source:
+```typescript
+/**
+ * Kalshi Order Response
+ * Source: https://trading-api.readme.io/reference/getorder
+ * Verified: 2026-01-27
+ */
+interface KalshiOrderResponse { ... }
+```
+
+See SKILL.md Step 2.6 for full guidance.
+
 ## The Adversarial Gauntlet
 
 The gauntlet is where specs go to get stress-tested by personas who are *paid to find problems*.

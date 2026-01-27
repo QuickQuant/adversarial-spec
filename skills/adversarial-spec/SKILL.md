@@ -532,6 +532,80 @@ Every arrow in an architecture diagram represents a mechanism decision. If you d
 
 This prevents the gauntlet from flagging unspecified flows after you've already designed around the wrong mechanism.
 
+### Step 2.6: External API Interface Verification (For Tech Specs)
+
+**CRITICAL**: When defining TypeScript/Python interfaces for external API responses, DO NOT GUESS.
+
+AI models pattern-match what they think an API "probably" looks like based on training data. This leads to specs with wrong field names, missing fields, and invented fields that don't exist.
+
+**Example Failure (Real Bug):**
+```typescript
+// WHAT 3 FRONTIER MODELS AGREED ON (WRONG):
+interface KalshiOrderResponse {
+  order: {
+    order_id: string;
+    status: string;
+    filled_count: number;        // ❌ WRONG - API uses "fill_count"
+    remaining_count: number;
+    average_fill_price?: number; // ❌ DOESN'T EXIST in API
+  };
+}
+```
+
+Three frontier models all agreed on this interface during constructive debate. None checked the actual Kalshi API documentation. The gauntlet can't catch this because `assumption_auditor` runs AFTER the spec is already built on false premises.
+
+**Before defining ANY external API interface:**
+
+1. **FETCH THE ACTUAL DOCUMENTATION**
+   - If Context7 MCP tools are available, use them: `mcp__context7__resolve-library-id` → `mcp__context7__query-docs`
+   - Otherwise, ask the user for a documentation link
+   - DO NOT proceed with "what it probably looks like"
+
+2. **CITE THE SOURCE**
+   Every external API interface in the spec MUST include:
+   ```typescript
+   /**
+    * Kalshi Order Response
+    * Source: https://trading-api.readme.io/reference/getorder
+    * Verified: 2026-01-27
+    */
+   interface KalshiOrderResponse {
+     // fields exactly as documented
+   }
+   ```
+
+3. **QUOTE THE ACTUAL RESPONSE**
+   If possible, include an example response from the docs:
+   ```typescript
+   // Example from docs:
+   // { "order": { "order_id": "abc", "fill_count": 5, ... } }
+   ```
+
+**Add an External API Interfaces table to tech specs:**
+
+```markdown
+## External API Interfaces
+
+| Interface | API Endpoint | Documentation Link | Verified Date |
+|-----------|--------------|-------------------|---------------|
+| KalshiOrderResponse | GET /orders/{order_id} | https://trading-api.readme.io/reference/getorder | 2026-01-27 |
+| KalshiFillResponse | GET /fills | https://trading-api.readme.io/reference/getfills | 2026-01-27 |
+```
+
+**If documentation is unavailable:**
+Mark the interface as `UNVERIFIED` and flag it for the user:
+```typescript
+/**
+ * UNVERIFIED - Documentation not found
+ * TODO: Verify field names against actual API before implementation
+ */
+interface SomeApiResponse {
+  // best guess - MUST be verified
+}
+```
+
+This prevents building an entire implementation on interfaces that don't match reality.
+
 ### Step 3: Select Opponent Models
 
 First, check which API keys are configured:
