@@ -16,8 +16,8 @@ from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("Task Manager")
 
-# Project directory detection
-_cached_project_dir: Optional[Path] = None
+# Project directory detection - NO CACHING
+# Caching caused tasks to go to wrong project when server started from home dir
 
 
 def _find_project_root(start_path: Path) -> Optional[Path]:
@@ -50,22 +50,21 @@ def get_working_dir() -> Path:
 
     Priority:
     1. MCP_WORKING_DIR environment variable (explicit override)
-    2. Detect project root from current directory
-    3. PWD environment variable
-    4. Current working directory
-    """
-    global _cached_project_dir
+    2. Detect project root from PWD/cwd (fresh each call - no caching!)
+    3. Fall back to PWD or cwd
 
+    NO CACHING: Each call detects fresh. This is important because Claude Code
+    sessions can switch projects, and we want tasks to go to the right place.
+    """
     # Explicit override always wins
     if os.environ.get("MCP_WORKING_DIR"):
         return Path(os.environ["MCP_WORKING_DIR"])
 
-    # Try to find project root (cache the result)
-    if _cached_project_dir is None:
-        start = Path(os.environ.get("PWD", os.getcwd()))
-        _cached_project_dir = _find_project_root(start) or start
+    # Detect project root fresh each time (no caching!)
+    start = Path(os.environ.get("PWD", os.getcwd()))
+    project_root = _find_project_root(start)
 
-    return _cached_project_dir
+    return project_root if project_root else start
 
 
 def get_tasks_file(project_dir: Optional[str] = None) -> Path:
