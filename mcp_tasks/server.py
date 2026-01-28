@@ -157,9 +157,16 @@ def TaskGet(taskId: str) -> dict:
 
 
 @mcp.tool()
-def TaskList() -> dict:
+def TaskList(
+    session_id: Optional[str] = None,
+    status: Optional[str] = None,
+) -> dict:
     """
     List all tasks in the task list.
+
+    Args:
+        session_id: Optional filter - only return tasks with this session_id in metadata
+        status: Optional filter - only return tasks with this status (pending, in_progress, completed)
 
     Returns:
         A summary of all tasks with their IDs, subjects, statuses, owners, and blockedBy lists
@@ -168,6 +175,15 @@ def TaskList() -> dict:
 
     summary = []
     for task in data["tasks"]:
+        # Filter by session_id if provided
+        if session_id:
+            task_session = task.get("metadata", {}).get("session_id")
+            if task_session != session_id:
+                continue
+
+        # Filter by status if provided
+        if status and task.get("status") != status:
+            continue
         # Only show blockedBy tasks that are not yet completed
         open_blockers = []
         for blocker_id in task.get("blockedBy", []):
