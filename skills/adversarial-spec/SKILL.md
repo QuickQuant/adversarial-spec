@@ -22,10 +22,16 @@ Use these tools throughout the workflow:
 |------|---------|---------|
 | `TaskCreate` | Create a new task | `TaskCreate(subject="Run debate round 1", description="...")` |
 | `TaskUpdate` | Update status, add blockers | `TaskUpdate(taskId="3", status="completed", owner="adv-spec:debate")` |
-| `TaskList` | See tasks (filter by session!) | `TaskList(session_id="adv-spec-20260127-myproject")` |
+| `TaskList` | See tasks or list contexts | `TaskList(context_name="OMS Implementation")` |
 | `TaskGet` | Get full task details | `TaskGet(taskId="3")` |
 
-**IMPORTANT:** Always use `TaskList(session_id="...")` to filter to the current project's tasks. Get the session_id from `.adversarial-spec/session-state.json`. Without this filter, you'll see tasks from ALL projects.
+**TaskList parameters:**
+- `session_id`: Filter by session_id in metadata
+- `context_name`: Filter by context_name in metadata (preferred - human-readable)
+- `status`: Filter by status (pending, in_progress, completed)
+- `list_contexts`: If true, returns summary of all active contexts instead of task list
+
+**IMPORTANT:** Use `TaskList(list_contexts=True)` at session start to detect active work streams. Then use `TaskList(context_name="...")` to see tasks for the selected context.
 
 **Key fields (via TaskUpdate):**
 - **`owner`** - Who's responsible: `adv-spec:orchestrator`, `adv-spec:debate`, `adv-spec:planner`, `adv-spec:impl:backend`
@@ -194,6 +200,7 @@ Use structured metadata to track tasks throughout the workflow. Different task t
   "source": "roadmap",
   "task_type": "milestone",
   "session_id": "adv-spec-20260124-150000",
+  "context_name": "OMS Implementation",
   "phase": "roadmap",
   "milestone_id": "M1",
   "roadmap_path": "roadmap/manifest.json",
@@ -206,6 +213,7 @@ Use structured metadata to track tasks throughout the workflow. Different task t
   "source": "roadmap",
   "task_type": "user_story",
   "session_id": "adv-spec-20260124-150000",
+  "context_name": "OMS Implementation",
   "phase": "roadmap",
   "milestone_id": "M1",
   "user_story_id": "US-1",
@@ -217,6 +225,7 @@ Use structured metadata to track tasks throughout the workflow. Different task t
   "schema_version": "1.0",
   "task_type": "debate",
   "session_id": "adv-spec-20260124-150000",
+  "context_name": "OMS Implementation",
   "phase": "debate",
   "doc_type": "spec",
   "depth": "technical",
@@ -230,6 +239,7 @@ Use structured metadata to track tasks throughout the workflow. Different task t
   "schema_version": "1.0",
   "task_type": "implementation",
   "session_id": "adv-spec-20260124-150000",
+  "context_name": "OMS Implementation",
   "phase": "implementation",
   "milestone_id": "M1",
   "user_story_ids": ["US-1", "US-2"],
@@ -246,6 +256,7 @@ Use structured metadata to track tasks throughout the workflow. Different task t
 - `schema_version`: Always "1.0"
 - `task_type`: One of `milestone`, `user_story`, `test_case`, `debate`, `implementation`
 - `session_id`: Format `adv-spec-YYYYMMDD-HHMMSS`
+- `context_name`: Human-readable name for the work stream (e.g., "OMS Implementation")
 - `phase`: One of `roadmap`, `debate`, `gauntlet`, `implementation`
 
 **Roadmap-linked fields:**
@@ -480,18 +491,70 @@ SPEC_EOF
 
 ## Process
 
-### Step 0: Initialize Task Tracking
+### Step 0: Context Detection (Work Stream Selection)
 
-Before anything else, set up MCP Tasks for the workflow:
+**Before doing anything else**, detect if there are multiple active work streams and let the user choose which one to work on. This prevents confusion when switching between different tasks.
 
-1. **Read current project's session state:** Check `.adversarial-spec/session-state.json` to get the `session_id` for this project
-2. **Check for existing session:** Use `TaskList(session_id="...")` to see only this project's tasks (not tasks from other projects)
+1. **List active contexts:** Use `TaskList(list_contexts=True)` to get all contexts with pending/in_progress tasks
+
+2. **If multiple active contexts exist**, present them to the user:
+   ```
+   I found 2 active work streams in this project:
+
+     1. OMS Implementation
+        - 3 tasks in progress, last active 2 days ago
+        - Session: adv-spec-20260125-oms
+
+     2. Pricing Bug Fix
+        - 1 task in progress, last active 4 hours ago
+        - Session: adv-spec-20260128-pricing
+
+   Which are you working on? Or describe something new.
+   ```
+
+3. **If user selects existing context:**
+   - Load the corresponding `session_id` and `context_name`
+   - Use `TaskList(context_name="...")` to see tasks for that context
+   - Proceed to resume from where they left off
+
+4. **If user describes new work:**
+   - Ask: "What should we call this work stream?" (e.g., "OMS Implementation", "Pricing Bug Fix")
+   - Generate new `session_id`: `adv-spec-YYYYMMDD-HHMMSS`
+   - Store `context_name` in session-state.json and all task metadata
+   - Proceed to Step 0.5 to initialize task tracking
+
+5. **If only one context exists:**
+   - Briefly confirm: "Resuming work on [context_name]..."
+   - Proceed with that context
+
+6. **If no active contexts exist:**
+   - Proceed to Step 0.5 as new work
+
+**Session state file** (`.adversarial-spec/session-state.json`) now includes `context_name`:
+
+```json
+{
+  "schema_version": "1.0",
+  "session_id": "adv-spec-20260128-143022",
+  "context_name": "OMS Implementation",
+  "current_phase": "debate",
+  "current_step": "Round 2 synthesis",
+  ...
+}
+```
+
+### Step 0.5: Initialize Task Tracking
+
+Set up MCP Tasks for the workflow:
+
+1. **Read current project's session state:** Check `.adversarial-spec/session-state.json` to get the `session_id` and `context_name`
+2. **Check for existing session:** Use `TaskList(session_id="...")` to see only this context's tasks
 3. **Create session tasks:** Use `TaskCreate` to create tasks for each phase (see "Task-Driven Workflow" above)
-4. **Set metadata:** Include `session_id`, `phase`, and `doc_type` in each task's metadata
+4. **Set metadata:** Include `session_id`, `context_name`, `phase`, and `doc_type` in each task's metadata
 5. **Set dependencies:** Use `addBlockedBy` to establish the dependency chain
 6. **Start first task:** Mark "Determine document type" as `in_progress` with owner `adv-spec:orchestrator`
 
-**IMPORTANT:** Always filter tasks by session_id to avoid seeing tasks from other projects. The MCP tasks server is global, but each project has its own session_id in `.adversarial-spec/session-state.json`.
+**IMPORTANT:** Always include `context_name` in task metadata. This enables the context detection in Step 0.
 
 ### Step 1: Gather Input and Offer Interview Mode
 

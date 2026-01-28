@@ -159,19 +159,60 @@ def TaskGet(taskId: str) -> dict:
 @mcp.tool()
 def TaskList(
     session_id: Optional[str] = None,
+    context_name: Optional[str] = None,
     status: Optional[str] = None,
+    list_contexts: bool = False,
 ) -> dict:
     """
-    List all tasks in the task list.
+    List all tasks in the task list, or list available contexts.
 
     Args:
         session_id: Optional filter - only return tasks with this session_id in metadata
+        context_name: Optional filter - only return tasks with this context_name in metadata
         status: Optional filter - only return tasks with this status (pending, in_progress, completed)
+        list_contexts: If true, return a summary of all contexts with task counts instead of task list
 
     Returns:
-        A summary of all tasks with their IDs, subjects, statuses, owners, and blockedBy lists
+        If list_contexts=True: Summary of contexts with their task counts and last activity
+        Otherwise: A summary of all tasks with their IDs, subjects, statuses, owners, and blockedBy lists
     """
     data = load_tasks()
+
+    # If list_contexts is True, return context summary instead of task list
+    if list_contexts:
+        contexts = {}
+        for task in data["tasks"]:
+            ctx_name = task.get("metadata", {}).get("context_name", "unnamed")
+            if ctx_name not in contexts:
+                contexts[ctx_name] = {
+                    "context_name": ctx_name,
+                    "session_id": task.get("metadata", {}).get("session_id"),
+                    "total": 0,
+                    "pending": 0,
+                    "in_progress": 0,
+                    "completed": 0,
+                    "last_updated": None,
+                }
+            contexts[ctx_name]["total"] += 1
+            task_status = task.get("status", "pending")
+            if task_status == "pending":
+                contexts[ctx_name]["pending"] += 1
+            elif task_status == "in_progress":
+                contexts[ctx_name]["in_progress"] += 1
+            elif task_status == "completed":
+                contexts[ctx_name]["completed"] += 1
+            # Track most recent update
+            task_updated = task.get("updatedAt")
+            if task_updated:
+                if contexts[ctx_name]["last_updated"] is None or task_updated > contexts[ctx_name]["last_updated"]:
+                    contexts[ctx_name]["last_updated"] = task_updated
+
+        # Filter to contexts with active work (pending or in_progress)
+        active_contexts = [c for c in contexts.values() if c["pending"] > 0 or c["in_progress"] > 0]
+        return {
+            "contexts": active_contexts,
+            "total_contexts": len(active_contexts),
+        }
 
     summary = []
     for task in data["tasks"]:
@@ -179,6 +220,12 @@ def TaskList(
         if session_id:
             task_session = task.get("metadata", {}).get("session_id")
             if task_session != session_id:
+                continue
+
+        # Filter by context_name if provided
+        if context_name:
+            task_context = task.get("metadata", {}).get("context_name")
+            if task_context != context_name:
                 continue
 
         # Filter by status if provided
@@ -198,6 +245,7 @@ def TaskList(
             "status": task["status"],
             "owner": task.get("owner"),
             "blockedBy": open_blockers,
+            "context_name": task.get("metadata", {}).get("context_name"),
         })
 
     return {
