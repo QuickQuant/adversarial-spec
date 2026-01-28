@@ -22,15 +22,17 @@ Use these tools throughout the workflow:
 |------|---------|---------|
 | `TaskCreate` | Create a new task | `TaskCreate(subject="Run debate round 1", description="...")` |
 | `TaskUpdate` | Update status, add blockers | `TaskUpdate(taskId="3", status="completed", owner="adv-spec:debate")` |
-| `TaskList` | See all tasks and progress | `TaskList()` |
+| `TaskList` | See tasks (filter by session!) | `TaskList(session_id="adv-spec-20260127-myproject")` |
 | `TaskGet` | Get full task details | `TaskGet(taskId="3")` |
+
+**IMPORTANT:** Always use `TaskList(session_id="...")` to filter to the current project's tasks. Get the session_id from `.adversarial-spec/session-state.json`. Without this filter, you'll see tasks from ALL projects.
 
 **Key fields (via TaskUpdate):**
 - **`owner`** - Who's responsible: `adv-spec:orchestrator`, `adv-spec:debate`, `adv-spec:planner`, `adv-spec:impl:backend`
 - **`addBlockedBy`** - Dependencies: task IDs that must complete first
 - **`metadata`** - Context: `{"phase": "debate", "round": 1, "session_id": "...", "concern_ids": [...]}`
 
-Tasks are stored in `.claude/tasks.json` in the current project.
+Tasks are stored globally but filtered by `session_id` in metadata.
 
 ### Initial Task Structure
 
@@ -38,10 +40,11 @@ When `/adversarial-spec` is invoked, create the following task structure using T
 
 ```
 Phase 1: Requirements Gathering
-- [ ] Determine document type (PRD/tech/debug)
+- [ ] Determine document type (spec or debug)
+- [ ] If spec: determine depth (product, technical, or full)
 - [ ] Identify starting point (existing file or new concept)
-- [ ] Offer interview mode (PRD/tech only; debug skips interview)
-- [ ] Conduct interview (if selected, PRD/tech only)
+- [ ] Offer interview mode (spec only; debug skips interview)
+- [ ] Conduct interview (if selected, spec only)
   - [ ] Problem & Context (what problem, prior attempts, why now)
   - [ ] Users & Stakeholders (all user types, technical levels, concerns)
   - [ ] Functional Requirements (core journey, decision points, edge cases)
@@ -51,8 +54,30 @@ Phase 1: Requirements Gathering
   - [ ] Risks & Concerns (what could fail, assumptions, dependencies)
   - [ ] Success Criteria (metrics, minimum viable, exceeding expectations)
 - [ ] For debug: Gather symptoms, evidence, initial hypotheses
-- [ ] Load existing file OR generate initial draft
-- [ ] User confirms initial draft before debate
+- [ ] Build RequirementsSummary (user types, features, integrations, unknowns)
+- [ ] User confirms requirements before roadmap
+
+Phase 1.5: Roadmap Alignment (spec only, REQUIRED)
+- [ ] Assess complexity (simple/medium/complex)
+  - simple: score ≤4, no integrations, no unknowns → one-shot roadmap
+  - medium: score 5-9 or 1 integration → one debate round on roadmap
+  - complex: score ≥10 or 2+ integrations → roadmap folder, iterative discovery
+- [ ] Draft initial roadmap
+  - [ ] Define user stories (AS A... I WANT... SO THAT...)
+  - [ ] Define natural language success criteria
+  - [ ] Identify "Getting Started" workflow (for technical/full depth)
+  - [ ] Define milestones with dependencies
+- [ ] Validate roadmap schema
+- [ ] Roadmap debate (if medium/complex)
+  - [ ] Send roadmap to opponent models
+  - [ ] Synthesize questions surfaced
+  - [ ] Ask user clarifying questions
+  - [ ] Revise roadmap based on answers
+- [ ] User confirms roadmap (REQUIRED checkpoint)
+- [ ] Persist roadmap artifacts (manifest.json + rendered views)
+- [ ] Create milestone Tasks
+- [ ] Create user story Tasks
+- [ ] Note: Test cases expand from natural language → concrete during implementation
 
 Phase 2: Adversarial Debate
 - [ ] Check available API providers
@@ -86,9 +111,10 @@ Phase 4: Finalization
 - [ ] Quality check: Consistency (terminology, formatting uniform?)
 - [ ] Quality check: Clarity (no ambiguous language?)
 - [ ] Quality check: Actionability (stakeholders can act without questions?)
+- [ ] Verify spec addresses ALL roadmap user stories
 - [ ] Document-specific verification:
-  - PRD: user stories, success metrics, scope boundaries
-  - Tech: APIs with schemas, data models, performance targets
+  - Spec (product depth): user stories, success metrics, scope boundaries
+  - Spec (technical/full depth): APIs with schemas, data models, performance targets, Getting Started
   - Debug: evidence supports diagnosis, fix is proportional, verification plan exists
 - [ ] Output final document to terminal
 - [ ] Write to spec-output.md (or debug-output.md for debug type)
@@ -158,20 +184,75 @@ Phase 7: Implementation (if proceeding with code execution)
 - **Implementation:** Use execution plan's dependency graph for `blockedBy`
 
 **Metadata Fields:**
+
+Use structured metadata to track tasks throughout the workflow. Different task types use different fields:
+
 ```json
+// Milestone task (from roadmap)
 {
+  "schema_version": "1.0",
+  "source": "roadmap",
+  "task_type": "milestone",
+  "session_id": "adv-spec-20260124-150000",
+  "phase": "roadmap",
+  "milestone_id": "M1",
+  "roadmap_path": "roadmap/manifest.json",
+  "test_summary": {"total": 5, "passing": 2, "failing": 1, "not_started": 2}
+}
+
+// User story task (from roadmap)
+{
+  "schema_version": "1.0",
+  "source": "roadmap",
+  "task_type": "user_story",
+  "session_id": "adv-spec-20260124-150000",
+  "phase": "roadmap",
+  "milestone_id": "M1",
+  "user_story_id": "US-1",
+  "test_cases": ["TC-1.1", "TC-1.2"]
+}
+
+// Debate round task
+{
+  "schema_version": "1.0",
+  "task_type": "debate",
   "session_id": "adv-spec-20260124-150000",
   "phase": "debate",
-  "doc_type": "tech",
+  "doc_type": "spec",
+  "depth": "technical",
   "round": 3,
   "models": ["gpt-5.2", "gemini-3-pro"],
+  "roadmap_milestone": "M1"
+}
+
+// Implementation task (from execution plan)
+{
+  "schema_version": "1.0",
+  "task_type": "implementation",
+  "session_id": "adv-spec-20260124-150000",
+  "phase": "implementation",
+  "milestone_id": "M1",
+  "user_story_ids": ["US-1", "US-2"],
   "concern_ids": ["PARA-abc123"],
   "spec_refs": ["Section 3.2"],
   "workstream": "backend",
   "risk_level": "high",
-  "effort": "M"
+  "effort": "M",
+  "test_strategy": "test-first"
 }
 ```
+
+**Required fields for all tasks:**
+- `schema_version`: Always "1.0"
+- `task_type`: One of `milestone`, `user_story`, `test_case`, `debate`, `implementation`
+- `session_id`: Format `adv-spec-YYYYMMDD-HHMMSS`
+- `phase`: One of `roadmap`, `debate`, `gauntlet`, `implementation`
+
+**Roadmap-linked fields:**
+- `milestone_id`: Links task to roadmap milestone (e.g., "M1")
+- `user_story_id`: Links task to user story (e.g., "US-1")
+- `roadmap_path`: Path to manifest.json
+- `test_summary`: Progress tracking for milestones
 
 **Handling Optional Phases:**
 - **Interview**: If user declines, remove all 8 interview sub-tasks
@@ -191,11 +272,37 @@ If you encounter provider issues or need to configure new API keys, see [SETUP.m
 
 Ask the user which type of document they want to produce:
 
-### PRD (Product Requirements Document)
+### Spec (Unified Specification)
 
-Business and product-focused document for stakeholders, PMs, and designers.
+**Two pathways:** `spec` (for creating new things) and `debug` (for fixing existing things).
 
-**Structure:**
+The `spec` pathway has three depth levels that control required sections:
+
+| Depth | Focus | When to Use |
+|-------|-------|-------------|
+| `product` | User value, stakeholders, success metrics | Product planning, stakeholder alignment |
+| `technical` | Architecture, APIs, data models | Engineering implementation |
+| `full` | All of the above | Complete journey from requirements to implementation |
+
+**CLI usage:**
+```bash
+# Product-focused spec (like old PRD)
+adversarial-spec critique --doc-type spec --depth product
+
+# Technical spec (like old tech spec)
+adversarial-spec critique --doc-type spec --depth technical
+
+# Full spec (both product and technical)
+adversarial-spec critique --doc-type spec --depth full
+```
+
+**Legacy flags (deprecated, will be removed in v2.0):**
+- `--doc-type prd` → `--doc-type spec --depth product`
+- `--doc-type tech` → `--doc-type spec --depth technical`
+
+#### Spec Structure by Depth
+
+**Product depth** (stakeholder-focused):
 - Executive Summary
 - Problem Statement / Opportunity
 - Target Users / Personas
@@ -206,24 +313,11 @@ Business and product-focused document for stakeholders, PMs, and designers.
 - Scope (In/Out)
 - Dependencies
 - Risks and Mitigations
-- Timeline / Milestones (optional)
 
-**Critique Criteria:**
-1. Clear problem definition with evidence
-2. Well-defined user personas with real pain points
-3. User stories follow proper format (As a... I want... So that...)
-4. Measurable success criteria
-5. Explicit scope boundaries
-6. Realistic risk assessment
-7. No technical implementation details (that's for tech spec)
-
-### Technical Specification / Architecture Document
-
-Engineering-focused document for developers and architects.
-
-**Structure:**
+**Technical depth** (engineering-focused):
 - Overview / Context
 - Goals and Non-Goals
+- **Getting Started** (REQUIRED - bootstrap workflow)
 - System Architecture
 - Component Design
 - API Design (endpoints, request/response schemas)
@@ -238,15 +332,35 @@ Engineering-focused document for developers and architects.
 - Migration Plan (if applicable)
 - Open Questions / Future Considerations
 
-**Critique Criteria:**
-1. Clear architectural decisions with rationale
-2. Complete API contracts (not just endpoints, but full schemas)
-3. Data model handles all identified use cases
-4. Security threats identified and mitigated
-5. Error scenarios enumerated with handling strategy
-6. Performance targets are specific and measurable
-7. Deployment is repeatable and reversible
-8. No ambiguity an engineer would need to resolve
+**Full depth**: All sections from both product and technical.
+
+#### Critique Criteria by Depth
+
+**Product depth:**
+1. Clear problem definition with evidence
+2. Well-defined user personas with real pain points
+3. User stories follow proper format (As a... I want... So that...)
+4. Measurable success criteria
+5. Explicit scope boundaries
+6. Realistic risk assessment
+
+**Technical depth:**
+1. **Getting Started section exists** - Clear bootstrap workflow
+2. Clear architectural decisions with rationale
+3. Complete API contracts (not just endpoints, but full schemas)
+4. Data model handles all identified use cases
+5. Security threats identified and mitigated
+6. Error scenarios enumerated with handling strategy
+7. Performance targets are specific and measurable
+8. Deployment is repeatable and reversible
+9. No ambiguity an engineer would need to resolve
+
+**Full depth:** All criteria from both.
+
+**CRITICAL for Round 1:** Before technical critique, verify:
+- All roadmap user stories have corresponding spec sections
+- "Getting Started" section exists (technical/full depth)
+- Success criteria are testable
 
 ### Debug Investigation
 
@@ -370,11 +484,14 @@ SPEC_EOF
 
 Before anything else, set up MCP Tasks for the workflow:
 
-1. **Check for existing session:** Use `TaskList` to see if there's an existing adversarial-spec session in progress
-2. **Create session tasks:** Use `TaskCreate` to create tasks for each phase (see "Task-Driven Workflow" above)
-3. **Set metadata:** Include `session_id`, `phase`, and `doc_type` in each task's metadata
-4. **Set dependencies:** Use `addBlockedBy` to establish the dependency chain
-5. **Start first task:** Mark "Determine document type" as `in_progress` with owner `adv-spec:orchestrator`
+1. **Read current project's session state:** Check `.adversarial-spec/session-state.json` to get the `session_id` for this project
+2. **Check for existing session:** Use `TaskList(session_id="...")` to see only this project's tasks (not tasks from other projects)
+3. **Create session tasks:** Use `TaskCreate` to create tasks for each phase (see "Task-Driven Workflow" above)
+4. **Set metadata:** Include `session_id`, `phase`, and `doc_type` in each task's metadata
+5. **Set dependencies:** Use `addBlockedBy` to establish the dependency chain
+6. **Start first task:** Mark "Determine document type" as `in_progress` with owner `adv-spec:orchestrator`
+
+**IMPORTANT:** Always filter tasks by session_id to avoid seeing tasks from other projects. The MCP tasks server is global, but each project has its own session_id in `.adversarial-spec/session-state.json`.
 
 ### Step 1: Gather Input and Offer Interview Mode
 
@@ -382,16 +499,22 @@ Before anything else, set up MCP Tasks for the workflow:
 
 Ask the user:
 
-1. **Document type**: "PRD", "tech", or "debug"
-   - PRD: Product Requirements Document (business/product focus)
-   - tech: Technical Specification (engineering focus)
+1. **Document type**: "spec" or "debug"
+   - spec: Unified specification (replaces PRD/tech, use depth to control focus)
    - debug: Debug Investigation (evidence-based diagnosis)
-2. **Starting point**:
+
+2. **If spec, ask depth**: "product", "technical", or "full"
+   - product: Business/stakeholder focus (like old PRD)
+   - technical: Engineering focus (like old tech spec)
+   - full: Both product and technical sections
+
+3. **Starting point**:
    - Path to existing file (e.g., `./docs/spec.md`, `~/projects/auth-spec.md`)
    - Or describe what to build (user provides concept, you draft the document)
    - For debug: describe symptoms, provide logs, or reference an existing investigation
-3. **Interview mode** (optional, PRD/tech only):
-   > "Would you like to start with an in-depth interview session before the adversarial debate? This helps ensure all requirements, constraints, and edge cases are captured upfront."
+
+4. **Interview mode** (optional, spec only):
+   > "Would you like to start with an in-depth interview session? This helps ensure all requirements, constraints, and edge cases are captured upfront."
 
    Note: Debug investigations skip interview mode and go directly to evidence gathering.
 
@@ -462,9 +585,192 @@ If the user opts for interview mode, conduct a comprehensive interview using the
 - Use multiple AskUserQuestion calls to cover all topics
 
 **After interview completion:**
-1. Synthesize all answers into a complete spec document
-2. Write the spec to file
-3. Show the user the generated spec and confirm before proceeding to debate
+1. Synthesize all answers into a RequirementsSummary
+2. Proceed to Step 1.6 (Roadmap Alignment)
+
+### Step 1.6: Roadmap Alignment (Spec Only, REQUIRED)
+
+**This step is MANDATORY for all spec documents.** It ensures user stories and testable milestones are defined BEFORE technical debate begins.
+
+**Update Tasks:** Mark "Assess complexity" as `in_progress`.
+
+#### 1. Build RequirementsSummary
+
+From interview answers (or by asking clarifying questions if no interview), build:
+
+```json
+{
+  "user_types": ["developer", "admin", "end-user"],
+  "feature_groups": ["authentication", "data export", "reporting"],
+  "external_integrations": ["Kalshi API", "Polymarket API"],
+  "unknowns": ["rate limit behavior under load"],
+  "bootstrap_steps": ["Install CLI", "Configure API keys", "Run first query"]
+}
+```
+
+**Validation:**
+- `user_types` must have at least 1 entry
+- `feature_groups` must have at least 1 entry
+- For technical/full depth: `bootstrap_steps` must be non-empty
+
+#### 2. Assess Complexity
+
+Calculate complexity score:
+```
+score = user_types + feature_groups + (2 × integrations) + unknowns
+```
+
+| Tier | Criteria | Roadmap Action |
+|------|----------|----------------|
+| **Simple** | score ≤ 4, no integrations, no unknowns | One-shot inline roadmap |
+| **Medium** | score 5-9 or exactly 1 integration | One debate round on roadmap |
+| **Complex** | score ≥ 10 or 2+ integrations or 3+ unknowns | Create `roadmap/` folder |
+
+**User can override:** `--complexity-override simple|medium|complex`
+
+#### 3. Draft Roadmap
+
+Generate roadmap with user stories and milestones:
+
+```markdown
+## Roadmap: [Feature Name]
+
+### Milestone 1: [Name]
+**User Stories:**
+- US-1: As a [persona], I want [action] so that [benefit]
+- US-2: ...
+
+**Success Criteria (Natural Language):**
+- [ ] User can [do X]
+- [ ] System responds with [Y]
+- [ ] Error case [Z] is handled
+
+**Test Cases (expand during implementation):**
+- TC-1.1: [Description] (stage: nl)
+- TC-1.2: [Description] (stage: nl)
+
+**Dependencies:** None | M0
+
+### Milestone 2: ...
+```
+
+**For technical/full depth, REQUIRE a "Getting Started" milestone:**
+```markdown
+### Milestone 0: Getting Started (Bootstrap)
+**User Stories:**
+- US-0: As a new user, I want to set up the tool so that I can start using it
+
+**Success Criteria:**
+- [ ] Setup takes < 5 minutes
+- [ ] Clear error messages if prerequisites missing
+- [ ] Can verify setup worked before proceeding
+```
+
+#### 4. Roadmap Debate (Medium/Complex Only)
+
+For medium or complex tier, run one debate round on the roadmap itself:
+
+```bash
+python3 debate.py critique --models MODEL_LIST --doc-type spec --depth product <<'ROADMAP_EOF'
+[roadmap content]
+ROADMAP_EOF
+```
+
+Opponent models critique:
+- Missing user stories
+- Unclear success criteria
+- Missing bootstrap workflow
+- Dependency issues
+
+Synthesize questions surfaced and ask user before finalizing.
+
+#### 5. User Confirmation (REQUIRED)
+
+**CRITICAL CHECKPOINT:** Before writing any files, present the roadmap to the user:
+
+> "Here's the roadmap I've drafted:
+>
+> **Complexity:** [tier] (score: [N])
+> **Milestones:** [list]
+> **User Stories:** [count]
+> **Getting Started:** [present/missing]
+>
+> Do you want to:
+> 1. Accept this roadmap
+> 2. Make changes
+> 3. Run roadmap debate for more perspectives"
+
+**Do NOT proceed to adversarial debate until user confirms roadmap.**
+
+#### 6. Persist Roadmap Artifacts
+
+**For simple tier:**
+- Include roadmap inline in spec document
+
+**For medium/complex tier:**
+Write to `roadmap/` folder:
+```
+roadmap/
+  manifest.json      # Source of truth (JSON)
+  overview.md        # Rendered human-readable view
+  _progress.json     # Test status tracking
+  _progress.md       # Human-readable progress
+```
+
+#### 7. Create Roadmap Tasks
+
+Create MCP Tasks for each milestone and user story:
+
+```python
+# Milestone task
+TaskCreate(
+    subject="[M1] Core Engine",
+    description="...",
+    metadata={
+        "schema_version": "1.0",
+        "source": "roadmap",
+        "task_type": "milestone",
+        "milestone_id": "M1",
+        "roadmap_path": "roadmap/manifest.json"
+    }
+)
+
+# User story task
+TaskCreate(
+    subject="[US-1] Bootstrap documentation",
+    description="As a developer, I want to bootstrap docs...",
+    metadata={
+        "schema_version": "1.0",
+        "source": "roadmap",
+        "task_type": "user_story",
+        "milestone_id": "M1",
+        "user_story_id": "US-1",
+        "test_cases": ["TC-1.1", "TC-1.2"]
+    }
+)
+```
+
+#### 8. Test Case Evolution
+
+Test cases evolve through stages during the workflow:
+
+| Stage | When | Format |
+|-------|------|--------|
+| `nl` (natural language) | Roadmap creation | "User can bootstrap documentation" |
+| `acceptance` | After debate | "Given valid URL, when bootstrap runs, docs appear in index within 30s" |
+| `concrete` | During implementation | `def test_bootstrap(): assert bootstrap(url).success` |
+
+**Completeness rule:** Test case design is not complete until concrete tests cover all natural language descriptions. This may require multiple adversarial-spec rounds.
+
+**Linking concrete tests:** Use `@spec:TC-X.Y` tags in test files:
+```python
+def test_bootstrap_from_url():
+    """
+    @spec:TC-1.1
+    """
+    result = bootstrap("https://example.com/docs")
+    assert result.success
+```
 
 ### Step 2: Load or Generate Initial Document
 
@@ -685,6 +991,35 @@ Synthesis:
 - Added by Claude: <your contributions>
 - Rejected: <what and why>
 ```
+
+**Round 1 Roadmap Validation (REQUIRED for Spec documents):**
+
+In Round 1, BEFORE reviewing technical details, validate against the roadmap:
+
+1. **User Story Coverage:** Does the spec address ALL user stories from the roadmap?
+   - For each `US-X` in roadmap, there should be corresponding spec sections
+   - Flag any user story without clear spec coverage
+
+2. **Getting Started Exists:** For technical/full depth, verify:
+   - A "Getting Started" or "Bootstrap" section exists
+   - The bootstrap workflow from the roadmap is documented
+   - New users can understand how to set up the system
+
+3. **Success Criteria Testable:** For each success criterion:
+   - Is it specific enough to write a test for?
+   - If not, flag for clarification
+
+4. **USER CHECKPOINT (Round 1 only):**
+   After Round 1 synthesis, ask the user:
+   > "Round 1 identified these gaps against your roadmap:
+   > - [list gaps if any]
+   >
+   > And these technical concerns:
+   > - [list concerns]
+   >
+   > Before Round 2, do any of these conflict with your priorities?"
+
+   Do NOT proceed to Round 2 until user confirms direction.
 
 **Handling Early Agreement (Anti-Laziness Check):**
 
