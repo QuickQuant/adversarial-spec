@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.1",
+  "active_session": "skill-improvement",
+  "active_session_file": ".adversarial-spec/sessions/skill-improvement.json",
+  "context_name": "Adversarial-Spec Skill Development",
+  "current_phase": "complete",
+  "current_step": "Medal system, meta-reports, and enhanced stats implemented",
+  "completed_work": "Tasks #94-99 complete. This session: Added medal awards system (Gold/Silver/Bronze for unique catches), adversary versioning (v1.0), Final Boss meta-reports (process + self reflection), enhanced stats (time-per-adversary, concern length correlation, rebuttal by severity, model pairing effectiveness, adversary pair synergy). Removed deprecated model references (gpt-4o, o3-mini). Fixed all ruff issues. Added deprecated_models hook.",
+  "next_action": "Docmaster implementation ready. Start with task #100 (Set up project structure). OR continue tuning adversary personas based on stats.",
+  "do_not_ask": "Structured spec converter (rejected), PRD vs tech spec distinction (removed), regex-based extraction (replaced with LLM), deprecated OpenAI models (removed).",
+  "files_changed": [
+    "skills/adversarial-spec/scripts/gauntlet.py (medal system, meta-reports, enhanced stats, timing)",
+    "skills/adversarial-spec/scripts/adversaries.py (versioning, content_hash)",
+    "skills/adversarial-spec/scripts/debate.py (medal-leaderboard, adversary-versions CLI)",
+    "skills/adversarial-spec/scripts/providers.py (removed deprecated models)",
+    ".claude/hooks/deprecated_models.py (NEW - blocks old model usage)"
+  ],
+  "new_cli_commands": [
+    "python3 debate.py medal-leaderboard",
+    "python3 debate.py adversary-versions"
+  ],
+  "updated_at": "2026-01-29T09:35:00Z"
+}

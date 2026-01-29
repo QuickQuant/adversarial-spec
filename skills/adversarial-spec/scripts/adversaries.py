@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Optional
 
 
@@ -23,6 +24,12 @@ class Adversary:
     invalid_dismissal: str  # Invalid dismissal patterns
     valid_acceptance: Optional[str] = None  # When to accept concerns
     rule: str = ""  # One-line summary rule
+    version: str = "1.0"  # Version for tracking persona changes over time
+
+    def content_hash(self) -> str:
+        """Generate hash of persona content for version tracking."""
+        content = f"{self.persona}{self.valid_dismissal}{self.invalid_dismissal}{self.valid_acceptance or ''}{self.rule}"
+        return hashlib.sha256(content.encode()).hexdigest()[:12]
 
 
 # =============================================================================
@@ -782,3 +789,47 @@ def get_adversary(name: str) -> Optional[Adversary]:
 def get_prefix(name: str) -> str:
     """Get the ID prefix for an adversary name."""
     return ADVERSARY_PREFIXES.get(name, name[:4].upper())
+
+
+def get_version_manifest() -> dict[str, dict]:
+    """Get version manifest for all adversaries.
+
+    Returns a dict mapping adversary name to version info:
+    {
+        "paranoid_security": {
+            "version": "1.0",
+            "content_hash": "abc123def456",
+            "prefix": "PARA"
+        },
+        ...
+    }
+
+    Use this to track persona changes over time and correlate
+    with performance metrics.
+    """
+    manifest = {}
+    all_adversaries = (
+        list(PRE_GAUNTLET.values()) +
+        list(ADVERSARIES.values()) +
+        list(FINAL_BOSS.values())
+    )
+    for adv in all_adversaries:
+        manifest[adv.name] = {
+            "version": adv.version,
+            "content_hash": adv.content_hash(),
+            "prefix": adv.prefix,
+        }
+    return manifest
+
+
+def print_version_manifest() -> None:
+    """Print current adversary versions for reference."""
+    manifest = get_version_manifest()
+    print("=== Adversary Version Manifest ===")
+    print(f"Generated: {datetime.now().isoformat()}\n")
+    for name, info in sorted(manifest.items()):
+        print(f"{name}:")
+        print(f"  version: {info['version']}")
+        print(f"  content_hash: {info['content_hash']}")
+        print(f"  prefix: {info['prefix']}")
+        print()

@@ -363,13 +363,12 @@ def get_available_providers() -> list[tuple[str, Optional[str], str]]:
         Note: env_var can be None for providers like Codex CLI that use alternative auth.
     """
     providers = [
-        ("OpenAI", "OPENAI_API_KEY", "gpt-4o"),
+        # Note: OpenAI direct API deprecated in favor of Codex CLI (free with ChatGPT subscription)
         ("Anthropic", "ANTHROPIC_API_KEY", "claude-sonnet-4-20250514"),
         ("Google", "GEMINI_API_KEY", "gemini/gemini-2.0-flash"),
         ("xAI", "XAI_API_KEY", "xai/grok-3"),
         ("Mistral", "MISTRAL_API_KEY", "mistral/mistral-large"),
         ("Groq", "GROQ_API_KEY", "groq/llama-3.3-70b-versatile"),
-        ("OpenRouter", "OPENROUTER_API_KEY", "openrouter/openai/gpt-4o"),
         ("Deepseek", "DEEPSEEK_API_KEY", "deepseek/deepseek-chat"),
         ("Zhipu", "ZHIPUAI_API_KEY", "zhipu/glm-4"),
     ]

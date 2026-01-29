@@ -38,7 +38,6 @@ class FinalBossVerdict(str, Enum):
 
 from adversaries import (
     ADVERSARIES,
-    ADVERSARY_PREFIXES,
     FINAL_BOSS,
     generate_concern_id,
 )
@@ -166,6 +165,7 @@ class GauntletResult:
     raw_concerns: Optional[list[Concern]] = None  # Pre-filtering concerns (all generated)
     dropped_concerns: Optional[list[Concern]] = None  # Concerns dropped by filtering
     spec_hash: Optional[str] = None  # Hash of the spec that was reviewed
+    adversary_timing: Optional[dict[str, float]] = None  # Time per adversary in seconds
 
     def get_adversary_stats(self) -> dict[str, dict]:
         """Get per-adversary statistics from this run.
@@ -213,6 +213,19 @@ class GauntletResult:
             else:
                 signal_score = 0.0
 
+            # NEW: Concern length stats
+            concern_lengths = [len(c.text) for c in adv_concerns]
+            avg_concern_length = sum(concern_lengths) / len(concern_lengths) if concern_lengths else 0
+
+            # NEW: Rebuttal success by severity
+            rebuttal_by_severity = {"high": {"won": 0, "lost": 0}, "medium": {"won": 0, "lost": 0}, "low": {"won": 0, "lost": 0}}
+            for r in adv_rebuttals:
+                severity = r.evaluation.concern.severity or "medium"
+                if r.sustained:
+                    rebuttal_by_severity[severity]["won"] += 1
+                else:
+                    rebuttal_by_severity[severity]["lost"] += 1
+
             stats[adv] = {
                 "concerns_raised": total,
                 "accepted": accepted,
@@ -224,6 +237,9 @@ class GauntletResult:
                 "rebuttals_lost": rebuttals_lost,
                 "dismissal_effort": round(dismissal_effort, 0),  # avg chars
                 "signal_score": round(signal_score, 3),
+                # NEW metrics
+                "avg_concern_length": round(avg_concern_length, 0),
+                "rebuttal_by_severity": rebuttal_by_severity,
             }
 
         return stats
@@ -269,6 +285,7 @@ class GauntletResult:
             "rebuttals": [rebuttal_to_dict(r) for r in self.rebuttals],
             "final_concerns": [concern_to_dict(c) for c in self.final_concerns],
             "adversary_stats": self.get_adversary_stats(),
+            "adversary_timing": self.adversary_timing,
         }
 
         if self.final_boss_result:
@@ -285,6 +302,8 @@ class GauntletResult:
                     self.final_boss_result.dismissal_review_stats.to_dict()
                     if self.final_boss_result.dismissal_review_stats else None
                 ),
+                "process_meta_report": self.final_boss_result.process_meta_report,
+                "self_meta_report": self.final_boss_result.self_meta_report,
             }
 
         return result
@@ -408,6 +427,30 @@ def update_adversary_stats(result: GauntletResult) -> dict:
             }
         stats["models"][model]["runs"] += 1
         stats["models"][model]["total_cost"] += result.total_cost
+
+    # NEW: Track model pairing effectiveness
+    pairing_key = f"{result.adversary_model} + {result.eval_model}"
+    if "model_pairings" not in stats:
+        stats["model_pairings"] = {}
+    if pairing_key not in stats["model_pairings"]:
+        stats["model_pairings"][pairing_key] = {
+            "runs": 0,
+            "total_concerns": 0,
+            "accepted": 0,
+            "dismissed": 0,
+            "avg_acceptance_rate": 0.0,
+        }
+
+    pairing = stats["model_pairings"][pairing_key]
+    pairing["runs"] += 1
+    total_concerns = len(result.concerns)
+    accepted = len([e for e in result.evaluations if e.verdict in ("accepted", "acknowledged")])
+    dismissed = len([e for e in result.evaluations if e.verdict == "dismissed"])
+    pairing["total_concerns"] += total_concerns
+    pairing["accepted"] += accepted
+    pairing["dismissed"] += dismissed
+    if pairing["total_concerns"] > 0:
+        pairing["avg_acceptance_rate"] = round(pairing["accepted"] / pairing["total_concerns"], 3)
 
     save_adversary_stats(stats)
     return stats
@@ -645,6 +688,473 @@ def get_adversary_leaderboard() -> str:
     lines.append("")
     lines.append("Verdicts: accepted (needs spec change), acknowledged (valid but out of scope),")
     lines.append("          dismissed (invalid), deferred (needs context)")
+
+    return "\n".join(lines)
+
+
+# =============================================================================
+# MEDAL AWARDS SYSTEM
+# =============================================================================
+# Awards adversaries for unique, high-value catches during gauntlet runs.
+# Only awarded when 6+ adversaries participate in a run.
+
+MEDALS_DIR = STATS_DIR / "medals"
+
+
+@dataclass
+class Medal:
+    """An award given to an adversary for a notable catch."""
+    type: str  # "gold", "silver", "bronze"
+    adversary: str
+    adversary_version: str  # Version of adversary persona at time of award
+    concern_id: str
+    concern_text: str
+    severity: str  # "high", "medium", "low"
+    uniqueness: str  # Description of why this was unique
+    report: str  # Full report text (2-4 para gold, 1 para silver, concise bronze)
+    timestamp: str
+    spec_hash: str
+    run_id: str  # Link back to the gauntlet run
+
+    def to_dict(self) -> dict:
+        return {
+            "type": self.type,
+            "adversary": self.adversary,
+            "adversary_version": self.adversary_version,
+            "concern_id": self.concern_id,
+            "concern_text": self.concern_text,
+            "severity": self.severity,
+            "uniqueness": self.uniqueness,
+            "report": self.report,
+            "timestamp": self.timestamp,
+            "spec_hash": self.spec_hash,
+            "run_id": self.run_id,
+        }
+
+
+def _get_concern_keywords(text: str) -> set[str]:
+    """Extract significant keywords from concern text for similarity detection."""
+    import re
+    # Remove common words and get significant terms
+    stopwords = {
+        "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
+        "have", "has", "had", "do", "does", "did", "will", "would", "could",
+        "should", "may", "might", "must", "can", "this", "that", "these",
+        "those", "it", "its", "to", "of", "in", "for", "on", "with", "at",
+        "by", "from", "as", "or", "and", "but", "if", "when", "what", "which",
+        "who", "how", "why", "where", "there", "here", "all", "each", "every",
+        "both", "few", "more", "most", "other", "some", "such", "no", "not",
+        "only", "same", "so", "than", "too", "very", "just", "also", "now",
+        "any", "into", "out", "up", "down", "about", "above", "below", "between",
+    }
+    # Extract words, lowercase, filter
+    words = set(re.findall(r'\b[a-z]{3,}\b', text.lower()))
+    return words - stopwords
+
+
+def _concerns_are_similar(concern1: str, concern2: str, threshold: float = 0.3) -> bool:
+    """Check if two concerns are semantically similar using keyword overlap."""
+    kw1 = _get_concern_keywords(concern1)
+    kw2 = _get_concern_keywords(concern2)
+    if not kw1 or not kw2:
+        return False
+    # Jaccard similarity
+    intersection = len(kw1 & kw2)
+    union = len(kw1 | kw2)
+    similarity = intersection / union if union > 0 else 0
+    return similarity >= threshold
+
+
+def calculate_medals(result: GauntletResult, spec_hash: str, run_id: str) -> list[Medal]:
+    """
+    Calculate medal awards for a gauntlet run.
+
+    Medal criteria (only when 6+ adversaries):
+    - GOLD: Critical insight (high severity), only this adversary caught it
+    - SILVER: Critical + 2 adversaries caught it, OR minor + only this adversary
+    - BRONZE: Minor fix, fewer than half of adversaries caught it
+
+    Returns list of Medal objects.
+    """
+    from adversaries import get_version_manifest
+
+    # Only award medals for runs with 6+ adversaries
+    active_adversaries = set(c.adversary for c in result.concerns)
+    if len(active_adversaries) < 6:
+        return []
+
+    medals: list[Medal] = []
+    versions = get_version_manifest()
+    timestamp = datetime.now().isoformat()
+
+    # Get accepted/acknowledged evaluations (valuable concerns)
+    valuable_evals = [
+        e for e in result.evaluations
+        if e.verdict in ("accepted", "acknowledged")
+    ]
+
+    # Group by adversary
+    concerns_by_adversary: dict[str, list[Evaluation]] = {}
+    for e in valuable_evals:
+        adv = e.concern.adversary
+        if adv not in concerns_by_adversary:
+            concerns_by_adversary[adv] = []
+        concerns_by_adversary[adv].append(e)
+
+    # For each valuable concern, check how many OTHER adversaries caught similar issues
+    for eval_item in valuable_evals:
+        concern = eval_item.concern
+        adversary = concern.adversary
+
+        # Count how many other adversaries caught similar concerns
+        similar_adversaries = {adversary}  # Start with self
+        for other_eval in valuable_evals:
+            if other_eval.concern.adversary == adversary:
+                continue
+            if _concerns_are_similar(concern.text, other_eval.concern.text):
+                similar_adversaries.add(other_eval.concern.adversary)
+
+        num_catchers = len(similar_adversaries)
+        is_critical = concern.severity == "high"
+        is_minor = concern.severity == "low"
+        half_adversaries = len(active_adversaries) / 2
+
+        # Determine medal type
+        medal_type = None
+        uniqueness = ""
+
+        if is_critical and num_catchers == 1:
+            # Gold: Critical insight, only this adversary caught it
+            medal_type = "gold"
+            uniqueness = f"Critical insight caught exclusively by {adversary} - no other adversary identified this issue"
+        elif is_critical and num_catchers == 2:
+            # Silver: Critical + exactly 2 adversaries
+            other = [a for a in similar_adversaries if a != adversary][0]
+            medal_type = "silver"
+            uniqueness = f"Critical insight caught by {adversary} and {other}"
+        elif is_minor and num_catchers == 1:
+            # Silver: Minor fix but nobody else got it
+            medal_type = "silver"
+            uniqueness = f"Minor fix caught exclusively by {adversary}"
+        elif is_minor and num_catchers < half_adversaries:
+            # Bronze: Minor fix, fewer than half caught it
+            medal_type = "bronze"
+            uniqueness = f"Minor fix caught by {num_catchers}/{len(active_adversaries)} adversaries"
+        elif is_critical and num_catchers > 2:
+            # Silver for major fix with 2+ catchers (shared credit)
+            medal_type = "silver"
+            uniqueness = f"Critical insight caught by {num_catchers} adversaries: {', '.join(sorted(similar_adversaries))}"
+
+        if medal_type:
+            # Check if we already awarded this adversary a medal for this concern type
+            # (avoid duplicate medals for same concern)
+            already_awarded = any(
+                m.concern_id == concern.id for m in medals
+            )
+            if not already_awarded:
+                adv_version = versions.get(adversary, {}).get("version", "unknown")
+                medal = Medal(
+                    type=medal_type,
+                    adversary=adversary,
+                    adversary_version=adv_version,
+                    concern_id=concern.id,
+                    concern_text=concern.text,
+                    severity=concern.severity,
+                    uniqueness=uniqueness,
+                    report="",  # Will be generated separately
+                    timestamp=timestamp,
+                    spec_hash=spec_hash,
+                    run_id=run_id,
+                )
+                medals.append(medal)
+
+    return medals
+
+
+def generate_medal_report(medal: Medal) -> str:
+    """
+    Generate the report text for a medal.
+
+    - Gold: 2-4 paragraph detailed analysis
+    - Silver: 1 paragraph note
+    - Bronze: Concise description
+    """
+    concern = medal.concern_text[:500] + "..." if len(medal.concern_text) > 500 else medal.concern_text
+
+    if medal.type == "gold":
+        # 2-4 paragraph detailed report
+        report = f"""## 🥇 Gold Medal: {medal.adversary}
+
+### The Catch
+{concern}
+
+### Why This Matters
+This concern was classified as **{medal.severity} severity** and represents a critical insight that was missed during the constructive phase of spec development. The {medal.adversary} persona uniquely identified this issue - no other adversary in the gauntlet run caught it.
+
+### Analysis
+{medal.uniqueness}
+
+This demonstrates the value of the {medal.adversary} perspective in catching issues that other review approaches miss. The adversarial nature of this persona allowed it to identify a gap that consensus-based review overlooked.
+
+### Context
+- Spec hash: {medal.spec_hash}
+- Run ID: {medal.run_id}
+- Adversary version: {medal.adversary_version}
+- Awarded: {medal.timestamp}
+"""
+    elif medal.type == "silver":
+        # 1 paragraph note
+        report = f"""## 🥈 Silver Medal: {medal.adversary}
+
+**Concern ({medal.severity} severity):** {concern}
+
+{medal.uniqueness}. This catch contributed to improving the specification quality. (Spec: {medal.spec_hash}, Run: {medal.run_id}, Adversary v{medal.adversary_version})
+"""
+    else:  # bronze
+        # Concise description
+        report = f"""## 🥉 Bronze Medal: {medal.adversary}
+
+{medal.severity.title()} severity fix: {concern[:200]}... {medal.uniqueness}. (Run: {medal.run_id})
+"""
+
+    return report
+
+
+def save_medal_reports(medals: list[Medal]) -> str:
+    """
+    Save all medal reports to persistent storage.
+
+    Returns path to the saved file.
+    """
+    if not medals:
+        return ""
+
+    MEDALS_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Generate reports for all medals
+    for medal in medals:
+        if not medal.report:
+            medal.report = generate_medal_report(medal)
+
+    # Create filename with timestamp and run info
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_id = medals[0].run_id if medals else "unknown"
+    filename = f"medals_{timestamp}_{run_id[:8]}.json"
+    filepath = MEDALS_DIR / filename
+
+    # Save medals with their reports
+    data = {
+        "timestamp": datetime.now().isoformat(),
+        "run_id": run_id,
+        "spec_hash": medals[0].spec_hash if medals else "",
+        "medal_counts": {
+            "gold": len([m for m in medals if m.type == "gold"]),
+            "silver": len([m for m in medals if m.type == "silver"]),
+            "bronze": len([m for m in medals if m.type == "bronze"]),
+        },
+        "medals": [m.to_dict() for m in medals],
+    }
+
+    filepath.write_text(json.dumps(data, indent=2))
+
+    # Also append to a running log of all medals for quick lookups
+    medals_index = STATS_DIR / "medals_index.json"
+    try:
+        index = json.loads(medals_index.read_text()) if medals_index.exists() else {"medals": []}
+    except (json.JSONDecodeError, OSError):
+        index = {"medals": []}
+
+    for medal in medals:
+        index["medals"].append({
+            "type": medal.type,
+            "adversary": medal.adversary,
+            "adversary_version": medal.adversary_version,
+            "concern_id": medal.concern_id,
+            "timestamp": medal.timestamp,
+            "run_id": medal.run_id,
+            "file": filename,
+        })
+
+    # Keep last 500 medals in index
+    index["medals"] = index["medals"][-500:]
+    medals_index.write_text(json.dumps(index, indent=2))
+
+    return str(filepath)
+
+
+def format_medals_for_display(medals: list[Medal]) -> str:
+    """Format medals for display in gauntlet output."""
+    if not medals:
+        return ""
+
+    lines = [
+        "",
+        "=" * 60,
+        "🏆 MEDAL AWARDS (6+ adversaries participated)",
+        "=" * 60,
+    ]
+
+    gold = [m for m in medals if m.type == "gold"]
+    silver = [m for m in medals if m.type == "silver"]
+    bronze = [m for m in medals if m.type == "bronze"]
+
+    if gold:
+        lines.append("")
+        lines.append("🥇 GOLD MEDALS (Critical insight, exclusive catch):")
+        for m in gold:
+            lines.append(f"  • {m.adversary} (v{m.adversary_version}): {m.concern_id}")
+            lines.append(f"    {m.concern_text[:100]}...")
+
+    if silver:
+        lines.append("")
+        lines.append("🥈 SILVER MEDALS:")
+        for m in silver:
+            reason = "critical shared" if m.severity == "high" else "minor exclusive"
+            lines.append(f"  • {m.adversary} (v{m.adversary_version}): {m.concern_id} [{reason}]")
+
+    if bronze:
+        lines.append("")
+        lines.append("🥉 BRONZE MEDALS (Minor fix, limited coverage):")
+        for m in bronze:
+            lines.append(f"  • {m.adversary}: {m.concern_id}")
+
+    lines.append("")
+    lines.append(f"Full reports saved to: {MEDALS_DIR}")
+    lines.append("=" * 60)
+
+    return "\n".join(lines)
+
+
+def get_adversary_synergy(result: GauntletResult) -> dict[str, dict]:
+    """
+    Calculate synergy between adversary pairs for a single run.
+
+    Synergy is measured by:
+    - Overlap: How often do two adversaries catch the same issue?
+    - Complementarity: How often do they catch DIFFERENT issues?
+
+    High overlap = redundant coverage
+    High complementarity = good pairing (they cover each other's blind spots)
+
+    Returns dict mapping pair names to synergy metrics.
+    """
+    accepted_by_adv: dict[str, set[str]] = {}
+
+    for e in result.evaluations:
+        if e.verdict in ("accepted", "acknowledged"):
+            adv = e.concern.adversary
+            if adv not in accepted_by_adv:
+                accepted_by_adv[adv] = set()
+            # Use first 50 chars as a rough "issue fingerprint"
+            # (full similarity would be expensive)
+            fingerprint = e.concern.text[:50].lower()
+            accepted_by_adv[adv].add(fingerprint)
+
+    synergy: dict[str, dict] = {}
+    adversaries = list(accepted_by_adv.keys())
+
+    for i, adv1 in enumerate(adversaries):
+        for adv2 in adversaries[i + 1:]:
+            pair_key = f"{adv1} + {adv2}"
+            issues1 = accepted_by_adv[adv1]
+            issues2 = accepted_by_adv[adv2]
+
+            # Jaccard-style overlap
+            intersection = len(issues1 & issues2)
+            union = len(issues1 | issues2)
+            overlap_rate = intersection / union if union > 0 else 0
+
+            # Unique issues each found
+            unique1 = len(issues1 - issues2)
+            unique2 = len(issues2 - issues1)
+            total_unique = unique1 + unique2
+
+            synergy[pair_key] = {
+                "overlap_rate": round(overlap_rate, 2),
+                "total_issues": len(issues1 | issues2),
+                f"unique_{adv1}": unique1,
+                f"unique_{adv2}": unique2,
+                "complementarity": round(total_unique / union, 2) if union > 0 else 0,
+            }
+
+    return synergy
+
+
+def format_synergy_report(synergy: dict[str, dict]) -> str:
+    """Format synergy data for display."""
+    if not synergy:
+        return "No synergy data (need at least 2 adversaries with accepted concerns)"
+
+    lines = ["=== Adversary Pair Synergy ===", ""]
+
+    # Sort by complementarity (higher = better pairing)
+    sorted_pairs = sorted(synergy.items(), key=lambda x: x[1].get("complementarity", 0), reverse=True)
+
+    lines.append("Best Pairings (high complementarity = cover each other's blind spots):")
+    for pair, data in sorted_pairs[:5]:
+        comp = data.get("complementarity", 0)
+        overlap = data.get("overlap_rate", 0)
+        total = data.get("total_issues", 0)
+        lines.append(f"  {pair}")
+        lines.append(f"    Complementarity: {comp:.0%}  Overlap: {overlap:.0%}  Total issues: {total}")
+
+    if len(sorted_pairs) > 5:
+        lines.append("")
+        lines.append("Redundant Pairings (high overlap = consider dropping one):")
+        high_overlap = [p for p in sorted_pairs if p[1].get("overlap_rate", 0) > 0.5]
+        for pair, data in high_overlap[:3]:
+            overlap = data.get("overlap_rate", 0)
+            lines.append(f"  {pair}: {overlap:.0%} overlap")
+
+    return "\n".join(lines)
+
+
+def get_medal_leaderboard() -> str:
+    """Get all-time medal standings for adversaries."""
+    medals_index = STATS_DIR / "medals_index.json"
+
+    if not medals_index.exists():
+        return "No medals awarded yet.\n\nMedals are awarded for gauntlet runs with 6+ adversaries."
+
+    try:
+        index = json.loads(medals_index.read_text())
+    except (json.JSONDecodeError, OSError):
+        return "Error reading medals index."
+
+    if not index.get("medals"):
+        return "No medals awarded yet."
+
+    # Count medals by adversary
+    counts: dict[str, dict[str, int]] = {}
+    for medal in index["medals"]:
+        adv = medal["adversary"]
+        mtype = medal["type"]
+        if adv not in counts:
+            counts[adv] = {"gold": 0, "silver": 0, "bronze": 0, "total_points": 0}
+        counts[adv][mtype] += 1
+
+    # Calculate points (gold=3, silver=2, bronze=1)
+    for adv, c in counts.items():
+        c["total_points"] = c["gold"] * 3 + c["silver"] * 2 + c["bronze"] * 1
+
+    # Sort by total points
+    sorted_advs = sorted(counts.items(), key=lambda x: x[1]["total_points"], reverse=True)
+
+    lines = [
+        "=== Medal Leaderboard (All Time) ===",
+        f"Total medals awarded: {len(index['medals'])}",
+        "",
+        "Rank  Adversary                    🥇  🥈  🥉  Points",
+        "-" * 55,
+    ]
+
+    for rank, (adv, c) in enumerate(sorted_advs, 1):
+        lines.append(
+            f"{rank:4}  {adv:28} {c['gold']:3} {c['silver']:3} {c['bronze']:3}  {c['total_points']:6}"
+        )
+
+    lines.append("")
+    lines.append("Points: Gold=3, Silver=2, Bronze=1")
 
     return "\n".join(lines)
 
@@ -1035,6 +1545,9 @@ class FinalBossResult:
     model: str
     tokens_used: int
     dismissal_review_stats: DismissalReviewStats = None  # Telemetry for dismissal review efficiency
+    # Meta-reports for process improvement
+    process_meta_report: str = ""  # Reflection on entire gauntlet process
+    self_meta_report: str = ""  # Reflection on final boss's own process
 
     def __post_init__(self):
         if self.dismissal_review_stats is None:
@@ -1085,8 +1598,6 @@ def run_final_boss_review(
         print("  Warning: Opus 4.5 not available, using best alternative", file=sys.stderr)
         if CODEX_AVAILABLE:
             model = "codex/gpt-5.2-codex"
-        elif os.environ.get("OPENAI_API_KEY"):
-            model = "gpt-4o"
         else:
             model = select_eval_model()
 
@@ -1221,7 +1732,21 @@ ALTERNATE APPROACHES TO EVALUATE:
 2. [Approach]
 ```
 
-Issue your verdict now."""
+## REQUIRED META-REPORTS (after your verdict)
+
+After your verdict, provide two concise meta-reports for process improvement:
+
+```
+PROCESS META-REPORT:
+[2-3 sentences reflecting on the entire gauntlet process. Was the adversary coverage appropriate?
+Did any adversary add disproportionate value or noise? Any gaps in coverage?]
+
+SELF META-REPORT:
+[2-3 sentences reflecting on YOUR process. Was reviewing dismissed concerns worthwhile?
+Did the alternate approaches analysis surface anything useful? What would improve your review?]
+```
+
+Issue your verdict and meta-reports now."""
 
     try:
         response, in_tokens, out_tokens = call_model(
@@ -1299,6 +1824,34 @@ Issue your verdict now."""
                 flagged_dismissals = [f"D{m}" for m in matches]
                 break
 
+        # Extract meta-reports
+        process_meta = ""
+        self_meta = ""
+        response_lines = response.split("\n")
+        for i, line in enumerate(response_lines):
+            if "PROCESS META-REPORT" in line.upper():
+                # Gather lines until next section or end
+                meta_lines = []
+                for j in range(i + 1, min(i + 10, len(response_lines))):
+                    next_line = response_lines[j].strip()
+                    if next_line and not next_line.startswith("```"):
+                        if "SELF META-REPORT" in next_line.upper():
+                            break
+                        meta_lines.append(next_line)
+                    elif next_line.startswith("```"):
+                        break
+                process_meta = " ".join(meta_lines)
+            elif "SELF META-REPORT" in line.upper():
+                # Gather lines until end
+                meta_lines = []
+                for j in range(i + 1, min(i + 10, len(response_lines))):
+                    next_line = response_lines[j].strip()
+                    if next_line and not next_line.startswith("```"):
+                        meta_lines.append(next_line)
+                    elif next_line.startswith("```"):
+                        break
+                self_meta = " ".join(meta_lines)
+
         # Build dismissal review stats
         dismissal_stats = DismissalReviewStats(
             dismissed_simplifications_reviewed=num_dismissed_reviewed,
@@ -1315,6 +1868,8 @@ Issue your verdict now."""
             model=model,
             tokens_used=in_tokens + out_tokens,
             dismissal_review_stats=dismissal_stats,
+            process_meta_report=process_meta,
+            self_meta_report=self_meta,
         )
 
     except Exception as e:
@@ -1357,9 +1912,7 @@ def get_available_eval_models() -> list[str]:
     # Only add paid API models if we need more models for consensus
     # We want 2-3 models for good consensus, but free is better
     if len(models) < 2:
-        if os.environ.get("OPENAI_API_KEY"):
-            models.append("gpt-4o")
-        if len(models) < 2 and os.environ.get("ANTHROPIC_API_KEY"):
+        if os.environ.get("ANTHROPIC_API_KEY"):
             models.append("claude-sonnet-4-5-20250929")
         if len(models) < 2 and os.environ.get("GEMINI_API_KEY"):
             models.append("gemini/gemini-3-pro")
@@ -1513,10 +2066,6 @@ def select_adversary_model() -> str:
     if os.environ.get("GEMINI_API_KEY"):
         return "gemini/gemini-3-flash"
 
-    # Last resort
-    if os.environ.get("OPENAI_API_KEY"):
-        return "gpt-4o-mini"
-
     raise RuntimeError(
         "No model available for adversaries. Install Gemini CLI (free) or set an API key."
     )
@@ -1540,8 +2089,6 @@ def select_eval_model() -> str:
     # Fall back to strongest available API
     import os
 
-    if os.environ.get("OPENAI_API_KEY"):
-        return "gpt-4o"
     if os.environ.get("ANTHROPIC_API_KEY"):
         return "claude-sonnet-4-5-20250929"
     if os.environ.get("GEMINI_API_KEY"):
@@ -1630,7 +2177,7 @@ def generate_attacks(
     adversaries: list[str],
     model: str,
     timeout: int = 300,
-) -> list[Concern]:
+) -> tuple[list[Concern], dict[str, float]]:
     """
     Phase 1: Generate attacks from all adversary personas in parallel.
 
@@ -1641,15 +2188,18 @@ def generate_attacks(
         timeout: Timeout per adversary call
 
     Returns:
-        List of Concern objects
+        Tuple of (List of Concern objects, dict of adversary -> elapsed time in seconds)
     """
     concerns: list[Concern] = []
+    timing: dict[str, float] = {}  # Track time per adversary
 
-    def run_adversary(adversary_key: str) -> list[Concern]:
+    def run_adversary(adversary_key: str) -> tuple[list[Concern], float]:
+        """Run a single adversary and return concerns with timing."""
+        start = time.time()
         adversary = ADVERSARIES.get(adversary_key)
         if not adversary:
             print(f"Warning: Unknown adversary '{adversary_key}'", file=sys.stderr)
-            return []
+            return [], 0.0
 
         system_prompt = f"""You are an adversarial reviewer with this persona:
 
@@ -1686,14 +2236,15 @@ Output your concerns as a numbered list. Be specific and cite parts of the spec.
                             Concern(adversary=adversary_key, text=text)
                         )
 
-            return local_concerns
+            elapsed = time.time() - start
+            return local_concerns, elapsed
 
         except Exception as e:
             print(
                 f"Warning: Adversary {adversary_key} failed: {e}",
                 file=sys.stderr,
             )
-            return []
+            return [], time.time() - start
 
     # Run adversaries in parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(adversaries)) as executor:
@@ -1701,9 +2252,19 @@ Output your concerns as a numbered list. Be specific and cite parts of the spec.
             executor.submit(run_adversary, adv): adv for adv in adversaries
         }
         for future in concurrent.futures.as_completed(futures):
-            concerns.extend(future.result())
+            adv_key = futures[future]
+            adv_concerns, elapsed = future.result()
+            concerns.extend(adv_concerns)
+            timing[adv_key] = elapsed
 
-    return concerns
+    # Print timing summary
+    if timing:
+        sorted_timing = sorted(timing.items(), key=lambda x: x[1], reverse=True)
+        print("  Adversary timing:", file=sys.stderr)
+        for adv, t in sorted_timing:
+            print(f"    {adv}: {t:.1f}s ({len([c for c in concerns if c.adversary == adv])} concerns)", file=sys.stderr)
+
+    return concerns, timing
 
 
 # =============================================================================
@@ -2082,7 +2643,7 @@ def run_gauntlet(
     if adversaries is None:
         adversaries = list(ADVERSARIES.keys())
 
-    print(f"=== Adversarial Gauntlet ===", file=sys.stderr)
+    print("=== Adversarial Gauntlet ===", file=sys.stderr)
     print(f"Adversaries: {', '.join(adversaries)}", file=sys.stderr)
     print(f"Attack model: {adversary_model}", file=sys.stderr)
     print(f"Eval models: {', '.join(eval_models)}", file=sys.stderr)
@@ -2090,7 +2651,7 @@ def run_gauntlet(
 
     # Phase 1: Attack Generation (parallel)
     print("Phase 1: Generating attacks...", file=sys.stderr)
-    raw_concerns = generate_attacks(spec, adversaries, adversary_model, timeout)
+    raw_concerns, adversary_timing = generate_attacks(spec, adversaries, adversary_model, timeout)
     print(f"  Generated {len(raw_concerns)} raw concerns", file=sys.stderr)
 
     # Save raw concerns before any filtering
@@ -2153,13 +2714,13 @@ def run_gauntlet(
     print(f"  Evaluations saved: {evals_file}", file=sys.stderr)
 
     # Print intermediate summary (so results visible even if later phases crash)
-    print(f"\n=== Phase 2 Summary (accepted concerns) ===", file=sys.stderr)
+    print("\n=== Phase 2 Summary (accepted concerns) ===", file=sys.stderr)
     for e in accepted[:10]:
         print(f"  [{e.concern.adversary}] {e.concern.text[:80]}...", file=sys.stderr)
     if len(accepted) > 10:
         print(f"  ... and {len(accepted) - 10} more", file=sys.stderr)
     if acknowledged:
-        print(f"\n=== Acknowledged (valid but out of scope) ===", file=sys.stderr)
+        print("\n=== Acknowledged (valid but out of scope) ===", file=sys.stderr)
         for e in acknowledged[:5]:
             print(f"  [{e.concern.adversary}] {e.concern.text[:80]}...", file=sys.stderr)
         if len(acknowledged) > 5:
@@ -2192,7 +2753,7 @@ def run_gauntlet(
     )
 
     # Print full summary BEFORE Final Boss prompt (survives crashes/EOFError)
-    print(f"\n=== Gauntlet Summary (Phases 1-4) ===", file=sys.stderr)
+    print("\n=== Gauntlet Summary (Phases 1-4) ===", file=sys.stderr)
     print(f"Total concerns: {len(concerns)} generated, {len(dropped_concerns)} filtered", file=sys.stderr)
     print(f"Verdicts: {len(accepted)} accepted, {len(dismissed)} dismissed, {len(deferred)} deferred", file=sys.stderr)
     if surviving_challenges:
@@ -2249,7 +2810,7 @@ Technical concerns requiring revision: {len(technical_concerns)}
             print(f"  VERDICT: PASS by {final_boss_result.model}", file=sys.stderr)
         elif final_boss_result.verdict == FinalBossVerdict.REFINE:
             print(f"  VERDICT: REFINE by {final_boss_result.model}", file=sys.stderr)
-            print(f"  Concerns to address:", file=sys.stderr)
+            print("  Concerns to address:", file=sys.stderr)
             for concern_text in final_boss_result.concerns[:3]:
                 print(f"    - {concern_text[:80]}...", file=sys.stderr)
             # Add UX concerns to final list
@@ -2262,7 +2823,7 @@ Technical concerns requiring revision: {len(technical_concerns)}
         elif final_boss_result.verdict == FinalBossVerdict.RECONSIDER:
             print(f"  VERDICT: RECONSIDER by {final_boss_result.model}", file=sys.stderr)
             print(f"  Reason: {final_boss_result.reconsider_reason}", file=sys.stderr)
-            print(f"  Alternate approaches to evaluate:", file=sys.stderr)
+            print("  Alternate approaches to evaluate:", file=sys.stderr)
             for alt in final_boss_result.alternate_approaches[:3]:
                 print(f"    - {alt[:80]}...", file=sys.stderr)
             # Add a meta-concern about needing reconsideration
@@ -2280,7 +2841,7 @@ Technical concerns requiring revision: {len(technical_concerns)}
     total_cost = cost_tracker.total_cost
 
     print(file=sys.stderr)
-    print(f"=== Gauntlet Complete ===", file=sys.stderr)
+    print("=== Gauntlet Complete ===", file=sys.stderr)
     print(f"Duration: {total_time:.1f}s", file=sys.stderr)
     if dropped_concerns:
         print(f"Filtered out: {len(dropped_concerns)} (previously addressed)", file=sys.stderr)
@@ -2300,6 +2861,7 @@ Technical concerns requiring revision: {len(technical_concerns)}
         raw_concerns=raw_concerns,  # All concerns before filtering
         dropped_concerns=dropped_concerns,  # Concerns dropped by filtering
         spec_hash=spec_hash,
+        adversary_timing=adversary_timing,  # Time per adversary
     )
 
     # Auto-save dismissed concerns to resolved database (for future filtering)
@@ -2327,7 +2889,16 @@ Technical concerns requiring revision: {len(technical_concerns)}
 
     # Save full run log for analysis and debugging
     run_file = save_gauntlet_run(result, spec)
+    run_id = Path(run_file).stem  # e.g., "20260129_090522_abc123"
     print(f"Run log saved: {run_file}", file=sys.stderr)
+
+    # Calculate and save medal awards (only for 6+ adversary runs)
+    medals = calculate_medals(result, spec_hash, run_id)
+    if medals:
+        medal_file = save_medal_reports(medals)
+        print(f"Medals awarded: {len(medals)} (saved to {medal_file})", file=sys.stderr)
+        # Store medals in result for display
+        result.medals = medals  # type: ignore[attr-defined]
 
     return result
 
@@ -2405,7 +2976,17 @@ def format_gauntlet_report(result: GauntletResult) -> str:
             if yield_pct > 0:
                 lines.append(f"    Yield rate: {yield_pct:.0f}% (>20% suggests dismissal process needs audit)")
             else:
-                lines.append(f"    Yield rate: 0% (consider skipping dismissal review to save tokens)")
+                lines.append("    Yield rate: 0% (consider skipping dismissal review to save tokens)")
+
+        # Meta-reports for process improvement
+        if result.final_boss_result.process_meta_report:
+            lines.append("")
+            lines.append("  --- Process Meta-Report ---")
+            lines.append(f"  {result.final_boss_result.process_meta_report[:200]}")
+        if result.final_boss_result.self_meta_report:
+            lines.append("")
+            lines.append("  --- Self Meta-Report ---")
+            lines.append(f"  {result.final_boss_result.self_meta_report[:200]}")
         lines.append("")
 
     # Final verdict
@@ -2427,6 +3008,10 @@ def format_gauntlet_report(result: GauntletResult) -> str:
 
     if not result.final_concerns:
         lines.append("  No concerns - spec is ready for implementation!")
+
+    # Medal awards (if any were given during this run)
+    if hasattr(result, 'medals') and result.medals:
+        lines.append(format_medals_for_display(result.medals))
 
     return "\n".join(lines)
 
@@ -2590,7 +3175,7 @@ def main():
 
             # Check if we should proceed
             if pre_result.status != PreGauntletStatus.COMPLETE:
-                print(f"\nPre-gauntlet did not complete successfully. Exiting.", file=sys.stderr)
+                print("\nPre-gauntlet did not complete successfully. Exiting.", file=sys.stderr)
                 sys.exit(get_exit_code(pre_result.status))
 
             # Use the context-enriched spec for gauntlet

@@ -1,0 +1,104 @@
+{
+  "$schema": "https://brainquarters.dev/schemas/hook-config.json",
+  "_meta": {
+    "description": "Configuration for development practice hooks",
+    "project": "Brainquarters",
+    "brainquarters_core_version": "1.0",
+    "project_config_version": "1.0",
+    "last_updated": "2026-01-13T17:58:46Z"
+  },
+  "mode": "flexible",
+  "per_hook_overrides": {
+    "assumption_detection_mode": null,
+    "unverified_claims_mode": null,
+    "secret_exposure_mode": null,
+    "uv_run_check_mode": null,
+    "bash_command_check_mode": null,
+    "banned_git_commands_mode": null,
+    "banned_filesystem_commands_mode": null,
+    "deprecated_models_mode": null
+  },
+  "_mode_documentation": {
+    "flexible": "Warn on violations but allow continuation. Good for learning/exploration.",
+    "strict": "Block on violations and require revision. Good for production/critical work.",
+    "per_hook_overrides": "Set to 'flexible' or 'strict' to override the global mode for specific hooks. Set to null to use global mode."
+  },
+  "_hook_registry": {
+    "assumption_detection": {
+      "practice_section": "6",
+      "practice_name": "Assumption Detection \u2013 Banned Language",
+      "hookable": true,
+      "version_flexible": "1.0.0",
+      "version_strict": "1.0.0",
+      "hash_flexible": null,
+      "hash_strict": null
+    },
+    "unverified_claims": {
+      "practice_section": "4",
+      "practice_name": "Documentation-First API Integration (enforcement)",
+      "hookable": true,
+      "version_flexible": "1.0.0",
+      "version_strict": "1.0.0",
+      "hash_flexible": null,
+      "hash_strict": null
+    },
+    "secret_exposure": {
+      "practice_section": "1",
+      "practice_name": "Absolute Secret-Handling Rules",
+      "hookable": true,
+      "version_flexible": "1.0.0",
+      "version_strict": "1.0.0",
+      "hash_flexible": null,
+      "hash_strict": null,
+      "note": "Both modes BLOCK - this is a hard constraint"
+    },
+    "uv_run_check": {
+      "practice_section": "2b",
+      "practice_name": "Environment and Tooling (Python 3.14 + uv)",
+      "hookable": true,
+      "version_flexible": "1.0.0",
+      "version_strict": "1.0.0",
+      "hash_flexible": null,
+      "hash_strict": null
+    },
+    "bash_command_check": {
+      "practice_section": "2b+12",
+      "practice_name": "Environment + Debugging Order",
+      "hookable": true,
+      "version_flexible": "1.0.0",
+      "version_strict": "1.0.0",
+      "hash_flexible": null,
+      "hash_strict": null
+    },
+    "banned_git_commands": {
+      "practice_section": "11",
+      "practice_name": "Git Safety",
+      "hookable": true,
+      "version_flexible": "1.0.0",
+      "version_strict": "1.0.0",
+      "hash_flexible": null,
+      "hash_strict": null,
+      "note": "ALWAYS BLOCKS regardless of mode - hard constraint"
+    },
+    "banned_filesystem_commands": {
+      "practice_section": "12",
+      "practice_name": "Filesystem Safety",
+      "hookable": true,
+      "version_flexible": "1.0.0",
+      "version_strict": "1.0.0",
+      "hash_flexible": null,
+      "hash_strict": null,
+      "note": "Tiered: recursive/wildcard always block, single file is mode-dependent"
+    },
+    "deprecated_models": {
+      "practice_section": "N/A",
+      "practice_name": "Model Hygiene - Block deprecated AI models",
+      "hookable": true,
+      "version_flexible": "1.0.0",
+      "version_strict": "1.0.0",
+      "hash_flexible": null,
+      "hash_strict": null,
+      "note": "ALWAYS BLOCKS regardless of mode - deprecated models don't exist"
+    }
+  }
+}

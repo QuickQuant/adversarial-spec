@@ -5,8 +5,9 @@ Sends specs to multiple LLMs for critique using LiteLLM.
 
 Usage:
     echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex,gemini-cli/gemini-3-pro-preview --doc-type prd
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex,gemini-cli/gemini-3-flash-preview --doc-type tech
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --doc-type spec --depth product
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --doc-type spec --depth technical
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --doc-type debug
     echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --focus security
     echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --persona "security engineer"
     echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --context ./api.md --context ./schema.sql
@@ -15,7 +16,7 @@ Usage:
     echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --session my-debate
     python3 debate.py critique --resume my-debate
     echo "spec" | python3 debate.py diff --previous prev.md --current current.md
-    echo "spec" | python3 debate.py export-tasks --doc-type prd
+    echo "spec" | python3 debate.py export-tasks --doc-type spec --depth product
     python3 debate.py providers
     python3 debate.py profiles
     python3 debate.py sessions
@@ -33,8 +34,10 @@ Supported providers (set corresponding API key):
                 Reasoning: --codex-reasoning xhigh (minimal, low, medium, high, xhigh)
 
 Document types:
-    prd   - Product Requirements Document (business/product focus)
-    tech  - Technical Specification / Architecture Document (engineering focus)
+    spec  - Specification (default). Use --depth to control focus:
+            --depth product    Product focus (user stories, stakeholders, metrics)
+            --depth technical  Technical focus (architecture, APIs, data models)
+            --depth full       Both product and technical sections
     debug - Debug Investigation (evidence-based diagnosis, proportional fixes)
 
 Exit codes:
@@ -96,6 +99,7 @@ from gauntlet import (  # noqa: E402
     ADVERSARIES,
     format_gauntlet_report,
     get_adversary_leaderboard,
+    get_medal_leaderboard,
     run_gauntlet,
 )
 
@@ -156,13 +160,10 @@ try:
     from execution_planner import (
         # FR-1: Spec Intake
         SpecIntake,
-        DocType,
         # FR-2: Scope Assessment
         ScopeAssessor,
-        ScopeRecommendation,
         # FR-3: Task Plan Generation
         TaskPlanner,
-        TaskPlan,
         # FR-4: Test Strategy Configuration
         TestStrategyManager,
         # FR-5: Over-Decomposition Guards
@@ -255,7 +256,7 @@ Cost: ${cost_tracker.total_cost:.4f}
 
 
 def send_final_spec_to_telegram(
-    spec: str, rounds: int, models: list[str], doc_type: str
+    spec: str, rounds: int, models: list[str], doc_type: str, depth: Optional[str] = None
 ) -> bool:
     """Send the final converged spec to Telegram.
 
@@ -281,7 +282,7 @@ def send_final_spec_to_telegram(
             )
             return False
 
-        doc_type_name = get_doc_type_name(doc_type)
+        doc_type_name = get_doc_type_name(doc_type, depth)
         models_str = ", ".join(f"`{m}`" for m in models)
         header = f"""*Debate complete!*
 
@@ -314,9 +315,15 @@ def add_core_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--doc-type",
         "-d",
-        choices=["prd", "tech", "debug"],
-        default="tech",
-        help="Document type: prd, tech, or debug (default: tech)",
+        choices=["spec", "debug"],
+        default="spec",
+        help="Document type: spec or debug (default: spec)",
+    )
+    parser.add_argument(
+        "--depth",
+        choices=["product", "technical", "full"],
+        default="technical",
+        help="Spec depth: product, technical, or full (default: technical). Only used with --doc-type spec.",
     )
     parser.add_argument(
         "--round", "-r", type=int, default=1, help="Current round number"
@@ -517,7 +524,7 @@ Examples:
   echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --context ./api.md
   echo "spec" | python3 debate.py critique --profile my-security-profile
   python3 debate.py diff --previous old.md --current new.md
-  echo "spec" | python3 debate.py export-tasks --doc-type prd
+  echo "spec" | python3 debate.py export-tasks --doc-type spec --depth product
   python3 debate.py providers
   python3 debate.py focus-areas
   python3 debate.py personas
@@ -545,8 +552,7 @@ Execution plan commands (generate implementation plans from specs):
   python3 debate.py execution-plan --spec-file spec.md --plan-format summary        # Brief summary
 
 Document types:
-  prd   - Product Requirements Document (business/product focus)
-  tech  - Technical Specification / Architecture Document (engineering focus)
+  spec  - Specification (use --depth product, technical, or full)
   debug - Debug Investigation (evidence-based diagnosis, proportional fixes)
         """,
     )
@@ -559,6 +565,8 @@ Document types:
             "gauntlet",
             "gauntlet-adversaries",
             "adversary-stats",
+            "medal-leaderboard",
+            "adversary-versions",
             "providers",
             "send-final",
             "diff",
@@ -650,6 +658,15 @@ def handle_info_command(args: argparse.Namespace) -> bool:
 
     if args.action == "adversary-stats":
         print(get_adversary_leaderboard())
+        return True
+
+    if args.action == "medal-leaderboard":
+        print(get_medal_leaderboard())
+        return True
+
+    if args.action == "adversary-versions":
+        from adversaries import print_version_manifest
+        print_version_manifest()
         return True
 
     return False
@@ -798,7 +815,7 @@ def handle_execution_plan(args: argparse.Namespace) -> bool:
     print(f"  Confidence: {scope_assessment.confidence.value}", file=sys.stderr)
     print(f"  Effort estimate: {scope_assessment.effort_estimate}", file=sys.stderr)
     if scope_assessment.fast_path_eligible:
-        print(f"  Fast-path eligible: Yes", file=sys.stderr)
+        print("  Fast-path eligible: Yes", file=sys.stderr)
 
     # =========================================================================
     # FR-3: Task Plan Generation
@@ -827,7 +844,7 @@ def handle_execution_plan(args: argparse.Namespace) -> bool:
     guard = OverDecompositionGuard()
     guard_result = guard.check(plan, doc)
     if guard_result.exceeds_threshold:
-        print(f"  WARNING: Plan may be over-decomposed!", file=sys.stderr)
+        print("  WARNING: Plan may be over-decomposed!", file=sys.stderr)
         print(f"  Tasks: {guard_result.task_count}, Threshold: {guard_result.threshold}", file=sys.stderr)
         if guard_result.suggestions:
             print(f"  Consolidation suggestions: {len(guard_result.suggestions)}", file=sys.stderr)
@@ -990,7 +1007,7 @@ def _format_full_plan_markdown(plan, doc, report, scope, strategy, guard, parall
         f"**Estimated effort:** {scope.effort_estimate}",
     ])
     if scope.fast_path_eligible:
-        lines.append(f"**Fast-path eligible:** Yes (can skip decomposition)")
+        lines.append("**Fast-path eligible:** Yes (can skip decomposition)")
     lines.extend([
         "",
         "**Analysis:**",
@@ -1309,7 +1326,7 @@ def apply_profile(args: argparse.Namespace) -> None:
     profile = load_profile(args.profile)
     if "models" in profile and args.models is None:
         args.models = profile["models"]
-    if "doc_type" in profile and args.doc_type == "tech":
+    if "doc_type" in profile and args.doc_type == "spec":
         args.doc_type = profile["doc_type"]
     if "focus" in profile and not args.focus:
         args.focus = profile["focus"]
@@ -1455,7 +1472,7 @@ def handle_send_final(args: argparse.Namespace, models: list[str]) -> None:
     if not spec:
         print("Error: No spec provided via stdin", file=sys.stderr)
         sys.exit(1)
-    if send_final_spec_to_telegram(spec, args.rounds, models, args.doc_type):
+    if send_final_spec_to_telegram(spec, args.rounds, models, args.doc_type, getattr(args, "depth", None)):
         print("Final document sent to Telegram.")
     else:
         print("Failed to send final document to Telegram.", file=sys.stderr)
@@ -1474,7 +1491,7 @@ def handle_export_tasks(args: argparse.Namespace, models: list[str]) -> None:
         print("Error: No spec provided via stdin", file=sys.stderr)
         sys.exit(1)
 
-    doc_type_name = get_doc_type_name(args.doc_type)
+    doc_type_name = get_doc_type_name(args.doc_type, getattr(args, "depth", None))
     prompt = EXPORT_TASKS_PROMPT.format(doc_type_name=doc_type_name, spec=spec)
 
     try:
@@ -1704,6 +1721,7 @@ def run_critique(
         args.timeout,
         bedrock_mode,
         bedrock_region,
+        getattr(args, "depth", None),
     )
 
     errors = [r for r in results if r.error]
@@ -1810,7 +1828,7 @@ def output_results(
             output["user_feedback"] = user_feedback
         print(json.dumps(output, indent=2))
     else:
-        doc_type_name = get_doc_type_name(args.doc_type)
+        doc_type_name = get_doc_type_name(args.doc_type, getattr(args, "depth", None))
         print(f"\n=== Round {args.round} Results ({doc_type_name}) ===\n")
 
         for r in results:
