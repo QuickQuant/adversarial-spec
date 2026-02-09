@@ -537,9 +537,9 @@ def create_adversarial_spec_session(
         session.phase6_tasks.append(t_offer_exec.id)
 
         t_run_pipeline = tm.create_task(
-            subject="Run execution planning pipeline",
-            description="FR-1: Spec Intake, FR-2: Scope Assessment, FR-3: Task Plan, FR-4: Test Strategy, FR-5: Over-Decomposition Guard, FR-6: Parallelization",
-            active_form="Running execution planning pipeline",
+            subject="Create execution plan from spec and gauntlet output",
+            description="Claude creates plan directly using guidelines in phases/06-execution.md (pipeline deprecated Feb 2026)",
+            active_form="Creating execution plan",
             owner=f"{TaskManager.OWNER_PREFIX}planner",
             metadata=phase6_meta,
             blocked_by=[t_offer_exec.id],
