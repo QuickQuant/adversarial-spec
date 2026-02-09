@@ -4,16 +4,16 @@ Adversarial spec debate script.
 Sends specs to multiple LLMs for critique using LiteLLM.
 
 Usage:
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --doc-type spec --depth product
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --doc-type spec --depth technical
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --doc-type debug
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --focus security
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --persona "security engineer"
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --context ./api.md --context ./schema.sql
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --profile strict-security
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --preserve-intent
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --session my-debate
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --doc-type spec --depth product
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --doc-type spec --depth technical
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --doc-type debug
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --focus security
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --persona "security engineer"
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --context ./api.md --context ./schema.sql
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --profile strict-security
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --preserve-intent
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --session my-debate
     python3 debate.py critique --resume my-debate
     echo "spec" | python3 debate.py diff --previous prev.md --current current.md
     echo "spec" | python3 debate.py export-tasks --doc-type spec --depth product
@@ -22,14 +22,14 @@ Usage:
     python3 debate.py sessions
 
 Supported providers (set corresponding API key):
-    OpenAI:     OPENAI_API_KEY       models: gpt-5.2, o3-mini, gpt-5.2-mini
-    Anthropic:  ANTHROPIC_API_KEY    models: claude-opus-4-5-20251124, claude-sonnet-4-5-20250929
+    OpenAI:     OPENAI_API_KEY       models: gpt-5.3
+    Anthropic:  ANTHROPIC_API_KEY    models: claude-opus-4-6, claude-sonnet-4-5-20250929
     Google:     GEMINI_API_KEY       models: gemini/gemini-3-pro, gemini/gemini-3-flash
     xAI:        XAI_API_KEY          models: xai/grok-4, xai/grok-4.1-fast
     Mistral:    MISTRAL_API_KEY      models: mistral/mistral-large-3, mistral/mistral-medium-3
     Groq:       GROQ_API_KEY         models: groq/llama-4-maverick, groq/llama-3.3-70b-versatile
-    OpenRouter: OPENROUTER_API_KEY   models: openrouter/openai/gpt-5.2, openrouter/anthropic/claude-sonnet-4.5
-    Codex CLI:  (ChatGPT subscription) models: codex/gpt-5.2-codex, codex/gpt-5.1-codex-max
+    OpenRouter: OPENROUTER_API_KEY   models: openrouter/openai/gpt-5.3, openrouter/anthropic/claude-sonnet-4-5
+    Codex CLI:  (ChatGPT subscription) models: codex/gpt-5.3-codex, codex/gpt-5.1-codex-max
                 Install: npm install -g @openai/codex && codex login
                 Reasoning: --codex-reasoning xhigh (minimal, low, medium, high, xhigh)
 
@@ -69,6 +69,13 @@ except ImportError:
     )
     sys.exit(1)
 
+from gauntlet import (  # noqa: E402
+    ADVERSARIES,
+    format_gauntlet_report,
+    get_adversary_leaderboard,
+    get_medal_leaderboard,
+    run_gauntlet,
+)
 from models import (  # noqa: E402
     ModelResponse,
     call_models_parallel,
@@ -95,13 +102,6 @@ from providers import (  # noqa: E402
     validate_model_credentials,
 )
 from session import SESSIONS_DIR, SessionState, save_checkpoint  # noqa: E402
-from gauntlet import (  # noqa: E402
-    ADVERSARIES,
-    format_gauntlet_report,
-    get_adversary_leaderboard,
-    get_medal_leaderboard,
-    run_gauntlet,
-)
 
 # Optional task tracking - only import if needed
 _task_manager = None
@@ -155,28 +155,15 @@ def _complete_round_task(tm, task_id: str, all_agreed: bool) -> None:
     except Exception as e:
         print(f"Warning: Failed to complete round task: {e}", file=sys.stderr)
 
-# Import execution planner if available
+# Import gauntlet concern parser (only surviving part of execution_planner)
 try:
     from execution_planner import (
-        # FR-1: Spec Intake
-        SpecIntake,
-        # FR-2: Scope Assessment
-        ScopeAssessor,
-        # FR-3: Task Plan Generation
-        TaskPlanner,
-        # FR-4: Test Strategy Configuration
-        TestStrategyManager,
-        # FR-5: Over-Decomposition Guards
-        OverDecompositionGuard,
-        # FR-6: Parallelization Guidance
-        ParallelizationAdvisor,
-        # Gauntlet concerns
         GauntletConcernParser,
         load_concerns_for_spec,
     )
-    EXECUTION_PLANNER_AVAILABLE = True
+    GAUNTLET_CONCERNS_AVAILABLE = True
 except ImportError:
-    EXECUTION_PLANNER_AVAILABLE = False
+    GAUNTLET_CONCERNS_AVAILABLE = False
 
 
 def send_telegram_notification(
@@ -310,7 +297,7 @@ def add_core_arguments(parser: argparse.ArgumentParser) -> None:
         "--models",
         "-m",
         default=None,
-        help="Comma-separated list of models (e.g., codex/gpt-5.2-codex,gemini-cli/gemini-3-pro-preview)",
+        help="Comma-separated list of models (e.g., codex/gpt-5.3-codex,gemini-cli/gemini-3-pro-preview)",
     )
     parser.add_argument(
         "--doc-type",
@@ -481,7 +468,7 @@ def add_gauntlet_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--final-boss",
         action="store_true",
-        help="Run Phase 5 Final Boss UX review (uses Opus 4.5, expensive but thorough)",
+        help="Run Phase 5 Final Boss UX review (uses Opus 4.6, expensive but thorough)",
     )
 
 
@@ -518,10 +505,10 @@ def create_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex
-  echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --focus security
-  echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --persona "security engineer"
-  echo "spec" | python3 debate.py critique --models codex/gpt-5.2-codex --context ./api.md
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --focus security
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --persona "security engineer"
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --context ./api.md
   echo "spec" | python3 debate.py critique --profile my-security-profile
   python3 debate.py diff --previous old.md --current new.md
   echo "spec" | python3 debate.py export-tasks --doc-type spec --depth product
@@ -529,7 +516,7 @@ Examples:
   python3 debate.py focus-areas
   python3 debate.py personas
   python3 debate.py profiles
-  python3 debate.py save-profile myprofile --models codex/gpt-5.2-codex,gemini-cli/gemini-3-pro-preview --focus security
+  python3 debate.py save-profile myprofile --models codex/gpt-5.3-codex,gemini-cli/gemini-3-pro-preview --focus security
 
 Gauntlet commands (adversarial attack on specs):
   echo "spec" | python3 debate.py gauntlet                   # Run gauntlet with all adversaries
@@ -722,15 +709,13 @@ def handle_utility_command(args: argparse.Namespace) -> bool:
 
 
 def handle_execution_plan(args: argparse.Namespace) -> bool:
-    """Handle execution-plan command.
+    """Handle execution-plan command (DEPRECATED).
 
-    Runs the full execution planning pipeline:
-    1. FR-1: Spec Intake - Parse the specification
-    2. FR-2: Scope Assessment - Recommend single-agent vs multi-agent
-    3. FR-3: Task Plan Generation - Create tasks with concerns linked
-    4. FR-4: Test Strategy Configuration - Assign test strategies
-    5. FR-5: Over-Decomposition Guards - Warn if plan is too granular
-    6. FR-6: Parallelization Guidance - Identify workstreams
+    The automated execution planning pipeline has been deprecated (Feb 2026,
+    Option B+ decision). Claude now creates execution plans directly using
+    guidelines in phases/06-execution.md.
+
+    This command now prints a deprecation notice and exits.
 
     Args:
         args: Parsed command-line arguments.
@@ -741,12 +726,28 @@ def handle_execution_plan(args: argparse.Namespace) -> bool:
     if args.action != "execution-plan":
         return False
 
-    if not EXECUTION_PLANNER_AVAILABLE:
-        print(
-            "Error: execution_planner module not available.",
-            file=sys.stderr,
-        )
-        print("Install with: pip install -e .", file=sys.stderr)
+    print(
+        "DEPRECATED: The execution-plan command has been deprecated.",
+        file=sys.stderr,
+    )
+    print(
+        "Claude now creates execution plans directly using guidelines in",
+        file=sys.stderr,
+    )
+    print(
+        "~/.claude/skills/adversarial-spec/phases/06-execution.md",
+        file=sys.stderr,
+    )
+    print(file=sys.stderr)
+    print(
+        "To generate an execution plan, run /adversarial-spec and proceed",
+        file=sys.stderr,
+    )
+    print(
+        "through the phases to Phase 6 (Execution Planning).",
+        file=sys.stderr,
+    )
+    return True
         sys.exit(1)
 
     # Get spec content from stdin or file
@@ -821,11 +822,31 @@ def handle_execution_plan(args: argparse.Namespace) -> bool:
     # FR-3: Task Plan Generation
     # =========================================================================
     print("\n[3/6] Task Plan Generation...", file=sys.stderr)
+
+    # Try mechanical generation first
     if doc.is_tech_spec():
         plan = TaskPlanner.generate_from_tech_spec(doc, gauntlet_report)
+        generation_method = "tech-spec (mechanical)"
     else:
         plan = TaskPlanner.generate(doc)
-    print(f"  Generated {len(plan.tasks)} tasks", file=sys.stderr)
+        generation_method = "FR-based (mechanical)"
+
+    # Fall back to LLM extraction if mechanical produces 0 tasks
+    if len(plan.tasks) == 0:
+        print("  Mechanical generation produced 0 tasks, falling back to LLM extraction...", file=sys.stderr)
+        try:
+            plan = TaskPlanner.auto_generate(
+                doc,
+                gauntlet_report=gauntlet_report,
+                llm_model="auto",
+                timeout=300,
+            )
+            generation_method = f"LLM ({plan.llm_model})"
+        except Exception as e:
+            print(f"  Warning: LLM extraction failed: {e}", file=sys.stderr)
+            # Keep the empty mechanical plan
+
+    print(f"  Generated {len(plan.tasks)} tasks via {generation_method}", file=sys.stderr)
 
     # =========================================================================
     # FR-4: Test Strategy Configuration
@@ -1357,16 +1378,16 @@ def parse_models(args: argparse.Namespace) -> list[str]:
             )
             print("\nAvailable providers:", file=sys.stderr)
             print(
-                "  Codex CLI: Install codex CLI for codex/gpt-5.2-codex (FREE with ChatGPT subscription)", file=sys.stderr
+                "  Codex CLI: Install codex CLI for codex/gpt-5.3-codex (FREE with ChatGPT subscription)", file=sys.stderr
             )
             print(
                 "  Gemini CLI: Install gemini CLI for gemini-cli/gemini-3-pro-preview (FREE)", file=sys.stderr
             )
             print(
-                "  OpenAI:    Set OPENAI_API_KEY for gpt-5.2, o3-mini", file=sys.stderr
+                "  OpenAI:    Set OPENAI_API_KEY for gpt-5.3", file=sys.stderr
             )
             print(
-                "  Anthropic: Set ANTHROPIC_API_KEY for claude-opus-4-5, claude-sonnet-4-5",
+                "  Anthropic: Set ANTHROPIC_API_KEY for claude-opus-4-6, claude-sonnet-4-5",
                 file=sys.stderr,
             )
             print(
@@ -1390,7 +1411,7 @@ def parse_models(args: argparse.Namespace) -> list[str]:
                 "  Zhipu:     Set ZHIPUAI_API_KEY for zhipu/glm-4-plus",
                 file=sys.stderr,
             )
-            print("\nOr specify models explicitly: --models codex/gpt-5.2-codex", file=sys.stderr)
+            print("\nOr specify models explicitly: --models codex/gpt-5.3-codex", file=sys.stderr)
             print(
                 "\nRun 'python3 debate.py providers' to see which keys are set.",
                 file=sys.stderr,

@@ -15,7 +15,11 @@ from pathlib import Path
 from typing import Optional
 
 # Add adversarial-spec scripts to path for shared imports
-_SCRIPTS_PATH = Path(__file__).parent.parent / "skills" / "adversarial-spec" / "scripts"
+# Works whether execution_planner is in project root or skill directory
+_PARENT = Path(__file__).parent.parent
+_SCRIPTS_PATH = _PARENT / "scripts"  # Skill directory layout
+if not _SCRIPTS_PATH.exists():
+    _SCRIPTS_PATH = _PARENT / "skills" / "adversarial-spec" / "scripts"  # Project layout
 if str(_SCRIPTS_PATH) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_PATH))
 
