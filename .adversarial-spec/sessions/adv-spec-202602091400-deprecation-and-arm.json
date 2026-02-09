@@ -1,0 +1,53 @@
+{
+  "session_id": "adv-spec-202602091400-deprecation-and-arm",
+  "context_name": "Execution Planner Deprecation + Arm Adversaries",
+  "current_phase": "complete",
+  "current_step": "All work done including phase transition sync fix.",
+  "created_at": "2026-02-09T14:00:00Z",
+  "completed_at": "2026-02-09T22:30:00Z",
+  "updated_at": "2026-02-09T22:30:00Z",
+  "journey": [
+    {"time": "2026-02-09T14:00:00Z", "event": "Session started from completed Model Hygiene session", "type": "start"},
+    {"time": "2026-02-09T14:10:00Z", "event": "Read execution-planner-deprecation.md spec (Option B+)", "type": "research"},
+    {"time": "2026-02-09T14:30:00Z", "event": "Pivoted to investigate COMP adversary context gap", "type": "discovery"},
+    {"time": "2026-02-09T15:00:00Z", "event": "Brainstormed Arm Adversaries phase - per-adversary context strategy", "type": "design"},
+    {"time": "2026-02-09T15:30:00Z", "event": "Designed Context Readiness Audit (between R1 and R2) and Arm Adversaries (before gauntlet)", "type": "design"},
+    {"time": "2026-02-09T16:00:00Z", "event": "Wrote arm-adversaries spec", "type": "artifact"},
+    {"time": "2026-02-09T16:30:00Z", "event": "Sent spec to codex/gpt-5.3-codex for critique (medium reasoning)", "type": "debate"},
+    {"time": "2026-02-09T17:00:00Z", "event": "Merged Codex feedback: kept Getting Started, schemas, contracts. Dropped security, error codes, SLAs, feature flags.", "type": "revision"},
+    {"time": "2026-02-09T17:30:00Z", "event": "Updated 03-debate.md, 04-gauntlet.md, context-addition-protocol.md with new phases", "type": "implementation"},
+    {"time": "2026-02-09T17:45:00Z", "event": "Committed and pushed arm adversaries: da3022e", "type": "commit"},
+    {"time": "2026-02-09T18:00:00Z", "event": "Started execution planner deprecation Phase 2+3", "type": "implementation"},
+    {"time": "2026-02-09T18:15:00Z", "event": "Verified 06-execution.md has all 5 converted module concepts. Agent found 3 gaps, added to guidelines.", "type": "verification"},
+    {"time": "2026-02-09T18:30:00Z", "event": "Deleted 11 modules + 9 test files (-7,196 lines). Rewrote __init__.py. Updated debate.py imports + deprecation notice.", "type": "implementation"},
+    {"time": "2026-02-09T19:00:00Z", "event": "WIP committed and pushed: e6ce6fa", "type": "commit"},
+    {"time": "2026-02-09T20:00:00Z", "event": "Context limit reached, checkpointed. Deprecation partially done.", "type": "checkpoint"},
+    {"time": "2026-02-09T21:00:00Z", "event": "Deprecation completed (821322b). Session marked complete.", "type": "commit"},
+    {"time": "2026-02-09T22:00:00Z", "event": "Identified phase transition sync gaps (pointer vs detail file drift, missing artifact linkback)", "type": "discovery"},
+    {"time": "2026-02-09T22:15:00Z", "event": "Added Phase Transition Protocol to SKILL.md, roadmap_path write to 02-roadmap.md, spec_path write to 05-finalize.md", "type": "implementation"},
+    {"time": "2026-02-09T22:20:00Z", "event": "Codex reviewed plan (high reasoning): [AGREE]", "type": "debate"},
+    {"time": "2026-02-09T22:30:00Z", "event": "Checkpoint before commit", "type": "checkpoint"}
+  ],
+  "requirements_summary": {
+    "completed_work": [
+      "Arm Adversaries spec written, debated with Codex, merged (da3022e)",
+      "03-debate.md updated with Context Readiness Audit",
+      "04-gauntlet.md updated with Arm Adversaries step",
+      "context-addition-protocol.md updated with inventory integration",
+      "06-execution.md updated with 3 missing test strategy guidelines",
+      "Deleted 11 dead modules from execution_planner/",
+      "Deleted 9 test files from tests/execution_planner/",
+      "Rewrote execution_planner/__init__.py (gauntlet exports only)",
+      "Updated debate.py: deprecation notice + import cleanup",
+      "Execution planner deprecation completed (821322b)",
+      "Phase Transition Protocol added to SKILL.md (dual-write rule)",
+      "roadmap_path linkback added to 02-roadmap.md",
+      "spec_path linkback added to 05-finalize.md"
+    ],
+    "remaining_work": []
+  },
+  "specs": {
+    "arm_adversaries": ".adversarial-spec/specs/arm-adversaries.md",
+    "execution_planner_deprecation": ".adversarial-spec/specs/execution-planner-deprecation.md"
+  }
+}

@@ -241,6 +241,34 @@ Based on `current_phase` from session state, read the appropriate file:
 
 **If in Brainquarters** (detected by `projects.yaml` existing): Can also use `TaskList(list_contexts=True)` to see cross-project contexts.
 
+### Phase Transition Protocol
+
+**Every phase transition must update BOTH files atomically:**
+
+1. **Detail file** (`sessions/<id>.json`) — update first:
+   - Set `current_phase` to new phase
+   - Set `current_step` to entry point description
+   - Set `updated_at` to ISO 8601 timestamp
+   - Append to `journey`: `{"time": "ISO8601", "event": "Phase transition: <old> → <new>", "type": "transition"}`
+   - If `journey` array doesn't exist, create it
+
+2. **Pointer file** (`session-state.json`) — update second:
+   - Set `current_phase`, `current_step`, `next_action`, `updated_at`
+
+**Detail file first, pointer second.** If interrupted between writes, the pointer stays behind (safe — it catches up on next transition). The reverse would leave a pointer ahead of a stale detail file.
+
+**Artifact path fields** — set in the detail file at specific transitions:
+
+| Transition | Field | Value |
+|------------|-------|-------|
+| roadmap → debate | `roadmap_path` | `"roadmap/manifest.json"` or `"inline"` |
+| finalize → execution | `spec_path` | Path to written spec (e.g., `"spec-output.md"`) |
+| any → complete | `completed_at` | ISO 8601 timestamp |
+
+Both writes must use atomic pattern (temp file + rename).
+
+**Backward compatibility:** If the detail file lacks `current_phase` (legacy sessions), add it — do not error. The schema is flexible.
+
 ---
 
 ## First-Run Bootstrap

@@ -1,1 +1,1 @@
-checkpoint-20260129-medal-system.md
+checkpoint-20260206-model-hygiene-and-path-fixes.md
