@@ -14,27 +14,27 @@ from prompts import FOCUS_AREAS, PERSONAS
 PROFILES_DIR = Path.home() / ".config" / "adversarial-spec" / "profiles"
 GLOBAL_CONFIG_PATH = Path.home() / ".claude" / "adversarial-spec" / "config.json"
 
-# Cost per 1M tokens (approximate, as of 2024)
+# Cost per 1M tokens (approximate, as of Feb 2026)
 MODEL_COSTS = {
+    # OpenAI API models
     "gpt-4o": {"input": 2.50, "output": 10.00},
-    "gpt-4-turbo": {"input": 10.00, "output": 30.00},
-    "gpt-4": {"input": 30.00, "output": 60.00},
-    "gpt-3.5-turbo": {"input": 0.50, "output": 1.50},
+    "gpt-5.3": {"input": 5.00, "output": 15.00},
     "o1": {"input": 15.00, "output": 60.00},
-    "o1-mini": {"input": 3.00, "output": 12.00},
-    "claude-sonnet-4-20250514": {"input": 3.00, "output": 15.00},
-    "claude-opus-4-20250514": {"input": 15.00, "output": 75.00},
-    "gemini/gemini-2.0-flash": {"input": 0.075, "output": 0.30},
-    "gemini/gemini-pro": {"input": 0.50, "output": 1.50},
+    # Anthropic models
+    "claude-sonnet-4-5-20250929": {"input": 3.00, "output": 15.00},
+    "claude-opus-4-6": {"input": 15.00, "output": 75.00},
+    # Google models
+    "gemini/gemini-3-pro": {"input": 1.25, "output": 5.00},
+    "gemini/gemini-3-flash": {"input": 0.075, "output": 0.30},
+    # Other providers
     "xai/grok-3": {"input": 3.00, "output": 15.00},
-    "xai/grok-beta": {"input": 5.00, "output": 15.00},
     "mistral/mistral-large": {"input": 2.00, "output": 6.00},
     "groq/llama-3.3-70b-versatile": {"input": 0.59, "output": 0.79},
     "deepseek/deepseek-chat": {"input": 0.14, "output": 0.28},
     "zhipu/glm-4": {"input": 1.40, "output": 1.40},
     "zhipu/glm-4-plus": {"input": 7.00, "output": 7.00},
     # Codex CLI models (uses ChatGPT subscription, no per-token cost)
-    "codex/gpt-5.2-codex": {"input": 0.0, "output": 0.0},
+    "codex/gpt-5.3-codex": {"input": 0.0, "output": 0.0},
     "codex/gpt-5.1-codex-max": {"input": 0.0, "output": 0.0},
     "codex/gpt-5.1-codex-mini": {"input": 0.0, "output": 0.0},
     # Gemini CLI models (uses Google account, no per-token cost)
@@ -274,11 +274,11 @@ def list_providers():
         print("-" * 60 + "\n")
 
     providers = [
-        ("OpenAI", "OPENAI_API_KEY", "gpt-5.2, o3-mini, gpt-5.2-mini"),
+        ("OpenAI", "OPENAI_API_KEY", "gpt-5.3"),
         (
             "Anthropic",
             "ANTHROPIC_API_KEY",
-            "claude-sonnet-4-5-20250929, claude-opus-4-5-20251124",
+            "claude-sonnet-4-5-20250929, claude-opus-4-6",
         ),
         ("Google", "GEMINI_API_KEY", "gemini/gemini-3-pro, gemini/gemini-3-flash"),
         ("xAI", "XAI_API_KEY", "xai/grok-3, xai/grok-beta"),
@@ -287,7 +287,7 @@ def list_providers():
         (
             "OpenRouter",
             "OPENROUTER_API_KEY",
-            "openrouter/openai/gpt-5.2, openrouter/anthropic/claude-sonnet-4.5",
+            "openrouter/openai/gpt-5.3, openrouter/anthropic/claude-sonnet-4-5",
         ),
         ("Deepseek", "DEEPSEEK_API_KEY", "deepseek/deepseek-chat"),
         ("Zhipu", "ZHIPUAI_API_KEY", "zhipu/glm-4, zhipu/glm-4-plus"),
@@ -307,7 +307,7 @@ def list_providers():
     # Codex CLI (uses ChatGPT subscription, not API key)
     codex_status = "[installed]" if CODEX_AVAILABLE else "[not installed]"
     print(f"  {'Codex CLI':12} {'(ChatGPT subscription)':24} {codex_status}")
-    print("             Example models: codex/gpt-5.2-codex, codex/gpt-5.1-codex-max")
+    print("             Example models: codex/gpt-5.3-codex, codex/gpt-5.1-codex-max")
     print(
         "             Reasoning: --codex-reasoning (minimal, low, medium, high, xhigh)"
     )
@@ -364,8 +364,8 @@ def get_available_providers() -> list[tuple[str, Optional[str], str]]:
     """
     providers = [
         # Note: OpenAI direct API deprecated in favor of Codex CLI (free with ChatGPT subscription)
-        ("Anthropic", "ANTHROPIC_API_KEY", "claude-sonnet-4-20250514"),
-        ("Google", "GEMINI_API_KEY", "gemini/gemini-2.0-flash"),
+        ("Anthropic", "ANTHROPIC_API_KEY", "claude-sonnet-4-5-20250929"),
+        ("Google", "GEMINI_API_KEY", "gemini/gemini-3-flash"),
         ("xAI", "XAI_API_KEY", "xai/grok-3"),
         ("Mistral", "MISTRAL_API_KEY", "mistral/mistral-large"),
         ("Groq", "GROQ_API_KEY", "groq/llama-3.3-70b-versatile"),
@@ -380,7 +380,7 @@ def get_available_providers() -> list[tuple[str, Optional[str], str]]:
 
     # Add Codex CLI if available
     if CODEX_AVAILABLE:
-        available.append(("Codex CLI", None, "codex/gpt-5.2-codex"))
+        available.append(("Codex CLI", None, "codex/gpt-5.3-codex"))
 
     # Add Gemini CLI if available
     if GEMINI_CLI_AVAILABLE:

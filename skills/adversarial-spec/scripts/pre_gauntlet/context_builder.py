@@ -9,10 +9,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from .models import (
-    BuildStatus,
-    ConcernSeverity,
     GitPosition,
-    PreGauntletResult,
     SystemState,
 )
 

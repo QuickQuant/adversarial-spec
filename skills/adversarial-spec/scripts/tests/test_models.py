@@ -534,11 +534,11 @@ class TestCallCodexModel:
             stdout='{"type":"item.completed","item":{"type":"agent_message","text":"Response"}}\n{"type":"turn.completed","usage":{"input_tokens":100,"output_tokens":50}}',
             stderr="",
         )
-        response, inp, out = call_codex_model("sys", "user", "codex/gpt-5.2-codex")
+        response, inp, out = call_codex_model("sys", "user", "codex/gpt-5.3-codex")
         # Verify model name was extracted and passed to command
         cmd = mock_run.call_args[0][0]
-        assert "gpt-5.2-codex" in cmd
-        assert "codex/gpt-5.2-codex" not in cmd
+        assert "gpt-5.3-codex" in cmd
+        assert "codex/gpt-5.3-codex" not in cmd
 
     @patch("models.CODEX_AVAILABLE", True)
     @patch("models.subprocess.run")

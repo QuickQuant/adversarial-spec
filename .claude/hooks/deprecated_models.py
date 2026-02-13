@@ -36,22 +36,31 @@ MODE = CONFIG.get("deprecated_models_mode", CONFIG.get("mode", "flexible"))
 
 DEPRECATED_MODELS = {
     # OpenAI legacy models - replaced by gpt-5.x series
-    "gpt-4o": "Use codex/gpt-5.2-codex-medium (free with ChatGPT subscription) or claude-sonnet-4-5",
-    "gpt-4o-mini": "Use codex/gpt-5.2-codex-medium (free) or gemini-cli/gemini-3-flash-preview (free)",
-    "gpt-4-turbo": "Use codex/gpt-5.2-codex (free with ChatGPT subscription)",
-    "gpt-4": "Use codex/gpt-5.2-codex (free with ChatGPT subscription)",
+    "gpt-4o": "Use codex/gpt-5.3-codex (free, xhigh reasoning) or --codex-reasoning medium for lighter use",
+    "gpt-4o-mini": "Use codex/gpt-5.3-codex --codex-reasoning medium (free) or gemini-cli/gemini-3-flash-preview (free)",
+    "gpt-4-turbo": "Use codex/gpt-5.3-codex (free with ChatGPT subscription)",
+    "gpt-4": "Use codex/gpt-5.3-codex (free with ChatGPT subscription)",
     "gpt-3.5-turbo": "Use gemini-cli/gemini-3-flash-preview (free) or groq/llama-3.3-70b-versatile",
-    "o3-mini": "Use codex/gpt-5.2-codex-medium (free with ChatGPT subscription)",
+    "o3-mini": "Use codex/gpt-5.3-codex --codex-reasoning medium (free with ChatGPT subscription)",
 
     # Old Gemini models
     "gemini-pro": "Use gemini/gemini-3-pro or gemini-cli/gemini-3-pro-preview (free)",
     "gemini-1.5-pro": "Use gemini/gemini-3-pro or gemini-cli/gemini-3-pro-preview (free)",
     "gemini-1.5-flash": "Use gemini/gemini-3-flash or gemini-cli/gemini-3-flash-preview (free)",
+    "gemini-2.5-pro": "Use gemini/gemini-3-pro or gemini-cli/gemini-3-pro-preview (free)",
 
-    # Old Claude models
-    "claude-3-opus": "Use claude-opus-4-5-20250514",
+    # Old Claude models (Claude 3 series)
+    "claude-3-opus": "Use claude-opus-4-6",
     "claude-3-sonnet": "Use claude-sonnet-4-5-20250929",
-    "claude-3-haiku": "Use claude-haiku-3-5-20250929",
+    "claude-3-haiku": "Use claude-haiku-4-5-20251001",
+
+    # Old Claude models (Claude 4.0 series - superseded by 4.5/4.6)
+    "claude-sonnet-4-20250514": "Use claude-sonnet-4-5-20250929",
+    "claude-opus-4-20250514": "Use claude-opus-4-6",
+
+    # Old Claude models (Claude 4.5 Opus - superseded by 4.6)
+    "claude-opus-4-5-20251124": "Use claude-opus-4-6",
+    "claude-opus-4-5-20250514": "Use claude-opus-4-6",
 }
 
 # Patterns to match model specifications in commands
@@ -129,7 +138,7 @@ def main():
         print("Update your command to use a supported model.", file=sys.stderr)
         print("", file=sys.stderr)
         print("Free options with no API cost:", file=sys.stderr)
-        print("  • codex/gpt-5.2-codex (requires ChatGPT subscription + npm install -g @openai/codex)", file=sys.stderr)
+        print("  • codex/gpt-5.3-codex (requires ChatGPT subscription + npm install -g @openai/codex)", file=sys.stderr)
         print("  • gemini-cli/gemini-3-pro-preview (requires Google account + install gemini CLI)", file=sys.stderr)
 
         sys.exit(2)  # Block the command

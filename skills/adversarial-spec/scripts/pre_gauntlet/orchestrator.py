@@ -25,7 +25,6 @@ from .context_builder import build_context
 from .discovery import DiscoveryResult
 from .models import (
     CompatibilityConfig,
-    ConcernSeverity,
     ContextSummary,
     DiscoveredServiceSummary,
     DiscoverySummary,

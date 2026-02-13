@@ -1,14 +1,103 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "_meta": {
+    "description": "Claude Code hooks for development practices enforcement",
+    "version": "1.0.0",
+    "brainquarters_core_version": "1.0",
+    "project_version": "1.0"
+  },
   "permissions": {
     "allow": [
       "Bash(python3:*)",
       "Bash(grep:*)",
-      "Bash(for file in skills/adversarial-spec/scripts/{debate,models,prompts,providers,session,telegram_bot}.py)",
-      "Bash(do if ! head -5 \"$file\")",
-      "Bash(then echo \"Adding future import to $file\" fi done)",
-      "Bash(for file in skills/adversarial-spec/scripts/{debate,models,prompts,providers,session}.py)",
-      "Bash(do echo \"=== $file ===\" head -30 \"$file\")",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "mcp__tasks__TaskList",
+      "mcp__tasks__TaskCreate",
+      "mcp__tasks__TaskUpdate",
+      "mcp__tasks__TaskGet",
+      "Bash(/home/jason/miniconda3/bin/mcp-tasks:*)",
+      "Bash(pip show:*)",
+      "Bash(echo:*)",
+      "Bash(git commit:*)",
+      "Bash(git add:*)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/assumption_detection.py",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/unverified_claims.py",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/secret_exposure.py",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/uv_run_check.py",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/bash_command_check.py",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/banned_git_commands.py",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/banned_filesystem_commands.py",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/prod_deployment_guard.py",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/force_flag_defense.py",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/codex-timeout-guard.py",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/deprecated_models.py",
+            "timeout": 30
+          }
+        ]
+      }
     ]
   }
 }

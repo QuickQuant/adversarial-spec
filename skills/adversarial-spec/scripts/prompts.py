@@ -122,9 +122,30 @@ PERSONAS = {
     "legal-compliance": "You are a legal/compliance reviewer. Focus on data privacy (GDPR, CCPA), terms of service implications, liability, audit requirements, and regulatory compliance.",
 }
 
-SYSTEM_PROMPT_PRD = """You are a senior product manager participating in adversarial spec development.
+SYSTEM_PROMPT_SPEC_PRODUCT = """You are a senior product manager participating in adversarial spec development.
 
 You will receive a Product Requirements Document (PRD) from another AI model. Your job is to critique it rigorously.
+
+**CRITICAL REQUIREMENTS (check these FIRST before technical details):**
+
+1. **User Journey:** Is there a clear path from "new user" to "productive user"?
+   - How does someone discover this product?
+   - What's their first interaction?
+   - When do they experience value?
+   - If this path is unclear, flag it as a CRITICAL gap.
+
+2. **User Stories:** Are all user types and scenarios covered?
+   - Proper format: "As a [user type], I want [action] so that [benefit]"
+   - Look for MISSING user stories - what user scenarios are NOT addressed?
+   - If no user stories exist, this is a CRITICAL gap.
+
+3. **Missing Use Cases:** What user scenarios are NOT addressed?
+   - New user onboarding
+   - Error/failure scenarios from user perspective
+   - Edge cases in user workflows
+   - If major use cases are missing, flag them.
+
+**If the PRD lacks user stories or a clear user journey, this is a CRITICAL gap that must be raised BEFORE discussing other requirements.**
 
 Analyze the PRD for:
 - Clear problem definition with evidence of real user pain
@@ -160,9 +181,33 @@ If the PRD is solid and ready for stakeholder review:
 Be rigorous. A good PRD should let any PM or designer understand exactly what to build and why.
 Push back on vague requirements, unmeasurable success criteria, and missing user context."""
 
-SYSTEM_PROMPT_TECH = """You are a senior software architect participating in adversarial spec development.
+SYSTEM_PROMPT_SPEC_TECHNICAL = """You are a senior software architect participating in adversarial spec development.
 
 You will receive a Technical Specification from another AI model. Your job is to critique it rigorously.
+
+**CRITICAL REQUIREMENTS (check these FIRST before implementation details):**
+
+1. **Getting Started / Bootstrap:** How does a user set up and start using this system?
+   - Is there a clear "Getting Started" section?
+   - What prerequisites are needed?
+   - What's the step-by-step first-run experience?
+   - How long until a user can perform their first real task?
+   - **If no setup workflow is defined, this is a CRITICAL gap.**
+
+2. **User Journey:** Is there a clear path from "new user" to "productive user"?
+   - Technical setup steps should be documented
+   - First successful interaction should be clear
+   - Common workflows should be documented
+   - **If this path is unclear, flag it as a CRITICAL gap.**
+
+3. **Missing Use Cases:** What technical scenarios are NOT addressed?
+   - Initial setup / bootstrapping
+   - Configuration and customization
+   - Error recovery and troubleshooting
+   - Upgrade and migration paths
+   - **If major technical scenarios are missing, flag them.**
+
+**If the spec lacks a "Getting Started" section or clear setup workflow, this is a CRITICAL gap that must be raised BEFORE discussing implementation details.**
 
 Analyze the spec for:
 - Clear architectural decisions with rationale
@@ -177,6 +222,7 @@ Analyze the spec for:
 Expected structure:
 - Overview / Context
 - Goals and Non-Goals
+- **Getting Started** (REQUIRED - bootstrap workflow for new users)
 - System Architecture
 - Component Design
 - API Design (full schemas, not just endpoint names)
@@ -379,8 +425,16 @@ Extract:
 Be thorough. Every actionable item in the spec should become a task."""
 
 
-def get_system_prompt(doc_type: str, persona: Optional[str] = None) -> str:
-    """Get the system prompt for a given document type and optional persona."""
+def get_system_prompt(
+    doc_type: str, persona: Optional[str] = None, depth: Optional[str] = None
+) -> str:
+    """Get the system prompt for a given document type and optional persona.
+
+    Args:
+        doc_type: Document type (spec, prd, tech, debug)
+        persona: Optional persona to use instead of default prompt
+        depth: Spec depth (product, technical, full). Only used when doc_type is 'spec'.
+    """
     if persona:
         persona_key = persona.lower().replace(" ", "-").replace("_", "-")
         if persona_key in PERSONAS:
@@ -388,23 +442,36 @@ def get_system_prompt(doc_type: str, persona: Optional[str] = None) -> str:
         else:
             return f"You are a {persona} participating in adversarial spec development. Review the document from your professional perspective and critique any issues you find."
 
-    if doc_type == "prd":
-        return SYSTEM_PROMPT_PRD
-    elif doc_type == "tech":
-        return SYSTEM_PROMPT_TECH
+    # Unified spec with depth
+    if doc_type == "spec":
+        if depth == "product":
+            return SYSTEM_PROMPT_SPEC_PRODUCT
+        else:  # technical or full
+            return SYSTEM_PROMPT_SPEC_TECHNICAL
     elif doc_type == "debug":
         return SYSTEM_PROMPT_DEBUG
     else:
+        # Unknown doc type - use generic
         return SYSTEM_PROMPT_GENERIC
 
 
-def get_doc_type_name(doc_type: str) -> str:
-    """Get human-readable document type name."""
-    if doc_type == "prd":
-        return "Product Requirements Document"
-    elif doc_type == "tech":
-        return "Technical Specification"
+def get_doc_type_name(doc_type: str, depth: Optional[str] = None) -> str:
+    """Get human-readable document type name.
+
+    Args:
+        doc_type: Document type (spec, debug)
+        depth: Spec depth (product, technical, full). Only used when doc_type is 'spec'.
+    """
+    if doc_type == "spec":
+        if depth == "product":
+            return "Product Specification"
+        elif depth == "technical":
+            return "Technical Specification"
+        elif depth == "full":
+            return "Full Specification"
+        else:
+            return "Specification"
     elif doc_type == "debug":
         return "Debug Investigation"
     else:
-        return "specification"
+        return "Specification"

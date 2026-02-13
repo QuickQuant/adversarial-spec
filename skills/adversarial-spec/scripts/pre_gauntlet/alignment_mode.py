@@ -14,7 +14,6 @@ from .models import (
     AlignmentResolution,
     AlignmentStatus,
     Concern,
-    ConcernSeverity,
     PreGauntletResult,
     PreGauntletStatus,
 )

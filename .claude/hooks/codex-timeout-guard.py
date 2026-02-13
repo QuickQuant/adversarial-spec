@@ -2,6 +2,9 @@
 """
 Hook: Codex Timeout Guard
 
+Owner: Claude (Opus 4.5)
+Created: 2026-01-29
+
 Prevents dispatching codex commands with insufficient timeout.
 Codex with xhigh reasoning needs at least 15 minutes for light work,
 30 minutes for heavier work.
@@ -9,12 +12,35 @@ Codex with xhigh reasoning needs at least 15 minutes for light work,
 Exit codes:
   0 = Allow
   2 = Block with error message
+
+Note: This hook ALWAYS blocks regardless of mode - insufficient timeout
+means the command will fail anyway, so blocking prevents wasted API calls.
 """
 
 import json
 import re
 import sys
+from pathlib import Path
 
+# =============================================================================
+# CONFIGURATION
+# =============================================================================
+
+def load_config():
+    config_path = Path(__file__).parent / "hook_config.json"
+    if config_path.exists():
+        with open(config_path) as f:
+            return json.load(f)
+    return {"mode": "flexible"}
+
+CONFIG = load_config()
+# Note: This hook always blocks - mode is read for consistency but not used
+# because insufficient timeout = guaranteed failure
+MODE = CONFIG.get("per_hook_overrides", {}).get("codex_timeout_guard_mode") or CONFIG.get("mode", "flexible")
+
+# =============================================================================
+# HOOK LOGIC
+# =============================================================================
 
 def main():
     # Read hook input from stdin

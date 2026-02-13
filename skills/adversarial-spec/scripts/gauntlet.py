@@ -16,7 +16,7 @@ Usage:
     cat spec.md | python3 debate.py gauntlet --gauntlet-adversaries paranoid_security,burned_oncall
 
     # Run gauntlet before debate
-    cat spec.md | python3 debate.py critique --models codex/gpt-5.2-codex --gauntlet
+    cat spec.md | python3 debate.py critique --models codex/gpt-5.3-codex --gauntlet
 """
 
 from __future__ import annotations
@@ -71,7 +71,7 @@ except ImportError:
 # Access persona with: ADVERSARIES["name"].persona
 
 # =============================================================================
-# FINAL BOSS ADVERSARY (runs after all others, uses Opus 4.5)
+# FINAL BOSS ADVERSARY (runs after all others, uses Opus 4.6)
 # =============================================================================
 # FINAL_BOSS is imported from adversaries.py - includes verdict system (PASS/REFINE/RECONSIDER)
 
@@ -124,6 +124,7 @@ class Concern:
     text: str
     severity: str = "medium"  # low, medium, high
     id: str = ""  # Stable ID for linking (auto-generated if empty)
+    source_model: str = ""  # Which attack model generated this concern
 
     def __post_init__(self):
         """Generate ID if not provided."""
@@ -150,10 +151,27 @@ class Rebuttal:
 
 
 @dataclass
+class BigPictureSynthesis:
+    """Holistic analysis of all concerns before evaluation.
+
+    Synthesizes insights by looking at the full picture across all adversaries.
+    """
+
+    total_concerns: int
+    unique_texts: int
+    real_issues: list[str]  # The 2-4 things that actually matter
+    hidden_connections: list[str]  # Links between different adversaries' concerns
+    whats_missing: list[str]  # Blind spots - what no one caught
+    meta_concern: str  # The parent concern that would generate all others
+    high_signal: list[str]  # 2-3 concerns deserving most attention
+    raw_response: str
+
+
+@dataclass
 class GauntletResult:
     """Complete result of running the gauntlet."""
 
-    concerns: list[Concern]  # Post-filtering concerns that were evaluated
+    concerns: list[Concern]  # Post-filtering concerns before clustering
     evaluations: list[Evaluation]
     rebuttals: list[Rebuttal]
     final_concerns: list[Concern]  # Concerns that survived (technical + UX)
@@ -161,11 +179,15 @@ class GauntletResult:
     eval_model: str
     total_time: float
     total_cost: float
-    final_boss_result: Optional["FinalBossResult"] = None  # Phase 5 result
+    final_boss_result: Optional["FinalBossResult"] = None  # Phase 7 result
     raw_concerns: Optional[list[Concern]] = None  # Pre-filtering concerns (all generated)
     dropped_concerns: Optional[list[Concern]] = None  # Concerns dropped by filtering
     spec_hash: Optional[str] = None  # Hash of the spec that was reviewed
     adversary_timing: Optional[dict[str, float]] = None  # Time per adversary in seconds
+    big_picture: Optional[BigPictureSynthesis] = None  # Holistic concern analysis
+    clustered_concerns: Optional[list[Concern]] = None  # Concerns evaluated after dedup
+    clustered_evaluations: Optional[list[Evaluation]] = None  # One evaluation per cluster representative
+    cluster_members: Optional[dict[str, list[Concern]]] = None  # representative concern id -> member concerns
 
     def get_adversary_stats(self) -> dict[str, dict]:
         """Get per-adversary statistics from this run.
@@ -248,7 +270,15 @@ class GauntletResult:
         """Serialize the gauntlet result to a dictionary for JSON storage."""
 
         def concern_to_dict(c: Concern) -> dict:
-            return {"id": c.id, "adversary": c.adversary, "text": c.text, "severity": c.severity}
+            result = {
+                "id": c.id,
+                "adversary": c.adversary,
+                "text": c.text,
+                "severity": c.severity,
+            }
+            if c.source_model:
+                result["source_model"] = c.source_model
+            return result
 
         def eval_to_dict(e: Evaluation) -> dict:
             return {
@@ -287,6 +317,15 @@ class GauntletResult:
             "adversary_stats": self.get_adversary_stats(),
             "adversary_timing": self.adversary_timing,
         }
+        if self.clustered_concerns is not None:
+            result["clustered_concerns"] = [concern_to_dict(c) for c in self.clustered_concerns]
+        if self.clustered_evaluations is not None:
+            result["clustered_evaluations"] = [eval_to_dict(e) for e in self.clustered_evaluations]
+        if self.cluster_members is not None:
+            result["cluster_members"] = {
+                rep_id: [concern_to_dict(c) for c in members]
+                for rep_id, members in self.cluster_members.items()
+            }
 
         if self.final_boss_result:
             result["final_boss"] = {
@@ -313,8 +352,8 @@ class GauntletResult:
 # ADVERSARY STATS PERSISTENCE
 # =============================================================================
 
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 STATS_DIR = Path.home() / ".adversarial-spec"
 STATS_FILE = STATS_DIR / "adversary_stats.json"
@@ -417,8 +456,17 @@ def update_adversary_stats(result: GauntletResult) -> dict:
         else:
             existing["avg_signal_score"] = 0.0
 
-    # Update model stats
-    for model, role in [(result.adversary_model, "adversary"), (result.eval_model, "evaluation")]:
+    # Update model stats (supports comma-separated model lists).
+    model_roles: list[tuple[str, str]] = []
+    attack_models = [m.strip() for m in result.adversary_model.split(",") if m.strip()]
+    eval_models = [m.strip() for m in result.eval_model.split(",") if m.strip()]
+    for model in attack_models:
+        model_roles.append((model, "adversary"))
+    for model in eval_models:
+        model_roles.append((model, "evaluation"))
+
+    cost_share = result.total_cost / max(1, len(model_roles))
+    for model, role in model_roles:
         if model not in stats["models"]:
             stats["models"][model] = {
                 "role": role,
@@ -426,7 +474,7 @@ def update_adversary_stats(result: GauntletResult) -> dict:
                 "total_cost": 0.0,
             }
         stats["models"][model]["runs"] += 1
-        stats["models"][model]["total_cost"] += result.total_cost
+        stats["models"][model]["total_cost"] += cost_share
 
     # NEW: Track model pairing effectiveness
     pairing_key = f"{result.adversary_model} + {result.eval_model}"
@@ -1504,7 +1552,7 @@ def filter_concerns_with_explanations(
 
 
 # =============================================================================
-# FINAL BOSS REVIEW (Phase 5)
+# FINAL BOSS REVIEW (Phase 7)
 # =============================================================================
 
 @dataclass
@@ -1559,6 +1607,179 @@ class FinalBossResult:
         return self.verdict == FinalBossVerdict.PASS
 
 
+BIG_PICTURE_PROMPT = """You are analyzing ALL concerns raised by adversarial reviewers about a spec.
+Your job is to look at these concerns HOLISTICALLY and synthesize insights that individual
+evaluation would miss.
+
+## Concerns by Adversary
+
+{concerns_by_adversary}
+
+## Your Analysis
+
+Look at these concerns as a WHOLE. What story do they tell?
+
+1. **THE REAL ISSUES**: Looking across all adversaries, what are the 2-4 things that
+   actually matter most? Cut through the noise. What would you tell the spec author
+   if you only had 30 seconds?
+
+2. **HIDDEN CONNECTIONS**: Where do concerns from different adversaries connect in
+   ways they don't realize? Security concern X and operations concern Y might be
+   the same underlying issue.
+
+3. **WHAT'S MISSING**: Given all the concerns raised, what DIDN'T anyone catch?
+   Is there a blind spot? Sometimes the most important insight is what's absent.
+
+4. **THE META-CONCERN**: If these concerns had one parent concern that generated
+   them all, what would it be? "The spec doesn't understand X" or "The architecture
+   is fighting against Y."
+
+5. **HIGH-SIGNAL ALERTS**: If you had to prioritize the evaluator's attention,
+   which 2-3 concerns deserve the most careful review? Why?
+
+Be concise and insightful. Don't just summarize - synthesize.
+
+Format:
+
+REAL_ISSUES:
+- [Issue 1]
+- [Issue 2]
+
+HIDDEN_CONNECTIONS:
+- [Connection 1]
+
+WHATS_MISSING:
+- [Gap 1]
+
+META_CONCERN: [One sentence]
+
+HIGH_SIGNAL:
+- [Concern ID or quote]: [why it matters]
+"""
+
+
+def generate_big_picture_synthesis(
+    concerns: list[Concern],
+    model: str,
+    timeout: int = 120,
+) -> BigPictureSynthesis:
+    """Generate a holistic analysis of all concerns before evaluation.
+
+    Synthesizes insights by looking at the full picture:
+    - What are the real issues across all concerns?
+    - Hidden connections between different adversaries' concerns
+    - What's missing - blind spots no one caught
+    - The meta-concern that ties everything together
+    """
+    # Group concerns by adversary for the prompt
+    by_adversary: dict[str, list[str]] = {}
+    for c in concerns:
+        if c.adversary not in by_adversary:
+            by_adversary[c.adversary] = []
+        by_adversary[c.adversary].append(c.text)
+
+    concerns_text = ""
+    for adv, texts in sorted(by_adversary.items()):
+        concerns_text += f"\n### {adv} ({len(texts)} concerns)\n"
+        for i, t in enumerate(texts, 1):
+            concerns_text += f"{i}. {t}\n"
+
+    prompt = BIG_PICTURE_PROMPT.format(concerns_by_adversary=concerns_text)
+
+    try:
+        # Use a capable model for synthesis
+        if model.startswith("codex/"):
+            response, in_tokens, out_tokens = call_codex_model(
+                model=model.replace("codex/", ""),
+                system_prompt="You are an expert at pattern recognition and synthesis.",
+                user_message=prompt,
+                timeout=timeout,
+            )
+        elif model.startswith("gemini-cli/"):
+            response, in_tokens, out_tokens = call_gemini_cli_model(
+                model=model.replace("gemini-cli/", ""),
+                system_prompt="You are an expert at pattern recognition and synthesis.",
+                user_message=prompt,
+                timeout=timeout,
+            )
+        else:
+            result = completion(
+                model=model,
+                messages=[
+                    {"role": "system", "content": "Expert at pattern recognition."},
+                    {"role": "user", "content": prompt},
+                ],
+                timeout=timeout,
+            )
+            response = result.choices[0].message.content
+            in_tokens = result.usage.prompt_tokens if result.usage else 0
+            out_tokens = result.usage.completion_tokens if result.usage else 0
+
+        cost_tracker.add(model, in_tokens, out_tokens)
+
+        # Extract lists from response
+        def extract_list(marker: str) -> list[str]:
+            items = []
+            if marker in response:
+                start = response.find(marker) + len(marker)
+                # Find next section header
+                next_markers = ["REAL_ISSUES", "HIDDEN_CONNECTIONS", "WHATS_MISSING",
+                               "META_CONCERN", "HIGH_SIGNAL"]
+                end = len(response)
+                for m in next_markers:
+                    if m in response[start:]:
+                        pos = response.find(m, start)
+                        if pos < end and pos > start:
+                            end = pos
+                section = response[start:end]
+                for line in section.split("\n"):
+                    line = line.strip()
+                    if line.startswith(("-", "•", "*")):
+                        items.append(line.lstrip("-•* ").strip())
+            return items
+
+        def extract_single(marker: str) -> str:
+            if marker in response:
+                start = response.find(marker) + len(marker)
+                end = response.find("\n", start)
+                if end == -1:
+                    end = len(response)
+                return response[start:end].strip()
+            return ""
+
+        real_issues = extract_list("REAL_ISSUES:")
+        hidden_connections = extract_list("HIDDEN_CONNECTIONS:")
+        whats_missing = extract_list("WHATS_MISSING:")
+        meta_concern = extract_single("META_CONCERN:")
+        high_signal = extract_list("HIGH_SIGNAL:")
+
+        unique_count = len(set(c.text for c in concerns))
+
+        return BigPictureSynthesis(
+            total_concerns=len(concerns),
+            unique_texts=unique_count,
+            real_issues=real_issues,
+            hidden_connections=hidden_connections,
+            whats_missing=whats_missing,
+            meta_concern=meta_concern,
+            high_signal=high_signal,
+            raw_response=response,
+        )
+
+    except Exception as e:
+        print(f"Warning: Big picture synthesis failed: {e}", file=sys.stderr)
+        return BigPictureSynthesis(
+            total_concerns=len(concerns),
+            unique_texts=len(set(c.text for c in concerns)),
+            real_issues=[],
+            hidden_connections=[],
+            whats_missing=[],
+            meta_concern=f"Synthesis failed: {e}",
+            high_signal=[],
+            raw_response="",
+        )
+
+
 def run_final_boss_review(
     spec: str,
     gauntlet_summary: str,
@@ -1567,9 +1788,9 @@ def run_final_boss_review(
     timeout: int = 600,
 ) -> FinalBossResult:
     """
-    Phase 5: Final Boss UX/User Story Review with Verdict.
+    Phase 7: Final Boss UX/User Story Review with Verdict.
 
-    Runs AFTER all other adversaries have been satisfied. Uses Opus 4.5 to do
+    Runs AFTER all other adversaries have been satisfied. Uses Opus 4.6 to do
     a high-level sanity check on whether the spec actually serves users.
 
     The Final Boss can issue three verdicts:
@@ -1589,15 +1810,15 @@ def run_final_boss_review(
     """
     import os
 
-    # Final boss uses Opus 4.5 - expensive but thorough
+    # Final boss uses Opus 4.6 - expensive but thorough
     # Check for Claude Code first (uses subscription)
     if os.environ.get("ANTHROPIC_API_KEY"):
-        model = "claude-opus-4-5-20250514"
+        model = "claude-opus-4-6"
     else:
         # Fall back to best available
-        print("  Warning: Opus 4.5 not available, using best alternative", file=sys.stderr)
+        print("  Warning: Opus 4.6 not available, using best alternative", file=sys.stderr)
         if CODEX_AVAILABLE:
-            model = "codex/gpt-5.2-codex"
+            model = "codex/gpt-5.3-codex"
         else:
             model = select_eval_model()
 
@@ -1905,7 +2126,7 @@ def get_available_eval_models() -> list[str]:
 
     # Free CLI tools first (prefer these over paid APIs)
     if CODEX_AVAILABLE:
-        models.append("codex/gpt-5.2-codex")
+        models.append("codex/gpt-5.3-codex")
     if GEMINI_CLI_AVAILABLE:
         models.append("gemini-cli/gemini-3-pro-preview")
 
@@ -1928,7 +2149,7 @@ def evaluate_concerns_multi_model(
     timeout: int = 300,
 ) -> list[Evaluation]:
     """
-    Phase 2: Evaluate concerns using MULTIPLE models in parallel.
+    Phase 4: Evaluate concerns using MULTIPLE models in parallel.
 
     Args:
         spec: The specification
@@ -2073,14 +2294,14 @@ def select_adversary_model() -> str:
 
 def select_eval_model() -> str:
     """
-    Select model for evaluation (Phase 2 & 4).
+    Select model for evaluation (Phase 4 & 6).
     Priority: FREE frontier CLI tools, then strongest API.
 
     Evaluation needs to be rigorous - use the best available.
     """
     # Codex CLI is free with ChatGPT subscription and is frontier quality
     if CODEX_AVAILABLE:
-        return "codex/gpt-5.2-codex"
+        return "codex/gpt-5.3-codex"
 
     # Gemini CLI Pro is also frontier quality
     if GEMINI_CLI_AVAILABLE:
@@ -2175,8 +2396,9 @@ def call_model(
 def generate_attacks(
     spec: str,
     adversaries: list[str],
-    model: str,
+    models: list[str] | str,
     timeout: int = 300,
+    codex_reasoning: str = "low",
 ) -> tuple[list[Concern], dict[str, float]]:
     """
     Phase 1: Generate attacks from all adversary personas in parallel.
@@ -2184,17 +2406,24 @@ def generate_attacks(
     Args:
         spec: The specification to attack
         adversaries: List of adversary keys to use
-        model: Model to use for attack generation
+        models: Model(s) to use for attack generation
         timeout: Timeout per adversary call
+        codex_reasoning: Reasoning effort for Codex attacks (default: "low" to conserve tokens)
 
     Returns:
-        Tuple of (List of Concern objects, dict of adversary -> elapsed time in seconds)
+        Tuple of (List of Concern objects, dict of adversary@model -> elapsed time in seconds)
     """
-    concerns: list[Concern] = []
-    timing: dict[str, float] = {}  # Track time per adversary
+    if isinstance(models, str):
+        models = [models]
+    models = [m.strip() for m in models if m and m.strip()]
+    if not models:
+        raise ValueError("At least one attack model is required")
 
-    def run_adversary(adversary_key: str) -> tuple[list[Concern], float]:
-        """Run a single adversary and return concerns with timing."""
+    concerns: list[Concern] = []
+    timing: dict[str, float] = {}  # Track time per adversary@model
+
+    def run_adversary_with_model(adversary_key: str, model: str) -> tuple[list[Concern], float]:
+        """Run one adversary with one model and return concerns with timing."""
         start = time.time()
         adversary = ADVERSARIES.get(adversary_key)
         if not adversary:
@@ -2221,20 +2450,58 @@ Output your concerns as a numbered list. Be specific and cite parts of the spec.
                 system_prompt=system_prompt,
                 user_message=user_message,
                 timeout=timeout,
+                codex_reasoning=codex_reasoning,
             )
             cost_tracker.add(model, in_tokens, out_tokens)
 
-            # Parse concerns from response
+            # Parse concerns from response - group numbered items with their sub-bullets
             local_concerns = []
+            current_concern_lines: list[str] = []
+            seen_texts: set[str] = set()  # Deduplication
+
+            def flush_concern():
+                """Flush accumulated lines as a single concern."""
+                if current_concern_lines:
+                    # Join all lines into one concern
+                    full_text = " ".join(current_concern_lines)
+                    # Deduplicate
+                    if full_text and full_text not in seen_texts:
+                        seen_texts.add(full_text)
+                        local_concerns.append(
+                            Concern(
+                                adversary=adversary_key,
+                                text=full_text,
+                                source_model=model,
+                            )
+                        )
+                    current_concern_lines.clear()
+
             for line in response.split("\n"):
                 line = line.strip()
-                if line and (line[0].isdigit() or line.startswith("-")):
-                    # Remove leading number/dash
+                if not line:
+                    continue
+
+                # Check if this is a new numbered concern (1., 2., etc.)
+                is_numbered = line and line[0].isdigit() and (
+                    ". " in line[:4] or ")" in line[:4]
+                )
+
+                if is_numbered:
+                    # Flush previous concern before starting new one
+                    flush_concern()
+                    # Start new concern with cleaned text
                     text = line.lstrip("0123456789.-) ").strip()
                     if text:
-                        local_concerns.append(
-                            Concern(adversary=adversary_key, text=text)
-                        )
+                        current_concern_lines.append(text)
+                elif line.startswith(("-", "•", "*")):
+                    # Sub-bullet - append to current concern
+                    text = line.lstrip("-•* ").strip()
+                    if text and current_concern_lines:
+                        current_concern_lines.append(text)
+                # Ignore other lines (headers, blank, etc.)
+
+            # Flush final concern
+            flush_concern()
 
             elapsed = time.time() - start
             return local_concerns, elapsed
@@ -2246,29 +2513,292 @@ Output your concerns as a numbered list. Be specific and cite parts of the spec.
             )
             return [], time.time() - start
 
-    # Run adversaries in parallel
-    with concurrent.futures.ThreadPoolExecutor(max_workers=len(adversaries)) as executor:
+    # Run adversary/model pairs in parallel
+    pairs = [(adv, model) for adv in adversaries for model in models]
+    max_workers = min(32, len(pairs)) if pairs else 1
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
-            executor.submit(run_adversary, adv): adv for adv in adversaries
+            executor.submit(run_adversary_with_model, adv, model): (adv, model)
+            for adv, model in pairs
         }
         for future in concurrent.futures.as_completed(futures):
-            adv_key = futures[future]
+            adv_key, model = futures[future]
             adv_concerns, elapsed = future.result()
             concerns.extend(adv_concerns)
-            timing[adv_key] = elapsed
+            timing[f"{adv_key}@{model}"] = elapsed
 
     # Print timing summary
     if timing:
         sorted_timing = sorted(timing.items(), key=lambda x: x[1], reverse=True)
-        print("  Adversary timing:", file=sys.stderr)
-        for adv, t in sorted_timing:
-            print(f"    {adv}: {t:.1f}s ({len([c for c in concerns if c.adversary == adv])} concerns)", file=sys.stderr)
+        print("  Adversary timing (adversary@model):", file=sys.stderr)
+        for adv_model, elapsed in sorted_timing:
+            if "@" in adv_model:
+                adv, model = adv_model.split("@", 1)
+            else:
+                adv, model = adv_model, ""
+            count = len(
+                [
+                    c for c in concerns
+                    if c.adversary == adv and (not model or c.source_model == model)
+                ]
+            )
+            print(f"    {adv_model}: {elapsed:.1f}s ({count} concerns)", file=sys.stderr)
 
     return concerns, timing
 
 
 # =============================================================================
-# PHASE 2: STRUCTURED EVALUATION
+# PHASE 3.5: CLUSTERING + PROVENANCE EXPANSION
+# =============================================================================
+
+
+def choose_clustering_model(attack_models: list[str], fallback: str) -> str:
+    """Choose a cheap model for dedup clustering."""
+    if not attack_models:
+        return fallback
+
+    # Prefer explicitly cheap model families when available.
+    cheap_markers = ("flash", "mini", "haiku", "small", "low")
+    for model in attack_models:
+        model_lc = model.lower()
+        if any(marker in model_lc for marker in cheap_markers):
+            return model
+    return attack_models[0]
+
+
+def _normalize_concern_text(text: str) -> str:
+    """Normalize concern text for cheap exact-match dedup."""
+    import re
+
+    normalized = text.lower().strip()
+    normalized = re.sub(r"\s+", " ", normalized)
+    normalized = re.sub(r"[`*_]+", "", normalized)
+    return normalized
+
+
+def cluster_concerns_with_provenance(
+    concerns: list[Concern],
+    model: str,
+    timeout: int = 60,
+) -> tuple[list[Concern], dict[str, list[Concern]]]:
+    """
+    Cluster near-duplicate concerns using a cheap model.
+
+    Returns:
+        (
+            representatives,   # one concern per cluster
+            cluster_members,   # representative concern id -> full member concerns
+        )
+    """
+    if not concerns:
+        return [], {}
+
+    # Step 1: exact dedup by normalized text (free + deterministic).
+    exact_groups: dict[str, list[Concern]] = {}
+    for concern in concerns:
+        norm = _normalize_concern_text(concern.text)
+        exact_groups.setdefault(norm, []).append(concern)
+
+    candidate_groups = list(exact_groups.values())
+    candidate_reps = [group[0] for group in candidate_groups]
+
+    # If one candidate remains, we're done.
+    if len(candidate_reps) <= 1:
+        rep = candidate_reps[0]
+        return [rep], {rep.id: candidate_groups[0]}
+
+    # Step 2: semantic clustering over representative candidates.
+    concerns_text = "\n".join(
+        f"[{idx}] adversary={c.adversary}; model={c.source_model or 'unknown'}\n{c.text}"
+        for idx, c in enumerate(candidate_reps, 1)
+    )
+
+    system_prompt = """You cluster near-duplicate engineering concerns.
+
+Goal: Merge concerns that describe the SAME underlying issue in different words.
+
+Rules:
+1. Merge ONLY when the root cause AND required mitigation are the same.
+2. Do NOT merge concerns that are thematically related but require different fixes.
+3. Every concern index must appear in exactly one cluster.
+4. When in doubt, keep concerns SEPARATE. Over-merging loses insights.
+
+## GOOD merges (same root cause, same fix):
+- "Fill events could be lost if DB write fails midway" + "No transactional guarantee for fill event insertion" → MERGE (both about atomicity of fill writes, same fix: wrap in transaction)
+- "getMyFills has no pagination" + "Fill query returns unbounded results" → MERGE (both about missing pagination on the same endpoint)
+- "Status filter uses wrong enum values" + "getActiveAlgoStates filters on 'executing' but DB has 'working'" → MERGE (same bug described at different abstraction levels)
+- "No auth check on /devtest" + "Dev test page accessible without authentication" → MERGE (identical concern, different wording)
+
+## BAD merges (related topic but DIFFERENT root causes or fixes):
+- "Fill events lost during concurrent writes" + "Fill events lost if mutation fails midway" → DO NOT MERGE (first is race condition needing locking, second is atomicity needing transactions)
+- "getMyFills missing exchange field" + "getMyExecutions missing exchange field" → DO NOT MERGE (different endpoints, different code paths, fixed independently)
+- "DMA orders show 0/0 progress" + "Arb orders show wrong leg count" → DO NOT MERGE (different order types, different display bugs, different fixes)
+- "No rate limiting on order placement" + "No rate limiting on fill queries" → DO NOT MERGE (different endpoints, different risk profiles)
+
+Output JSON only:
+{
+  "clusters": [
+    [1, 7, 14],
+    [2],
+    [3, 9]
+  ]
+}
+"""
+
+    user_prompt = f"""Cluster these concerns by semantic equivalence.
+Remember: only merge when root cause AND fix are the same. When in doubt, keep separate.
+
+{concerns_text}
+
+Return JSON only."""
+
+    semantic_clusters: list[list[int]] = [[i] for i in range(len(candidate_reps))]
+
+    try:
+        response, in_tokens, out_tokens = call_model(
+            model=model,
+            system_prompt=system_prompt,
+            user_message=user_prompt,
+            timeout=timeout,
+        )
+        cost_tracker.add(model, in_tokens, out_tokens)
+
+        json_start = response.find("{")
+        json_end = response.rfind("}") + 1
+        if json_start >= 0 and json_end > json_start:
+            payload = json.loads(response[json_start:json_end])
+            raw_clusters = payload.get("clusters", [])
+            parsed_clusters: list[list[int]] = []
+
+            for raw_cluster in raw_clusters:
+                if isinstance(raw_cluster, dict):
+                    members = raw_cluster.get("member_indexes") or raw_cluster.get("members") or []
+                else:
+                    members = raw_cluster
+
+                if not isinstance(members, list):
+                    continue
+
+                # Convert 1-based indexes to 0-based and validate bounds.
+                converted: list[int] = []
+                for idx in members:
+                    if not isinstance(idx, int):
+                        continue
+                    zero_idx = idx - 1
+                    if 0 <= zero_idx < len(candidate_reps) and zero_idx not in converted:
+                        converted.append(zero_idx)
+                if converted:
+                    parsed_clusters.append(converted)
+
+            if parsed_clusters:
+                assigned: set[int] = set()
+                normalized_clusters: list[list[int]] = []
+                for cluster in parsed_clusters:
+                    fresh = [idx for idx in cluster if idx not in assigned]
+                    if fresh:
+                        normalized_clusters.append(fresh)
+                        assigned.update(fresh)
+                # Add any unassigned concerns as singleton clusters.
+                for idx in range(len(candidate_reps)):
+                    if idx not in assigned:
+                        normalized_clusters.append([idx])
+                if normalized_clusters:
+                    semantic_clusters = normalized_clusters
+
+    except Exception as e:
+        print(f"  Warning: Clustering failed ({e}); falling back to exact dedup only", file=sys.stderr)
+
+    # Step 3: expand clusters back to full member concerns and choose representatives.
+    representatives: list[Concern] = []
+    cluster_members: dict[str, list[Concern]] = {}
+
+    for cluster in semantic_clusters:
+        members: list[Concern] = []
+        for candidate_idx in cluster:
+            members.extend(candidate_groups[candidate_idx])
+        if not members:
+            continue
+        representative = members[0]
+        representatives.append(representative)
+        cluster_members[representative.id] = members
+
+    return representatives, cluster_members
+
+
+def expand_clustered_evaluations(
+    clustered_evaluations: list[Evaluation],
+    cluster_members: dict[str, list[Concern]],
+) -> list[Evaluation]:
+    """
+    Fan out each clustered evaluation back to all original members for attribution stats.
+    """
+    expanded: list[Evaluation] = []
+    for evaluation in clustered_evaluations:
+        members = cluster_members.get(evaluation.concern.id, [evaluation.concern])
+        cluster_size = len(members)
+        for member in members:
+            reasoning = evaluation.reasoning
+            if cluster_size > 1:
+                reasoning = f"[Clustered from {cluster_size} similar concerns; representative={evaluation.concern.id}] {reasoning}"
+            expanded.append(
+                Evaluation(
+                    concern=member,
+                    verdict=evaluation.verdict,
+                    reasoning=reasoning,
+                )
+            )
+    return expanded
+
+
+def _track_dedup_stats(
+    spec_hash: str,
+    raw_count: int,
+    post_filter_count: int,
+    post_cluster_count: int,
+    cluster_deduped: int,
+    reduction_pct: float,
+    attack_models: list[str],
+    clustering_model: str,
+) -> None:
+    """Persist dedup/clustering stats to a JSON log for tracking over time."""
+    import datetime
+    from pathlib import Path
+
+    stats_file = Path(".adversarial-spec-gauntlet") / "dedup-stats.json"
+    stats_file.parent.mkdir(exist_ok=True)
+
+    existing: list = []
+    if stats_file.exists():
+        try:
+            existing = json.loads(stats_file.read_text())
+        except (json.JSONDecodeError, OSError):
+            existing = []
+
+    entry = {
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "spec_hash": spec_hash[:8],
+        "raw_concerns": raw_count,
+        "post_filter": post_filter_count,
+        "post_cluster": post_cluster_count,
+        "cluster_deduped": cluster_deduped,
+        "reduction_pct": round(reduction_pct, 1),
+        "attack_models": attack_models,
+        "clustering_model": clustering_model,
+    }
+    existing.append(entry)
+    stats_file.write_text(json.dumps(existing, indent=2) + "\n")
+
+    # Print historical summary if we have multiple runs
+    if len(existing) >= 2:
+        avg_reduction = sum(e["reduction_pct"] for e in existing) / len(existing)
+        print(
+            f"  Dedup history: {len(existing)} runs, avg {avg_reduction:.0f}% reduction",
+            file=sys.stderr,
+        )
+
+
+# =============================================================================
+# PHASE 4: STRUCTURED EVALUATION
 # =============================================================================
 
 
@@ -2279,7 +2809,7 @@ def evaluate_concerns(
     timeout: int = 300,
 ) -> list[Evaluation]:
     """
-    Phase 2: Evaluate each concern using the frontier model.
+    Phase 4: Evaluate each concern using the frontier model.
 
     Args:
         spec: The original specification
@@ -2403,7 +2933,7 @@ def run_rebuttals(
     timeout: int = 300,
 ) -> list[Rebuttal]:
     """
-    Phase 3: Allow adversaries to rebut dismissals.
+    Phase 5: Allow adversaries to rebut dismissals.
 
     Args:
         evaluations: List of evaluations (only dismissed ones get rebuttals)
@@ -2516,7 +3046,7 @@ def final_adjudication(
     timeout: int = 300,
 ) -> list[Concern]:
     """
-    Phase 4: Final adjudication of challenged dismissals.
+    Phase 6: Final adjudication of challenged dismissals.
 
     Args:
         spec: The original specification
@@ -2602,12 +3132,14 @@ def run_gauntlet(
     spec: str,
     adversaries: Optional[list[str]] = None,
     adversary_model: Optional[str] = None,
+    attack_models: Optional[list[str]] = None,
     eval_models: Optional[list[str]] = None,
     allow_rebuttals: bool = True,
     use_multi_model: bool = True,
     skip_filtering: bool = False,
     run_final_boss: bool = False,
     timeout: int = 300,
+    attack_codex_reasoning: str = "low",
 ) -> GauntletResult:
     """
     Run the full adversarial gauntlet on a specification.
@@ -2615,13 +3147,15 @@ def run_gauntlet(
     Args:
         spec: The specification to review
         adversaries: List of adversary keys (default: all)
-        adversary_model: Model for adversaries (default: auto-select free)
+        adversary_model: Legacy single-model override for adversaries
+        attack_models: Model list for adversary attacks (default: auto-select one cheap model)
         eval_models: Models for evaluation (default: auto-select multiple)
         allow_rebuttals: Whether to run rebuttal phase
         use_multi_model: Use multiple models for evaluation consensus
         skip_filtering: Skip filtering against resolved concerns
-        run_final_boss: Run Phase 5 Final Boss UX review (expensive, uses Opus 4.5)
+        run_final_boss: Run Phase 7 Final Boss UX review (expensive, uses Opus 4.6)
         timeout: Timeout per model call
+        attack_codex_reasoning: Reasoning effort for Codex in attack phase (default: "low")
 
     Returns:
         GauntletResult with all phases' outputs
@@ -2630,8 +3164,19 @@ def run_gauntlet(
     spec_hash = get_spec_hash(spec)
 
     # Select models
-    if adversary_model is None:
-        adversary_model = select_adversary_model()
+    if attack_models is None:
+        if adversary_model:
+            attack_models = [m.strip() for m in adversary_model.split(",") if m.strip()]
+        else:
+            attack_models = [select_adversary_model()]
+    else:
+        attack_models = [m.strip() for m in attack_models if m and m.strip()]
+    if not attack_models:
+        attack_models = [select_adversary_model()]
+
+    # Keep legacy field populated for backwards compatibility in reports/stats.
+    adversary_model = ", ".join(attack_models)
+    primary_attack_model = attack_models[0]
 
     if eval_models is None:
         if use_multi_model:
@@ -2645,13 +3190,16 @@ def run_gauntlet(
 
     print("=== Adversarial Gauntlet ===", file=sys.stderr)
     print(f"Adversaries: {', '.join(adversaries)}", file=sys.stderr)
-    print(f"Attack model: {adversary_model}", file=sys.stderr)
+    print(f"Attack models: {', '.join(attack_models)}", file=sys.stderr)
     print(f"Eval models: {', '.join(eval_models)}", file=sys.stderr)
     print(file=sys.stderr)
 
     # Phase 1: Attack Generation (parallel)
     print("Phase 1: Generating attacks...", file=sys.stderr)
-    raw_concerns, adversary_timing = generate_attacks(spec, adversaries, adversary_model, timeout)
+    raw_concerns, adversary_timing = generate_attacks(
+        spec, adversaries, attack_models, timeout,
+        codex_reasoning=attack_codex_reasoning,
+    )
     print(f"  Generated {len(raw_concerns)} raw concerns", file=sys.stderr)
 
     # Save raw concerns before any filtering
@@ -2662,18 +3210,48 @@ def run_gauntlet(
     gauntlet_dir.mkdir(exist_ok=True)
     concerns_file = gauntlet_dir / f"concerns-{spec_hash[:8]}.json"
     with open(concerns_file, 'w') as f:
-        json.dump([{"id": c.id, "adversary": c.adversary, "text": c.text, "severity": c.severity} for c in concerns], f, indent=2)
+        json.dump(
+            [
+                {
+                    "id": c.id,
+                    "adversary": c.adversary,
+                    "text": c.text,
+                    "severity": c.severity,
+                    "source_model": c.source_model,
+                }
+                for c in concerns
+            ],
+            f,
+            indent=2,
+        )
     print(f"  Concerns saved: {concerns_file}", file=sys.stderr)
 
-    # Phase 1.5: Self-Filtering (NEW)
+    # Phase 2: Big Picture Synthesis
+    print("Phase 2: Big picture synthesis...", file=sys.stderr)
+    big_picture = generate_big_picture_synthesis(
+        concerns,
+        primary_attack_model,
+        timeout=120,
+    )
+    if big_picture.real_issues:
+        print(f"  Real issues: {len(big_picture.real_issues)}", file=sys.stderr)
+        for issue in big_picture.real_issues[:2]:
+            print(f"    • {issue[:70]}...", file=sys.stderr)
+    if big_picture.meta_concern:
+        print(f"  Meta-concern: {big_picture.meta_concern[:80]}...", file=sys.stderr)
+    if big_picture.high_signal:
+        n = len(big_picture.high_signal)
+        print(f"  High-signal: {n} concerns flagged", file=sys.stderr)
+
+    # Phase 3: Self-Filtering
     dropped_concerns: list[Concern] = []
     noted_concerns: list[tuple[Concern, ExplanationMatch]] = []
 
     if not skip_filtering:
-        print("Phase 1.5: Filtering against resolved concerns...", file=sys.stderr)
+        print("Phase 3: Filtering against resolved concerns...", file=sys.stderr)
         concerns, dropped_concerns, noted_concerns = filter_concerns_with_explanations(
             concerns,
-            adversary_model,  # Use cheap model for filtering
+            primary_attack_model,  # Use cheap model for filtering
             spec_hash,
             timeout=60,
         )
@@ -2683,17 +3261,58 @@ def run_gauntlet(
             print(f"  Noted: {len(noted_concerns)} (has explanation but re-verifying)", file=sys.stderr)
         print(f"  Proceeding with: {len(concerns)} concerns", file=sys.stderr)
 
-    # Phase 2: Multi-Model Evaluation (batched, parallel)
-    print("Phase 2: Evaluating concerns...", file=sys.stderr)
-    if use_multi_model and len(eval_models) >= 2:
-        evaluations = evaluate_concerns_multi_model(spec, concerns, eval_models, timeout=timeout)
-    else:
-        evaluations = evaluate_concerns(spec, concerns, eval_models[0], timeout)
+    # Preserve post-filter concerns for adversary-level stats before clustering.
+    post_filter_concerns = concerns
 
-    dismissed = [e for e in evaluations if e.verdict == "dismissed"]
-    accepted = [e for e in evaluations if e.verdict == "accepted"]
-    acknowledged = [e for e in evaluations if e.verdict == "acknowledged"]
-    deferred = [e for e in evaluations if e.verdict == "deferred"]
+    # Phase 3.5: Cluster + Dedup
+    clustering_model = choose_clustering_model(attack_models, primary_attack_model)
+    print(f"Phase 3.5: Clustering near-duplicates ({clustering_model})...", file=sys.stderr)
+    clustered_concerns, cluster_members = cluster_concerns_with_provenance(
+        concerns,
+        clustering_model,
+        timeout=60,
+    )
+    cluster_deduped = len(concerns) - len(clustered_concerns)
+    reduction_pct = (cluster_deduped / len(concerns) * 100) if concerns else 0
+    print(
+        f"  Clustered: {len(concerns)} -> {len(clustered_concerns)} ({cluster_deduped} merged, {reduction_pct:.0f}% reduction)",
+        file=sys.stderr,
+    )
+
+    # Persist dedup stats for tracking over time
+    _track_dedup_stats(
+        spec_hash=spec_hash,
+        raw_count=len(raw_concerns),
+        post_filter_count=len(post_filter_concerns),
+        post_cluster_count=len(clustered_concerns),
+        cluster_deduped=cluster_deduped,
+        reduction_pct=reduction_pct,
+        attack_models=attack_models,
+        clustering_model=clustering_model,
+    )
+
+    # Phase 4: Multi-Model Evaluation (batched, parallel)
+    print("Phase 4: Evaluating concerns...", file=sys.stderr)
+    evaluation_concerns = clustered_concerns
+    if use_multi_model and len(eval_models) >= 2:
+        clustered_evaluations = evaluate_concerns_multi_model(
+            spec,
+            evaluation_concerns,
+            eval_models,
+            timeout=timeout,
+        )
+    else:
+        clustered_evaluations = evaluate_concerns(
+            spec,
+            evaluation_concerns,
+            eval_models[0],
+            timeout,
+        )
+
+    dismissed = [e for e in clustered_evaluations if e.verdict == "dismissed"]
+    accepted = [e for e in clustered_evaluations if e.verdict == "accepted"]
+    acknowledged = [e for e in clustered_evaluations if e.verdict == "acknowledged"]
+    deferred = [e for e in clustered_evaluations if e.verdict == "deferred"]
     print(
         f"  Dismissed: {len(dismissed)}, Accepted: {len(accepted)}, Acknowledged: {len(acknowledged)}, Deferred: {len(deferred)}",
         file=sys.stderr,
@@ -2704,17 +3323,23 @@ def run_gauntlet(
     with open(evals_file, 'w') as f:
         eval_data = [
             {
-                "concern": {"id": e.concern.id, "adversary": e.concern.adversary, "text": e.concern.text, "severity": e.concern.severity},
+                "concern": {
+                    "id": e.concern.id,
+                    "adversary": e.concern.adversary,
+                    "text": e.concern.text,
+                    "severity": e.concern.severity,
+                    "source_model": e.concern.source_model,
+                },
                 "verdict": e.verdict,
                 "reasoning": e.reasoning,
             }
-            for e in evaluations
+            for e in clustered_evaluations
         ]
         json.dump(eval_data, f, indent=2)
     print(f"  Evaluations saved: {evals_file}", file=sys.stderr)
 
     # Print intermediate summary (so results visible even if later phases crash)
-    print("\n=== Phase 2 Summary (accepted concerns) ===", file=sys.stderr)
+    print("\n=== Phase 4 Summary (accepted concerns) ===", file=sys.stderr)
     for e in accepted[:10]:
         print(f"  [{e.concern.adversary}] {e.concern.text[:80]}...", file=sys.stderr)
     if len(accepted) > 10:
@@ -2727,21 +3352,21 @@ def run_gauntlet(
             print(f"  ... and {len(acknowledged) - 5} more", file=sys.stderr)
     print(file=sys.stderr)
 
-    # Phase 3: Rebuttals (parallel)
+    # Phase 5: Rebuttals (parallel)
     rebuttals: list[Rebuttal] = []
     if allow_rebuttals and dismissed:
-        print("Phase 3: Running rebuttals...", file=sys.stderr)
-        rebuttals = run_rebuttals(evaluations, adversary_model, timeout)
+        print("Phase 5: Running rebuttals...", file=sys.stderr)
+        rebuttals = run_rebuttals(clustered_evaluations, primary_attack_model, timeout)
         sustained = sum(1 for r in rebuttals if r.sustained)
         print(f"  Challenges: {sustained} of {len(rebuttals)}", file=sys.stderr)
 
-    # Phase 4: Final Adjudication
+    # Phase 6: Final Adjudication
     surviving_challenges: list[Concern] = []
     primary_eval_model = eval_models[0] if eval_models else select_eval_model()
     if rebuttals:
         challenged = [r for r in rebuttals if r.sustained]
         if challenged:
-            print("Phase 4: Final adjudication...", file=sys.stderr)
+            print("Phase 6: Final adjudication...", file=sys.stderr)
             surviving_challenges = final_adjudication(spec, rebuttals, primary_eval_model, timeout)
             print(f"  Overturned: {len(surviving_challenges)}", file=sys.stderr)
 
@@ -2753,8 +3378,13 @@ def run_gauntlet(
     )
 
     # Print full summary BEFORE Final Boss prompt (survives crashes/EOFError)
-    print("\n=== Gauntlet Summary (Phases 1-4) ===", file=sys.stderr)
-    print(f"Total concerns: {len(concerns)} generated, {len(dropped_concerns)} filtered", file=sys.stderr)
+    print("\n=== Gauntlet Summary (Phases 1-6) ===", file=sys.stderr)
+    print(
+        f"Total concerns: {len(raw_concerns)} generated, "
+        f"{len(post_filter_concerns)} post-filter, "
+        f"{len(clustered_concerns)} clustered for eval",
+        file=sys.stderr,
+    )
     print(f"Verdicts: {len(accepted)} accepted, {len(dismissed)} dismissed, {len(deferred)} deferred", file=sys.stderr)
     if surviving_challenges:
         print(f"Rebuttals: {len(surviving_challenges)} overturned", file=sys.stderr)
@@ -2762,7 +3392,7 @@ def run_gauntlet(
     print(f"Checkpoint files: {gauntlet_dir}/", file=sys.stderr)
     print(file=sys.stderr)
 
-    # Phase 5: Final Boss UX Review (optional, expensive)
+    # Phase 7: Final Boss UX Review (optional, expensive)
     final_boss_result: Optional[FinalBossResult] = None
     ux_concerns: list[Concern] = []
 
@@ -2776,12 +3406,13 @@ def run_gauntlet(
             do_final_boss = False
 
     if do_final_boss:
-        print("Phase 5: Final Boss UX Review (Opus 4.5)...", file=sys.stderr)
+        print("Phase 7: Final Boss UX Review (Opus 4.6)...", file=sys.stderr)
 
         # Build summary of what the gauntlet found
         gauntlet_summary = f"""Technical review results:
-- {len(concerns)} concerns raised by adversaries
+- {len(raw_concerns)} concerns raised by adversaries
 - {len(dropped_concerns)} filtered out (already addressed)
+- {len(clustered_concerns)} clustered concerns evaluated
 - {len(dismissed)} dismissed with justification
 - {len(accepted)} accepted (spec needs revision)
 - {len(deferred)} deferred (need more context)
@@ -2848,8 +3479,11 @@ Technical concerns requiring revision: {len(technical_concerns)}
     print(f"Final concerns requiring revision: {len(final_concerns)}", file=sys.stderr)
     print(f"Total cost: ${total_cost:.4f}", file=sys.stderr)
 
+    # Expand clustered evaluations back to member concerns for adversary attribution stats.
+    evaluations = expand_clustered_evaluations(clustered_evaluations, cluster_members)
+
     result = GauntletResult(
-        concerns=concerns,  # Post-filtering concerns that were evaluated
+        concerns=post_filter_concerns,  # Post-filtering concerns before clustering
         evaluations=evaluations,
         rebuttals=rebuttals,
         final_concerns=final_concerns,
@@ -2862,6 +3496,10 @@ Technical concerns requiring revision: {len(technical_concerns)}
         dropped_concerns=dropped_concerns,  # Concerns dropped by filtering
         spec_hash=spec_hash,
         adversary_timing=adversary_timing,  # Time per adversary
+        big_picture=big_picture,  # Holistic synthesis
+        clustered_concerns=clustered_concerns,
+        clustered_evaluations=clustered_evaluations,
+        cluster_members=cluster_members,
     )
 
     # Auto-save dismissed concerns to resolved database (for future filtering)
@@ -2916,39 +3554,47 @@ def format_gauntlet_report(result: GauntletResult) -> str:
     ]
 
     # Phase 1 summary
+    phase1_concerns = result.raw_concerns if result.raw_concerns is not None else result.concerns
     by_adversary: dict[str, int] = {}
-    for c in result.concerns:
+    for c in phase1_concerns:
         by_adversary[c.adversary] = by_adversary.get(c.adversary, 0) + 1
 
     lines.append("Phase 1 - Attack Generation:")
     for adv, count in sorted(by_adversary.items()):
         lines.append(f"  {adv}: {count} concerns")
-    lines.append(f"  Total: {len(result.concerns)} raw concerns")
+    lines.append(f"  Total: {len(phase1_concerns)} raw concerns")
+    lines.append(f"  Post-filter concerns: {len(result.concerns)}")
+    if result.clustered_concerns is not None:
+        merged = len(result.concerns) - len(result.clustered_concerns)
+        lines.append(f"  Clustered for evaluation: {len(result.clustered_concerns)} ({max(0, merged)} merged)")
     lines.append("")
 
-    # Phase 2 summary
-    dismissed = [e for e in result.evaluations if e.verdict == "dismissed"]
-    accepted = [e for e in result.evaluations if e.verdict == "accepted"]
-    acknowledged = [e for e in result.evaluations if e.verdict == "acknowledged"]
-    deferred = [e for e in result.evaluations if e.verdict == "deferred"]
+    # Phase 4 summary
+    phase4_evals = result.clustered_evaluations if result.clustered_evaluations is not None else result.evaluations
+    dismissed = [e for e in phase4_evals if e.verdict == "dismissed"]
+    accepted = [e for e in phase4_evals if e.verdict == "accepted"]
+    acknowledged = [e for e in phase4_evals if e.verdict == "acknowledged"]
+    deferred = [e for e in phase4_evals if e.verdict == "deferred"]
 
-    lines.append(f"Phase 2 - Evaluation ({result.eval_model}):")
+    lines.append(f"Phase 4 - Evaluation ({result.eval_model}):")
     lines.append(f"  Dismissed: {len(dismissed)} (with justification)")
     lines.append(f"  Accepted: {len(accepted)} (spec revision needed)")
     lines.append(f"  Acknowledged: {len(acknowledged)} (valid but out of scope)")
     lines.append(f"  Deferred: {len(deferred)} (need more context)")
+    if result.clustered_evaluations is not None and len(result.evaluations) != len(result.clustered_evaluations):
+        lines.append(f"  Attributed evaluations for stats: {len(result.evaluations)}")
     lines.append("")
 
-    # Phase 3 summary
+    # Phase 5 summary
     if result.rebuttals:
         sustained = [r for r in result.rebuttals if r.sustained]
-        lines.append("Phase 3 - Rebuttals:")
+        lines.append("Phase 5 - Rebuttals:")
         lines.append(f"  Challenges: {len(sustained)} (of {len(result.rebuttals)} dismissals)")
         lines.append("")
 
-    # Phase 5 summary (Final Boss)
+    # Phase 7 summary (Final Boss)
     if result.final_boss_result:
-        lines.append(f"Phase 5 - Final Boss UX Review ({result.final_boss_result.model}):")
+        lines.append(f"Phase 7 - Final Boss UX Review ({result.final_boss_result.model}):")
         verdict = result.final_boss_result.verdict
         if verdict == FinalBossVerdict.PASS:
             lines.append("  VERDICT: PASS - User story is sound")
@@ -3038,6 +3684,10 @@ def main():
         help="Model for adversary attacks (default: auto-select free)",
     )
     parser.add_argument(
+        "--attack-models",
+        help="Comma-separated models for adversary attacks (overrides --adversary-model)",
+    )
+    parser.add_argument(
         "--eval-model",
         help="Model for evaluation (default: auto-select frontier)",
     )
@@ -3045,6 +3695,12 @@ def main():
         "--no-rebuttals",
         action="store_true",
         help="Skip rebuttal phase",
+    )
+    parser.add_argument(
+        "--attack-codex-reasoning",
+        default="low",
+        choices=["minimal", "low", "medium", "high", "xhigh"],
+        help="Codex reasoning effort for attacks (default: low, saves tokens)",
     )
     parser.add_argument(
         "--timeout",
@@ -3146,13 +3802,14 @@ def main():
     # Run pre-gauntlet if requested
     if args.pre_gauntlet:
         try:
+            from pathlib import Path
+
             from pre_gauntlet import (
+                PreGauntletStatus,
+                get_exit_code,
                 run_pre_gauntlet,
                 save_report,
-                get_exit_code,
-                PreGauntletStatus,
             )
-            from pathlib import Path
 
             print("=== Pre-Gauntlet Compatibility Check ===", file=sys.stderr)
 
@@ -3191,25 +3848,46 @@ def main():
     if args.adversaries != "all":
         adversaries = [a.strip() for a in args.adversaries.split(",")]
 
+    attack_models = None
+    if args.attack_models:
+        attack_models = [m.strip() for m in args.attack_models.split(",") if m.strip()]
+
+    legacy_attack_model = args.adversary_model
+    if attack_models is not None:
+        legacy_attack_model = None
+
     # Run gauntlet
     result = run_gauntlet(
         spec=spec,
         adversaries=adversaries,
-        adversary_model=args.adversary_model,
+        adversary_model=legacy_attack_model,
+        attack_models=attack_models,
         eval_models=[args.eval_model] if args.eval_model else None,
         allow_rebuttals=not args.no_rebuttals,
         timeout=args.timeout,
+        attack_codex_reasoning=args.attack_codex_reasoning,
     )
 
     # Output
     if args.json:
         output = {
             "concerns": [
-                {"adversary": c.adversary, "text": c.text} for c in result.concerns
+                {
+                    "id": c.id,
+                    "adversary": c.adversary,
+                    "source_model": c.source_model,
+                    "text": c.text,
+                }
+                for c in result.concerns
             ],
             "evaluations": [
                 {
-                    "concern": {"adversary": e.concern.adversary, "text": e.concern.text},
+                    "concern": {
+                        "id": e.concern.id,
+                        "adversary": e.concern.adversary,
+                        "source_model": e.concern.source_model,
+                        "text": e.concern.text,
+                    },
                     "verdict": e.verdict,
                     "reasoning": e.reasoning,
                 }
@@ -3223,6 +3901,16 @@ def main():
             "total_time": result.total_time,
             "total_cost": result.total_cost,
         }
+        if result.clustered_concerns is not None:
+            output["clustered_concerns"] = [
+                {
+                    "id": c.id,
+                    "adversary": c.adversary,
+                    "source_model": c.source_model,
+                    "text": c.text,
+                }
+                for c in result.clustered_concerns
+            ]
         print(json.dumps(output, indent=2))
     else:
         print()

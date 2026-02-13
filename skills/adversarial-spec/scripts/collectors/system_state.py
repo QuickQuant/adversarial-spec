@@ -7,7 +7,6 @@ Collects build status, schema files, and directory trees.
 from __future__ import annotations
 
 import hashlib
-import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -15,7 +14,7 @@ from pathlib import Path
 # Add parent to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from integrations.process_runner import ProcessRunner, ProcessResult
+from integrations.process_runner import ProcessRunner
 from pre_gauntlet.models import (
     BuildStatus,
     Concern,

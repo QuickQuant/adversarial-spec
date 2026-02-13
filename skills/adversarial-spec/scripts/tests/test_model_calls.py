@@ -291,7 +291,7 @@ class TestCodexModelPath:
     @patch("models.cost_tracker", CostTracker())
     def test_codex_unavailable_returns_error(self):
         result = call_single_model(
-            model="codex/gpt-5.2-codex",
+            model="codex/gpt-5.3-codex",
             spec="# Spec",
             round_num=1,
             doc_type="tech",

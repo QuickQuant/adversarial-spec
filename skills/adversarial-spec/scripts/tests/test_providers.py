@@ -27,11 +27,13 @@ class TestModelCosts:
     def test_model_costs_has_expected_models(self):
         expected = [
             "gpt-4o",
-            "gemini/gemini-2.0-flash",
+            "gpt-5.3",
+            "gemini/gemini-3-flash",
             "xai/grok-3",
             "mistral/mistral-large",
             "deepseek/deepseek-chat",
             "zhipu/glm-4",
+            "codex/gpt-5.3-codex",
         ]
         for model in expected:
             assert model in MODEL_COSTS
@@ -699,15 +701,15 @@ class TestGetAvailableProviders:
         with patch.dict(
             "os.environ",
             {
-                "OPENAI_API_KEY": "test-key",
                 "ANTHROPIC_API_KEY": "test-key",
+                "GEMINI_API_KEY": "test-key",
             },
             clear=False,
         ):
             available = get_available_providers()
             provider_names = [name for name, _, _ in available]
-            assert "OpenAI" in provider_names
             assert "Anthropic" in provider_names
+            assert "Google" in provider_names
 
     def test_excludes_providers_without_keys(self):
         from providers import get_available_providers
@@ -715,23 +717,23 @@ class TestGetAvailableProviders:
         with patch.dict(
             "os.environ",
             {
-                "OPENAI_API_KEY": "test-key",
+                "ANTHROPIC_API_KEY": "test-key",
             },
             clear=True,
         ):
             available = get_available_providers()
             provider_names = [name for name, _, _ in available]
-            assert "OpenAI" in provider_names
-            assert "Anthropic" not in provider_names
+            assert "Anthropic" in provider_names
+            assert "Google" not in provider_names
 
     def test_returns_default_models(self):
         from providers import get_available_providers
 
-        with patch.dict("os.environ", {"OPENAI_API_KEY": "test-key"}, clear=False):
+        with patch.dict("os.environ", {"ANTHROPIC_API_KEY": "test-key"}, clear=False):
             available = get_available_providers()
             for name, key, model in available:
-                if name == "OpenAI":
-                    assert model == "gpt-4o"
+                if name == "Anthropic":
+                    assert model == "claude-sonnet-4-5-20250929"
 
     def test_includes_codex_cli_when_available(self):
         from providers import get_available_providers
@@ -765,7 +767,7 @@ class TestGetDefaultModel:
 
         with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}, clear=True):
             default = get_default_model()
-            assert default == "gemini/gemini-2.0-flash"
+            assert default == "gemini/gemini-3-flash"
 
     def test_returns_none_when_no_keys(self):
         from providers import get_default_model
@@ -828,14 +830,14 @@ class TestValidateModelCredentials:
         from providers import validate_model_credentials
 
         with patch("providers.CODEX_AVAILABLE", True):
-            valid, invalid = validate_model_credentials(["codex/gpt-5.2-codex"])
-            assert valid == ["codex/gpt-5.2-codex"]
+            valid, invalid = validate_model_credentials(["codex/gpt-5.3-codex"])
+            assert valid == ["codex/gpt-5.3-codex"]
             assert invalid == []
 
         with patch("providers.CODEX_AVAILABLE", False):
-            valid, invalid = validate_model_credentials(["codex/gpt-5.2-codex"])
+            valid, invalid = validate_model_credentials(["codex/gpt-5.3-codex"])
             assert valid == []
-            assert invalid == ["codex/gpt-5.2-codex"]
+            assert invalid == ["codex/gpt-5.3-codex"]
 
     def test_validates_gemini_cli_availability(self):
         from providers import validate_model_credentials

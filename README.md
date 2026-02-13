@@ -28,36 +28,47 @@ export OPENROUTER_API_KEY="sk-or-..."
 ┌─────────────────────────────────────────────────────────────────┐
 │  1. You describe product (or provide existing doc)              │
 │                            ↓                                    │
-│  2. Claude drafts spec                                          │
+│  2. Claude drafts spec + Q&A with you                           │
 │                            ↓                                    │
-│  3. THE GAUNTLET: 5 adversary personas attack                   │
+│  3. COLLABORATIVE REFINEMENT: You + multiple LLMs improve spec  │
+│     • GPT, Gemini, Grok suggest improvements in parallel        │
+│     • Claude asks YOU about product decisions                   │
+│     • Claude synthesizes feedback + adds own improvements       │
+│     • Repeat until ALL models agree spec is ready               │
+│                            ↓                                    │
+│  4. PRE-GAUNTLET: Codebase compatibility check                  │
+│     • existing_system_compatibility verifies build, schema,     │
+│       naming conflicts before stress testing                    │
+│                            ↓                                    │
+│  5. THE GAUNTLET: 8 adversary personas attack the agreed spec   │
 │     • paranoid_security finds threats everywhere                │
 │     • burned_oncall asks "what happens at 3am?"                 │
 │     • lazy_developer says "this is too complicated"             │
 │     • pedantic_nitpicker asks about leap seconds                │
 │     • asshole_loner points out your design is broken            │
+│     • prior_art_scout finds existing code to reuse              │
+│     • assumption_auditor demands "where's the citation?"        │
+│     • information_flow_auditor audits every arrow in diagrams   │
 │                            ↓                                    │
-│  4. Frontier model evaluates each concern                       │
+│  6. Frontier model evaluates each concern                       │
 │     Adversaries can rebut if dismissed too easily               │
 │                            ↓                                    │
-│  5. Multiple LLMs critique in parallel                          │
-│     (GPT, Gemini, Grok, etc.)                                   │
+│  7. Address accepted concerns (back to step 3 if major changes) │
 │                            ↓                                    │
-│  6. Claude synthesizes all feedback + adds own critique         │
+│  8. FINAL BOSS: ux_architect asks "did we lose the forest?"     │
+│     Issues PASS / REFINE / RECONSIDER verdict                   │
 │                            ↓                                    │
-│  7. Revise and repeat until ALL models agree                    │
+│  9. User review: accept, request changes, or run another cycle  │
 │                            ↓                                    │
-│  8. User review: accept, request changes, or run another cycle  │
+│  10. Final document output                                      │
 │                            ↓                                    │
-│  9. Final document output                                       │
+│  11. Generate execution plan with tasks linked to concerns      │
 │                            ↓                                    │
-│  10. Generate execution plan with tasks linked to concerns      │
-│                            ↓                                    │
-│  11. Track all work via MCP Tasks (cross-project visibility)   │
+│  12. Track all work via MCP Tasks (cross-project visibility)    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-The gauntlet is where your spec gets stress-tested by personas who are *paid to find problems*. Then multiple LLMs debate until they all agree. Then you review. Then you get an execution plan that links tasks back to the concerns that drove them.
+First you and multiple LLMs collaborate until everyone agrees the spec is solid. *Then* the gauntlet stress-tests it with adversary personas who are paid to find problems. You address those concerns, get final boss approval, and end up with an execution plan that links tasks back to the concerns that drove them.
 
 ## Task-Driven Workflow
 
@@ -315,6 +326,14 @@ cat spec.md | python3 debate.py critique --models codex/gpt-5.2-codex --gauntlet
 
 ### The Adversaries
 
+**Pre-Gauntlet (codebase verification):**
+
+| Persona | What They Do | Why They're Annoying (In a Good Way) |
+|---------|--------------|--------------------------------------|
+| `existing_system_compatibility` | Verifies spec is grounded in actual codebase state. Checks build baseline, schema drift, naming conflicts, pattern consistency. | Catches when specs are designed against stale understanding. Triggers ALIGNMENT MODE when drift is found. |
+
+**Main Gauntlet (spec attack):**
+
 | Persona | What They Do | Why They're Annoying (In a Good Way) |
 |---------|--------------|--------------------------------------|
 | `paranoid_security` | Sees threats everywhere. Every input is malicious. Every dependency will be compromised. | Occasionally catches what everyone else missed because they weren't paranoid *enough*. |
@@ -325,6 +344,12 @@ cat spec.md | python3 debate.py critique --models codex/gpt-5.2-codex --gauntlet
 | `prior_art_scout` | Thinks in patterns. Finds similar concepts in the codebase and proposes implementations that blend with existing abstractions. | Suggests architecture improvements: "This looks like BaseClient - extend it instead of building standalone." |
 | `assumption_auditor` | Challenges domain premises, not just logic. "How do we KNOW this is how it works?" Demands documentation citations. | Catches when all models share the same false assumption about an external system. |
 | `information_flow_auditor` | Audits every arrow in architecture diagrams. "What mechanism does 'Result' represent?" | Catches unspecified flows that default to polling when push is available. |
+
+**Final Boss (holistic review):**
+
+| Persona | What They Do | Why They're Annoying (In a Good Way) |
+|---------|--------------|--------------------------------------|
+| `ux_architect` | Senior UX engineer asking "Did we lose the forest for the trees?" Reviews user story, experience delta, measurement strategy. | Issues PASS/REFINE/RECONSIDER verdict. Can send spec back for re-architecture if concerns suggest fundamental issues. |
 
 ### The Final Boss
 

@@ -188,3 +188,15 @@ In practice, Claude assembles the briefings in memory and passes them to the gau
 1. Trim base context — shorter architecture excerpt
 2. Drop supplements for adversaries where spec doesn't touch their domain
 3. Truncate large artifacts with `... N more items`
+
+---
+
+### Phase Transition: gauntlet → finalize
+
+After gauntlet concerns are integrated into the spec, sync both session files per the Phase Transition Protocol (SKILL.md):
+
+1. **Detail file** (`sessions/<id>.json`):
+   - Set `current_phase: "finalize"`, `current_step: "Gauntlet complete, spec updated with accepted concerns"`
+   - Set `gauntlet_concerns_path` to the saved concerns JSON (e.g., `".adversarial-spec/gauntlet-concerns-2026-02-10.json"`)
+   - Append journey: `{"time": "ISO8601", "event": "Gauntlet complete, N concerns accepted", "type": "transition"}`
+2. **Pointer file** (`session-state.json`): set `current_phase: "finalize"`, `current_step`, `next_action`, `updated_at`

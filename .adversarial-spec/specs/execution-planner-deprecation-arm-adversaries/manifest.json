@@ -1,0 +1,44 @@
+{
+  "session_id": "adv-spec-202602091400-deprecation-and-arm",
+  "context_name": "Execution Planner Deprecation + Arm Adversaries",
+  "created_at": "2026-02-09T14:00:00Z",
+  "completed_at": "2026-02-09T22:30:00Z",
+  "status": "complete",
+  "specs": [
+    {
+      "path": "../arm-adversaries.md",
+      "title": "Arm Adversaries: Context Readiness Audit & Per-Adversary Briefings",
+      "status": "final",
+      "debated_with": ["codex/gpt-5.3-codex"],
+      "decision": "Two new steps: Context Readiness Audit (between R1/R2) + Arm Adversaries (before gauntlet)"
+    },
+    {
+      "path": "../execution-planner-deprecation.md",
+      "title": "Execution Planner Partial Deprecation",
+      "status": "final",
+      "debated_with": ["codex/gpt-5.3-codex", "gemini-cli/gemini-3-pro-preview"],
+      "decision": "Option B+: keep gauntlet_concerns.py, convert generation to LLM guidelines, remove dead code"
+    }
+  ],
+  "commits": [
+    {"hash": "da3022e", "description": "feat(gauntlet): Add Context Readiness Audit and Arm Adversaries phases"},
+    {"hash": "e6ce6fa", "description": "wip: Execution planner deprecation Phase 2+3 in progress"},
+    {"hash": "821322b", "description": "feat: Complete execution planner deprecation (Phase 2+3)"},
+    {"hash": "a2984bf", "description": "fix(skill): Add Phase Transition Protocol for session state sync"}
+  ],
+  "artifacts_modified": [
+    "skills/adversarial-spec/phases/03-debate.md",
+    "skills/adversarial-spec/phases/04-gauntlet.md",
+    "skills/adversarial-spec/phases/06-execution.md",
+    "skills/adversarial-spec/reference/context-addition-protocol.md",
+    "skills/adversarial-spec/SKILL.md",
+    "skills/adversarial-spec/phases/02-roadmap.md",
+    "skills/adversarial-spec/phases/05-finalize.md",
+    "execution_planner/__init__.py"
+  ],
+  "deleted": {
+    "modules": 11,
+    "test_files": 9,
+    "lines_removed": 7196
+  }
+}

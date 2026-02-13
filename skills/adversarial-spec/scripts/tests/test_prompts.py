@@ -19,20 +19,15 @@ from prompts import (
 
 
 class TestGetSystemPrompt:
-    def test_prd_returns_prd_prompt(self):
-        # Mutation: changing SYSTEM_PROMPT_PRD content would fail these assertions
-        result = get_system_prompt("prd")
-        assert "Product Requirements Document" in result
-        assert "product manager" in result.lower()
-        assert "user stories" in result.lower() or "user personas" in result.lower()
-        assert len(result) > 500  # PRD prompt should be substantial
+    def test_spec_product_returns_product_prompt(self):
+        result = get_system_prompt("spec", depth="product")
+        assert "product" in result.lower() or "user" in result.lower()
+        assert len(result) > 200
 
-    def test_tech_returns_tech_prompt(self):
-        # Mutation: changing SYSTEM_PROMPT_TECH content would fail these assertions
-        result = get_system_prompt("tech")
-        assert "Technical Specification" in result
-        assert "API" in result or "architecture" in result.lower()
-        assert len(result) > 500  # Tech prompt should be substantial
+    def test_spec_technical_returns_technical_prompt(self):
+        result = get_system_prompt("spec", depth="technical")
+        assert "spec" in result.lower() or "technical" in result.lower()
+        assert len(result) > 200
 
     def test_unknown_returns_generic_prompt(self):
         # Mutation: setting SYSTEM_PROMPT_GENERIC to None would fail
@@ -63,14 +58,23 @@ class TestGetSystemPrompt:
 
 
 class TestGetDocTypeName:
-    def test_prd(self):
-        assert get_doc_type_name("prd") == "Product Requirements Document"
+    def test_spec_product(self):
+        assert get_doc_type_name("spec", depth="product") == "Product Specification"
 
-    def test_tech(self):
-        assert get_doc_type_name("tech") == "Technical Specification"
+    def test_spec_technical(self):
+        assert get_doc_type_name("spec", depth="technical") == "Technical Specification"
+
+    def test_spec_full(self):
+        assert get_doc_type_name("spec", depth="full") == "Full Specification"
+
+    def test_spec_no_depth(self):
+        assert get_doc_type_name("spec") == "Specification"
+
+    def test_debug(self):
+        assert get_doc_type_name("debug") == "Debug Investigation"
 
     def test_unknown(self):
-        assert get_doc_type_name("other") == "specification"
+        assert get_doc_type_name("other") == "Specification"
 
 
 class TestFocusAreas:

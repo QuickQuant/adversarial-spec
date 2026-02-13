@@ -28,6 +28,7 @@ Read ALL fields:
 - `current_step`: Specific progress point
 - `next_action`: What you should do/ask - FOLLOW THIS
 - `do_not_ask`: Topics to avoid (ALWAYS a list) - RESPECT THIS
+- `session_stack`: Recently active sessions (most recent first, optional)
 
 **Validate integrity (Zombie Pointer Handling):**
 If `active_session_id` is set, check if `sessions/<id>.json` exists:
@@ -41,6 +42,38 @@ If the session file is MISSING (e.g., git branch switch):
 - Proceed as "no active session"
 
 **If session file exists**, also read it for full context including `journey` array.
+
+**Startup Context Intent Gate (REQUIRED):**
+
+Before entering the phase workflow, detect whether the user may have switched workstreams.
+
+Check these signals:
+- `session_stack` has multiple entries (recent alternate context exists)
+- `session_stack[0]` differs from `active_session_id` (pointer drift)
+- Most recently updated file in `.adversarial-spec/sessions/` is not `active_session_id`
+- Latest user messages suggest a topic different from `context_name`
+
+If ANY signal exists, ask before proceeding:
+```
+Context Intent Check
+───────────────────────────────────────
+Active: [context_name] ([active_session_id])
+Recent alt: [alt_context_name] ([alt_session_id])   # if available
+
+Did we switch what we're working on?
+
+[Continue active] [Switch to recent] [Show sessions]
+```
+
+Rules:
+- Do NOT auto-switch silently.
+- On **Continue active**: proceed with current pointer.
+- On **Switch to recent**:
+  1. Load target session file.
+  2. Atomically update pointer file fields (`active_session_id`, `active_session_file`, `context_name`, `current_phase`, `current_step`, `next_action`, `updated_at`).
+  3. Append journey event to target session: `{"time":"ISO8601","event":"Resumed via startup context intent check","type":"resume"}`.
+  4. Continue from the switched session.
+- On **Show sessions**: list up to 5 recent sessions by `updated_at`, then ask again.
 
 **Check for Missing Manifest (Retroactive Generation):**
 
@@ -130,7 +163,7 @@ Journey (recent):
 
 Next: [next_action]
 
-[Continue] [New session] [Archive this] [Branch]
+[Continue] [Switch recent] [New session] [Archive this] [Branch]
 ```
 
 ### If no session-state.json exists:
@@ -262,8 +295,12 @@ Based on `current_phase` from session state, read the appropriate file:
 | Transition | Field | Value |
 |------------|-------|-------|
 | roadmap → debate | `roadmap_path` | `"roadmap/manifest.json"` or `"inline"` |
+| gauntlet → finalize | `gauntlet_concerns_path` | Path to saved concerns JSON (e.g., `".adversarial-spec/gauntlet-concerns.json"`) |
 | finalize → execution | `spec_path` | Path to written spec (e.g., `"spec-output.md"`) |
+| finalize → execution | `manifest_path` | Path to spec manifest if created (e.g., `"specs/<slug>/manifest.json"`) |
 | any → complete | `completed_at` | ISO 8601 timestamp |
+
+**Non-artifact transitions** (debate → gauntlet, etc.) still MUST dual-write `current_phase` and `current_step` to both files, even though they don't produce artifact path fields. Every phase change syncs both files — no exceptions.
 
 Both writes must use atomic pattern (temp file + rename).
 

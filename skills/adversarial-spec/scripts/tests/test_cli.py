@@ -314,7 +314,7 @@ class TestCreateParser:
         parser = debate.create_parser()
         args = parser.parse_args(["critique"])
         assert args.models is None  # Now dynamically detected based on API keys
-        assert args.doc_type == "tech"
+        assert args.doc_type == "spec"
         assert args.round == 1
         assert args.timeout == 600
 

@@ -16,7 +16,10 @@
     "bash_command_check_mode": null,
     "banned_git_commands_mode": null,
     "banned_filesystem_commands_mode": null,
-    "deprecated_models_mode": null
+    "deprecated_models_mode": null,
+    "codex_timeout_guard_mode": null,
+    "force_flag_defense_mode": null,
+    "prod_deployment_guard_mode": null
   },
   "_mode_documentation": {
     "flexible": "Warn on violations but allow continuation. Good for learning/exploration.",
@@ -99,6 +102,38 @@
       "hash_flexible": null,
       "hash_strict": null,
       "note": "ALWAYS BLOCKS regardless of mode - deprecated models don't exist"
+    },
+    "codex_timeout_guard": {
+      "practice_section": "N/A",
+      "practice_name": "Codex Timeout Guard - Ensure sufficient timeout for Codex commands",
+      "hookable": true,
+      "version_flexible": "1.0.0",
+      "version_strict": "1.0.0",
+      "hash_flexible": null,
+      "hash_strict": null,
+      "note": "ALWAYS BLOCKS if timeout too short - prevents wasted API calls"
+    },
+    "force_flag_defense": {
+      "practice_section": "N/A",
+      "practice_name": "Force Flag Defense - Require explicit itemization before --force",
+      "hookable": true,
+      "version_flexible": "1.0.0",
+      "version_strict": "1.0.0",
+      "hash_flexible": null,
+      "hash_strict": null,
+      "note": "ALWAYS BLOCKS - requires listing every affected item before --force operations"
+    },
+    "prod_deployment_guard": {
+      "practice_section": "N/A",
+      "practice_name": "Production Deployment Guard - Warn before prod deployments",
+      "hookable": true,
+      "version_flexible": "1.0.0",
+      "version_strict": "1.0.0",
+      "hash_flexible": null,
+      "hash_strict": null,
+      "owner": "Claude (Opus 4.5)",
+      "created": "2026-01-29",
+      "note": "Warns on convex deploy/--prod commands. Project-specific for Convex apps."
     }
   }
 }

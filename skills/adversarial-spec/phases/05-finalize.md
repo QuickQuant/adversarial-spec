@@ -57,7 +57,8 @@ When ALL opponent models AND you have said `[AGREE]` (and gauntlet is complete o
    ```
 5. Update session with artifact paths (sync both files per Phase Transition Protocol):
    - Detail file (`sessions/<id>.json`): set `spec_path` to the written file path (`"spec-output.md"` or `"debug-output.md"`)
-   - If gauntlet was run, also set `gauntlet_concerns_path` to the saved concerns JSON
+   - If gauntlet was run, also set `gauntlet_concerns_path` to the saved concerns JSON (if not already set during gauntlet → finalize transition)
+   - If a spec manifest was created (`specs/<slug>/manifest.json`), set `manifest_path` to its path
    - Append journey: `{"time": "ISO8601", "event": "Spec finalized: <path>", "type": "artifact"}`
    - Update both files with `current_phase: "finalize"`, `current_step: "Document finalized, awaiting user review"`
    - Use atomic writes for both files

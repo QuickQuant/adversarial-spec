@@ -7,7 +7,7 @@ Collects git repository position and staleness information.
 from __future__ import annotations
 
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 # Add parent to path for imports

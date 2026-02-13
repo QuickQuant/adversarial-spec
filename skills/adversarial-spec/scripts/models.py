@@ -46,6 +46,17 @@ from providers import (
 MAX_RETRIES = 3
 RETRY_BASE_DELAY = 1.0  # seconds
 
+# Safety preamble for agentic CLI tools (Codex, Gemini CLI) that have file write access
+CLI_FILE_SAFETY_PREAMBLE = """CRITICAL FILE SAFETY RULES:
+- You are running in a workspace with file write permissions
+- NEVER overwrite existing files without reading them first
+- If you need to save output, create a NEW file with a unique name (e.g., add timestamp or random suffix)
+- Your task is to ANALYZE and RESPOND, not to modify the workspace
+- Return your response as text output, do NOT write it to files
+- If you must write a file, use a path like: .adversarial-spec-gauntlet/output-{timestamp}.json
+
+"""
+
 
 def is_o_series_model(model: str) -> bool:
     """
@@ -285,7 +296,7 @@ def call_codex_model(
     Args:
         system_prompt: System instructions for the model
         user_message: User prompt to send
-        model: Model name (e.g., "codex/gpt-5.2-codex" -> uses "gpt-5.2-codex")
+        model: Model name (e.g., "codex/gpt-5.3-codex" -> uses "gpt-5.3-codex")
         reasoning_effort: Thinking level (minimal, low, medium, high, xhigh). Default: xhigh
         timeout: Timeout in seconds (default 10 minutes)
         search: Enable web search capability for Codex
@@ -305,8 +316,9 @@ def call_codex_model(
     actual_model = model.split("/", 1)[1] if "/" in model else model
 
     # Combine system prompt and user message for Codex
+    # Include file safety preamble since Codex runs with --full-auto (workspace write access)
     full_prompt = f"""SYSTEM INSTRUCTIONS:
-{system_prompt}
+{CLI_FILE_SAFETY_PREAMBLE}{system_prompt}
 
 USER REQUEST:
 {user_message}"""
@@ -401,8 +413,9 @@ def call_gemini_cli_model(
     actual_model = model.split("/", 1)[1] if "/" in model else model
 
     # Combine system prompt and user message
+    # Include file safety preamble since Gemini CLI runs with -y (auto-approve)
     full_prompt = f"""SYSTEM INSTRUCTIONS:
-{system_prompt}
+{CLI_FILE_SAFETY_PREAMBLE}{system_prompt}
 
 USER REQUEST:
 {user_message}"""
@@ -469,6 +482,7 @@ def call_single_model(
     timeout: int = 600,
     bedrock_mode: bool = False,
     bedrock_region: Optional[str] = None,
+    depth: Optional[str] = None,
 ) -> ModelResponse:
     """Send spec to a single model and return response with retry on failure."""
     # Handle Bedrock routing
@@ -479,8 +493,8 @@ def call_single_model(
         if not model.startswith("bedrock/"):
             actual_model = f"bedrock/{model}"
 
-    system_prompt = get_system_prompt(doc_type, persona)
-    doc_type_name = get_doc_type_name(doc_type)
+    system_prompt = get_system_prompt(doc_type, persona, depth)
+    doc_type_name = get_doc_type_name(doc_type, depth)
 
     focus_section = ""
     if focus and focus.lower() in FOCUS_AREAS:
@@ -693,6 +707,7 @@ def call_models_parallel(
     timeout: int = 600,
     bedrock_mode: bool = False,
     bedrock_region: Optional[str] = None,
+    depth: Optional[str] = None,
 ) -> list[ModelResponse]:
     """Call multiple models in parallel and collect responses."""
     results = []
@@ -714,6 +729,7 @@ def call_models_parallel(
                 timeout,
                 bedrock_mode,
                 bedrock_region,
+                depth,
             ): model
             for model in models
         }

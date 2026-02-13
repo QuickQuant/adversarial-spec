@@ -543,3 +543,14 @@ If the model was being lazy and now has critiques, continue the debate normally.
 - Choose the approach that best serves the document's audience
 - Note the tradeoff in your response
 
+---
+
+### Phase Transition: debate → gauntlet
+
+When consensus is reached and user opts for gauntlet, sync both session files per the Phase Transition Protocol (SKILL.md):
+
+1. **Detail file** (`sessions/<id>.json`): set `current_phase: "gauntlet"`, `current_step: "Consensus reached, running gauntlet"`, append journey entry
+2. **Pointer file** (`session-state.json`): set `current_phase: "gauntlet"`, `current_step`, `next_action`, `updated_at`
+
+If user declines gauntlet and proceeds directly to finalize, set `current_phase: "finalize"` instead.
+

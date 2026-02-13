@@ -13,7 +13,6 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-
 # Patterns that indicate potential secrets (high-entropy tokens)
 SECRET_PATTERNS = [
     r"[A-Za-z0-9+/]{40,}={0,2}",  # Base64 tokens

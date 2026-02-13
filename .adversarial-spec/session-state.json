@@ -1,17 +1,15 @@
 {
   "schema_version": "1.3",
-  "active_session_id": "adv-spec-202602091400-deprecation-and-arm",
-  "context_name": "Execution Planner Deprecation + Arm Adversaries",
+  "active_session_id": "adv-spec-202602101754-phase-sync-gaps",
+  "context_name": "Phase Transition Sync Gaps",
   "current_phase": "complete",
-  "current_step": "All work done including phase transition sync fix.",
+  "current_step": "All gaps fixed, deployed via hardlinks",
   "next_action": null,
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-20260209-phase-transition-sync.md",
+  "last_checkpoint": null,
   "do_not_ask": [
-    "execution planner deprecation approach (decided: Option B+, combine Phase 2+3)",
-    "arm adversaries design (spec finalized, Codex reviewed)",
-    "security section (dropped, local tool)",
-    "which concepts to preserve (06-execution.md updated with 3 missing guidelines)",
-    "phase transition sync fix (implemented: SKILL.md protocol + 02-roadmap.md + 05-finalize.md)"
+    "Phase Transition Protocol design (already decided: detail first, pointer second)",
+    "Which fields to add (manifest_path, gauntlet_concerns_path — done)",
+    "Non-artifact transitions (rule added: every phase change must dual-write)"
   ],
-  "updated_at": "2026-02-09T22:30:00Z"
+  "updated_at": "2026-02-10T18:00:00Z"
 }

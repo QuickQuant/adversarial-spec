@@ -447,6 +447,10 @@ def add_gauntlet_arguments(parser: argparse.ArgumentParser) -> None:
         help="Model for adversary attacks (default: auto-select free model)",
     )
     parser.add_argument(
+        "--gauntlet-attack-models",
+        help="Comma-separated models for adversary attacks (overrides --gauntlet-model)",
+    )
+    parser.add_argument(
         "--gauntlet-frontier",
         help="Model for evaluation (default: auto-select frontier model)",
     )
@@ -983,10 +987,22 @@ def handle_gauntlet(args: argparse.Namespace) -> None:
         if args.gauntlet_frontier:
             eval_models = [m.strip() for m in args.gauntlet_frontier.split(",")]
 
+        # Parse attack models (comma-separated). Backward compatible with --gauntlet-model.
+        attack_models = None
+        if args.gauntlet_attack_models:
+            attack_models = [m.strip() for m in args.gauntlet_attack_models.split(",") if m.strip()]
+        elif args.gauntlet_model and "," in args.gauntlet_model:
+            attack_models = [m.strip() for m in args.gauntlet_model.split(",") if m.strip()]
+
+        legacy_attack_model = args.gauntlet_model
+        if attack_models is not None:
+            legacy_attack_model = None
+
         result = run_gauntlet(
             spec=spec,
             adversaries=adversaries,
-            adversary_model=args.gauntlet_model,
+            adversary_model=legacy_attack_model,
+            attack_models=attack_models,
             eval_models=eval_models,
             allow_rebuttals=not args.no_rebuttals,
             run_final_boss=args.final_boss,
@@ -996,13 +1012,20 @@ def handle_gauntlet(args: argparse.Namespace) -> None:
         if args.json:
             output = {
                 "concerns": [
-                    {"adversary": c.adversary, "text": c.text}
+                    {
+                        "id": c.id,
+                        "adversary": c.adversary,
+                        "source_model": c.source_model,
+                        "text": c.text,
+                    }
                     for c in result.concerns
                 ],
                 "evaluations": [
                     {
                         "concern": {
+                            "id": e.concern.id,
                             "adversary": e.concern.adversary,
+                            "source_model": e.concern.source_model,
                             "text": e.concern.text,
                         },
                         "verdict": e.verdict,
@@ -1019,6 +1042,16 @@ def handle_gauntlet(args: argparse.Namespace) -> None:
                 "total_time": result.total_time,
                 "total_cost": result.total_cost,
             }
+            if result.clustered_concerns is not None:
+                output["clustered_concerns"] = [
+                    {
+                        "id": c.id,
+                        "adversary": c.adversary,
+                        "source_model": c.source_model,
+                        "text": c.text,
+                    }
+                    for c in result.clustered_concerns
+                ]
             print(json.dumps(output, indent=2))
         else:
             print()
