@@ -2399,7 +2399,7 @@ def generate_attacks(
     models: list[str] | str,
     timeout: int = 300,
     codex_reasoning: str = "low",
-) -> tuple[list[Concern], dict[str, float]]:
+) -> tuple[list[Concern], dict[str, float], dict[str, str]]:
     """
     Phase 1: Generate attacks from all adversary personas in parallel.
 
@@ -2411,7 +2411,8 @@ def generate_attacks(
         codex_reasoning: Reasoning effort for Codex attacks (default: "low" to conserve tokens)
 
     Returns:
-        Tuple of (List of Concern objects, dict of adversary@model -> elapsed time in seconds)
+        Tuple of (List of Concern objects, dict of adversary@model -> elapsed time in seconds,
+                  dict of adversary@model -> raw LLM response text)
     """
     if isinstance(models, str):
         models = [models]
@@ -2421,14 +2422,15 @@ def generate_attacks(
 
     concerns: list[Concern] = []
     timing: dict[str, float] = {}  # Track time per adversary@model
+    raw_responses: dict[str, str] = {}  # Track raw LLM responses for debugging
 
-    def run_adversary_with_model(adversary_key: str, model: str) -> tuple[list[Concern], float]:
+    def run_adversary_with_model(adversary_key: str, model: str) -> tuple[list[Concern], float, str]:
         """Run one adversary with one model and return concerns with timing."""
         start = time.time()
         adversary = ADVERSARIES.get(adversary_key)
         if not adversary:
             print(f"Warning: Unknown adversary '{adversary_key}'", file=sys.stderr)
-            return [], 0.0
+            return [], 0.0, ""
 
         system_prompt = f"""You are an adversarial reviewer with this persona:
 
@@ -2498,20 +2500,32 @@ Output your concerns as a numbered list. Be specific and cite parts of the spec.
                     text = line.lstrip("-•* ").strip()
                     if text and current_concern_lines:
                         current_concern_lines.append(text)
-                # Ignore other lines (headers, blank, etc.)
+                elif current_concern_lines:
+                    # Continuation prose — append to current concern
+                    current_concern_lines.append(line)
+                # Only truly ignore lines before the first numbered item
 
             # Flush final concern
             flush_concern()
 
+            # Warn if concerns look like bare quotes (possible parse issue)
+            for c in local_concerns:
+                if len(c.text) < 80 and ("quote" in c.text.lower() or c.text.startswith('"')):
+                    print(
+                        f"Warning: Concern from {adversary_key} looks like a bare quote "
+                        f"(possible parse issue): {c.text[:60]}...",
+                        file=sys.stderr,
+                    )
+
             elapsed = time.time() - start
-            return local_concerns, elapsed
+            return local_concerns, elapsed, response
 
         except Exception as e:
             print(
                 f"Warning: Adversary {adversary_key} failed: {e}",
                 file=sys.stderr,
             )
-            return [], time.time() - start
+            return [], time.time() - start, ""
 
     # Run adversary/model pairs in parallel
     pairs = [(adv, model) for adv in adversaries for model in models]
@@ -2523,9 +2537,11 @@ Output your concerns as a numbered list. Be specific and cite parts of the spec.
         }
         for future in concurrent.futures.as_completed(futures):
             adv_key, model = futures[future]
-            adv_concerns, elapsed = future.result()
+            adv_concerns, elapsed, raw_response = future.result()
             concerns.extend(adv_concerns)
             timing[f"{adv_key}@{model}"] = elapsed
+            if raw_response:
+                raw_responses[f"{adv_key}@{model}"] = raw_response
 
     # Print timing summary
     if timing:
@@ -2544,7 +2560,7 @@ Output your concerns as a numbered list. Be specific and cite parts of the spec.
             )
             print(f"    {adv_model}: {elapsed:.1f}s ({count} concerns)", file=sys.stderr)
 
-    return concerns, timing
+    return concerns, timing, raw_responses
 
 
 # =============================================================================
@@ -3196,7 +3212,7 @@ def run_gauntlet(
 
     # Phase 1: Attack Generation (parallel)
     print("Phase 1: Generating attacks...", file=sys.stderr)
-    raw_concerns, adversary_timing = generate_attacks(
+    raw_concerns, adversary_timing, attack_raw_responses = generate_attacks(
         spec, adversaries, attack_models, timeout,
         codex_reasoning=attack_codex_reasoning,
     )
@@ -3225,6 +3241,13 @@ def run_gauntlet(
             indent=2,
         )
     print(f"  Concerns saved: {concerns_file}", file=sys.stderr)
+
+    # Persist raw LLM responses so parsing errors are recoverable
+    if attack_raw_responses:
+        raw_file = gauntlet_dir / f"raw-responses-{spec_hash[:8]}.json"
+        with open(raw_file, 'w') as f:
+            json.dump(attack_raw_responses, f, indent=2)
+        print(f"  Raw responses saved: {raw_file}", file=sys.stderr)
 
     # Phase 2: Big Picture Synthesis
     print("Phase 2: Big picture synthesis...", file=sys.stderr)

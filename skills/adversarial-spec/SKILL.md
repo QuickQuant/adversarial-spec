@@ -298,6 +298,7 @@ Based on `current_phase` from session state, read the appropriate file:
 | gauntlet → finalize | `gauntlet_concerns_path` | Path to saved concerns JSON (e.g., `".adversarial-spec/gauntlet-concerns.json"`) |
 | finalize → execution | `spec_path` | Path to written spec (e.g., `"spec-output.md"`) |
 | finalize → execution | `manifest_path` | Path to spec manifest if created (e.g., `"specs/<slug>/manifest.json"`) |
+| execution → implementation | `execution_plan_path` | Path to written execution plan (e.g., `".adversarial-spec/specs/<slug>/execution-plan.md"`) |
 | any → complete | `completed_at` | ISO 8601 timestamp |
 
 **Non-artifact transitions** (debate → gauntlet, etc.) still MUST dual-write `current_phase` and `current_step` to both files, even though they don't produce artifact path fields. Every phase change syncs both files — no exceptions.

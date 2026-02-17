@@ -215,4 +215,35 @@ Task 8 → Task 5 (merge point)
 > "Execution plan ready with N tasks across W workstreams. M gauntlet concerns linked.
 > Any concerns not covered? Want to adjust task granularity or workstream assignments?"
 
-Wait for user approval before proceeding to Phase 7 (Implementation).
+Wait for user approval before proceeding to Step 8.
+
+---
+
+### Step 8: Persist Execution Plan
+
+**This step is REQUIRED before checkpoint or phase transition.** The plan must be on disk, not just in conversation output. A fresh agent (new conversation, Codex, or any other tool) cannot recover inline-only plans.
+
+**Write the execution plan to:**
+```
+.adversarial-spec/specs/<slug>/execution-plan.md
+```
+
+Where `<slug>` is the context name slugified (same as the manifest directory).
+
+**Use atomic write** (temp file + rename) to prevent corruption.
+
+**Update session detail file:**
+```json
+{
+  "execution_plan_path": ".adversarial-spec/specs/<slug>/execution-plan.md"
+}
+```
+
+**Update pointer file** (`session-state.json`) to include the same `execution_plan_path` for consistency.
+
+**Verify before proceeding:**
+- File exists on disk
+- File is non-empty
+- Path recorded in session detail file
+
+Only after verification: proceed to Phase 7 (Implementation).
