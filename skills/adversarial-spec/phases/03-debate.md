@@ -1,3 +1,25 @@
+**TodoWrite (REQUIRED):** At the start of the debate phase, create a TodoWrite list tracking all major steps. Update it as you complete each step. Example:
+
+```
+TodoWrite([
+  {content: "Verify roadmap exists (gate)", status: "in_progress", activeForm: "Verifying roadmap exists"},
+  {content: "Load roadmap user stories", status: "pending", activeForm: "Loading roadmap user stories"},
+  {content: "Load or generate initial document", status: "pending", activeForm: "Loading initial document"},
+  {content: "Information flow audit (technical/full)", status: "pending", activeForm: "Auditing information flows"},
+  {content: "External API interface verification (technical/full)", status: "pending", activeForm: "Verifying external API interfaces"},
+  {content: "Select opponent models", status: "pending", activeForm: "Selecting opponent models"},
+  {content: "Assemble context files (technical/full)", status: "pending", activeForm: "Assembling context files"},
+  {content: "Round 1: Requirements validation", status: "pending", activeForm: "Running Round 1 debate"},
+  {content: "Context readiness audit (technical/full)", status: "pending", activeForm: "Running context readiness audit"},
+  {content: "Round 2: Architecture & design", status: "pending", activeForm: "Running Round 2 debate"},
+  ...additional rounds as needed...
+])
+```
+
+Mark each step `completed` as you finish it. Mark the current step `in_progress`. Skip steps marked "technical/full" for product-depth specs.
+
+---
+
 ### Step 1: Verify Roadmap Exists (GATE)
 
 **BLOCKING CHECK:** Before ANY debate work, verify that roadmap artifacts from Phase 2 exist.
@@ -276,12 +298,55 @@ options: [only include models whose API keys are configured]
 
 More models = more perspectives = stricter convergence.
 
-### Step 4: Send to Opponent Models for Critique
+### Step 3.5: Assemble Context Files (REQUIRED for technical/full depth)
 
-Run the debate script with selected models:
+**Before the first debate round**, assemble context files so opponent models can critique against the actual codebase, not hallucinated patterns.
+
+**Use TodoWrite** to track each context source as you check it:
+
+```
+TodoWrite([
+  {content: "Check architecture docs (.architecture/INDEX.md)", status: "in_progress", activeForm: "Checking architecture docs"},
+  {content: "Check source issues (.adversarial-spec/issues/)", status: "pending", activeForm: "Checking source issues"},
+  {content: "Check type definitions (API models, interfaces)", status: "pending", activeForm: "Checking type definitions"},
+  {content: "Check existing routes/endpoints", status: "pending", activeForm: "Checking existing routes"},
+  {content: "Build --context flags and store in session", status: "pending", activeForm: "Building context flags"},
+])
+```
+
+**Build the --context flags:**
 
 ```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models MODEL_LIST --doc-type spec --depth DEPTH <<'SPEC_EOF'
+CONTEXT_FLAGS=""
+
+# 1. Architecture docs (almost always relevant)
+if [ -f ".architecture/INDEX.md" ]; then
+  CONTEXT_FLAGS="$CONTEXT_FLAGS --context .architecture/INDEX.md"
+fi
+
+# 2. Source issues/requirements that motivated the spec
+# Check session extended_state for issues_file, or scan issues dir
+for f in .adversarial-spec/issues/*.md; do
+  [ -f "$f" ] && CONTEXT_FLAGS="$CONTEXT_FLAGS --context $f"
+done
+
+# 3. Key type definitions (limit to 3-5 most relevant files)
+# e.g., --context src/types.ts --context src/api_models.py
+```
+
+**Store assembled context list in session state** (`extended_state.context_files`) for reuse across rounds.
+
+**Do NOT run `debate.py critique` without --context for technical/full specs that reference an existing codebase.** Product-depth specs about new greenfield projects may not need context.
+
+### Step 4: Send to Opponent Models for Critique
+
+Run the debate script with selected models and context:
+
+```bash
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
+  --models MODEL_LIST --doc-type spec --depth DEPTH \
+  $CONTEXT_FLAGS \
+  <<'SPEC_EOF'
 <paste your document here>
 SPEC_EOF
 ```
@@ -289,6 +354,7 @@ SPEC_EOF
 Replace:
 - `MODEL_LIST`: comma-separated models from user selection
 - `DEPTH`: `product`, `technical`, or `full` (based on spec depth from Phase 1)
+- `$CONTEXT_FLAGS`: assembled in Step 3.5 (empty for product-depth greenfield specs)
 
 For debug investigations, use `--doc-type debug` (no --depth needed).
 
@@ -339,6 +405,8 @@ Each round has a specific focus. This prevents deep-diving into implementation b
 
 In Round 1, BEFORE reviewing technical details, **confirm** the spec addresses all roadmap user stories. Since the spec was generated anchored to user stories (Step 2), this is a verification step, not a discovery step.
 
+**Use TodoWrite** to track each validation item — mark completed or flag blocked:
+
 1. **Confirm User Story Coverage:** Verify the spec addresses ALL user stories from the roadmap.
    - The spec should already have `<!-- Addresses US-X -->` markers from Step 2.5
    - For each `US-X` in roadmap, confirm the corresponding spec section exists and is substantive
@@ -376,6 +444,8 @@ In Round 1, BEFORE reviewing technical details, **confirm** the spec addresses a
 After Round 1 validates requirements and before Round 2 debates architecture, audit what codebase context is available to inform the remaining debate and the eventual gauntlet.
 
 **Why here:** Round 1 is about user value (no codebase context needed). Round 2 is about architecture (codebase context critical). Gaps discovered now have time to be addressed — tasks can complete while debate proceeds.
+
+**Use TodoWrite** to track each context source check from the table below — mark each as completed with its status (AVAILABLE/PARTIAL/NOT_AVAILABLE/NOT_APPLICABLE).
 
 **Process:**
 
@@ -462,7 +532,16 @@ After Round 1 validates requirements and before Round 2 debates architecture, au
 
    **Staleness rule:** If `git rev-parse --short HEAD` differs from `git_hash` in inventory, re-extract only the sources whose files were modified.
 
-**After the audit, proceed to Round 2.**
+**After the audit, update --context flags for Round 2+:**
+
+Build expanded context from the inventory's AVAILABLE sources:
+```bash
+CONTEXT_FLAGS=""
+for source in inventory.sources where status == "available" and path != null:
+  CONTEXT_FLAGS="$CONTEXT_FLAGS --context $source.path"
+```
+
+Update `extended_state.context_files` in session state with the new list. Use these flags for ALL subsequent `debate.py critique` invocations.
 
 ---
 

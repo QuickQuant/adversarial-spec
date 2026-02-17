@@ -101,7 +101,7 @@ from providers import (  # noqa: E402
     validate_bedrock_models,
     validate_model_credentials,
 )
-from session import SESSIONS_DIR, SessionState, save_checkpoint  # noqa: E402
+from session import SESSIONS_DIR, SessionState, save_checkpoint, save_critique_responses  # noqa: E402
 
 # Optional task tracking - only import if needed
 _task_manager = None
@@ -1151,6 +1151,34 @@ def run_critique(
                 tm, args.round, models, args.doc_type, session_id
             )
 
+    # Warn when running technical/full spec critique with no context files
+    depth = getattr(args, "depth", None)
+    if (
+        getattr(args, "doc_type", "") == "spec"
+        and depth in ("technical", "full")
+        and not getattr(args, "context", None)
+    ):
+        print(
+            "WARNING: Running technical spec critique with no --context files.",
+            file=sys.stderr,
+        )
+        print(
+            "  Models will guess at codebase patterns instead of verifying them.",
+            file=sys.stderr,
+        )
+        print(
+            "  Consider: --context .architecture/INDEX.md --context <type-defs>",
+            file=sys.stderr,
+        )
+        # Also hint at auto-detected files
+        from pathlib import Path
+        for candidate in (".architecture/INDEX.md", ".architecture/index.md"):
+            if Path(candidate).exists():
+                print(
+                    f"  Found: {candidate} — add --context {candidate}",
+                    file=sys.stderr,
+                )
+
     mode = "pressing for confirmation" if args.press else "critiquing"
     focus_info = f" (focus: {args.focus})" if args.focus else ""
     persona_info = f" (persona: {args.persona})" if args.persona else ""
@@ -1192,6 +1220,9 @@ def run_critique(
     session_id = session_state.session_id if session_state else args.session
     if session_id or args.session:
         save_checkpoint(spec, args.round, session_id)
+
+    # Save raw critique responses to disk (makes parsing errors recoverable)
+    save_critique_responses(results, args.round, session_id)
 
     latest_spec = spec
     for r in successful:

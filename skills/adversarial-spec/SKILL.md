@@ -355,6 +355,32 @@ Still aligned?
 
 ---
 
+## Pre-Checkpoint Checklist (REQUIRED)
+
+**Before running `/checkpoint`, verify ALL of these.** The checkpoint command only handles pointer/session state — the surrounding process steps are your responsibility.
+
+```
+Pre-Checkpoint Verification
+───────────────────────────────────────
+[ ] Deliverables persisted — All debate output, execution plans,
+    specs, and gauntlet concerns exist as FILES on disk
+    (not just conversation/terminal output)
+[ ] Alignment check offered — Alignment Prompts section above
+[ ] Orphan detection run — File Discipline section below
+[ ] TodoWrite current — Reflects actual work state
+
+Proceed with /checkpoint? [Y/n]
+```
+
+**If any check fails:**
+- Fix it before running `/checkpoint`
+- Debate output → save to `.adversarial-spec-checkpoints/` (debate.py does this automatically for `critique` runs; for manual synthesis, write the file yourself)
+- Execution plans → save to `.adversarial-spec/specs/<slug>/execution-plan.md`
+
+**Why this matters:** The checkpoint command exits 0 even when deliverables are missing from disk. Context switches after checkpoint destroy conversation-only output permanently.
+
+---
+
 ## File Discipline & Orphan Detection
 
 At checkpoint/resume, scan project root for potential orphan files.

@@ -80,3 +80,30 @@ def save_checkpoint(spec: str, round_num: int, session_id: Optional[str] = None)
         raise ValueError(f"Invalid session ID: {session_id}")
     path.write_text(spec)
     print(f"Checkpoint saved: {path}", file=sys.stderr)
+
+
+def save_critique_responses(
+    results: list, round_num: int, session_id: Optional[str] = None
+):
+    """Save raw critique responses alongside the spec checkpoint.
+
+    This ensures debate output is recoverable even if the conversation
+    is lost. Each model's full response text is preserved.
+    """
+    CHECKPOINTS_DIR.mkdir(parents=True, exist_ok=True)
+    prefix = f"{session_id}-" if session_id else ""
+    path = CHECKPOINTS_DIR / f"{prefix}round-{round_num}-critiques.json"
+    if not path.resolve().is_relative_to(CHECKPOINTS_DIR.resolve()):
+        raise ValueError(f"Invalid session ID: {session_id}")
+    data = [
+        {
+            "model": r.model,
+            "agreed": r.agreed,
+            "response": r.response,
+            "spec": r.spec,
+            "error": r.error,
+        }
+        for r in results
+    ]
+    path.write_text(json.dumps(data, indent=2))
+    print(f"Critique responses saved: {path}", file=sys.stderr)
