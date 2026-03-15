@@ -1,6 +1,8 @@
-## Execution Planning (Phase 6)
+## Execution Planning (Phase 7)
 
-After the spec is finalized (and optionally after gauntlet), offer to generate an execution plan:
+After the spec is finalized and the gauntlet has been run, offer to generate an execution plan.
+
+**Skipping the gauntlet is highly discouraged.** Anything that needs an execution plan should also need the thoroughness of a gauntlet review — the gauntlet generates the concrete failure-mode concerns that become acceptance criteria in the execution plan. Without it, acceptance criteria are vague and implementation bugs slip through to code review (or worse, production). At minimum, run a limited gauntlet if context is running short.
 
 > "Spec is finalized. Would you like me to generate an execution plan for implementation?"
 
@@ -51,6 +53,47 @@ Recommendation: [single-agent | single-agent with workstreams | multi-agent]
 
 Proceed with task decomposition? [Y/n]
 ```
+
+---
+
+### Step 2.5: Architecture Spine (if Target Architecture exists)
+
+**Load target architecture:**
+```bash
+# Check for target architecture from Phase 4
+ls .adversarial-spec/specs/*/target-architecture.md 2>/dev/null | head -1
+```
+
+If found, extract cross-cutting patterns and add an Architecture Spine section to the execution plan:
+
+```markdown
+## Architecture Spine
+Cross-cutting patterns from the Target Architecture. All tasks must follow.
+
+### [Pattern Name]
+- **Pattern:** [one-line description]
+- **Rule:** [what implementers must / must not do]
+- **Reference:** Target Architecture §[N], Task W0-[N]
+```
+
+**Wave 0: Architecture Foundation**
+
+Create tasks establishing shared infrastructure BEFORE feature tasks:
+- One task per pattern in the Target Architecture
+- Wave 0 tasks block all feature tasks depending on the pattern
+- Typical: 4-8 tasks, S-M effort
+
+Example:
+```
+Wave 0 Tasks
+───────────────────────────────────────
+W0-1  Establish data fetching pattern     S   Blocks: Tasks 3, 5, 8
+W0-2  Implement auth middleware           M   Blocks: Tasks 4, 6, 7
+W0-3  Set up shared error handling        S   Blocks: All feature tasks
+W0-4  Create component boundary template  S   Blocks: Tasks 3, 4, 5
+```
+
+**If no target architecture exists:** Skip Architecture Spine and Wave 0. Proceed directly to Task Decomposition.
 
 ---
 

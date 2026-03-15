@@ -306,10 +306,11 @@ More models = more perspectives = stricter convergence.
 
 ```
 TodoWrite([
-  {content: "Check architecture docs (.architecture/INDEX.md)", status: "in_progress", activeForm: "Checking architecture docs"},
+  {content: "Check architecture docs (.architecture/)", status: "in_progress", activeForm: "Checking architecture docs"},
   {content: "Check source issues (.adversarial-spec/issues/)", status: "pending", activeForm: "Checking source issues"},
   {content: "Check type definitions (API models, interfaces)", status: "pending", activeForm: "Checking type definitions"},
   {content: "Check existing routes/endpoints", status: "pending", activeForm: "Checking existing routes"},
+  {content: "Validate context files contain substantive content", status: "pending", activeForm: "Validating context file content"},
   {content: "Build --context flags and store in session", status: "pending", activeForm: "Building context flags"},
 ])
 ```
@@ -320,8 +321,19 @@ TodoWrite([
 CONTEXT_FLAGS=""
 
 # 1. Architecture docs (almost always relevant)
-if [ -f ".architecture/INDEX.md" ]; then
-  CONTEXT_FLAGS="$CONTEXT_FLAGS --context .architecture/INDEX.md"
+# WARNING: Do NOT pass INDEX.md as --context. INDEX.md is a navigation page
+# containing links that opponent models cannot follow. It provides zero
+# substantive content. Pass the files it REFERENCES instead:
+if [ -d ".architecture" ]; then
+  # ALWAYS include overview.md — the single most valuable context file
+  [ -f ".architecture/overview.md" ] && CONTEXT_FLAGS="$CONTEXT_FLAGS --context .architecture/overview.md"
+
+  # Include component docs relevant to the spec's blast zone (2-4 files)
+  # Match spec file paths/module names against .architecture/structured/components/
+  # e.g., --context .architecture/structured/components/data-service.md
+
+  # For broad specs, flows.md covers data paths across the whole system
+  [ -f ".architecture/structured/flows.md" ] && CONTEXT_FLAGS="$CONTEXT_FLAGS --context .architecture/structured/flows.md"
 fi
 
 # 2. Source issues/requirements that motivated the spec
@@ -334,31 +346,71 @@ done
 # e.g., --context src/types.ts --context src/api_models.py
 ```
 
+**Context File Validation (REQUIRED before passing --context):**
+
+Before passing any file via `--context`, verify it contains substantive content:
+
+1. **Does the file contain actual architecture/code information?** Navigation pages, tables of contents, and link-only documents are useless to opponent models — they can't follow links.
+2. **Can the recipient model use the content without following links?** If the file is mostly `[link text](url)` references, pass the linked files instead.
+3. **Is the file relevant to the spec being critiqued?** Don't pass every architecture doc — select files that cover the spec's blast zone.
+
+**Do NOT pass as --context:**
+- `INDEX.md` or any file that's primarily navigation/links
+- Files over 500 lines without trimming to relevant sections
+- Files unrelated to the spec's scope
+
 **Store assembled context list in session state** (`extended_state.context_files`) for reuse across rounds.
 
 **Do NOT run `debate.py critique` without --context for technical/full specs that reference an existing codebase.** Product-depth specs about new greenfield projects may not need context.
 
 ### Step 4: Send to Opponent Models for Critique
 
-Run the debate script with selected models and context:
+**CRITICAL: Always pass the COMPLETE spec document from disk. NEVER summarize, condense, or rewrite it from memory.**
+
+The spec file on disk is the source of truth. Opponent models must see the exact same document the user approved. Any "optimization" that shortens the input invalidates the entire round.
+
+**Before EVERY debate round (use TodoWrite to track — do NOT skip):**
+
+```
+TodoWrite([
+  {content: "Write spec to disk as spec-draft-vN.md", status: "in_progress", activeForm: "Writing spec to disk"},
+  {content: "Verify spec file line count (wc -l)", status: "pending", activeForm: "Verifying spec file"},
+  {content: "Pipe spec from disk to debate.py (cat file | debate.py)", status: "pending", activeForm: "Running debate round N"},
+])
+```
+
+1. Write the current spec to `.adversarial-spec/specs/<slug>/spec-draft-vN.md`
+2. Verify the file exists and has expected content: `wc -l .adversarial-spec/specs/<slug>/spec-draft-vN.md`
+3. Use `cat <file> | debate.py ...` — the file IS the input, never a heredoc
 
 ```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
+# CORRECT: pipe from disk (structurally safe)
+cat .adversarial-spec/specs/<slug>/spec-draft-vN.md | \
+  python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
   --models MODEL_LIST --doc-type spec --depth DEPTH \
-  $CONTEXT_FLAGS \
-  <<'SPEC_EOF'
-<paste your document here>
+  --round N \
+  $CONTEXT_FLAGS
+```
+
+**NEVER do this:**
+```bash
+# WRONG: heredoc from memory — LLM will condense the spec
+python3 debate.py critique --models ... <<'SPEC_EOF'
+<LLM rewrites spec from memory here — WILL lose sections>
 SPEC_EOF
 ```
 
 Replace:
+- `<slug>`: spec directory name (from session)
+- `vN`: current version number (v1 for Round 1, v2 for Round 2, etc.)
 - `MODEL_LIST`: comma-separated models from user selection
 - `DEPTH`: `product`, `technical`, or `full` (based on spec depth from Phase 1)
+- `N`: current round number
 - `$CONTEXT_FLAGS`: assembled in Step 3.5 (empty for product-depth greenfield specs)
 
 For debug investigations, use `--doc-type debug` (no --depth needed).
 
-The script calls all models in parallel and returns each model's critique or `[AGREE]`.
+The script calls all models in parallel and returns each model's critique or `[AGREE]`. It logs the input line count and SHA256 hash — verify these match the file you piped.
 
 ### Step 5: Review, Critique, and Iterate
 
@@ -439,7 +491,15 @@ In Round 1, BEFORE reviewing technical details, **confirm** the spec addresses a
 
 ---
 
-**Context Readiness Audit (between Round 1 and Round 2, REQUIRED for technical/full depth):**
+**Context Readiness Audit (GATE — between Round 1 and Round 2, REQUIRED for technical/full depth):**
+
+> **STOP.** Do NOT proceed to Round 2 without completing this audit.
+> This is a GATE, not advisory. The audit produces the `ContextInventoryV1` that:
+> - Builds the `--context` flags for Round 2+ debate invocations
+> - Feeds the Arm Adversaries step before the gauntlet (see 04-gauntlet.md)
+> - Prevents the failure pattern where models critique architecture without seeing the actual codebase
+>
+> **If this audit was skipped** (e.g., resumed session), run it NOW before proceeding.
 
 After Round 1 validates requirements and before Round 2 debates architecture, audit what codebase context is available to inform the remaining debate and the eventual gauntlet.
 
@@ -547,6 +607,8 @@ Update `extended_state.context_files` in session state with the new list. Use th
 
 **Round 2 Architecture & Design (For Spec documents):**
 
+**PRE-CHECK:** Verify the Context Readiness Audit was completed. If `extended_state.context_inventory` is missing from the session state, STOP and run the audit above before proceeding. Round 2 without codebase context produces hallucinated critiques.
+
 After Round 1 confirms requirements, Round 2 focuses on system design:
 
 1. **Component Design:** Are system components well-defined with clear responsibilities?
@@ -580,9 +642,9 @@ Final rounds focus on polish:
 If any model says `[AGREE]` within the first 2 rounds, be skeptical. Press the model by running another critique round with explicit instructions:
 
 ```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models MODEL_NAME --doc-type TYPE --press <<'SPEC_EOF'
-<spec here>
-SPEC_EOF
+cat .adversarial-spec/specs/<slug>/spec-draft-vN.md | \
+  python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
+  --models MODEL_NAME --doc-type TYPE --press
 ```
 
 The `--press` flag instructs the model to:
@@ -614,7 +676,13 @@ If the model was being lazy and now has critiques, continue the debate normally.
 4. Address all valid issues in your revision
 5. If you disagree with a critique, explain why in your response
 6. Output the revised document incorporating all accepted feedback
-7. Go back to Step 4 with your new document
+7. **Write the revised spec to disk** as `spec-draft-v{N+1}.md` (where N is current round):
+   ```bash
+   # Write revised spec to disk BEFORE next round
+   # This is the source of truth for the next debate.py invocation
+   ```
+   Verify the file was written: `wc -l .adversarial-spec/specs/<slug>/spec-draft-v{N+1}.md`
+8. Go back to Step 4, piping the NEW file from disk: `cat spec-draft-v{N+1}.md | debate.py ...`
 
 **Handling conflicting critiques:**
 - If models suggest contradictory changes, evaluate each on merit

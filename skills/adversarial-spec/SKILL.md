@@ -24,7 +24,7 @@ cat .adversarial-spec/session-state.json 2>/dev/null
 Read ALL fields:
 - `active_session_id`: The session ID (path is `sessions/<id>.json`)
 - `context_name`: What work stream this is
-- `current_phase`: Where we are (requirements, roadmap, debate, gauntlet, finalize, execution, implementation)
+- `current_phase`: Where we are (requirements, roadmap, debate, target-architecture, gauntlet, finalize, execution, implementation)
 - `current_step`: Specific progress point
 - `next_action`: What you should do/ask - FOLLOW THIS
 - `do_not_ask`: Topics to avoid (ALWAYS a list) - RESPECT THIS
@@ -149,6 +149,33 @@ Consider running /mapcodebase --update
 
 **On "Skip":** Proceed normally. Architecture mapping is advisory, not required.
 
+**Load Architecture Context (REQUIRED when `.architecture/` exists):**
+
+If `.architecture/manifest.json` exists (mapping is available), load targeted architecture docs into your context **now** — before any phase work begins. The LLM makes decisions throughout the session (synthesis, critique evaluation, accept/reject) that are all better when grounded in actual architecture.
+
+```bash
+# 1. Read INDEX.md to understand the component map (for YOUR navigation only)
+cat .architecture/INDEX.md 2>/dev/null
+
+# 2. ALWAYS read overview.md — the single most valuable context file
+cat .architecture/overview.md 2>/dev/null
+
+# 3. Select 2-4 component docs based on the session's blast zone
+# Parse the spec/session requirements_summary for file paths and module names
+# Match those against the INDEX component table
+# Read matching component docs from .architecture/structured/components/
+```
+
+**Selection heuristic:**
+- Parse the spec (or session `requirements_summary`) for file paths and module names
+- Match those against the INDEX component table
+- Read the matching component docs + `overview.md`
+- If unsure which components are relevant, `overview.md` + `flows.md` covers ~80% of what any phase needs
+
+**Cost:** ~400-600 lines of context. **Benefit:** Avoids context-blind debate/gauntlet rounds where models guess at codebase patterns.
+
+**IMPORTANT:** `INDEX.md` is for YOUR navigation only. It contains links that opponent models cannot follow. Never pass `INDEX.md` as `--context` to `debate.py` — pass the substantive docs it references instead.
+
 **Present Path Context (REQUIRED FORMAT):**
 ```
 Path Context
@@ -251,23 +278,53 @@ Based on `current_phase` from session state, read the appropriate file:
 | requirements | `~/.claude/skills/adversarial-spec/phases/01-init-and-requirements.md` |
 | roadmap | `~/.claude/skills/adversarial-spec/phases/02-roadmap.md` |
 | debate | `~/.claude/skills/adversarial-spec/phases/03-debate.md` |
-| gauntlet | `~/.claude/skills/adversarial-spec/phases/04-gauntlet.md` |
-| finalize | `~/.claude/skills/adversarial-spec/phases/05-finalize.md` |
-| execution | `~/.claude/skills/adversarial-spec/phases/06-execution.md` |
-| implementation | `~/.claude/skills/adversarial-spec/phases/07-implementation.md` |
+| target-architecture | `~/.claude/skills/adversarial-spec/phases/04-target-architecture.md` |
+| gauntlet | `~/.claude/skills/adversarial-spec/phases/05-gauntlet.md` |
+| finalize | `~/.claude/skills/adversarial-spec/phases/06-finalize.md` |
+| execution | `~/.claude/skills/adversarial-spec/phases/07-execution.md` |
+| implementation | `~/.claude/skills/adversarial-spec/phases/08-implementation.md` |
 | complete | Ask user: "Start new work? Or continue with follow-up?" |
 
 **Read the file for your current phase using the Read tool.** Don't load all phases at once.
+
+### User Language → Phase Mapping
+
+Users don't always use exact phase names. Map their intent:
+
+| User says | Target phase |
+|-----------|-------------|
+| "critique," "review," "feedback," "get opinions" | **debate** |
+| "architecture," "target architecture," "how should we build it," "patterns" | **target-architecture** |
+| "adversarial," "stress test," "try to break it," "gauntlet," "attack" | **gauntlet** |
+| "finalize," "lock it down," "we're done debating" | **finalize** |
+| "execution plan," "implementation plan," "how to build it" | **execution** |
+| "start building," "implement," "code it" | **implementation** |
+
+**The debate and gauntlet are fundamentally different processes:**
+- **Debate** = collaborative improvement via `debate.py critique` (round-based model feedback)
+- **Gauntlet** = adversarial stress testing via adversary personas (PARA, BURN, LAZY, etc.) with per-adversary briefings and a multi-phase attack pipeline
+
+Do NOT run `debate.py critique` when the user wants the gauntlet, and vice versa.
+
+### CRITICAL: Phase Transition Gate
+
+**On ANY phase transition (user request or natural progression), you MUST:**
+
+1. **Read the TARGET phase file** from the Phase Router table above — not continue with the current one
+2. **Follow the target phase's entry protocol** — each phase has specific startup steps
+3. **Do not apply the previous phase's commands/tools to the new phase** — e.g., do not use `debate.py critique` for the gauntlet phase
+
+**Why:** Process failure (Feb 2026) showed the LLM staying in "debate mode" when the user requested the gauntlet, attempting to run `debate.py critique` Round 4 instead of reading `05-gauntlet.md` and following its distinct protocol (Arm Adversaries, persona-based attacks, multi-phase evaluation pipeline).
 
 ### CRITICAL: Phase Transition Rules
 
 **NEVER mark a session as `complete` without going through these gates:**
 
 1. **finalize → execution**: After finalize, you MUST ask: "Spec is finalized. Would you like me to generate an execution plan for implementation?"
-   - If yes: Read `phases/06-execution.md` and create the plan directly using its guidelines
+   - If yes: Read `phases/07-execution.md` and create the plan directly using its guidelines
    - If no: User explicitly declines - only THEN can you mark complete (with note: "execution skipped by user")
 
-2. **execution → implementation/complete**: Create execution plans directly using guidelines in `phases/06-execution.md`. There is no `debate.py execution-plan` command - that pipeline was deprecated (Feb 2026, Option B+).
+2. **execution → implementation/complete**: Create execution plans directly using guidelines in `phases/07-execution.md`. There is no `debate.py execution-plan` command - that pipeline was deprecated (Feb 2026, Option B+).
    - If the plan has 0 actionable tasks, WARN the user before proceeding
 
 **Why this matters:** The failure report showed sessions jumping from gauntlet→complete, skipping execution entirely. This loses all the work linking gauntlet concerns to implementation tasks.
@@ -295,6 +352,7 @@ Based on `current_phase` from session state, read the appropriate file:
 | Transition | Field | Value |
 |------------|-------|-------|
 | roadmap → debate | `roadmap_path` | `"roadmap/manifest.json"` or `"inline"` |
+| target-architecture → gauntlet | `target_architecture_path` | Path to architecture doc (e.g., `"specs/<slug>/target-architecture.md"`) |
 | gauntlet → finalize | `gauntlet_concerns_path` | Path to saved concerns JSON (e.g., `".adversarial-spec/gauntlet-concerns.json"`) |
 | finalize → execution | `spec_path` | Path to written spec (e.g., `"spec-output.md"`) |
 | finalize → execution | `manifest_path` | Path to spec manifest if created (e.g., `"specs/<slug>/manifest.json"`) |
@@ -378,6 +436,36 @@ Proceed with /checkpoint? [Y/n]
 - Execution plans → save to `.adversarial-spec/specs/<slug>/execution-plan.md`
 
 **Why this matters:** The checkpoint command exits 0 even when deliverables are missing from disk. Context switches after checkpoint destroy conversation-only output permanently.
+
+---
+
+## Context Budget Gates (CRITICAL)
+
+**Checkpoint-First Rule:** After writing a final spec version or completing a context-heavy phase, checkpoint IMMEDIATELY. Do not write reports, update MEMORY.md, or do additional work before checkpointing. Those can happen in the next session.
+
+**Phase transition gates:**
+
+| Transition | Gate |
+|-----------|------|
+| debate → gauntlet | If you wrote a spec draft in this session, **checkpoint before starting the gauntlet**. The gauntlet generates massive tool output and should start in a fresh context window. |
+| gauntlet → finalize | If you ran a full gauntlet round (8+ adversaries) in this session, **checkpoint before synthesizing** the final spec version. |
+| any → checkpoint | After writing the final deliverable for any phase, checkpoint is your NEXT action. Not reports. Not MEMORY.md. Not process failure analysis. Checkpoint first. |
+
+**Heuristic:** If the session has (a) written a full spec draft AND (b) completed a full gauntlet round, you are in the danger zone. Checkpoint immediately. Do not do additional work.
+
+---
+
+## TaskOutput Anti-Patterns (CRITICAL)
+
+These patterns waste context budget and have caused session death:
+
+1. **NEVER Read the output file after a blocking TaskOutput call.** `TaskOutput(block=true)` already returns the full result into context. Reading the same file again doubles the token cost for zero benefit.
+
+2. **NEVER re-launch the same command after a hook rejection.** If a Bash command is blocked by a hook, switch tools or fix the command immediately. Do not read the hook source to investigate why — hooks are a solved problem.
+
+3. **NEVER retry the same command with incremental timeout increases.** Know the timeout requirements before launching: Codex calls need `timeout=900000` minimum. Use background mode for any long-running model call.
+
+4. **After launching background tasks, check with `block=false` after ~45s** to catch quota/crash errors before committing to a full timeout wait.
 
 ---
 

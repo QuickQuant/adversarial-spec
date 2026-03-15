@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "adversarial-spec-skill"
+version = "1.0.0"
+description = "Adversarial spec skill for Claude Code"
+requires-python = ">=3.10"
+dependencies = [
+    "litellm>=1.50.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["scripts*", "execution_planner*"]
