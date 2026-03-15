@@ -1,1 +1,1 @@
-checkpoint-20260206-model-hygiene-and-path-fixes.md
+checkpoint-202603051646-target-architecture-implementation-complete.md

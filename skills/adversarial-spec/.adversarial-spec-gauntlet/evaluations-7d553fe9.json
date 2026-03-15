@@ -1,0 +1,632 @@
+[
+  {
+    "concern": {
+      "id": "LAZY-f69d8acc",
+      "adversary": "lazy_developer",
+      "text": "**Application-Level \"STARTING\" Grace Period** Quote**: `STARTING | ... | \u2705 healthy (grace period) | Process start | First data -> HEALTHY; Timeout (60s) -> UNHEALTHY` Simpler Alternative**: **Azure `startupProbe`.** Why it works**: Azure probes have a `startupProbe` specifically for this purpose. It allows the container a grace period to initialize before the liveness probe starts killing it. By managing `SM_STARTUP_GRACE_MS` and a `STARTING` state in code, you are reimplementing a platform feature. The app should just try to connect; if the platform's startup timer expires, the platform kills it. What would break**: The ability to report `connectionState: \"STARTING\"` in your custom health JSON during the first 60 seconds.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'acknowledged': 1}] Valid point: ACA startupProbe can provide a grace period, but the spec keeps STARTING to report connectionState in /health and keep startup behavior consistent across environments; removing it would change the health contract, so no change."
+  },
+  {
+    "concern": {
+      "id": "AUDT-e2a8d26b",
+      "adversary": "assumption_auditor",
+      "text": "**Assumption: 45 Seconds is a Reliable Proxy for Connection Health** The Claim**: \"Global staleness detected (45s no data from ANY market)\" triggers a recovery. The Problem**: You are conflating \"market activity\" with \"connection health.\" Is there a citation or historical data analysis proving that across all monitored Polymarket markets, there is *guaranteed* to be at least one message every 45 seconds? On weekends or during low-volatility periods, a 45-second lull is highly plausible. Evidence Needed**: Official Polymarket API documentation or a data log showing the maximum observed \"quiet period\" across the targeted asset set. If no such guarantee exists, this state machine will trigger unnecessary restarts during quiet markets, potentially leading to unnecessary rate-limiting. Cascading Concern**: Every other concern regarding \"Quick Retry\" and \"UNHEALTHY\" transitions depends on this 45s threshold being a valid indicator of a dead socket.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] No evidence is cited that any message arrives within 45s across all markets; add data or docs proving the maximum quiet period or change health to use heartbeat signals and make the threshold adaptive."
+  },
+  {
+    "concern": {
+      "id": "AUDT-0ecac6cb",
+      "adversary": "assumption_auditor",
+      "text": "**Assumption: Re-subscribing on an Open Socket Resolves \"Hangs\"** The Claim**: \"If socket open: Send `{ operation: \"subscribe\", assets_ids: [...] }`\" The Problem**: How do we **KNOW** that Polymarket's server-side logic handles redundant or \"refresh\" subscriptions on an active socket to \"wake up\" a stalled stream? In many WebSocket implementations, if a stream is stalled but the TCP connection is \"open,\" the issue is often a logic hang on the provider side that requires a fresh TCP handshake (reconnect), not just a new subscription message. Evidence Needed**: Link to Polymarket CLOB/WS documentation confirming that sending a `subscribe` message on an already-subscribed socket is a valid \"no-op\" or \"refresh\" tactic. If the API ignores redundant subscriptions, this \"Quick Retry\" is security theater.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] No cited evidence that resubscribe on an open socket refreshes the stream; either add doc evidence or change quick retry to force reconnect before resubscribe."
+  },
+  {
+    "concern": {
+      "id": "AUDT-a426330e",
+      "adversary": "assumption_auditor",
+      "text": "**Assumption: Polymarket Lacks a Native Heartbeat (Ping/Pong)** The Claim**: The spec relies entirely on \"data staleness\" for health. The Problem**: Standard WebSocket hygiene (and most institutional-grade exchanges) uses `ping/pong` frames to detect half-open connections. If Polymarket supports `ping/pong` or a `{\"type\": \"ping\"}` message, using a 45s data timer is a fragile and \"noisy\" substitute. Evidence Needed**: Quote from the Polymarket API spec regarding heartbeats. If they exist, the state machine should transition based on `pong` timeouts, not market volume.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] No cited evidence about Polymarket heartbeat support; update the spec to use ping/pong if supported or explicitly document absence and keep data-staleness fallback."
+  },
+  {
+    "concern": {
+      "id": "AUDT-cb9e1026",
+      "adversary": "assumption_auditor",
+      "text": "**Assumption: \"First Data\" is the First Message Received** The Claim**: \"STARTING ... First data \u2192 HEALTHY\" The Problem**: Most WebSocket APIs send a \"welcome,\" \"authentication_successful,\" or \"subscription_confirmed\" message before any market data. If your code waits specifically for a *data* frame (e.g., an orderbook update) to transition to HEALTHY, the connector will stay in STARTING (and potentially timeout) even if the connection is perfectly established, simply because no one is trading. Evidence Needed**: A trace of a successful Polymarket WS connection sequence. Does the API send a confirmation message immediately? If so, *that* should be the exit trigger for STARTING, not market data.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Spec transitions to HEALTHY on first data; without evidence of immediate data frames, add subscription-confirmed or welcome messages as valid start signals and document the message sequence."
+  },
+  {
+    "concern": {
+      "id": "AUDT-1e244fbb",
+      "adversary": "assumption_auditor",
+      "text": "**Assumption: 60-Second Cooldown Clears a 429 Rate Limit** The Claim**: \"await sleep(SM_FATAL_ERROR_COOLDOWN_MS); // 60s cooldown ... transitionTo('UNHEALTHY')\" The Problem**: You are assuming Polymarket's rate-limiting bucket resets on a scale compatible with a 60-second sleep and an Azure restart. If their 429s are IP-based and last 5 minutes (standard for many CDNs/exchanges), your 60s cooldown followed by a restart will immediately trigger another 429, creating a permanent \"Crash Loop\" that consumes Azure resources without ever recovering. Evidence Needed**: Citation of Polymarket's 429/Rate Limit policy. How long do bans last? What is the reset window?",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] No rate-limit policy is cited; add documented 429 reset window behavior or change cooldown/backoff to match provider policy."
+  },
+  {
+    "concern": {
+      "id": "AUDT-c8c7fde6",
+      "adversary": "assumption_auditor",
+      "text": "**Assumption: Azure Container Apps (ACA) Probe Timing Alignment** The Claim**: \"Health endpoint returns isHealthy: true DURING the 5s retry window to prevent Azure interference.\" The Problem**: This assumes the ACA liveness probe won't trigger at the exact millisecond the retry fails but before the 60s \"Fatal Error\" sleep (if applicable) or during the transition. Evidence Needed**: Verification of the ACA `periodSeconds` and `failureThreshold` in the deployment config. If `periodSeconds` is 5 and `failureThreshold` is 1, your \"grace period\" within the app logic is extremely brittle.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Spec assumes ACA probe timing aligns with the 5s quick retry window; include periodSeconds and failureThreshold in the spec or adjust health logic to be robust to those values."
+  },
+  {
+    "concern": {
+      "id": "AUDT-dabc672c",
+      "adversary": "assumption_auditor",
+      "text": "**Pattern Match Risk: \"Polymarket\" vs. Generic WebSocket** The Claim**: Use of `assets_ids` in the subscribe message. The Problem**: Are we sure it's `assets_ids`? Different versions of the Polymarket/Clob API use different naming (e.g., `token_id`, `condition_id`, or `market_slug`). Evidence Needed**: Quote the specific SDK or API docs being used. Pattern-matching \"Payment API\" logic onto \"Crypto Exchange\" logic often leads to invalid payload errors that are only caught in production.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Spec uses assets_ids without a cited API schema; add the exact WS subscribe payload from Polymarket docs/SDK and update field names if needed."
+  },
+  {
+    "concern": {
+      "id": "LAZY-135c43d5",
+      "adversary": "lazy_developer",
+      "text": "**In-App \"Fatal Error\" Cooldown** Quote**: `await sleep(SM_FATAL_ERROR_COOLDOWN_MS); // 60s cooldown ... This prevents: Rate limit -> Restart -> Rate limit -> Restart loops.` Simpler Alternative**: **Exit with a non-zero code and use ACA's Max Restart Count/Backoff.** Why it works**: You are reimplementing \"Crash Loop Backoff.\" If the app hits a 429 (Rate Limit) or 401 (Auth Failure), it should stop running. Azure Container Apps manages restart backoffs automatically. Holding a process in a `sleep` state while it's fundamentally broken consumes resources and complicates the health status (it's \"healthy\" but doing nothing). What would break**: The specific 60s duration of the cooldown. You would instead rely on the platform's exponential backoff timing.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Spec chooses in-process sleep for fatal errors without showing why ACA backoff is insufficient; decide one mechanism and update the spec accordingly (exit to use ACA backoff, or mark unhealthy during cooldown and add jitter)."
+  },
+  {
+    "concern": {
+      "id": "LAZY-68310931",
+      "adversary": "lazy_developer",
+      "text": "**Exposing Internal Registry in Health Endpoint** Quote**: `registry: { desired: number; queued: number; pending: number; active: number; failed: number; };` Simpler Alternative**: **Standard Prometheus metrics only.** Why it works**: The health endpoint's primary job is to tell the load balancer/orchestrator if the process is alive (200 or 503). Azure does not read the JSON body. You already have Prometheus metrics planned for these values. Including them in the HTTP response body adds serialization overhead and creates a redundant \"mini-dashboard\" that humans shouldn't be manually curling anyway. What would break**: The ability to see queue depth by manually hitting the `/health` endpoint in a browser.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Health response includes registry stats that are already covered by Prometheus; remove them from /health or gate behind a debug flag to reduce redundancy and exposure."
+  },
+  {
+    "concern": {
+      "id": "LAZY-c45311bb",
+      "adversary": "lazy_developer",
+      "text": "**The simplification \"Feature Flag\"** Quote**: `USE_SIMPLE_STATE_MACHINE=false // Feature flag for rollout` Simpler Alternative**: **Hard replacement / Delete the old code.** Why it works**: The goal of this spec is to \"Reduce state complexity.\" Keeping the old 5-state logic in the codebase \"just in case\" actually *increases* complexity, as you now have to maintain, test, and reason about two different state machines. In a containerized world, \"rollback\" is done by redeploying the previous image version, not by toggling an environment variable that leaves dead code in the binary. What would break**: The ability to switch back to the 5-state machine without a redeploy.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 1, 'acknowledged': 1}] Valid point about complexity, but staged rollout and quick rollback are requirements; the spec already mandates cleanup after 2 weeks, so the temporary flag remains."
+  },
+  {
+    "concern": {
+      "id": "PARA-46b3647b",
+      "adversary": "paranoid_security",
+      "text": "**The \"Healthy Lie\" Attack (Orchestrator Bypass)** Threat:** Intentional deception of the infrastructure layer. Attack Vector:** The spec states: `if (isInQuickRetry) return true; // Don't fail during retry attempt`. If the \"Quick Retry\" logic hangs, enters an infinite loop, or hits a deadlock, the process will report `isHealthy: true` to Azure indefinitely. Impact:** Azure Container Apps will never restart the dead process. This creates a \"zombie\" instance that consumes resources and occupies a slot in the cluster but performs no work, effectively bypassing the primary recovery mechanism (Azure restart) you claim to rely on.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 2}] Quick retry is bounded by SM_QUICK_RETRY_TIMEOUT_MS (5s) and the spec states Quick retry timeout -> UNHEALTHY; /health only returns true while isInQuickRetry is true, so the healthy window is capped and cannot persist indefinitely under the specified behavior."
+  },
+  {
+    "concern": {
+      "id": "PARA-1ff172ac",
+      "adversary": "paranoid_security",
+      "text": "**Information Leakage via `/health` Endpoint** Threat:** Reconnaissance and System Mapping. Attack Vector:** The `/health` endpoint (Port 8085) returns highly granular internal data: `flushSuccessRate`, `registry` counts (`active`, `pending`, `failed`), and `timeSinceDataMs`. This endpoint is seemingly unauthenticated. Impact:** An attacker with internal network access (or a misconfigured ingress) can use this to map the system's throughput, identify the exact moment the system is under stress (high `pending` counts), and time their attacks to coincide with \"Quick Retry\" windows or high `flushErrors` periods.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The /health payload exposes internal throughput and error signals; restrict access or remove sensitive fields to avoid disclosure."
+  },
+  {
+    "concern": {
+      "id": "PARA-05089c04",
+      "adversary": "paranoid_security",
+      "text": "**The \"Thundering Herd\" Cooldown Sync** Threat:** Permanent Outage via Synchronized Rebounds. Attack Vector:** The 60s cooldown is a hardcoded default (`SM_FATAL_ERROR_COOLDOWN_MS`). If 10 instances hit a rate limit at once, they all sleep for 60s and wake up at the exact same millisecond to slam the Polymarket API again. Impact:** This guarantees a secondary, even more intense rate limit, leading to a \"Crash Loop\" that your \"Crash Loop Protection\" actually *facilitates* by making the retry timing deterministic and synchronized across the fleet.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Fixed 60s cooldown can synchronize retries across instances; add jitter or exponential backoff, or delegate to ACA backoff."
+  },
+  {
+    "concern": {
+      "id": "LAZY-d836ca4d",
+      "adversary": "lazy_developer",
+      "text": "**The \"Quick Retry\" Logic** Quote**: \"one quick recovery attempt before delegating to Azure Container Apps restart... Health endpoint returns `isHealthy: true` DURING the 5s retry window to prevent Azure interference.\" Simpler Alternative**: **Immediate process exit.** Why it works**: Azure Container Apps (ACA) is designed to manage container lifecycles. If the socket is stale for 45 seconds, the connection is effectively dead. By \"masking\" the failure for an extra 5 seconds to perform a manual resubscription, you are building a custom orchestrator that competes with Azure's liveness probes. If you exit immediately, Azure handles the restart, providing a clean slate (fresh memory, fresh socket handles) which is more reliable than an in-process \"quick retry.\" What would break**: The 5-second \"silent\" recovery window for transient blips. However, a container restart in ACA typically takes only a few seconds longer and is more deterministic.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 1, 'acknowledged': 1}] Valid simplicity argument, but the spec explicitly requires one bounded in-process recovery attempt for transient blips; removing it would violate that goal."
+  },
+  {
+    "concern": {
+      "id": "PARA-fbc7303b",
+      "adversary": "paranoid_security",
+      "text": "**Socket Leakage during \"Quick Retry\"** Threat:** Resource Exhaustion (File Descriptors). Attack Vector:** \"If socket closed/errored: Reconnect once, then subscribe.\" If the previous socket wasn't perfectly cleaned up due to the error state, the \"Quick Retry\" creates a new connection. Impact:** Rapid successions of transient network blips could lead to an accumulation of \"ghost\" sockets or file descriptors. If the process doesn't hit the `UNHEALTHY` state fast enough to be killed by Azure, it will eventually crash due to `EMFILE` (Too many open files), potentially taking down other co-located processes or logging agents.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Spec says during quick retry, if the socket is closed/errored, it reconnects once and subscribes, but it does not state that the prior socket is explicitly closed or listeners are detached. Add explicit socket disposal and a single-socket guard before reconnecting to prevent FD leaks."
+  },
+  {
+    "concern": {
+      "id": "PARA-e8bbc550",
+      "adversary": "paranoid_security",
+      "text": "**Silent Death via \"Invalid Message Schema\"** Threat:** Data Integrity Failure / Stagnation. Attack Vector:** Under **Error Handling**, the spec says for \"Invalid message schema,\" the action is \"Log and drop\" with \"No change\" to state. Impact:** If an attacker (or a breaking change from Polymarket) poisons the data stream with messages that fail schema validation, the system will \"Log and drop\" 100% of traffic. Since it is still technically *receiving* data, it may not trigger the 45s staleness threshold immediately. The system remains \"HEALTHY\" while successfully processing zero bytes of actual data.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Spec says invalid message schema is logged and dropped with no state change, while staleness is based on 45s of no data from any market without defining whether 'data' means validated messages. Define staleness using validated data only or treat persistent schema failures as unhealthy to avoid a healthy state with zero usable data."
+  },
+  {
+    "concern": {
+      "id": "PARA-d915b347",
+      "adversary": "paranoid_security",
+      "text": "**The \"Grace Period\" Exploitation** Threat:** Startup Hanging. Attack Vector:** `SM_STARTUP_GRACE_MS` is 60 seconds. During this time, `isHealthy` is always `true`. Impact:** An attacker could potentially interfere with the initial handshake to keep the process in a \"half-open\" state. For 60 full seconds, you are flying blind with a process that isn't working but is being shielded from the orchestrator's health checks. If the process is part of a scaling event, this delays the availability of new capacity.",
+      "severity": "medium"
+    },
+    "verdict": "acknowledged",
+    "reasoning": "[Consensus: {'acknowledged': 2}] The spec intentionally marks STARTING as healthy during SM_STARTUP_GRACE_MS and transitions to UNHEALTHY on the 60s timeout; this is a bounded startup tradeoff needed for normal handshakes. The concern is valid but not being changed."
+  },
+  {
+    "concern": {
+      "id": "FLOW-239f47ca",
+      "adversary": "information_flow_auditor",
+      "text": "**Market Data as Heartbeat Proxy**: The \"Global staleness\" trigger (45s) relies on the flow of market data to verify connection health. This ignores the source's actual capabilities (WebSocket Pings/Pongs). During low-volume periods (e.g., late night or between events), the absence of data will trigger unnecessary \"Quick Retries\" and container restarts, even if the information flow is technically open.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Global staleness uses absence of market data as the liveness signal, and the spec does not document WebSocket ping/pong or data cadence. Add an explicit heartbeat mechanism or document why data flow is the only supported liveness signal to avoid false retries during low volume."
+  },
+  {
+    "concern": {
+      "id": "PARA-6256386a",
+      "adversary": "paranoid_security",
+      "text": "**Deterministic Staleness Trigger** Threat:** Side-Channel Timing Attack. Attack Vector:** The 45s staleness threshold is fixed. Impact:** An attacker can observe the `/health` endpoint to see `timeSinceDataMs` approaching 45,000. They can then time a specific payload or network interruption to hit exactly when the \"Quick Retry\" (and the 5s health-check deception) begins, maximizing the chance of catching the system in a vulnerable, non-reporting state.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'deferred': 1}] The spec does not state who can access `/health` or the threat model for `timeSinceDataMs`, so the side-channel risk cannot be assessed. Need exposure and access control context to decide."
+  },
+  {
+    "concern": {
+      "id": "FLOW-db20f73e",
+      "adversary": "information_flow_auditor",
+      "text": "**Opaque \"Flush\" Mechanism and Backpressure**: The mechanism for \"flushing to Convex\" is unspecified. If this flow is synchronous, a bottleneck in Convex will block the WebSocket event loop. This creates a hidden dependency where the health of the *input* flow (Polymarket) is falsely reported as \"stale\" due to a failure in the *output* flow (Convex).",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The spec mentions flushing to Convex but does not state whether the flush is synchronous or buffered; a synchronous flush could block the WebSocket loop and create false staleness. Specify the flush mechanism and backpressure so input health is not coupled to output stalls."
+  },
+  {
+    "concern": {
+      "id": "PARA-09603fbd",
+      "adversary": "paranoid_security",
+      "text": "**Fatal Error Cooldown as a DoS Vector** Threat:** Voluntary Denial of Service. Attack Vector:** On 401, 403, or 429, the system executes `await sleep(SM_FATAL_ERROR_COOLDOWN_MS);` (60s). During this minute, the process is functionally dead. If an attacker can trigger a 429 (Rate Limit) by flooding the upstream or manipulating request patterns, they can force all connector instances into a synchronized 60-second \"coma.\" Impact:** This creates a predictable window of total data blackout. Furthermore, because the `isHealthy` logic doesn't explicitly check if the app is in \"cooldown sleep,\" it may continue to report `isHealthy: true` while it's just sitting there, preventing the orchestrator from spinning up fresh, un-throttled instances.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Fatal error handling sleeps 60s before transitioning to UNHEALTHY, and `isHealthy()` returns true for HEALTHY with no cooldown flag. Mark unhealthy (or a cooldown state) immediately and avoid a blocking sleep to prevent a 60s healthy-but-dead window."
+  },
+  {
+    "concern": {
+      "id": "FLOW-482aa23f",
+      "adversary": "information_flow_auditor",
+      "text": "**Hidden Internal Buffer Flow**: The `registry` in the `HealthResponse` (`queued`, `pending`, `active`) implies an internal producer-consumer queue. This information flow is completely missing from the state machine description. If the \"Flush\" flow slows down, the spec doesn't define what happens when the queue fills\u2014does the \"Data\" flow block, or is data dropped?",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The health response exposes registry queue counts but the spec defines no bounds or overflow policy. Add queue limits and behavior on saturation (drop, backpressure, or transition) to prevent unbounded growth."
+  },
+  {
+    "concern": {
+      "id": "FLOW-1765008d",
+      "adversary": "information_flow_auditor",
+      "text": "**Ambiguous Subscription \"Result\"**: During \"Quick Retry,\" the connector sends a subscription and waits 5s for \"any valid data.\" This is a flawed audit of a mechanism. If Polymarket sends a \"Success\" acknowledgment but no market data arrives within 5s (due to low volume), the connector will transition to `UNHEALTHY` and trigger a restart despite a successful subscription.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Quick retry success requires 'any valid data' within 5s, with no allowance for subscription acks or low-volume periods. Define acceptable liveness signals (ack/ping) or adjust the timeout to avoid false UNHEALTHY transitions."
+  },
+  {
+    "concern": {
+      "id": "FLOW-788af925",
+      "adversary": "information_flow_auditor",
+      "text": "**Deceptive Health Reporting (The \"Lying\" Window)**: The spec explicitly states `isHealthy: true` is returned DURING the 5s retry window. This is a mask over an uncertain information flow. If Azure probes during this window, it receives a false positive. If the retry fails at 5.1s, the system has effectively \"lied\" to the orchestrator, potentially delaying a necessary restart by a full Azure probe cycle.",
+      "severity": "medium"
+    },
+    "verdict": "acknowledged",
+    "reasoning": "[Consensus: {'acknowledged': 2}] The spec explicitly states `isHealthy: true` during the 5s retry window to prevent Azure interference; this is an intentional, bounded tradeoff. The point is valid but not being changed."
+  },
+  {
+    "concern": {
+      "id": "FLOW-5740fca0",
+      "adversary": "information_flow_auditor",
+      "text": "**Protocol Mismatch in Fatal Errors**: The `FATAL_ERRORS` logic checks `response.status`, which is an HTTP-specific field. Since the connector uses a long-lived WebSocket, it is unclear if these errors are caught during the initial handshake flow or via in-band WebSocket frames. Most WebSocket libraries do not surface a `response.status` for frames received after the connection is established.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] Fatal error logic checks `response.status`, which is HTTP-specific, and the spec does not clarify if this only applies to the handshake or how WebSocket close codes are handled. Specify the exact mechanism and error mapping."
+  },
+  {
+    "concern": {
+      "id": "FLOW-10a83c55",
+      "adversary": "information_flow_auditor",
+      "text": "**\"Reconnect\" Mechanism latency**: The \"Quick Retry\" includes a \"Reconnect once\" step. This mechanism (DNS resolution -> TCP Handshake -> TLS Handshake -> Auth) is unspecified and highly variable in latency. Budgeting only 5s for a full reconnect *plus* waiting for data is an aggressive assumption that will likely fail in real-world network conditions.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The 5s quick retry budget includes reconnect + data receipt, but there is no latency analysis. Document timing assumptions or split timeouts for reconnect vs data so the mechanism is realistic."
+  },
+  {
+    "concern": {
+      "id": "FLOW-b950eeb3",
+      "adversary": "information_flow_auditor",
+      "text": "**Unspecified Result of Fatal Error Cooldown**: When a 429 (Rate Limit) occurs, the system sleeps for 60s and then transitions to `UNHEALTHY`. It is not specified if the `/health` endpoint remains responsive during this `await sleep(60000)`. If the sleep blocks the event loop, the health probe will timeout, causing an abrupt Azure kill instead of an orderly `503` transition.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The spec does not state whether `await sleep` is non-blocking for health responses; if it blocks the event loop, probes can time out. Specify non-blocking sleep and health endpoint responsiveness during cooldown."
+  },
+  {
+    "concern": {
+      "id": "PARA-2066fa3d",
+      "adversary": "paranoid_security",
+      "text": "**Unchecked Registry Growth** Threat:** Heap Memory Exhaustion. Attack Vector:** The `registry` tracks `desired`, `queued`, `pending`, etc. The spec does not define limits for these queues. Impact:** During a \"Quick Retry\" or a slow \"Convex flush\" period, these queues could grow unboundedly. Since you've removed the `CONNECTING` state and other \"complexity,\" you may have also removed the backpressure controls. An attacker could flood the socket, filling the `queued` registry until the Node.js heap explodes (OOM), which is a much \"messier\" exit than a controlled `UNHEALTHY` transition.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Registry growth and backpressure are undefined; without limits, a flood or slow flush can exhaust heap. Add explicit bounds and a defined drop or backpressure strategy."
+  },
+  {
+    "concern": {
+      "id": "BURN-4ccef8e5",
+      "adversary": "burned_oncall",
+      "text": "**The \"Healthy Zombie\" Cooldown Period** Failure Mode:** When a `FATAL_ERROR` (401, 403, 429) occurs, the spec calls `await sleep(SM_FATAL_ERROR_COOLDOWN_MS)` (60s) *before* transitioning to `UNHEALTHY`. According to the `isHealthy()` logic, if the state is still `HEALTHY` (which it is, because you haven't transitioned yet), the health endpoint will return `200 OK`. How operators find out:** They won't\u2014at least not via the health check. For 60 seconds, the service is effectively dead (sleeping) but telling Azure it's perfectly fine. Blast Radius:** You lose 60 seconds of data processing per crash loop, and your orchestrator can't move the container to a different node because it thinks the current one is healthy.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] During fatal error cooldown, state remains HEALTHY until after the sleep, so `/health` returns 200 and operators cannot detect the outage. Transition immediately to UNHEALTHY or add a cooldown state that returns 503 and is surfaced in metrics."
+  },
+  {
+    "concern": {
+      "id": "BURN-24730e1e",
+      "adversary": "burned_oncall",
+      "text": "**The 5s \"Quick Retry\" Optimism Bias** Failure Mode:** The spec assumes a full WebSocket reconnect (DNS lookup, TCP handshake, TLS handshake, and sub request) can reliably happen in < 5 seconds. If the network is jittery, the reconnect might take 6 seconds. How operators find out:** `QUICK_RETRY_FAILED` logs and constant container restarts. Blast Radius:** Transient network issues that could be solved by a slightly longer (10-15s) retry or a second attempt will instead trigger a full ACA restart, which takes significantly longer (pulling images, init, etc.), leading to minutes of downtime instead of seconds.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'dismissed': 1}] Spec fixes `SM_QUICK_RETRY_TIMEOUT_MS` at 5000ms without any reconnect latency analysis; DNS/TCP/TLS plus subscribe can exceed 5s on jittery networks. Revise the spec to justify the timeout with measurements or adjust the default while remaining within the Azure restart window."
+  },
+  {
+    "concern": {
+      "id": "BURN-91b062d0",
+      "adversary": "burned_oncall",
+      "text": "**Lying to the Probe (Health Check Masking)** Failure Mode:** `isInQuickRetry` returns `true` for `isHealthy`. If the retry logic itself hangs (e.g., a socket library call that doesn't respect the 5s timeout), the health check will stay `200 OK` indefinitely or until the global timeout. How operators find out:** Metrics show zero data flowing, but the dashboard shows \"Healthy.\" Blast Radius:** Total data loss for the duration of the hang. You're effectively bypassing the one safety mechanism (the probe) that's supposed to save you from hung code.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The health logic returns true when `isInQuickRetry`, but the spec does not guarantee retry operations are bounded if a socket call blocks past the 5s timeout. Add a hard watchdog so `isInQuickRetry` clears after `SM_QUICK_RETRY_TIMEOUT_MS` and health turns unhealthy on overrun."
+  },
+  {
+    "concern": {
+      "id": "BURN-f4c3f192",
+      "adversary": "burned_oncall",
+      "text": "**Convex Flush Failures are a Memory Leak waiting to happen** Failure Mode:** The spec says \"Convex flush failure: No change (unless rate < 40%)\". If Convex is slow (but not failing > 60% of the time), data will back up in the `registry` (queued/pending). How operators find out:** OOM (Out Of Memory) kills. Blast Radius:** The state machine stays `HEALTHY` while memory usage balloons. Eventually, the Linux OOM killer steps in. Since this isn't a \"state machine transition,\" you won't get your pretty structured logs; the container will just vanish.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Error handling says Convex flush failures do not change state unless `flushSuccessRate < 0.4`, and there are no queue/backpressure limits; `registry.queued/pending` can grow unbounded. Add explicit backlog thresholds and transition to UNHEALTHY or apply backpressure/drop to prevent OOM."
+  },
+  {
+    "concern": {
+      "id": "BURN-f6f96b2a",
+      "adversary": "burned_oncall",
+      "text": "**Global vs. Per-Market Staleness Blindness** Failure Mode:** You trigger a retry if *any* market sends data. If Polymarket has one high-volume market (e.g., BTC price) and 50 low-volume markets, and the 50 markets stop working due to a subscription bug, the system stays `HEALTHY` because the one high-volume market keeps the global timer reset. How operators find out:** They won't, unless they happen to check the \"log only\" per-market staleness events (which are buried at 30 minutes). Blast Radius:** Partial data outage for specific markets that can last for hours while the service reports it's \"Healthy.\"",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'acknowledged': 1}] Only global staleness (45s no data from any market) triggers retry, while per-market staleness is log-only at 30 minutes. Add per-market alerting or health degradation when a material fraction of markets are stale."
+  },
+  {
+    "concern": {
+      "id": "BURN-1bf55f20",
+      "adversary": "burned_oncall",
+      "text": "**The 429 Restart Loop (Thundering Herd)** Failure Mode:** You hit a 429 (Rate Limit), sleep 60s, and then restart. If Polymarket's rate limit is IP-based and lasts 5 minutes, you will restart, immediately hit the rate limit again, sleep, and repeat. How operators find out:** High restart counts and `FATAL_ERROR` logs. Blast Radius:** You risk a permanent IP ban by repeatedly hitting a rate-limited endpoint immediately after a fixed cooldown. There is no exponential backoff logic across restarts.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'acknowledged': 1}] Spec handles 429 with a fixed 60s cooldown then UNHEALTHY; if the rate limit window is longer or IP-based, restart loops continue. Change the spec to honor `Retry-After` or add exponential/backoff persisted across restarts."
+  },
+  {
+    "concern": {
+      "id": "BURN-e24a8452",
+      "adversary": "burned_oncall",
+      "text": "**Race Condition: Data Arrival during Transition** Failure Mode:** A data message arrives exactly when the 5s `QUICK_RETRY_TIMEOUT` fires. How operators find out:** Inconsistent logs (Success and Failure logs for the same event) or a transition to `UNHEALTHY` despite data being present. Blast Radius:** Unnecessary restarts and \"flapping\" health status.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'dismissed': 1}] The spec does not define atomic transition semantics between data arrival and the quick-retry timeout. Add state versioning or timer cancellation so a late data message cannot race a timeout and cause conflicting transitions/logs."
+  },
+  {
+    "concern": {
+      "id": "BURN-38edee77",
+      "adversary": "burned_oncall",
+      "text": "**The \"Starting\" Grace Period is too long** Failure Mode:** `SM_STARTUP_GRACE_MS` is 60s. If the service is misconfigured (bad API key), it will sit in `STARTING` for a full minute before admitting it's `UNHEALTHY`. How operators find out:** Deployment takes 1 minute to fail instead of 5 seconds. Blast Radius:** Slowed down CI/CD pipelines and increased Mean Time to Recovery (MTTR).",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'acknowledged': 1}] Default `SM_STARTUP_GRACE_MS` of 60000 keeps health true even on misconfiguration. Add fast-fail paths for fatal startup errors or reduce/make grace conditional so bad configs surface quickly."
+  },
+  {
+    "concern": {
+      "id": "FLOW-1b6e53b3",
+      "adversary": "information_flow_auditor",
+      "text": "**Startup Flow Blindness**: The `STARTING` state guarantees a \"healthy\" status for 60s. If the information flow is dead on arrival (e.g., bad API key or DNS failure), the connector will sit in a \"Healthy\" grace period for a full minute. This masks critical initialization failures from Azure, preventing the orchestrator from immediately responding to a \"Crash Loop.\"",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'acknowledged': 1}] STARTING reports healthy for 60s and there is no documented startup flow latency analysis or early failure mechanism. Update the spec to require success criteria (valid subscription/data) before healthy or define fail-fast paths with explicit timing."
+  },
+  {
+    "concern": {
+      "id": "BURN-ea4b3300",
+      "adversary": "burned_oncall",
+      "text": "**Unchecked Registry Growth** Failure Mode:** The `HealthResponse` includes `registry: { queued, pending, active }`. There is no logic in `isHealthy` to check if `queued` or `pending` are exceeding reasonable limits. How operators find out:** When the container hits the Azure memory limit. Blast Radius:** Performance degradation and eventual crash without an \"UNHEALTHY\" signal to the load balancer or orchestrator.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Health response exposes `registry` counts but `isHealthy()` ignores them. Add thresholds for `queued/pending` and mark unhealthy or alert when exceeded to prevent silent OOM."
+  },
+  {
+    "concern": {
+      "id": "PEDA-ca0f7eea",
+      "adversary": "pedantic_nitpicker",
+      "text": "**The \"Ghost Data\" False Positive** Edge Case**: The WebSocket connection is established, and the server sends a non-market data message (e.g., a \"Welcome\", \"Heartbeat\", or \"Authentication Successful\" JSON). How it occurs**: Many exchange protocols send control messages immediately upon connection. Consequence**: The state machine transitions from `STARTING` to `HEALTHY` because it received \"first data\". If the actual market subscription fails silently or is delayed, the system remains in `HEALTHY` for 45 seconds despite not actually ingestion-streaming. This wastes the startup grace period.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] STARTING \u2192 HEALTHY is triggered by 'first data' but control messages are not excluded. Define 'valid data message' for state transitions and ignore non-market frames."
+  },
+  {
+    "concern": {
+      "id": "BURN-ef0ca652",
+      "adversary": "burned_oncall",
+      "text": "**Socket State Inconsistency** Failure Mode:** \"If socket open: Send subscribe\". If the socket is in a half-open state (where the OS thinks it's open but the remote has dropped it), the subscribe call will \"succeed\" into a black hole. How operators find out:** The 5s data timeout will fire, leading to a restart. Blast Radius:** Every \"half-open\" event (common in cloud NATs) will *always* result in a full container restart because the \"quick retry\" will fail to see data.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'dismissed': 1}] Quick retry uses 'if socket open, send subscribe' which will not recover half-open sockets. Change retry to force reconnect on staleness or add ping/pong/keepalive validation before deciding to resubscribe."
+  },
+  {
+    "concern": {
+      "id": "PEDA-b633b749",
+      "adversary": "pedantic_nitpicker",
+      "text": "**Inconsistent Health Logic regarding Flush Success** Edge Case**: `flushSuccessRate` drops below 40%, but the WebSocket is still receiving data. How it occurs**: The connector is receiving data (Socket is healthy), but the Convex backend is rate-limiting the connector or is down (Flushing is failing). Consequence**: The \"Error Handling\" table says the state should change if the rate is < 40%, but the provided `isHealthy()` function code **only** checks `state` and `isInQuickRetry`. This creates a \"zombie\" state where the service returns HTTP 200 while failing to persist any data to the database.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Error Handling implies state changes when `flushSuccessRate < 0.4`, but `isHealthy()` does not check it. Align health logic with the documented threshold or update the table to match behavior."
+  },
+  {
+    "concern": {
+      "id": "PEDA-fe5842c6",
+      "adversary": "pedantic_nitpicker",
+      "text": "**The 429 Cooldown Liveness Paradox** Edge Case**: A 429 (Rate Limit) error occurs, triggering the `await sleep(60000)`. How it occurs**: Occurs during high volatility or if multiple container instances are scaled up simultaneously. Consequence**: During this 60s sleep, the state is still technically `HEALTHY` (since `transitionTo('UNHEALTHY')` hasn't happened yet). The `/health` endpoint will continue to return 200. Azure Container Apps will keep the instance alive and potentially send more traffic or think the cluster is healthy when it is actually stalled. Furthermore, the 45s staleness timer will likely trigger *during* the sleep, potentially spawning a `QUICK RETRY` loop in parallel with the cooldown sleep.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] On 429 the spec sleeps 60s before transitioning to UNHEALTHY, leaving state HEALTHY and allowing staleness timers to trigger a retry concurrently. Add a 'cooldown' unhealthy status or suspend retries and mark health false during cooldown."
+  },
+  {
+    "concern": {
+      "id": "PEDA-6f064a10",
+      "adversary": "pedantic_nitpicker",
+      "text": "**Zero-Market Subscription Death Loop** Edge Case**: The `registry` is empty (e.g., a configuration error or a temporary API failure in the market discovery service). How it occurs**: The connector starts up, but the service providing the list of `assets_ids` returns an empty array. Consequence**: The connector will never receive \"first data\". It will stay in `STARTING` for the full 60s, then transition to `UNHEALTHY`. Azure will restart the container. This loop will continue indefinitely with 60-second intervals, making it look like a slow startup rather than a configuration error.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] No guard for empty `assets_ids`; the system will loop STARTING\u2192UNHEALTHY every 60s. Add validation and treat empty registry as a fatal configuration error with immediate unhealthy status."
+  },
+  {
+    "concern": {
+      "id": "PEDA-948e6ce7",
+      "adversary": "pedantic_nitpicker",
+      "text": "**Staleness Race Condition with Azure Probes** Edge Case**: Global staleness is detected at exactly the same time as an Azure liveness probe. How it occurs**: The 45s `SM_STALENESS_THRESHOLD_MS` is identical to common Azure default restart thresholds. Consequence**: If the staleness timer hits at $T+45.0s$, and the Azure probe hits at $T+45.1s$ while the `QUICK RETRY` is just starting, we return 200. However, if the retry fails at $T+50.1s$, the state becomes `UNHEALTHY`. If the *next* Azure probe isn't for another 10 seconds, we've extended the window of \"falsely healthy\" reporting, delaying recovery by up to 15-20 seconds beyond the intended threshold.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'dismissed': 1}] Returning healthy during quick retry can extend recovery by up to the probe interval, and that timing skew is valid. The spec explicitly requires health to stay true during the retry to prevent Azure interference, so this delay is an accepted tradeoff for the single in-process retry."
+  },
+  {
+    "concern": {
+      "id": "PEDA-9fa10f31",
+      "adversary": "pedantic_nitpicker",
+      "text": "**Event Loop Lag and Time Drift** Edge Case**: High CPU usage or garbage collection pauses the Node.js event loop for several seconds. How it occurs**: Large JSON payloads from Polymarket or high-frequency flushing. Consequence**: If the staleness check relies on `setTimeout` or `Date.now()`, event loop lag can cause the 45s threshold to be measured inaccurately. In a heavily loaded system, the \"45 seconds\" of wall-clock time might only represent 30 seconds of actual socket monitoring, leading to premature `UNHEALTHY` transitions and \"restart storms.\"",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Spec defines 45s/60s thresholds but does not specify monotonic timing or event-loop-lag handling; if `Date.now()` or delayed timers are used, GC pauses can inflate elapsed time and trigger false staleness. Add monotonic elapsed time (e.g., `process.hrtime`) and/or event-loop-lag tracking to distinguish CPU stalls."
+  },
+  {
+    "concern": {
+      "id": "PEDA-f0aa5753",
+      "adversary": "pedantic_nitpicker",
+      "text": "**Thundering Herd on Global Staleness** Edge Case**: Polymarket API experiences a 60-second global outage. How it occurs**: Upstream provider downtime. Consequence**: Every single instance of the connector will hit the 45s staleness threshold simultaneously. Every instance will trigger a `QUICK RETRY` (re-subscribing/re-connecting) at the same time. If they all fail, every instance will go `UNHEALTHY` and Azure will restart the entire fleet at once. This thundering herd could overwhelm the Polymarket Auth/WebSocket gateway exactly as it's trying to recover.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Spec triggers quick retry at a fixed 45s across all instances with no jitter/backoff. A provider outage would synchronize retries and unhealthy transitions. Add per-instance randomized delay/jitter before quick retry or before marking UNHEALTHY to avoid a herd."
+  },
+  {
+    "concern": {
+      "id": "PEDA-61ce8516",
+      "adversary": "pedantic_nitpicker",
+      "text": "**Partial Subscription Failure (Sub-state Blindness)** Edge Case**: The WebSocket is \"HEALTHY\" (receiving data from Market A), but the subscription for Market B failed. How it occurs**: Invalid `asset_id` or permissions issues for a specific new market. Consequence**: The global health is 200 because data is flowing. The \"Per-market staleness\" only logs a warning. If the system is responsible for 100 markets and 99 are failing, the system stays \"HEALTHY\" because 1 market is still active. There is no mechanism to transition to `UNHEALTHY` based on *partial* failure density, only total silence.",
+      "severity": "medium"
+    },
+    "verdict": "acknowledged",
+    "reasoning": "[Consensus: {'acknowledged': 2}] Spec explicitly treats per-market staleness as log-only and keeps health tied to any data (Staleness Thresholds + Health Logic). Adding partial-failure thresholds would introduce per-market health semantics and conflicts with the simplification and no per-market management goals, so we keep log/alerting only."
+  },
+  {
+    "concern": {
+      "id": "PEDA-990eabd0",
+      "adversary": "pedantic_nitpicker",
+      "text": "**The \"Zombie Socket\" Quick Retry Failure** Edge Case**: The socket state is \"open\" according to the OS, but the underlying TCP connection is half-open/dead (a common occurrence in cloud NATs). How it occurs**: A silent network drop where the FIN/ACK packet is lost. Consequence**: The \"Quick Retry\" logic sees the socket as \"open\" and sends the `subscribe` message. This write \"succeeds\" into the local buffer, so the logic waits 5s for data. Since the connection is actually dead, no data arrives. The 5s timeout is hit, and only *then* do we transition to `UNHEALTHY`. This adds a 5s delay to a recovery that could have been triggered immediately if a fresh connection was forced.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'acknowledged': 1}] Quick Retry Behavior chooses resubscribe when socket appears open and waits up to 5s; a half-open socket could add that 5s before UNHEALTHY. This is within the bounded retry window and avoids forced reconnect churn; we keep the single retry as designed."
+  },
+  {
+    "concern": {
+      "id": "ASSH-5e96ac9b",
+      "adversary": "asshole_loner",
+      "text": "**The \"Fatal Error Cooldown\" is a total lie.**",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'dismissed': 1}] Crash Loop Protection explicitly includes `await sleep(SM_FATAL_ERROR_COOLDOWN_MS)` before `transitionTo('UNHEALTHY')`, which is a real cooldown. Health logic is state-based, so the delay is intentional, not a lie."
+  },
+  {
+    "concern": {
+      "id": "PEDA-040ea382",
+      "adversary": "pedantic_nitpicker",
+      "text": "**Leap Second / NTP Step Discontinuity** Edge Case**: The system clock jumps backward by 1 second during an NTP sync or leap second adjustment. How it occurs**: Standard OS time maintenance. Consequence**: If calculating `elapsedTime` using `Date.now() - startTime`, the result could be negative or artificially large. If it jumps backward, a `STARTING` process might stay in that state for 61 seconds instead of 60, or a staleness check might fail to trigger when it should.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Spec uses elapsed time thresholds but does not specify monotonic time; an NTP step can skew `elapsedTime` if `Date.now()` is used. Require monotonic duration tracking for startup/staleness checks."
+  },
+  {
+    "concern": {
+      "id": "ASSH-4bde7083",
+      "adversary": "asshole_loner",
+      "text": "**The \"Socket Open\" check in Quick Retry is useless.**",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'dismissed': 1}] Quick Retry step 1 uses socket open/closed to decide resubscribe vs reconnect; this changes behavior and is required when closed/errored. The check is functional, not useless."
+  },
+  {
+    "concern": {
+      "id": "ASSH-2f51ce14",
+      "adversary": "asshole_loner",
+      "text": "**Health Logic ignores the actual work.**",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 1, 'acknowledged': 1}] Health Logic intentionally gates only on state and quick retry; flushSuccessRate and registry stats are exposed for monitoring/alerts, not restarts. This aligns with the goal of deterministic health and avoiding restarts for downstream issues, so we keep it."
+  },
+  {
+    "concern": {
+      "id": "ASSH-2310dfab",
+      "adversary": "asshole_loner",
+      "text": "**Startup Grace Period is a race condition.**",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 2}] STARTING transitions are deterministic: first data moves to HEALTHY, a 60s timeout moves to UNHEALTHY. A single timer canceled on first data with state guards avoids race conditions."
+  },
+  {
+    "concern": {
+      "id": "ASSH-5b25ec03",
+      "adversary": "asshole_loner",
+      "text": "**Quick Retry is a \"Global No-Op\" during startup.**",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 2}] Quick retry is defined only after HEALTHY + 45s staleness; STARTING has a 60s grace period. No quick retry during startup is by design."
+  },
+  {
+    "concern": {
+      "id": "ASSH-18e075ab",
+      "adversary": "asshole_loner",
+      "text": "**Registry Bloat is ignored.**",
+      "severity": "medium"
+    },
+    "verdict": "acknowledged",
+    "reasoning": "[Consensus: {'acknowledged': 2}] Registry counts are reported in /health but no thresholds drive health. The scope focuses on socket liveness; backlog handling should be via metrics/alerts rather than restart logic, so we are not adding health gating."
+  },
+  {
+    "concern": {
+      "id": "PREV-89322954",
+      "adversary": "prior_art_scout",
+      "text": "**Reinventing SDK Capabilities (@polymarket/clob-client)** Prior Art Found**: References in `scripts/integrations/knowledge_service.py` and `scripts/pre_gauntlet/discovery.py` indicate the codebase is aware of and utilizes the `@polymarket/clob-client` library. Relation to Spec**: The specification describes low-level WebSocket connection management, heartbeats, and subscription logic (e.g., sending `{ operation: \"subscribe\", assets_ids: [...] }`). Alternate Implementation**: The Polymarket CLOB SDK typically includes high-level managers for WebSocket connections that handle authentication, heartbeats, and re-subscription automatically. We should use the SDK's built-in `ClobClient` or its WebSocket provider instead of manual socket manipulation. Effort Reduction**: ~60% (by delegating reconnection and protocol logic to the SDK).",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Searched workspace with `rg -n \"clob-client|@polymarket\" -uuu`; matches are only docs/patterns in `skills/adversarial-spec/scripts/pre_gauntlet/discovery.py` and `skills/adversarial-spec/scripts/integrations/knowledge_service.py`, not an SDK integration. Need the actual connector repo/dependency list and SDK capability fit to decide whether to adopt."
+  },
+  {
+    "concern": {
+      "id": "ASSH-b0a10993",
+      "adversary": "asshole_loner",
+      "text": "**Global Staleness is a blind spot.**",
+      "severity": "medium"
+    },
+    "verdict": "acknowledged",
+    "reasoning": "[Consensus: {'acknowledged': 2}] Global staleness is intentionally defined as no data from ANY market, and per-market staleness is log-only. This tradeoff avoids false unhealthy transitions for low-volume markets; we keep it and rely on per-market logs/alerts."
+  },
+  {
+    "concern": {
+      "id": "PREV-1a4bce18",
+      "adversary": "prior_art_scout",
+      "text": "**Bypassing the `WebSocketClientBase` Abstraction** Prior Art Found**: Previous review logs in `scripts/.adversarial-spec-gauntlet/evaluations-56a64a01.json` explicitly reference a `WebSocketClientBase` abstraction intended to unify Polymarket and Kalshi connectors. Relation to Spec**: The spec describes a standalone 3-state model (STARTING, HEALTHY, UNHEALTHY) and custom staleness thresholds. Alternate Implementation**: Implement the simplified state machine logic within `WebSocketClientBase` so that all connectors (including Kalshi) benefit from the simplified recovery flow. This preserves architectural consistency. Effort Reduction**: ~40% (by reusing existing connector boilerplate and metrics/logging integration).",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Searched workspace with `rg -n \"WebSocketClientBase\" -uuu`; only references are in gauntlet JSON (`skills/adversarial-spec/.adversarial-spec-gauntlet/concerns-7d553fe9.json`), no implementation to extend. Need the actual connector codebase to confirm whether such an abstraction exists and is suitable."
+  },
+  {
+    "concern": {
+      "id": "PREV-eb785e7d",
+      "adversary": "prior_art_scout",
+      "text": "**Duplicate Crash-Loop Protection** Existing Pattern**: The spec proposes a manual `sleep(60000)` before transitioning to UNHEALTHY on fatal errors. Relation to Spec**: Most container orchestrators (like Azure Container Apps, mentioned in the spec) already have exponential backoff for crash-looping containers. Adding a manual 60s sleep *inside* the process before marking it unhealthy effectively masks the failure from Azure for a full minute. Alternate Implementation**: Use a standard utility or rely on the orchestrator's restart policy. If a cooldown is truly needed to prevent rate-limit hammering, it should be a standardized middleware shared across all external service clients. Effort Reduction**: ~10% (minor reduction in custom error handling code).",
+      "severity": "medium"
+    },
+    "verdict": "acknowledged",
+    "reasoning": "[Consensus: {'acknowledged': 2}] Azure backoff exists, but the spec intentionally adds a 60s in-process cooldown before UNHEALTHY on 401/403/429 to avoid hammering the upstream service. This delays restart by design as a tradeoff to protect the provider."
+  },
+  {
+    "concern": {
+      "id": "PREV-3a5db01d",
+      "adversary": "prior_art_scout",
+      "text": "**Brittle \"Global Staleness\" Detection** Prior Art Search**: Search within `scripts/adversaries.py` shows that \"Silent Connections\" (L2 heartbeats) are a common point of failure. Relation to Spec**: The spec relies on 45s of silence from *all* markets to trigger a retry. Alternate Implementation**: Instead of reinventing a silence timer, use the WebSocket ping/pong frames or the SDK's built-in heartbeat mechanism. If the SDK is being bypassed, the spec must explain why a 45s silence timer is superior to standard L2 heartbeats (which usually have 20-30s intervals). Effort Reduction**: Reusing SDK heartbeats eliminates the need for manual staleness timers and configurable environment variables like `SM_STALENESS_THRESHOLD_MS`.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The spec triggers quick retry after 45s with no data and only defines resubscribe/reconnect behavior; it does not reference WebSocket ping/pong or any SDK heartbeat. The spec should add a decision point to verify whether SDK or WS heartbeats exist, prefer them for liveness, or explicitly justify using data-silence and the 45s threshold instead of heartbeat intervals."
+  },
+  {
+    "concern": {
+      "id": "PREV-f3e54d4b",
+      "adversary": "prior_art_scout",
+      "text": "**Redundant Prometheus Metric Definitions** Existing Pattern**: The spec defines metrics like `ws_connector_state` and `ws_connector_staleness_seconds`. Relation to Spec**: Existing metrics in the codebase (implied by the `system_state.py` collector) likely already track process health and connection status. Alternate Implementation**: Map the new 3-state model to existing metric names to avoid breaking existing Grafana dashboards or alerting rules. Adding new metric names for the same concepts creates dashboard clutter. Effort Reduction**: ~15% (avoiding manual dashboard updates and redundant instrumentation).",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The spec introduces new Prometheus metric names (ws_connector_state, ws_connector_staleness_seconds, etc.) and alerting thresholds without addressing existing metric naming or dashboards. The spec should require an audit of current metrics and either reuse names, add aliases, or plan dashboard/runbook updates to avoid duplicate metrics and broken alerts."
+  },
+  {
+    "concern": {
+      "id": "PREV-2f1bed38",
+      "adversary": "prior_art_scout",
+      "text": "**Inconsistent Connector Patterns (Polymarket vs. Kalshi)** Prior Art Found**: Checkpoint logs in `scripts/.adversarial-spec-checkpoints/depth-caching-debate-round-1.md` state: *\"We have two exchange connectors (Polymarket, Kalshi) that... now share a pattern.\"* Relation to Spec**: The specification is scoped exclusively to Polymarket. Simplifying Polymarket to 3 states while leaving Kalshi at 5 (or vice versa) breaks the \"shared pattern\" established in previous architectural debates. Alternate Implementation**: The spec must define the migration path for *both* connectors or justify why Polymarket requires a unique state machine simplification that Kalshi does not. Effort Reduction**: Long-term maintenance reduction by avoiding \"special snowflake\" connector logic.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] The spec is scoped to Polymarket and does not mention Kalshi or any shared connector pattern. The spec should add an explicit cross-connector decision: either apply the 3-state model to Kalshi with a migration plan or document why Polymarket is an exception and how the divergence will be managed."
+  }
+]

@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.3",
+  "session_id": "adv-spec-202601311600-prior-art-scout-debug",
+  "context_name": "Prior Art Scout Concern Explosion",
+  "current_phase": "complete",
+  "current_step": "All fixes deployed",
+  "doc_type": "debug",
+  "depth": null,
+  "roadmap_path": null,
+  "spec_path": null,
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-20260131-prior-art-scout-fix.md",
+  "models": [],
+  "open_issues": [],
+  "history": [
+    {
+      "date": "2026-01-31",
+      "phase": "investigation",
+      "summary": "Located problem run in prediction-prime: 713 PREV concerns (7.4x all others)",
+      "outcome": "Root cause identified: naive parser + repetitive model output"
+    },
+    {
+      "date": "2026-01-31",
+      "phase": "fix",
+      "summary": "Fixed parser, added dedup, added Big Picture Synthesis phase, renumbered phases",
+      "outcome": "All changes deployed"
+    }
+  ],
+  "updated_at": "2026-01-31T22:55:00Z",
+  "investigation": {
+    "symptoms": "prior_art_scout generated 713 concerns vs 96 from all other adversaries combined (7.4x ratio)",
+    "affected_file": "/home/jason/PycharmProjects/prediction-prime/.adversarial-spec-gauntlet/concerns-02a47663.json",
+    "root_causes": [
+      {
+        "id": 1,
+        "title": "Naive line-by-line parser",
+        "description": "Parser created new concern for EVERY line starting with digit or dash, fragmenting multi-line concerns into pieces",
+        "code_location": "gauntlet.py:2229-2237",
+        "status": "FIXED"
+      },
+      {
+        "id": 2,
+        "title": "Model repetition in output",
+        "description": "Model outputs summary/action items that repeat 35-37 times. 17 unique items appeared 35-37x each = 603 of 713 entries",
+        "evidence": {
+          "total_concerns": 713,
+          "unique_concerns": 126,
+          "single_occurrence": 108,
+          "repeated_35_37x": 17
+        },
+        "status": "FIXED (deduplication added)"
+      }
+    ],
+    "fixes_applied": [
+      "Parser now groups numbered items with sub-bullets into single concerns",
+      "Added deduplication via seen_texts set",
+      "Added Big Picture Synthesis (Phase 2) for holistic concern analysis",
+      "Renumbered all phases: 1=Attack, 2=BigPicture, 3=Filter, 4=Eval, 5=Rebuttal, 6=Adjudication, 7=FinalBoss"
+    ]
+  }
+}

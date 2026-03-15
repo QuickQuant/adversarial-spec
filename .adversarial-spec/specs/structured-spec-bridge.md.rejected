@@ -1,0 +1,428 @@
+# Technical Specification: Structured Spec Bridge
+
+## Overview
+
+The Structured Spec Bridge enables the execution planner to consume both **narrative specs** (like docmaster) and **structured specs** (with explicit US-X/FR-X identifiers). It introduces a lightweight structuring step that extracts actionable requirements while preserving the human-readable narrative format.
+
+**Decision:** Implements **Option 2 (Post-Processing Conversion)** with **Option 1 (Structured Template)** as the preferred authoring mode for new specs.
+
+## Goals
+
+1. Enable execution planner to generate tasks from any well-formed spec
+2. Preserve narrative readability as the primary deliverable
+3. Support explicit traceability (FR → US → Goal) when authors provide it
+4. Fail fast with actionable errors when specs lack extractable requirements
+5. First successful task generation within 5 minutes of spec completion
+
+## Non-Goals
+
+- Replacing narrative specs with rigid templates (narrative stays primary)
+- Perfect NLU for arbitrary prose (structured hints are encouraged)
+- Automatic decomposition beyond explicit requirements
+
+---
+
+## Getting Started (Bootstrap)
+
+### Prerequisites
+- Python 3.14+
+- `uv` installed
+- Completed spec from debate phase
+
+### Workflow: Structured Spec (Recommended)
+
+For new specs, use inline structure during debate:
+
+```bash
+# 1. Run debate with structured output hints
+uv run python ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
+  --models "gemini-cli/gemini-3-pro-preview" \
+  --doc-type spec --depth technical \
+  --structured-hints \
+  < requirements.md > spec.md
+
+# 2. Generate execution plan (direct - no conversion needed)
+uv run python ~/.claude/skills/adversarial-spec/scripts/debate.py execution-plan \
+  --input spec.md > tasks.json
+
+# 3. Verify tasks generated
+jq '.tasks | length' tasks.json  # Should be > 0
+```
+
+### Workflow: Legacy Narrative Spec (Conversion)
+
+For existing narrative specs (like docmaster):
+
+```bash
+# 1. Convert narrative to structured format
+uv run python ~/.claude/skills/adversarial-spec/scripts/debate.py structure \
+  --input spec-narrative.md \
+  --output spec-structured.md \
+  --json-out spec.json
+
+# 2. Generate execution plan from structured output
+uv run python ~/.claude/skills/adversarial-spec/scripts/debate.py execution-plan \
+  --input spec.json > tasks.json
+```
+
+### Failure Cases
+
+| Condition | Error Code | Resolution |
+|-----------|------------|------------|
+| No extractable requirements | `E-NO-REQUIREMENTS` | Add explicit US-X/FR-X markers or more specific goals |
+| Ambiguous prose | `E-AMBIGUOUS` | Clarify vague statements ("make it fast" → "response < 100ms") |
+| Missing traceability | `E-NO-TRACE` | Link FRs to USs: `(Implements: US-1)` |
+| Schema validation failed | `E-SCHEMA` | Check JSON output against structured-v1 schema |
+| LLM extraction failed | `E-EXTRACT` | Retry with different model or add structure hints |
+
+---
+
+## Structured Markdown Format
+
+### Inline Structure (Minimal Friction)
+
+Authors can add structure inline using a simple convention:
+
+```markdown
+## Goals
+<!-- US-0: Bootstrap experience -->
+1. Enable first successful query within 5 minutes from repo checkout
+
+<!-- US-1: Token efficiency -->
+2. Return the most relevant chunk in ≤500 tokens by default
+
+## CLI Commands
+
+<!-- FR-1: Implements US-0 -->
+### init command
+`docmaster init <source_id> --file PATH --format openapi|markdown`
+
+Initializes a documentation source for indexing.
+
+<!-- FR-2: Implements US-1 -->
+### search command
+`docmaster search <source> "query" [--max-tokens N]`
+
+Searches indexed documentation with token budget enforcement.
+```
+
+**Rules:**
+- `<!-- US-N: description -->` defines a user story
+- `<!-- FR-N: Implements US-X, US-Y -->` defines a functional requirement with traceability
+- Comments are invisible to human readers but extractable by the structurer
+- Prose around the comments remains unchanged
+
+### Explicit Structure (Maximum Clarity)
+
+For specs where traceability is critical:
+
+```markdown
+## User Stories
+
+US-0: As a new user, I want to set up docmaster in under 5 minutes, so that I can start querying documentation immediately.
+- Acceptance: `uv sync && docmaster init && docmaster search` completes in < 5 min
+- Priority: must
+
+US-1: As an LLM tool, I want token-bounded responses, so that I don't exceed context limits.
+- Acceptance: Default response ≤ 500 tokens
+- Priority: must
+
+## Functional Requirements
+
+FR-1: The system shall provide an `init` command that registers a documentation source.
+- Implements: US-0
+- Acceptance: Source appears in `docmaster.toml` after init
+
+FR-2: The system shall enforce a configurable token budget on search results.
+- Implements: US-1
+- Acceptance: `--max-tokens 500` limits output to 500 tokens
+```
+
+---
+
+## JSON Schema: structured-v1
+
+The canonical machine-readable format for execution planning:
+
+```json
+{
+  "schema_version": "structured-v1",
+  "title": "docmaster",
+  "overview": "Local-first CLI for token-bounded documentation lookup",
+
+  "goals": [
+    "Return relevant chunks in ≤500 tokens",
+    "First query within 5 minutes of setup"
+  ],
+
+  "user_stories": [
+    {
+      "id": "US-0",
+      "role": "new user",
+      "want": "set up docmaster quickly",
+      "benefit": "start querying documentation immediately",
+      "acceptance_criteria": ["Setup completes in < 5 min"],
+      "priority": "must"
+    }
+  ],
+
+  "functional_requirements": [
+    {
+      "id": "FR-1",
+      "statement": "The system shall provide an init command",
+      "implements": ["US-0"],
+      "acceptance_criteria": ["Source registered in config"],
+      "priority": "must",
+      "component": "CLI"
+    }
+  ],
+
+  "traceability": [
+    {"from": "FR-1", "to": "US-0"},
+    {"from": "FR-2", "to": "US-1"}
+  ],
+
+  "source_spec": "spec.md",
+  "extracted_at": "2026-01-28T19:00:00Z"
+}
+```
+
+### Pydantic Models
+
+```python
+from pydantic import BaseModel, Field
+from typing import Literal
+from datetime import datetime
+
+class UserStory(BaseModel):
+    id: str = Field(pattern=r"^US-\d+$")
+    role: str
+    want: str
+    benefit: str
+    acceptance_criteria: list[str] = []
+    priority: Literal["must", "should", "could", "wont"] = "should"
+
+class FunctionalRequirement(BaseModel):
+    id: str = Field(pattern=r"^FR-\d+$")
+    statement: str
+    implements: list[str] = Field(min_length=1)  # Must link to at least one US
+    acceptance_criteria: list[str] = []
+    priority: Literal["must", "should", "could", "wont"] = "should"
+    component: str | None = None
+
+class TraceLink(BaseModel):
+    from_id: str = Field(alias="from")
+    to_id: str = Field(alias="to")
+
+class StructuredSpec(BaseModel):
+    schema_version: Literal["structured-v1"] = "structured-v1"
+    title: str
+    overview: str
+    goals: list[str]
+    user_stories: list[UserStory]
+    functional_requirements: list[FunctionalRequirement]
+    traceability: list[TraceLink]
+    source_spec: str | None = None
+    extracted_at: datetime | None = None
+```
+
+---
+
+## Component Design
+
+### 1. SpecParser (New)
+
+Extracts structure from markdown:
+
+```python
+class SpecParser:
+    def parse(self, markdown: str) -> ParseResult:
+        """
+        Attempts extraction in order of preference:
+        1. Explicit US-N/FR-N patterns (regex)
+        2. HTML comment annotations (<!-- US-N -->)
+        3. LLM-assisted extraction (fallback)
+        """
+
+    def extract_explicit(self, md: str) -> list[UserStory | FunctionalRequirement]:
+        """Regex extraction for US-N: and FR-N: patterns"""
+
+    def extract_annotations(self, md: str) -> list[UserStory | FunctionalRequirement]:
+        """Extract from <!-- US-N --> HTML comments"""
+
+    def extract_llm(self, md: str, model: str) -> list[UserStory | FunctionalRequirement]:
+        """LLM-assisted extraction with schema enforcement"""
+```
+
+### 2. SpecValidator
+
+Enforces schema and traceability:
+
+```python
+class SpecValidator:
+    def validate(self, spec: StructuredSpec) -> ValidationResult:
+        errors = []
+
+        # Every FR must implement at least one US
+        for fr in spec.functional_requirements:
+            if not fr.implements:
+                errors.append(f"{fr.id} has no traceability to user stories")
+            for us_id in fr.implements:
+                if us_id not in [us.id for us in spec.user_stories]:
+                    errors.append(f"{fr.id} references unknown {us_id}")
+
+        # Every US should be implemented by at least one FR
+        implemented = {us for fr in spec.functional_requirements for us in fr.implements}
+        for us in spec.user_stories:
+            if us.id not in implemented:
+                errors.append(f"Warning: {us.id} has no implementing requirements")
+
+        return ValidationResult(valid=len(errors) == 0, errors=errors)
+```
+
+### 3. ExecutionPlanner Integration
+
+The execution planner gains a preprocessing step:
+
+```python
+# In debate.py execution-plan command
+def execution_plan(input_path: str, ...):
+    content = Path(input_path).read_text()
+
+    # Try to load as JSON first (already structured)
+    if input_path.endswith('.json'):
+        spec = StructuredSpec.model_validate_json(content)
+    else:
+        # Parse markdown and extract structure
+        parser = SpecParser()
+        result = parser.parse(content)
+
+        if result.requirements_found == 0:
+            raise ExtractionError(
+                "E-NO-REQUIREMENTS",
+                "No extractable requirements found. Add US-X/FR-X markers or use --structure first."
+            )
+
+        spec = result.to_structured_spec()
+
+    # Validate
+    validator = SpecValidator()
+    validation = validator.validate(spec)
+    if not validation.valid:
+        raise ValidationError("E-SCHEMA", validation.errors)
+
+    # Generate tasks from structured spec
+    tasks = generate_tasks(spec)
+    return tasks
+```
+
+---
+
+## CLI Commands
+
+### New: `structure` command
+
+```bash
+debate.py structure --input SPEC.md --output SPEC-structured.md --json-out SPEC.json \
+  [--model MODEL] [--max-retries N]
+```
+
+Converts narrative spec to structured format.
+
+**Options:**
+- `--input`: Source markdown spec
+- `--output`: Structured markdown (human-readable with explicit US/FR)
+- `--json-out`: JSON output for execution planner
+- `--model`: LLM for extraction (default: uses configured default)
+- `--max-retries`: Retry count for validation failures (default: 3)
+
+**Exit codes:**
+- 0: Success
+- 2: Validation error (schema/traceability)
+- 3: Extraction error (LLM failure)
+- 4: I/O error
+
+### Updated: `execution-plan` command
+
+```bash
+debate.py execution-plan --input SPEC [--format auto|structured-v1|narrative]
+```
+
+**New behavior:**
+- `--format auto` (default): Detect format and convert if needed
+- `--format structured-v1`: Require JSON input
+- `--format narrative`: Force LLM extraction
+
+---
+
+## Error Handling
+
+### Extraction Failures
+
+When LLM extraction produces invalid output:
+
+1. Log the validation error
+2. Re-prompt with specific error: "The FR-3 you extracted references US-99 which doesn't exist"
+3. Retry up to `--max-retries` times
+4. If still failing, output partial results with warnings
+
+### Ambiguity Handling
+
+When prose is too vague to extract:
+
+```
+Warning: Could not extract requirements from section "Performance"
+  Content: "Should be fast enough for real-time use"
+
+  Suggestion: Add specific criteria, e.g.:
+    <!-- FR-N: Implements US-X -->
+    Response time shall be < 100ms p99
+```
+
+---
+
+## Migration Path
+
+### Phase 1: Add structure command (immediate)
+- Implement `debate.py structure`
+- Update execution-plan to auto-detect format
+- Document inline annotation convention
+
+### Phase 2: Update debate templates (next)
+- Add `--structured-hints` flag to critique command
+- Prompts encourage US-X/FR-X format during debate
+- Generated specs include structure by default
+
+### Phase 3: Deprecate pure narrative (future)
+- Warn when narrative spec requires conversion
+- Encourage structured authoring from the start
+
+---
+
+## Testing Strategy
+
+1. **Unit tests**: Parser regex, validator logic, schema enforcement
+2. **Golden tests**:
+   - `docmaster-spec.md` → `docmaster-structured.json` → tasks
+   - Verify task count > 0 for real specs
+3. **Integration**: End-to-end debate → structure → execution-plan
+4. **Edge cases**: Empty specs, circular references, missing sections
+
+---
+
+## Performance Targets
+
+| Operation | Target |
+|-----------|--------|
+| Regex extraction | < 100ms |
+| LLM extraction | < 30s |
+| Validation | < 100ms |
+| Full pipeline | < 60s |
+
+---
+
+## Open Questions
+
+1. **Default model for extraction**: Should we use a fast model (gpt-4o-mini) or prioritize accuracy (gpt-4o)?
+2. **Minimum requirements**: Should we require at least N user stories and M functional requirements?
+3. **Gauntlet integration**: Should gauntlet concerns auto-generate FR suggestions?

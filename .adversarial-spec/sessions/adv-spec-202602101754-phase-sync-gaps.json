@@ -1,28 +1,71 @@
 {
   "session_id": "adv-spec-202602101754-phase-sync-gaps",
   "context_name": "Phase Transition Sync Gaps",
-  "current_phase": "complete",
-  "current_step": "All gaps fixed, deployed via hardlinks",
+  "current_phase": "implementation",
+  "current_step": "All three features implemented: condensed spec fix, claude-cli provider, gauntlet rate limiting",
   "created_at": "2026-02-10T17:54:00Z",
   "completed_at": "2026-02-10T18:00:00Z",
-  "updated_at": "2026-02-10T18:00:00Z",
+  "updated_at": "2026-02-18T17:06:04Z",
   "journey": [
-    {"time": "2026-02-10T17:54:00Z", "event": "Session started: fix remaining phase transition sync gaps identified in quarterdeck checkpoint", "type": "start"},
-    {"time": "2026-02-10T17:56:00Z", "event": "Added manifest_path + gauntlet_concerns_path to SKILL.md artifact path table, added non-artifact transition rule", "type": "implementation"},
-    {"time": "2026-02-10T17:57:00Z", "event": "Added Phase Transition section to end of 03-debate.md (debate → gauntlet)", "type": "implementation"},
-    {"time": "2026-02-10T17:58:00Z", "event": "Added Phase Transition section to end of 04-gauntlet.md (gauntlet → finalize) with gauntlet_concerns_path linkback", "type": "implementation"},
-    {"time": "2026-02-10T17:59:00Z", "event": "Added manifest_path instruction to 05-finalize.md step 5", "type": "implementation"},
-    {"time": "2026-02-10T18:00:00Z", "event": "Verified all files deployed via hardlinks (same inodes). Session complete.", "type": "verification"}
+    {
+      "time": "2026-02-10T17:54:00Z",
+      "event": "Session started: fix remaining phase transition sync gaps identified in quarterdeck checkpoint",
+      "type": "start"
+    },
+    {
+      "time": "2026-02-10T17:56:00Z",
+      "event": "Added manifest_path + gauntlet_concerns_path to SKILL.md artifact path table, added non-artifact transition rule",
+      "type": "implementation"
+    },
+    {
+      "time": "2026-02-10T17:57:00Z",
+      "event": "Added Phase Transition section to end of 03-debate.md (debate \u2192 gauntlet)",
+      "type": "implementation"
+    },
+    {
+      "time": "2026-02-10T17:58:00Z",
+      "event": "Added Phase Transition section to end of 04-gauntlet.md (gauntlet \u2192 finalize) with gauntlet_concerns_path linkback",
+      "type": "implementation"
+    },
+    {
+      "time": "2026-02-10T17:59:00Z",
+      "event": "Added manifest_path instruction to 05-finalize.md step 5",
+      "type": "implementation"
+    },
+    {
+      "time": "2026-02-10T18:00:00Z",
+      "event": "Verified all files deployed via hardlinks (same inodes). Session complete.",
+      "type": "verification"
+    },
+    {
+      "time": "2026-02-18T17:06:04Z",
+      "event": "All three features implemented: condensed spec fix, claude-cli provider, gauntlet rate limiting",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-02-18T17:06:04Z",
+      "event": "Checkpoint saved: condensed-spec-fix-claude-cli-rate-limit.",
+      "type": "checkpoint"
+    }
   ],
   "requirements_summary": {
     "completed_work": [
-      "SKILL.md: Added gauntlet_concerns_path (gauntlet → finalize) and manifest_path (finalize → execution) to artifact path table",
-      "SKILL.md: Added non-artifact transition rule — every phase change must dual-write, no exceptions",
-      "03-debate.md: Added Phase Transition section for debate → gauntlet sync",
-      "04-gauntlet.md: Added Phase Transition section for gauntlet → finalize sync with gauntlet_concerns_path",
+      "SKILL.md: Added gauntlet_concerns_path (gauntlet \u2192 finalize) and manifest_path (finalize \u2192 execution) to artifact path table",
+      "SKILL.md: Added non-artifact transition rule \u2014 every phase change must dual-write, no exceptions",
+      "03-debate.md: Added Phase Transition section for debate \u2192 gauntlet sync",
+      "04-gauntlet.md: Added Phase Transition section for gauntlet \u2192 finalize sync with gauntlet_concerns_path",
       "05-finalize.md: Added manifest_path linkback instruction to step 5"
     ],
     "remaining_work": []
   },
-  "origin": "Identified during quarterdeck checkpoint: session detail file had stale current_phase and missing manifest_path"
+  "origin": "Identified during quarterdeck checkpoint: session detail file had stale current_phase and missing manifest_path",
+  "completed_work": "Fix 1: 03-debate.md rewritten - heredoc replaced with cat-pipe pattern, TodoWrite enforcement for pre-round checklist, inter-round spec persistence to disk, SHA256 hash logging in debate.py. Fix 2: claude-cli/ provider added across providers.py, models.py, gauntlet.py, debate.py - shells out to claude -p with JSON output, --tools empty, --no-session-persistence. Fix 3: Gauntlet rate limiting - extracted get_rate_limit_config to module level, replaced unbatched ThreadPoolExecutor with provider-aware batching in generate_attacks(). Fix 4: Added gauntlet model selection multiselect step to 04-gauntlet.md. All 328 tests passing.",
+  "next_action": "Commit changes and test claude-cli provider end-to-end with a real invocation",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202602181706-condensed-spec-fix-claude-cli-rate-limit.md",
+  "do_not_ask": [
+    "Phase Transition Protocol design (already decided: detail first, pointer second)",
+    "Which fields to add (manifest_path, gauntlet_concerns_path \u2014 done)",
+    "Non-artifact transitions (rule added: every phase change must dual-write)"
+  ],
+  "status": "active"
 }

@@ -1,0 +1,117 @@
+{
+  "status": "COMPLETE",
+  "doc_type": "tech",
+  "concerns": [
+    {
+      "id": "COMP-b7f1b3e4",
+      "severity": "WARN",
+      "category": "GIT",
+      "title": "Uncommitted Changes",
+      "message": "Working tree has uncommitted changes. Baseline verification may not reflect committed state.",
+      "evidence_refs": [
+        {
+          "type": "GIT_LOG",
+          "source": "git status --porcelain",
+          "excerpt": "(non-empty output)"
+        }
+      ]
+    }
+  ],
+  "alignment_issues": [],
+  "git_position": {
+    "current_branch": "main",
+    "head_commit": "6971dead37d012d231c104ee1d2e7dc1b7450cd2",
+    "base_branch": "main",
+    "base_commit": "6971dead37d012d231c104ee1d2e7dc1b7450cd2",
+    "merge_base_commit": "6971dead37d012d231c104ee1d2e7dc1b7450cd2",
+    "commits_ahead": 0,
+    "commits_behind": 0,
+    "last_sync_with_base": "2026-01-24 14:54:07-06:00",
+    "main_recent_commits": [
+      {
+        "hash": "6971dead37d012d231c104ee1d2e7dc1b7450cd2",
+        "author": "Jason",
+        "date": "2026-01-24 14:54:07-06:00",
+        "subject": "feat: add MCP Tasks integration for cross-project task tracking"
+      },
+      {
+        "hash": "856e8ba1c16def3b2f51cf3aa261806161333eb6",
+        "author": "Jason",
+        "date": "2026-01-24 00:01:47-06:00",
+        "subject": "fix(gauntlet): include concern IDs in JSON persistence, fix justification->reasoning typo"
+      },
+      {
+        "hash": "b4dd36522a3726267d7a1a3ff4ee9dee7164583b",
+        "author": "Jason",
+        "date": "2026-01-23 23:14:18-06:00",
+        "subject": "docs: update README with current model names (Jan 2026)"
+      },
+      {
+        "hash": "05d72f015eb3aec740b2b11836ebd57ad4a18c2e",
+        "author": "Jason",
+        "date": "2026-01-23 23:09:42-06:00",
+        "subject": "docs: fix confusing flow diagram in README"
+      },
+      {
+        "hash": "8632604a7f6f46fd31dc3a0e838fabd9582275f7",
+        "author": "Jason",
+        "date": "2026-01-23 22:34:49-06:00",
+        "subject": "docs: update README with gauntlet, execution plans, and concern IDs"
+      },
+      {
+        "hash": "ca3146907a9ac3ddeba1abc34fa24bbc1b5b4844",
+        "author": "Jason",
+        "date": "2026-01-23 22:23:19-06:00",
+        "subject": "feat(gauntlet): add stable concern IDs for execution plan linking"
+      },
+      {
+        "hash": "17248493e89eab885e3cb4e832cb75440e7c2ae9",
+        "author": "Jason",
+        "date": "2026-01-23 21:53:47-06:00",
+        "subject": "feat(skill): add comprehensive Task-Driven Workflow to guide adversarial-spec sessions"
+      },
+      {
+        "hash": "ae83e936225ca717cc3caa92dcf68781f23793de",
+        "author": "Jason",
+        "date": "2026-01-23 18:23:45-06:00",
+        "subject": "feat(gauntlet): add acknowledged verdict for valid-but-out-of-scope concerns"
+      },
+      {
+        "hash": "c58246fa1cf35c270a188f10f522ba46a7f8138e",
+        "author": "Jason",
+        "date": "2026-01-23 12:01:38-06:00",
+        "subject": "fix(gauntlet): parameter name mismatch eval_model -> eval_models"
+      },
+      {
+        "hash": "8809acdde6bc4c1ff9abfcef96dcf9a00df18a8a",
+        "author": "Jason",
+        "date": "2026-01-23 11:57:38-06:00",
+        "subject": "chore: update provider example models to current versions"
+      }
+    ],
+    "affected_files_changes": [],
+    "working_tree_clean": false,
+    "detached_head": false
+  },
+  "system_state": {
+    "build_status": "SKIP",
+    "build_exit_code": null,
+    "build_duration_ms": 0,
+    "build_output_excerpt": "",
+    "schema_contents": [],
+    "directory_trees": [],
+    "working_tree_clean": false,
+    "collection_timestamp": "2026-01-24 20:39:29.813827"
+  },
+  "context_summary": {
+    "context_chars": 443,
+    "truncated_sections": []
+  },
+  "timings": {
+    "git_ms": 21,
+    "build_ms": 0,
+    "files_ms": 3,
+    "total_ms": 30
+  },
+  "alignment_override": false
+}

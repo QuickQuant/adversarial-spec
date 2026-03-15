@@ -87,7 +87,7 @@ Introduce two new structured steps in the workflow:
    | Architecture docs | `[ -f .architecture/manifest.json ]` | ALL (base context) |
    | Schema/type definitions | Grep for table/interface names in blast zone | PEDA, COMP |
    | Test coverage | Check for pytest-cov config or recent coverage report | PEDA, COMP |
-   | Dependency inventory | Read pyproject.toml / package.json | LAZY, PREV, PARA |
+   | Dependency inventory | Read pyproject.toml / package.json | LAZY, PREV, PARA, FLOW |
    | Git recent changes | `git log --oneline -10 -- <blast zone files>` | COMP, PREV |
    | Build/test status | `uv run pytest --tb=short` (or equivalent) | COMP |
    | Monitoring/metrics | Check for alerting config, dashboards, SLIs | BURN |
@@ -206,12 +206,12 @@ Introduce two new structured steps in the workflow:
    | COMP (existing_system) | Full build/test status, current vs proposed schema diff, naming conventions, pending migrations, duplicate file analysis | ~1,100 tok |
    | PREV (prior_art_scout) | Legacy/archive search results, dependency inventory, keyword search results, existing similar pattern analysis | ~650 tok |
    | AUDT (assumption_auditor) | External API doc excerpts, SDK type definitions, existing integration code showing actual behavior | ~300 tok |
-   | FLOW (info_flow_auditor) | FULL architecture overview (not excerpt), data flow docs, external API capabilities (REST/WS/webhook), existing latency data if available | ~900 tok |
+   | FLOW (info_flow_auditor) | FULL architecture overview (not excerpt), data flow docs, external API capabilities (REST/WS/webhook), existing latency data if available, **dependency inventory for external SDKs** (present/missing in pyproject.toml), **import/construction path status** (is the SDK imported and instantiated anywhere?) | ~1,000 tok |
 
 4. **Apply relevance filter.** Not every adversary needs every supplement every time:
    - Spec adds an API endpoint? → PARA gets auth patterns, FLOW gets data flow
    - Spec changes data model? → PEDA gets constraints, COMP gets schema diff
-   - Spec integrates external service? → AUDT gets API docs, PREV gets existing integrations
+   - Spec integrates external service? → AUDT gets API docs, PREV gets existing integrations, FLOW gets dependency wiring status + external API boundaries
    - Spec is internal refactor? → LAZY gets utility inventory, ASSH gets design rationale
    - If a supplement source was NOT_AVAILABLE or NOT_APPLICABLE, skip it and note why
 
