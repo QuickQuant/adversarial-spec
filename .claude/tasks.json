@@ -1,0 +1,394 @@
+{
+  "tasks": [
+    {
+      "id": "1",
+      "subject": "Determine document type",
+      "description": "Ask user for document type: PRD, tech spec, or debug investigation",
+      "status": "pending",
+      "owner": "adv-spec:orchestrator",
+      "blockedBy": [],
+      "blocks": [
+        "2"
+      ],
+      "activeForm": "Determining document type",
+      "metadata": {
+        "session_id": "adv-spec-20260124-140223",
+        "doc_type": "tech",
+        "phase": "requirements"
+      },
+      "createdAt": "2026-01-24T20:02:23.665956Z",
+      "updatedAt": "2026-01-24T20:02:23.665956Z"
+    },
+    {
+      "id": "2",
+      "subject": "Identify starting point",
+      "description": "Get existing file path or description of what to build",
+      "status": "pending",
+      "owner": "adv-spec:orchestrator",
+      "blockedBy": [
+        "1"
+      ],
+      "blocks": [
+        "3"
+      ],
+      "activeForm": "Identifying starting point",
+      "metadata": {
+        "session_id": "adv-spec-20260124-140223",
+        "doc_type": "tech",
+        "phase": "requirements"
+      },
+      "createdAt": "2026-01-24T20:02:23.666188Z",
+      "updatedAt": "2026-01-24T20:02:23.666188Z"
+    },
+    {
+      "id": "3",
+      "subject": "Offer interview mode",
+      "description": "Ask if user wants in-depth requirements interview",
+      "status": "pending",
+      "owner": "adv-spec:orchestrator",
+      "blockedBy": [
+        "2"
+      ],
+      "blocks": [
+        "4"
+      ],
+      "activeForm": "Offering interview mode",
+      "metadata": {
+        "session_id": "adv-spec-20260124-140223",
+        "doc_type": "tech",
+        "phase": "requirements"
+      },
+      "createdAt": "2026-01-24T20:02:23.666478Z",
+      "updatedAt": "2026-01-24T20:02:23.666478Z"
+    },
+    {
+      "id": "4",
+      "subject": "Conduct interview",
+      "description": "Interview covering: Problem/Context, Users/Stakeholders, Functional Requirements, Technical Constraints, UI/UX, Tradeoffs, Risks, Success Criteria",
+      "status": "pending",
+      "owner": "adv-spec:orchestrator",
+      "blockedBy": [
+        "3"
+      ],
+      "blocks": [
+        "5"
+      ],
+      "activeForm": "Conducting requirements interview",
+      "metadata": {
+        "session_id": "adv-spec-20260124-140223",
+        "doc_type": "tech",
+        "phase": "requirements"
+      },
+      "createdAt": "2026-01-24T20:02:23.666736Z",
+      "updatedAt": "2026-01-24T20:02:23.666736Z"
+    },
+    {
+      "id": "5",
+      "subject": "Generate initial draft",
+      "description": "Load existing file or generate initial document based on user input",
+      "status": "pending",
+      "owner": "adv-spec:orchestrator",
+      "blockedBy": [
+        "4"
+      ],
+      "blocks": [
+        "6"
+      ],
+      "activeForm": "Generating initial draft",
+      "metadata": {
+        "session_id": "adv-spec-20260124-140223",
+        "doc_type": "tech",
+        "phase": "requirements"
+      },
+      "createdAt": "2026-01-24T20:02:23.666955Z",
+      "updatedAt": "2026-01-24T20:02:23.666955Z"
+    },
+    {
+      "id": "6",
+      "subject": "Confirm draft with user",
+      "description": "Show draft to user and get confirmation before debate",
+      "status": "pending",
+      "owner": "adv-spec:orchestrator",
+      "blockedBy": [
+        "5"
+      ],
+      "blocks": [
+        "7"
+      ],
+      "activeForm": "Confirming draft with user",
+      "metadata": {
+        "session_id": "adv-spec-20260124-140223",
+        "doc_type": "tech",
+        "phase": "requirements"
+      },
+      "createdAt": "2026-01-24T20:02:23.667326Z",
+      "updatedAt": "2026-01-24T20:02:23.667326Z"
+    },
+    {
+      "id": "7",
+      "subject": "Check available API providers",
+      "description": "Run providers command to see which APIs are configured",
+      "status": "pending",
+      "owner": "adv-spec:orchestrator",
+      "blockedBy": [
+        "6"
+      ],
+      "blocks": [
+        "8"
+      ],
+      "activeForm": "Checking API providers",
+      "metadata": {
+        "session_id": "adv-spec-20260124-140223",
+        "doc_type": "tech",
+        "phase": "debate"
+      },
+      "createdAt": "2026-01-24T20:02:23.667583Z",
+      "updatedAt": "2026-01-24T20:02:23.667583Z"
+    },
+    {
+      "id": "8",
+      "subject": "Select opponent models",
+      "description": "Let user choose which models to include in the debate",
+      "status": "pending",
+      "owner": "adv-spec:orchestrator",
+      "blockedBy": [
+        "7"
+      ],
+      "blocks": [
+        "9"
+      ],
+      "activeForm": "Selecting opponent models",
+      "metadata": {
+        "session_id": "adv-spec-20260124-140223",
+        "doc_type": "tech",
+        "phase": "debate"
+      },
+      "createdAt": "2026-01-24T20:02:23.667853Z",
+      "updatedAt": "2026-01-24T20:02:23.667853Z"
+    },
+    {
+      "id": "9",
+      "subject": "Run debate until consensus",
+      "description": "Iterate through debate rounds until all models agree. Add round tasks dynamically.",
+      "status": "pending",
+      "owner": "adv-spec:orchestrator",
+      "blockedBy": [
+        "8"
+      ],
+      "blocks": [
+        "10"
+      ],
+      "activeForm": "Running adversarial debate",
+      "metadata": {
+        "session_id": "adv-spec-20260124-140223",
+        "doc_type": "tech",
+        "phase": "debate"
+      },
+      "createdAt": "2026-01-24T20:02:23.668180Z",
+      "updatedAt": "2026-01-24T20:02:23.668180Z"
+    },
+    {
+      "id": "10",
+      "subject": "Offer gauntlet review",
+      "description": "Ask user if they want adversarial stress testing with specialized personas",
+      "status": "pending",
+      "owner": "adv-spec:orchestrator",
+      "blockedBy": [
+        "9"
+      ],
+      "blocks": [
+        "11"
+      ],
+      "activeForm": "Offering gauntlet review",
+      "metadata": {
+        "session_id": "adv-spec-20260124-140223",
+        "doc_type": "tech",
+        "phase": "gauntlet"
+      },
+      "createdAt": "2026-01-24T20:02:23.668700Z",
+      "updatedAt": "2026-01-24T20:02:23.668700Z"
+    },
+    {
+      "id": "11",
+      "subject": "Run gauntlet phases",
+      "description": "Phase 1: Adversary attacks, Phase 2: Evaluation, Phase 3: Rebuttals, Phase 4: Summary, Phase 5: Final Boss (optional)",
+      "status": "pending",
+      "owner": "adv-spec:orchestrator",
+      "blockedBy": [
+        "10"
+      ],
+      "blocks": [
+        "12"
+      ],
+      "activeForm": "Running gauntlet",
+      "metadata": {
+        "session_id": "adv-spec-20260124-140223",
+        "doc_type": "tech",
+        "phase": "gauntlet"
+      },
+      "createdAt": "2026-01-24T20:02:23.669054Z",
+      "updatedAt": "2026-01-24T20:02:23.669054Z"
+    },
+    {
+      "id": "12",
+      "subject": "Integrate accepted concerns",
+      "description": "Add mitigations for accepted concerns into spec, save concerns JSON",
+      "status": "pending",
+      "owner": "adv-spec:orchestrator",
+      "blockedBy": [
+        "11"
+      ],
+      "blocks": [
+        "13"
+      ],
+      "activeForm": "Integrating gauntlet concerns",
+      "metadata": {
+        "session_id": "adv-spec-20260124-140223",
+        "doc_type": "tech",
+        "phase": "gauntlet"
+      },
+      "createdAt": "2026-01-24T20:02:23.669460Z",
+      "updatedAt": "2026-01-24T20:02:23.669460Z"
+    },
+    {
+      "id": "13",
+      "subject": "Perform quality checks",
+      "description": "Check completeness, consistency, clarity, actionability. Document-specific verification.",
+      "status": "pending",
+      "owner": "adv-spec:orchestrator",
+      "blockedBy": [
+        "12"
+      ],
+      "blocks": [
+        "14"
+      ],
+      "activeForm": "Performing quality checks",
+      "metadata": {
+        "session_id": "adv-spec-20260124-140223",
+        "doc_type": "tech",
+        "phase": "finalization"
+      },
+      "createdAt": "2026-01-24T20:02:23.669778Z",
+      "updatedAt": "2026-01-24T20:02:23.669778Z"
+    },
+    {
+      "id": "14",
+      "subject": "Output final document",
+      "description": "Print to terminal, write to file, send summary, Telegram if enabled",
+      "status": "pending",
+      "owner": "adv-spec:orchestrator",
+      "blockedBy": [
+        "13"
+      ],
+      "blocks": [
+        "15"
+      ],
+      "activeForm": "Outputting final document",
+      "metadata": {
+        "session_id": "adv-spec-20260124-140223",
+        "doc_type": "tech",
+        "phase": "finalization"
+      },
+      "createdAt": "2026-01-24T20:02:23.670109Z",
+      "updatedAt": "2026-01-24T20:02:23.670109Z"
+    },
+    {
+      "id": "15",
+      "subject": "User review period",
+      "description": "Accept / Request changes / Run another cycle",
+      "status": "pending",
+      "owner": "adv-spec:orchestrator",
+      "blockedBy": [
+        "14"
+      ],
+      "blocks": [
+        "16"
+      ],
+      "activeForm": "Awaiting user review",
+      "metadata": {
+        "session_id": "adv-spec-20260124-140223",
+        "doc_type": "tech",
+        "phase": "finalization"
+      },
+      "createdAt": "2026-01-24T20:02:23.670475Z",
+      "updatedAt": "2026-01-24T20:02:23.670475Z"
+    },
+    {
+      "id": "16",
+      "subject": "Offer execution plan generation",
+      "description": "Ask if user wants to generate implementation plan from spec",
+      "status": "pending",
+      "owner": "adv-spec:planner",
+      "blockedBy": [
+        "15"
+      ],
+      "blocks": [
+        "17"
+      ],
+      "activeForm": "Offering execution plan",
+      "metadata": {
+        "session_id": "adv-spec-20260124-140223",
+        "doc_type": "tech",
+        "phase": "execution-planning"
+      },
+      "createdAt": "2026-01-24T20:02:23.670886Z",
+      "updatedAt": "2026-01-24T20:02:23.670886Z"
+    },
+    {
+      "id": "17",
+      "subject": "Run execution planning pipeline",
+      "description": "FR-1: Spec Intake, FR-2: Scope Assessment, FR-3: Task Plan, FR-4: Test Strategy, FR-5: Over-Decomposition Guard, FR-6: Parallelization",
+      "status": "pending",
+      "owner": "adv-spec:planner",
+      "blockedBy": [
+        "16"
+      ],
+      "blocks": [
+        "18"
+      ],
+      "activeForm": "Running execution planning pipeline",
+      "metadata": {
+        "session_id": "adv-spec-20260124-140223",
+        "doc_type": "tech",
+        "phase": "execution-planning"
+      },
+      "createdAt": "2026-01-24T20:02:23.671326Z",
+      "updatedAt": "2026-01-24T20:02:23.671326Z"
+    },
+    {
+      "id": "18",
+      "subject": "Review execution plan with user",
+      "description": "Present plan, discuss workstreams, confirm before implementation",
+      "status": "pending",
+      "owner": "adv-spec:planner",
+      "blockedBy": [
+        "17"
+      ],
+      "blocks": [],
+      "activeForm": "Reviewing execution plan",
+      "metadata": {
+        "session_id": "adv-spec-20260124-140223",
+        "doc_type": "tech",
+        "phase": "execution-planning"
+      },
+      "createdAt": "2026-01-24T20:02:23.671910Z",
+      "updatedAt": "2026-01-24T20:02:23.671910Z"
+    },
+    {
+      "id": "19",
+      "subject": "Integration test task",
+      "description": "Testing cross-program visibility",
+      "status": "pending",
+      "owner": "test",
+      "blockedBy": [],
+      "blocks": [],
+      "activeForm": "Testing integration",
+      "metadata": {
+        "test": true
+      },
+      "createdAt": "2026-01-24T20:13:24.681154Z",
+      "updatedAt": "2026-01-24T20:13:24.681154Z"
+    }
+  ],
+  "next_id": 20
+}

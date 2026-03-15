@@ -3,9 +3,9 @@
   "_meta": {
     "description": "Configuration for development practice hooks",
     "project": "Brainquarters",
-    "brainquarters_core_version": "1.0",
-    "project_config_version": "1.0",
-    "last_updated": "2026-01-13T17:58:46Z"
+    "brainquarters_core_version": "1.1",
+    "project_config_version": "1.1",
+    "last_updated": "2026-01-29T10:00:00Z"
   },
   "mode": "flexible",
   "per_hook_overrides": {
