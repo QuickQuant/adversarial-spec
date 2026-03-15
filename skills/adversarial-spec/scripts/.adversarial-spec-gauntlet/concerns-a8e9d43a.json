@@ -1,0 +1,62 @@
+[
+  {
+    "id": "FLOW-028807b5",
+    "adversary": "information_flow_auditor",
+    "text": "**Indeterminate Registration Latency:** In `registration_flow`, the use of a 202 Accepted response followed by polling (`pollWorkflowStatus`) introduces an unspecified delay in worker readiness. If the worker is meant to replace a failing node, this polling mechanism could lead to significant gaps in market coverage.",
+    "severity": "medium"
+  },
+  {
+    "id": "FLOW-6e55bad9",
+    "adversary": "information_flow_auditor",
+    "text": "**Brittle Batch Synchronization:** In `subscription_initial_flow`, the step `waitForBatchComplete` assumes the source (Polymarket) provides a way to signal the end of a snapshot stream. Polymarket does not provide this. This flow is likely \"guessing\" completion, which will fail or time out under high network load.",
+    "severity": "medium"
+  },
+  {
+    "id": "FLOW-6a8cba2a",
+    "adversary": "information_flow_auditor",
+    "text": "**Inconsistent Subscription State Machine:** `subscription_resubscribe_flow` uses `{ type: \"market\" }` for both new connections and staleness resets. However, `subscription_runtime_add_flow` uses `{ operation: \"subscribe\" }`. It is unclear why a staleness reset on a live socket uses the \"initial handshake\" format rather than the \"subscribe\" operation. This risks the server closing the connection due to a protocol error.",
+    "severity": "medium"
+  },
+  {
+    "id": "FLOW-de74d24b",
+    "adversary": "information_flow_auditor",
+    "text": "**Global Throttling Bottleneck:** The 50ms throttle in `price_emit_flow` appears to be global to the worker. With `MAX_MARKETS_PER_CONNECTION` set to 1000, a single active market could effectively block the worker from reporting updates on the other 999 markets, as the \"trailing emit\" logic only handles one pending update.",
+    "severity": "medium"
+  },
+  {
+    "id": "FLOW-4f0db2a6",
+    "adversary": "information_flow_auditor",
+    "text": "**High-Latency Buffer Flush:** The `flush_flow` logic only clears the buffer every 30 seconds if the `batchSize` (100) isn't met. In scenarios with many low-activity markets, price updates will sit in the worker's memory for 30,000ms before being sent to Convex. This is unacceptable for a system requiring sub-second price awareness.",
+    "severity": "medium"
+  },
+  {
+    "id": "FLOW-c9a41f35",
+    "adversary": "information_flow_auditor",
+    "text": "**Missing WebSocket Heartbeats:** While `message_receive_flow` mentions ignoring heartbeats from the server, the spec does not describe the worker *sending* heartbeats to Polymarket. Most exchange WebSockets will silently drop connections if the client does not send a ping/heartbeat within 20-30 seconds, which is shorter than the worker's 45s staleness check.",
+    "severity": "medium"
+  },
+  {
+    "id": "FLOW-6c593b3a",
+    "adversary": "information_flow_auditor",
+    "text": "**Data Loss on Ingestion Failure:** In `flush_flow`, if the `convexClient.ingestPriceUpdates` call fails, the spec states: `DON'T re-add to buffer`. This guarantees data loss during network blips. While price updates are ephemeral, a failure during a period of high volatility means the backend will remain \"stale\" until the next price change occurs for every affected market.",
+    "severity": "medium"
+  },
+  {
+    "id": "FLOW-1c6596a5",
+    "adversary": "information_flow_auditor",
+    "text": "**Slow Market Rebalancing:** The `heartbeat_flow` (polling Convex every 60s) is the only mechanism for a worker to receive new market assignments. If the system needs to scale rapidly or rebalance markets due to a node failure, there is a 60-second \"blind spot\" where capacity is wasted and markets are unmonitored.",
+    "severity": "medium"
+  },
+  {
+    "id": "FLOW-28c672ee",
+    "adversary": "information_flow_auditor",
+    "text": "**Unspecified Convex Client Mechanism:** The `convexClient` is used for registration (POST), top-ups (GET), and ingestion (POST). The spec does not clarify if these are standard REST calls or if a persistent connection (like a Convex Action or Mutation stream) is used. The overhead of opening new HTTP/TLS connections for every 100 updates will be significant.",
+    "severity": "medium"
+  },
+  {
+    "id": "FLOW-9bc45bc2",
+    "adversary": "information_flow_auditor",
+    "text": "**Race Condition in Resubscription:** `resubscribe()` sets `isResubscribing = false` immediately after sending the WebSocket message (Step 6). However, the snapshots have not yet arrived. The `staleness_monitor_flow` skips checks when `isResubscribing` is true. By flipping this to false before snapshots arrive, the staleness monitor could immediately trigger a *second* resubscribe if the server is slow to respond, creating a loop.",
+    "severity": "medium"
+  }
+]

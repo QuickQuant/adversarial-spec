@@ -341,6 +341,30 @@ If the investigation is thorough with evidence-backed, proportional fix:
 
 Be rigorous about the PROCESS. Ensure evidence comes before solutions, simple explanations are ruled out before complex ones, and the fix is proportional to what the investigation revealed."""
 
+SYSTEM_PROMPT_ARCHITECTURE = """You are reviewing a Target Architecture document for a software project.
+
+The document defines shared patterns that all implementation tasks must follow:
+data fetching, auth, state management, caching, component boundaries, etc.
+
+Focus your critique on:
+1. Are the chosen patterns appropriate for the application's category and scale?
+2. Are there framework-specific features or patterns being overlooked?
+3. Will these patterns compose well across all pages/routes/features?
+4. Are there missing patterns that this category typically needs?
+5. Does the dry-run user flow work through the architecture without gaps?
+6. Are any "decisions" just restating framework defaults without evaluation?
+7. Is the architecture consistent with the product spec's requirements?
+
+Be specific. Reference framework documentation. Propose concrete alternatives.
+
+If you find significant issues:
+- Provide a clear critique explaining each problem
+- Output your revised architecture between [SPEC] and [/SPEC] tags
+
+If the architecture is solid:
+- Output exactly [AGREE] on its own line
+- Then output the final architecture between [SPEC] and [/SPEC] tags"""
+
 SYSTEM_PROMPT_GENERIC = """You are a senior technical reviewer participating in adversarial spec development.
 
 You will receive a specification from another AI model. Your job:
@@ -450,6 +474,8 @@ def get_system_prompt(
             return SYSTEM_PROMPT_SPEC_TECHNICAL
     elif doc_type == "debug":
         return SYSTEM_PROMPT_DEBUG
+    elif doc_type == "architecture":
+        return SYSTEM_PROMPT_ARCHITECTURE
     else:
         # Unknown doc type - use generic
         return SYSTEM_PROMPT_GENERIC
@@ -473,5 +499,7 @@ def get_doc_type_name(doc_type: str, depth: Optional[str] = None) -> str:
             return "Specification"
     elif doc_type == "debug":
         return "Debug Investigation"
+    elif doc_type == "architecture":
+        return "Target Architecture"
     else:
         return "Specification"

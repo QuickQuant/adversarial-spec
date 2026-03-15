@@ -1,0 +1,200 @@
+[
+  {
+    "id": "ASSH-3d33f68c",
+    "adversary": "asshole_loner",
+    "text": "**Brittle Order IDs:** Using `sha256(raw_block)` is amateur hour. You\u2019re relying on the user to copy-paste text from a website perfectly every single time. If DoorDash changes their UI, or the user captures an extra newline, or their browser renders a \"\u2022\" differently, the hash changes. When the hash changes, all those \"manual exclusions\" and \"price overrides\" stored in your JSON file become orphaned garbage. You\u2019re asking the user to do manual labor (price entry) and then giving them a system where that labor can vanish because of a CSS update.",
+    "severity": "medium"
+  },
+  {
+    "id": "ASSH-22d52f31",
+    "adversary": "asshole_loner",
+    "text": "**Date Inference is Statistically Illiterate:** Your algorithm assumes the user provides a perfect reverse-chronological stream. If the user pastes two different blocks of data or misses a month, your \"year decrement\" logic will hallucinate dates. Worse, defaulting to the \"current year\" if no explicit year is found is lazy. If I\u2019m parsing my 2024 history in 2026, your script is going to dump everything into 2026 until it hits a lucky \"2025\" string. It\u2019s a data integrity nightmare.",
+    "severity": "medium"
+  },
+  {
+    "id": "ASSH-a47b26e2",
+    "adversary": "asshole_loner",
+    "text": "**\"Proportional Match\" is Nonsense:** Scaling price by item count is a joke. Four $2.00 sodas do not cost the same as two $25.00 steaks. Using a \"ratio\" to infer prices for $0 orders is basically rolling dice. You\u2019re better off just flagging everything for manual entry than providing \"medium confidence\" lies that will skew the entire analysis.",
+    "severity": "medium"
+  },
+  {
+    "id": "ASSH-c1f36c42",
+    "adversary": "asshole_loner",
+    "text": "**Item Normalization ignores Modifiers:** \"Strip punctuation and sort\" sounds fine until you realize DoorDash items are often things like \"Build Your Own Burger\" where the actual price-driving data is in the sub-bullets (bacon, extra patty, etc.) which your \"raw block\" parser will likely mangle or ignore. Two \"Build Your Own Burgers\" can have a $15 price difference. Your matching logic is too shallow to be useful.",
+    "severity": "medium"
+  },
+  {
+    "id": "ASSH-9df08521",
+    "adversary": "asshole_loner",
+    "text": "**Performance Bottleneck:** You\u2019re using Streamlit, which re-runs the script on every interaction. If a user has three years of data (hundreds or thousands of orders), and you\u2019re re-parsing, re-hashing, and re-running \"inference logic\" every time they move a price slider, the UI is going to crawl. You haven't mentioned a single word about caching or data persistence beyond the exclusions.",
+    "severity": "medium"
+  },
+  {
+    "id": "ASSH-163d96f0",
+    "adversary": "asshole_loner",
+    "text": "**Outlier Noise:** \"2 standard deviations\" is a terrible threshold for personal spending. Eating habits are highly irregular. A single fancy group dinner will set a high mean, while a few cheap snacks will create a massive standard deviation. You're going to spam the user with \"outlier\" flags for perfectly normal Friday night dinners, making the \"Outliers Tab\" a wall of annoying notifications they'll eventually just ignore.",
+    "severity": "medium"
+  },
+  {
+    "id": "ASSH-77ee531e",
+    "adversary": "asshole_loner",
+    "text": "**The \"Manual Copy-Paste\" Foundation:** The entire project is built on the assumption that a user wants to manually scrape a website. This isn't a \"Technical Spec\"; it's a script that will work for exactly one week until DoorDash updates their frontend, at which point your `parser.py` becomes a collection of broken regexes.",
+    "severity": "medium"
+  },
+  {
+    "id": "PEDA-4718a6c1",
+    "adversary": "pedantic_nitpicker",
+    "text": "**Fragile `order_id` Stability**: The ID is derived from `sha256(raw_block)[:16]`. The Edge Case**: A user reviews an order on DoorDash *after* having already run the visualizer once. DoorDash adds a line like `\u2022 Reviewed on 12/14/25` to that order block in the UI. Production Occurrence**: The user copies the updated history into `doordashdata`. Consequence**: The `raw_block` content changes, resulting in a new hash. Any manual exclusions or price overrides previously associated with that order are lost, forcing the user to re-categorize the data.",
+    "severity": "medium"
+  },
+  {
+    "id": "PEDA-5232f54e",
+    "adversary": "pedantic_nitpicker",
+    "text": "**Unstable `occurrence_index`**: The ID appends an index to handle duplicate orders (same restaurant/date/items). The Edge Case**: A user has two identical orders for \"Sabroso\" on the same day. Order A (index 0) and Order B (index 1). The user excludes Order B because it was a duplicate entry error. Later, they realize Order A was also a duplicate and remove its text from the raw file. Production Occurrence**: Manual cleaning of the raw data file. Consequence**: Order B now becomes the first occurrence in the file (index 0). The exclusion record in `state/exclusions.json` is still keyed to `...:1`, meaning Order B is no longer excluded, and a \"ghost\" exclusion exists for a non-existent index.",
+    "severity": "medium"
+  },
+  {
+    "id": "PEDA-5b41d999",
+    "adversary": "pedantic_nitpicker",
+    "text": "**Date Inference - The \"Multi-Year Gap\" Problem**: The algorithm decrements the year only if the current date is after the previous one. The Edge Case**: A user has a gap in ordering from Dec 2024 to Jan 2026. The file contains \"Jan 10\" (2026) followed by \"Dec 20\". Production Occurrence**: Infrequent use of the app over several years. Consequence**: The algorithm assumes \"Dec 20\" refers to 2025 (the year immediately preceding 2026). It has no mechanism to detect that an entire calendar year (2025) was skipped, leading to a permanent one-year offset for all historical data.",
+    "severity": "medium"
+  },
+  {
+    "id": "PEDA-2cc36b65",
+    "adversary": "pedantic_nitpicker",
+    "text": "**Date Inference - Leap Year Crash**: The Edge Case**: Parsing a \"Feb 29\" entry when the inferred baseline year is a non-leap year (e.g., 2025). Production Occurrence**: Processing historical data from 2024 while the script establishes 2025 as the working year. Consequence**: `datetime.date(2025, 2, 29)` will raise a `ValueError`, crashing the entire parsing pipeline and preventing the dashboard from loading.",
+    "severity": "medium"
+  },
+  {
+    "id": "PEDA-2c22d723",
+    "adversary": "pedantic_nitpicker",
+    "text": "**Inference Loop - $0-only Restaurants**: The Edge Case**: A user only ever orders from a specific restaurant using gift cards (e.g., a \"work-only\" restaurant). Production Occurrence**: All entries for \"Sweetgreen\" are $0. Consequence**: The \"Restaurant average\" logic will calculate a mean of $0. The \"Proportional match\" will find no paid anchors. The system may enter a state where it \"successfully\" infers a price of $0, providing no value and potentially bypassing the \"Manual flag\" if the average is technically calculated.",
+    "severity": "medium"
+  },
+  {
+    "id": "PEDA-bc50ec7f",
+    "adversary": "pedantic_nitpicker",
+    "text": "**Outlier Logic - Small Sample Variance**: The system flags orders > 2 standard deviations from the mean. The Edge Case**: A restaurant has exactly two orders: $20.00 and $20.00. Production Occurrence**: A user frequently orders the exact same meal. Consequence**: The standard deviation is 0. If the user's third order is $20.01 (due to a $0.01 service fee change), the order is technically \"infinitely\" many standard deviations away. This will either cause a division by zero error in the math or flag every single order as an outlier if there is even a one-cent deviation.",
+    "severity": "medium"
+  },
+  {
+    "id": "PEDA-ad873ea6",
+    "adversary": "pedantic_nitpicker",
+    "text": "**Normalization Collision**: Item normalization involves sorting items alphabetically. The Edge Case**: Order 1: \"Large Soda, Small Fries\". Order 2: \"Small Soda, Large Fries\". Production Occurrence**: Different sized items with the same names. Consequence**: If the normalization doesn't preserve the quantity/size association correctly, the \"Exact match\" price inference might treat these two different orders as identical. If they have different prices, the $0 inference will be inaccurate.",
+    "severity": "medium"
+  },
+  {
+    "id": "PEDA-f8e828ac",
+    "adversary": "pedantic_nitpicker",
+    "text": "**Currency and Locale Hardcoding**: The spec assumes `$` and \"Jan 30\" (US format). The Edge Case**: A user in a region where DoorDash uses `\u20ac` or formats dates as `30 Jan`. Production Occurrence**: International users or travelers. Consequence**: The regex-based parser will fail to find the currency symbol or will misinterpret days as months (or vice versa), leading to \"Missing data\" errors or corrupted temporal analysis.",
+    "severity": "medium"
+  },
+  {
+    "id": "PEDA-fb410ad0",
+    "adversary": "pedantic_nitpicker",
+    "text": "**Reverse Chronological Assumption**: The date inference relies on the file being in strict reverse order. The Edge Case**: The user's manual copy-paste includes a \"Scheduled\" or \"Active\" order that DoorDash places at the top of the UI out of chronological sequence. Production Occurrence**: Copy-pasting while an order is in progress. Consequence**: The \"decrement year\" trigger (`date > previous_date`) will fire prematurely and incorrectly, shifting the year for every single subsequent order in the file.",
+    "severity": "medium"
+  },
+  {
+    "id": "PEDA-fb8566e3",
+    "adversary": "pedantic_nitpicker",
+    "text": "**Refund Inflation**: Status lines identify \"Refund Issued\". The Edge Case**: A $50 order is placed, but later fully refunded due to non-delivery. Production Occurrence**: Common delivery failures. Consequence**: If the status is \"Refund Issued\", the spec says it is listed separately but \"Excluded by default\". However, the \"Total spending\" metrics must explicitly subtract these or ensure they aren't added. If a *partial* refund (credit) is issued, the spec has no schema field to store the *actual* net cost, leading to over-reporting of total expenses.",
+    "severity": "medium"
+  },
+  {
+    "id": "LAZY-4ff90553",
+    "adversary": "lazy_developer",
+    "text": "**Brittle ID Hashing** Quote:** `order_id: str # sha256(raw_block)[:16] + \":\" + occurrence_index` ... `Exclusions and price overrides need to survive data file updates.` Simpler Alternative:** A natural key using `date + restaurant + amount_cents + occurrence_index`. Why:** Hashing the \"raw block\" is a maintenance nightmare. If the user cleans up the source text file (e.g., deletes a \"Loved\" review line or fixes a typo), the SHA256 hash changes, the `order_id` breaks, and all their manual exclusions and price overrides are lost. Data fields are stable; raw text blocks are not. Requirement that breaks:** The ability to distinguish between two identical orders that have different \"review\" text in the raw source (which is an edge case that doesn't justify the brittleness).",
+    "severity": "medium"
+  },
+  {
+    "id": "LAZY-438cd76b",
+    "adversary": "lazy_developer",
+    "text": "**Over-Engineered Price Inference** Quote:** \"Price inference logic... 1. Exact match... 2. Proportional match... 3. Restaurant average... 4. Manual entry\" Simpler Alternative:** Use a single \"Restaurant Average\" default for all $0 orders and provide a \"Bulk Edit\" table in the UI. Why:** \"Proportional matching\" (scaling by item count) is a guess disguised as math. A \"4-item order\" could be four $2 tacos or four $25 fajita platters. You are writing complex logic to produce \"medium confidence\" lies. Just give them the average and let them fix it if they care. Requirement that breaks:** The goal of \"estimating costs\" automatically for users who have hundreds of gift card orders and refuse to verify them.",
+    "severity": "medium"
+  },
+  {
+    "id": "LAZY-13355928",
+    "adversary": "lazy_developer",
+    "text": "**Integer Cents in a Data Science App** Quote:** `amount_cents: int # Price in cents (e.g., 5392 for $53.92)` Simpler Alternative:** `float` (Standard Python/Pandas practice). Why:** You are using Pandas and Plotly. These libraries are built to handle floats. By using integer cents, you're forcing every single visualization, filter, and user input to go through a `math.div(100)` or `math.mul(100)` conversion. Floating point errors matter for high-frequency trading, not for seeing how many burritos Jason ate in 2025. Requirement that breaks:** Absolute protection against $0.0000000001 rounding errors in the \"Total Spending\" summary.",
+    "severity": "medium"
+  },
+  {
+    "id": "LAZY-e24f799a",
+    "adversary": "lazy_developer",
+    "text": "**Schema Versioning for a Single User** Quote:** \"The schema_version field allows future migrations... run migrations sequentially\" Simpler Alternative:** Basic dictionary `.get()` defaults or a simple \"reset settings\" button. Why:** This is a local script for one person. Sequential migration logic is infrastructure for a SaaS product, not a Streamlit tool. If you change the schema, just update the parser to handle the old key or tell the user to delete their `exclusions.json`. Requirement that breaks:** Seamless, automated data migration if you radically change the JSON structure every week.",
+    "severity": "medium"
+  },
+  {
+    "id": "LAZY-76c4ffad",
+    "adversary": "lazy_developer",
+    "text": "**Sorting as Normalization** Quote:** \"Item normalization for matching: ... Sort items alphabetically before comparison\" Simpler Alternative:** Direct string comparison or a simple `set()` comparison. Why:** Sorting strings alphabetically to detect matching orders assumes DoorDash randomly shuffles item names in the order history for the same purchase. They don't. You're adding a processing step to solve a problem that doesn't exist in the data source. Requirement that breaks:** Matching \"Burger, Fries\" with \"Fries, Burger\" if the source text ever actually flips them.",
+    "severity": "medium"
+  },
+  {
+    "id": "LAZY-651f5ca6",
+    "adversary": "lazy_developer",
+    "text": "**The \"Year Inference\" Guessing Game** Quote:** \"If the resulting date would be AFTER the previously parsed date, decrement the year\" Simpler Alternative:** Just ask the user for the \"Start Year\" of the file in the Sidebar. Why:** Your algorithm is one \"Jan 2\" order placed out of order (due to a late delivery or status update) away from decrementing the year for the entire rest of the file. Automated date inference is famously fragile. One manual input field in the UI makes this 100% reliable. Requirement that breaks:** The \"Success Criteria\" that setup takes < 2 minutes without any user input.",
+    "severity": "medium"
+  },
+  {
+    "id": "LAZY-b7020305",
+    "adversary": "lazy_developer",
+    "text": "**Building a Custom Multi-line Parser** Quote:** \"The doordashdata file contains entries like... Multi-line entries may include... Status lines...\" Simpler Alternative:** Use a browser snippet to copy the Order History as a clean JSON/CSV from the DoorDash network tab. Why:** You're writing a regex-heavy parser to handle \"raw blocks\" of text-wrapped copy-pasted data. This is the most fragile part of the system. If DoorDash changes their CSS font size and the text wraps differently, your parser breaks. Requirement that breaks:** The ability to work with a raw copy-paste instead of using \"Developer Tools.\" (But if Jason is using Python 3.9+, he knows how to open the Network tab).",
+    "severity": "medium"
+  },
+  {
+    "id": "PREV-0f22234f",
+    "adversary": "prior_art_scout",
+    "text": "**Existing Data Models (`scripts/models.py`):** The project already utilizes `dataclasses` and a `CostTracker` that handles unit-based calculations (tokens to dollars) similar to the `Order` dataclass's `amount_cents` logic.",
+    "severity": "medium"
+  },
+  {
+    "id": "PREV-5936b1f2",
+    "adversary": "prior_art_scout",
+    "text": "**ID Generation Pattern (`scripts/adversaries.py`):** The project has a stable ID generation mechanism (`generate_concern_id`) that uses content hashing to ensure persistence across sessions, which is identical to the proposed `order_id` logic.",
+    "severity": "medium"
+  },
+  {
+    "id": "PREV-75119314",
+    "adversary": "prior_art_scout",
+    "text": "**State Persistence & Versioning (`scripts/gauntlet.py`):** The codebase already implements a robust JSON persistence layer in `.adversarial-spec-gauntlet/` and `~/.adversarial-spec/`, including schema versioning and run indexing.",
+    "severity": "medium"
+  },
+  {
+    "id": "PREV-746cb665",
+    "adversary": "prior_art_scout",
+    "text": "**Adversarial Filtering Logic (`scripts/gauntlet.py`):** The \"Outlier Management\" and \"Exclusion\" features in the spec (flagging, manual dismissal, persistence) are functional duplicates of the existing `GauntletResult` and `Evaluation` workflow.",
+    "severity": "medium"
+  },
+  {
+    "id": "PREV-5fe65e3f",
+    "adversary": "prior_art_scout",
+    "text": "**Redundant Data Modeling & Currency Handling** Existing Pattern:** `CostTracker` in `models.py` already manages the conversion of integer-based units (tokens) into fractional currency (USD) using per-million rates. Relation to Spec:** The spec proposes a new `Order` dataclass and manual price inference logic using `amount_cents`. Alternate Implementation:** Extend the existing `CostTracker` or create a generic `FinancialModel` base class that leverages the existing formatting and accumulation logic. Effort Reduction:** ~15% (Reuse of formatting, accumulation, and summary reporting logic).",
+    "severity": "medium"
+  },
+  {
+    "id": "PREV-bace4c0d",
+    "adversary": "prior_art_scout",
+    "text": "**Duplicate Stable ID Generation Logic** Existing Code:** `generate_concern_id` in `adversaries.py` (imported by `gauntlet.py`) already implements `sha256` hashing of raw text blocks to create stable identifiers that survive data updates. Relation to Spec:** The spec proposes `sha256(raw_block)[:16]` for `order_id` to handle persistence for exclusions. Alternate Implementation:** Move `generate_concern_id` to a shared `utils/hashing.py` and use it for both concerns and expenses. Effort Reduction:** ~5% (Standardized hashing and collision handling).",
+    "severity": "medium"
+  },
+  {
+    "id": "PREV-db5c8353",
+    "adversary": "prior_art_scout",
+    "text": "**Reinventing State Persistence & Exclusions** Existing Pattern:** `gauntlet.py` manages a `RESOLVED_CONCERNS_FILE` and `runs_index.json`. It handles \"Dismissals\" (Exclusions) with reasoning, timestamps, and confidence scores. Relation to Spec:** The spec proposes a custom `state/exclusions.json` with `exclusion_reason` and `override_cents`. Alternate Implementation:** Adapt the `GauntletResult` and `Evaluation` schema to handle expense items. The \"Outlier Management\" UI in the spec is essentially a view of the existing \"Evaluation\" state. Effort Reduction:** ~30% (Reuse of JSON serialization, schema migration logic, and filesystem management).",
+    "severity": "medium"
+  },
+  {
+    "id": "PREV-c7232734",
+    "adversary": "prior_art_scout",
+    "text": "**Greenfield Parser Development** Existing Code:** `GauntletConcernParser` (referenced in `debate.py`) and the extraction logic in `models.py` (e.g., `extract_tasks`) already handle block-based text parsing with multi-line support. Relation to Spec:** The spec proposes a new multi-line parser for the `doordashdata` file format. Alternate Implementation:** Implement a `DoorDashParser` as a subclass of an existing (or extracted) `BlockParser` base class to handle the \"Date Inference Algorithm\" as a specific plugin. Effort Reduction:** ~20% (Reuse of regex patterns for prices/dates and error logging infrastructure).",
+    "severity": "medium"
+  },
+  {
+    "id": "PREV-2ec2f911",
+    "adversary": "prior_art_scout",
+    "text": "**External API/SDK Integration Patterns** Existing Pattern:** The `integrations/` folder and `litellm` usage provide a clear pattern for wrapping external services (CLI or API) with retry logic and standardized response objects. Relation to Spec:** The spec mentions future DoorDash API sync and price inference. Alternate Implementation:** Structure the `price_inference.py` as an \"Integration\" similar to `knowledge_service.py`, ensuring it follows existing timeout and error-handling conventions. Effort Reduction:** ~10% (Consistency in architecture and error handling).",
+    "severity": "medium"
+  }
+]

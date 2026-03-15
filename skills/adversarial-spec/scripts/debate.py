@@ -32,6 +32,8 @@ Supported providers (set corresponding API key):
     Codex CLI:  (ChatGPT subscription) models: codex/gpt-5.3-codex, codex/gpt-5.1-codex-max
                 Install: npm install -g @openai/codex && codex login
                 Reasoning: --codex-reasoning xhigh (minimal, low, medium, high, xhigh)
+    Claude CLI: (Anthropic subscription) models: claude-cli/claude-sonnet-4-6, claude-cli/claude-opus-4-6
+                Install: npm install -g @anthropic-ai/claude-code && claude setup-token
 
 Document types:
     spec  - Specification (default). Use --depth to control focus:
@@ -39,6 +41,7 @@ Document types:
             --depth technical  Technical focus (architecture, APIs, data models)
             --depth full       Both product and technical sections
     debug - Debug Investigation (evidence-based diagnosis, proportional fixes)
+    architecture - Target Architecture (shared patterns, component boundaries, data flow)
 
 Exit codes:
     0 - Success
@@ -49,6 +52,7 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -69,6 +73,10 @@ except ImportError:
     )
     sys.exit(1)
 
+from adversaries import (  # noqa: E402
+    FINAL_BOSS,
+    PRE_GAUNTLET,
+)
 from gauntlet import (  # noqa: E402
     ADVERSARIES,
     format_gauntlet_report,
@@ -102,6 +110,24 @@ from providers import (  # noqa: E402
     validate_model_credentials,
 )
 from session import SESSIONS_DIR, SessionState, save_checkpoint, save_critique_responses  # noqa: E402
+
+def log_input_stats(text: str, source: str = "stdin") -> None:
+    """Log line count and SHA256 hash of input document.
+
+    This helps detect when the orchestrating LLM passes a condensed
+    summary instead of the full spec document.
+
+    Args:
+        text: The input document text.
+        source: Description of where the input came from.
+    """
+    line_count = text.count("\n") + (1 if text and not text.endswith("\n") else 0)
+    sha = hashlib.sha256(text.encode()).hexdigest()[:12]
+    print(
+        f"Input ({source}): {line_count} lines, sha256:{sha}",
+        file=sys.stderr,
+    )
+
 
 # Optional task tracking - only import if needed
 _task_manager = None
@@ -292,9 +318,9 @@ def add_core_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--doc-type",
         "-d",
-        choices=["spec", "debug"],
+        choices=["spec", "debug", "architecture"],
         default="spec",
-        help="Document type: spec or debug (default: spec)",
+        help="Document type: spec, debug, or architecture (default: spec)",
     )
     parser.add_argument(
         "--depth",
@@ -625,9 +651,13 @@ def handle_info_command(args: argparse.Namespace) -> bool:
 
     if args.action == "gauntlet-adversaries":
         print("Available Gauntlet Adversaries:\n")
-        for name, desc in ADVERSARIES.items():
-            first_line = desc.strip().split("\n")[0][:60]
-            print(f"  {name:20} {first_line}...")
+        print(f"  {'NAME':<30} {'PREFIX':<8} DESCRIPTION")
+        print(f"  {'─' * 28}  {'─' * 6}  {'─' * 50}")
+        all_advs = list(PRE_GAUNTLET.items()) + list(ADVERSARIES.items()) + list(FINAL_BOSS.items())
+        for name, adv in all_advs:
+            first_line = adv.persona.strip().split("\n")[0][:50]
+            category = "(pre-gauntlet)" if name in PRE_GAUNTLET else "(final boss)" if name in FINAL_BOSS else ""
+            print(f"  {name:<30} {adv.prefix:<8} {first_line}... {category}")
         print()
         print("Use with: --gauntlet-adversaries paranoid_security,burned_oncall")
         print("Or use all: --gauntlet-adversaries all")
@@ -966,6 +996,7 @@ def handle_gauntlet(args: argparse.Namespace) -> None:
     if not spec:
         print("Error: No spec provided via stdin", file=sys.stderr)
         sys.exit(1)
+    log_input_stats(spec, "stdin/gauntlet")
 
     # Parse adversaries
     adversaries = None
@@ -1102,6 +1133,7 @@ def load_or_resume_session(
         if not spec:
             print("Error: No spec provided via stdin", file=sys.stderr)
             sys.exit(1)
+        log_input_stats(spec, "stdin")
 
     if args.session and not session_state:
         session_state = SessionState(
@@ -1167,12 +1199,19 @@ def run_critique(
             file=sys.stderr,
         )
         print(
-            "  Consider: --context .architecture/INDEX.md --context <type-defs>",
+            "  Consider: --context .architecture/overview.md --context <type-defs>",
+            file=sys.stderr,
+        )
+        print(
+            "  NOTE: Do NOT pass INDEX.md as context (navigation only, models can't follow links).",
             file=sys.stderr,
         )
         # Also hint at auto-detected files
         from pathlib import Path
-        for candidate in (".architecture/INDEX.md", ".architecture/index.md"):
+        for candidate in (
+            ".architecture/overview.md",
+            ".architecture/structured/flows.md",
+        ):
             if Path(candidate).exists():
                 print(
                     f"  Found: {candidate} — add --context {candidate}",
@@ -1367,6 +1406,11 @@ def validate_models_before_run(models: list[str], bedrock_mode: bool) -> None:
             # Determine which key is needed
             if model.startswith("gpt-") or model.startswith("o1"):
                 print(f"  - {model} (requires OPENAI_API_KEY)", file=sys.stderr)
+            elif model.startswith("claude-cli/"):
+                print(
+                    f"  - {model} (requires Claude CLI: npm install -g @anthropic-ai/claude-code && claude setup-token)",
+                    file=sys.stderr,
+                )
             elif model.startswith("claude-"):
                 print(f"  - {model} (requires ANTHROPIC_API_KEY)", file=sys.stderr)
             elif model.startswith("gemini/"):

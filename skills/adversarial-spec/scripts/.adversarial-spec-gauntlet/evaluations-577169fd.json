@@ -1,0 +1,1702 @@
+[
+  {
+    "concern": {
+      "id": "PARA-980017ac",
+      "adversary": "paranoid_security",
+      "text": "**Impact**: Incorrect market data could lead to erroneous trading decisions, financial losses, and loss of trust in the system.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] The spec introduces caching and notes zero tolerance for stale cache bugs but provides no concrete correctness safeguards; incorrect market data remains possible, so the spec needs explicit guarantees and validation."
+  },
+  {
+    "concern": {
+      "id": "PARA-4a615290",
+      "adversary": "paranoid_security",
+      "text": "**Race Conditions on Cache Access**",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The spec mentions concurrent emits as an edge case but does not define serialization or synchronization; without that, cache reads/writes can race. The spec should clarify the concurrency model or add synchronization."
+  },
+  {
+    "concern": {
+      "id": "PARA-ff94f93d",
+      "adversary": "paranoid_security",
+      "text": "**Stale Cache Risk**",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Cache invalidation is manual (`sortedCache = null`) with no enforcement or verification; stale cache is a real risk and requires spec changes such as invariants, versioning, or tests."
+  },
+  {
+    "concern": {
+      "id": "PARA-bc61cc3a",
+      "adversary": "paranoid_security",
+      "text": "**Threat**: The cache could become stale if invalidation (`sortedCache = null`) is missed or improperly implemented.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Same invalidation gap as Concern 3; a missed invalidation yields stale cache. The spec needs explicit invalidation coverage and verification."
+  },
+  {
+    "concern": {
+      "id": "PARA-04a293a5",
+      "adversary": "paranoid_security",
+      "text": "**Attack Vector**: An attacker could exploit a missed cache invalidation to manipulate the order book view by sending rapid, minor deltas that are not properly invalidated, causing incorrect sorting and potentially incorrect market data being emitted.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] If invalidation is missed, adversarial delta patterns can surface stale data; the spec needs defensive checks (for example version counters or rebuild triggers) to make correctness robust."
+  },
+  {
+    "concern": {
+      "id": "PARA-41348f4f",
+      "adversary": "paranoid_security",
+      "text": "**Attack Vector**: An attacker might flood the system with deltas and emits simultaneously, causing the cache to be accessed in an inconsistent state.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Flooding and simultaneous emit/delta handling depends on the event-loop model, input rate limits, and scheduling; the spec does not provide this context, so risk cannot be assessed yet."
+  },
+  {
+    "concern": {
+      "id": "PARA-134801d7",
+      "adversary": "paranoid_security",
+      "text": "**Memory Consumption**",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Memory impact depends on actual depth sizes and market count caps; the spec provides an estimate but no hard bounds. Those constraints are needed to assess this."
+  },
+  {
+    "concern": {
+      "id": "PARA-6c9484f0",
+      "adversary": "paranoid_security",
+      "text": "**Threat**: Concurrent emit and delta updates could lead to race conditions where the cache is accessed while being invalidated or rebuilt.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] Overlaps with Concern 2; the spec does not define how emit and delta are serialized or synchronized, so race risk remains and needs to be addressed."
+  },
+  {
+    "concern": {
+      "id": "PARA-95c200bc",
+      "adversary": "paranoid_security",
+      "text": "**Threat**: The proposed solution increases memory usage, which could be exploited to initiate a denial-of-service (DoS) attack.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] DoS risk from memory growth depends on whether market count or depth size can be attacker-inflated; the spec does not define limits, so this cannot be evaluated yet."
+  },
+  {
+    "concern": {
+      "id": "PARA-2ae352ce",
+      "adversary": "paranoid_security",
+      "text": "**Impact**: This could result in crashes or inconsistencies in the emitted data, providing attackers with an opportunity to exploit these conditions for arbitrage.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] If stale or inconsistent data is emitted, arbitrage risk is a valid consequence; the spec needs correctness guarantees to prevent this outcome."
+  },
+  {
+    "concern": {
+      "id": "PARA-b8bff62e",
+      "adversary": "paranoid_security",
+      "text": "**Impact**: The system could slow down or crash, disrupting service availability.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Availability impact depends on actual load behavior and failure modes; the spec lacks performance testing data or bounds, so this remains undecidable."
+  },
+  {
+    "concern": {
+      "id": "PARA-46070955",
+      "adversary": "paranoid_security",
+      "text": "**Complexity and Bug Introduction**",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The spec explicitly notes added complexity and failure modes; without mitigation, bug introduction risk is valid and requires added tests and invariants."
+  },
+  {
+    "concern": {
+      "id": "PARA-ff99e0d4",
+      "adversary": "paranoid_security",
+      "text": "**Attack Vector**: An attacker could exploit bugs in the caching logic to force incorrect cache reads or writes, leading to data corruption.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] Bug-exploit risk is valid if caching logic is incorrect; the spec needs defensive checks and validation to prevent incorrect cache reads/writes."
+  },
+  {
+    "concern": {
+      "id": "PARA-148decc6",
+      "adversary": "paranoid_security",
+      "text": "**Impact**: This could result in incorrect market data being emitted, impacting trading decisions and system reliability.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] Incorrect market data impact is a valid consequence of stale or race issues; the spec needs safeguards to avoid this."
+  },
+  {
+    "concern": {
+      "id": "PARA-37602ab0",
+      "adversary": "paranoid_security",
+      "text": "**Cache Poisoning**",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Cache poisoning is not defined in the spec (input surface, validation, or threat model); more detail is needed to assess."
+  },
+  {
+    "concern": {
+      "id": "PARA-05f54cd9",
+      "adversary": "paranoid_security",
+      "text": "**Threat**: Increased code complexity introduces more opportunities for bugs, including security vulnerabilities.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] The spec adds new mutable cache state (`sortedCache`) and invalidation logic without concrete invariants or a test plan, which increases bug risk. Add explicit correctness rules and tests for cache freshness."
+  },
+  {
+    "concern": {
+      "id": "PARA-fda98a1b",
+      "adversary": "paranoid_security",
+      "text": "**Threat**: An attacker could attempt to poison the cache with malicious entries that are incorrectly sorted or calculated.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 2}] The cache is derived deterministically from `depthMap` (the stated source of truth) using the same Map-to-sorted-array conversion already performed on each emit, so no new input channel or algorithm is introduced that would enable cache poisoning beyond existing input handling."
+  },
+  {
+    "concern": {
+      "id": "PARA-c0f95c19",
+      "adversary": "paranoid_security",
+      "text": "**Attack Vector**: By manipulating deltas in a way that the cache rebuild process does not handle properly, an attacker could introduce incorrect data into the sorted cache.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The spec does not define ordering or atomicity between deltas, cache invalidation, and emit rebuilds (including snapshot resets). It needs a concurrency/event-ordering model and safeguards against races."
+  },
+  {
+    "concern": {
+      "id": "PARA-3034e592",
+      "adversary": "paranoid_security",
+      "text": "**Impact**: This could cause the system to emit incorrect market data, potentially leading to financial losses or market manipulation.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] If stale data is emitted, incorrect market data can result; the spec\u2019s 'zero tolerance' criterion needs concrete safeguards (validation, monitoring, or fail-safe behavior)."
+  },
+  {
+    "concern": {
+      "id": "PARA-4a993238",
+      "adversary": "paranoid_security",
+      "text": "**Testing Challenges**",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] Testing challenges are real and are only listed as questions; the spec needs an explicit test matrix covering rapid deltas, concurrent emits, and snapshot resets."
+  },
+  {
+    "concern": {
+      "id": "PARA-e73e35c2",
+      "adversary": "paranoid_security",
+      "text": "**Threat**: Ensuring the cache is never stale is complex and may not be fully covered by testing.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] The spec requires zero stale cache but does not define mechanisms beyond testing; add invariants such as version counters or sequence checks to detect stale caches."
+  },
+  {
+    "concern": {
+      "id": "PARA-f6f6f6b4",
+      "adversary": "paranoid_security",
+      "text": "**Attack Vector**: An attacker could exploit edge cases that are not adequately tested, such as rapid deltas or concurrent emit scenarios, to introduce stale data into the emitted output.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] Edge cases like rapid deltas and concurrent emits are not specified; define event ordering/locking and add stress tests to prevent stale output."
+  },
+  {
+    "concern": {
+      "id": "PARA-77551795",
+      "adversary": "paranoid_security",
+      "text": "**Attack Vector**: An attacker could create numerous markets or manipulate the system to artificially inflate the number of cached arrays, exhausting memory resources.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] The risk depends on whether market creation/count is bounded or attacker-influenced; the spec only provides typical counts. Clarify market list limits and control before assessing memory-exhaustion risk."
+  },
+  {
+    "concern": {
+      "id": "PARA-e494d459",
+      "adversary": "paranoid_security",
+      "text": "**Impact**: This could lead to incorrect market data and potential financial harm to users relying on accurate information.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] Incorrect market data can cause financial harm; add detection/alerting or rollback behavior aligned with the accuracy requirements."
+  },
+  {
+    "concern": {
+      "id": "FLOW-4f9e373e",
+      "adversary": "information_flow_auditor",
+      "text": "**Unlabeled Emit Mechanism**: The spec mentions \"On emit\" without specifying the mechanism used to emit the sorted array. Is it a WebSocket, REST API, or something else? Not specifying this can lead to assumptions about the emit process, potentially affecting latency and performance.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The emit mechanism to Convex is not specified, and no latency analysis is provided for that flow; define the transport (e.g., WebSocket/REST) and latency budget."
+  },
+  {
+    "concern": {
+      "id": "FLOW-8b270664",
+      "adversary": "information_flow_auditor",
+      "text": "**WebSocket Frequency Assumption**: The emit frequency is described as \"Per WebSocket message (many per second)\" without detailing the mechanism for handling high-frequency WebSocket messages. Is there a buffering or batching mechanism in place to handle this load? This could impact the efficiency of the proposed caching solution.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] The spec notes per-WebSocket-message emission but does not describe buffering, batching, or backpressure; specify handling to evaluate caching impact."
+  },
+  {
+    "concern": {
+      "id": "FLOW-5272f147",
+      "adversary": "information_flow_auditor",
+      "text": "**Implicit Latency Requirement**: There is a mention of \"200ms flush intervals\" and \"No increase in emit latency p99,\" but the spec does not explicitly state the latency requirements for each flow or how the caching mechanism interacts with these requirements. Without clear latency constraints, it is challenging to assess whether the proposed solution meets performance needs.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] Latency requirements are mentioned (200ms flush, p99 emit) but not specified per flow or tied to the cache behavior; add explicit latency budgets and measurement criteria."
+  },
+  {
+    "concern": {
+      "id": "FLOW-22a46991",
+      "adversary": "information_flow_auditor",
+      "text": "**Polling vs. Real-Time Update Mechanism**: The spec assumes the cache invalidation and rebuild mechanism will handle updates efficiently, but it doesn't specify whether updates are handled via polling or real-time notifications. This distinction could significantly impact system performance and should be clarified.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] Polling vs push is not explicitly documented for update flows; the mechanism and its latency implications should be stated."
+  },
+  {
+    "concern": {
+      "id": "FLOW-b9bbdb13",
+      "adversary": "information_flow_auditor",
+      "text": "**Unspecified Source Capabilities**: The spec assumes the use of Maps and sorted arrays but does not detail if the underlying systems (e.g., Polymarket, Kalshi) offer any built-in capabilities for handling sorted data or delta updates. Understanding the source's capabilities could reveal opportunities for optimization or highlight constraints.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The spec does not document exchange-provided capabilities (delta semantics, ordering, availability of sorted data), which are needed to justify Map+sort and caching choices."
+  },
+  {
+    "concern": {
+      "id": "FLOW-854df1b2",
+      "adversary": "information_flow_auditor",
+      "text": "**Alternatives Considered**: Although the spec proposes a \"Lazy Sorted Array Cache\" and briefly mentions \"Emit throttling\" as an alternative, it does not provide a thorough analysis of other potential solutions, such as using a priority queue or other data structures that might offer better performance characteristics.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] Only emit throttling is briefly mentioned; add an evaluation of other data structures (e.g., priority queues) and document why they are rejected."
+  },
+  {
+    "concern": {
+      "id": "FLOW-70caf793",
+      "adversary": "information_flow_auditor",
+      "text": "**Cache Invalidation Complexity**: The spec notes the need for cache invalidation but does not detail the mechanisms to ensure it is never missed, especially in scenarios involving concurrent operations or rapid deltas. This could lead to stale data issues, violating the \"Zero tolerance for stale cache bugs\" success criterion.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Spec only invalidates cache by setting `sortedCache = null` on delta and notes the risk, but does not define comprehensive invalidation coverage (snapshot resets, deletions) or concurrency/order guarantees. Add explicit invalidation rules and a concurrency model to satisfy the zero-stale requirement."
+  },
+  {
+    "concern": {
+      "id": "FLOW-6b61f3bd",
+      "adversary": "information_flow_auditor",
+      "text": "**Testing and Verification**: While the spec acknowledges the need for testing complexity, it lacks a detailed plan for verifying cache correctness under various conditions. Without a clear testing strategy, there is a risk of undetected bugs in the caching logic.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Spec asks about testing complexity but provides no verification plan. Add a test strategy (sequence/property tests, snapshot reset cases, emit/delta ordering) to validate cache correctness."
+  },
+  {
+    "concern": {
+      "id": "FLOW-6b922545",
+      "adversary": "information_flow_auditor",
+      "text": "**Uniformity Across Systems**: The question of whether to apply the caching pattern to Kalshi for consistency is raised, but the spec lacks a conclusion or criteria for making this decision. Consistency across systems is crucial for maintainability and should be clearly addressed.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Spec raises applying caching to Kalshi but leaves criteria undecided. Define explicit decision criteria (consistency requirement vs connector-specific tradeoffs) and document the choice."
+  },
+  {
+    "concern": {
+      "id": "FLOW-18c5168f",
+      "adversary": "information_flow_auditor",
+      "text": "**Memory Usage Clarification**: The spec estimates memory usage for the cached arrays but does not specify whether this is based on current or projected data sizes. This could lead to underestimating or overestimating memory requirements, impacting system scalability.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] Memory estimate is presented without stating whether it is based on current depth sizes or projected worst-case. Add measurement basis and bounds to avoid under/overestimation."
+  },
+  {
+    "concern": {
+      "id": "PARA-e4390cff",
+      "adversary": "paranoid_security",
+      "text": "**Consistency Across Connectors**",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] Spec does not define whether connectors must share identical caching semantics. Add an explicit consistency requirement or an intentional divergence rationale to avoid mismatched behavior."
+  },
+  {
+    "concern": {
+      "id": "PARA-c7e226f1",
+      "adversary": "paranoid_security",
+      "text": "**Impact**: This could lead to data integrity issues and reduce trust in the system's ability to handle market data consistently across different exchanges.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] Data integrity impact is plausible if connector behavior diverges; spec only mentions stale-cache risk, not cross-connector consistency. Add explicit integrity/consistency criteria and validation checks."
+  },
+  {
+    "concern": {
+      "id": "PARA-1ca7987c",
+      "adversary": "paranoid_security",
+      "text": "**Attack Vector**: Attackers could exploit differences in implementation to cause inconsistencies or errors specific to one exchange connector.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Threat model and trust boundaries are not specified, so attacker capabilities and input control are unknown. Provide those constraints to assess exploitability."
+  },
+  {
+    "concern": {
+      "id": "PARA-272a551e",
+      "adversary": "paranoid_security",
+      "text": "**Threat**: Inconsistent caching strategies between Polymarket and Kalshi could lead to discrepancies in how market data is handled and emitted.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] Spec leaves open whether caching strategies differ between connectors; without an invariant, discrepancies in emitted data are possible. Add a stated rule or analysis to prevent divergence."
+  },
+  {
+    "concern": {
+      "id": "LAZY-975542e6",
+      "adversary": "lazy_developer",
+      "text": "**Complexity of Cache Invalidation**",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] Cache invalidation complexity is a real risk, and the spec does not propose safeguards beyond noting the risk. Add concrete mitigation (versioning/atomic swap/tests) or justify rejecting caching."
+  },
+  {
+    "concern": {
+      "id": "LAZY-57884761",
+      "adversary": "lazy_developer",
+      "text": "Quote: \"Code complexity: must ensure cache invalidation is never missed\"",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] This reiterates the invalidation-risk tradeoff; the spec does not define how to ensure invalidation is never missed. Add explicit safeguards or decide against caching."
+  },
+  {
+    "concern": {
+      "id": "LAZY-77932b37",
+      "adversary": "lazy_developer",
+      "text": "Explanation: By relying on the current conversion mechanism, we eliminate the risk of stale data due to missed invalidation and avoid introducing additional logic to track cache state.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] Avoiding caching reduces stale-data risk, but the spec does not compare this option against the CPU-reduction goal. Add an explicit decision informed by profiling data."
+  },
+  {
+    "concern": {
+      "id": "LAZY-1a61681c",
+      "adversary": "lazy_developer",
+      "text": "Simpler Alternative: Avoid caching and instead use the existing Map-to-array conversion on demand.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The no-cache alternative should be evaluated against the success criterion of reduced CPU during low-activity periods and either accepted or rejected explicitly."
+  },
+  {
+    "concern": {
+      "id": "LAZY-fd6b3847",
+      "adversary": "lazy_developer",
+      "text": "Requirement Break: This approach would break the requirement to reduce CPU usage during low-activity periods by re-converting the Map every time.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] Always rebuilding the array on emit would not meet the stated CPU-reduction criterion. Either relax that requirement or keep a caching strategy."
+  },
+  {
+    "concern": {
+      "id": "LAZY-931d84d9",
+      "adversary": "lazy_developer",
+      "text": "Quote: \"Alternative: Emit throttling? Instead of caching, could we reduce emit frequency?\"",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] Emit throttling is raised but not analyzed. Add evaluation of latency/freshness impact, per-market debounce behavior, and compatibility with the 200ms flush target."
+  },
+  {
+    "concern": {
+      "id": "LAZY-4dc520e5",
+      "adversary": "lazy_developer",
+      "text": "**Platform Mismatch: Emit Throttling**",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Platform mismatch is not defined; missing latency/SLA constraints or platform limits make this impossible to assess. Provide those constraints."
+  },
+  {
+    "concern": {
+      "id": "LAZY-b5f4affe",
+      "adversary": "lazy_developer",
+      "text": "Simpler Alternative: Implement emit throttling or debouncing mechanisms.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "LAZY-76db873a",
+      "adversary": "lazy_developer",
+      "text": "Requirement Break: This could potentially increase latency in emitting updates, which may not meet the requirement of no increase in emit latency p99.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "LAZY-aa49104f",
+      "adversary": "lazy_developer",
+      "text": "Explanation: By reducing the frequency of emits, we inherently reduce the number of conversions without introducing cache complexity. This approach is straightforward and can be easily controlled.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "LAZY-5d997ec4",
+      "adversary": "lazy_developer",
+      "text": "**Reimplemented Wheels: Existing Map Efficiency**",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "LAZY-9630264f",
+      "adversary": "lazy_developer",
+      "text": "Quote: \"After fixing Polymarket to use Maps (O(1) delta lookups)\"",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "LAZY-edaf0331",
+      "adversary": "lazy_developer",
+      "text": "Simpler Alternative: Continue to leverage the efficiency of Maps without additional caching.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "LAZY-40ee41c2",
+      "adversary": "lazy_developer",
+      "text": "Requirement Break: This does not directly address the CPU reduction during low-activity periods unless combined with emit throttling.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "LAZY-83eb566f",
+      "adversary": "lazy_developer",
+      "text": "Explanation: Maps already provide efficient operations. If the primary concern is conversion overhead, focusing on operational efficiency or optimizing the conversion process may provide benefits without cache complexities.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "LAZY-593b0a74",
+      "adversary": "lazy_developer",
+      "text": "**Unnecessary Abstraction: Caching Complexity**",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "LAZY-82e06661",
+      "adversary": "lazy_developer",
+      "text": "Quote: \"Markets with no deltas since last emit: reuse cached array (O(1))\"",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "LAZY-11586e22",
+      "adversary": "lazy_developer",
+      "text": "Simpler Alternative: Implement a flag to track changes since the last emit without storing a cached sorted array.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "LAZY-5faa0c8b",
+      "adversary": "lazy_developer",
+      "text": "Explanation: A boolean flag indicating if any changes have occurred since the last emit could avoid unnecessary conversions without full cache implementation.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "LAZY-469c20ba",
+      "adversary": "lazy_developer",
+      "text": "Requirement Break: This might not optimize CPU as effectively as reusing a pre-sorted array in certain low-activity scenarios.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "LAZY-42292985",
+      "adversary": "lazy_developer",
+      "text": "Quote: \"Each cached array is ~20-100 DepthTuples \u00d7 16 bytes = 0.3-1.6KB per side \u00d7 4 sides \u00d7 100 markets = 120-640KB total.\"",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "LAZY-a7d2b5f3",
+      "adversary": "lazy_developer",
+      "text": "**Memory Overhead Justification**",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "LAZY-648d99b4",
+      "adversary": "lazy_developer",
+      "text": "Simpler Alternative: Avoid caching altogether to eliminate this memory overhead.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 2}] Simple approach (no caching) fails for case Y: low-activity markets with frequent emits where Success Criteria requires reduced CPU usage; without caching we still sort on every emit. Handling Y requires patch Z: persist the last sorted array and a per-side dirty flag so unchanged markets reuse the prior array. Z invites complexity because you must store prior arrays and invalidate on every delta/snapshot reset to prevent staleness, which is the same cache+invalidation system, so the 'simpler' alternative rebuilds the complex solution anyway."
+  },
+  {
+    "concern": {
+      "id": "LAZY-0d1ba20e",
+      "adversary": "lazy_developer",
+      "text": "Explanation: Not implementing caching keeps memory usage consistent with the current design, avoiding any increase.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'dismissed': 1}] Simple approach (no caching) fails for case Y: quiet markets under frequent emits still incur O(n log n) sorts, violating the reduced-CPU Success Criteria. Handling Y requires patch Z: track dirty state and reuse the previous sorted array when no deltas occur. Z invites complexity because it requires storing prior arrays and strict invalidation on every delta and snapshot reset; that is the cache+invalidation design, so eliminating caching does not avoid complexity."
+  },
+  {
+    "concern": {
+      "id": "LAZY-68e7a98f",
+      "adversary": "lazy_developer",
+      "text": "Requirement Break: This would not meet the requirement to reduce CPU usage during low-activity periods.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'dismissed': 1}] Simple approach (no caching) fails for case Y: low-activity periods with frequent emits where CPU reduction is required; it still re-sorts every emit. Handling Y requires patch Z: retain the last sorted array and a dirty flag to skip recomputation. Z invites complexity because it introduces state retention and invalidation on all update paths, which is equivalent to the caching mechanism, so this does not provide a simpler compliant solution."
+  },
+  {
+    "concern": {
+      "id": "LAZY-d79e0dac",
+      "adversary": "lazy_developer",
+      "text": "**Testing Complexity and Failure Modes**",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] Valid: caching introduces stale-cache failure modes and the spec does not define a verification strategy. Add explicit invariants (single update path that always invalidates) and a testing plan (unit/property tests comparing cache to freshly sorted map on emit, plus snapshot reset cases)."
+  },
+  {
+    "concern": {
+      "id": "LAZY-729fdffb",
+      "adversary": "lazy_developer",
+      "text": "Simpler Alternative: Avoid caching to eliminate the need for complex testing around cache consistency.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 2}] Simple approach (no caching) fails for case Y: the requirement to reduce CPU during low-activity periods while emits continue; without caching we still sort each emit. Handling Y requires patch Z: cache the prior sorted array and track dirty state to reuse it. Z invites complexity because it requires persistent arrays and invalidation on all delta/snapshot paths, which is the same cache+invalidation system, so the proposed 'simple' alternative recreates the complex solution."
+  },
+  {
+    "concern": {
+      "id": "LAZY-1d8ecdc2",
+      "adversary": "lazy_developer",
+      "text": "Requirement Break: The absence of caching could lead to suboptimal CPU usage in some scenarios, failing to meet the reduced CPU usage requirement.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'dismissed': 1}] Simple approach (no caching) fails for case Y: quiet markets with frequent emits still pay sort costs, violating the CPU-reduction success criteria. Handling Y requires patch Z: store previous sorted arrays and dirty flags to avoid recomputation. Z invites complexity because it adds state retention and invalidation logic that must be tested for staleness, which is the same complexity the cache introduces, so this does not eliminate testing needs."
+  },
+  {
+    "concern": {
+      "id": "LAZY-579ec4e8",
+      "adversary": "lazy_developer",
+      "text": "Explanation: Without caching, testing focuses on existing functionalities without introducing new failure modes.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'dismissed': 1}] Simple approach (no caching) fails for case Y: low-activity periods with high emit cadence still require repeated sorts, so CPU is not reduced as required. Handling Y requires patch Z: reuse previously sorted arrays when no deltas occur via dirty tracking. Z invites complexity because it mandates stored arrays and invalidation on every update path, which is the cache mechanism itself, so the alternative is not simpler."
+  },
+  {
+    "concern": {
+      "id": "LAZY-e5b0cc66",
+      "adversary": "lazy_developer",
+      "text": "Quote: \"Testing complexity? How do we verify the cache is never stale?\"",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Valid: the question highlights that the spec lacks a concrete method to verify cache freshness. Add a defined verification approach (tests asserting cached output matches a recomputed sort under rapid deltas, concurrent emits, and snapshot resets)."
+  },
+  {
+    "concern": {
+      "id": "LAZY-e4390cff",
+      "adversary": "lazy_developer",
+      "text": "**Consistency Across Connectors**",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'deferred': 1}] Need context on whether connector consistency is a requirement or a preference: do Polymarket and Kalshi share emit code paths, and is divergence acceptable for maintenance or performance? Without that, a consistency mandate cannot be decided."
+  },
+  {
+    "concern": {
+      "id": "AUDT-299279d6",
+      "adversary": "assumption_auditor",
+      "text": "**Assumption of Emit Frequency**: The spec states \"Emit frequency: Per WebSocket message (many per second)\" but does not provide any citation or documentation to confirm this behavior for both Polymarket and Kalshi. Is this emit frequency documented in the APIs of these exchanges? What do the official documentation or user experiences say about the typical frequency of WebSocket messages?",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Valid: emit frequency is assumed but uncited. The spec should reference official docs or include instrumentation results showing typical WebSocket message rates for both exchanges."
+  },
+  {
+    "concern": {
+      "id": "AUDT-e467bab2",
+      "adversary": "assumption_auditor",
+      "text": "**Polymarket's Use of Maps**: The assumption \"After fixing Polymarket to use Maps (O(1) delta lookups)\" lacks verification. Was this change documented or confirmed by Polymarket's official resources? Is there any evidence that this fix has been implemented and works as described?",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Valid: the claim that Polymarket uses Maps after a fix needs evidence. Add a reference to the actual implementation or commit, or mark it as a verified assumption with a link."
+  },
+  {
+    "concern": {
+      "id": "AUDT-5858c17b",
+      "adversary": "assumption_auditor",
+      "text": "**Kalshi's Internal Use of Maps**: The statement \"Kalshi already uses Maps internally\" is presented without verification. Is there documentation or source code confirmation that Kalshi uses Maps for maintaining order book states? Alternatively, has someone with direct experience with Kalshi confirmed this?",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Valid: the assertion that Kalshi uses Maps internally is undocumented. Provide a source-code reference, documentation citation, or direct confirmation, or remove the claim."
+  },
+  {
+    "concern": {
+      "id": "AUDT-11b55118",
+      "adversary": "assumption_auditor",
+      "text": "**Performance Claim for the Current State**: The claim \"100 markets \u00d7 4 depth arrays \u00d7 O(n log n) = significant CPU per emit cycle\" suggests a performance bottleneck, but lacks empirical evidence. Are there benchmarks or profiling data that confirm this level of CPU usage? Without this, the claim remains speculative.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Valid: the performance bottleneck claim lacks profiling/benchmarks. Add measured CPU data or a measurement plan to justify the optimization."
+  },
+  {
+    "concern": {
+      "id": "AUDT-34333e28",
+      "adversary": "assumption_auditor",
+      "text": "**Cache Invalidation Assumption**: The specification states, \"must ensure cache invalidation is never missed,\" which implies a potential risk. However, it does not provide a strategy or mechanism to guarantee this. What evidence or strategies are in place to ensure cache invalidation is robust and foolproof?",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Valid: the spec states cache invalidation must never be missed but provides no mechanism. Add a concrete invalidation strategy (single mutation pathway, dirty flag discipline) and tests/guards to enforce it."
+  },
+  {
+    "concern": {
+      "id": "AUDT-18ff2c23",
+      "adversary": "assumption_auditor",
+      "text": "**Memory Tradeoff Calculation**: The memory tradeoff calculation assumes a specific size for DepthTuples (\"~20-100 DepthTuples \u00d7 16 bytes\"). Is there evidence (e.g., actual data structure definitions or memory profiling) that confirms these size estimates? Without accurate profiling, the memory tradeoff could be underestimated or overestimated.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Valid: the memory estimate for DepthTuple size is unverified. Provide actual data structure sizing or runtime profiling to validate the memory tradeoff."
+  },
+  {
+    "concern": {
+      "id": "AUDT-16b4d87f",
+      "adversary": "assumption_auditor",
+      "text": "**Criteria for Success**: The success criteria include \"No increase in emit latency p99,\" but there is no cited baseline or reference for current p99 latency. How is the current performance measured, and what benchmarks or documentation are used to define acceptable performance levels?",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The spec states No increase in emit latency p99 but provides no baseline, measurement method, or acceptable delta; add current p99 numbers and how they are measured so the criterion is testable."
+  },
+  {
+    "concern": {
+      "id": "AUDT-22c62ec1",
+      "adversary": "assumption_auditor",
+      "text": "**Alternative Solutions**: The question \"Alternative: Emit throttling?\" is raised without exploring existing documentation or experiences that might inform whether such strategies have been attempted or are feasible with current Polymarket and Kalshi APIs. Is there evidence that emit throttling is possible or previously considered?",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'deferred': 1, 'accepted': 1}] Emit throttling is raised as an alternative without any evidence it is feasible for the Polymarket and Kalshi connectors; add API or connector constraints or prior experiments to validate or rule it out."
+  },
+  {
+    "concern": {
+      "id": "AUDT-870aac2c",
+      "adversary": "assumption_auditor",
+      "text": "**Application to Kalshi**: The spec asks, \"Should we add the same caching pattern for consistency?\" but does not provide any analysis or evidence that the proposed solution fits Kalshi's architecture or needs. Has there been any testing or documentation review to confirm that this optimization would be beneficial for Kalshi?",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] The spec asks whether to apply caching to Kalshi but provides no profiling or architectural evidence that Kalshi has the same conversion cost; add Kalshi-specific measurements or documentation before deciding."
+  },
+  {
+    "concern": {
+      "id": "AUDT-c17b1e6a",
+      "adversary": "assumption_auditor",
+      "text": "**Testing for Stale Cache**: The spec queries \"How do we verify the cache is never stale?\" without providing a concrete testing framework or methodology. Is there a reference to testing procedures that would ensure cache integrity, especially under edge conditions like rapid deltas or concurrent operations?",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The spec asks how to verify the cache is never stale but does not define a testing methodology; add unit and integration tests covering delta sequences, snapshot resets, and concurrent emit ordering."
+  },
+  {
+    "concern": {
+      "id": "LAZY-5b79eef7",
+      "adversary": "lazy_developer",
+      "text": "Quote: \"Apply to Kalshi too? Kalshi already uses Maps internally.\"",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 2}] Simple approach fails for case Y: many markets with high emit frequency and few deltas; the spec says emit converts Map to sorted array (O(n log n)) per WebSocket message, so Map-only still burns CPU. Handling Y requires patch Z: track a dirty flag and reuse the last sorted array when no deltas occur. Z invites complexity because it needs invalidation on every delta, snapshot reset, and concurrency-safe emit ordering, which means the same caching system is required anyway."
+  },
+  {
+    "concern": {
+      "id": "LAZY-10176bbe",
+      "adversary": "lazy_developer",
+      "text": "Simpler Alternative: Maintain the current Map usage without adding caching.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 2}] Simple approach fails for case Y: unchanged books still pay Map to sorted array conversion on every emit (spec: conversion on emit, many per second). Handling Y requires patch Z: store the last sorted array and a dirty flag to skip rebuilds. Z invites complexity because it must invalidate on all deltas and resets and be concurrency-safe, which reproduces the caching design."
+  },
+  {
+    "concern": {
+      "id": "LAZY-3128b2a8",
+      "adversary": "lazy_developer",
+      "text": "Explanation: Keeping both connectors consistent in their use of Maps without additional caching reduces complexity and ensures uniformity.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 2}] Simple approach fails for case Y: uniform Map-only behavior still incurs O(n log n) conversion each emit in low-activity periods (spec: conversion per emit). Handling Y requires patch Z: add cached arrays and dirty tracking for both connectors. Z invites complexity because invalidation and emit ordering must be consistent across connectors, which recreates the same caching complexity."
+  },
+  {
+    "concern": {
+      "id": "LAZY-a0271732",
+      "adversary": "lazy_developer",
+      "text": "Requirement Break: This might not align with the goal of reducing CPU usage during low-activity periods if caching proves beneficial in specific scenarios.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The spec does not define a decision gate that ensures the reduced CPU usage goal is met if caching is skipped; add measurable thresholds or a profiling requirement to avoid choosing the simpler path when it fails the stated success criteria."
+  },
+  {
+    "concern": {
+      "id": "PEDA-3ffd5db9",
+      "adversary": "pedantic_nitpicker",
+      "text": "**Edge Case: Empty Map**",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The spec does not define behavior for an empty depthMap; specify that an empty book should emit an empty array and that the cache should represent this state correctly."
+  },
+  {
+    "concern": {
+      "id": "PEDA-c8c1a08b",
+      "adversary": "pedantic_nitpicker",
+      "text": "Occurrence: The `depthMap` could be empty if no orders exist or all have been removed.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The spec omits the scenario where all orders are removed; add explicit handling for the transition to an empty Map and how it affects cache invalidation."
+  },
+  {
+    "concern": {
+      "id": "PEDA-45980768",
+      "adversary": "pedantic_nitpicker",
+      "text": "Consequence: If `depthMap` is empty, the conversion to an array and sorting operation might be unnecessary but still executed. Additionally, the system must ensure that emitting an empty array doesn't interfere with downstream processes expecting non-empty data.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The spec does not state whether downstream consumers accept empty arrays or whether sorting should be skipped when the Map is empty; add explicit emit semantics and any short-circuiting rules."
+  },
+  {
+    "concern": {
+      "id": "PEDA-b2ea8157",
+      "adversary": "pedantic_nitpicker",
+      "text": "Occurrence: If a market becomes extremely popular, the `depthMap` could grow to be very large, potentially reaching 2^31 entries.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Need maximum depth limits or production metrics; the spec only mentions typical sizes (20-100 tuples) and does not document any caps, so the relevance of 2^31 entries cannot be assessed."
+  },
+  {
+    "concern": {
+      "id": "PEDA-fd9bcca3",
+      "adversary": "pedantic_nitpicker",
+      "text": "**Edge Case: Extremely Large Maps**",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Same missing information as concern 11; without exchange limits or observed maxima the extremely large Map case cannot be evaluated."
+  },
+  {
+    "concern": {
+      "id": "PEDA-37a6b36a",
+      "adversary": "pedantic_nitpicker",
+      "text": "**Edge Case: Leap Seconds in Emit Frequency**",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Need details on the scheduler and clock source; if monotonic timers are used, leap seconds are irrelevant, but the spec does not state timing behavior."
+  },
+  {
+    "concern": {
+      "id": "PEDA-151b9a93",
+      "adversary": "pedantic_nitpicker",
+      "text": "**Edge Case: Unicode in Price Keys**",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The spec uses Map<string, number> and parseFloat on price keys but does not define the priceKey format; add a schema citation or validation rules for non-numeric or Unicode keys to prevent NaN entries."
+  },
+  {
+    "concern": {
+      "id": "PEDA-628f7beb",
+      "adversary": "pedantic_nitpicker",
+      "text": "Consequence: The conversion from a `Map` to a sorted array in such cases could become a significant bottleneck, leading to increased CPU usage and potential memory exhaustion.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 2}] Spec already identifies Map->array conversion CPU cost and proposes cached arrays; memory impact is bounded by the tradeoff estimate of 120-640KB total for 100 markets. Probability of memory exhaustion from conversion at that scale is <1 per 1e9 emits; blast radius is one connector process handling about 100 markets; fix cost 0 hours because mitigation is already specified."
+  },
+  {
+    "concern": {
+      "id": "PEDA-8a3f6310",
+      "adversary": "pedantic_nitpicker",
+      "text": "Occurrence: If price keys are not strictly numeric and could contain Unicode characters, it may affect the sorting logic.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] Spec does not state that price keys are strictly numeric; parseFloat on Unicode or non-numeric input can yield NaN. Add a requirement to store prices as numbers or validate that priceKey is ASCII numeric and drop or flag NaN before sorting."
+  },
+  {
+    "concern": {
+      "id": "PEDA-d3214235",
+      "adversary": "pedantic_nitpicker",
+      "text": "Consequence: Sorting operations might behave unexpectedly if Unicode characters are present, leading to incorrect order book representations.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] If non-numeric keys slip through, the comparator can return NaN and ordering becomes undefined. Add validation to prevent NaN entries in the cache and define behavior for invalid prices."
+  },
+  {
+    "concern": {
+      "id": "PEDA-424d4ac9",
+      "adversary": "pedantic_nitpicker",
+      "text": "**Edge Case: Cache Invalidation Failures**",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Cache invalidation failure can emit stale prices, which violates the zero-tolerance correctness goal. Add safeguards: a single update API that always invalidates, and tests that compare emitted arrays to map state after delta and snapshot sequences."
+  },
+  {
+    "concern": {
+      "id": "PEDA-6e7c4327",
+      "adversary": "pedantic_nitpicker",
+      "text": "Consequence: Misalignment in emit timings might occur, potentially leading to missed updates or incorrect data being emitted at unexpected times.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 2}] Caching does not change the emit scheduler; it only changes array construction on emit. Probability of cache-induced timing misalignment is <1 per 1e9 emits; blast radius is one connector process handling about 100 markets; fix cost 0 hours because no scheduler change is required."
+  },
+  {
+    "concern": {
+      "id": "PEDA-09f25ca4",
+      "adversary": "pedantic_nitpicker",
+      "text": "Occurrence: If the emit frequency relies on system time or intervals that do not account for leap seconds, this could affect the ability to maintain consistent emit intervals.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 2}] Emit timing is outside this change, and leap seconds occur about 1 per 2.3e8 200ms intervals. Probability of a leap-second affecting an emit interval is 1 per 2.3e8 emits; blast radius is at most 1 second jitter on one connector process handling about 100 markets; fix cost about 4 hours to use a monotonic clock, so no change is justified here."
+  },
+  {
+    "concern": {
+      "id": "PEDA-fe90ef16",
+      "adversary": "pedantic_nitpicker",
+      "text": "Consequence: If this invalidation step is missed due to a coding error or concurrent modification issues, stale data might be emitted, causing incorrect market data to be processed by clients.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] If invalidation is missed, stale data can be emitted. Add explicit safeguards such as a version counter on the cache or assertions that any mutation marks the cache dirty, plus tests covering concurrent delta and emit sequences."
+  },
+  {
+    "concern": {
+      "id": "PEDA-97576de9",
+      "adversary": "pedantic_nitpicker",
+      "text": "Occurrence: The cache invalidation relies on setting `sortedCache = null` on every delta update.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] Manual cache invalidation on every delta is easy to miss. Require all mutations to go through a single function or class that invalidates cache and disallow direct map writes."
+  },
+  {
+    "concern": {
+      "id": "PEDA-64fc0d08",
+      "adversary": "pedantic_nitpicker",
+      "text": "**Edge Case: Concurrent Modifications**",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Need to know the concurrency model (single-threaded event loop vs worker threads) and whether emits and deltas can interleave with shared mutable state."
+  },
+  {
+    "concern": {
+      "id": "PEDA-e6ab00a1",
+      "adversary": "pedantic_nitpicker",
+      "text": "Consequence: This could result in inconsistent cache states, where some deltas are not properly reflected, leading to incorrect or outdated market information being emitted.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Inconsistent cache state depends on whether concurrent access is possible; need details on emit and delta scheduling and synchronization."
+  },
+  {
+    "concern": {
+      "id": "PEDA-a146d362",
+      "adversary": "pedantic_nitpicker",
+      "text": "Occurrence: If multiple deltas or emit operations occur concurrently, it might lead to race conditions.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Race condition likelihood depends on how emit and delta handlers are scheduled; need the threading and async model to decide."
+  },
+  {
+    "concern": {
+      "id": "PEDA-4c981f17",
+      "adversary": "pedantic_nitpicker",
+      "text": "**Edge Case: High Emit Frequency Without Deltas**",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'dismissed': 1}] High emit frequency without deltas is expected and the cache check is O(1). Probability of this scenario is about 1 per 2 emits during low activity; blast radius is one connector process handling about 100 markets with about 2,000 checks/s (100 markets x 4 sides x 5 emits/s), which is <0.01% CPU; fix cost 0 hours."
+  },
+  {
+    "concern": {
+      "id": "PEDA-16fe8a6f",
+      "adversary": "pedantic_nitpicker",
+      "text": "Occurrence: The additional memory usage by cached arrays might be problematic if the system operates under tight resource constraints.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 2}] Spec already quantifies extra memory as 120-640KB for 100 markets. Probability of this causing memory pressure at that scale is <1 per 1e6 runs; blast radius is one connector process handling about 100 markets; fix cost 0 hours because usage is within the stated budget."
+  },
+  {
+    "concern": {
+      "id": "PEDA-38300a15",
+      "adversary": "pedantic_nitpicker",
+      "text": "Consequence: While this reduces CPU usage compared to sorting, it may still introduce unnecessary overhead due to frequent checks and could be optimized further by throttling emits based on activity level.",
+      "severity": "medium"
+    },
+    "verdict": "acknowledged",
+    "reasoning": "[Consensus: {'acknowledged': 2}] Throttling emits based on activity could reduce overhead, but it changes latency and behavior and is a separate policy decision. Valid point, but out of scope for this caching-only change."
+  },
+  {
+    "concern": {
+      "id": "PEDA-424cee2e",
+      "adversary": "pedantic_nitpicker",
+      "text": "Occurrence: Markets with high emit frequency but no deltas could still trigger frequent cache checks.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 1}] Frequent cache checks are O(1) and already accounted for. Probability of this occurrence is about 1 per 2 emits during low activity; blast radius is one connector process handling about 100 markets with about 2,000 checks/s (<0.01% CPU); fix cost 0 hours."
+  },
+  {
+    "concern": {
+      "id": "PEDA-3c4bc9e2",
+      "adversary": "pedantic_nitpicker",
+      "text": "**Edge Case: System Resource Constraints**",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "PEDA-d9e5f901",
+      "adversary": "pedantic_nitpicker",
+      "text": "Consequence: This could lead to memory allocation failures, particularly in environments with limited resources, affecting overall system stability and performance.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "PEDA-807c2d6e",
+      "adversary": "pedantic_nitpicker",
+      "text": "**Edge Case: Testing for Stale Cache**",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "PEDA-4f7df8e1",
+      "adversary": "pedantic_nitpicker",
+      "text": "Occurrence: The spec mentions testing complexity for stale caches with rapid deltas and concurrent emits.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "PREV-03845213",
+      "adversary": "prior_art_scout",
+      "text": "**LEGACY FOLDER SEARCH**:",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "PEDA-7e408f20",
+      "adversary": "pedantic_nitpicker",
+      "text": "**Edge Case: Inconsistent Application Across Connectors**",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "PEDA-c72d65b9",
+      "adversary": "pedantic_nitpicker",
+      "text": "Consequence: Insufficient testing for these edge cases might miss potential bugs, leading to production issues where stale caches cause incorrect data emissions, affecting client systems relying on this data.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "PEDA-ff5b5eb3",
+      "adversary": "pedantic_nitpicker",
+      "text": "Occurrence: The spec questions if the same caching pattern should apply to Kalshi for consistency.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "PREV-0d39894e",
+      "adversary": "prior_art_scout",
+      "text": "**FEATURE KEYWORD GREP**:",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "PREV-36f5bbf9",
+      "adversary": "prior_art_scout",
+      "text": "The spec mentions \"Polymarket\" and \"Kalshi\" exchange connectors. A grep search for these keywords across the codebase could reveal existing patterns or utility functions related to orderbook state management or similar caching strategies. This might indicate whether a similar caching approach has been attempted and its outcomes.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "PREV-38df12fb",
+      "adversary": "prior_art_scout",
+      "text": "The specification does not mention the use of any libraries or SDKs that might already provide optimized data structures or caching utilities. Checking package.json or equivalent files could reveal dependencies that offer similar functionalities, which could be reused instead of building from scratch.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "PREV-d132b6c2",
+      "adversary": "prior_art_scout",
+      "text": "**SIMILAR PATTERNS**:",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "PEDA-443c810a",
+      "adversary": "pedantic_nitpicker",
+      "text": "Consequence: Inconsistent implementations across connectors could lead to maintenance challenges, discrepancies in performance optimizations, and potential bugs arising from differing logic paths.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "PREV-b948d8db",
+      "adversary": "prior_art_scout",
+      "text": "The proposed solution outlines a pattern for caching and invalidation. It would be beneficial to know if there are existing patterns for caching within the system, such as a \"CacheManager\" or similar abstraction that could be extended. This could ensure consistency and reduce the cognitive load of introducing new patterns.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "PREV-bbfc8823",
+      "adversary": "prior_art_scout",
+      "text": "**ALTERNATIVE IMPLEMENTATIONS**:",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Evaluation failed"
+  },
+  {
+    "concern": {
+      "id": "PREV-4a28f872",
+      "adversary": "prior_art_scout",
+      "text": "**DEPENDENCY INVENTORY**:",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The spec does not list dependencies or existing orderbook utilities, so a dependency inventory is needed to check for reusable SDK structures or conflicts before adding caching."
+  },
+  {
+    "concern": {
+      "id": "PREV-54d4b0a6",
+      "adversary": "prior_art_scout",
+      "text": "**TRADEOFF AND COMPLEXITY**:",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 2}] The spec already has a Tradeoff Analysis with explicit Benefits and Costs plus When This Helps/Hurts and a complexity question, so tradeoff and complexity are already addressed."
+  },
+  {
+    "concern": {
+      "id": "PREV-0ad62ca6",
+      "adversary": "prior_art_scout",
+      "text": "The caching mechanism described involves setting `sortedCache = null` on each delta. This approach could be error-prone if invalidation is missed. Exploring existing invalidation strategies in the codebase could lead to a more robust solution. For instance, if there's a pattern for event-driven updates or similar cache invalidation strategies, they should be leveraged.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The spec flags invalidation risk but does not require auditing existing invalidation patterns; add a step to review current update paths and enforce a single mutation API to guarantee cache invalidation."
+  },
+  {
+    "concern": {
+      "id": "PREV-cee63aaf",
+      "adversary": "prior_art_scout",
+      "text": "The spec raises concerns about code complexity and cache invalidation. It's important to evaluate if existing mechanisms for throttling or debouncing emits are already in place and could be extended to address the user's concern about emit frequency without introducing a new caching layer.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] Emit throttling is only posed as a question; the spec should inventory any existing throttling or debouncing and compare CPU impact versus caching before deciding."
+  },
+  {
+    "concern": {
+      "id": "PREV-96006c67",
+      "adversary": "prior_art_scout",
+      "text": "Without access to the codebase, I can't verify if there's an existing caching mechanism in any _legacy, deprecated, or archive folders. This is crucial because there might be prior caching implementations that could be adapted for this use case, potentially reducing development effort by 50-80%.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The spec does not require checking legacy or archived code for prior caching; add an explicit audit of deprecated paths to avoid reimplementing."
+  },
+  {
+    "concern": {
+      "id": "PREV-9cdd35e0",
+      "adversary": "prior_art_scout",
+      "text": "The spec mentions the complexity of testing for stale caches. If the codebase includes existing unit tests or testing frameworks for similar mechanisms, they could be expanded to cover the new caching logic, ensuring robust validation without reinventing the testing approach.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The spec raises testing complexity but does not tie into existing tests; add a plan to extend current unit or integration tests for stale cache detection and emit correctness."
+  },
+  {
+    "concern": {
+      "id": "PREV-68a6a0c9",
+      "adversary": "prior_art_scout",
+      "text": "**INTEGRATION WITH KALSHI**:",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 2}] The spec already includes an explicit 'Apply to Kalshi too?' question and notes Kalshi uses Maps, so integration with Kalshi is already considered."
+  },
+  {
+    "concern": {
+      "id": "PREV-8118ec9e",
+      "adversary": "prior_art_scout",
+      "text": "The spec suggests applying the same caching pattern to Kalshi for consistency. Before proceeding, it's important to confirm whether Kalshi's existing implementation already includes optimizations that might conflict with or duplicate the proposed changes.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'deferred': 1, 'accepted': 1}] The spec should add an explicit check of Kalshi's current optimizations to avoid duplication or conflicts before applying caching."
+  },
+  {
+    "concern": {
+      "id": "PREV-26d351f0",
+      "adversary": "prior_art_scout",
+      "text": "**TESTING COMPLEXITY**:",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 2}] Testing complexity is already explicitly called out in the spec questions and reinforced by the zero tolerance for stale cache bugs success criterion, so the concern is already addressed."
+  },
+  {
+    "concern": {
+      "id": "ASSH-96ee6008",
+      "adversary": "asshole_loner",
+      "text": "**Cache Invalidation is Fragile**: The proposed solution relies heavily on setting `sortedCache = null` to invalidate the cache. This is error-prone and could lead to stale data if any delta update is missed. You need a more robust mechanism to ensure cache invalidation is foolproof.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The spec identifies invalidation risk but lacks a robust mechanism; add design changes such as centralized mutation or versioning to make invalidation verifiable."
+  },
+  {
+    "concern": {
+      "id": "ASSH-fdba6cb4",
+      "adversary": "asshole_loner",
+      "text": "**Complexity Overhead**: Introducing caching increases code complexity significantly. The spec acknowledges this under \"Code complexity\", but the risk of introducing bugs due to this complexity seems downplayed. You need to weigh this risk against the benefits more critically, especially since the existing O(1) deltas are already efficient.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'dismissed': 1}] The spec lists code complexity as a cost, asks whether it is worth it, and sets zero tolerance for stale cache bugs, so complexity risk is not downplayed."
+  },
+  {
+    "concern": {
+      "id": "ASSH-18c133be",
+      "adversary": "asshole_loner",
+      "text": "**Memory Usage Underestimated**: While the document claims the memory overhead is 120-640KB, this doesn't account for potential growth in the number of markets or depth arrays in the future. The cost of additional memory could escalate quickly, and the analysis seems overly optimistic.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Expected bounds on market count and depth size are missing; the memory estimate is based on 100 markets, so the growth risk cannot be evaluated without that data."
+  },
+  {
+    "concern": {
+      "id": "ASSH-9bab1422",
+      "adversary": "asshole_loner",
+      "text": "**Emit Frequency Not Addressed**: The spec briefly mentions emit throttling as an alternative but doesn't explore it. This could be a simpler solution to reduce CPU usage without adding complexity. Why isn't this considered more seriously?",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The spec does not analyze throttling beyond a mention; add a concrete evaluation of emit throttling or debouncing as an alternative or complement."
+  },
+  {
+    "concern": {
+      "id": "ASSH-b26ada49",
+      "adversary": "asshole_loner",
+      "text": "**Questionable Tradeoff Analysis**: The tradeoff analysis seems skewed towards finding a positive outcome for caching. It fails to consider scenarios where frequent updates render the cache useless, increasing complexity with no real benefit.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 2}] The spec already includes a When This Hurts scenario where every market updates every emit cycle, so it explicitly considers the no benefit case."
+  },
+  {
+    "concern": {
+      "id": "ASSH-6427cb7e",
+      "adversary": "asshole_loner",
+      "text": "**Underestimated Cache Benefits**: The spec assumes that markets will frequently have no deltas, but if this assumption is wrong, the cache will constantly be invalidated, negating any benefits and unnecessarily consuming resources.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 2}] The spec conditions benefits on low delta frequency and calls out frequent updates as a negative case, so the assumption is already bounded."
+  },
+  {
+    "concern": {
+      "id": "ASSH-c1fd4f63",
+      "adversary": "asshole_loner",
+      "text": "**Testing and Verification Ambiguity**: The spec mentions testing complexity but is vague on how to ensure the cache is never stale. Without a detailed testing plan, the system could easily fail under edge cases like rapid deltas or concurrent emits.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The spec only flags testing complexity and lists edge cases, but provides no concrete verification plan. Add explicit tests (e.g., invalidation on all mutation paths, snapshot resets, emit/delta ordering, and property tests that cached output equals a full rebuild)."
+  },
+  {
+    "concern": {
+      "id": "ASSH-a9645f37",
+      "adversary": "asshole_loner",
+      "text": "**Inconsistent Application Across Connectors**: The spec questions whether to apply this to Kalshi for consistency but doesn't provide a clear decision. Consistency across systems should be a priority to avoid maintenance headaches.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The spec leaves the Kalshi decision as an open question. It needs a clear decision and rationale to avoid divergent implementations and maintenance costs."
+  },
+  {
+    "concern": {
+      "id": "ASSH-11ee40fe",
+      "adversary": "asshole_loner",
+      "text": "**Unclear Performance Metrics**: The success criteria mention \"No increase in emit latency p99\", but there's no baseline provided. Without current performance metrics, how can you determine if the new system is actually an improvement?",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The success criteria cite p99 latency but no baseline metrics are specified. Add current emit latency and CPU baselines to evaluate improvement or regression."
+  },
+  {
+    "concern": {
+      "id": "BURN-02476192",
+      "adversary": "burned_oncall",
+      "text": "**Failure Mode: Stale Cache on Missed Invalidation**",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The spec explicitly notes stale cache risk but does not define mitigation. Add a single mutation API that always invalidates and tests that fail on stale emits."
+  },
+  {
+    "concern": {
+      "id": "BURN-b9eb0e06",
+      "adversary": "burned_oncall",
+      "text": "If the cache invalidation (`sortedCache = null`) is missed or fails due to a bug or unexpected execution path, the system may emit stale data.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] This restates the stale-cache risk without a mitigation. The spec must enumerate all mutation paths (set, delete, zero size, snapshot replace) and enforce invalidation in each."
+  },
+  {
+    "concern": {
+      "id": "BURN-5c6a6283",
+      "adversary": "burned_oncall",
+      "text": "Operators may not immediately notice since stale data can appear valid unless discrepancies are explicitly monitored.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The spec lacks any detection mechanism for stale emits. Add monitoring such as periodic full-rebuild comparisons or invariant checks that alert on mismatch."
+  },
+  {
+    "concern": {
+      "id": "BURN-f7b93674",
+      "adversary": "burned_oncall",
+      "text": "The blast radius includes all markets and users relying on the emitted data, potentially leading to incorrect trading decisions based on outdated information.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] Blast radius is not addressed. Add a feature flag, staged rollout, and a fallback to rebuild-each-emit to limit impact."
+  },
+  {
+    "concern": {
+      "id": "BURN-dfbd0dbd",
+      "adversary": "burned_oncall",
+      "text": "**Failure Mode: Cache Rebuild Failure on Concurrent Access**",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] The spec does not state the concurrency model. Need to know whether emits can overlap or if the runtime is single-threaded before assessing concurrent rebuild risk."
+  },
+  {
+    "concern": {
+      "id": "BURN-8b548223",
+      "adversary": "burned_oncall",
+      "text": "The cache rebuild process during emit (`if (sortedCache === null) { ... }`) might face concurrency issues. If multiple threads or processes attempt to rebuild the cache simultaneously, it could lead to race conditions or data corruption.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Race-condition risk depends on threading/async scheduling details that are not in the spec. Provide the execution model and any shared-state guards."
+  },
+  {
+    "concern": {
+      "id": "BURN-b9b94887",
+      "adversary": "burned_oncall",
+      "text": "Operators might only detect this issue through inconsistencies in emitted data, making it challenging to diagnose.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Detection of concurrency issues depends on whether concurrent access can occur and what telemetry exists. The spec lacks this information."
+  },
+  {
+    "concern": {
+      "id": "BURN-820faa32",
+      "adversary": "burned_oncall",
+      "text": "The blast radius affects all markets, especially under high load or frequent emit conditions, potentially leading to incorrect order book states.",
+      "severity": "medium"
+    },
+    "verdict": "deferred",
+    "reasoning": "[Consensus: {'dismissed': 1, 'deferred': 1}] Blast radius under high load depends on the unresolved concurrency model. Need clarification before concluding."
+  },
+  {
+    "concern": {
+      "id": "BURN-24d9e2bf",
+      "adversary": "burned_oncall",
+      "text": "**Failure Mode: Memory Overhead and Resource Exhaustion**",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The memory estimate is provided but there is no capacity plan or guardrail for market growth. Add a memory budget, cap, or ability to disable caching."
+  },
+  {
+    "concern": {
+      "id": "BURN-0d20cbb0",
+      "adversary": "burned_oncall",
+      "text": "The additional memory overhead from cached arrays (4 per market) could lead to resource exhaustion on systems with limited memory, especially if the number of active markets grows beyond current expectations.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The spec assumes ~100 markets; it does not define how memory scales beyond that. Add scaling assumptions and limits."
+  },
+  {
+    "concern": {
+      "id": "BURN-069aefcb",
+      "adversary": "burned_oncall",
+      "text": "The blast radius could extend to the entire system, affecting performance and stability across all components relying on these caches.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] System-level resource impact is not analyzed. Add monitoring/alerts for process RSS and a fail-safe if memory pressure rises."
+  },
+  {
+    "concern": {
+      "id": "BURN-f07654cc",
+      "adversary": "burned_oncall",
+      "text": "**Failure Mode: Increased Latency During Cache Miss**",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 2}] On a cache miss, rebuild cost is the same as the current Map-to-sorted conversion; the spec states 'Markets with deltas: one conversion (same as before).' Operators can detect any regression via the 'No increase in emit latency p99' success criterion."
+  },
+  {
+    "concern": {
+      "id": "BURN-1f6a5884",
+      "adversary": "burned_oncall",
+      "text": "On a cache miss, the rebuild process introduces additional latency due to the sorting operation (`O(n log n)` complexity). If many markets experience deltas simultaneously, this could exceed the acceptable emit latency p99.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The rebuild path still performs Map\u2192array\u2192sort and the spec only states a p99 goal without any worst\u2011case validation or guardrails; add explicit perf benchmarks and latency budget checks for simultaneous deltas."
+  },
+  {
+    "concern": {
+      "id": "BURN-0e2ccbfd",
+      "adversary": "burned_oncall",
+      "text": "Operators might notice increased latency or system crashes, but these symptoms might be misattributed to other components.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The spec has no observability plan; add metrics/logs for emit latency, cache rebuild time, and cache hit/miss so operators can attribute symptoms to the cache."
+  },
+  {
+    "concern": {
+      "id": "BURN-de667bf2",
+      "adversary": "burned_oncall",
+      "text": "Operators might detect this through latency monitoring tools, but the exact cause might not be immediately clear.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] No causal instrumentation is defined; add per\u2011market emit timing and cache rebuild timing to make latency spikes attributable."
+  },
+  {
+    "concern": {
+      "id": "BURN-df75d9ff",
+      "adversary": "burned_oncall",
+      "text": "The blast radius impacts all markets, potentially delaying the dissemination of crucial order book updates.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] The spec describes 200ms flush intervals over ~100 markets but does not define isolation or parallelism; specify scheduling/backpressure or parallelization to avoid global delays."
+  },
+  {
+    "concern": {
+      "id": "BURN-8f16b4ca",
+      "adversary": "burned_oncall",
+      "text": "**Failure Mode: Unintended Behavior Under High Frequency Deltas**",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] High\u2011frequency deltas are listed as an edge case in the testing question, but behavior and safety are not defined; add concurrency/atomicity handling and tests for rapid updates."
+  },
+  {
+    "concern": {
+      "id": "BURN-28c2cdf4",
+      "adversary": "burned_oncall",
+      "text": "Operators have no direct way to verify cache validity, relying instead on indirect symptoms like data inconsistency reports from users.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] There is no direct cache validity check in the spec; add a validation mechanism (periodic recompute/compare or invariant checks) so operators can verify correctness."
+  },
+  {
+    "concern": {
+      "id": "BURN-47982393",
+      "adversary": "burned_oncall",
+      "text": "**Failure Mode: Lack of Monitoring for Cache Validity**",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The spec does not include monitoring for cache validity; add alerts on validation mismatches or missed invalidations."
+  },
+  {
+    "concern": {
+      "id": "BURN-99609969",
+      "adversary": "burned_oncall",
+      "text": "The blast radius includes all markets, as undetected stale caches can lead to a widespread distribution of incorrect data.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] Caches are per market but invalidation logic is shared; without validation or rollback, a bug can propagate incorrect data broadly; add feature flag/fallback and validation to limit blast radius."
+  },
+  {
+    "concern": {
+      "id": "BURN-e2edee6e",
+      "adversary": "burned_oncall",
+      "text": "The spec does not mention any monitoring or alerting mechanisms specifically for detecting stale cache scenarios or missed invalidations.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Correct: the spec does not mention monitoring or alerting for stale caches; add specific alerts tied to cache correctness."
+  },
+  {
+    "concern": {
+      "id": "BURN-f852cf2e",
+      "adversary": "burned_oncall",
+      "text": "Operators may not immediately recognize this shift without specific monitoring for cache usage patterns.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] No cache usage metrics are defined; add cache hit rate and rebuild cost metrics so operators can recognize shifts in behavior."
+  },
+  {
+    "concern": {
+      "id": "BURN-522be0a2",
+      "adversary": "burned_oncall",
+      "text": "The caching strategy assumes periods of low activity for optimal performance. If market conditions change and high-frequency deltas become the norm, the cache might constantly invalidate, negating its intended benefits and potentially introducing overhead.",
+      "severity": "medium"
+    },
+    "verdict": "dismissed",
+    "reasoning": "[Consensus: {'dismissed': 1, 'acknowledged': 1}] The spec already calls out the 'When This Hurts' case where caches are always dirty and complexity adds no benefit; this is a known tradeoff accepted unless activity patterns change."
+  },
+  {
+    "concern": {
+      "id": "BURN-63635e69",
+      "adversary": "burned_oncall",
+      "text": "**Failure Mode: Complexity and Testing Gaps**",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] The spec asks how to verify staleness but provides no test plan; add unit/integration tests for invalidation, snapshot reset, and concurrent emits."
+  },
+  {
+    "concern": {
+      "id": "BURN-8f53ac26",
+      "adversary": "burned_oncall",
+      "text": "The blast radius affects all markets, with potential performance degradation during peak trading times.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'dismissed': 1, 'accepted': 1}] Peak\u2011time performance across many markets is not addressed; add perf guardrails or demonstrate latency budgets under peak load."
+  },
+  {
+    "concern": {
+      "id": "BURN-d89a7b0a",
+      "adversary": "burned_oncall",
+      "text": "The added complexity from caching increases the likelihood of edge cases and bugs, particularly with rapid deltas, concurrent emits, and snapshot resets.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'acknowledged': 1, 'accepted': 1}] The spec lists rapid deltas, concurrent emits, and snapshot resets as edge cases but does not define handling; add atomic invalidation rules and tests."
+  },
+  {
+    "concern": {
+      "id": "BURN-2d495bce",
+      "adversary": "burned_oncall",
+      "text": "The blast radius could affect any market, with potential for incorrect pricing data leading to financial impact for users.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1}] The spec requires zero tolerance for stale cache bugs but provides no safeguards; add validation, alerting, and rollback/feature flag mechanisms to prevent incorrect pricing."
+  },
+  {
+    "concern": {
+      "id": "BURN-26b1a4ff",
+      "adversary": "burned_oncall",
+      "text": "Operators may lack comprehensive test coverage to ensure zero tolerance for stale cache bugs, leading to undetected issues until they manifest in production.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The spec sets a \"Zero tolerance for stale cache bugs\" success criterion and explicitly flags testing complexity, but it does not define a concrete test plan or coverage requirements. This is a valid gap; the spec should add unit and integration tests for cache invalidation, snapshot resets, rapid deltas, and concurrent emits, plus runtime guards if feasible."
+  },
+  {
+    "concern": {
+      "id": "BURN-39c4e73f",
+      "adversary": "burned_oncall",
+      "text": "**Failure Mode: Inconsistent Application Across Connectors**",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'dismissed': 1}] The spec asks \"Apply to Kalshi too?\" but does not define a decision or rollout strategy, which creates a risk of inconsistent behavior across connectors. The spec should state whether the change is applied uniformly or gated per connector and include a compatibility/consistency requirement."
+  },
+  {
+    "concern": {
+      "id": "BURN-998d2049",
+      "adversary": "burned_oncall",
+      "text": "The decision to apply the caching strategy to Kalshi as well, for consistency, might introduce new issues if the connectors have different operational characteristics.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The spec provides general \"When this helps/hurts\" guidance but no connector-specific data for Kalshi. Applying caching for consistency without validating Kalshi\u2019s update patterns could introduce regressions. The spec should add criteria or metrics to decide applicability per connector."
+  },
+  {
+    "concern": {
+      "id": "BURN-77c32297",
+      "adversary": "burned_oncall",
+      "text": "Operators might face challenges in maintaining consistent behavior and performance across both connectors without thorough integration testing.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'dismissed': 1}] There is no integration testing plan in the spec, despite concerns about maintaining consistent behavior and performance across both connectors. The spec should include cross-connector integration/performance tests and acceptance thresholds."
+  },
+  {
+    "concern": {
+      "id": "BURN-27bcc515",
+      "adversary": "burned_oncall",
+      "text": "The blast radius includes all users relying on data from both Polymarket and Kalshi, with potential discrepancies between the two data sources.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'dismissed': 1}] The spec does not address blast radius mitigation or monitoring for discrepancies between Polymarket and Kalshi outputs. Given both connectors feed users, the spec should add safeguards such as per-connector feature flags, divergence monitoring, and rollback criteria."
+  }
+]

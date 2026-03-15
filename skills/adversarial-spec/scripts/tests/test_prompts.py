@@ -13,6 +13,7 @@ from prompts import (
     PRESERVE_INTENT_PROMPT,
     PRESS_PROMPT_TEMPLATE,
     REVIEW_PROMPT_TEMPLATE,
+    SYSTEM_PROMPT_ARCHITECTURE,
     get_doc_type_name,
     get_system_prompt,
 )
@@ -73,8 +74,59 @@ class TestGetDocTypeName:
     def test_debug(self):
         assert get_doc_type_name("debug") == "Debug Investigation"
 
+    def test_architecture(self):
+        assert get_doc_type_name("architecture") == "Target Architecture"
+
     def test_unknown(self):
         assert get_doc_type_name("other") == "Specification"
+
+
+class TestArchitectureDocType:
+    def test_architecture_prompt_selection(self):
+        result = get_system_prompt("architecture")
+        assert result == SYSTEM_PROMPT_ARCHITECTURE
+
+    def test_architecture_prompt_content(self):
+        result = get_system_prompt("architecture")
+        assert "Target Architecture" in result
+        assert "shared patterns" in result
+        assert "[AGREE]" in result
+        assert "[SPEC]" in result
+
+    def test_architecture_not_overridden_by_persona(self):
+        # Persona takes precedence over doc_type
+        result = get_system_prompt("architecture", persona="oncall-engineer")
+        assert "Target Architecture" not in result
+
+
+class TestArchPersona:
+    def test_arch_persona_exists(self):
+        from adversaries import ADVERSARIES, ARCHITECT
+        assert "architect" in ADVERSARIES
+        assert ADVERSARIES["architect"] is ARCHITECT
+
+    def test_arch_prefix(self):
+        from adversaries import ARCHITECT, ADVERSARY_PREFIXES
+        assert ARCHITECT.prefix == "ARCH"
+        assert ADVERSARY_PREFIXES["architect"] == "ARCH"
+
+    def test_arch_persona_content(self):
+        from adversaries import ARCHITECT
+        assert "data flow" in ARCHITECT.persona.lower()
+        assert "component boundaries" in ARCHITECT.persona.lower()
+        assert ARCHITECT.name == "architect"
+
+    def test_arch_concern_id_generation(self):
+        from adversaries import generate_concern_id
+        cid = generate_concern_id("architect", "test concern")
+        assert cid.startswith("ARCH-")
+        assert len(cid) == 13  # ARCH- + 8 hex chars
+
+    def test_arch_in_version_manifest(self):
+        from adversaries import get_version_manifest
+        manifest = get_version_manifest()
+        assert "architect" in manifest
+        assert manifest["architect"]["prefix"] == "ARCH"
 
 
 class TestFocusAreas:

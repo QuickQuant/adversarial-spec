@@ -35,11 +35,15 @@ MODEL_COSTS = {
     "zhipu/glm-4-plus": {"input": 7.00, "output": 7.00},
     # Codex CLI models (uses ChatGPT subscription, no per-token cost)
     "codex/gpt-5.3-codex": {"input": 0.0, "output": 0.0},
+    "codex/gpt-5.4": {"input": 0.0, "output": 0.0},
     "codex/gpt-5.1-codex-max": {"input": 0.0, "output": 0.0},
     "codex/gpt-5.1-codex-mini": {"input": 0.0, "output": 0.0},
     # Gemini CLI models (uses Google account, no per-token cost)
     "gemini-cli/gemini-3-pro-preview": {"input": 0.0, "output": 0.0},
     "gemini-cli/gemini-3-flash-preview": {"input": 0.0, "output": 0.0},
+    # Claude CLI models (uses Anthropic subscription via claude command, no per-token cost)
+    "claude-cli/claude-sonnet-4-6": {"input": 0.0, "output": 0.0},
+    "claude-cli/claude-opus-4-6": {"input": 0.0, "output": 0.0},
 }
 
 DEFAULT_COST = {"input": 5.00, "output": 15.00}
@@ -49,6 +53,9 @@ CODEX_AVAILABLE = shutil.which("codex") is not None
 
 # Check if Gemini CLI is available
 GEMINI_CLI_AVAILABLE = shutil.which("gemini") is not None
+
+# Check if Claude CLI is available
+CLAUDE_CLI_AVAILABLE = shutil.which("claude") is not None
 
 # Default reasoning effort for Codex CLI (minimal, low, medium, high, xhigh)
 DEFAULT_CODEX_REASONING = "xhigh"
@@ -323,6 +330,15 @@ def list_providers():
     print("             Install: npm install -g @google/gemini-cli && gemini auth")
     print()
 
+    # Claude CLI (uses Anthropic subscription via claude command)
+    claude_cli_status = "[installed]" if CLAUDE_CLI_AVAILABLE else "[not installed]"
+    print(f"  {'Claude CLI':12} {'(Anthropic subscription)':24} {claude_cli_status}")
+    print(
+        "             Example models: claude-cli/claude-sonnet-4-6, claude-cli/claude-opus-4-6"
+    )
+    print("             Install: npm install -g @anthropic-ai/claude-code && claude setup-token")
+    print()
+
     # Show Bedrock option if not enabled
     if not bedrock_config.get("enabled"):
         print("AWS Bedrock:\n")
@@ -386,6 +402,10 @@ def get_available_providers() -> list[tuple[str, Optional[str], str]]:
     if GEMINI_CLI_AVAILABLE:
         available.append(("Gemini CLI", None, "gemini-cli/gemini-3-pro-preview"))
 
+    # Add Claude CLI if available
+    if CLAUDE_CLI_AVAILABLE:
+        available.append(("Claude CLI", None, "claude-cli/claude-sonnet-4-6"))
+
     return available
 
 
@@ -444,6 +464,7 @@ def validate_model_credentials(models: list[str]) -> tuple[list[str], list[str]]
         "zhipu/": "ZHIPUAI_API_KEY",
         "codex/": None,  # Uses ChatGPT subscription, not API key
         "gemini-cli/": None,  # Uses Google account, not API key
+        "claude-cli/": None,  # Uses Anthropic subscription via claude command
     }
 
     for model in models:
@@ -458,6 +479,14 @@ def validate_model_credentials(models: list[str]) -> tuple[list[str], list[str]]
         # Check if it's a Gemini CLI model
         if model.startswith("gemini-cli/"):
             if GEMINI_CLI_AVAILABLE:
+                valid.append(model)
+            else:
+                invalid.append(model)
+            continue
+
+        # Check if it's a Claude CLI model
+        if model.startswith("claude-cli/"):
+            if CLAUDE_CLI_AVAILABLE:
                 valid.append(model)
             else:
                 invalid.append(model)

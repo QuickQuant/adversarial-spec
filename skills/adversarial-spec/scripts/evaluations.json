@@ -1,0 +1,79 @@
+{
+  "evaluations": [
+    {
+      "concern_index": 0,
+      "verdict": "accepted",
+      "reasoning": "The spec fails to define a terminal failure state for the 'unwind' process. If `executeRecovery` fails (e.g. market closed), the system remains in `unwinding` state indefinitely."
+    },
+    {
+      "concern_index": 1,
+      "verdict": "accepted",
+      "reasoning": "The `subscribe` + `claim` pattern (Section 6.1) creates a 'thundering herd' problem. All workers receive the same update and race to claim the same order, causing high Optimistic Concurrency Control (OCC) conflict rates."
+    },
+    {
+      "concern_index": 2,
+      "verdict": "accepted",
+      "reasoning": "Section 6.4's `executeRecovery` handles the happy path for unwinding but lacks a catch block or state transition for when the unwind order itself fails (e.g., INSUFFICIENT_BALANCE)."
+    },
+    {
+      "concern_index": 3,
+      "verdict": "accepted",
+      "reasoning": "Valid consequence of Concern 3. Without a `unwind_failed` state and automated escalation, the user holds unhedged risk indefinitely."
+    },
+    {
+      "concern_index": 4,
+      "verdict": "accepted",
+      "reasoning": "Confirmed defect. Records will stale in `unwinding` state, making detection rely on implicit timeouts rather than explicit status."
+    },
+    {
+      "concern_index": 5,
+      "verdict": "accepted",
+      "reasoning": "Valid detection of 'Ghost Execution'. Zombie recovery (7.1) resets the order but does not ensure the previous worker has stopped. If the retry acquires a *new* nonce (6.3), both transactions can settle."
+    },
+    {
+      "concern_index": 6,
+      "verdict": "accepted",
+      "reasoning": "The retry mechanism (7.1) combined with new nonce acquisition (6.3) permits double-execution (double spend) if a 'zombie' worker wakes up and submits a valid, previously signed transaction."
+    },
+    {
+      "concern_index": 7,
+      "verdict": "dismissed",
+      "reasoning": "Heartbeats update `order_queue` items that are exclusively locked by the worker. They do not contend with other writes. General DB load (Concern 9) is not sufficient to cause system-wide heartbeat failure."
+    },
+    {
+      "concern_index": 8,
+      "verdict": "dismissed",
+      "reasoning": "Total throughput (~125 ops/sec) is negligible for Convex (scales to thousands/sec). The bottleneck is contention (Concern 2), not aggregate write limits."
+    },
+    {
+      "concern_index": 9,
+      "verdict": "accepted",
+      "reasoning": "The key rotation strategy described in Section 8 is incomplete; rotating the environment variable without a migration strategy will lock out existing data."
+    },
+    {
+      "concern_index": 10,
+      "verdict": "accepted",
+      "reasoning": "Code snippet in 8.3 uses a single `process.env.CREDENTIAL_ENCRYPTION_KEY` and ignores the `encryptionKeyId` field defined in the schema, making rotation impossible without downtime/data loss."
+    },
+    {
+      "concern_index": 11,
+      "verdict": "accepted",
+      "reasoning": "Valid consequence of the implementation flaw in Concern 11."
+    },
+    {
+      "concern_index": 12,
+      "verdict": "accepted",
+      "reasoning": "Valid consequence of the implementation flaw in Concern 11."
+    },
+    {
+      "concern_index": 13,
+      "verdict": "accepted",
+      "reasoning": "The policy of blocking a wallet on *any* ambiguous error (Section 6.3) creates unacceptable availability risks."
+    },
+    {
+      "concern_index": 14,
+      "verdict": "accepted",
+      "reasoning": "Marking a wallet as `reconciling` for up to 30s (Section 7.2) upon a single network timeout (Section 6.3) violates the p95 < 900ms latency goal and degrades service reliability."
+    }
+  ]
+}

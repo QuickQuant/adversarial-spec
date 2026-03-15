@@ -42,6 +42,7 @@ from adversaries import (
     generate_concern_id,
 )
 from models import (
+    call_claude_cli_model,
     call_codex_model,
     call_gemini_cli_model,
     cost_tracker,
@@ -132,6 +133,23 @@ class Concern:
             self.id = generate_concern_id(self.adversary, self.text)
 
 
+_VERDICT_NORMALIZE = {
+    "dismiss": "dismissed",
+    "dismissed": "dismissed",
+    "accept": "accepted",
+    "accepted": "accepted",
+    "acknowledge": "acknowledged",
+    "acknowledged": "acknowledged",
+    "defer": "deferred",
+    "deferred": "deferred",
+}
+
+
+def normalize_verdict(raw: str) -> str:
+    """Normalize verdict strings (e.g. 'accept' -> 'accepted')."""
+    return _VERDICT_NORMALIZE.get(raw.lower().strip(), "deferred")
+
+
 @dataclass
 class Evaluation:
     """Frontier model's evaluation of a concern."""
@@ -139,6 +157,9 @@ class Evaluation:
     concern: Concern
     verdict: str  # dismissed, accepted, acknowledged, deferred
     reasoning: str
+
+    def __post_init__(self):
+        self.verdict = normalize_verdict(self.verdict)
 
 
 @dataclass
@@ -1702,6 +1723,13 @@ def generate_big_picture_synthesis(
                 user_message=prompt,
                 timeout=timeout,
             )
+        elif model.startswith("claude-cli/"):
+            response, in_tokens, out_tokens = call_claude_cli_model(
+                system_prompt="You are an expert at pattern recognition and synthesis.",
+                user_message=prompt,
+                model=model,
+                timeout=timeout,
+            )
         else:
             result = completion(
                 model=model,
@@ -2151,6 +2179,11 @@ def evaluate_concerns_multi_model(
     """
     Phase 4: Evaluate concerns using MULTIPLE models in parallel.
 
+    Runs all batches for each model concurrently (respecting per-provider rate limits),
+    and runs different models in parallel with each other. This is much faster than the
+    old sequential approach which waited for all models to finish one batch before starting
+    the next.
+
     Args:
         spec: The specification
         concerns: List of concerns to evaluate
@@ -2178,33 +2211,90 @@ def evaluate_concerns_multi_model(
     batches = [concerns[i:i + batch_size] for i in range(0, len(concerns), batch_size)]
     print(f"  Processing {len(concerns)} concerns in {len(batches)} batches", file=sys.stderr)
 
+    # -------------------------------------------------------------------------
+    # Run all batches per model concurrently, respecting per-provider rate limits.
+    # Different models run fully in parallel with each other since they have
+    # independent rate limits.
+    # -------------------------------------------------------------------------
+
+    def run_all_batches_for_model(model: str) -> dict[int, list[Evaluation]]:
+        """Run all batches for a single model, respecting its rate limit."""
+        rate_batch_size, rate_delay = get_rate_limit_config(model)
+        results: dict[int, list[Evaluation]] = {}
+
+        # Group batches into rate-limited waves
+        for wave_start in range(0, len(batches), rate_batch_size):
+            wave_end = min(wave_start + rate_batch_size, len(batches))
+            wave_batches = list(range(wave_start, wave_end))
+
+            if wave_start > 0:
+                print(
+                    f"  {model}: rate limit pause {rate_delay}s before wave "
+                    f"{wave_start // rate_batch_size + 1}...",
+                    file=sys.stderr,
+                )
+                time.sleep(rate_delay)
+
+            # Run all batches in this wave concurrently
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(wave_batches)) as wave_executor:
+                future_to_idx = {}
+                for batch_idx in wave_batches:
+                    future = wave_executor.submit(
+                        evaluate_concerns, spec, batches[batch_idx], model, timeout
+                    )
+                    future_to_idx[future] = batch_idx
+
+                for future in concurrent.futures.as_completed(future_to_idx):
+                    batch_idx = future_to_idx[future]
+                    try:
+                        evals = future.result()
+                        results[batch_idx] = evals
+                        print(
+                            f"  {model}: batch {batch_idx + 1}/{len(batches)} done "
+                            f"({len(evals)} evals)",
+                            file=sys.stderr,
+                        )
+                    except Exception as e:
+                        print(
+                            f"  Warning: {model} batch {batch_idx + 1} failed: {e}",
+                            file=sys.stderr,
+                        )
+                        results[batch_idx] = []
+
+        return results
+
+    # Launch all models in parallel — each manages its own rate limiting internally
+    model_all_results: dict[str, dict[int, list[Evaluation]]] = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(eval_models)) as model_executor:
+        model_futures = {
+            model_executor.submit(run_all_batches_for_model, m): m
+            for m in eval_models
+        }
+        for future in concurrent.futures.as_completed(model_futures):
+            model = model_futures[future]
+            try:
+                model_all_results[model] = future.result()
+                total_evals = sum(len(v) for v in model_all_results[model].values())
+                print(f"  {model}: all batches complete ({total_evals} evals)", file=sys.stderr)
+            except Exception as e:
+                print(f"  Warning: {model} failed entirely: {e}", file=sys.stderr)
+                model_all_results[model] = {}
+
+    # -------------------------------------------------------------------------
+    # Build consensus across models for each concern
+    # -------------------------------------------------------------------------
     all_evaluations: list[Evaluation] = []
     disagreements = 0
 
     for batch_idx, batch in enumerate(batches):
-        print(f"  Batch {batch_idx + 1}/{len(batches)} ({len(batch)} concerns)...", file=sys.stderr)
-
-        # Evaluate batch with all models in parallel
-        model_results: dict[str, list[Evaluation]] = {}
-
-        def eval_with_model(model: str) -> tuple[str, list[Evaluation]]:
-            evals = evaluate_concerns(spec, batch, model, timeout)
-            return model, evals
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=len(eval_models)) as executor:
-            futures = [executor.submit(eval_with_model, m) for m in eval_models]
-            for future in concurrent.futures.as_completed(futures):
-                model, evals = future.result()
-                model_results[model] = evals
-
-        # Build consensus for each concern in batch
         for i, concern in enumerate(batch):
             verdicts = {}
             reasonings = {}
 
-            for model, evals in model_results.items():
-                if i < len(evals):
-                    eval_item = evals[i]
+            for model in eval_models:
+                batch_results = model_all_results.get(model, {}).get(batch_idx, [])
+                if i < len(batch_results):
+                    eval_item = batch_results[i]
                     verdicts[model] = eval_item.verdict
                     reasonings[model] = eval_item.reasoning
 
@@ -2370,6 +2460,14 @@ def call_model(
             timeout=timeout,
         )
 
+    if model.startswith("claude-cli/"):
+        return call_claude_cli_model(
+            system_prompt=system_prompt,
+            user_message=user_message,
+            model=model,
+            timeout=timeout,
+        )
+
     # Standard litellm path
     response = completion(
         model=model,
@@ -2386,6 +2484,45 @@ def call_model(
     output_tokens = response.usage.completion_tokens if response.usage else 0
 
     return content, input_tokens, output_tokens
+
+
+# =============================================================================
+# RATE LIMITING
+# =============================================================================
+
+
+def get_rate_limit_config(model_name: str) -> tuple[int, int]:
+    """Return (batch_size, delay_seconds) for the given model.
+
+    Rate limits vary by provider:
+      Gemini: 5-15 RPM (free), 150+ RPM (paid) - set GEMINI_PAID_TIER=true
+      Claude: 50 RPM (Tier 1), 2000+ (Tier 3+) - set CLAUDE_PAID_TIER=true
+      Codex: message quotas, generally generous
+    """
+    import os
+
+    model_lower = model_name.lower()
+    if "gemini" in model_lower:
+        paid = os.environ.get("GEMINI_PAID_TIER", "").lower() == "true"
+        return (10, 2) if paid else (3, 15)
+    elif "claude" in model_lower or "anthropic" in model_lower:
+        paid = os.environ.get("CLAUDE_PAID_TIER", "").lower() == "true"
+        return (20, 1) if paid else (5, 5)
+    elif "codex" in model_lower or "gpt" in model_lower or "openai" in model_lower:
+        # Codex uses message quotas, not RPM - be generous
+        return (10, 2)
+    else:
+        # Unknown provider - be conservative
+        return (3, 10)
+
+
+def _get_model_provider(model: str) -> str:
+    """Extract provider key from model name for rate limit grouping."""
+    for prefix in ("codex/", "gemini-cli/", "gemini/", "claude-cli/", "claude-",
+                    "xai/", "mistral/", "groq/", "deepseek/", "zhipu/", "gpt-"):
+        if model.startswith(prefix):
+            return prefix.rstrip("/-")
+    return model
 
 
 # =============================================================================
@@ -2527,21 +2664,49 @@ Output your concerns as a numbered list. Be specific and cite parts of the spec.
             )
             return [], time.time() - start, ""
 
-    # Run adversary/model pairs in parallel
+    # Run adversary/model pairs in batches, respecting provider rate limits.
+    # Group pairs by provider so we can batch same-provider calls together.
     pairs = [(adv, model) for adv in adversaries for model in models]
-    max_workers = min(32, len(pairs)) if pairs else 1
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {
-            executor.submit(run_adversary_with_model, adv, model): (adv, model)
-            for adv, model in pairs
-        }
-        for future in concurrent.futures.as_completed(futures):
-            adv_key, model = futures[future]
-            adv_concerns, elapsed, raw_response = future.result()
-            concerns.extend(adv_concerns)
-            timing[f"{adv_key}@{model}"] = elapsed
-            if raw_response:
-                raw_responses[f"{adv_key}@{model}"] = raw_response
+
+    # Group by provider for rate limiting
+    from collections import defaultdict
+    by_provider: dict[str, list[tuple[str, str]]] = defaultdict(list)
+    for adv, model in pairs:
+        by_provider[_get_model_provider(model)].append((adv, model))
+
+    def collect_result(future, adv_key, model):
+        adv_concerns, elapsed, raw_response = future.result()
+        concerns.extend(adv_concerns)
+        timing[f"{adv_key}@{model}"] = elapsed
+        if raw_response:
+            raw_responses[f"{adv_key}@{model}"] = raw_response
+
+    # Process each provider's pairs in rate-limited batches, but run
+    # different providers concurrently since they have independent limits.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(32, len(pairs) or 1)) as executor:
+        for provider, provider_pairs in by_provider.items():
+            batch_size, batch_delay = get_rate_limit_config(provider_pairs[0][1])
+
+            for batch_idx in range(0, len(provider_pairs), batch_size):
+                batch = provider_pairs[batch_idx:batch_idx + batch_size]
+                if batch_idx > 0:
+                    # Stagger batches for the same provider
+                    print(
+                        f"  Rate limit pause: {batch_delay}s before {provider} batch "
+                        f"{batch_idx // batch_size + 1}/{(len(provider_pairs) + batch_size - 1) // batch_size}...",
+                        file=sys.stderr,
+                    )
+                    time.sleep(batch_delay)
+
+                batch_futures = {
+                    executor.submit(run_adversary_with_model, adv, model): (adv, model)
+                    for adv, model in batch
+                }
+                # Wait for this batch to complete before submitting next batch
+                # for the same provider (rate limit enforcement)
+                for future in concurrent.futures.as_completed(batch_futures):
+                    adv_key, model = batch_futures[future]
+                    collect_result(future, adv_key, model)
 
     # Print timing summary
     if timing:
@@ -3011,28 +3176,6 @@ CHALLENGED: [counter-evidence or logical flaw] if the reasoning is flawed"""
             return None
 
     # Run rebuttals in batches to avoid rate limits
-    # Rate limits vary by provider:
-    #   Gemini: 5-15 RPM (free), 150+ RPM (paid) - set GEMINI_PAID_TIER=true
-    #   Claude: 50 RPM (Tier 1), 2000+ (Tier 3+) - set CLAUDE_PAID_TIER=true
-    #   Codex: message quotas, generally generous
-    import os
-
-    def get_rate_limit_config(model_name: str) -> tuple[int, int]:
-        """Return (batch_size, delay_seconds) for the given model."""
-        model_lower = model_name.lower()
-        if "gemini" in model_lower:
-            paid = os.environ.get("GEMINI_PAID_TIER", "").lower() == "true"
-            return (10, 2) if paid else (3, 15)
-        elif "claude" in model_lower or "anthropic" in model_lower:
-            paid = os.environ.get("CLAUDE_PAID_TIER", "").lower() == "true"
-            return (20, 1) if paid else (5, 5)
-        elif "codex" in model_lower or "gpt" in model_lower or "openai" in model_lower:
-            # Codex uses message quotas, not RPM - be generous
-            return (10, 2)
-        else:
-            # Unknown provider - be conservative
-            return (3, 10)
-
     batch_size, batch_delay = get_rate_limit_config(model)
 
     for i in range(0, len(dismissed), batch_size):

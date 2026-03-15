@@ -775,8 +775,9 @@ class TestGetDefaultModel:
         with patch.dict("os.environ", {}, clear=True):
             with patch("providers.CODEX_AVAILABLE", False):
                 with patch("providers.GEMINI_CLI_AVAILABLE", False):
-                    default = get_default_model()
-                    assert default is None
+                    with patch("providers.CLAUDE_CLI_AVAILABLE", False):
+                        default = get_default_model()
+                        assert default is None
 
     def test_prefers_bedrock_when_enabled(self):
         from providers import get_default_model

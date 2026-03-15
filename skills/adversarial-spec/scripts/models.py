@@ -36,6 +36,7 @@ from prompts import (
     get_system_prompt,
 )
 from providers import (
+    CLAUDE_CLI_AVAILABLE,
     CODEX_AVAILABLE,
     DEFAULT_CODEX_REASONING,
     DEFAULT_COST,
@@ -45,6 +46,67 @@ from providers import (
 
 MAX_RETRIES = 3
 RETRY_BASE_DELAY = 1.0  # seconds
+
+
+def _extract_claude_cli_output(payload: object) -> tuple[str, int, int]:
+    """Normalize Claude CLI JSON output across legacy and event-array formats."""
+    response_text = ""
+    input_tokens = 0
+    output_tokens = 0
+
+    if isinstance(payload, dict):
+        response_text = str(payload.get("result", "")).strip()
+        usage = payload.get("usage", {})
+        if isinstance(usage, dict):
+            input_tokens = int(usage.get("input_tokens", input_tokens) or 0)
+            output_tokens = int(usage.get("output_tokens", output_tokens) or 0)
+        input_tokens = int(payload.get("input_tokens", input_tokens) or 0)
+        output_tokens = int(payload.get("output_tokens", output_tokens) or 0)
+        return response_text, input_tokens, output_tokens
+
+    if isinstance(payload, list):
+        for event in payload:
+            if not isinstance(event, dict):
+                continue
+
+            if event.get("type") == "assistant":
+                message = event.get("message", {})
+                if isinstance(message, dict):
+                    content = message.get("content", [])
+                    if isinstance(content, list):
+                        text_parts = [
+                            block.get("text", "")
+                            for block in content
+                            if isinstance(block, dict)
+                            and block.get("type") == "text"
+                            and block.get("text")
+                        ]
+                        if text_parts:
+                            response_text = "\n".join(text_parts).strip()
+
+                    usage = message.get("usage", {})
+                    if isinstance(usage, dict):
+                        input_tokens = int(usage.get("input_tokens", input_tokens) or 0)
+                        output_tokens = int(
+                            usage.get("output_tokens", output_tokens) or 0
+                        )
+
+            if event.get("type") == "result":
+                result_text = str(event.get("result", "")).strip()
+                if result_text:
+                    response_text = result_text
+
+                usage = event.get("usage", {})
+                if isinstance(usage, dict):
+                    input_tokens = int(usage.get("input_tokens", input_tokens) or 0)
+                    output_tokens = int(usage.get("output_tokens", output_tokens) or 0)
+
+        return response_text, input_tokens, output_tokens
+
+    if isinstance(payload, str):
+        return payload.strip(), 0, 0
+
+    return "", 0, 0
 
 # Safety preamble for agentic CLI tools (Codex, Gemini CLI) that have file write access
 CLI_FILE_SAFETY_PREAMBLE = """CRITICAL FILE SAFETY RULES:
@@ -100,7 +162,11 @@ class CostTracker:
 
     def add(self, model: str, input_tokens: int, output_tokens: int) -> float:
         """Add usage for a model call and return the cost."""
-        costs = MODEL_COSTS.get(model, DEFAULT_COST)
+        # CLI-routed models are free — don't fall through to DEFAULT_COST
+        cli_prefixes = ("codex/", "gemini-cli/", "claude-cli/")
+        free_cost = {"input": 0.0, "output": 0.0}
+        default = free_cost if model.startswith(cli_prefixes) else DEFAULT_COST
+        costs = MODEL_COSTS.get(model, default)
         cost = (input_tokens / 1_000_000 * costs["input"]) + (
             output_tokens / 1_000_000 * costs["output"]
         )
@@ -467,6 +533,89 @@ USER REQUEST:
         raise RuntimeError("Gemini CLI not found in PATH")
 
 
+def call_claude_cli_model(
+    system_prompt: str,
+    user_message: str,
+    model: str,
+    timeout: int = 600,
+) -> tuple[str, int, int]:
+    """
+    Call Claude CLI (claude -p) for model inference using Anthropic subscription.
+
+    Args:
+        system_prompt: System instructions for the model
+        user_message: User prompt to send
+        model: Model name (e.g., "claude-cli/claude-sonnet-4-6" -> uses "claude-sonnet-4-6")
+        timeout: Timeout in seconds (default 10 minutes)
+
+    Returns:
+        Tuple of (response_text, input_tokens, output_tokens)
+
+    Raises:
+        RuntimeError: If Claude CLI is not available or fails
+    """
+    if not CLAUDE_CLI_AVAILABLE:
+        raise RuntimeError(
+            "Claude CLI not found. Install with: npm install -g @anthropic-ai/claude-code && claude setup-token"
+        )
+
+    # Extract actual model name from "claude-cli/model" format
+    actual_model = model.split("/", 1)[1] if "/" in model else model
+
+    # Combine system prompt and user message for the prompt
+    full_prompt = f"""SYSTEM INSTRUCTIONS:
+{system_prompt}
+
+USER REQUEST:
+{user_message}"""
+
+    try:
+        cmd = [
+            "claude",
+            "-p",
+            "--model",
+            actual_model,
+            "--output-format",
+            "json",
+            "--no-session-persistence",
+            "--tools",
+            "",
+        ]
+
+        result = subprocess.run(
+            cmd, input=full_prompt, capture_output=True, text=True, timeout=timeout
+        )
+
+        if result.returncode != 0:
+            error_msg = (
+                result.stderr.strip()
+                or f"Claude CLI exited with code {result.returncode}"
+            )
+            raise RuntimeError(f"Claude CLI failed: {error_msg}")
+
+        # Parse JSON output
+        try:
+            output = json.loads(result.stdout)
+            response_text, input_tokens, output_tokens = _extract_claude_cli_output(
+                output
+            )
+        except json.JSONDecodeError:
+            # Fall back to raw text if JSON parsing fails
+            response_text = result.stdout.strip()
+            input_tokens = len(full_prompt) // 4
+            output_tokens = len(response_text) // 4
+
+        if not response_text:
+            raise RuntimeError("No response from Claude CLI")
+
+        return response_text, input_tokens, output_tokens
+
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(f"Claude CLI timed out after {timeout}s")
+    except FileNotFoundError:
+        raise RuntimeError("Claude CLI not found in PATH")
+
+
 def call_single_model(
     model: str,
     spec: str,
@@ -574,6 +723,56 @@ def call_single_model(
         for attempt in range(MAX_RETRIES):
             try:
                 content, input_tokens, output_tokens = call_gemini_cli_model(
+                    system_prompt=system_prompt,
+                    user_message=user_message,
+                    model=model,
+                    timeout=timeout,
+                )
+                agreed = "[AGREE]" in content
+                extracted = extract_spec(content)
+
+                if not agreed and not extracted:
+                    print(
+                        f"Warning: {model} provided critique but no [SPEC] tags found. Response may be malformed.",
+                        file=sys.stderr,
+                    )
+
+                cost = cost_tracker.add(model, input_tokens, output_tokens)
+
+                return ModelResponse(
+                    model=model,
+                    response=content,
+                    agreed=agreed,
+                    spec=extracted,
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                    cost=cost,
+                )
+            except Exception as e:
+                last_error = str(e)
+                if attempt < MAX_RETRIES - 1:
+                    delay = RETRY_BASE_DELAY * (2**attempt)
+                    print(
+                        f"Warning: {model} failed (attempt {attempt + 1}/{MAX_RETRIES}): {last_error}. Retrying in {delay:.1f}s...",
+                        file=sys.stderr,
+                    )
+                    time.sleep(delay)
+                else:
+                    print(
+                        f"Error: {model} failed after {MAX_RETRIES} attempts: {last_error}",
+                        file=sys.stderr,
+                    )
+
+        return ModelResponse(
+            model=model, response="", agreed=False, spec=None, error=last_error
+        )
+
+    # Route Claude CLI models to dedicated handler
+    if model.startswith("claude-cli/"):
+        last_error = None
+        for attempt in range(MAX_RETRIES):
+            try:
+                content, input_tokens, output_tokens = call_claude_cli_model(
                     system_prompt=system_prompt,
                     user_message=user_message,
                     model=model,

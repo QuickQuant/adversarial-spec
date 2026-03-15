@@ -523,6 +523,72 @@ When accepting, require the spec to add:
     rule="No citation = unverified assumption. Don't reason about likelihood - demand proof.",
 )
 
+ARCHITECT = Adversary(
+    name="architect",
+    prefix="ARCH",
+    persona="""You challenge internal code structure, data flow, and component boundaries.
+Other adversaries ask "does the spec cover the right features?" - you ask "how is the code
+ACTUALLY organized to deliver those features?"
+
+You trace data flow. You ask "what happens when..." for real user paths. You identify
+missing abstractions, inconsistent boundaries, and patterns that won't compose.
+
+## What You Challenge
+
+1. DATA FLOW: How does data flow from database through server components to client components?
+   Where are the transformation points? Are there unnecessary hops or copies?
+
+2. SHARED INFRASTRUCTURE: What shared infrastructure exists for auth, data fetching, caching,
+   error handling? Is each feature building its own plumbing, or is there a common foundation?
+
+3. STATE MANAGEMENT: What happens to client state when a user navigates between pages?
+   Is state ownership clear? Are there potential stale-state bugs?
+
+4. COMPONENT BOUNDARIES: Where is the server/client component boundary (or equivalent)?
+   Is it consistent across features? Are there components doing work on the wrong side?
+
+5. PATTERN PROPAGATION: How will the first implementation's pattern propagate to subsequent
+   ones? If the first feature establishes a bad pattern, will 10 more features copy it?
+
+6. MISSING ABSTRACTIONS: Are there patterns repeated across files that should be centralized?
+   Is there a data fetching pattern used 12 times that should be a utility?
+
+## Your Output Format
+
+For each concern:
+- State the architectural issue clearly
+- Trace a specific user flow that exposes it
+- Explain the downstream impact (tech debt, bugs, performance)
+- Propose a concrete structural alternative""",
+    valid_dismissal="""
+You may dismiss architect's concern IF:
+- "The architecture document addresses this at [section]: [quote pattern decision]"
+- "This boundary is consistent with [framework]'s recommended pattern: [doc link]"
+- "The pattern is centralized at [file/module] and all features use it"
+- "The data flow is documented in the dry-run walkthrough: [reference]"
+""",
+    invalid_dismissal="""
+Do NOT accept these as valid dismissals:
+- "We'll refactor later" (architecture is hardest to change later)
+- "Each feature is independent" (shared patterns emerge whether you plan them or not)
+- "The framework handles it" (which framework feature? how?)
+- "It's a small project" (bad patterns propagate regardless of size)
+""",
+    valid_acceptance="""
+Accept architect's concern IF:
+- No target architecture document exists defining shared patterns
+- Data flow has undocumented transformation points
+- Multiple features build their own plumbing for the same concern
+- Component boundaries are inconsistent across features
+- First feature establishes a pattern without evaluating propagation
+
+When accepting, require:
+1. Document the shared pattern in the target architecture
+2. Or: explain why the pattern legitimately differs per feature
+""",
+    rule="If the first feature's pattern will be copied by 10 more, it better be the right pattern.",
+)
+
 INFORMATION_FLOW_AUDITOR = Adversary(
     name="information_flow_auditor",
     prefix="FLOW",
@@ -568,6 +634,13 @@ For every arrow/flow in the architecture:
    - Were alternatives evaluated? (Push vs poll, sync vs async)
    - If not, why not?
 
+5. **EXTERNAL BOUNDARY WIRED? (For flows crossing the system boundary)**
+   - Is the SDK/library listed in project dependencies (pyproject.toml, package.json)?
+   - Is there a construction path: credentials → client initialization → call site?
+   - Are ALL required credentials specified? (Many APIs need key + secret + passphrase)
+   - Does a concrete implementation exist, or only an interface/mock with `Any`-typed injection?
+   - Priority: outbound flows where money, orders, or mutations leave the system = AUDIT FIRST
+
 **Output Format:**
 
 For each flow you audit:
@@ -585,7 +658,10 @@ Assessment: [PASS/FLAG with explanation]
 - Flows described as "worker checks" or "system polls" without justification
 - Latency requirements that can't be traced to a mechanism
 - External system capabilities (WebSocket, webhooks) that aren't mentioned
-- "Result" or "Response" arrows without mechanism specification""",
+- "Result" or "Response" arrows without mechanism specification
+- External SDK referenced in spec but missing from project dependencies
+- `Any`-typed or duck-typed client injection with no concrete construction path
+- Outbound order/payment/mutation flows with no integration test or smoke test""",
     valid_dismissal="""
 You may dismiss information_flow_auditor's concern IF:
 - The mechanism is now explicitly documented with latency analysis
@@ -607,11 +683,13 @@ Accept information_flow_auditor's concern IF:
 - Source system capabilities weren't documented
 - Latency requirements exist but mechanism can't achieve them
 - Push mechanisms exist at source but weren't considered
+- External SDK is missing from dependencies or has no construction path
+- Outbound system boundary has only mock/interface with no concrete wiring
 
 When accepting, the spec should add an "Information Flow Audit" table:
-| Flow | Source | Destination | Mechanism | Latency | Source Capabilities | Justification |
+| Flow | Source | Destination | Mechanism | Latency | Source Capabilities | SDK Wired | Justification |
 """,
-    rule="Every arrow is a mechanism decision. No unlabeled flows. No assumed patterns.",
+    rule="Every arrow is a mechanism decision. No unlabeled flows. No assumed patterns. No unwired boundaries.",
 )
 
 UX_ARCHITECT = Adversary(
@@ -747,6 +825,7 @@ ADVERSARIES: dict[str, Adversary] = {
     "prior_art_scout": PRIOR_ART_SCOUT,
     "assumption_auditor": ASSUMPTION_AUDITOR,
     "information_flow_auditor": INFORMATION_FLOW_AUDITOR,
+    "architect": ARCHITECT,
 }
 
 # Final boss (runs after all regular adversaries)

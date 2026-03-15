@@ -1,0 +1,92 @@
+[
+  {
+    "concern": {
+      "id": "FLOW-947a0282",
+      "adversary": "information_flow_auditor",
+      "text": "**Inconsistent Subscription Protocol (State Overwrite vs. Delta Update):** The Problem:** The mechanism for how the Polymarket WebSocket Server handles these distinct schemas is unspecified. If `{ type: \"market\" }` is a \"set-state\" operation (overwriting previous subscriptions) and `{ operation: \"subscribe\" }` is an \"add-state\" operation, then a `resubscribe()` call on an open socket (Trigger 2) might accidentally wipe out all markets assigned in later batches or runtime additions. There is no flow indicating the server's acknowledgement or the worker's verification of the resulting subscription state.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The spec shows mixed subscription schemas ({ type: \"market\" } vs { operation: \"subscribe\" }) and uses { type: \"market\" } for resubscribe on an open socket, but does not define server semantics or any subscription state verification; the spec needs to document whether these are set vs add operations and how the worker confirms resulting state."
+  },
+  {
+    "concern": {
+      "id": "FLOW-4f171d5f",
+      "adversary": "information_flow_auditor",
+      "text": "**Missing Flow: Subscription Confirmation (The \"Fire and Forget\" Flag):** The Problem:** There is no return arrow from the Server to the Worker for subscription success or failure. In a real-world WebSocket implementation, subscriptions can fail due to invalid IDs, rate limiting, or permission errors. The spec assumes 100% delivery and acceptance. Without a `onSubscriptionError` or `onSubscriptionSuccess` flow, the worker's internal \"subscribed\" state will inevitably drift from the server's reality.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] There is no return flow for subscription success/failure in the diagram or call graph, only send() calls; the spec needs to add subscription ack/error handling and describe how the worker reconciles its subscribed state with server responses."
+  },
+  {
+    "concern": {
+      "id": "FLOW-89caf059",
+      "adversary": "information_flow_auditor",
+      "text": "**Poll-Based Market Discovery Latency:** The Problem:** New market assignments are pulled via polling. This introduces a worst-case 60-second latency between a market being created on the exchange and the worker beginning to monitor it. If the business requirement is \"real-time coverage,\" this polling mechanism fails by design. The source (Convex) capabilities regarding server-sent events (SSE) or WebSockets for *pushing* new assignments to workers are not mentioned.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 1, 'acknowledged': 1}] New assignments arrive via a 60s heartbeat/top-up poll, and the spec provides no latency analysis or push alternative; the spec needs to state the required assignment latency and either justify polling or add a push mechanism."
+  },
+  {
+    "concern": {
+      "id": "FLOW-8e0c283b",
+      "adversary": "information_flow_auditor",
+      "text": "**Kalshi Adapter Zero-Spec:** The Problem:** It is an implicit assumption that Kalshi supports the same batching, staleness detection, and message schemas as Polymarket. External system capabilities for Kalshi (REST vs. WS, auth requirements, rate limits) are completely omitted. If Kalshi requires a different handshake or doesn't support batching, the `WebSocketClientBase` abstraction is likely broken.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The spec only details Polymarket message formats and flows; Kalshi is shown as using the same base but without protocol, batching, staleness, or rate-limit details; the spec needs to document Kalshi-specific capabilities and any deviations from the base."
+  },
+  {
+    "concern": {
+      "id": "FLOW-02041932",
+      "adversary": "information_flow_auditor",
+      "text": "**Unspecified Mechanism for Convex Ingestion (The \"Result\" Trap):** The Problem:** While the registration flow explicitly labels `POST`, the ingestion flow\u2014the most high-frequency path in the system\u2014is implicit. If this is a standard REST POST, the worker's performance is now bound by HTTP/1.1 or HTTP/2 overhead for every 100 messages or 1 second. If the \"Convex Backend\" experiences 500ms of latency, the `flushBuffer()` call (which appears synchronous in the call graph) will back up the `onMessage` processing.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The ingestion path to Convex is unlabeled and lacks transport, method, and async/backpressure semantics; the spec needs to define the ingestion mechanism (e.g., POST/gRPC/streaming), expected latency, and how flushBuffer interacts with slow responses."
+  },
+  {
+    "concern": {
+      "id": "FLOW-30a4561d",
+      "adversary": "information_flow_auditor",
+      "text": "**Indeterminate \"Staleness\" Detection Mechanism:** The Problem:** How is staleness defined? Is it a lack of `onMessage` events? A missed server-side heartbeat? If the mechanism is a simple timer since the last message, a quiet market will trigger a `resubscribe()` loop. Furthermore, the flow shows `resubscribe()` sending a message over the *same* open socket. If the socket is \"stale\" (i.e., the underlying TCP connection is dead but not closed), `this.send(msg)` will fail silently or buffer indefinitely in the OS kernel, yet there is no error-handling flow for this specific \"recovery\" path.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] Staleness detection is referenced but not defined, and resubscribe sends on the same socket without a documented failure path; the spec needs to define staleness criteria and explicit recovery/error handling for send failures on a stale connection."
+  },
+  {
+    "concern": {
+      "id": "FLOW-7ff90367",
+      "adversary": "information_flow_auditor",
+      "text": "**The 50ms Throttle vs. High-Frequency Volatility:** The Problem:** This is an implicit decision about information density. During a high-volatility event (e.g., an election night or a flash crash), the order book might change 20 times in 50ms. By throttling to 50ms *before* buffering, you are discarding intermediate price states. If the downstream \"Convex Backend\" logic requires a full audit trail of price movements for trade execution, this throttle is a data-loss bug specified as a feature.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The spec explicitly throttles to 50ms before buffering but does not state fidelity requirements or data-loss tolerance; it needs to clarify whether sampling is acceptable or adjust the pipeline to preserve required granularity."
+  },
+  {
+    "concern": {
+      "id": "FLOW-226c1e2b",
+      "adversary": "information_flow_auditor",
+      "text": "**Ambiguous \"terminate\" Signal Path:** The Problem:** The diagram shows `shutdown() \u2500\u2500\u2500> process.exit(0)`. It does NOT show a flow for notifying the Exchange or Convex that the worker is shutting down *before* it dies, other than the \"Deregister\" in the Shutdown Sequence. If the `process.exit(0)` is triggered immediately by the heartbeat, we bypass the `deregister` and `disconnect` steps shown in the final sequence box, leading to \"ghost\" workers in the Convex dashboard.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The heartbeat path shows shutdown() leading directly to process.exit(0) while the shutdown sequence lists deregister/disconnect steps, creating ambiguity about ordering; the spec needs to explicitly state that terminate triggers the full shutdown sequence before exit."
+  },
+  {
+    "concern": {
+      "id": "FLOW-06192c05",
+      "adversary": "information_flow_auditor",
+      "text": "**Buffer Overflow and Backpressure Blindness:** The Problem:** If `flushBuffer()` is slow (due to the Convex mechanism issues mentioned in Concern #2), and the WebSocket continues to stream data at 1000 msgs/sec, the memory usage of the `WORKER PROCESS` will grow unboundedly. There is no flow for \"Pause Listen\" or \"Drop Oldest\" when the buffer reaches a critical threshold.",
+      "severity": "medium"
+    },
+    "verdict": "accepted",
+    "reasoning": "[Consensus: {'accepted': 2}] The buffer only shows size-based and time-based flush triggers with no max size, backpressure, or drop policy; the spec needs to define a capacity limit and behavior under sustained ingest when flushBuffer is slow."
+  }
+]

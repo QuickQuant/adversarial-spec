@@ -12,6 +12,7 @@ from models import (
     RETRY_BASE_DELAY,
     CostTracker,
     ModelResponse,
+    call_claude_cli_model,
     call_codex_model,
     call_gemini_cli_model,
     call_models_parallel,
@@ -789,6 +790,64 @@ class TestCallGeminiCliModel:
         assert "-y" in cmd
 
 
+class TestCallClaudeCliModel:
+    @patch("models.CLAUDE_CLI_AVAILABLE", False)
+    def test_raises_when_claude_cli_unavailable(self):
+        import pytest
+
+        with pytest.raises(RuntimeError, match="Claude CLI not found"):
+            call_claude_cli_model("system", "user", "claude-cli/claude-sonnet-4-6")
+
+    @patch("models.CLAUDE_CLI_AVAILABLE", True)
+    @patch("models.subprocess.run")
+    def test_extracts_model_name_from_prefix(self, mock_run):
+        mock_run.return_value = Mock(
+            returncode=0,
+            stdout='{"result":"Response","input_tokens":100,"output_tokens":50}',
+            stderr="",
+        )
+        response, inp, out = call_claude_cli_model(
+            "sys", "user", "claude-cli/claude-sonnet-4-6"
+        )
+        cmd = mock_run.call_args[0][0]
+        assert "claude-sonnet-4-6" in cmd
+        assert "claude-cli/claude-sonnet-4-6" not in " ".join(cmd)
+        assert response == "Response"
+        assert inp == 100
+        assert out == 50
+
+    @patch("models.CLAUDE_CLI_AVAILABLE", True)
+    @patch("models.subprocess.run")
+    def test_parses_event_array_output(self, mock_run):
+        mock_run.return_value = Mock(
+            returncode=0,
+            stdout='[{"type":"system"},{"type":"assistant","message":{"content":[{"type":"text","text":"Assistant text"}],"usage":{"input_tokens":3,"output_tokens":1}}},{"type":"result","result":"Final text","usage":{"input_tokens":3,"output_tokens":4}}]',
+            stderr="",
+        )
+        response, inp, out = call_claude_cli_model("sys", "user", "claude-cli/model")
+        assert response == "Final text"
+        assert inp == 3
+        assert out == 4
+
+    @patch("models.CLAUDE_CLI_AVAILABLE", True)
+    @patch("models.subprocess.run")
+    def test_falls_back_to_raw_text_for_non_json_output(self, mock_run):
+        mock_run.return_value = Mock(returncode=0, stdout="Plain response", stderr="")
+        response, inp, out = call_claude_cli_model("system prompt", "user", "claude-cli/model")
+        assert response == "Plain response"
+        assert inp > 0
+        assert out > 0
+
+    @patch("models.CLAUDE_CLI_AVAILABLE", True)
+    @patch("models.subprocess.run")
+    def test_raises_on_empty_response(self, mock_run):
+        import pytest
+
+        mock_run.return_value = Mock(returncode=0, stdout='[{"type":"system"}]', stderr="")
+        with pytest.raises(RuntimeError, match="No response from Claude CLI"):
+            call_claude_cli_model("sys", "user", "claude-cli/model")
+
+
 class TestCallSingleModel:
     @patch("models.completion")
     def test_returns_model_response_on_success(self, mock_completion):
@@ -1056,6 +1115,33 @@ class TestCallSingleModel:
         calls = mock_sleep.call_args_list
         assert calls[0][0][0] == 1.0  # First delay
         assert calls[1][0][0] == 2.0  # Second delay
+
+    @patch("models.call_claude_cli_model")
+    @patch("models.CLAUDE_CLI_AVAILABLE", True)
+    def test_routes_claude_cli_model_to_handler(self, mock_claude):
+        mock_claude.return_value = ("[AGREE]\n[SPEC]spec[/SPEC]", 100, 50)
+
+        result = call_single_model("claude-cli/claude-sonnet-4-6", "spec", 1, "prd")
+        mock_claude.assert_called_once()
+        assert result.model == "claude-cli/claude-sonnet-4-6"
+
+    @patch("models.call_claude_cli_model")
+    @patch("models.CLAUDE_CLI_AVAILABLE", True)
+    @patch("models.time.sleep")
+    def test_claude_cli_retries_on_failure(self, mock_sleep, mock_claude):
+        mock_claude.side_effect = [Exception("First fail"), ("[AGREE]", 10, 5)]
+
+        result = call_single_model("claude-cli/claude-sonnet-4-6", "spec", 1, "prd")
+        assert mock_claude.call_count == 2
+        assert result.agreed is True
+
+    @patch("models.call_claude_cli_model")
+    @patch("models.CLAUDE_CLI_AVAILABLE", True)
+    def test_claude_cli_extracts_spec_from_response(self, mock_claude):
+        mock_claude.return_value = ("Critique\n[SPEC]Extracted spec[/SPEC]", 100, 50)
+
+        result = call_single_model("claude-cli/claude-sonnet-4-6", "spec", 1, "prd")
+        assert result.spec == "Extracted spec"
 
 
 class TestCallModelsParallel:
