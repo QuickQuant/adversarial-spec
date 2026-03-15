@@ -1,0 +1,130 @@
+<!-- Project Reference v1.0 | adversarial-spec | 2026-01-22 -->
+# Project Reference
+
+This document contains **REFERENCE** patterns - historical context, architectural overview, and "good to know" information.
+
+For constraints Claude MUST follow, see [project-practices.md](project-practices.md).
+For universal rules, see [core-practices.md](core-practices.md).
+
+**Tagging**: Sections are tagged with `<!-- tags: domain1, domain2 -->`. context_loader.sh only loads sections matching the current domain or tagged "global".
+
+---
+
+## System Architecture Overview
+<!-- tags: global -->
+
+**adversarial-spec** is a Claude Code plugin that iteratively refines product specifications through multi-model debate until consensus is reached.
+
+### Core Insight
+
+A single LLM reviewing a spec will miss things. Multiple LLMs debating a spec will catch gaps, challenge assumptions, and surface edge cases that any one model would overlook.
+
+### High-Level Flow
+
+```
+User describes product --> Claude drafts spec --> Multiple LLMs critique in parallel
+       |                                                |
+       |                                                v
+       |                               Claude synthesizes + adds own critique
+       |                                                |
+       |                                                v
+       |                               Revise and repeat until ALL agree
+       |                                                |
+       +----------------------------------------------->|
+                                                        v
+                                              User review period
+                                                        |
+                                                        v
+                                              Final document output
+```
+
+### Key Architectural Decisions
+
+1. **Claude is an active participant**, not just an orchestrator
+   - Claude provides independent critiques
+   - Claude challenges opponent models
+   - Claude contributes substantive improvements
+
+2. **litellm for model orchestration**
+   - Single interface to multiple providers
+   - Handles API differences transparently
+   - CLI adapters (codex/, gemini-cli/) for non-API models
+
+3. **Early agreement verification**
+   - Models that agree too quickly are pressed
+   - Prevents rubber-stamping without thorough review
+
+4. **Document types are distinct**
+   - PRD: Business/product focus (stakeholders, PMs, designers)
+   - Tech Spec: Engineering focus (developers, architects)
+   - Different critique prompts for each type
+
+### Code Organization
+
+```
+adversarial-spec/
+├── skills/adversarial-spec/
+│   ├── SKILL.md              # Skill definition for Claude Code
+│   └── scripts/
+│       ├── debate.py         # Main CLI and orchestration
+│       ├── models.py         # Model call abstractions
+│       ├── providers.py      # API key detection
+│       ├── prompts.py        # Critique and synthesis prompts
+│       ├── session.py        # Session persistence
+│       └── telegram_bot.py   # Telegram notifications
+├── execution_planner/        # Task extraction from specs
+└── tests/                    # Test suites
+```
+
+---
+
+## Model Integration Reference
+<!-- tags: global -->
+
+### Provider Support Matrix
+
+| Provider   | Env Var                | Routing                    |
+|------------|------------------------|----------------------------|
+| OpenAI     | `OPENAI_API_KEY`       | Direct via litellm         |
+| Anthropic  | `ANTHROPIC_API_KEY`    | Direct via litellm         |
+| Google     | `GEMINI_API_KEY`       | gemini/ prefix             |
+| xAI        | `XAI_API_KEY`          | xai/ prefix                |
+| Mistral    | `MISTRAL_API_KEY`      | mistral/ prefix            |
+| Groq       | `GROQ_API_KEY`         | groq/ prefix               |
+| OpenRouter | `OPENROUTER_API_KEY`   | openrouter/ prefix         |
+| Codex CLI  | ChatGPT subscription   | codex/ prefix (CLI adapter)|
+| Gemini CLI | Google account         | gemini-cli/ prefix         |
+| Deepseek   | `DEEPSEEK_API_KEY`     | deepseek/ prefix           |
+| Bedrock    | AWS credentials        | Routing mode (all calls)   |
+
+### CLI Adapter Pattern
+
+For models accessed via CLI tools rather than APIs:
+- `codex/gpt-5.2-codex` - Routes through OpenAI Codex CLI
+- `gemini-cli/gemini-3-pro-preview` - Routes through Google Gemini CLI
+
+These adapters spawn subprocesses and parse CLI output.
+
+---
+
+## UI Design Reference
+<!-- tags: ui-design -->
+
+### Current State
+
+The tool is CLI-only. No graphical interface exists yet.
+
+### User Touchpoints
+
+1. **Invocation**: `/adversarial-spec "description"` or `/adversarial-spec ./existing-spec.md`
+2. **Configuration prompts**: Document type, interview mode, opponent models
+3. **Round display**: Shows opponent critiques, Claude's critique, synthesis
+4. **Cost summary**: Token counts and estimated costs per round
+5. **User review period**: Accept, request changes, or run another cycle
+6. **Final output**: Printed to terminal and written to file
+
+### Output Files
+
+- `spec-output.md` (PRD) or `tech-spec-output.md` (tech spec)
+- Session checkpoints in `.adversarial-spec-checkpoints/`
+- Sessions in `~/.config/adversarial-spec/sessions/`

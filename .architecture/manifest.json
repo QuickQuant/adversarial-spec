@@ -1,0 +1,107 @@
+{
+  "schema_version": "1.0",
+  "skill": "mapcodebase",
+  "skill_version": "2.1",
+  "model": "claude-opus-4-6",
+  "generated_at": "2026-02-06T20:35:00Z",
+  "target_dir": "/home/jason/PycharmProjects/adversarial-spec",
+  "git_hash": "e94ebfe",
+  "status": "success",
+  "mode": "full",
+  "focus": null,
+  "components": [
+    {
+      "id": "debate-engine",
+      "name": "Debate Engine",
+      "purpose": "Multi-model spec critique loop with 18 CLI actions",
+      "entry_file": "skills/adversarial-spec/scripts/debate.py:1933",
+      "key_files": ["skills/adversarial-spec/scripts/debate.py", "skills/adversarial-spec/scripts/session.py"],
+      "doc_path": "structured/components/debate-engine.md"
+    },
+    {
+      "id": "gauntlet",
+      "name": "Gauntlet",
+      "purpose": "Adversarial stress-testing with named attacker personas",
+      "entry_file": "skills/adversarial-spec/scripts/gauntlet.py",
+      "key_files": ["skills/adversarial-spec/scripts/gauntlet.py", "skills/adversarial-spec/scripts/adversaries.py"],
+      "doc_path": "structured/components/gauntlet.md"
+    },
+    {
+      "id": "models",
+      "name": "Models",
+      "purpose": "LLM call abstraction (LiteLLM + Codex/Gemini CLI)",
+      "entry_file": "skills/adversarial-spec/scripts/models.py",
+      "key_files": ["skills/adversarial-spec/scripts/models.py", "skills/adversarial-spec/scripts/providers.py"],
+      "doc_path": "structured/components/models.md"
+    },
+    {
+      "id": "execution-planner",
+      "name": "Execution Planner",
+      "purpose": "Spec-to-task decomposition pipeline (mid-deprecation)",
+      "entry_file": "execution_planner/task_planner.py",
+      "key_files": ["execution_planner/__init__.py", "execution_planner/task_planner.py", "execution_planner/gauntlet_concerns.py"],
+      "doc_path": "structured/components/execution-planner.md"
+    },
+    {
+      "id": "pre-gauntlet",
+      "name": "Pre-Gauntlet",
+      "purpose": "Context collection (git, system state) before gauntlet",
+      "entry_file": "skills/adversarial-spec/scripts/pre_gauntlet/orchestrator.py:51",
+      "key_files": ["skills/adversarial-spec/scripts/pre_gauntlet/orchestrator.py", "skills/adversarial-spec/scripts/collectors/git_position.py", "skills/adversarial-spec/scripts/collectors/system_state.py"],
+      "doc_path": "structured/components/pre-gauntlet.md"
+    },
+    {
+      "id": "mcp-tasks",
+      "name": "MCP Tasks",
+      "purpose": "Cross-agent task coordination via MCP protocol",
+      "entry_file": "mcp_tasks/server.py:365",
+      "key_files": ["mcp_tasks/server.py", "skills/adversarial-spec/scripts/task_manager.py"],
+      "doc_path": "structured/components/mcp-tasks.md"
+    }
+  ],
+  "metrics": {
+    "files_scanned": 57,
+    "components_identified": 6,
+    "flows_identified": 10,
+    "entry_points_identified": 12,
+    "explorer_failures": 0
+  },
+  "artifacts": [
+    "INDEX.md",
+    "overview.md",
+    "filesystem-map.md",
+    "structured/entry-points.md",
+    "structured/flows.md",
+    "structured/cross-references.md",
+    "structured/components/debate-engine.md",
+    "structured/components/gauntlet.md",
+    "structured/components/models.md",
+    "structured/components/execution-planner.md",
+    "structured/components/pre-gauntlet.md",
+    "structured/components/mcp-tasks.md",
+    "HUMAN_READ_ONLY_visuals/system-overview.md",
+    "manifest.json"
+  ],
+  "warnings": [
+    "scripts/scripts/ is a stale copy of scripts/ — canonical source is scripts/",
+    "execution_planner/ is mid-deprecation — only gauntlet_concerns.py and task_planner.py survive long-term"
+  ],
+  "exclusions": [
+    ".git/",
+    "node_modules/",
+    ".venv/",
+    "__pycache__/",
+    "dist/",
+    "build/",
+    ".adversarial-spec/",
+    ".idea/",
+    ".vscode/",
+    "adversarial_spec.egg-info/",
+    "skills/adversarial-spec/adversarial_spec_skill.egg-info/"
+  ],
+  "previous_run": {
+    "git_hash": null,
+    "timestamp": null,
+    "skill_version": null
+  }
+}
