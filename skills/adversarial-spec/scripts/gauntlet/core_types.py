@@ -7,12 +7,11 @@ gauntlet modules.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
 from adversaries import ADVERSARIES, generate_concern_id
-
 
 # =============================================================================
 # ENUMS
@@ -46,7 +45,7 @@ _VERDICT_NORMALIZE = {
 
 def normalize_verdict(raw: str) -> str:
     """Map raw verdict strings to canonical forms."""
-    return _VERDICT_NORMALIZE.get(raw.lower().strip(), raw.lower().strip())
+    return _VERDICT_NORMALIZE.get(raw.lower().strip(), "deferred")
 
 
 # =============================================================================
