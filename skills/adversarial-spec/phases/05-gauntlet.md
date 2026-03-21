@@ -205,6 +205,8 @@ After consensus is reached but before finalization, offer the adversarial gauntl
    - Add mitigations for accepted concerns
    - Update relevant sections (don't summarize or reduce existing content)
    - Save the full concern report as `gauntlet-concerns-YYYY-MM-DD.json`
+   - **Run checkpoint guardrails (CONS) after incorporating the batch of fixes** — gauntlet fix incorporation can introduce cross-section contradictions. Run CONS to catch them. SCOPE and TRACE are not needed here (gauntlet fixes are evaluated by Claude, not automated scope additions).
+   - If CONS finds issues, fix and re-run (max 2 attempts, then defer to user)
    - If significant changes were made, consider running another debate round
 
 8. Optionally run Final Boss (UX Architect review — expensive but thorough)
@@ -216,7 +218,41 @@ After consensus is reached but before finalization, offer the adversarial gauntl
 
 ### Arm Adversaries (before gauntlet attack generation)
 
-Adversaries produce higher-quality findings when they have codebase context, not just the spec text. This step assembles per-adversary briefing documents from the Context Readiness Audit inventory (built during debate — see 03-debate.md) and reports token overhead.
+Adversaries produce higher-quality findings when they have codebase context AND scope-aware prompts, not just the spec text. This step has two parts: (A) classify scope and generate dynamic prompts, and (B) assemble per-adversary briefing documents.
+
+**Part A: Scope Classification + Dynamic Prompt Generation**
+
+Before assembling briefings, classify the spec's scope and generate scope-aware prompts:
+
+1. **Classify scope** using `VALID_SCOPE_KEYS` from `adversaries.py`:
+   ```
+   Scope Classification
+   ═══════════════════════════════════════
+   exposure: public-internet
+   domain: user-facing-api
+   risk_signals: auth, payments
+   stack: python, fastapi
+   ```
+
+2. **For each adversary in `ADVERSARY_TEMPLATES`**, generate a dynamic prompt:
+   - Start with the template's fixed `tone`
+   - Select relevant `scope_guidelines` based on scope classification
+   - Generate 2-4 sentences of spec-specific focus
+   - Assemble into full persona string
+
+3. **Present all generated prompts to user for review** (see spec §1.4 for format)
+
+4. **User approves / edits / skips individual adversaries**
+
+5. **Write approved prompts** to `.adversarial-spec-gauntlet/approved-prompts.json` with `spec_hash` (generated via `sha256sum <spec-file> | cut -c1-12`)
+
+6. **Skipping adversaries by scope** — some adversaries become irrelevant for certain scopes (e.g., PARA for local-only CLI tools). Skipping is always a user decision, not automatic. Claude recommends skips with reasoning; user confirms.
+
+If `ADVERSARY_TEMPLATES` is empty (templates not yet populated), fall back to static personas from `ADVERSARIES` dict. Note this to the user: "Dynamic prompts not available — using static personas."
+
+**Part B: Context Briefing Assembly**
+
+Assemble per-adversary briefing documents from the Context Readiness Audit inventory (built during debate — see 03-debate.md) and report token overhead.
 
 **Process:**
 

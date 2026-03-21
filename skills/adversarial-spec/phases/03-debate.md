@@ -682,13 +682,68 @@ If the model was being lazy and now has critiques, continue the debate normally.
    # This is the source of truth for the next debate.py invocation
    ```
    Verify the file was written: `wc -l .adversarial-spec/specs/<slug>/spec-draft-v{N+1}.md`
-8. Go back to Step 4, piping the NEW file from disk: `cat spec-draft-v{N+1}.md | debate.py ...`
+8. **Run checkpoint guardrails** (see Checkpoint Guardrails section below)
+9. Go back to Step 4, piping the NEW file from disk: `cat spec-draft-v{N+1}.md | debate.py ...`
 
 **Handling conflicting critiques:**
 - If models suggest contradictory changes, evaluate each on merit
 - If the choice is a product decision (not purely technical), ask the user which approach they prefer
 - Choose the approach that best serves the document's audience
 - Note the tradeoff in your response
+
+---
+
+---
+
+### Checkpoint Guardrails (after each round incorporation)
+
+After incorporating critiques into a new spec version (Step 5 item 8), run checkpoint guardrails before the next debate round. These catch editorial regressions early — contradictions, scope drift, and orphaned requirements compound across rounds.
+
+**Three guardrail adversaries** (defined in `adversaries.py` → `GUARDRAILS` dict):
+
+| Guardrail | Prefix | What it checks |
+|-----------|--------|----------------|
+| `consistency_auditor` | CONS | Cross-section contradictions, duplicate numbering, arithmetic consistency |
+| `scope_creep_detector` | SCOPE | New scope additions not in original requirements |
+| `requirements_tracer` | TRACE | User stories/acceptance criteria that lost coverage |
+
+**First-draft exemption:** CONS cannot run on the first draft (it compares sections against each other — only meaningful after revision introduces cross-section drift). **SCOPE and TRACE CAN run on the first draft** because they compare the spec against external inputs (requirements and roadmap), which exist before the first draft.
+
+**Invocation contract — how Claude assembles guardrail inputs:**
+
+1. Read the guardrail prompt from `guardrail-prompts.md` (CONS, SCOPE, or TRACE)
+2. Assemble the input payload:
+   - **CONS:** prompt + current spec text
+   - **SCOPE:** prompt + original requirements (from session file `requirements_summary`) + current spec text
+   - **TRACE:** prompt + roadmap manifest (user stories + acceptance criteria) + current spec text
+3. Send the assembled input to a model via `debate.py critique --model <model> --system-prompt <guardrail-prompt>` or evaluate inline if the spec fits in Claude's own context
+
+**Session file dependency:** SCOPE and TRACE require data from the session file. If `requirements_summary` (SCOPE) or the roadmap manifest (TRACE) is missing, warn the user and skip that guardrail rather than running it without the external input.
+
+**Depth limit (FM-2):** If CONS finds issues, fix them and re-run CONS. If the re-run finds NEW contradictions introduced by the fix, defer to the user after 2 attempts — do not loop indefinitely.
+
+**Workflow after guardrails:**
+
+```
+Guardrail Results (post-Round N incorporation)
+═══════════════════════════════════════
+CONS (consistency_auditor): 2 findings
+  1. §3.2 says "max 5 retries" but §5.1 says "max 3 retries"
+  2. §7.3 and §7.4 both numbered as §7.3
+
+SCOPE (scope_creep_detector): 1 finding
+  1. §4.2 adds "webhook notification system" — not in original
+     requirements. → SCOPE ADDITION (needs approval)
+
+TRACE (requirements_tracer): 0 findings
+
+[Fix CONS findings] [Approve/remove SCOPE additions] [Proceed to next round]
+```
+
+1. Fix CONS findings before proceeding
+2. Present SCOPE additions for user approval or removal
+3. Restore TRACE-flagged coverage or explicitly descope with user approval
+4. Only after guardrails pass (or user explicitly overrides): proceed to the next round
 
 ---
 

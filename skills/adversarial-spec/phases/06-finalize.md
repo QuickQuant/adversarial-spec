@@ -4,6 +4,20 @@ When ALL opponent models AND you have said `[AGREE]` (and gauntlet is complete o
 
 **Before outputting, perform a final quality check:**
 
+**Final Guardrail Pass (REQUIRED):** Run all three guardrails one last time:
+- **CONS:** Cross-reference consistency — every numeric claim is arithmetically consistent, every "deferred" item does not also appear as in-scope, section numbering has no duplicates
+- **SCOPE:** Scope integrity — verify the final spec hasn't drifted beyond the approved requirements, especially after gauntlet fix incorporation which can introduce scope additions disguised as bug fixes
+- **TRACE:** Requirements coverage — verify no user story was orphaned during revisions; this is the last chance to catch dropped requirements before execution planning
+
+Fix any CONS findings. Present SCOPE additions for user approval. Restore TRACE-flagged coverage or explicitly descope with user approval. Only proceed after guardrails pass or user overrides.
+
+| Guardrail | Failure Mode | Action |
+|-----------|-------------|--------|
+| CONS model call fails | Hard stop — consistency check is mandatory, retry or switch models |
+| SCOPE or TRACE model call fails | Soft stop — warn and require explicit user approval to proceed without |
+
+Then verify:
+
 1. **Completeness**: Verify every section from the document structure is present and substantive
 2. **Consistency**: Ensure terminology, formatting, and style are uniform throughout
 3. **Clarity**: Remove any ambiguous language that could be misinterpreted
