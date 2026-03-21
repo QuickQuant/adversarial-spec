@@ -297,6 +297,75 @@ class TestCLIBedrock:
                         assert data["bedrock"]["region"] == "us-east-1"
 
 
+class TestCLIGauntlet:
+    def test_show_manifest_prints_formatted_manifest_and_exits(self):
+        """The primary gauntlet entry point must expose manifest viewing."""
+        import debate
+        import pytest
+
+        with patch("gauntlet.persistence.load_run_manifest", return_value={"status": "ok"}):
+            with patch(
+                "gauntlet.reporting.format_run_manifest",
+                return_value="formatted manifest",
+            ):
+                with patch(
+                    "sys.argv",
+                    ["debate.py", "gauntlet", "--show-manifest", "abc123"],
+                ):
+                    with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                        with pytest.raises(SystemExit) as exc_info:
+                            debate.main()
+
+        assert exc_info.value.code == 0
+        assert mock_stdout.getvalue().strip() == "formatted manifest"
+
+    def test_show_manifest_without_hash_loads_most_recent_manifest(self):
+        """Omitting HASH should ask persistence for the most recent manifest."""
+        import debate
+        import pytest
+
+        with patch(
+            "gauntlet.persistence.load_run_manifest",
+            return_value={"status": "ok"},
+        ) as mock_load_manifest:
+            with patch(
+                "gauntlet.reporting.format_run_manifest",
+                return_value="formatted manifest",
+            ):
+                with patch("sys.argv", ["debate.py", "gauntlet", "--show-manifest"]):
+                    with patch("sys.stdout", new_callable=StringIO):
+                        with pytest.raises(SystemExit) as exc_info:
+                            debate.main()
+
+        assert exc_info.value.code == 0
+        assert mock_load_manifest.call_args.args == (None,)
+
+    def test_gauntlet_reuses_global_codex_reasoning_for_attacks(self):
+        """The gauntlet subcommand must use the existing global Codex reasoning flag."""
+        import debate
+
+        with patch("debate.run_gauntlet", return_value=object()) as mock_run_gauntlet:
+            with patch("debate.format_gauntlet_report", return_value="report"):
+                with patch("sys.stdin", StringIO("# Test Spec")):
+                    with patch(
+                        "sys.argv",
+                        [
+                            "debate.py",
+                            "gauntlet",
+                            "--codex-reasoning",
+                            "high",
+                            "--eval-codex-reasoning",
+                            "medium",
+                        ],
+                    ):
+                        with patch("sys.stdout", new_callable=StringIO):
+                            with patch("sys.stderr", new_callable=StringIO):
+                                debate.main()
+
+        assert mock_run_gauntlet.call_args.kwargs["attack_codex_reasoning"] == "high"
+        assert mock_run_gauntlet.call_args.kwargs["eval_codex_reasoning"] == "medium"
+
+
 class TestCreateParser:
     def test_creates_parser_with_all_actions(self):
         """Test that parser includes all expected actions."""

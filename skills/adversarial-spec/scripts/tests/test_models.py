@@ -78,6 +78,25 @@ class TestModelResponse:
 
 
 class TestCostTracker:
+    def test_add_uses_lock(self):
+        class RecordingLock:
+            def __init__(self):
+                self.enter_count = 0
+
+            def __enter__(self):
+                self.enter_count += 1
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+        tracker = CostTracker()
+        tracker._lock = RecordingLock()
+
+        tracker.add("gpt-4o", 1000, 500)
+
+        assert tracker._lock.enter_count == 1
+
     def test_add_costs(self):
         tracker = CostTracker()
         tracker.add("gpt-4o", 1000, 500)

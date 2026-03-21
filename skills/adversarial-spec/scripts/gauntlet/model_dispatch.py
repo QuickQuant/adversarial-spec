@@ -36,7 +36,7 @@ except ImportError:
 # =============================================================================
 
 # Blocklist patterns for model name injection prevention
-_MODEL_NAME_BLOCKLIST = re.compile(r'[;|&$`\s]|[\x00-\x1f]|^--|^-')
+_MODEL_NAME_BLOCKLIST = re.compile(r'[;|&$`\s]|[\x00-\x1f]|--|^-')
 
 
 def _validate_model_name(model: str) -> None:

@@ -6,13 +6,14 @@ analysis, and the final gauntlet report. No phase logic lives here.
 
 from __future__ import annotations
 
+from typing import Any
+
 from gauntlet.core_types import (
     FinalBossVerdict,
     GauntletResult,
 )
 from gauntlet.medals import format_medals_for_display
 from gauntlet.persistence import load_adversary_stats
-
 
 # =============================================================================
 # ADVERSARY LEADERBOARD
@@ -233,6 +234,56 @@ def format_synergy_report(synergy: dict[str, dict]) -> str:
         for pair, data in high_overlap[:3]:
             overlap = data.get("overlap_rate", 0)
             lines.append(f"  {pair}: {overlap:.0%} overlap")
+
+    return "\n".join(lines)
+
+
+# =============================================================================
+# RUN MANIFEST
+# =============================================================================
+
+
+def format_run_manifest(manifest: dict[str, Any]) -> str:
+    """Format a run manifest for human-readable CLI output."""
+    phases = manifest.get("phases", [])
+    lines = [
+        "=== Gauntlet Run Manifest ===",
+        f"Spec hash: {manifest.get('spec_hash', 'unknown')}",
+        f"Status: {manifest.get('status', 'unknown')}",
+        f"Created: {manifest.get('created_at', 'unknown')}",
+        f"Updated: {manifest.get('updated_at', 'unknown')}",
+    ]
+
+    if manifest.get("path"):
+        lines.append(f"Path: {manifest['path']}")
+
+    if not phases:
+        lines.append("")
+        lines.append("No phase metrics recorded.")
+        return "\n".join(lines)
+
+    total_duration = sum(phase.get("duration_seconds", 0.0) for phase in phases)
+    total_input = sum(phase.get("input_tokens", 0) for phase in phases)
+    total_output = sum(phase.get("output_tokens", 0) for phase in phases)
+
+    lines.append("")
+    lines.append(
+        f"Totals: {len(phases)} phases, {total_duration:.1f}s, "
+        f"{total_input} input tokens, {total_output} output tokens"
+    )
+    lines.append("")
+
+    for phase in phases:
+        models = ", ".join(phase.get("models_used", [])) or "-"
+        lines.append(
+            f"[{phase.get('phase_index', '?')}] {phase.get('phase', 'unknown')} "
+            f"status={phase.get('status', 'unknown')} "
+            f"duration={phase.get('duration_seconds', 0.0):.1f}s "
+            f"tokens={phase.get('input_tokens', 0)}/{phase.get('output_tokens', 0)}"
+        )
+        lines.append(f"  Models: {models}")
+        if phase.get("error"):
+            lines.append(f"  Error: {phase['error']}")
 
     return "\n".join(lines)
 

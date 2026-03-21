@@ -9,16 +9,13 @@ from __future__ import annotations
 import json
 import re
 from datetime import datetime
-from typing import Optional
 
 from adversaries import get_version_manifest
 from gauntlet.core_types import (
-    Evaluation,
     GauntletResult,
     Medal,
 )
 from gauntlet.persistence import MEDALS_DIR, STATS_DIR
-
 
 # =============================================================================
 # CONCERN SIMILARITY

@@ -100,6 +100,7 @@ Evaluate each concern according to the response protocols. Output valid JSON."""
             system_prompt=system_prompt,
             user_message=user_message,
             timeout=config.timeout,
+            codex_reasoning=config.eval_codex_reasoning,
         )
         cost_tracker.add(model, in_tokens, out_tokens)
 

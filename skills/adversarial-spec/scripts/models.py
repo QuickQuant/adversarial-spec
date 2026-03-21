@@ -8,6 +8,7 @@ import json
 import os
 import subprocess
 import sys
+import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -159,6 +160,7 @@ class CostTracker:
     total_output_tokens: int = 0
     total_cost: float = 0.0
     by_model: dict = field(default_factory=dict)
+    _lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False)
 
     def add(self, model: str, input_tokens: int, output_tokens: int) -> float:
         """Add usage for a model call and return the cost."""
@@ -171,15 +173,20 @@ class CostTracker:
             output_tokens / 1_000_000 * costs["output"]
         )
 
-        self.total_input_tokens += input_tokens
-        self.total_output_tokens += output_tokens
-        self.total_cost += cost
+        with self._lock:
+            self.total_input_tokens += input_tokens
+            self.total_output_tokens += output_tokens
+            self.total_cost += cost
 
-        if model not in self.by_model:
-            self.by_model[model] = {"input_tokens": 0, "output_tokens": 0, "cost": 0.0}
-        self.by_model[model]["input_tokens"] += input_tokens
-        self.by_model[model]["output_tokens"] += output_tokens
-        self.by_model[model]["cost"] += cost
+            if model not in self.by_model:
+                self.by_model[model] = {
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "cost": 0.0,
+                }
+            self.by_model[model]["input_tokens"] += input_tokens
+            self.by_model[model]["output_tokens"] += output_tokens
+            self.by_model[model]["cost"] += cost
 
         return cost
 

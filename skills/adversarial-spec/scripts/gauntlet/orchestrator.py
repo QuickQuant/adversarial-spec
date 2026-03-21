@@ -39,7 +39,6 @@ from gauntlet.persistence import (
     save_checkpoint,
     save_gauntlet_run,
     save_partial_clustering,
-    save_run_manifest,
     update_adversary_stats,
     update_run_manifest,
 )
@@ -60,6 +59,58 @@ from gauntlet.phase_5_rebuttals import run_rebuttals
 from gauntlet.phase_6_adjudication import final_adjudication
 from gauntlet.phase_7_final_boss import run_final_boss_review
 from models import cost_tracker
+
+PHASE_INDEXES = {
+    "phase_1": 1,
+    "phase_2": 2,
+    "phase_3": 3,
+    "phase_3_5": 4,
+    "phase_4": 5,
+    "phase_5": 6,
+    "phase_6": 7,
+    "phase_7": 8,
+}
+
+
+def _start_phase_capture() -> tuple[float, int, int]:
+    """Capture timing and token counters at phase start."""
+    return (
+        time.time(),
+        cost_tracker.total_input_tokens,
+        cost_tracker.total_output_tokens,
+    )
+
+
+def _build_phase_metrics(
+    phase: str,
+    started_at: float,
+    input_before: int,
+    output_before: int,
+    models_used: list[str],
+    config: GauntletConfig,
+    spec_hash: str,
+    *,
+    status: str = "completed",
+    error: Optional[str] = None,
+    extra: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
+    """Build a manifest payload with the full PhaseMetrics contract."""
+    metrics = PhaseMetrics(
+        phase=phase,
+        phase_index=PHASE_INDEXES[phase],
+        status=status,
+        duration_seconds=max(0.0, time.time() - started_at),
+        input_tokens=max(0, cost_tracker.total_input_tokens - input_before),
+        output_tokens=max(0, cost_tracker.total_output_tokens - output_before),
+        models_used=list(models_used),
+        config_snapshot=dict(config.__dict__),
+        error=error,
+        spec_hash=spec_hash,
+    )
+    payload = dict(metrics.__dict__)
+    if extra:
+        payload.update(extra)
+    return payload
 
 
 def run_gauntlet(
@@ -182,12 +233,14 @@ def run_gauntlet(
         print(f"Attack models: {', '.join(attack_models)}", file=sys.stderr)
         print(f"Eval models: {', '.join(eval_models)}", file=sys.stderr)
         if config.resume:
-            print(f"Resume: enabled", file=sys.stderr)
+            print("Resume: enabled", file=sys.stderr)
         if config.unattended:
-            print(f"Unattended: enabled (auto-checkpoint on)", file=sys.stderr)
+            print("Unattended: enabled (auto-checkpoint on)", file=sys.stderr)
         print(file=sys.stderr)
 
         # ── Phase 1: Attack Generation ──
+        phase_1_started_at, phase_1_input, phase_1_output = _start_phase_capture()
+        phase_1_status = "completed"
         print("Phase 1: Generating attacks...", file=sys.stderr)
         if "phase_1" in partial:
             raw_concerns = partial["phase_1"]["concerns"]
@@ -205,6 +258,7 @@ def run_gauntlet(
                 adversary_timing.update(new_timing)
                 attack_raw_responses.update(new_raw)
             else:
+                phase_1_status = "skipped_resume"
                 print(f"  Resumed {len(raw_concerns)} concerns from checkpoint", file=sys.stderr)
         else:
             raw_concerns, adversary_timing, attack_raw_responses = generate_attacks(
@@ -219,7 +273,7 @@ def run_gauntlet(
         save_checkpoint(
             "concerns", "phase_1", concerns, spec_hash, config_hash,
         )
-        print(f"  Concerns checkpointed", file=sys.stderr)
+        print("  Concerns checkpointed", file=sys.stderr)
 
         # Persist raw LLM responses so parsing errors are recoverable
         if attack_raw_responses:
@@ -227,15 +281,27 @@ def run_gauntlet(
             with open(raw_file, 'w') as f:
                 json.dump(attack_raw_responses, f, indent=2)
 
-        manifest_path = update_run_manifest(manifest_path, {
-            "phase": "phase_1",
-            "spec_hash": spec_hash,
-            "concerns_generated": len(raw_concerns),
-            "attack_models": attack_models,
-            "adversaries": adversaries,
-        })
+        manifest_path = update_run_manifest(
+            manifest_path,
+            _build_phase_metrics(
+                "phase_1",
+                phase_1_started_at,
+                phase_1_input,
+                phase_1_output,
+                [] if phase_1_status == "skipped_resume" else attack_models,
+                config,
+                spec_hash,
+                status=phase_1_status,
+                extra={
+                    "concerns_generated": len(raw_concerns),
+                    "attack_models": attack_models,
+                    "adversaries": adversaries,
+                },
+            ),
+        )
 
         # ── Phase 2: Big Picture Synthesis ──
+        phase_2_started_at, phase_2_input, phase_2_output = _start_phase_capture()
         print("Phase 2: Big picture synthesis...", file=sys.stderr)
         big_picture = generate_big_picture_synthesis(
             concerns, primary_attack_model, config,
@@ -250,13 +316,25 @@ def run_gauntlet(
             n = len(big_picture.high_signal)
             print(f"  High-signal: {n} concerns flagged", file=sys.stderr)
 
-        manifest_path = update_run_manifest(manifest_path, {
-            "phase": "phase_2",
-            "real_issues": len(big_picture.real_issues) if big_picture.real_issues else 0,
-            "high_signal": len(big_picture.high_signal) if big_picture.high_signal else 0,
-        })
+        manifest_path = update_run_manifest(
+            manifest_path,
+            _build_phase_metrics(
+                "phase_2",
+                phase_2_started_at,
+                phase_2_input,
+                phase_2_output,
+                [primary_attack_model],
+                config,
+                spec_hash,
+                extra={
+                    "real_issues": len(big_picture.real_issues) if big_picture.real_issues else 0,
+                    "high_signal": len(big_picture.high_signal) if big_picture.high_signal else 0,
+                },
+            ),
+        )
 
         # ── Phase 3: Self-Filtering ──
+        phase_3_started_at, phase_3_input, phase_3_output = _start_phase_capture()
         dropped_concerns: list[Concern] = []
         noted_concerns: list[tuple[Concern, ExplanationMatch]] = []
 
@@ -274,19 +352,34 @@ def run_gauntlet(
                 print(f"  Noted: {len(noted_concerns)} (has explanation but re-verifying)", file=sys.stderr)
             print(f"  Proceeding with: {len(concerns)} concerns", file=sys.stderr)
 
-        manifest_path = update_run_manifest(manifest_path, {
-            "phase": "phase_3",
-            "post_filter": len(concerns),
-            "dropped": len(dropped_concerns),
-        })
+        manifest_path = update_run_manifest(
+            manifest_path,
+            _build_phase_metrics(
+                "phase_3",
+                phase_3_started_at,
+                phase_3_input,
+                phase_3_output,
+                [primary_attack_model] if not skip_filtering else [],
+                config,
+                spec_hash,
+                extra={
+                    "post_filter": len(concerns),
+                    "dropped": len(dropped_concerns),
+                },
+            ),
+        )
 
         # Preserve post-filter concerns for adversary-level stats before clustering.
         post_filter_concerns = concerns
 
         # ── Phase 3.5: Cluster + Dedup ──
+        phase_3_5_started_at, phase_3_5_input, phase_3_5_output = _start_phase_capture()
+        phase_3_5_status = "completed"
+        clustering_model = ""
         if "phase_3_5" in partial and not skip_filtering:
             clustered_concerns = partial["phase_3_5"]["clustered_concerns"]
             cluster_members = partial["phase_3_5"].get("cluster_members", {})
+            phase_3_5_status = "skipped_resume"
             print(f"Phase 3.5: Resumed {len(clustered_concerns)} clustered concerns from checkpoint", file=sys.stderr)
         else:
             clustering_model = choose_clustering_model(attack_models, primary_attack_model)
@@ -306,7 +399,7 @@ def run_gauntlet(
         # Auto-checkpoint after clustering (G-2: highest-cost crash failure mode)
         if config.auto_checkpoint:
             save_partial_clustering(spec_hash, clustered_concerns, config_hash)
-            print(f"  Clustering checkpointed", file=sys.stderr)
+            print("  Clustering checkpointed", file=sys.stderr)
 
         # Persist dedup stats for tracking over time
         _track_dedup_stats(
@@ -320,14 +413,28 @@ def run_gauntlet(
             clustering_model=clustering_model if "phase_3_5" not in partial else "resumed",
         )
 
-        manifest_path = update_run_manifest(manifest_path, {
-            "phase": "phase_3_5",
-            "pre_cluster": len(concerns),
-            "post_cluster": len(clustered_concerns),
-            "reduction_pct": round(reduction_pct, 1),
-        })
+        manifest_path = update_run_manifest(
+            manifest_path,
+            _build_phase_metrics(
+                "phase_3_5",
+                phase_3_5_started_at,
+                phase_3_5_input,
+                phase_3_5_output,
+                [] if phase_3_5_status == "skipped_resume" else [clustering_model],
+                config,
+                spec_hash,
+                status=phase_3_5_status,
+                extra={
+                    "pre_cluster": len(concerns),
+                    "post_cluster": len(clustered_concerns),
+                    "reduction_pct": round(reduction_pct, 1),
+                },
+            ),
+        )
 
         # ── Phase 4: Multi-Model Evaluation ──
+        phase_4_started_at, phase_4_input, phase_4_output = _start_phase_capture()
+        phase_4_status = "completed"
         print("Phase 4: Evaluating concerns...", file=sys.stderr)
         evaluation_concerns = clustered_concerns
 
@@ -337,9 +444,10 @@ def run_gauntlet(
             current_concern_ids = {c.id for c in clustered_concerns}
             if saved_concern_ids == current_concern_ids:
                 clustered_evaluations = partial["phase_4"]["evaluations"]
+                phase_4_status = "skipped_resume"
                 print(f"  Resumed {len(clustered_evaluations)} evaluations from checkpoint", file=sys.stderr)
             else:
-                print(f"  Concern set changed since checkpoint, re-evaluating", file=sys.stderr)
+                print("  Concern set changed since checkpoint, re-evaluating", file=sys.stderr)
                 if use_multi_model and len(eval_models) >= 2:
                     clustered_evaluations = evaluate_concerns_multi_model(
                         spec, evaluation_concerns, eval_models, config,
@@ -373,15 +481,27 @@ def run_gauntlet(
             save_checkpoint(
                 "evaluations", "phase_4", clustered_evaluations, spec_hash, config_hash,
             )
-            print(f"  Evaluations checkpointed", file=sys.stderr)
+            print("  Evaluations checkpointed", file=sys.stderr)
 
-        manifest_path = update_run_manifest(manifest_path, {
-            "phase": "phase_4",
-            "dismissed": len(dismissed),
-            "accepted": len(accepted),
-            "acknowledged": len(acknowledged),
-            "deferred": len(deferred),
-        })
+        manifest_path = update_run_manifest(
+            manifest_path,
+            _build_phase_metrics(
+                "phase_4",
+                phase_4_started_at,
+                phase_4_input,
+                phase_4_output,
+                [] if phase_4_status == "skipped_resume" else eval_models,
+                config,
+                spec_hash,
+                status=phase_4_status,
+                extra={
+                    "dismissed": len(dismissed),
+                    "accepted": len(accepted),
+                    "acknowledged": len(acknowledged),
+                    "deferred": len(deferred),
+                },
+            ),
+        )
 
         # Print intermediate summary (so results visible even if later phases crash)
         print("\n=== Phase 4 Summary (accepted concerns) ===", file=sys.stderr)
@@ -398,6 +518,7 @@ def run_gauntlet(
         print(file=sys.stderr)
 
         # ── Phase 5: Rebuttals ──
+        phase_5_started_at, phase_5_input, phase_5_output = _start_phase_capture()
         rebuttals: list[Rebuttal] = []
         if allow_rebuttals and dismissed:
             print("Phase 5: Running rebuttals...", file=sys.stderr)
@@ -405,15 +526,28 @@ def run_gauntlet(
             sustained = sum(1 for r in rebuttals if r.sustained)
             print(f"  Challenges: {sustained} of {len(rebuttals)}", file=sys.stderr)
 
-        manifest_path = update_run_manifest(manifest_path, {
-            "phase": "phase_5",
-            "rebuttals": len(rebuttals),
-            "sustained": sum(1 for r in rebuttals if r.sustained),
-        })
+        manifest_path = update_run_manifest(
+            manifest_path,
+            _build_phase_metrics(
+                "phase_5",
+                phase_5_started_at,
+                phase_5_input,
+                phase_5_output,
+                [primary_attack_model] if allow_rebuttals and dismissed else [],
+                config,
+                spec_hash,
+                extra={
+                    "rebuttals": len(rebuttals),
+                    "sustained": sum(1 for r in rebuttals if r.sustained),
+                },
+            ),
+        )
 
         # ── Phase 6: Final Adjudication ──
+        phase_6_started_at, phase_6_input, phase_6_output = _start_phase_capture()
         surviving_challenges: list[Concern] = []
         primary_eval_model = eval_models[0] if eval_models else select_eval_model()
+        challenged: list[Rebuttal] = []
         if rebuttals:
             challenged = [r for r in rebuttals if r.sustained]
             if challenged:
@@ -423,10 +557,19 @@ def run_gauntlet(
                 )
                 print(f"  Overturned: {len(surviving_challenges)}", file=sys.stderr)
 
-        manifest_path = update_run_manifest(manifest_path, {
-            "phase": "phase_6",
-            "overturned": len(surviving_challenges),
-        })
+        manifest_path = update_run_manifest(
+            manifest_path,
+            _build_phase_metrics(
+                "phase_6",
+                phase_6_started_at,
+                phase_6_input,
+                phase_6_output,
+                [primary_eval_model] if challenged else [],
+                config,
+                spec_hash,
+                extra={"overturned": len(surviving_challenges)},
+            ),
+        )
 
         # Compile technical concerns (accepted + deferred + surviving challenges)
         technical_concerns = (
@@ -455,13 +598,16 @@ def run_gauntlet(
         print(file=sys.stderr)
 
         # ── Phase 7: Final Boss UX Review (optional, expensive) ──
+        phase_7_started_at, phase_7_input, phase_7_output = _start_phase_capture()
+        phase_7_status = "completed"
         final_boss_result: Optional[FinalBossResult] = None
         ux_concerns: list[Concern] = []
 
         # Check for resumed Final Boss result
         if "phase_7" in partial and run_final_boss:
             final_boss_result = partial["phase_7"]["final_boss_result"]
-            print(f"Phase 7: Resumed Final Boss result from checkpoint", file=sys.stderr)
+            phase_7_status = "skipped_resume"
+            print("Phase 7: Resumed Final Boss result from checkpoint", file=sys.stderr)
         else:
             # Determine whether to run Final Boss
             do_final_boss = run_final_boss
@@ -542,10 +688,25 @@ Technical concerns requiring revision: {len(technical_concerns)}
                     severity="critical",
                 ))
 
-        manifest_path = update_run_manifest(manifest_path, {
-            "phase": "phase_7",
-            "verdict": final_boss_result.verdict.value if final_boss_result else "skipped",
-        })
+        phase_7_models = (
+            [final_boss_result.model] if final_boss_result and final_boss_result.model else []
+        )
+        manifest_path = update_run_manifest(
+            manifest_path,
+            _build_phase_metrics(
+                "phase_7",
+                phase_7_started_at,
+                phase_7_input,
+                phase_7_output,
+                phase_7_models,
+                config,
+                spec_hash,
+                status=phase_7_status,
+                extra={
+                    "verdict": final_boss_result.verdict.value if final_boss_result else "skipped",
+                },
+            ),
+        )
 
         # ── Build result ──
         final_concerns = technical_concerns + ux_concerns
@@ -621,7 +782,7 @@ Technical concerns requiring revision: {len(technical_concerns)}
             result.medals = medals  # type: ignore[attr-defined]
 
         # Finalize manifest
-        update_run_manifest(manifest_path, {"status": "complete"})
+        update_run_manifest(manifest_path, {"status": "completed"})
 
         return result
 

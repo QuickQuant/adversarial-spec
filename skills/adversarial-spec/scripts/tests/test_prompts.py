@@ -106,7 +106,7 @@ class TestArchPersona:
         assert ADVERSARIES["architect"] is ARCHITECT
 
     def test_arch_prefix(self):
-        from adversaries import ARCHITECT, ADVERSARY_PREFIXES
+        from adversaries import ADVERSARY_PREFIXES, ARCHITECT
         assert ARCHITECT.prefix == "ARCH"
         assert ADVERSARY_PREFIXES["architect"] == "ARCH"
 

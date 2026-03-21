@@ -7,11 +7,11 @@ source until the monolith is deleted.
 
 from adversaries import ADVERSARIES
 from gauntlet.medals import get_medal_leaderboard
+from gauntlet.orchestrator import run_gauntlet
 from gauntlet.reporting import (
     format_gauntlet_report,
     get_adversary_leaderboard,
 )
-from gauntlet.orchestrator import run_gauntlet
 
 __all__ = [
     "ADVERSARIES",

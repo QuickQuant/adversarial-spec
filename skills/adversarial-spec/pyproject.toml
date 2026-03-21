@@ -8,6 +8,7 @@ version = "1.0.0"
 description = "Adversarial spec skill for Claude Code"
 requires-python = ">=3.10"
 dependencies = [
+    "filelock==3.16.1",
     "litellm>=1.50.0",
 ]
 

@@ -15,7 +15,6 @@ from gauntlet.core_types import Evaluation, GauntletConfig, Rebuttal
 from gauntlet.model_dispatch import call_model, get_rate_limit_config
 from models import cost_tracker
 
-
 # =============================================================================
 # PROMPT
 # =============================================================================
@@ -93,6 +92,7 @@ CHALLENGED: [counter-evidence or logical flaw] if the reasoning is flawed"""
                 system_prompt=system_prompt,
                 user_message=user_message,
                 timeout=config.timeout,
+                codex_reasoning=config.attack_codex_reasoning,
             )
             cost_tracker.add(model, in_tokens, out_tokens)
 

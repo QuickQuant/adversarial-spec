@@ -33,7 +33,6 @@ from gauntlet.persistence import (
 )
 from models import cost_tracker
 
-
 # =============================================================================
 # EXPLANATION MATCHING (Phase 3.5 pre-filter)
 # =============================================================================
@@ -43,8 +42,8 @@ def find_matching_explanation(
     concern_text: str,
     adversary: str,
     model: str,
-    current_spec_hash: Optional[str] = None,
-    config: Optional[GauntletConfig] = None,
+    current_spec_hash: Optional[str],
+    config: GauntletConfig,
 ) -> Optional[ExplanationMatch]:
     """Check if a concern matches any resolved explanation.
 
@@ -53,8 +52,6 @@ def find_matching_explanation(
     Returns:
         ExplanationMatch with action: "accept", "note", "ignore", or None
     """
-    timeout = config.timeout if config else 60
-
     resolved = load_resolved_concerns()
     if not resolved["concerns"]:
         return None
@@ -114,7 +111,7 @@ Does any existing explanation FULLY address this concern?"""
             model=model,
             system_prompt=system_prompt,
             user_message=user_prompt,
-            timeout=timeout,
+            timeout=config.timeout,
         )
 
         if "MATCH:" in response.upper():
@@ -148,16 +145,14 @@ Does any existing explanation FULLY address this concern?"""
 def filter_concerns_with_explanations(
     concerns: list[Concern],
     model: str,
-    spec_hash: Optional[str] = None,
-    config: Optional[GauntletConfig] = None,
+    spec_hash: Optional[str],
+    config: GauntletConfig,
 ) -> tuple[list[Concern], list[Concern], list[tuple[Concern, ExplanationMatch]]]:
     """Filter concerns against resolved explanations database.
 
     Returns:
         (filtered_concerns, dropped_concerns, noted_concerns)
     """
-    timeout = config.timeout if config else 60
-
     filtered = []
     dropped = []
     noted = []

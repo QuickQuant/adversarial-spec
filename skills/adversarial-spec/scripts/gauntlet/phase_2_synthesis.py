@@ -115,6 +115,7 @@ def generate_big_picture_synthesis(
                 model=model.replace("codex/", ""),
                 system_prompt="You are an expert at pattern recognition and synthesis.",
                 user_message=prompt,
+                reasoning_effort=config.attack_codex_reasoning,
                 timeout=config.timeout,
             )
         elif model.startswith("gemini-cli/"):
