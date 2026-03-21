@@ -27,6 +27,7 @@ from gauntlet.core_types import (
 STATS_DIR = Path.home() / ".adversarial-spec"
 STATS_FILE = STATS_DIR / "adversary_stats.json"
 RUNS_DIR = STATS_DIR / "runs"
+MEDALS_DIR = STATS_DIR / "medals"
 RESOLVED_CONCERNS_FILE = STATS_DIR / "resolved_concerns.json"
 
 
