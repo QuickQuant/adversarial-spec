@@ -11,7 +11,7 @@ from gauntlet.reporting import (
     format_gauntlet_report,
     get_adversary_leaderboard,
 )
-from gauntlet_monolith import run_gauntlet
+from gauntlet.orchestrator import run_gauntlet
 
 __all__ = [
     "ADVERSARIES",
