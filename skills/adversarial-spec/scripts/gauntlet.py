@@ -3397,7 +3397,7 @@ def run_gauntlet(
     big_picture = generate_big_picture_synthesis(
         concerns,
         primary_attack_model,
-        timeout=120,
+        timeout=timeout,
     )
     if big_picture.real_issues:
         print(f"  Real issues: {len(big_picture.real_issues)}", file=sys.stderr)
@@ -3419,7 +3419,7 @@ def run_gauntlet(
             concerns,
             primary_attack_model,  # Use cheap model for filtering
             spec_hash,
-            timeout=60,
+            timeout=timeout,
         )
         if dropped_concerns:
             print(f"  Dropped: {len(dropped_concerns)} (already addressed)", file=sys.stderr)
@@ -3436,7 +3436,7 @@ def run_gauntlet(
     clustered_concerns, cluster_members = cluster_concerns_with_provenance(
         concerns,
         clustering_model,
-        timeout=60,
+        timeout=timeout,
     )
     cluster_deduped = len(concerns) - len(clustered_concerns)
     reduction_pct = (cluster_deduped / len(concerns) * 100) if concerns else 0
@@ -3599,7 +3599,7 @@ Technical concerns requiring revision: {len(technical_concerns)}
             gauntlet_summary=gauntlet_summary,
             accepted_concerns=accepted_concerns,
             dismissed_evaluations=dismissed,
-            timeout=600,
+            timeout=max(timeout, 600),  # Final Boss needs at least 600s (Opus 4.6 + large context)
         )
 
         # Handle verdict

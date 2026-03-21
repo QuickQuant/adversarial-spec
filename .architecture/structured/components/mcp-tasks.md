@@ -23,8 +23,8 @@ IN:  MCP protocol messages (tool calls from Claude Code)
 PROCESS:
      ├─> TaskCreate: generate ID, write to tasks.json
      ├─> TaskGet: read by ID from tasks.json
-     ├─> TaskList: filter by session_id, status, owner
-     └─> TaskUpdate: modify status, metadata, blockedBy
+     ├─> TaskList: filter by session_id, context_name, status; or list_contexts mode
+     └─> TaskUpdate: modify status, metadata, blockedBy, addBlocks
 
 OUT: MCP protocol responses (JSON)
      + .claude/tasks.json (shared file)
@@ -36,11 +36,11 @@ OUT: MCP protocol responses (JSON)
 |----------|---------|----------|
 | `TaskCreate` (decorator) | Create new task | server.py:98 |
 | `TaskGet` (decorator) | Get task by ID | server.py:140 |
-| `TaskList` (decorator) | List tasks with filters | server.py:160 |
-| `TaskUpdate` (decorator) | Update task status/metadata | server.py:261 |
-| `TaskManager.__init__()` | Python API initialization | task_manager.py:124 |
+| `TaskList` (decorator) | List tasks with filters or list contexts | server.py:160 |
+| `TaskUpdate` (decorator) | Update task status/metadata/dependencies | server.py:261 |
+| `TaskManager.__init__()` | Python API initialization | task_manager.py:114 |
 | `TaskManager.create_task()` | Python task creation | task_manager.py |
-| `create_adversarial_spec_session()` | Creates full 5-phase task set | task_manager.py |
+| `create_adversarial_spec_session()` | Creates full phase-based task set | task_manager.py:301 |
 
 ## Common Patterns
 
@@ -51,6 +51,10 @@ Both the MCP server and Python TaskManager read/write the same `.claude/tasks.js
 ### Working Directory Detection
 
 `get_working_dir()` checks `MCP_WORKING_DIR` → `PWD` → `os.getcwd()` to find the project root. This ensures tasks are stored per-project.
+
+### Context-Based Filtering
+
+TaskList supports `context_name` filtering and a `list_contexts` mode that returns a summary of all contexts with task counts and last activity, enabling work stream management.
 
 ## Error Handling
 
@@ -73,4 +77,3 @@ Both the MCP server and Python TaskManager read/write the same `.claude/tasks.js
 - The MCP server uses FastMCP decorators, not explicit tool registration. Tools are defined as decorated functions.
 - `task_manager.py` is the Python equivalent of the MCP server — same storage, different interface.
 - Session-based filtering uses `metadata.session_id` field, not a top-level session property.
-- The `OWNER_PREFIX = "adv-spec:"` convention identifies tasks owned by the adversarial-spec skill.

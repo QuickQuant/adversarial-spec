@@ -445,8 +445,8 @@ def add_misc_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--timeout",
         type=int,
-        default=600,
-        help="Timeout in seconds for model API/CLI calls (default: 600 = 10 minutes)",
+        default=900,
+        help="Timeout in seconds for model API/CLI calls (default: 900 = 15 minutes)",
     )
     parser.add_argument(
         "--track-tasks",

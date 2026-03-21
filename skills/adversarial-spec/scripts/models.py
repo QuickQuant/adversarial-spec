@@ -403,9 +403,9 @@ USER REQUEST:
         ]
         if search:
             cmd.append("--search")
-        cmd.append(full_prompt)
+        cmd.append("-")  # Read prompt from stdin to avoid ARG_MAX limits
 
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, input=full_prompt)
 
         if result.returncode != 0:
             error_msg = (
