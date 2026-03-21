@@ -119,13 +119,20 @@ Output your concerns as a numbered list. Be specific and cite parts of the spec.
                 if not line:
                     continue
 
-                is_numbered = line and line[0].isdigit() and (
-                    ". " in line[:4] or ")" in line[:4]
-                )
+                # Detect numbered items: "1. ...", "1) ...", or Gemini "### 1. ..."
+                is_numbered = False
+                if line[0].isdigit() and (". " in line[:4] or ")" in line[:4]):
+                    is_numbered = True
+                elif line.startswith("#"):
+                    stripped_hashes = line.lstrip("# ")
+                    if stripped_hashes and stripped_hashes[0].isdigit() and (
+                        ". " in stripped_hashes[:4] or ")" in stripped_hashes[:4]
+                    ):
+                        is_numbered = True
 
                 if is_numbered:
                     flush_concern()
-                    text = line.lstrip("0123456789.-) ").strip()
+                    text = line.lstrip("#").lstrip(" ").lstrip("0123456789.-) ").strip()
                     if text:
                         current_concern_lines.append(text)
                 elif line.startswith(("-", "•", "*")):
@@ -208,3 +215,36 @@ Output your concerns as a numbered list. Be specific and cite parts of the spec.
             print(f"    {adv_model}: {elapsed:.1f}s ({count} concerns)", file=sys.stderr)
 
     return concerns, timing, raw_responses
+
+
+def check_phase1_quality(
+    concerns: list[Concern],
+    raw_responses: dict[str, str],
+) -> list[dict[str, str | int]]:
+    """Detect parse failures: adversary×model pairs with non-empty response but 0 concerns.
+
+    Empty responses indicate model errors (different error class) and are excluded.
+
+    Returns:
+        List of failure dicts with keys: adversary, model, response_length.
+    """
+    # Build set of adversary×model pairs that produced at least one concern
+    pairs_with_concerns: set[tuple[str, str]] = set()
+    for c in concerns:
+        pairs_with_concerns.add((c.adversary, c.source_model))
+
+    failures: list[dict[str, str | int]] = []
+    for key, response in raw_responses.items():
+        if "@" not in key:
+            continue
+        adversary, model = key.split("@", 1)
+        if not response.strip():
+            continue  # Empty response = model error, not parse failure
+        if (adversary, model) not in pairs_with_concerns:
+            failures.append({
+                "adversary": adversary,
+                "model": model,
+                "response_length": len(response),
+            })
+
+    return failures
