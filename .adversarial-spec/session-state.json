@@ -1,24 +1,26 @@
 {
   "schema_version": "1.3",
-  "active_session_id": "adv-spec-202603051555-philosophy-phase-and-arch-persona",
-  "context_name": "Target Architecture Phase",
-  "current_phase": "implementation",
-  "current_step": "All 7 spec v3 changes implemented and 337/337 tests passing",
-  "next_action": "Commit implementation changes. Then investigate broken adversarial-spec CLI entry point (pyproject.toml references non-existent adversarial_spec/ package dir \u2014 addressed elsewhere per user). Consider running gauntlet on the spec itself or starting a new session.",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202603051646-target-architecture-implementation-complete.md",
+  "active_session_id": "adv-spec-202603201800-gauntlet-refactor-quota-burn",
+  "context_name": "Gauntlet Refactor",
+  "current_phase": "gauntlet",
+  "current_step": "Gauntlet complete (23 final concerns, 9 addressed in spec). Ready for plan approval and implementation.",
+  "next_action": "Approve plan via ExitPlanMode, then execute Steps 0-10 (refactor gauntlet.py into gauntlet/ package with 5 Quota Burn fixes).",
+  "last_checkpoint": null,
   "do_not_ask": [
-    "Phase sequencing (decided: after spec debate, before gauntlet)",
-    "Naming (decided: Target Architecture, not Philosophy)",
-    "Arming strategy (decided: ALL adversaries get architecture, not just ARCH)",
-    "Operational concerns like SLAs, error codes, feature flags (rejected as over-engineering)",
-    "CLI entry point issue (handled elsewhere per user)"
+    "Bootstrap section format (decided: brief, not full product spec)",
+    "Formal SLA/observability/security sections (decided: inline, not separate)",
+    "5-stage deployment rollback (decided: cp -r + monolith shim is sufficient)",
+    "--resume naming (decided: --gauntlet-resume in debate.py, --resume in standalone cli.py)",
+    "eval_codex_reasoning default (decided: xhigh, matches DEFAULT_CODEX_REASONING)",
+    "Model blocklist vs allowlist (decided: blocklist, allowlist too brittle)"
   ],
-  "updated_at": "2026-03-05T16:46:17Z",
-  "active_session": "adv-spec-202603051555-philosophy-phase-and-arch-persona",
-  "active_session_file": ".adversarial-spec/sessions/adv-spec-202603051555-philosophy-phase-and-arch-persona.json",
+  "updated_at": "2026-03-21T01:05:00Z",
+  "active_session": "adv-spec-202603201800-gauntlet-refactor-quota-burn",
+  "active_session_file": ".adversarial-spec/sessions/adv-spec-202603201800-gauntlet-refactor-quota-burn.json",
   "session_stack": [
+    "adv-spec-202603201800-gauntlet-refactor-quota-burn",
     "adv-spec-202603051555-philosophy-phase-and-arch-persona",
     "adv-spec-202602101754-phase-sync-gaps"
   ],
-  "completed_work": "Implemented Target Architecture phase: new 04-target-architecture.md phase file, ARCH adversary persona in adversaries.py, architecture doc type in debate.py+prompts.py, gauntlet input expansion with architecture context+truncation, execution plan Architecture Spine+Wave 0, SKILL.md updates (phase router, transitions, language mapping, renumbering 04-07 to 05-08), 8 new tests. All files symlinked to deployed skill. Decision Journal schema embedded in phase doc."
+  "completed_work": "Spec debated through 2 rounds (Codex 5.4 + Gemini + Claude synthesis) and gauntlet (9 adversaries, 75->42->23 concerns). 4 timeout hotfixes applied to gauntlet.py during development. Critical --resume flag collision caught and fixed."
 }

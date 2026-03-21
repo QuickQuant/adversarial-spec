@@ -1,6 +1,6 @@
 # CLAUDE.md
-<!-- Base: Brainquarters v1.5 | Project: v1.0 | Last synced: 2026-03-13 -->
-<!-- Last reviewed: 2026-03-13 | Next review: 2026-04-03 -->
+<!-- Base: Brainquarters v1.5 | Project: v1.1 | Last synced: 2026-03-21 -->
+<!-- Last reviewed: 2026-03-21 | Next review: 2026-04-11 -->
 <!-- Target: 60-100 lines | If >100 lines, prune or move to .active_context.md -->
 
 ## WHAT: Project & Stack
@@ -76,6 +76,35 @@ Token discipline (see `core-practices.md` §8 for rationale):
 - Failure patterns (rate limits, wrong defaults) → record in MEMORY.md same session.
 - Background notification for already-consumed task → reply "Already processed." (one line).
 
+## Multi-Agent Coordination (Claude + Codex)
+
+Two agents work **in parallel on the same branch**. Coordination via `.handoff.md` + Trello.
+
+- **Before picking up a card**: Read `.handoff.md`, update your row, check for file conflicts with the other agent
+- **After picking up a card**: Create a TodoWrite (Claude) / update_plan (Codex) for the card's tasks. Last task must be: "Pick up next card, update handoff, create TodoWrite/update_plan with this task as the last task"
+- **After every commit**: Update `.handoff.md` review queue, move Trello card → "Review" list, add comment with commit hash
+- **Reviews before new work**: Check review queue first — reviewing the other agent's commit takes priority over picking up a new card
+- **Before reviewing a commit**: Check `.handoff.md`, `git log`, and the current branch tip to confirm the referenced commit is still the latest commit for that task. Review the specific commit only if it is still current; if superseded, reconcile Trello/`.handoff.md` to the newer reviewed state instead of re-reviewing stale code
+- **Don't stall**: If there are pending todos or cards, do not ask "Shall I proceed?" — just do the work
+- **Full protocol**: Read `.coordination/PROTOCOL.md`
+
+### Trello Management
+
+Board: `Adversarial Spec` (`69be407deef7267a2cea1feb`) — **always keep cards in sync with actual work state.**
+
+**Board pinning (enforced by hook):** Always pass `boardId="69be407deef7267a2cea1feb"` to all Trello MCP calls. **Never use `set_active_board`** — it changes global state and causes cross-project drift when multiple projects run simultaneously.
+
+**Trello context discipline:** Never bulk-fetch cards from multiple lists in main context — it causes context bloat. Use a subagent to aggregate Trello data and return a summary. Same principle applies to any large MCP response.
+
+| Action | Trello Update |
+|--------|--------------|
+| Pick up a card | Move → "In Progress", add comment: `Starting: <agent-name>` |
+| Commit | Add comment: `<hash> <summary>`, move → "Review" |
+| Review LGTM | Move → "Done" |
+| Review needs changes | Move → "In Progress", comment with issues |
+
+Commit messages reference the card: `[AS-1] Short description`
+
 ## Progressive Disclosure
 
 **This file is minimal by design.** Load context on-demand:
@@ -107,4 +136,4 @@ Token discipline (see `core-practices.md` §8 for rationale):
 - After fixing, run the failing test again to confirm it passes.
 - Never rewrite large sections of code to fix a bug. If you feel the urge, you don't understand the root cause yet.
 
-<!-- Line count: ~105 -->
+<!-- Line count: ~135 (multi-agent + token discipline + debugging sections) -->

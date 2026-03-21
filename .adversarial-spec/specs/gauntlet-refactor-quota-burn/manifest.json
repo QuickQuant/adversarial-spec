@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0",
+  "slug": "gauntlet-refactor-quota-burn",
+  "title": "Refactor gauntlet.py into gauntlet/ package + Quota Burn Fixes",
+  "created_at": "2026-03-20T18:00:00Z",
+  "updated_at": "2026-03-21T01:00:00Z",
+  "status": "gauntlet_complete",
+  "phase": "gauntlet",
+  "spec_file": "spec.md",
+  "spec_hash": "d453f1d84d77",
+  "debate_rounds": 2,
+  "debate_models": [
+    "codex/gpt-5.4",
+    "gemini-cli/gemini-3-pro-preview"
+  ],
+  "gauntlet": {
+    "completed": true,
+    "adversaries": [
+      "paranoid_security",
+      "burned_oncall",
+      "lazy_developer",
+      "pedantic_nitpicker",
+      "asshole_loner",
+      "prior_art_scout",
+      "assumption_auditor",
+      "information_flow_auditor",
+      "architect"
+    ],
+    "attack_model": "gemini-cli/gemini-3-flash-preview",
+    "eval_models": ["codex/gpt-5.3-codex", "gemini-cli/gemini-3-pro-preview"],
+    "raw_concerns": 75,
+    "clustered_concerns": 42,
+    "accepted": 20,
+    "dismissed": 16,
+    "acknowledged": 4,
+    "deferred": 2,
+    "rebuttals_challenged": 8,
+    "overturned": 1,
+    "final_concerns": 23,
+    "concerns_addressed_in_spec": 9,
+    "duration_seconds": 1897.1,
+    "checkpoint_files": {
+      "concerns": ".adversarial-spec-gauntlet/concerns-d453f1d8.json",
+      "raw_responses": ".adversarial-spec-gauntlet/raw-responses-d453f1d8.json",
+      "evaluations": ".adversarial-spec-gauntlet/evaluations-d453f1d8.json"
+    }
+  },
+  "review_history": [
+    {
+      "round": "pre-gauntlet",
+      "model": "codex/gpt-5.4",
+      "findings": 14,
+      "addressed": 14
+    },
+    {
+      "round": "debate-r1",
+      "models": ["codex/gpt-5.4", "gemini-cli/gemini-3-pro-preview"],
+      "findings": 10,
+      "addressed": 10
+    },
+    {
+      "round": "debate-r2",
+      "models": ["codex/gpt-5.4", "gemini-cli/gemini-3-pro-preview"],
+      "findings": 12,
+      "addressed": 9,
+      "declined": 3
+    },
+    {
+      "round": "gauntlet",
+      "adversaries": 9,
+      "final_concerns": 23,
+      "addressed": 9,
+      "accepted_as_is": 7,
+      "deferred": 1
+    }
+  ]
+}

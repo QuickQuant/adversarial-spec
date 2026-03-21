@@ -1,0 +1,67 @@
+{
+  "session_id": "adv-spec-202603201800-gauntlet-refactor-quota-burn",
+  "created_at": "2026-03-20T18:00:00Z",
+  "updated_at": "2026-03-21T01:00:00Z",
+  "spec_slug": "gauntlet-refactor-quota-burn",
+  "title": "Refactor gauntlet.py into gauntlet/ package + Quota Burn Fixes",
+  "phase": "gauntlet",
+  "status": "gauntlet_complete",
+  "context_name": "Gauntlet Refactor",
+  "phases_completed": [
+    {
+      "phase": "drafting",
+      "completed_at": "2026-03-20T19:00:00Z",
+      "notes": "Initial plan drafted with 5 Quota Burn fixes + 4 user adjustments"
+    },
+    {
+      "phase": "pre-gauntlet-review",
+      "completed_at": "2026-03-20T20:00:00Z",
+      "notes": "Codex 5.4 pre-gauntlet critique: 14 findings (6 HIGH, 5 MEDIUM, 3 LOW), all addressed"
+    },
+    {
+      "phase": "debate-r1",
+      "completed_at": "2026-03-20T21:00:00Z",
+      "notes": "Codex 5.4 + Gemini R1: 10 findings. Key additions: Step 8.5 (debate.py flags), __main__.py, checkpoint envelope schema, timeout policy, error contract"
+    },
+    {
+      "phase": "debate-r2",
+      "completed_at": "2026-03-20T22:00:00Z",
+      "notes": "Codex 5.4 + Gemini R2: 12 findings. Key additions: exact API signature, GauntletExecutionError, flag precedence, --show-manifest, 10 required pytest tests, exit 130"
+    },
+    {
+      "phase": "gauntlet",
+      "completed_at": "2026-03-21T00:52:00Z",
+      "notes": "9 adversaries, 75 raw -> 42 clustered -> 23 accepted. Key catch: --resume flag collision (G-1 CRITICAL). 9 findings fixed in spec."
+    }
+  ],
+  "hotfixes_applied": [
+    {
+      "file": "scripts/gauntlet.py",
+      "description": "Fixed 4 hardcoded timeouts (Phase 2: 120->timeout, Phase 3: 60->timeout, Phase 3.5: 60->timeout, Final Boss: 600->max(timeout,600))",
+      "applied_at": "2026-03-20T21:30:00Z",
+      "reason": "Needed for gauntlet to run correctly during plan development"
+    }
+  ],
+  "decision_journal": [
+    {
+      "decision": "Use --gauntlet-resume instead of --resume in debate.py",
+      "reason": "debate.py already has --resume SESSION_ID for session resumption — flag collision caught by prior_art_scout adversary",
+      "decided_at": "2026-03-21T01:00:00Z"
+    },
+    {
+      "decision": "Pin filelock==3.16.1 instead of >=3.12.0",
+      "reason": "paranoid_security adversary flagged unpinned dependency as supply chain risk",
+      "decided_at": "2026-03-21T01:00:00Z"
+    },
+    {
+      "decision": "Add checkpoint after Phase 3.5 clustering (not just Phase 4 and 7)",
+      "reason": "burned_oncall adversary identified in-memory clustered data as highest-cost crash failure mode",
+      "decided_at": "2026-03-21T01:00:00Z"
+    },
+    {
+      "decision": "Monkey-patch builtins.input for unattended enforcement",
+      "reason": "pedantic_nitpicker adversary noted policy-only enforcement is insufficient — need runtime guard",
+      "decided_at": "2026-03-21T01:00:00Z"
+    }
+  ]
+}

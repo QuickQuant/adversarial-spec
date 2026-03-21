@@ -1,0 +1,15 @@
+[
+  {
+    "timestamp": "2026-03-21T04:58:01.675346+00:00",
+    "spec_hash": "d453f1d8",
+    "raw_concerns": 75,
+    "post_filter": 75,
+    "post_cluster": 42,
+    "cluster_deduped": 33,
+    "reduction_pct": 44.0,
+    "attack_models": [
+      "gemini-cli/gemini-3-flash-preview"
+    ],
+    "clustering_model": "gemini-cli/gemini-3-flash-preview"
+  }
+]

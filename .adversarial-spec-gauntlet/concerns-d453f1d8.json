@@ -1,0 +1,527 @@
+[
+  {
+    "id": "BURN-b2b1a1ca",
+    "adversary": "burned_oncall",
+    "text": "**Stale File Locks on Abrupt Termination** Failure Mode:** If a run is OOM-killed or the container is hard-recycled while `filelock` is held in `persistence.py`, a stale lock file might persist. Subsequent attempts to run or `--resume` will hang indefinitely waiting for a lock that will never be released. Detection:** The process will simply stop making progress with no logs. Operators will see a running process consuming 0% CPU. Blast Radius:** Complete denial of service for the gauntlet until manual intervention (deleting `.lock` files).",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "BURN-0c0b286c",
+    "adversary": "burned_oncall",
+    "text": "**Spec Hash Hypersensitivity** Failure Mode:** You're using a `spec_hash` for checkpoint validation. If a user adds a single trailing newline, a comment, or an IDE auto-formats the spec file between runs, the `spec_hash` changes. The `--resume` flag becomes a \"no-op\" and runs the whole expensive pipeline from scratch. Detection:** Unexpectedly high API costs and \"Resume ignored: spec mismatch\" warnings in logs (if you even log the mismatch reason). Blast Radius:** 100% quota burn for what should have been a 5% resume cost.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "BURN-6afb18c1",
+    "adversary": "burned_oncall",
+    "text": "**The \"Final Boss\" Hardcoded Floor** Failure Mode:** You claim to fix hardcoded timeouts, then immediately introduce `max(config.timeout, 600)` for the Final Boss. If an operator sets `--timeout 30` because they are in a low-latency CI environment or testing a small spec, the Final Boss will still hang for up to 10 minutes on a stuck API call. Detection:** CI pipelines timing out at the very end of a run despite explicit CLI flags. Blast Radius:** One stuck phase stalls the entire developer feedback loop.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "BURN-e72d1994",
+    "adversary": "burned_oncall",
+    "text": "**In-Memory State Loss during Phase 3.5/4 Fan-out** Failure Mode:** `orchestrator.py` only saves state after Phase 4 and Phase 7. Phases 3.5 and 4 use `ThreadPoolExecutor`. If the process crashes *during* Phase 4 evaluation (the most expensive and longest phase), 100% of the work for those evaluations is lost because no checkpoint was written yet. Detection:** High \"retry\" costs. Operators see the process reach Phase 4, crash, and then start Phase 1 again on resume. Blast Radius:** Massive waste of tokens; the most expensive phase has the least resilience.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "BURN-c413eae1",
+    "adversary": "burned_oncall",
+    "text": "**Model Name Blocklist Bypass** Failure Mode:** Using a blocklist for `_validate_model_name` is a classic security failure. Attackers (or weird edge-case model providers) will find characters you didn't block (e.g., non-breaking spaces, specific Unicode homoglyphs, or nested sub-shell syntax that bypasses `subprocess.run` list-logic depending on how the underlying OS handles the list). Detection:** Potential arbitrary code execution or unexpected flag injection if the model name is ever logged to a shell or passed to a secondary tool. Blast Radius:** Local system compromise or data exfiltration. Use an allowlist `[a-zA-Z0-9\\-_/:]+`.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "BURN-bb546d4c",
+    "adversary": "burned_oncall",
+    "text": "**Missing \"Global\" Timeout Circuit Breaker** Failure Mode:** You have per-phase timeouts, but no global wall-clock timeout. If a run has 11 adversaries and each times out at 300s, the total run could take 55+ minutes. Detection:** \"Ghost\" processes running for hours in CI or on developer machines, eating up local resources and potentially hitting rate limits across multiple runs. Blast Radius:** Resource exhaustion and \"hung\" runner pools.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "BURN-b4374885",
+    "adversary": "burned_oncall",
+    "text": "**Clustering \"Hard Halt\" vs. User Experience** Failure Mode:** Phase 3 retries once then throws `GauntletClusteringError` (Exit Code 3). If a flaky API causes a clustering failure twice in a row, the entire run dies. Detection:** Exit code 3 in CI. Blast Radius:** In \"unattended\" mode, a tiny flake in a non-critical dedup step kills a multi-hour specification review, requiring manual restarts. There is no \"ignore and continue with raw concerns\" fallback.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "BURN-f17b9791",
+    "adversary": "burned_oncall",
+    "text": "**Atomic Write Race Conditions** Failure Mode:** `os.replace()` is atomic, but your `persistence.py` logic (Load -> Modify -> Save) is not an atomic transaction. If two processes (e.g., a background bot and a CLI user) try to update the same run manifest or checkpoint, one will overwrite the other's progress. Detection:** \"Ghost\" data or missing phase logs in the manifest. Blast Radius:** Corrupt run history and broken `--resume` logic.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "BURN-19c906f9",
+    "adversary": "burned_oncall",
+    "text": "**Manifest Write-Failure at Exit** Failure Mode:** You're building the manifest \"iteratively,\" but if the process receives a `SIGKILL` or hits a Segfault, the final manifest write might be skipped or truncated. Detection:** A `.adversarial-spec-gauntlet/` directory full of JSON files but no \"Run Manifest\" to tie them together, making the run \"invisible\" to reporting tools. Blast Radius:** Operational blindness. You won't know why a run failed if the record of the failure was never flushed to disk.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "BURN-8a1acff1",
+    "adversary": "burned_oncall",
+    "text": "**Import Fragility in `__init__.py`** Failure Mode:** `debate.py` expects exactly 5 symbols. If `orchestrator.py` or `reporting.py` introduces a circular import during extraction (easy to do when splitting 4k lines), `gauntlet/__init__.py` will fail to initialize. Detection:** `ImportError` or `AttributeError` as soon as `debate` starts. Blast Radius:** Total CLI breakage. Every single command in the tool fails immediately.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PARA-84aff119",
+    "adversary": "paranoid_security",
+    "text": "**Checkpoint Poisoning & Execution Hijack:** Threat:** The `--resume` logic relies on JSON files in `.adversarial-spec-gauntlet/`. Attack Vector:** An attacker with low-level filesystem access (or a malicious script in the same environment) can pre-seed a \"valid\" `evaluations-{hash}.json` that claims a malicious specification passed all security checks with a \"Sustained\" verdict. Impact:** The `orchestrator.py` will skip the actual LLM evaluation phases, trusting the forged checkpoint, and report a \"Pass\" for a specification that contains backdoors or vulnerabilities. You are creating a \"Skip Security\" button that survives across sessions.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PARA-72ae0477",
+    "adversary": "paranoid_security",
+    "text": "**Predictable Temporary File Hijacking (Symlink Attack):** Threat:** Step 3 proposes \"Atomic JSON writes via temp file + os.replace()\". Attack Vector:** If the temporary file names are predictable (e.g., `checkpoint.json.tmp`) and created in a shared or poorly permissioned directory, an attacker can create a symlink with that name pointing to a sensitive system file (like `~/.ssh/authorized_keys`). Impact:** When `gauntlet` performs the `os.replace()`, it could overwrite critical system files with JSON data, causing a Denial of Service (DoS) or potentially gaining elevated access if it overwrites configuration files.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PARA-914431ec",
+    "adversary": "paranoid_security",
+    "text": "**Ineffectual \"Blocklist\" Validation (Bypass via Obfuscation):** Threat:** Step 2 adds `_validate_model_name()` using a *blocklist*. Attack Vector:** Blocklists are fundamentally broken. Attackers will use Unicode homoglyphs, shell-specific escape sequences, or unexpected encodings that your \"metacharacter\" check won't catch. If these model names are ever passed to a shell, a subprocess, or even just logged into a system that interprets control characters, you have an injection vulnerability. Impact:** Arbitrary command execution or log injection. You must use a strict **allowlist** (e.g., `^[a-zA-Z0-9\\-\\:_]+$`), or you are leaving the door unlocked.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PARA-d64f3f92",
+    "adversary": "paranoid_security",
+    "text": "**Filelock Denial of Service (System Bricking):** Threat:** You are introducing `filelock` for persistence. Attack Vector:** An attacker can create a stale `.lock` file in the `.adversarial-spec-gauntlet/` directory and set it to read-only. Impact:** The `gauntlet` tool will hang indefinitely or crash every time it tries to run, effectively bricking the entire \"adversarial-spec\" capability for the user. Without a robust lock-timeout and cleanup mechanism, the system is fragile.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PARA-9c3eff9d",
+    "adversary": "paranoid_security",
+    "text": "**Hash Collision & Spec Substitution:** Threat:** The resume logic uses `spec_hash`. Attack Vector:** If you use a weak hashing algorithm (like MD5) or a truncated hash, an attacker can craft a \"Malicious Spec\" that produces the same hash as a \"Safe Spec.\" Impact:** The user runs the \"Malicious Spec,\" but the orchestrator sees the hash, finds a cached \"Success\" checkpoint for the \"Safe Spec,\" and skips all adversarial testing. The user is misled into thinking their dangerous spec is secure.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PARA-b0e5d214",
+    "adversary": "paranoid_security",
+    "text": "**Resource Exhaustion via Decompression/Parsing Bombs:** Threat:** The \"Resume loader\" reads bare JSON files. Attack Vector:** An attacker replaces a checkpoint with a 5GB JSON file consisting of nested arrays or extremely long strings. Impact:** When `persistence.py` attempts to load the checkpoint, the Python process will hit an Out-Of-Memory (OOM) error or consume 100% CPU for minutes, crashing the CLI tool. This is a trivial DoS.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PARA-88b4cb9b",
+    "adversary": "paranoid_security",
+    "text": "**Unattended Mode Silent Failure:** Threat:** `--unattended` forbids `input()` and auto-checkpoints. Attack Vector:** If a critical error occurs during a background run, your \"Silent catch-all\" fixes might still miss edge cases in the new package structure. Impact:** The system might fail to actually run the \"Final Boss\" but still report a successful run manifest because the error handling in the new `orchestrator.py` hasn't been hardened for non-interactive environments. You are trading visibility for convenience.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PARA-40e8830c",
+    "adversary": "paranoid_security",
+    "text": "**Dependency Supply Chain Inflation:** Threat:** Adding `filelock>=3.12.0`. Attack Vector:** You are pulling in a new external dependency with a wide version range. Impact:** A compromised version of `filelock` (or one of its future dependencies) could be pulled in during a `uv sync`, compromising the developer's entire machine. Every new dependency is a new vector for a supply chain attack.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PARA-e0966aa7",
+    "adversary": "paranoid_security",
+    "text": "**Information Leakage in \"Run Manifests\":** Threat:** The manifest logs \"config_snapshot\" and \"models.\" Attack Vector:** These manifests are written to `.adversarial-spec-gauntlet/`. Impact:** If the config snapshot includes environment variables, API base URLs, or internal project paths, you are leaking architectural metadata to anyone who can read that directory. This information is a goldmine for an attacker planning a secondary strike.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PARA-5bd5152d",
+    "adversary": "paranoid_security",
+    "text": "**Race Condition in Multi-Model Cost Tracking:** Threat:** Adding `threading.Lock` to `CostTracker.add()`. Attack Vector:** While `add()` might be thread-safe, the *reading* and *resetting* of stats across the 16 new files might not be synchronized. Impact:** You\u2019ll get \"Quota Burn\" again because the orchestrator might read a stale cost state and decide it has more budget than it actually does, leading to unexpected API costs or hitting hard limits mid-run. Your \"fix\" is a band-aid on a gushing wound.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "LAZY-01d7e471",
+    "adversary": "lazy_developer",
+    "text": "**Extreme File Fragmentation** Quote**: \"becomes `scripts/gauntlet/` package (16 files)\" Simpler Alternative**: Split into exactly 3 modules: `core.py` (types/dispatch), `phases.py` (all 7 phases), and `cli.py` (orchestrator/main). Why**: 16 files for ~4,000 lines of code is an average of 250 lines per file. Navigating 7 different `phase_X.py` files to follow a sequential pipeline is a massive cognitive tax. You're trading \"one big file\" for \"directory-induced vertigo.\" What breaks**: It would slightly increase the size of `phases.py`, but it would keep the logic of the pipeline in one place where a developer can actually see the flow without jumping between 7 tabs.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "LAZY-8e684882",
+    "adversary": "lazy_developer",
+    "text": "**Over-engineered Checkpoint \"Envelope\"** Quote**: \"Resume loader with checkpoint envelope schema (schema_version, spec_hash, config_hash, phase, created_at, data_hash)\" Simpler Alternative**: A simple \"try-except\" around each phase that writes `phase_N_results.json`. If the file exists and the timestamp is recent, ask the user: \"Resume?\" Why**: You are building a mini-database migration system for intermediate CLI state. \"Schema versioning\" and \"data hashing\" for local JSON cache files is pure architecture astronautics. If a run fails, the user just needs to not pay for the same API calls twice; they don't need a cryptographic proof of state integrity. What breaks**: If the user modifies the spec *mid-run* and then tries to resume, they might get inconsistent results\u2014but that's a user error that a simple \"Spec changed, discard cache?\" check solves without a \"config_hash\" complex.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "LAZY-43ed7f57",
+    "adversary": "lazy_developer",
+    "text": "**Manual File Locking and Atomic Swaps** Quote**: \"Atomic JSON writes via temp file + os.replace() with filelock\" Simpler Alternative**: Use standard `json.dump()` or, if concurrency is actually a concern, SQLite. Why**: Adding `filelock` as a mandatory dependency for a CLI tool is unnecessary overhead. If you are worried about corrupted writes during a crash, `os.replace` is fine, but why do we need a lock? Are users really running multiple gauntlets against the same spec in the same directory concurrently? If so, why? What breaks**: Without `filelock`, if two identical gauntlets run at the exact same millisecond, one might overwrite the other's checkpoint. This is a \"theoretical\" problem that doesn't justify a new dependency and locking logic.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "LAZY-efd8560c",
+    "adversary": "lazy_developer",
+    "text": "**Security \"Busy Work\" Validation** Quote**: \"Add _validate_model_name() blocklist (reject shell metacharacters, spaces, flag-like patterns)\" Simpler Alternative**: Use `shlex.quote()` or rely on the list-based `subprocess.run` you already mentioned you use. Why**: You already admitted the system is safe because it uses list-based subprocess calls. Creating a custom character blocklist is a classic security anti-pattern (you should use allowlists, or better yet, proper APIs). This is \"just-in-case\" code that adds no value but will eventually break when a model provider names a model something \"weird.\" What breaks**: Nothing breaks if you remove it; the system is already safe by design of the `subprocess` call.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "LAZY-5f545364",
+    "adversary": "lazy_developer",
+    "text": "**The \"GauntletConfig\" Junk Drawer** Quote**: \"Build GauntletConfig at top of run_gauntlet(), pass to every phase\" Simpler Alternative**: Pass a `dict` or just the 3-4 actual variables (`timeout`, `reasoning`) needed. Why**: Formal \"Config\" objects in refactors almost always become dumping grounds for global state that should have been kept local. It's a \"Dependency Injection\" pattern for something that never changes during the run. What breaks**: Passing variables individually makes the function signatures slightly longer (e.g., 4 arguments instead of 1), but it makes it much clearer what each phase actually *uses* from the CLI flags.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "LAZY-888d1e65",
+    "adversary": "lazy_developer",
+    "text": "**Redundant \"Run Manifest\"** Quote**: \"Run manifest (replaces dedup-stats.json): PhaseMetrics with phase, phase_index, status, duration, tokens...\" Simpler Alternative**: Log these metrics to `stderr` or a simple `.log` file. Why**: You're replacing one \"write-only useless file\" with a more structured \"write-only useless file.\" Unless there is a specific dashboard or tool that *reads* this manifest to take action, you're just writing JSON to disk for the sake of \"completeness.\" What breaks**: You wouldn't have a structured record of how many tokens Phase 4 used\u2014but since the cost is already tracked in the `CostTracker`, does it matter?",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "LAZY-10dfe667",
+    "adversary": "lazy_developer",
+    "text": "**Manual Locking in CostTracker** Quote**: \"threading.Lock added to CostTracker.add()\" Simpler Alternative**: Use a `queue.Queue` to aggregate costs if you're paranoid, or just let it be. Why**: In Python, simple float addition/assignment is effectively atomic for this use case because of the GIL (even in 3.14, the \"removal\" of the GIL is experimental and opt-in). Adding a `threading.Lock` to a counter in a CLI tool is a great way to introduce a deadlock for a $0.00001 tracking error. What breaks**: In the absolute worst-case scenario with a massive thread pool and no GIL, the cost report might be off by a fraction of a cent. Summary**: This plan is 20% fixing defects and 80% building \"enterprise-grade\" scaffolding for a CLI script. Why can't we just fix the 5 bugs in the monolith and split it into 3 files instead of 16?",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "ASSH-2636b3e0",
+    "adversary": "asshole_loner",
+    "text": "**Circular Import Suicide**: You have `__init__.py` importing from `orchestrator.py` to export the public API, but `orchestrator.py` imports from every phase, and I guarantee your phases or `model_dispatch` will eventually try to import something from the `gauntlet` package root or `core_types`. You\u2019re building a dependency knot that won't even pass an import check on day one.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "ASSH-27896b09",
+    "adversary": "asshole_loner",
+    "text": "**The \"Resume\" is a Joke**: You\u2019re using `spec_hash` and `config_hash` for the resume guard. If a user fixes a single typo in their 5,000-word spec or changes a minor CLI flag, your \"resume\" logic will discard all progress and burn another $10 in API credits. A \"resume\" that only works if nothing changed is useless for iterative engineering.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "ASSH-8e72544d",
+    "adversary": "asshole_loner",
+    "text": "**Clustering \"Fix\" is a Regression**: Replacing a silent fallback with a `GauntletClusteringError` hard halt is amateur hour. If the LLM flunks a clustering task (which they do constantly), you kill the entire run instead of just processing the raw concerns? You\u2019ve \"fixed\" a sub-optimal cost issue by making the tool completely unreliable.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "ASSH-3d5d0df9",
+    "adversary": "asshole_loner",
+    "text": "**Useless `filelock` Bloat**: Adding `filelock` to a CLI tool that is 99% of the time run by a single human in a single terminal is pure architecture-astronaut nonsense. You\u2019re adding a dependency and potential stale-lock bugs for a concurrency problem that doesn't exist in this workflow.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "ASSH-fd0b8722",
+    "adversary": "asshole_loner",
+    "text": "**Hypocritical Timeout Policy**: You spent half the briefing whining about \"13 hardcoded timeouts,\" and then your \"Timeout Policy\" section immediately introduces a new hardcoded magic number: `max(config.timeout, 600)` for the Final Boss. You haven't solved the problem; you've just moved the magic numbers into a different file.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "ASSH-f7892375",
+    "adversary": "asshole_loner",
+    "text": "**Model \"Validation\" is Security Theater**: A blocklist for model names (`_validate_model_name`) is a losing game. If you're worried about shell injection, use `shlex.quote` or stick to list-based `subprocess` calls. Trying to maintain a list of \"bad characters\" is what junior devs do before they learn how systems actually work.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "ASSH-e83e2246",
+    "adversary": "asshole_loner",
+    "text": "**Atomic Write Overkill**: You\u2019re doing \"temp file + os.replace + filelock\" for JSON files that are essentially log dumps. If a write fails, the user just reruns the tool. You\u2019re adding three layers of filesystem complexity to protect data that isn't mission-critical.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "ASSH-c692b370",
+    "adversary": "asshole_loner",
+    "text": "**The `debate.py` Dependency is Brittle**: You're assuming `debate.py` only needs 5 symbols. The moment someone needs a new helper from the gauntlet package, they'll have to mess with `__init__.py` exports, further complicating the circular dependency mess I mentioned in point #1.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "ASSH-577fc64a",
+    "adversary": "asshole_loner",
+    "text": "**Thread-Safe CostTracker is Premature**: You're adding `threading.Lock` because Python 3.14 *might* remove the GIL? We aren't even on 3.14 yet. You're adding overhead and complexity today to solve a problem that might not exist for another year, in a tool that spends most of its time waiting for network I/O anyway.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "ASSH-c80df349",
+    "adversary": "asshole_loner",
+    "text": "**The Envelope Schema is Busywork**: Adding `schema_version`, `created_at`, and `data_hash` to the checkpoint files adds zero functional value to the user. If the JSON is corrupt, it's corrupt. You don't need a `data_hash` to tell you that `json.load()` failed. You're just making the files harder to read manually.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PEDA-f96fa096",
+    "adversary": "pedantic_nitpicker",
+    "text": "**Spec Hash Rigidity vs. Reality:** The `--resume` logic relies on a `spec_hash`. If a user fixes a single typo or adds a trailing newline to the specification file between a crash and a retry, the `config_hash` or `spec_hash` mismatch will trigger a \"discard\" (Step 3). This defeats the purpose of \"resume\" for many real-world recovery scenarios where the user might try to fix the input that caused the crash.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PEDA-6b8a3f2b",
+    "adversary": "pedantic_nitpicker",
+    "text": "**The \"Phase 4\" Persistence Gap:** You state Phase 4 (Evaluation) is the \"expensive eval\" and plan to \"save state after Phase 4.\" If a run crashes *during* Phase 4\u2014which is highly likely due to the volume of API calls and potential rate limits\u2014the system has no mid-phase checkpoint. You will lose 90% of an expensive multi-model evaluation and have to restart Phase 4 from zero.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PEDA-37b87fdb",
+    "adversary": "pedantic_nitpicker",
+    "text": "**JSON Serialization of Dataclasses:** Step 3 and 7 mention \"Atomic JSON IO\" and \"save state\" for `GauntletResult` and other dataclasses. Python's standard `json` module cannot serialize dataclasses or Enums natively. Unless you are implementing a custom `JSONEncoder`, your first checkpoint attempt will throw a `TypeError`, crashing the entire gauntlet.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PEDA-c74123cf",
+    "adversary": "pedantic_nitpicker",
+    "text": "**Incomplete `unattended` Enforcement:** You state `unattended=True` \"forbids `input()`\" (Step 7). If this is not enforced by redirecting `sys.stdin` to `/dev/null` or patching `builtins.input`, a stray `input()` call in a dependency or a future phase will still hang a headless CI process indefinitely, causing a different kind of timeout failure.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PEDA-0a1ef88e",
+    "adversary": "pedantic_nitpicker",
+    "text": "**Model Name Blocklist Bypass:** A blocklist-based `_validate_model_name` (Step 2) is historically weak. You reject spaces and flag-like patterns, but what about Unicode homoglyphs, zero-width spaces, or shell metacharacters that aren't in your \"list\"? An allowlist of `[a-zA-Z0-9._:-]` is the only safe approach for a system that eventually hits a CLI or API.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PEDA-3de78d69",
+    "adversary": "pedantic_nitpicker",
+    "text": "**Global Lock File Collision:** You plan to use `filelock` for atomic writes (Step 3). If the lock file is at a static path (e.g., `.adversarial-spec-gauntlet/gauntlet.lock`), you cannot run two different gauntlets on two different specifications simultaneously in the same directory. One will block the other, potentially leading to timeouts that your `config.timeout` doesn't account for.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PEDA-c21be6ae",
+    "adversary": "pedantic_nitpicker",
+    "text": "**Leap Second / Clock Skew in Timeouts:** You are standardizing on `config.timeout` across all phases. If the system clock is adjusted (via NTP) or a leap second occurs during a long-running phase, `time.time()` based comparisons can fail. For 600s+ timeouts, monotonic clocks (`time.monotonic()`) must be explicitly used to prevent premature or late exits.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PEDA-de7d1406",
+    "adversary": "pedantic_nitpicker",
+    "text": "**Disk Full on \"Atomic\" Write:** Step 3 uses \"temp file + os.replace()\". If the disk is at 99% capacity, you may successfully write the temp file but fail the `os.replace` or `os.close`. More importantly, if the gauntlet crashes before `os.replace`, your directory will fill up with orphaned `.tmp` files that the \"Persistence\" layer doesn't appear to clean up.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PEDA-c49c4f0b",
+    "adversary": "pedantic_nitpicker",
+    "text": "**The \"COMP\" Adversary Self-Break:** The `existing_system_compatibility` (COMP) adversary lives in `adversaries.py`. If its logic relies on searching for `scripts/gauntlet.py` (which you are deleting) or assumes the previous file structure, your refactor will cause the compatibility check to fail or return false negatives about the very system it is part of.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PEDA-55dda9fa",
+    "adversary": "pedantic_nitpicker",
+    "text": "**Exit Code 3 Severity:** You are introducing `GauntletClusteringError` which causes a hard exit (Exit Code 3) after one retry. If the clustering failure is caused by a transient model hallucination or a brief API outage, killing the entire process\u2014potentially hours into a run\u2014is a massive \"User Burn\" compared to the original \"Quota Burn.\"",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PEDA-cb012a75",
+    "adversary": "pedantic_nitpicker",
+    "text": "**Hash Collisions on Tiny Specs:** If a user provides an extremely short or empty spec, a basic hash might collide or produce predictable results. Does the `spec_hash` handle empty strings or 1-character files without throwing an error in the persistence layer?",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PEDA-1826d102",
+    "adversary": "pedantic_nitpicker",
+    "text": "**`eval_codex_reasoning` Cost Escalation:** You are defaulting `eval_codex_reasoning` to `\"xhigh\"`. If the previous monolith used a lower (even if hardcoded) reasoning level, this \"fix\" actually *increases* your quota burn by using more expensive tokens for the evaluation phase by default.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PREV-83891417",
+    "adversary": "prior_art_scout",
+    "text": "**Redundant Orchestrator Pattern:** The spec proposes a new `orchestrator.py` in `gauntlet/` using a functional approach (`run_gauntlet`), while `skills/adversarial-spec/scripts/pre_gauntlet/orchestrator.py` already implements a class-based `PreGauntletOrchestrator`. Building a second, structurally different orchestrator for a similar purpose (pipeline execution) is a \"from-scratch\" approach that ignores established patterns. Using a consistent class-based `GauntletOrchestrator` would align with the existing `pre_gauntlet` architecture and likely reduce implementation effort by 20%.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PREV-de5b170f",
+    "adversary": "prior_art_scout",
+    "text": "**Fragmented Persistence Infrastructure:** The plan for `gauntlet/persistence.py` (atomic writes, filelock, envelope schema) duplicates and diverges from `skills/adversarial-spec/scripts/session.py`. `SessionState` already handles JSON-based state persistence and checkpointing for the `debate.py` entry point. Instead of building a gauntlet-specific persistence layer, these should be unified into a shared utility (e.g., `scripts/common/persistence.py`). This would prevent the codebase from supporting three different persistence patterns (Debate Sessions, Gauntlet Runs, and the new Gauntlet Checkpoints). Reuse could save 40% of the persistence implementation effort.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PREV-da1d00b5",
+    "adversary": "prior_art_scout",
+    "text": "**Configuration Data Duplication:** The proposed `GauntletConfig` dataclass mirrors the purpose and structure of `CompatibilityConfig` in `skills/adversarial-spec/scripts/pre_gauntlet/models.py`. Both are used to pass stage-specific flags and timeouts. A unified configuration pattern or a shared `BaseConfig` would be more idiomatic and prevent \"config drift\" where global flags like `--timeout` are handled differently across stages. Unifying these would reduce the boilerplate for future pipeline stages.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PREV-b9c1202d",
+    "adversary": "prior_art_scout",
+    "text": "**Resume Logic Collision:** `debate.py` already implements `--resume` for multi-round critiques via `SessionState`. Adding a second, independent `--resume` flag for the gauntlet within the same CLI entry point creates a conflicting user experience and redundant logic. The gauntlet's resume capability should be integrated into the existing `SessionState` or use the same underlying registry. Building a standalone `--resume` for gauntlet ignores the prior art of the `debate.py` session management.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PREV-382c5293",
+    "adversary": "prior_art_scout",
+    "text": "**Redundant Model Dispatching:** `gauntlet/model_dispatch.py` and its `call_model()` function overlap with existing utilities in `skills/adversarial-spec/scripts/models.py` (e.g., `call_models_parallel`, `call_codex_model`). While the spec claims to extract these from the monolith, it fails to consider if these should be moved to the shared `models.py` or if `gauntlet` should simply use the existing high-level dispatchers. Building a \"gauntlet-only\" model dispatcher risks diverging from how the rest of the system handles rate limits and provider routing.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PREV-862aa5d0",
+    "adversary": "prior_art_scout",
+    "text": "**Missing Reuse of Pre-Gauntlet Metadata:** The proposed \"run manifest\" in `persistence.py` captures phase metrics, which is exactly what `PreGauntletResult` and its `Timings` dataclass already do for the pre-gauntlet phase. Rather than creating a new `PhaseMetrics` schema, the spec should extend the existing `Timings` and `Result` patterns from `pre_gauntlet/models.py` to cover all 7 gauntlet phases. This would allow for unified reporting across the entire 8-phase pipeline.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PREV-096768ae",
+    "adversary": "prior_art_scout",
+    "text": "**Thread-Safety for Global CostTracker:** The spec proposes adding a `threading.Lock` to `CostTracker.add` in `models.py`. Since `CostTracker` is a global instance used across the entire project, this is a correct but \"out-of-scope\" fix that acknowledges the existing system but handles it as a side-effect of the gauntlet refactor. This change should be evaluated for its impact on other non-gauntlet model calls to ensure no performance regressions in high-frequency loops.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "PREV-6ba868b2",
+    "adversary": "prior_art_scout",
+    "text": "**Atomic Write Prior Art:** The spec proposes \"Atomic JSON writes via temp file + os.replace()\". While not a full utility, `gauntlet.py` already implements basic persistence. A more \"port and adapt\" approach would be to move the existing `save_gauntlet_run` and `load_gauntlet_run` logic to a shared utility rather than redesigning the persistence schema with a new \"envelope\" from scratch. The effort to build a new envelope schema is high compared to stabilizing the existing JSON dump/load pattern.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "AUDT-1e3bb585",
+    "adversary": "assumption_auditor",
+    "text": "**Unverified Claim: Python 3.14 GIL Removal and Threading.Lock Necessity** Spec Quote:** \"CostTracker has no threading.Lock (relies on GIL \u2014 Python 3.14 may remove it). ... Step 3: Thread-safe CostTracker (threading.Lock in models.py)\" The Assumption:** The spec assumes that Python 3.14 definitively removes the Global Interpreter Lock (GIL) to the extent that current \"GIL-reliant\" code will fail, and that a `threading.Lock` is the correct or sufficient remedy for `CostTracker.add()`. Why verify?** Python's \"No-GIL\" work (PEP 703) is experimental. Even in a \"no-GIL\" build, many operations remain atomic, or different synchronization primitives might be required. Adding locks blindly can introduce deadlocks or performance bottlenecks if the underlying dictionary operations in `litellm` or the `CostTracker` are already protected or handled differently in 3.14. Evidence needed:** Citation of the Python 3.14 release notes or PEP 703 implementation status for the specific target environment. Also, confirmation that `litellm`\u2019s internal cost tracking isn't already thread-safe (it often uses its own internal state management). Cascading Concern:** If the locking strategy is wrong, the `CostTracker` could become a global bottleneck for the parallel adversary attacks (Phase 1).",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "AUDT-bb4f7e85",
+    "adversary": "assumption_auditor",
+    "text": "**Unverified Claim: Atomic JSON writes via `os.replace()` + `filelock`** Spec Quote:** \"Atomic JSON writes via temp file + os.replace() with filelock.\" The Assumption:** The spec assumes `os.replace()` is atomic and that `filelock` is necessary/sufficient for preventing corruption during concurrent access. Why verify?** While `os.replace()` is atomic on POSIX, it does not guarantee that the data is flushed to the physical disk (durability). A system crash between `replace()` and the OS buffer flush can result in a 0-byte file or a corrupt checkpoint. Furthermore, `filelock` (flock/lockf) behavior varies significantly on network filesystems (NFS) or containerized volumes (overlayfs), which are common in CLI tool environments. Evidence needed:** Citation of `filelock` documentation regarding behavior on the target filesystem (Linux, but which flavor/storage?) and a verification that `fsync()` is called before the rename/replace to ensure integrity. Cascading Concern:** The entire `--resume` capability (Fix 3) depends on the integrity of these checkpoints. If the write isn't truly durable, the \"resume\" logic will be loading \"sophisticated garbage.\"",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "AUDT-713fb467",
+    "adversary": "assumption_auditor",
+    "text": "**Pattern-Matched Assumption: Hashing Strategy for `spec_hash` and `config_hash`** Spec Quote:** \"Resume loader with checkpoint envelope schema (... spec_hash, config_hash ...). Invalidation guard (config_hash mismatch \u2192 discard)\" The Assumption:** The spec assumes a simple hash of the \"spec\" and \"config\" is a stable and reliable key for resumption. Why verify?** If `spec` is a string containing the product description, does the hash ignore whitespace or line endings (CRLF vs LF)? If a user fixes a typo in a comment in the spec, does the `spec_hash` change and invalidate the entire 7-phase run? For `config_hash`, if the user changes an irrelevant flag (e.g., `--verbose`), does it discard a 4-hour gauntlet run? Evidence needed:** A defined hashing algorithm (e.g., SHA-256) and a specification of what parts of the `spec` and `GauntletConfig` are normalized (canonicalized) before hashing. Cascading Concern:** Without stable hashing, the \"Zero resume capability\" fix is functionally useless for real-world iterative development.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "AUDT-c54816bb",
+    "adversary": "assumption_auditor",
+    "text": "**External System Claim: `litellm` Timeout Compatibility** Spec Quote:** \"config.timeout is the default for all phases... Attack phases use config.attack_codex_reasoning; eval/adjudication phases use config.eval_codex_reasoning\" The Assumption:** The spec assumes that passing a `timeout` to the phase functions will correctly propagate to the underlying `litellm.completion()` or `mcp` calls. Why verify?** `litellm` has multiple timeout parameters (`timeout`, `request_timeout`, `dt_timeout`). Some providers (like Anthropic or OpenAI via certain proxies) might ignore the client-side timeout or have hard-coded server-side limits that override the CLI's `--timeout 300`. Evidence needed:** Citation from `litellm` documentation (v1.80.13 as specified) on how timeouts are enforced across different providers, and verification that the `mcp_tasks` server respects these limits. Cascading Concern:** Fix 1 (GauntletConfig for hardcoded timeouts) will fail if the underlying library ignores the parameter.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "AUDT-acc208ce",
+    "adversary": "assumption_auditor",
+    "text": "**External System Claim: Model Name Blocklist Security** Spec Quote:** \"Add _validate_model_name() blocklist (reject shell metacharacters, spaces, flag-like patterns)\" The Assumption:** A blocklist is a sufficient security measure for model names passed to `subprocess.run`. Why verify?** The \"PARA\" context mentions preventing shell injection. However, if `litellm` or a provider SDK uses the model name to construct a URL or a file path internally, a blocklist might miss bypasses (e.g., Unicode normalization attacks, long-path overflows). Evidence needed:** Citation of `litellm`'s model naming conventions. Why use a blocklist instead of an allowlist (regex: `^[a-zA-Z0-9\\-_/:]+$`)? Cascading Concern:** If security relies on an incomplete blocklist, the \"paranoid_security\" adversary is ironically the weakest link.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "AUDT-feea51b6",
+    "adversary": "assumption_auditor",
+    "text": "**Assumption of Internal Interface Isolation** Spec Quote:** \"debate.py:80-86 imports exactly 5 symbols... this is the ONLY external consumer.\" The Assumption:** The spec assumes no other scripts or tests in the project import from `gauntlet.py`. Why verify?** The \"Architecture Context\" mentions 7 test files with ~4,582 lines. It is highly probable that unit tests for the adversaries or the debate engine import internal functions from `gauntlet.py` that are *not* among the 5 symbols listed. Evidence needed:** A `grep` search for `import gauntlet` and `from gauntlet` across the *entire* `/tests/` and `/scripts/` directories, not just `debate.py`. Cascading Concern:** Breaking the test suite makes the \"Validation is the only path to finality\" mandate impossible to fulfill.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "AUDT-30d2acd1",
+    "adversary": "assumption_auditor",
+    "text": "**Domain Model Verification: \"Unattended\" and Interactive Prompts** Spec Quote:** \"unattended=True forbids input()\" The Assumption:** The spec assumes that the only source of interactivity is the `input()` call in the \"Final Boss\" phase. Why verify?** Many CLI tools or SDKs (including `uv` or `git` if called via `mcp_tasks`) may prompt for credentials, SSH passphrases, or TTY confirmations if environment variables are missing. Evidence needed:** A search for all instances of `input()`, `getpass()`, and a review of the `mcp_tasks/server.py` for potential blocking calls. Cascading Concern:** If `unattended=True` is set in a CI environment and a sub-dependency prompts for input, the process will hang indefinitely, potentially exhausting CI credits or \"burning quota\" in a different way.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "AUDT-9154b78e",
+    "adversary": "assumption_auditor",
+    "text": "**External System Claim: `filelock` version and Python 3.14** Spec Quote:** \"Plan adds filelock>=3.12.0 ... uv sync --dev (adds filelock)\" The Assumption:** `filelock` version 3.12.0 is compatible with Python 3.14's experimental features. Why verify?** Python 3.14 is a future-dated version in this context (March 2026). The `filelock` library relies on OS-level locking mechanisms that change between kernel versions and Python's internal file handle implementations. Evidence needed:** Citation of `filelock` compatibility with Python 3.14 or a verification plan that tests the locking mechanism on the specific Linux kernel being used.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "FLOW-278a431a",
+    "adversary": "information_flow_auditor",
+    "text": "**Phasing Mismatch (3.5 vs 4):** The \"Per-Adversary Context\" cites \"Phase 3.5 and 4 have fan-out,\" but the \"Target Structure\" only lists `phase_3_filtering.py` and `phase_4_evaluation.py`. This suggests a missing component or a split in the logic that isn't reflected in the file layout.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "FLOW-2d95344e",
+    "adversary": "information_flow_auditor",
+    "text": "**Phase 3 Silent Fallback vs. Execution Halt:** The spec replaces the \"silent catch-all\" in Phase 3 clustering with a single retry and then a `GauntletClusteringError`. This effectively turns a \"soft\" (but expensive) failure into a \"hard\" pipeline halt. If clustering is flaky due to LLM variance, this will significantly degrade user experience for long-running specs.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "FLOW-83881345",
+    "adversary": "information_flow_auditor",
+    "text": "**Ghost Configuration:** The documentation (`05-gauntlet.md`) claims `--codex-reasoning` is global. The spec says this is false and adds `eval_codex_reasoning` to the API, but then states \"Not adding backward-compat for --codex-reasoning (never existed in CLI).\" This creates a three-way contradiction between the documentation, the existing code, and the new plan.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "FLOW-a2ca885b",
+    "adversary": "information_flow_auditor",
+    "text": "**Manifest Write Frequency:** The plan states the run manifest is built \"iteratively after each phase,\" but the \"Auto-checkpoint\" only triggers after Phase 4 and 7. If the manifest is the primary tool for diagnosis, its persistence mechanism must be specified as *independent* of the checkpoint frequency to capture failures in Phases 1, 2, 3, 5, and 6.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "FLOW-2a3e9dcb",
+    "adversary": "information_flow_auditor",
+    "text": "**Model Blocklist Latency:** `_validate_model_name()` is placed in `model_dispatch.py`. If this is the *only* validation point, invalid model names from the CLI will propagate through the entire orchestrator setup (including potentially expensive file operations or manifest creation) before being caught at the first API call.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "FLOW-a3623917",
+    "adversary": "information_flow_auditor",
+    "text": "**Checkpoint Data Integrity:** The envelope uses a `data_hash`. It is unspecified whether this is a hash of the raw Python objects (unstable) or the serialized JSON string (stable). If it's the latter, the flow must ensure the JSON is sorted/canonicalized to prevent hash mismatches on resume.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "FLOW-34e86daa",
+    "adversary": "information_flow_auditor",
+    "text": "**The \"Silent Catch-all\" Replacement:** While the spec targets the \"silent catch-all\" at line 2889, it doesn't specify if other `Exception` blocks (common in the 4087-line monolith) are being standardized or left as-is, potentially leaving other \"quota burn\" sinks in place.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "FLOW-7b99537e",
+    "adversary": "information_flow_auditor",
+    "text": "**Final Boss Timeout Paradox:** The timeout policy states \"Final Boss gets max(config.timeout, 600).\" If `config.timeout` is 300 (default), the Boss gets 600. If the Boss is interactive, 10 minutes is a reasonable human timeout, but if it's LLM-driven (as implied by `unattended`), 10 minutes is an eternity for a single call and may mask \"hanging\" API requests.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "FLOW-1698a334",
+    "adversary": "information_flow_auditor",
+    "text": "**Medals vs. Reporting Dependency:** The spec notes a strict one-way dependency (`reporting.py` -> `medals.py`). However, if `format_gauntlet_report` needs to include \"Medal Progress,\" it must query `medals.py`, which in turn queries `persistence.py`. This chain is specified, but the mechanism for `medals.py` to \"find\" the relevant historical runs in the `.adversarial-spec-gauntlet/` directory (which contains hundreds of un-indexed JSON files) is missing an index/database mechanism.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  },
+  {
+    "id": "FLOW-d7e4651f",
+    "adversary": "information_flow_auditor",
+    "text": "**Filelock Dependency Verification:** The plan adds `filelock>=3.12.0` but does not specify how the gauntlet handles environments where file locking is restricted (e.g., certain containerized environments or network mounts). A failure to acquire a lock should not prevent a \"read-only\" run, yet the flow doesn't specify a \"fallback to no-lock\" mechanism.",
+    "severity": "medium",
+    "source_model": "gemini-cli/gemini-3-flash-preview"
+  }
+]
