@@ -22,7 +22,7 @@ Models that evaluate whether concerns are valid. The pipeline auto-selects eval 
 
 | Provider | Model ID | Notes |
 |----------|----------|-------|
-| Codex CLI | `codex/gpt-5.4` | Default eval model. Use `--codex-reasoning medium` for gauntlet eval. |
+| Codex CLI | `codex/gpt-5.4` | Default eval model. Use `--eval-codex-reasoning medium` for gauntlet evals. |
 | Gemini CLI | `gemini-cli/gemini-3-pro-preview` | Second eval model for multi-model consensus. |
 
 ### Frontier (deep analysis, final boss)
@@ -31,7 +31,7 @@ For tasks requiring maximum reasoning depth.
 | Provider | Model ID | Notes |
 |----------|----------|-------|
 | Claude | Claude Opus 4.6 | The orchestrating model. Best evaluator — has full codebase context. |
-| Codex CLI | `codex/gpt-5.4` | With `--codex-reasoning high` or `xhigh` for targeted deep analysis. |
+| Codex CLI | `codex/gpt-5.4` | With `--codex-reasoning high` for critique/attack work or `--eval-codex-reasoning xhigh` for gauntlet evaluation. |
 
 ## Deprecated Models
 
@@ -54,6 +54,6 @@ Per user preference: **never use paid APIs for adversarial-spec debates — use 
 
 When updating this file, also update hardcoded model defaults in:
 - `scripts/providers.py` — `MODEL_COSTS`, `PROVIDERS` list, `auto_detect_providers()`
-- `scripts/gauntlet.py` — search for old model name in fallback strings
+- `scripts/gauntlet/` — search fallback strings in `model_dispatch.py` and `phase_7_final_boss.py`
 - `scripts/debate.py` — docstring examples, help text
 - `SETUP.md` — provider table

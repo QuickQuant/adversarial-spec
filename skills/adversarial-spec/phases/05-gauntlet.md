@@ -69,8 +69,8 @@ After consensus is reached but before finalization, offer the adversarial gauntl
    evaluator when synthesizing results into spec changes.
 
    **Reasoning levels are now split** — attacks and evaluations have independent controls:
-   - `--attack-codex-reasoning low` (default) — cheap adversary generation
-   - `--eval-codex-reasoning xhigh` (default) — thorough evaluation verdicts
+   - `--codex-reasoning low` (default) — controls attack reasoning effort
+   - `--eval-codex-reasoning xhigh` (default) — controls evaluation/adjudication reasoning effort
 
    **Additional flags:**
    - `--gauntlet-resume` — resume from checkpoint (reuse Phase 1 concerns, skip re-eval)
@@ -84,7 +84,7 @@ After consensus is reached but before finalization, offer the adversarial gauntl
    | `medium` | Balanced option for either attack or eval | 2× attack cost, decent eval quality |
    | `xhigh` (eval default) | Evaluation/adjudication — verdict quality matters | Expensive but accurate verdicts |
 
-   **Always use defaults** (`--attack-codex-reasoning low --eval-codex-reasoning xhigh`) unless the user explicitly requests otherwise.
+   **Always use defaults** (`--codex-reasoning low --eval-codex-reasoning xhigh`) unless the user explicitly requests otherwise.
 
    Present the cost estimate before launching:
    ```

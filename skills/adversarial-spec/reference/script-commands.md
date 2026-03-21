@@ -23,12 +23,25 @@ $DEBATE save-profile NAME --models ... [--focus ...] [--persona ...]
 # Telegram
 $DEBATE send-final --models MODEL_LIST --doc-type TYPE --rounds N < spec.md
 
-# Gauntlet (adversarial attack on specs)
+# Gauntlet (adversarial attack on specs — 7-phase pipeline)
 # IMPORTANT: --gauntlet-adversaries expects NAMES, not a count!
 $DEBATE gauntlet --gauntlet-adversaries all < spec.md                    # All adversaries
 $DEBATE gauntlet --gauntlet-adversaries paranoid_security,burned_oncall  # Specific ones
+$DEBATE gauntlet --gauntlet-adversaries all --gauntlet-resume            # Resume from checkpoint
+$DEBATE gauntlet --gauntlet-adversaries all \
+  --gauntlet-attack-models "codex/gpt-5.4,gemini-cli/gemini-3-pro-preview"  # Multi-model attacks
+$DEBATE gauntlet --show-manifest                                         # Show latest run manifest
+$DEBATE gauntlet --show-manifest abc1234                                 # Show specific run manifest
 $DEBATE gauntlet-adversaries  # List available adversary names
 $DEBATE adversary-stats       # View adversary performance
+$DEBATE medal-leaderboard     # View medal rankings
+
+# Standalone gauntlet CLI (different flag names — see reference/gauntlet-details.md)
+GAUNTLET="python3 ~/.claude/skills/adversarial-spec/scripts/gauntlet/cli.py"
+$GAUNTLET --adversaries all < spec.md
+$GAUNTLET --spec-file spec.md --adversaries all --resume --unattended
+$GAUNTLET --list-runs
+$GAUNTLET --show-run FILENAME
 ```
 
 **Critique options:**
@@ -49,6 +62,19 @@ $DEBATE adversary-stats       # View adversary performance
 - `--codex-search` - Enable web search for Codex CLI models (allows researching current info)
 - `--timeout` - Timeout in seconds for model API/CLI calls (default: 600)
 - `--show-cost` - Show cost summary after critique
+
+**Gauntlet options (via debate.py):**
+- `--gauntlet, -g` - Enable gauntlet mode (can combine with critique)
+- `--gauntlet-adversaries` - **NAMES only** (comma-separated or `all`)
+- `--gauntlet-attack-models` - Comma-separated models for Phase 1 attacks
+- `--gauntlet-model` - Legacy single attack model (overridden by --gauntlet-attack-models)
+- `--gauntlet-frontier` - Evaluation model
+- `--codex-reasoning` - Attack reasoning effort (default: low). Maps to `attack_codex_reasoning` in the pipeline
+- `--eval-codex-reasoning` - Eval/adjudication reasoning (default: xhigh)
+- `--gauntlet-resume` - Resume from checkpoint
+- `--no-rebuttals` - Skip Phase 5 rebuttals
+- `--final-boss` - Auto-run Phase 7
+- `--show-manifest [HASH]` - Display run manifest
 
 ## External Documentation Discovery (Context7)
 
