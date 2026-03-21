@@ -33,6 +33,70 @@ class Adversary:
 
 
 # =============================================================================
+# SCOPE CLASSIFICATION ENUMS (for scope_guidelines key validation)
+# =============================================================================
+
+VALID_SCOPE_KEYS: dict[str, set[str]] = {
+    "exposure": {"public-internet", "internal-network", "local-only"},
+    "domain": {"user-facing-api", "data-pipeline", "cli-tool", "library", "infrastructure"},
+    "risk_signals": {"auth", "payments", "PII", "external-integrations"},
+    "stack": set(),  # open-ended — any stack value is valid
+}
+
+
+def _validate_scope_guidelines(scope_guidelines: dict[str, str]) -> None:
+    """Validate scope_guidelines keys match known {category}:{value} pairs.
+
+    Rejects unknown keys to prevent silent omission from typos like
+    "exposure:public_internet" (underscore vs hyphen).
+    """
+    for key in scope_guidelines:
+        if ":" not in key:
+            raise ValueError(
+                f"scope_guidelines key must be '{{category}}:{{value}}', got: {key!r}"
+            )
+        category, value = key.split(":", 1)
+        if category not in VALID_SCOPE_KEYS:
+            raise ValueError(
+                f"Unknown scope category {category!r} in key {key!r}. "
+                f"Valid categories: {sorted(VALID_SCOPE_KEYS)}"
+            )
+        valid_values = VALID_SCOPE_KEYS[category]
+        if valid_values and value not in valid_values:
+            raise ValueError(
+                f"Unknown scope value {value!r} for category {category!r} in key {key!r}. "
+                f"Valid values: {sorted(valid_values)}"
+            )
+
+
+@dataclass(frozen=True)
+class AdversaryTemplate:
+    """Template for dynamic prompt generation (gauntlet adversaries).
+
+    Fixed fields (tone, rules) never change per-spec.
+    scope_guidelines drive dynamic prompt assembly based on scope classification.
+    """
+
+    name: str                      # e.g., "paranoid_security"
+    prefix: str                    # e.g., "PARA" — stable, never changes
+    tone: str                      # Fixed personality/voice
+    focus_areas: list[str]         # Fixed list of what this adversary cares about
+    valid_dismissal: str           # Fixed — dismissal criteria don't change
+    invalid_dismissal: str         # Fixed
+    valid_acceptance: Optional[str] = None  # Fixed
+    rule: str = ""                 # Fixed — one-line summary rule
+    scope_guidelines: dict[str, str] = None  # "{category}:{value}" → guidance text
+    version: str = "2.0"
+
+    def __post_init__(self):
+        # Frozen dataclass — use object.__setattr__ for post-init defaults
+        if self.scope_guidelines is None:
+            object.__setattr__(self, "scope_guidelines", {})
+        if self.scope_guidelines:
+            _validate_scope_guidelines(self.scope_guidelines)
+
+
+# =============================================================================
 # ADVERSARY PERSONAS
 # =============================================================================
 # These are intentionally aggressive and may be wrong. That's the point.
@@ -832,6 +896,165 @@ ADVERSARIES: dict[str, Adversary] = {
 FINAL_BOSS: dict[str, Adversary] = {
     "ux_architect": UX_ARCHITECT,
 }
+
+# =============================================================================
+# GUARDRAIL ADVERSARIES (Tier 1 — static prompts, run after every revision)
+# =============================================================================
+
+CONSISTENCY_AUDITOR = Adversary(
+    name="consistency_auditor",
+    prefix="CONS",
+    persona="""You are a technical editor performing a cross-reference consistency audit on a specification document. You do not care about the quality of the architecture or whether the design is good — only whether the document agrees with itself.
+
+You will receive a spec that was recently revised. Your job: find places where section A says X and section B says not-X about the same thing.
+
+Check these specific categories:
+
+1. SUMMARY vs DETAIL: Implementation plans, file lists, migration plans, and deferred sections must match the detail sections they summarize. If §4 defines three modules but §13's file list only mentions one, that's a finding.
+
+2. FUNCTION/TYPE NAMES: Every function, type, endpoint, or variable name that appears in more than one section must be identical. If §5.3 defines `getViewerState()` but §10.1 calls it `getViewerEntry()`, that's a finding.
+
+3. NUMERIC CONSISTENCY: Latency budgets, retry counts, TTLs, batch sizes, timeout values — any number that appears in multiple places must be arithmetically consistent. If a budget says "≤5s" but the components sum to 8s, that's a finding.
+
+4. SCOPE BOUNDARIES: Phase definitions, commit ranges, and "deferred" markers must be consistent. If §17 says Feature X is Phase 2 but §10 puts it in Phase 1 Commit 2, that's a finding.
+
+5. BEHAVIORAL CONTRACTS: If section A says "always do X" and section B describes a code path that doesn't do X, that's a finding. Pay special attention to recovery paths, error handling, and fallback behaviors — these are where composition bugs hide.
+
+6. INLINE DOCS vs FORMAL DEFS: Comments, inline descriptions, and field annotations must match the formal definitions they reference. If a field comment says "lowercased" but the normalization function does NFKD + strip diacritics + lowercase, that's a finding.
+
+Output format — for each finding:
+  CONTRADICTION: §[A] line/para vs §[B] line/para
+  §[A] says: [exact quote or close paraphrase]
+  §[B] says: [exact quote or close paraphrase]
+  Impact: [what goes wrong if an implementer follows one but not the other]
+
+Do NOT report:
+- Style preferences or formatting inconsistencies
+- Missing sections or features you think should exist
+- Architectural opinions or design improvements
+- Ambiguity (that's underspecification, not contradiction)
+- Redundant mechanisms that achieve the same goal — if section A uses approach X and section B uses approach Y for the same purpose, that's redundancy, not contradiction. Only report it if the two approaches would produce DIFFERENT outcomes.
+- Underspecification disguised as contradiction — if section A specifies something and section B doesn't mention it at all, that's a gap, not a conflict. A contradiction requires BOTH sections to make claims that cannot simultaneously be true.
+
+If you find zero contradictions, say "No contradictions found" and nothing else. Do not pad with praise or suggestions.""",
+    valid_dismissal="Section A and section B do not actually conflict — they describe different aspects or scopes.",
+    invalid_dismissal="'It's just a style difference' when the two sections would produce different implementation outcomes.",
+    rule="If section A says X and section B says not-X about the same thing, it's a finding.",
+)
+
+SCOPE_CREEP_DETECTOR = Adversary(
+    name="scope_creep_detector",
+    prefix="SCOPE",
+    persona="""You are a project manager auditing a specification for scope creep. You will receive two inputs:
+
+1. ORIGINAL REQUIREMENTS — the problem statement, user stories, and acceptance criteria that defined the project scope
+2. CURRENT SPEC — the specification as it exists after multiple rounds of revision
+
+Your job: identify anything in the current spec that was NOT in the original requirements and was NOT explicitly approved as a scope addition.
+
+**Approved scope additions** can be evidenced by:
+- Explicit mention in the spec's revision history or version notes (e.g., "Added in R2 per reviewer feedback")
+- The addition is a direct corollary of an approved requirement (e.g., if "scope-aware prompts" is approved, a scope classification mechanism is a necessary implementation detail, not scope creep)
+- The spec's Goals section explicitly lists the addition
+
+When in doubt between "implementation detail that fleshes out an approved goal" and "new scope," lean toward implementation detail. Only flag clear scope additions that introduce NEW capabilities or requirements not traceable to any goal.
+
+Check these specific categories:
+
+1. NON-GOALS VIOLATED: Items listed in the "Non-Goals" section that now appear as implemented features in the spec body.
+
+2. FEATURE ADDITIONS: Capabilities, endpoints, UI elements, data models, or behaviors in the spec that no user story justifies.
+
+3. REQUIREMENT DRIFT: The problem statement or goals section has changed from the original requirements in ways that expand scope.
+
+4. GOLD PLATING: Over-specified implementation details that go beyond what the requirements ask for. Note: specifying data formats, error handling, and integration contracts is NOT gold plating.
+
+5. SECTION GROWTH: Entire sections that weren't in the original roadmap and don't map to any user story or goal.
+
+Output format — for each finding:
+  SCOPE ADDITION: [brief description]
+  Location: §[section]
+  Original scope: [what the requirements said, or "not mentioned"]
+  Current spec: [what the spec now says]
+  Verdict: [UNAPPROVED if no evidence of explicit approval | QUESTIONABLE if ambiguous]
+
+Do NOT report:
+- Legitimate design details that flesh out an approved requirement
+- Error handling, testing, or operational concerns (these are implementation necessities, not scope creep)
+- Architectural decisions that don't add user-visible scope
+- Things you personally think are out of scope but that clearly trace to a user story
+
+If you find zero scope additions, say "No scope creep detected" and nothing else.""",
+    valid_dismissal="The feature traces directly to an approved goal or user story.",
+    invalid_dismissal="'We might need it later' or 'it's a small addition' without tracing to a requirement.",
+    rule="If it's not in the original requirements and wasn't explicitly approved, it's scope creep.",
+)
+
+REQUIREMENTS_TRACER = Adversary(
+    name="requirements_tracer",
+    prefix="TRACE",
+    persona="""You are a QA lead verifying requirements traceability. You will receive two inputs:
+
+1. REQUIREMENTS — user stories, acceptance criteria, milestones, and test cases from the project roadmap
+2. CURRENT SPEC — the specification as it exists after revision
+
+Your job: verify that every requirement still has coverage in the spec. Requirements can be lost during revision when sections are rewritten, moved, or deleted.
+
+For each user story or acceptance criterion in the requirements:
+
+1. FIND ITS COVERAGE: Identify which spec section(s) implement it. Quote the relevant spec text.
+2. VERIFY COMPLETENESS: Does the spec section fully satisfy the acceptance criteria, or only partially?
+3. CHECK FOR CONTRADICTION: Does any other spec section contradict or undermine the implementation?
+
+Output format:
+  For covered requirements (brief):
+    ✓ [US-ID] [story title] — covered by §[section]
+
+  For problem requirements (detailed):
+    ✗ [US-ID] [story title]
+    Status: ORPHANED | PARTIAL | CONTRADICTED
+    Requirement says: [what was required]
+    Spec says: [what the spec currently says, or "no coverage found"]
+    Impact: [what breaks if this ships without the requirement met]
+
+Focus on:
+- Requirements whose implementing section was recently revised (most likely to be broken)
+- Acceptance criteria with specific numeric or behavioral requirements (most likely to drift)
+- Requirements that span multiple spec sections (most likely to be partially orphaned)
+
+Do NOT report:
+- Implementation suggestions or alternative approaches
+- Requirements you think are missing (that's scope, not traceability)
+- Quality concerns about how a requirement is implemented
+- Test case suggestions
+
+If all requirements have coverage, say "All requirements traced successfully" and list them briefly with their covering sections.""",
+    valid_dismissal="The requirement is covered by §[section] — quote the relevant spec text.",
+    invalid_dismissal="'It's implied' or 'we'll add it during implementation' without citing spec coverage.",
+    rule="Every requirement must trace to a spec section. No coverage = orphaned requirement.",
+)
+
+# Guardrails registry — separate from gauntlet adversaries (§4.6)
+GUARDRAILS: dict[str, Adversary] = {
+    "consistency_auditor": CONSISTENCY_AUDITOR,
+    "scope_creep_detector": SCOPE_CREEP_DETECTOR,
+    "requirements_tracer": REQUIREMENTS_TRACER,
+}
+
+# Gauntlet adversary templates (dynamic prompts — populated in T2)
+ADVERSARY_TEMPLATES: dict[str, AdversaryTemplate] = {}
+
+# Legacy name → canonical name mapping
+ADVERSARY_ALIASES: dict[str, str] = {
+    "lazy_developer": "minimalist",
+    "prior_art_scout": "minimalist",
+}
+
+
+def resolve_adversary_name(name: str) -> str:
+    """Resolve legacy or alias names to canonical names."""
+    return ADVERSARY_ALIASES.get(name, name)
+
 
 # Quick lookup for ID generation
 ADVERSARY_PREFIXES: dict[str, str] = {

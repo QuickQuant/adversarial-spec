@@ -6,6 +6,26 @@ After the execution plan is generated, offer to proceed with implementation:
 
 ---
 
+### CRITICAL: Setup Checklist (REQUIRED before writing ANY code)
+
+**Do NOT write any code, read source files, or start implementation until ALL of these are done:**
+
+```
+Implementation Setup
+───────────────────────────────────────
+[ ] Trello cards created for all execution plan tasks
+[ ] .handoff.md updated with agent assignments and wave plan
+[ ] Review queue checked (reviews before new work)
+[ ] First card moved to "In Progress" on Trello
+[ ] TodoWrite created with setup steps + first wave tasks
+```
+
+**Why:** Without this gate, agents read the phase doc, understand the steps, and then skip them to start coding. The Trello cards and handoff file are how multi-agent coordination works — skipping them means Codex has no visibility into the work and can't pick up parallel tasks.
+
+**After completing setup**, add the first wave's code tasks to TodoWrite and begin implementation.
+
+---
+
 ### CRITICAL: Structural Conformance
 
 **The execution plan's file structure is a contract, not a suggestion.**
