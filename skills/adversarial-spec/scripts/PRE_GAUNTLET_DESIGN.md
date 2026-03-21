@@ -91,7 +91,7 @@ skills/adversarial-spec/scripts/
 ### Command
 
 ```bash
-python3 gauntlet.py --spec <path> --doc-type <prd|tech|debug> --pre-gauntlet [--report-path <path>]
+PYTHONPATH=skills/adversarial-spec/scripts uv run python -m gauntlet --spec-file <path> --doc-type <prd|tech|debug> --pre-gauntlet [--report-path <path>]
 ```
 
 ### Exit Codes
@@ -604,7 +604,7 @@ require_trees = false
 2. `pre_gauntlet/orchestrator.py` - Entry point
 
 ### Phase 4: Integration
-1. Update `gauntlet.py` to call orchestrator
+1. Update `scripts/gauntlet/cli.py` to call the pre-gauntlet orchestrator before `run_gauntlet()`
 2. Add `--pre-gauntlet` flag
 3. Write report to `.adversarial-spec/pre_gauntlet_report.json`
 

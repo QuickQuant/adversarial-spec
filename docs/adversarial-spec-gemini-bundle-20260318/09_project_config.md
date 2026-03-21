@@ -329,10 +329,10 @@ Before the adversarial gauntlet runs, an optional **pre-gauntlet phase** verifie
 
 ```bash
 # Run gauntlet with pre-gauntlet checks
-cat spec.md | python3 gauntlet.py --pre-gauntlet --doc-type tech
+cat spec.md | python -m gauntlet --pre-gauntlet --doc-type tech
 
 # Or read spec from file
-python3 gauntlet.py --pre-gauntlet --doc-type tech --spec-file spec.md
+python -m gauntlet --pre-gauntlet --doc-type tech --spec-file spec.md
 ```
 
 ### Why Pre-Gauntlet?

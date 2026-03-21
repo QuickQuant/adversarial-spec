@@ -105,10 +105,10 @@ Before the adversarial gauntlet runs, an optional **pre-gauntlet phase** verifie
 
 ```bash
 # Run gauntlet with pre-gauntlet checks
-cat spec.md | python3 gauntlet.py --pre-gauntlet --doc-type tech
+PYTHONPATH=skills/adversarial-spec/scripts uv run python -m gauntlet --pre-gauntlet --doc-type tech < spec.md
 
 # Or read spec from file
-python3 gauntlet.py --pre-gauntlet --doc-type tech --spec-file spec.md
+PYTHONPATH=skills/adversarial-spec/scripts uv run python -m gauntlet --pre-gauntlet --doc-type tech --spec-file spec.md
 ```
 
 ### Why Pre-Gauntlet?
@@ -315,13 +315,13 @@ The gauntlet is where specs go to get stress-tested by personas who are *paid to
 
 ```bash
 # Run the gauntlet on any spec
-cat spec.md | python3 debate.py gauntlet
+uv run python skills/adversarial-spec/scripts/debate.py gauntlet < spec.md
 
 # Pick your adversaries
-cat spec.md | python3 debate.py gauntlet --gauntlet-adversaries paranoid_security,burned_oncall
+uv run python skills/adversarial-spec/scripts/debate.py gauntlet --gauntlet-adversaries paranoid_security,burned_oncall < spec.md
 
 # Include the gauntlet in a full debate
-cat spec.md | python3 debate.py critique --models codex/gpt-5.2-codex --gauntlet
+uv run python skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.4 --gauntlet < spec.md
 ```
 
 ### The Adversaries
@@ -357,7 +357,7 @@ After all technical concerns are addressed and models agree, the **UX Architect*
 
 ```bash
 # Enable the final boss review
-cat spec.md | python3 debate.py gauntlet --final-boss
+uv run python skills/adversarial-spec/scripts/debate.py gauntlet --final-boss < spec.md
 ```
 
 The Final Boss issues one of three verdicts:
@@ -909,14 +909,16 @@ debate.py diff --previous OLD.md --current NEW.md
 debate.py export-tasks --models MODEL --doc-type TYPE [--json] < spec.md
 
 # Gauntlet commands (with optional pre-gauntlet)
-gauntlet.py --pre-gauntlet --doc-type tech < spec.md            # Pre-gauntlet + gauntlet
-gauntlet.py --pre-gauntlet --spec-file spec.md                  # Read spec from file
-gauntlet.py --pre-gauntlet --report-path report.json < spec.md  # Custom report path
-debate.py gauntlet < spec.md                                    # Run full gauntlet (no pre-gauntlet)
-debate.py gauntlet --gauntlet-adversaries paranoid_security,burned_oncall < spec.md
-debate.py gauntlet --final-boss < spec.md                       # Include UX architect review
-debate.py gauntlet-adversaries                                  # List adversary personas
-debate.py adversary-stats                                       # Show adversary leaderboard
+PYTHONPATH=skills/adversarial-spec/scripts uv run python -m gauntlet --pre-gauntlet --doc-type tech < spec.md
+PYTHONPATH=skills/adversarial-spec/scripts uv run python -m gauntlet --pre-gauntlet --spec-file spec.md
+PYTHONPATH=skills/adversarial-spec/scripts uv run python -m gauntlet --pre-gauntlet --report-path report.json < spec.md
+uv run python skills/adversarial-spec/scripts/debate.py gauntlet < spec.md
+uv run python skills/adversarial-spec/scripts/debate.py gauntlet --gauntlet-adversaries paranoid_security,burned_oncall < spec.md
+uv run python skills/adversarial-spec/scripts/debate.py gauntlet --gauntlet-resume --unattended < spec.md
+uv run python skills/adversarial-spec/scripts/debate.py gauntlet --show-manifest HASH
+uv run python skills/adversarial-spec/scripts/debate.py gauntlet --final-boss < spec.md
+uv run python skills/adversarial-spec/scripts/debate.py gauntlet-adversaries
+uv run python skills/adversarial-spec/scripts/debate.py adversary-stats
 
 # Execution planning
 debate.py execution-plan --spec-file spec.md                    # Generate implementation plan
@@ -945,7 +947,8 @@ debate.py bedrock list-models                 # List built-in model mappings
 **Options:**
 - `--models, -m` - Comma-separated model list (auto-detects from available API keys if not specified)
 - `--doc-type, -d` - prd, tech, or debug
-- `--codex-reasoning` - Reasoning effort for Codex models (low, medium, high, xhigh; default: xhigh)
+- `--codex-reasoning` - Reasoning effort for Codex models; debate.py gauntlet also uses it for attack reasoning
+- `--eval-codex-reasoning` - Separate Codex reasoning effort for gauntlet evaluation/adjudication
 - `--focus, -f` - Focus area (security, scalability, performance, ux, reliability, cost)
 - `--persona` - Professional persona
 - `--context, -c` - Context file (repeatable)
@@ -955,7 +958,11 @@ debate.py bedrock list-models                 # List built-in model mappings
 - `--gauntlet, -g` - Run adversarial gauntlet
 - `--gauntlet-adversaries` - Specific adversaries to use
 - `--gauntlet-model` - Model for adversary attacks
+- `--gauntlet-attack-models` - Comma-separated models for adversary attacks
 - `--gauntlet-frontier` - Model for evaluation
+- `--gauntlet-resume` - Resume a debate.py gauntlet run from checkpoints if compatible
+- `--unattended` - Disable stdin prompts and auto-checkpoint after expensive gauntlet phases
+- `--show-manifest [HASH]` - Show the latest or matching gauntlet run manifest and exit
 - `--final-boss` - Enable UX architect review
 - `--pre-gauntlet` - Run pre-gauntlet compatibility checks before gauntlet
 - `--spec-file` - Read spec from file instead of stdin
@@ -986,7 +993,10 @@ adversarial-spec/
         └── scripts/
             ├── adversaries.py    # Centralized adversary personas
             ├── debate.py         # Multi-model debate orchestration
-            ├── gauntlet.py       # Adversarial gauntlet engine
+            ├── gauntlet/         # Adversarial gauntlet package
+            │   ├── cli.py        # Standalone `python -m gauntlet` entry point
+            │   ├── orchestrator.py
+            │   └── ...
             ├── providers.py      # API key detection
             ├── task_manager.py   # Python API for task coordination
             ├── telegram_bot.py   # Telegram notifications
