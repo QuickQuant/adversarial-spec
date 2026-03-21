@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 from typing import Any, Optional
 
-from adversaries import ADVERSARIES
+from adversaries import ADVERSARIES, resolve_adversary_name
 from gauntlet.core_types import (
     Concern,
     ExplanationMatch,
@@ -113,6 +113,86 @@ def _build_phase_metrics(
     return payload
 
 
+def _load_approved_prompts(
+    gauntlet_dir: Path,
+    spec_hash: str,
+) -> Optional[dict[str, Any]]:
+    """Load approved-prompts.json and validate spec_hash.
+
+    Returns None if file doesn't exist (static fallback).
+    Raises ValueError on hash mismatch or corrupt file (FM-1).
+    """
+    prompts_file = gauntlet_dir / "approved-prompts.json"
+    if not prompts_file.exists():
+        return None
+
+    try:
+        data = json.loads(prompts_file.read_text())
+    except (json.JSONDecodeError, OSError) as exc:
+        raise ValueError(f"Failed to load approved-prompts.json: {exc}") from exc
+
+    stored_hash = data.get("spec_hash", "")
+    if stored_hash != spec_hash:
+        raise ValueError(
+            f"Approved prompts are stale (spec changed since generation). "
+            f"Stored hash: {stored_hash}, current: {spec_hash}. "
+            f"Re-run Arm Adversaries to regenerate prompts, or pass "
+            f"--force-static-fallback to proceed with static personas."
+        )
+
+    return data
+
+
+def _resolve_and_filter_adversaries(
+    adversaries: list[str],
+    approved_prompts: Optional[dict[str, Any]],
+) -> tuple[list[str], Optional[dict[str, str]]]:
+    """Resolve aliases, deduplicate, validate, filter skipped, extract prompts.
+
+    Returns (filtered_adversary_list, prompts_dict_or_none).
+    Raises ValueError on unknown adversary (CB-5) or zero remaining (§1.7).
+    """
+    # Resolve aliases and deduplicate (preserving first-seen order)
+    seen: set[str] = set()
+    resolved: list[str] = []
+    for name in adversaries:
+        canonical = resolve_adversary_name(name)
+        if canonical not in seen:
+            seen.add(canonical)
+            resolved.append(canonical)
+
+    # Validate all resolved names exist in registry (CB-5/US-3)
+    for name in resolved:
+        if name not in ADVERSARIES:
+            raise ValueError(
+                f"Unknown adversary '{name}' after alias resolution. "
+                f"Valid adversaries: {sorted(ADVERSARIES.keys())}"
+            )
+
+    # Filter skipped adversaries and extract prompts dict
+    prompts: Optional[dict[str, str]] = None
+    if approved_prompts is not None:
+        prompts_section = approved_prompts.get("prompts", {})
+        filtered: list[str] = []
+        prompts = {}
+        for name in resolved:
+            entry = prompts_section.get(name, {})
+            if entry.get("status") == "skipped":
+                continue
+            filtered.append(name)
+            if entry.get("full_persona"):
+                prompts[name] = entry["full_persona"]
+        resolved = filtered
+
+    if not resolved:
+        raise ValueError(
+            "Zero adversaries remain after filtering skipped entries. "
+            "At least one adversary must be active."
+        )
+
+    return resolved, prompts
+
+
 def run_gauntlet(
     spec: str,
     adversaries: Optional[list[str]] = None,
@@ -204,6 +284,16 @@ def run_gauntlet(
 
     gauntlet_dir = Path(".adversarial-spec-gauntlet")
     gauntlet_dir.mkdir(exist_ok=True)
+
+    # ── Step 4.5: Load approved prompts + resolve/filter adversaries ──
+    approved_prompts = _load_approved_prompts(gauntlet_dir, spec_hash)
+    adversaries, dynamic_prompts = _resolve_and_filter_adversaries(
+        adversaries, approved_prompts,
+    )
+    if approved_prompts:
+        print(f"Dynamic prompts: loaded ({len(dynamic_prompts or {})} overrides)", file=sys.stderr)
+    else:
+        print("Dynamic prompts: none (using static personas)", file=sys.stderr)
     manifest_path: Optional[str] = None
     config_hash = get_config_hash(
         config,
@@ -253,6 +343,7 @@ def run_gauntlet(
                 print(f"  Resuming: {len(completed_advs)} done, {len(missing_advs)} remaining", file=sys.stderr)
                 new_concerns, new_timing, new_raw = generate_attacks(
                     spec, missing_advs, attack_models, config,
+                    prompts=dynamic_prompts,
                 )
                 raw_concerns.extend(new_concerns)
                 adversary_timing.update(new_timing)
@@ -263,6 +354,7 @@ def run_gauntlet(
         else:
             raw_concerns, adversary_timing, attack_raw_responses = generate_attacks(
                 spec, adversaries, attack_models, config,
+                prompts=dynamic_prompts,
             )
         print(f"  Generated {len(raw_concerns)} raw concerns", file=sys.stderr)
 

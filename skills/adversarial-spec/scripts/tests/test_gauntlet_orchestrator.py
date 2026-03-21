@@ -1,6 +1,7 @@
 """Tests for gauntlet orchestrator behavioral paths."""
 
 import builtins
+import json
 import sys
 import threading
 from pathlib import Path
@@ -11,6 +12,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from gauntlet.core_types import BigPictureSynthesis, Concern, Evaluation
+from gauntlet.orchestrator import _load_approved_prompts, _resolve_and_filter_adversaries
 from models import CostTracker
 
 
@@ -115,7 +117,7 @@ def test_run_gauntlet_records_phase_metrics_in_manifest(monkeypatch, tmp_path):
         manifest_updates.append(phase_metrics)
         return manifest_path or str(tmp_path / "manifest.json")
 
-    def fake_generate_attacks(spec, adversaries, models, config):  # noqa: ANN001
+    def fake_generate_attacks(spec, adversaries, models, config, prompts=None):  # noqa: ANN001
         bump(10, 5, 0.1)
         return [concern], {"paranoid_security": 1.0}, {"paranoid_security": "raw"}
 
@@ -196,3 +198,158 @@ def test_run_gauntlet_records_phase_metrics_in_manifest(monkeypatch, tmp_path):
 
     assert manifest_updates[-1]["status"] == "completed"
     assert result.spec_hash == "a" * 64
+
+
+# =============================================================================
+# T5: Tests for _load_approved_prompts
+# =============================================================================
+
+
+class TestLoadApprovedPrompts:
+    """Test approved-prompts.json loading and spec_hash validation."""
+
+    def test_returns_none_when_file_missing(self, tmp_path):
+        """No approved-prompts.json → returns None (static fallback)."""
+        result = _load_approved_prompts(tmp_path, "abc123")
+        assert result is None
+
+    def test_loads_valid_prompts_with_matching_hash(self, tmp_path):
+        """Valid file + matching hash → returns parsed dict."""
+        prompts_data = {
+            "spec_hash": "abc123def456",
+            "prompts": {
+                "paranoid_security": {
+                    "status": "approved",
+                    "full_persona": "You see threats everywhere.",
+                },
+            },
+        }
+        (tmp_path / "approved-prompts.json").write_text(json.dumps(prompts_data))
+        result = _load_approved_prompts(tmp_path, "abc123def456")
+        assert result == prompts_data
+
+    def test_hash_mismatch_raises_value_error(self, tmp_path):
+        """FM-1: Hash mismatch → halt with actionable error, NOT silent fallback."""
+        prompts_data = {
+            "spec_hash": "old_hash_1234",
+            "prompts": {"paranoid_security": {"status": "approved", "full_persona": "x"}},
+        }
+        (tmp_path / "approved-prompts.json").write_text(json.dumps(prompts_data))
+
+        with pytest.raises(ValueError, match="stale.*spec changed"):
+            _load_approved_prompts(tmp_path, "new_hash_5678")
+
+    def test_hash_mismatch_suggests_force_flag(self, tmp_path):
+        """FM-1: Error message includes actionable guidance."""
+        prompts_data = {"spec_hash": "old", "prompts": {}}
+        (tmp_path / "approved-prompts.json").write_text(json.dumps(prompts_data))
+
+        with pytest.raises(ValueError, match="force-static-fallback"):
+            _load_approved_prompts(tmp_path, "new")
+
+    def test_malformed_json_raises_value_error(self, tmp_path):
+        """Corrupt file → clear error."""
+        (tmp_path / "approved-prompts.json").write_text("not valid json{{{")
+
+        with pytest.raises(ValueError, match="Failed to load"):
+            _load_approved_prompts(tmp_path, "any_hash")
+
+
+# =============================================================================
+# T5: Tests for _resolve_and_filter_adversaries
+# =============================================================================
+
+
+class TestResolveAndFilterAdversaries:
+    """Test adversary name resolution, dedup, filtering, and validation."""
+
+    def test_resolves_legacy_aliases(self):
+        """CB-4: Legacy names resolve to canonical names."""
+        resolved, prompts = _resolve_and_filter_adversaries(
+            ["lazy_developer", "paranoid_security"],
+            approved_prompts=None,
+        )
+        assert "minimalist" in resolved
+        assert "lazy_developer" not in resolved
+
+    def test_deduplicates_after_resolution(self):
+        """CB-4: lazy_developer + minimalist → one entry."""
+        resolved, prompts = _resolve_and_filter_adversaries(
+            ["lazy_developer", "minimalist", "paranoid_security"],
+            approved_prompts=None,
+        )
+        assert resolved.count("minimalist") == 1
+        assert len(resolved) == 2
+
+    def test_unknown_adversary_raises_error(self):
+        """CB-5/US-3: Unknown adversary → hard error."""
+        with pytest.raises(ValueError, match="Unknown adversar"):
+            _resolve_and_filter_adversaries(
+                ["paranoid_security", "nonexistent_adversary"],
+                approved_prompts=None,
+            )
+
+    def test_filters_skipped_adversaries(self):
+        """§1.7: Skipped adversaries excluded from list."""
+        approved = {
+            "spec_hash": "test",
+            "prompts": {
+                "paranoid_security": {"status": "approved", "full_persona": "Threats."},
+                "minimalist": {"status": "skipped", "skip_reason": "Internal."},
+                "burned_oncall": {"status": "approved", "full_persona": "Outages."},
+            },
+        }
+        resolved, prompts = _resolve_and_filter_adversaries(
+            ["paranoid_security", "minimalist", "burned_oncall"],
+            approved_prompts=approved,
+        )
+        assert "minimalist" not in resolved
+        assert set(resolved) == {"paranoid_security", "burned_oncall"}
+
+    def test_zero_adversaries_after_filtering_raises_error(self):
+        """§1.7: All skipped → ValueError."""
+        approved = {
+            "spec_hash": "test",
+            "prompts": {
+                "paranoid_security": {"status": "skipped", "skip_reason": "Nope."},
+            },
+        }
+        with pytest.raises(ValueError, match="[Zz]ero adversaries"):
+            _resolve_and_filter_adversaries(
+                ["paranoid_security"],
+                approved_prompts=approved,
+            )
+
+    def test_extracts_flat_prompts_dict(self):
+        """§1.7: Extract flat {name: full_persona} from approved entries."""
+        approved = {
+            "spec_hash": "test",
+            "prompts": {
+                "paranoid_security": {"status": "approved", "full_persona": "Custom PARA."},
+                "burned_oncall": {"status": "approved", "full_persona": "Custom BURN."},
+            },
+        }
+        resolved, prompts = _resolve_and_filter_adversaries(
+            ["paranoid_security", "burned_oncall"],
+            approved_prompts=approved,
+        )
+        assert prompts == {
+            "paranoid_security": "Custom PARA.",
+            "burned_oncall": "Custom BURN.",
+        }
+
+    def test_no_approved_prompts_returns_none(self):
+        """No approved prompts → None prompts dict."""
+        resolved, prompts = _resolve_and_filter_adversaries(
+            ["paranoid_security"],
+            approved_prompts=None,
+        )
+        assert prompts is None
+
+    def test_preserves_order_after_dedup(self):
+        """Dedup preserves first-seen order."""
+        resolved, _ = _resolve_and_filter_adversaries(
+            ["burned_oncall", "lazy_developer", "paranoid_security", "minimalist"],
+            approved_prompts=None,
+        )
+        assert resolved == ["burned_oncall", "minimalist", "paranoid_security"]
