@@ -1,11 +1,11 @@
 {
   "session_id": "adv-spec-202603201800-gauntlet-refactor-quota-burn",
   "created_at": "2026-03-20T18:00:00Z",
-  "updated_at": "2026-03-21T01:00:00Z",
+  "updated_at": "2026-03-21T16:20:12Z",
   "spec_slug": "gauntlet-refactor-quota-burn",
   "title": "Refactor gauntlet.py into gauntlet/ package + Quota Burn Fixes",
-  "phase": "gauntlet",
-  "status": "gauntlet_complete",
+  "phase": "complete",
+  "status": "complete",
   "context_name": "Gauntlet Refactor",
   "phases_completed": [
     {
@@ -32,6 +32,11 @@
       "phase": "gauntlet",
       "completed_at": "2026-03-21T00:52:00Z",
       "notes": "9 adversaries, 75 raw -> 42 clustered -> 23 accepted. Key catch: --resume flag collision (G-1 CRITICAL). 9 findings fixed in spec."
+    },
+    {
+      "phase": "implementation",
+      "completed_at": "2026-03-21T16:20:12Z",
+      "notes": "All 18 Trello cards completed (AS-0 through AS-18). Package refactor, tests, docs, and follow-up tasks all done."
     }
   ],
   "hotfixes_applied": [
@@ -45,7 +50,7 @@
   "decision_journal": [
     {
       "decision": "Use --gauntlet-resume instead of --resume in debate.py",
-      "reason": "debate.py already has --resume SESSION_ID for session resumption — flag collision caught by prior_art_scout adversary",
+      "reason": "debate.py already has --resume SESSION_ID for session resumption \u2014 flag collision caught by prior_art_scout adversary",
       "decided_at": "2026-03-21T01:00:00Z"
     },
     {
@@ -60,8 +65,9 @@
     },
     {
       "decision": "Monkey-patch builtins.input for unattended enforcement",
-      "reason": "pedantic_nitpicker adversary noted policy-only enforcement is insufficient — need runtime guard",
+      "reason": "pedantic_nitpicker adversary noted policy-only enforcement is insufficient \u2014 need runtime guard",
       "decided_at": "2026-03-21T01:00:00Z"
     }
-  ]
+  ],
+  "completed_at": "2026-03-21T16:20:12Z"
 }

@@ -1,0 +1,203 @@
+{
+  "spec_hash": "1daf525a3e5f3b5a559aac968e469bc76f5166085005cb4324e5233ed885d63e",
+  "status": "completed",
+  "created_at": "2026-03-21T19:56:31Z",
+  "updated_at": "2026-03-21T20:11:52Z",
+  "phases": [
+    {
+      "phase": "phase_1",
+      "phase_index": 1,
+      "status": "completed",
+      "duration_seconds": 351.3894114494324,
+      "input_tokens": 390098,
+      "output_tokens": 43683,
+      "models_used": [
+        "codex/gpt-5.4",
+        "gemini-cli/gemini-3-pro-preview"
+      ],
+      "config_snapshot": {
+        "timeout": 900,
+        "attack_codex_reasoning": "low",
+        "eval_codex_reasoning": "xhigh",
+        "auto_checkpoint": true,
+        "resume": false,
+        "unattended": true
+      },
+      "error": null,
+      "spec_hash": "1daf525a3e5f3b5a559aac968e469bc76f5166085005cb4324e5233ed885d63e",
+      "concerns_generated": 296,
+      "attack_models": [
+        "codex/gpt-5.4",
+        "gemini-cli/gemini-3-pro-preview"
+      ],
+      "adversaries": [
+        "paranoid_security",
+        "burned_oncall",
+        "lazy_developer",
+        "pedantic_nitpicker",
+        "asshole_loner",
+        "prior_art_scout",
+        "assumption_auditor",
+        "information_flow_auditor",
+        "architect"
+      ]
+    },
+    {
+      "phase": "phase_2",
+      "phase_index": 2,
+      "status": "completed",
+      "duration_seconds": 25.88895583152771,
+      "input_tokens": 48963,
+      "output_tokens": 767,
+      "models_used": [
+        "codex/gpt-5.4"
+      ],
+      "config_snapshot": {
+        "timeout": 900,
+        "attack_codex_reasoning": "low",
+        "eval_codex_reasoning": "xhigh",
+        "auto_checkpoint": true,
+        "resume": false,
+        "unattended": true
+      },
+      "error": null,
+      "spec_hash": "1daf525a3e5f3b5a559aac968e469bc76f5166085005cb4324e5233ed885d63e",
+      "real_issues": 4,
+      "high_signal": 3
+    },
+    {
+      "phase": "phase_3",
+      "phase_index": 3,
+      "status": "completed",
+      "duration_seconds": 419.28473472595215,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "models_used": [
+        "codex/gpt-5.4"
+      ],
+      "config_snapshot": {
+        "timeout": 900,
+        "attack_codex_reasoning": "low",
+        "eval_codex_reasoning": "xhigh",
+        "auto_checkpoint": true,
+        "resume": false,
+        "unattended": true
+      },
+      "error": null,
+      "spec_hash": "1daf525a3e5f3b5a559aac968e469bc76f5166085005cb4324e5233ed885d63e",
+      "post_filter": 296,
+      "dropped": 0
+    },
+    {
+      "phase": "phase_3_5",
+      "phase_index": 4,
+      "status": "completed",
+      "duration_seconds": 144.17812871932983,
+      "input_tokens": 45643,
+      "output_tokens": 542,
+      "models_used": [
+        "gemini-cli/gemini-3-pro-preview"
+      ],
+      "config_snapshot": {
+        "timeout": 900,
+        "attack_codex_reasoning": "low",
+        "eval_codex_reasoning": "xhigh",
+        "auto_checkpoint": true,
+        "resume": false,
+        "unattended": true
+      },
+      "error": null,
+      "spec_hash": "1daf525a3e5f3b5a559aac968e469bc76f5166085005cb4324e5233ed885d63e",
+      "pre_cluster": 296,
+      "post_cluster": 131,
+      "reduction_pct": 55.7
+    },
+    {
+      "phase": "phase_4",
+      "phase_index": 5,
+      "status": "completed",
+      "duration_seconds": 331.01194620132446,
+      "input_tokens": 107740,
+      "output_tokens": 12694,
+      "models_used": [
+        "codex/gpt-5.3-codex",
+        "gemini-cli/gemini-3-pro-preview"
+      ],
+      "config_snapshot": {
+        "timeout": 900,
+        "attack_codex_reasoning": "low",
+        "eval_codex_reasoning": "xhigh",
+        "auto_checkpoint": true,
+        "resume": false,
+        "unattended": true
+      },
+      "error": null,
+      "spec_hash": "1daf525a3e5f3b5a559aac968e469bc76f5166085005cb4324e5233ed885d63e",
+      "dismissed": 0,
+      "accepted": 46,
+      "acknowledged": 0,
+      "deferred": 85
+    },
+    {
+      "phase": "phase_5",
+      "phase_index": 6,
+      "status": "completed",
+      "duration_seconds": 5.9604644775390625e-06,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "models_used": [],
+      "config_snapshot": {
+        "timeout": 900,
+        "attack_codex_reasoning": "low",
+        "eval_codex_reasoning": "xhigh",
+        "auto_checkpoint": true,
+        "resume": false,
+        "unattended": true
+      },
+      "error": null,
+      "spec_hash": "1daf525a3e5f3b5a559aac968e469bc76f5166085005cb4324e5233ed885d63e",
+      "rebuttals": 0,
+      "sustained": 0
+    },
+    {
+      "phase": "phase_6",
+      "phase_index": 7,
+      "status": "completed",
+      "duration_seconds": 6.9141387939453125e-06,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "models_used": [],
+      "config_snapshot": {
+        "timeout": 900,
+        "attack_codex_reasoning": "low",
+        "eval_codex_reasoning": "xhigh",
+        "auto_checkpoint": true,
+        "resume": false,
+        "unattended": true
+      },
+      "error": null,
+      "spec_hash": "1daf525a3e5f3b5a559aac968e469bc76f5166085005cb4324e5233ed885d63e",
+      "overturned": 0
+    },
+    {
+      "phase": "phase_7",
+      "phase_index": 8,
+      "status": "completed",
+      "duration_seconds": 2.2411346435546875e-05,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "models_used": [],
+      "config_snapshot": {
+        "timeout": 900,
+        "attack_codex_reasoning": "low",
+        "eval_codex_reasoning": "xhigh",
+        "auto_checkpoint": true,
+        "resume": false,
+        "unattended": true
+      },
+      "error": null,
+      "spec_hash": "1daf525a3e5f3b5a559aac968e469bc76f5166085005cb4324e5233ed885d63e",
+      "verdict": "skipped"
+    }
+  ]
+}

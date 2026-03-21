@@ -127,73 +127,79 @@ After consensus is reached but before finalization, offer the adversarial gauntl
    Claude has full codebase context, spec history, and architectural understanding that the
    pipeline's eval models do not.
 
-   **Step 6a: Parse Sanity Check**
+   **Cardinal rules** (from [process failure report](process-failure-gauntlet-synthesis-v1-vs-v2.md)):
+   1. **Never use LLM subagents for JSON extraction.** Use `jq` or Python. LLMs add latency, lossy compression, arithmetic errors, and hallucination risk to a task that is pure data extraction.
+   2. **Never pre-filter by pipeline verdicts.** Opus reads ALL concerns — accepted, dismissed, acknowledged, AND deferred. Pipeline verdicts are advisory, not authoritative. "Deferred" ≠ "not important."
+   3. **Always use the 8-category taxonomy.** No ad-hoc theming. Categories: Correctness Bugs, Race Conditions, Failure Modes, Security, Operability, Scalability, Design Debt, Underspecification.
+   4. **One Opus pass, not N subagent passes.** Synthesis is one coherent act of judgment. Splitting it across agents fragments the reasoning and drops concerns.
 
-   After the pipeline completes, check that the parser accurately captured all model responses.
+   **Step 6a: Extract Concerns with Code**
 
-   **Why:** Some models (especially Gemini) output structured markdown (`### 1. Title` with
-   sub-bullets) instead of plain numbered lists (`1. Concern text`). The parser expects
-   `line[0].isdigit()` so `### 1.` lines are silently dropped — entire high-quality responses
-   can parse to 0 concerns.
+   Extract all concerns from gauntlet output into a single compact file using code (NOT LLM subagents):
 
-   **Process:**
-   - Check the gauntlet output for any adversary×model combinations with 0 concerns
-   - If any exist, read the raw responses file (`.adversarial-spec-gauntlet/raw-responses-*.json`)
-   - Launch a **haiku subagent** to read the raw responses for 0-concern entries and report:
-     "N responses had substantive content but 0 parsed concerns. Summaries: [one-line each]"
-   - If mismatches found, YOU read the raw responses directly — they're part of your evaluation input
+   ```python
+   # Extract from evaluations JSON — adapt path from manifest.gauntlet.checkpoint_files.evaluations
+   import json
+   evals = json.load(open(".adversarial-spec-gauntlet/evaluations-HASH.json"))
+   for e in evals:
+       c = e["concern"]
+       print(f'[{c["id"]}] ({c["severity"]}) {c["adversary"]} | verdict={e["verdict"]}')
+       print(f'  {c["text"][:200]}')
+       print()
+   ```
 
-   **Common parse failure patterns:**
-   - `### N. Title` (Gemini markdown headers) — parser expects `N.` at line start
-   - Structured sub-bullets without a plain numbered parent line
-   - Concerns formatted as prose paragraphs without numbering
+   Or use `jq`:
+   ```bash
+   jq -r '.[] | "[" + .concern.id + "] (" + .concern.severity + ") " + .concern.adversary + " | verdict=" + .verdict + "\n  " + (.concern.text[:200])' evaluations-*.json
+   ```
 
-   **Cost:** One haiku call (~2K input tokens). Prevents losing entire model perspectives.
+   **Also check for parse failures:** Look for any adversary×model combinations with 0 concerns in the gauntlet output. If any exist, read the raw responses file (`.adversarial-spec-gauntlet/raw-responses-*.json`) directly. Common parse failure: Gemini outputs `### N. Title` headers instead of `N.` at line start.
 
-   **Step 6b: Synthesize ALL Inputs**
+   The goal: ONE file or context block containing ALL concerns (typically 10-15K tokens for ~200 concerns). This is your synthesis input.
 
-   Your evaluation inputs are:
-   1. **Pipeline verdicts** (Phase 4 output) — accepted, dismissed, acknowledged, deferred
-   2. **Raw responses for parse failures** — concerns the pipeline never evaluated
-   3. **Your own codebase knowledge** — architecture docs, blast zone files, implementation state
-   4. **Spec context** — what's already addressed, what's intentional, what's out of scope
+   **Step 6b: Synthesize in One Pass**
+
+   Read ALL extracted concerns in one pass. Your additional context:
+   - Your own codebase knowledge — architecture docs, blast zone files, implementation state
+   - Spec context — what's already addressed, what's intentional, what's out of scope
+   - Pipeline verdicts — as advisory signal, not as filter
 
    **Evaluation process:**
-   - Start with pipeline-accepted concerns — these already passed automated review. Quickly
-     confirm they're real (the pipeline is usually right on accepts).
-   - Check pipeline-dismissed concerns for false negatives — did the eval model dismiss something
-     valid? Skim the reasoning. Focus on dismissals where the eval said "spec already handles this"
-     but you know the spec doesn't.
-   - Read raw responses from parse failures. These are often the highest-signal concerns because
-     they came from a different model perspective (Gemini vs GPT).
-   - **Deduplicate across sources.** The same concern often appears from multiple adversaries and
-     both parsed + unparsed responses. Group by theme, not by source.
-   - Classify each unique concern:
+   - Read every concern. Do not skip deferred or dismissed concerns — the pipeline may be wrong.
+   - Classify each unique concern into one of the 8 standard categories:
+     **Correctness Bugs** | **Race Conditions** | **Failure Modes** | **Security** | **Operability** | **Scalability** | **Design Debt** | **Underspecification**
+   - For each concern, verdict:
      - **Accept** — spec needs revision. Note what changes.
      - **Acknowledge** — valid point, won't address (out of scope, known tradeoff). Credit the adversary.
      - **Dismiss** — not valid. One sentence why.
+   - Deduplicate by theme within categories, not by source adversary.
 
    **Step 6c: Present Findings**
 
-   Present a consolidated concern report (not the raw pipeline dump):
+   Present a consolidated concern report using the standard taxonomy:
    ```
    Gauntlet Findings
    ═══════════════════════════════════════
-   Sources: N pipeline-evaluated + M from parse recovery
+   Total concerns evaluated: N (all verdicts, not just accepted)
    After dedup: X unique concerns
 
-   ACCEPTED (spec changes needed):
-   1. [theme] — [one-line summary] (sources: PARA×GPT, BURN×Gemini)
-   2. ...
+   CORRECTNESS BUGS
+     CB-1: [one-line summary] — Accept (sources: PEDA×Gemini, ASSH×GPT)
+     CB-2: [one-line summary] — Acknowledge (known tradeoff: ...)
 
-   ACKNOWLEDGED (valid, won't address):
-   1. [theme] — [one-line summary + why not addressing]
-   2. ...
+   RACE CONDITIONS
+     RC-1: ...
 
-   DISMISSED: Y concerns (noise/already covered)
+   SECURITY
+     SEC-1: ...
 
+   [... remaining categories with concerns ...]
+
+   Summary: A accepted | K acknowledged | D dismissed
    [Proceed to spec revision] [Discuss specific concerns]
    ```
+
+   Categories with zero concerns may be omitted.
 
 7. **Revise spec with accepted concerns.**
    - Add mitigations for accepted concerns

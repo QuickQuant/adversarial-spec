@@ -1,0 +1,94 @@
+{
+  "session_id": "adv-spec-202603211620-adversary-system-redesign",
+  "created_at": "2026-03-21T16:20:42Z",
+  "updated_at": "2026-03-21T20:44:43Z",
+  "spec_slug": "adversary-system-redesign",
+  "title": "Adversary System Redesign: Dynamic Prompts, Roster, and Taxonomy",
+  "phase": "requirements",
+  "status": "active",
+  "context_name": "Adversary Redesign",
+  "phases_completed": [],
+  "hotfixes_applied": [],
+  "decision_journal": [],
+  "journey": [
+    {
+      "time": "2026-03-21T16:20:42Z",
+      "event": "Session created",
+      "type": "start"
+    },
+    {
+      "time": "2026-03-21T19:43:56Z",
+      "event": "R4 debate complete, all findings incorporated into spec v6",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-03-21T19:43:56Z",
+      "event": "Checkpoint saved: adversary-redesign-r4-guardrails-tuned.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-03-21T20:38:02Z",
+      "event": "Phase transition: implementation \u2192 gauntlet (ran 9-adversary gauntlet on v6)",
+      "type": "transition"
+    },
+    {
+      "time": "2026-03-21T20:38:02Z",
+      "event": "Gauntlet complete: 296 raw \u2192 131 clustered \u2192 15 accepted findings",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-03-21T20:38:02Z",
+      "event": "Incorporated 15 gauntlet findings into spec v7",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-03-21T20:38:02Z",
+      "event": "Guardrail pass on v7: CONS 2 fixed, SCOPE clean, TRACE skipped",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-03-21T20:38:02Z",
+      "event": "Phase transition: gauntlet \u2192 finalize",
+      "type": "transition"
+    },
+    {
+      "time": "2026-03-21T20:38:02Z",
+      "event": "Spec finalized: .adversarial-spec/specs/adversary-system-redesign/spec.md",
+      "type": "artifact"
+    },
+    {
+      "time": "2026-03-21T20:41:44Z",
+      "event": "Phase transition: finalize \u2192 execution",
+      "type": "transition"
+    },
+    {
+      "time": "2026-03-21T20:41:44Z",
+      "event": "Execution plan created: 11 tasks, 2 workstreams",
+      "type": "artifact"
+    },
+    {
+      "time": "2026-03-21T20:43:15Z",
+      "event": "Spec finalized (v7), execution plan created (11 tasks)",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-03-21T20:43:15Z",
+      "event": "Checkpoint saved: adversary-redesign-finalized-execution-plan.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-03-21T20:44:43Z",
+      "event": "Generated manifest retroactively",
+      "type": "maintenance"
+    }
+  ],
+  "current_phase": "implementation",
+  "current_step": "Spec finalized (v7), execution plan created (11 tasks)",
+  "completed_work": "Ran 9-adversary gauntlet on v6 (296 raw \u2192 131 clustered \u2192 15 accepted). Incorporated all 15 findings into spec v7. Ran guardrails (CONS: 2 fixed, SCOPE: clean, TRACE: skipped/no manifest). Finalized spec. Created execution plan: 11 tasks, 2 workstreams, 16-28hr estimated effort.",
+  "next_action": "Begin implementation per execution plan. Start with T4 (SYNTHESIS_CATEGORIES), then T1 (AdversaryTemplate + aliases).",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202603212043-adversary-redesign-finalized-execution-plan.md",
+  "do_not_ask": [],
+  "spec_path": ".adversarial-spec/specs/adversary-system-redesign/spec.md",
+  "execution_plan_path": ".adversarial-spec/specs/adversary-system-redesign/execution-plan.md",
+  "manifest_path": ".adversarial-spec/specs/adversary-system-redesign/manifest.json"
+}

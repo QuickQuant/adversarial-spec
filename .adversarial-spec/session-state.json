@@ -1,26 +1,20 @@
 {
   "schema_version": "1.3",
-  "active_session_id": "adv-spec-202603201800-gauntlet-refactor-quota-burn",
-  "context_name": "Gauntlet Refactor",
-  "current_phase": "gauntlet",
-  "current_step": "Gauntlet complete (23 final concerns, 9 addressed in spec). Ready for plan approval and implementation.",
-  "next_action": "Approve plan via ExitPlanMode, then execute Steps 0-10 (refactor gauntlet.py into gauntlet/ package with 5 Quota Burn fixes).",
-  "last_checkpoint": null,
-  "do_not_ask": [
-    "Bootstrap section format (decided: brief, not full product spec)",
-    "Formal SLA/observability/security sections (decided: inline, not separate)",
-    "5-stage deployment rollback (decided: cp -r + monolith shim is sufficient)",
-    "--resume naming (decided: --gauntlet-resume in debate.py, --resume in standalone cli.py)",
-    "eval_codex_reasoning default (decided: xhigh, matches DEFAULT_CODEX_REASONING)",
-    "Model blocklist vs allowlist (decided: blocklist, allowlist too brittle)"
-  ],
-  "updated_at": "2026-03-21T01:05:00Z",
-  "active_session": "adv-spec-202603201800-gauntlet-refactor-quota-burn",
-  "active_session_file": ".adversarial-spec/sessions/adv-spec-202603201800-gauntlet-refactor-quota-burn.json",
+  "active_session_id": "adv-spec-202603211620-adversary-system-redesign",
+  "context_name": "Adversary Redesign",
+  "current_phase": "implementation",
+  "current_step": "Spec finalized (v7), execution plan created (11 tasks)",
+  "next_action": "Begin implementation per execution plan. Start with T4 (SYNTHESIS_CATEGORIES), then T1 (AdversaryTemplate + aliases).",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202603212043-adversary-redesign-finalized-execution-plan.md",
+  "do_not_ask": [],
+  "updated_at": "2026-03-21T20:43:15Z",
+  "active_session": "adv-spec-202603211620-adversary-system-redesign",
+  "active_session_file": ".adversarial-spec/sessions/adv-spec-202603211620-adversary-system-redesign.json",
   "session_stack": [
+    "adv-spec-202603211620-adversary-system-redesign",
     "adv-spec-202603201800-gauntlet-refactor-quota-burn",
     "adv-spec-202603051555-philosophy-phase-and-arch-persona",
     "adv-spec-202602101754-phase-sync-gaps"
   ],
-  "completed_work": "Spec debated through 2 rounds (Codex 5.4 + Gemini + Claude synthesis) and gauntlet (9 adversaries, 75->42->23 concerns). 4 timeout hotfixes applied to gauntlet.py during development. Critical --resume flag collision caught and fixed."
+  "completed_work": "Ran 9-adversary gauntlet on v6 (296 raw \u2192 131 clustered \u2192 15 accepted). Incorporated all 15 findings into spec v7. Ran guardrails (CONS: 2 fixed, SCOPE: clean, TRACE: skipped/no manifest). Finalized spec. Created execution plan: 11 tasks, 2 workstreams, 16-28hr estimated effort."
 }

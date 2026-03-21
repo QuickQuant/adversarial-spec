@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "spec_slug": "adversary-system-redesign",
+  "title": "Adversary System Redesign: Dynamic Prompts, Roster, Taxonomy, and Checkpoint Guardrails",
+  "type": "technical",
+  "session_id": "adv-spec-202603211620-adversary-system-redesign",
+  "created_at": "2026-03-21T16:20:42Z",
+  "updated_at": "2026-03-21T20:43:15Z",
+  "status": "finalized",
+  "goals": [
+    "Dynamic prompts — Replace static persona text with Claude-generated, scope-aware prompts",
+    "Roster optimization — Merge redundant adversaries, add scalability coverage",
+    "Synthesis taxonomy — Define 8-category standard taxonomy as code constant",
+    "Checkpoint guardrails — Lightweight adversaries after every spec revision"
+  ],
+  "non_goals": [
+    "Changing the gauntlet pipeline phases (1-7)",
+    "Changing the evaluation/adjudication model selection",
+    "Adding new pipeline phases to debate.py",
+    "Changing the Concern or Evaluation data models",
+    "Building standalone CLI tools for prompt review"
+  ],
+  "evidence_base": [
+    "BracketBattleAI/.adversarial-spec/process-failure-gauntlet-synthesis-v1-vs-v2.md",
+    "BracketBattleAI/.adversarial-spec/process-failure-spec-internal-contradictions.md",
+    "extended commentary on adversaries.docx"
+  ],
+  "artifacts": {
+    "spec": ".adversarial-spec/specs/adversary-system-redesign/spec.md",
+    "guardrail_prompts": ".adversarial-spec/specs/adversary-system-redesign/guardrail-prompts.md",
+    "execution_plan": ".adversarial-spec/specs/adversary-system-redesign/execution-plan.md"
+  },
+  "debate": {
+    "rounds": 4,
+    "models": ["codex/gpt-5.4", "gemini-cli/gemini-3-pro-preview"],
+    "final_version": "v6 (pre-gauntlet)"
+  },
+  "guardrails": {
+    "cycles": 3,
+    "prompts_file": ".adversarial-spec/specs/adversary-system-redesign/guardrail-prompts.md",
+    "adversaries": ["consistency_auditor", "scope_creep_detector", "requirements_tracer"],
+    "final_results": {
+      "CONS": "2 findings fixed (duplicate section numbering, truncated examples)",
+      "SCOPE": "0 findings",
+      "TRACE": "skipped (no roadmap manifest at time of run)"
+    }
+  },
+  "gauntlet": {
+    "run_id": "1daf525a",
+    "attack_models": ["codex/gpt-5.4", "gemini-cli/gemini-3-pro-preview"],
+    "adversaries": 9,
+    "raw_concerns": 296,
+    "clustered_concerns": 131,
+    "accepted": 15,
+    "acknowledged": 2,
+    "dismissed": 15,
+    "artifacts": {
+      "evaluations": ".adversarial-spec-gauntlet/evaluations-1daf525a.json",
+      "raw_responses": ".adversarial-spec-gauntlet/raw-responses-1daf525a.json",
+      "run_log": "/home/jason/.adversarial-spec/runs/20260321_151152_1daf525a.json"
+    }
+  },
+  "execution_plan": {
+    "tasks": 11,
+    "workstreams": 2,
+    "estimated_effort": "16-28 hours",
+    "high_risk_tasks": ["T8: Replace deterministic concern parser"],
+    "critical_path": "T1 → T6 → T8 → T11"
+  },
+  "spec_versions": [
+    {"version": "v1", "description": "Initial draft"},
+    {"version": "v2-v5", "description": "Debate rounds R1-R3"},
+    {"version": "v6", "description": "Post-R4, guardrail tuning complete"},
+    {"version": "v7", "description": "Post-gauntlet, 15 findings incorporated, guardrails pass"}
+  ]
+}
