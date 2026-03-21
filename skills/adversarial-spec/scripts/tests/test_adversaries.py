@@ -13,6 +13,8 @@ from adversaries import (
     ADVERSARY_PREFIXES,
     ADVERSARY_TEMPLATES,
     AdversaryTemplate,
+    GUARDRAILS,
+    _validate_scope_guidelines,
     resolve_adversary_name,
 )
 
@@ -81,3 +83,50 @@ def test_adversary_prefixes_keep_historical_aliases_and_new_prefixes():
     assert ADVERSARY_PREFIXES["traffic_engineer"] == "TRAF"
     assert ADVERSARY_PREFIXES["lazy_developer"] == "LAZY"
     assert ADVERSARY_PREFIXES["prior_art_scout"] == "PREV"
+
+
+# =============================================================================
+# T11: scope_guidelines key validation
+# =============================================================================
+
+
+def test_scope_guidelines_rejects_unknown_category():
+    """Unknown category key raises ValueError."""
+    with pytest.raises(ValueError, match="Unknown scope category"):
+        _validate_scope_guidelines({"invalid_category:value": "guidance"})
+
+
+def test_scope_guidelines_rejects_invalid_value_for_known_category():
+    """Known category with wrong value raises ValueError."""
+    with pytest.raises(ValueError, match="Unknown scope value"):
+        _validate_scope_guidelines({"exposure:public_internet": "guidance"})
+
+
+def test_scope_guidelines_rejects_malformed_key_without_colon():
+    """Key without colon separator raises ValueError."""
+    with pytest.raises(ValueError, match="must be"):
+        _validate_scope_guidelines({"no_colon_key": "guidance"})
+
+
+def test_scope_guidelines_accepts_valid_keys():
+    """Valid keys pass without raising."""
+    _validate_scope_guidelines({
+        "exposure:public-internet": "Harden all endpoints.",
+        "domain:cli-tool": "Prefer builtins.",
+        "stack:python": "Any stack value is valid.",
+    })
+
+
+# =============================================================================
+# T11: Guardrail registry separation
+# =============================================================================
+
+
+def test_guardrails_registered_separately_from_adversaries():
+    """Guardrails must be in GUARDRAILS, NOT in ADVERSARIES or ADVERSARY_TEMPLATES."""
+    guardrail_names = {"consistency_auditor", "scope_creep_detector", "requirements_tracer"}
+
+    for name in guardrail_names:
+        assert name in GUARDRAILS, f"{name} missing from GUARDRAILS"
+        assert name not in ADVERSARIES, f"{name} should not be in ADVERSARIES"
+        assert name not in ADVERSARY_TEMPLATES, f"{name} should not be in ADVERSARY_TEMPLATES"
