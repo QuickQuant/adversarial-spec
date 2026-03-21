@@ -11,7 +11,7 @@ import sys
 import time
 from collections import defaultdict
 
-from adversaries import ADVERSARIES
+from adversaries import ADVERSARIES, resolve_adversary_name
 from gauntlet.core_types import Concern, GauntletConfig
 from gauntlet.model_dispatch import (
     _get_model_provider,
@@ -26,6 +26,7 @@ def generate_attacks(
     adversaries: list[str],
     models: list[str] | str,
     config: GauntletConfig,
+    prompts: dict[str, str] | None = None,
 ) -> tuple[list[Concern], dict[str, float], dict[str, str]]:
     """Phase 1: Generate attacks from all adversary personas in parallel.
 
@@ -34,10 +35,14 @@ def generate_attacks(
         adversaries: List of adversary keys to use
         models: Model(s) to use for attack generation
         config: Gauntlet configuration (timeout, attack_codex_reasoning)
+        prompts: Optional persona overrides keyed by adversary name
 
     Returns:
         Tuple of (concerns, timing_dict, raw_responses_dict)
     """
+    if not adversaries:
+        raise ValueError("At least one adversary is required")
+
     if isinstance(models, str):
         models = [models]
     models = [m.strip() for m in models if m and m.strip()]
@@ -51,14 +56,23 @@ def generate_attacks(
     def run_adversary_with_model(adversary_key: str, model: str) -> tuple[list[Concern], float, str]:
         """Run one adversary with one model and return concerns with timing."""
         start = time.time()
-        adversary = ADVERSARIES.get(adversary_key)
+        canonical_key = resolve_adversary_name(adversary_key)
+        adversary = ADVERSARIES.get(canonical_key)
         if not adversary:
             print(f"Warning: Unknown adversary '{adversary_key}'", file=sys.stderr)
             return [], 0.0, ""
 
+        persona = adversary.persona
+        if prompts:
+            persona = (
+                prompts.get(adversary_key)
+                or prompts.get(canonical_key)
+                or adversary.persona
+            )
+
         system_prompt = f"""You are an adversarial reviewer with this persona:
 
-{adversary.persona}
+{persona}
 
 Your job is to find problems with the specification below. Be aggressive.
 Output a numbered list of concerns. Each concern should be a potential problem
