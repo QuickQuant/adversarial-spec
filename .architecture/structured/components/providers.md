@@ -76,7 +76,7 @@ OUT: Validation results, profile data, config data
 **Called by:**
 - `debate.py` — credential validation, profile loading, bedrock setup
 - `models.py` — MODEL_COSTS for cost calculation
-- `gauntlet.py` — credential checks, model selection
+- `gauntlet/model_dispatch.py` — gauntlet model selection and credential-sensitive fallbacks
 
 ## LLM Notes
 

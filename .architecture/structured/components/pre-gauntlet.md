@@ -86,7 +86,7 @@ The pre-gauntlet subsystem has zero imports from the main debate/gauntlet module
 
 **Called by:**
 - `debate.py` — before gauntlet runs
-- `gauntlet.py` — standalone gauntlet mode
+- `gauntlet/cli.py` — standalone gauntlet mode
 
 ## LLM Notes
 

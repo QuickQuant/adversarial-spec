@@ -3,9 +3,9 @@
   "skill": "mapcodebase",
   "skill_version": "2.6",
   "model": "claude-opus-4-6",
-  "generated_at": "2026-03-18T16:00:00Z",
+  "generated_at": "2026-03-21T14:30:00Z",
   "target_dir": "/home/jason/PycharmProjects/adversarial-spec",
-  "git_hash": "0eb7ad9",
+  "git_hash": "12c5d3f",
   "status": "success",
   "mode": "full",
   "focus": null,
@@ -14,17 +14,33 @@
       "id": "debate-engine",
       "name": "Debate Engine",
       "purpose": "Multi-model spec critique loop with CLI orchestration",
-      "entry_file": "skills/adversarial-spec/scripts/debate.py:1443",
+      "entry_file": "skills/adversarial-spec/scripts/debate.py:1493",
       "key_files": ["skills/adversarial-spec/scripts/debate.py", "skills/adversarial-spec/scripts/session.py"],
       "doc_path": "structured/components/debate-engine.md",
       "runtime_status": "implemented"
     },
     {
       "id": "gauntlet",
-      "name": "Gauntlet",
-      "purpose": "7-phase adversarial stress-testing with named attacker personas",
-      "entry_file": "skills/adversarial-spec/scripts/gauntlet.py:3290",
-      "key_files": ["skills/adversarial-spec/scripts/gauntlet.py", "skills/adversarial-spec/scripts/adversaries.py"],
+      "name": "Gauntlet Pipeline",
+      "purpose": "7-phase adversarial stress-testing (16-module package)",
+      "entry_file": "skills/adversarial-spec/scripts/gauntlet/orchestrator.py:116",
+      "key_files": [
+        "skills/adversarial-spec/scripts/gauntlet/orchestrator.py",
+        "skills/adversarial-spec/scripts/gauntlet/core_types.py",
+        "skills/adversarial-spec/scripts/gauntlet/persistence.py",
+        "skills/adversarial-spec/scripts/gauntlet/model_dispatch.py",
+        "skills/adversarial-spec/scripts/gauntlet/cli.py",
+        "skills/adversarial-spec/scripts/gauntlet/reporting.py",
+        "skills/adversarial-spec/scripts/gauntlet/phase_1_attacks.py",
+        "skills/adversarial-spec/scripts/gauntlet/phase_2_synthesis.py",
+        "skills/adversarial-spec/scripts/gauntlet/phase_3_filtering.py",
+        "skills/adversarial-spec/scripts/gauntlet/phase_4_evaluation.py",
+        "skills/adversarial-spec/scripts/gauntlet/phase_5_rebuttals.py",
+        "skills/adversarial-spec/scripts/gauntlet/phase_6_adjudication.py",
+        "skills/adversarial-spec/scripts/gauntlet/phase_7_final_boss.py",
+        "skills/adversarial-spec/scripts/gauntlet/medals.py",
+        "skills/adversarial-spec/scripts/adversaries.py"
+      ],
       "doc_path": "structured/components/gauntlet.md",
       "runtime_status": "implemented"
     },
@@ -32,7 +48,7 @@
       "id": "models",
       "name": "Models",
       "purpose": "LLM call abstraction (LiteLLM + Codex/Gemini/Claude CLI)",
-      "entry_file": "skills/adversarial-spec/scripts/models.py:894",
+      "entry_file": "skills/adversarial-spec/scripts/models.py:901",
       "key_files": ["skills/adversarial-spec/scripts/models.py"],
       "doc_path": "structured/components/models.md",
       "runtime_status": "implemented"
@@ -41,7 +57,7 @@
       "id": "providers",
       "name": "Providers",
       "purpose": "Model config, credentials, cost rates, Bedrock support",
-      "entry_file": "skills/adversarial-spec/scripts/providers.py:436",
+      "entry_file": "skills/adversarial-spec/scripts/providers.py",
       "key_files": ["skills/adversarial-spec/scripts/providers.py"],
       "doc_path": "structured/components/providers.md",
       "runtime_status": "implemented"
@@ -50,7 +66,7 @@
       "id": "prompts",
       "name": "Prompts",
       "purpose": "Centralized templates, focus areas, personas",
-      "entry_file": "skills/adversarial-spec/scripts/prompts.py:125",
+      "entry_file": "skills/adversarial-spec/scripts/prompts.py",
       "key_files": ["skills/adversarial-spec/scripts/prompts.py"],
       "doc_path": "structured/components/prompts.md",
       "runtime_status": "implemented"
@@ -93,14 +109,14 @@
     }
   ],
   "metrics": {
-    "files_scanned": 65,
+    "files_scanned": 72,
     "components_identified": 9,
-    "flows_identified": 11,
-    "entry_points_identified": 25,
+    "flows_identified": 13,
+    "entry_points_identified": 27,
     "explorer_failures": 0,
     "hazards_identified": 1,
     "patterns_detected": 8,
-    "findings_produced": 7
+    "findings_produced": 8
   },
   "artifacts": [
     "INDEX.md",
@@ -126,7 +142,8 @@
   "warnings": [
     "execution_planner/ deprecation Phase 3 (cleanup exports) still PENDING",
     "scope.py (606 lines) is not imported by any module — potential dead code",
-    "knowledge_service.py implemented but not wired into any active flow"
+    "knowledge_service.py implemented but not wired into any active flow",
+    "gauntlet_monolith.py shim still exists (12 lines) — can be removed when references are cleared"
   ],
   "hazards": [
     {
@@ -134,10 +151,10 @@
       "type": "concurrency_race",
       "resource": "cost_tracker (global CostTracker singleton)",
       "component": "models",
-      "callers": ["call_single_model() via ThreadPoolExecutor (models.py:894)", "gauntlet phases (gauntlet.py)"],
-      "synchronization": "none (relies on GIL)",
+      "callers": ["call_single_model() via ThreadPoolExecutor (models.py:901)", "gauntlet phase modules via model_dispatch"],
+      "synchronization": "threading.Lock in CostTracker.add()",
       "severity": "low",
-      "description": "Multiple threads call cost_tracker.add() simultaneously. Dict updates to by_model not atomic. Currently safe under GIL but Python 3.14+ PEP 703 may remove GIL. Cost tracking is informational only — no business logic depends on accuracy."
+      "description": "Multiple threads call cost_tracker.add() simultaneously. Now guarded by threading.Lock. Cost tracking is informational only — no business logic depends on accuracy."
     }
   ],
   "patterns": [
@@ -152,8 +169,8 @@
     },
     {
       "pattern_id": "repeated-json-load-with-fallback",
-      "files": ["skills/adversarial-spec/scripts/gauntlet.py", "skills/adversarial-spec/scripts/session.py"],
-      "description": "JSON load with try/except fallback repeated 8+ times across both files",
+      "files": ["skills/adversarial-spec/scripts/gauntlet/persistence.py", "skills/adversarial-spec/scripts/session.py"],
+      "description": "JSON load with try/except fallback repeated 8+ times across files",
       "concern": "Scattered identical error handling makes uniform updates difficult",
       "best_practice": "Create load_json_safe(path, default_value) utility function",
       "severity": "warning",
@@ -161,8 +178,8 @@
     },
     {
       "pattern_id": "environment-variable-reading-scattered",
-      "files": ["skills/adversarial-spec/scripts/telegram_bot.py", "skills/adversarial-spec/scripts/providers.py", "skills/adversarial-spec/scripts/task_manager.py", "skills/adversarial-spec/scripts/gauntlet.py"],
-      "description": "Env vars read via os.environ.get() scattered across 4+ files with no centralization",
+      "files": ["skills/adversarial-spec/scripts/telegram_bot.py", "skills/adversarial-spec/scripts/providers.py", "skills/adversarial-spec/scripts/task_manager.py", "skills/adversarial-spec/scripts/gauntlet/model_dispatch.py", "skills/adversarial-spec/scripts/gauntlet/phase_7_final_boss.py"],
+      "description": "Env vars read via os.environ.get() scattered across 5+ files with no centralization",
       "concern": "Difficult to audit required env vars. No centralized validation.",
       "best_practice": "Create config.py with centralized getenv functions per concern area",
       "severity": "warning",
@@ -188,8 +205,8 @@
     },
     {
       "pattern_id": "litellm-configuration-duplication",
-      "files": ["skills/adversarial-spec/scripts/debate.py", "skills/adversarial-spec/scripts/models.py"],
-      "description": "Both files independently suppress litellm logging at import time",
+      "files": ["skills/adversarial-spec/scripts/debate.py", "skills/adversarial-spec/scripts/models.py", "skills/adversarial-spec/scripts/gauntlet/model_dispatch.py"],
+      "description": "Three files independently suppress litellm logging at import time",
       "concern": null,
       "best_practice": null,
       "severity": "info",
@@ -197,8 +214,8 @@
     },
     {
       "pattern_id": "cli-exit-code-convention",
-      "files": ["skills/adversarial-spec/scripts/debate.py", "skills/adversarial-spec/scripts/telegram_bot.py"],
-      "description": "Both CLIs use same exit codes (1=runtime, 2=config) but convention is implicit",
+      "files": ["skills/adversarial-spec/scripts/debate.py", "skills/adversarial-spec/scripts/gauntlet/cli.py", "skills/adversarial-spec/scripts/telegram_bot.py"],
+      "description": "All CLIs use same exit codes (1=runtime, 2=config, 3=clustering failure)",
       "concern": null,
       "best_practice": null,
       "severity": "info",
@@ -206,8 +223,8 @@
     },
     {
       "pattern_id": "cli-argparse-structure",
-      "files": ["skills/adversarial-spec/scripts/debate.py", "skills/adversarial-spec/scripts/telegram_bot.py"],
-      "description": "Both CLIs implement argparse with subparsers — framework-mandated pattern",
+      "files": ["skills/adversarial-spec/scripts/debate.py", "skills/adversarial-spec/scripts/gauntlet/cli.py", "skills/adversarial-spec/scripts/telegram_bot.py"],
+      "description": "All three CLIs implement argparse with command routing — framework-mandated pattern",
       "concern": null,
       "best_practice": null,
       "severity": "info",
@@ -230,26 +247,26 @@
     {
       "finding_id": "FIND-002",
       "category": "complexity",
-      "severity": "warning",
+      "severity": "info",
       "component": "gauntlet",
-      "files": ["skills/adversarial-spec/scripts/gauntlet.py"],
-      "title": "gauntlet.py exceeds maintainable single-file size (4087 lines)",
-      "description": "Contains 7-phase pipeline, data classes, evaluation logic, medal tracking, report formatting, stats persistence, and CLI",
-      "suggestion": "Split into gauntlet/ package: pipeline.py, evaluation.py, stats.py, report.py, types.py",
-      "confidence": "medium",
-      "evidence": "4087 lines. debate.py is 1485, models.py is 937 for comparison"
+      "files": ["skills/adversarial-spec/scripts/gauntlet/"],
+      "title": "(RESOLVED) gauntlet monolith extracted into 16-module package",
+      "description": "4087-line monolith successfully extracted into gauntlet/ package per refactor spec",
+      "suggestion": null,
+      "confidence": "high",
+      "evidence": "16 modules in gauntlet/, shim at gauntlet_monolith.py, 377+ tests passing"
     },
     {
       "finding_id": "FIND-003",
       "category": "performance",
-      "severity": "warning",
+      "severity": "info",
       "component": "models",
       "files": ["skills/adversarial-spec/scripts/models.py"],
-      "title": "cost_tracker relies on GIL for thread safety",
-      "description": "Global CostTracker written from multiple threads without lock. Safe under GIL, but Python 3.14+ may remove GIL (PEP 703)",
-      "suggestion": "Add threading.Lock to CostTracker.add()",
-      "confidence": "medium",
-      "evidence": "cost_tracker.add() at models.py:163 called from ThreadPoolExecutor threads. No lock."
+      "title": "(RESOLVED) cost_tracker now has threading.Lock",
+      "description": "CostTracker uses threading.Lock for thread-safe accumulation",
+      "suggestion": null,
+      "confidence": "high",
+      "evidence": "CostTracker.add() uses self._lock (threading.Lock)"
     },
     {
       "finding_id": "FIND-004",
@@ -258,8 +275,8 @@
       "component": "mcp-tasks",
       "files": ["mcp_tasks/server.py", "skills/adversarial-spec/scripts/task_manager.py"],
       "title": "No file locking on .claude/tasks.json",
-      "description": "MCP server and TaskManager both read/write tasks.json without locking. Concurrent access possible.",
-      "suggestion": "Add fcntl.flock or use single-writer pattern",
+      "description": "MCP server and TaskManager both read/write tasks.json without locking",
+      "suggestion": "Add filelock (already a dependency) to load_tasks/save_tasks",
       "confidence": "medium",
       "evidence": "load_tasks()/save_tasks() use plain path.read_text()/write_text() with no locking"
     },
@@ -270,7 +287,7 @@
       "component": "execution-planner",
       "files": ["execution_planner/__init__.py"],
       "title": "Execution planner exports still include potentially dead types",
-      "description": "Deprecation Phase 3 (cleanup exports) still pending per spec",
+      "description": "Deprecation Phase 3 (cleanup exports) still pending",
       "suggestion": "Audit which exports are still imported externally, remove unused ones",
       "confidence": "high",
       "evidence": "Deprecation spec lists Phase 3 as PENDING"
@@ -282,7 +299,7 @@
       "component": "pre-gauntlet",
       "files": ["skills/adversarial-spec/scripts/integrations/knowledge_service.py"],
       "title": "knowledge_service.py implemented but not wired into any flow",
-      "description": "Full caching implementation exists at integrations/knowledge_service.py but no code path calls it",
+      "description": "Full caching implementation exists but no code path calls it",
       "suggestion": "Wire into pre-gauntlet flow or remove",
       "confidence": "high",
       "evidence": "Only references are definition file and __init__.py re-export"
@@ -291,13 +308,25 @@
       "finding_id": "FIND-007",
       "category": "security",
       "severity": "info",
-      "component": "models",
-      "files": ["skills/adversarial-spec/scripts/models.py"],
-      "title": "Model names passed to subprocess without character validation",
-      "description": "CLI model names from --models flag passed to subprocess command arrays without character set validation",
-      "suggestion": "Validate model names against allowed character set (alphanumeric, hyphens, slashes, dots) — defense-in-depth",
-      "confidence": "low",
-      "evidence": "models.py:399 cmd includes model_name from CLI args. subprocess.run with list args prevents shell injection but model name could be interpreted as CLI flag."
+      "component": "gauntlet",
+      "files": ["skills/adversarial-spec/scripts/gauntlet/model_dispatch.py"],
+      "title": "(RESOLVED) Model name validation now implemented",
+      "description": "_validate_model_name() rejects shell metacharacters, control chars, flag patterns",
+      "suggestion": null,
+      "confidence": "high",
+      "evidence": "_MODEL_NAME_BLOCKLIST regex at model_dispatch.py:39"
+    },
+    {
+      "finding_id": "FIND-008",
+      "category": "idiomatic",
+      "severity": "warning",
+      "component": "gauntlet",
+      "files": ["skills/adversarial-spec/scripts/debate.py", "skills/adversarial-spec/scripts/gauntlet/cli.py"],
+      "title": "Two gauntlet CLIs with divergent flag names",
+      "description": "debate.py uses --codex-reasoning/--gauntlet-resume, cli.py uses --attack-codex-reasoning/--resume",
+      "suggestion": "Document flag mapping in --help text. Consider aliases for consistency.",
+      "confidence": "high",
+      "evidence": "debate.py add_gauntlet_arguments() vs gauntlet/cli.py argparse setup"
     }
   ],
   "exclusions": [
@@ -314,8 +343,8 @@
     "skills/adversarial-spec/adversarial_spec_skill.egg-info/"
   ],
   "previous_run": {
-    "git_hash": "e94ebfe",
-    "timestamp": "2026-02-06T20:35:00Z",
-    "skill_version": "2.1"
+    "git_hash": "0eb7ad9",
+    "timestamp": "2026-03-18T16:00:00Z",
+    "skill_version": "2.6"
   }
 }

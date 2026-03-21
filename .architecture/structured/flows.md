@@ -1,7 +1,7 @@
 # Structured Flows
 
 > Every significant flow in structured notation. Optimized for LLM consumption.
-> Generated: 2026-03-18 | Git: 0eb7ad9
+> Generated: 2026-03-21 | Git: 12c5d3f
 
 ## Notation
 
@@ -30,7 +30,7 @@ All 7 fields are required for every flow. If a field doesn't apply, write `none`
 
 ```
 TRIGGER: User runs `debate.py critique` with spec input
-ENTRY: main() (scripts/debate.py:1443)
+ENTRY: main() (scripts/debate.py:1493)
 STATUS: implemented
 
 STEPS:
@@ -90,7 +90,7 @@ EXITS_TO: debate_round_loop
 
 ```
 TRIGGER: Called from debate_startup after session is loaded
-ENTRY: run_critique() (scripts/debate.py:1156)
+ENTRY: run_critique() (scripts/debate.py:1206)
 STATUS: implemented
 
 STEPS:
@@ -115,7 +115,7 @@ DATA_OUT:
   - output: dict (JSON with responses, agreement status, cost)
   - side_effects: session file updated, checkpoint written, critiques JSON saved
 
-EXITS_TO: none (terminal — one round per invocation, user decides next round)
+EXITS_TO: none (terminal - one round per invocation, user decides next round)
 ```
 
 ### FLOW: model_call
@@ -150,60 +150,105 @@ EXITS_TO: debate_round_loop (collected by ThreadPoolExecutor)
 ### FLOW: gauntlet_pipeline
 
 ```
-TRIGGER: User runs `debate.py gauntlet` or `gauntlet.py`
-ENTRY: run_gauntlet() (scripts/gauntlet.py:3290)
+TRIGGER: User runs `debate.py gauntlet` or `python -m gauntlet`
+ENTRY: run_gauntlet() (scripts/gauntlet/orchestrator.py:116)
 STATUS: implemented
 
 STEPS:
-  1. Parse adversary list and model selection
-  2. Phase 1: Generate concerns (parallel per adversary, ThreadPoolExecutor max_workers=5)
-     - For each adversary: build persona prompt, call LLM, extract Concern objects
-     - Persist to .adversarial-spec-gauntlet/concerns-{hash}.json
-     - Persist raw responses to raw-responses-{hash}.json
-  3. Phase 2: Big Picture Synthesis
-     - LLM synthesizes patterns across all concerns
-     - Returns real_issues, hidden_connections, meta_concern, high_signal
-  4. Phase 3: Filter concerns against resolved historical concerns
+  1. Build GauntletConfig from CLI params (timeout, reasoning, resume, unattended)
+  2. Resolve models: attack_models (auto-select free CLI), eval_models (frontier)
+  3. _validate_model_name() for each model (blocklist regex: shell metachar, flags, control chars)
+  4. get_spec_hash(spec), get_config_hash(config) for checkpoint matching
+  5. Phase 1: generate_attacks() (phase_1_attacks.py)
+     - ThreadPoolExecutor per adversary, config.timeout per call
+     - Persist concerns + raw responses to .adversarial-spec-gauntlet/
+     - [config.resume and valid checkpoint exists] -> load from disk | generate
+     - Emit PhaseMetrics to run manifest
+  6. Phase 2: generate_big_picture_synthesis() (phase_2_synthesis.py)
+     - LLM synthesizes patterns: real_issues, hidden_connections, meta_concern, high_signal
+     - Uses config.eval_codex_reasoning for Codex calls
+  7. Phase 3: filter_concerns_with_explanations() (phase_3_filtering.py)
+     - Filter against resolved_concerns.json history
      - Returns filtered, dropped, noted lists
-  5. Phase 3.5: Cluster near-duplicate concerns via LLM
-     - Reduces volume, preserves cluster_members mapping
-  6. Phase 4: Multi-model evaluation (batched, 15 concerns per batch, wave-based concurrency)
-     - For each concern: multiple eval models produce verdict (accepted/dismissed/acknowledged/deferred)
-     - Persist evaluations to evaluations-{hash}.json
-  7. Phase 5: Rebuttals for dismissed concerns (parallel per batch)
-     - Adversary rebuts using REBUTTAL_PROMPT
-     - Returns sustained: bool per rebuttal
-  8. Phase 6: Final adjudication for sustained rebuttals
-     - Final model reviews challenge vs dismissal
-  9. Phase 7: [--final-boss or interactive prompt] -> Final Boss UX review (Opus 4.6) | skip
-     - Returns PASS/REFINE/RECONSIDER verdict with UX concerns
-  10. format_gauntlet_report() -> formatted output
-  11. Track dedup stats and medal awards
+  8. Phase 3.5: cluster_concerns_with_provenance() (phase_3_filtering.py)
+     - Semantic clustering via LLM, uses config.timeout
+     - GauntletClusteringError on failure (no silent fallback - QUOTA BURN FIX 2)
+     - save_partial_clustering() for checkpoint
+     - [config.auto_checkpoint] -> checkpoint after clustering
+  9. Phase 4: evaluate_concerns_multi_model() (phase_4_evaluation.py)
+     - Batched (15 per batch), wave-based concurrency across eval models
+     - Verdicts: accepted/dismissed/acknowledged/deferred
+     - Uses config.eval_codex_reasoning, config.timeout
+     - Persist evaluations checkpoint
+  10. Phase 5: run_rebuttals() (phase_5_rebuttals.py)
+      - Adversary rebuts dismissed concerns
+      - Uses config.attack_codex_reasoning, config.timeout
+      - Returns sustained: bool per rebuttal
+  11. Phase 6: final_adjudication() (phase_6_adjudication.py)
+      - Reviews sustained rebuttals
+      - Uses config.eval_codex_reasoning, config.timeout
+  12. Phase 7: [run_final_boss or interactive] -> run_final_boss_review() (phase_7_final_boss.py)
+      - Final Boss (Opus 4.6) reviews holistically
+      - Returns FinalBossVerdict: PASS/REFINE/RECONSIDER
+  13. save_gauntlet_run(), update_adversary_stats(), calculate_medals()
+  14. format_gauntlet_report() -> formatted output
 
 DATA_IN:
   - spec: str (specification markdown)
   - adversaries: list[str] (adversary names, or "all")
-  - models: list[str] (attack, eval, clustering models)
+  - attack_models: list[str], eval_models: list[str]
+  - timeout: int, attack_codex_reasoning: str, eval_codex_reasoning: str
+  - resume: bool, unattended: bool
 
 DATA_OUT:
   - report: GauntletResult (concerns, evaluations, rebuttals, medals, big_picture, final_boss)
+  - side_effects: run files in ~/.adversarial-spec/runs/, stats updated, manifest with PhaseMetrics
 
 EXITS_TO: terminal (report output)
+```
+
+### FLOW: gauntlet_checkpoint_resume
+
+```
+TRIGGER: --resume flag (debate.py --gauntlet-resume or gauntlet/cli.py --resume)
+ENTRY: load_partial_run() (scripts/gauntlet/persistence.py)
+STATUS: implemented
+
+STEPS:
+  1. Compute spec_hash + config_hash from current inputs
+  2. Look for .adversarial-spec-gauntlet/concerns-{hash}.json
+  3. [found and schema_version matches] -> load concerns, skip Phase 1
+  4. Look for clustered-concerns-{hash}.json
+  5. [found] -> load clusters, skip Phases 1-3.5
+  6. Look for evaluations-{hash}.json
+  7. [found] -> load evaluations, skip Phases 1-4
+  8. Return latest valid checkpoint data
+
+DATA_IN:
+  - spec_hash: str (SHA256 of spec)
+  - config_hash: str (hash of GauntletConfig fields)
+
+DATA_OUT:
+  - partial_data: dict (loaded checkpoint data for resume)
+
+EXITS_TO: gauntlet_pipeline (resumes from appropriate phase)
 ```
 
 ### FLOW: cost_tracking
 
 ```
 TRIGGER: Every model call completion
-ENTRY: CostTracker.add() (scripts/models.py:163)
+ENTRY: CostTracker.add() (scripts/models.py:204)
 STATUS: implemented
 
 STEPS:
-  1. Look up model in MODEL_COSTS dict (providers.py:18-47)
-  2. Calculate: cost = (input_tokens/1M * input_rate) + (output_tokens/1M * output_rate)
-  3. [CLI model (codex/, gemini-cli/, claude-cli/)] -> cost = 0 | standard rate
-  4. Accumulate in global totals and per-model breakdown (by_model dict)
-  5. [output requested] -> CostTracker.summary() formats human-readable string
+  1. Acquire threading.Lock
+  2. Look up model in MODEL_COSTS dict (providers.py)
+  3. Calculate: cost = (input_tokens/1M * input_rate) + (output_tokens/1M * output_rate)
+  4. [CLI model (codex/, gemini-cli/, claude-cli/)] -> cost = 0 | standard rate
+  5. Accumulate in global totals and per-model breakdown (by_model dict)
+  6. Release lock
+  7. [output requested] -> CostTracker.summary() formats human-readable string
 
 DATA_IN:
   - model: str (model identifier)
@@ -211,9 +256,9 @@ DATA_IN:
   - output_tokens: int
 
 DATA_OUT:
-  - cost: float (accumulated in singleton)
+  - cost: float (accumulated in singleton, thread-safe)
 
-EXITS_TO: included in debate output, gauntlet report, telegram notifications
+EXITS_TO: included in debate output, gauntlet report, PhaseMetrics telemetry
 ```
 
 ### FLOW: pre_gauntlet_context
@@ -301,6 +346,29 @@ DATA_OUT:
 EXITS_TO: call_models_parallel (error responses filtered by debate loop)
 ```
 
+### FLOW: gauntlet_clustering_failure
+
+```
+TRIGGER: Phase 3.5 clustering LLM returns unparseable result
+ENTRY: cluster_concerns_with_provenance() (scripts/gauntlet/phase_3_filtering.py)
+STATUS: implemented
+
+STEPS:
+  1. Attempt clustering via LLM
+  2. [parse failure] -> retry once with different prompt formatting
+  3. [second failure] -> raise GauntletClusteringError (QUOTA BURN FIX 2)
+  4. Pipeline halts with exit code 3
+
+DATA_IN:
+  - concerns: list[Concern]
+  - config: GauntletConfig
+
+DATA_OUT:
+  - error: GauntletClusteringError (no silent fallback to singleton clusters)
+
+EXITS_TO: terminal (sys.exit(3))
+```
+
 ### FLOW: session_state_persistence
 
 ```
@@ -328,7 +396,7 @@ EXITS_TO: none
 
 ```
 TRIGGER: Before model calls in debate startup
-ENTRY: validate_model_credentials() (scripts/providers.py:436)
+ENTRY: validate_model_credentials() (scripts/providers.py)
 STATUS: implemented
 
 STEPS:

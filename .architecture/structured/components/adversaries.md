@@ -25,7 +25,7 @@ PROCESS:
      └─> Provide generate_concern_id() for unique concern identification
 
 OUT: Adversary definitions + utility functions
-     └─> imported by gauntlet.py, debate.py, execution_planner/
+     └─> imported by gauntlet/ package modules, debate.py, execution_planner/
 ```
 
 ## Key Functions
@@ -52,7 +52,7 @@ OUT: Adversary definitions + utility functions
 - Nothing (leaf module, no internal imports)
 
 **Called by:**
-- `gauntlet.py` — persona definitions for attack generation
+- `gauntlet/phase_1_attacks.py` and `gauntlet/cli.py` — attack generation and adversary listing
 - `debate.py` — adversary listing and stats
 - `execution_planner/gauntlet_concerns.py` — ADVERSARY_PREFIXES for concern linking
 

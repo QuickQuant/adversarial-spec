@@ -57,7 +57,7 @@ OUT: Formatted prompt strings
 - `models.py` — prompt construction for LLM calls
 - `providers.py` — FOCUS_AREAS and PERSONAS for listing
 - `debate.py` — doc type names and prompt formatting
-- `gauntlet.py` — system prompt selection
+- `gauntlet` phase modules — gauntlet-specific prompt selection
 
 ## LLM Notes
 

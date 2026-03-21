@@ -9,7 +9,7 @@
                                            ▼
                     ┌──────────────────────────────────────────────────┐
                     │                  DEBATE ENGINE                    │
-                    │              (debate.py:main():1443)              │
+                    │              (debate.py:main():1493)              │
                     │                                                   │
                     │  ┌─────────┐  ┌──────────┐  ┌──────────────┐    │
                     │  │ Session │  │ Profiles │  │  Arg Router  │    │
@@ -18,7 +18,7 @@
                     │       │            │               │             │
                     │       ▼            ▼               ▼             │
                     │  ┌─────────────────────────────────────────┐    │
-                    │  │         run_critique():1156             │    │
+                    │  │         run_critique():1206             │    │
                     │  │  one round per invocation               │    │
                     │  └──────────────┬──────────────────────────┘    │
                     └─────────────────┼───────────────────────────────┘
@@ -26,7 +26,7 @@
                     ┌─────────────────┼─────────────────┐
                     │                 ▼                  │
                     │        MODELS COMPONENT            │
-                    │     (call_models_parallel:894)     │
+                    │     (call_models_parallel:901)     │
                     │                                    │
                     │   ┌────────┬────────┬────────┬──┐ │
                     │   │LiteLLM│ Codex  │Gemini  │Cl│ │
@@ -47,21 +47,27 @@
                     ═══════════════════════════════════════
 
                     ┌───────────────────────────────────────┐
-                    │            GAUNTLET ENGINE             │
-                    │        (gauntlet.py:run_gauntlet:3290) │
+                    │      GAUNTLET PIPELINE (gauntlet/)     │
+                    │  orchestrator.py:run_gauntlet():116    │
+                    │  GauntletConfig ─> all phases          │
                     │                                        │
                     │  Phase 1: ┌─────┐┌─────┐┌─────┐      │
-                    │  Concerns │Para ││Burn ││Dist │ ...   │
+                    │  Attacks  │Para ││Burn ││Dist │ x9    │
                     │  (parallel)│noid ││Oncl ││Sys  │      │
                     │           └──┬──┘└──┬──┘└──┬──┘      │
                     │              └──────┼──────┘          │
                     │                     ▼                  │
                     │  Phase 2: Big Picture Synthesis        │
-                    │  Phase 3: Filter + Cluster             │
+                    │  Phase 3: Filter + Cluster (FileLock)  │
+                    │  Phase 3.5: Checkpoint ────>  disk     │
                     │  Phase 4: Multi-model Evaluation       │
                     │  Phase 5: Adversary Rebuttals          │
                     │  Phase 6: Final Adjudication           │
                     │  Phase 7: [Optional] Final Boss (Opus) │
+                    │                                        │
+                    │  persistence.py ─> checkpoints/manifests│
+                    │  model_dispatch.py ─> validate + route  │
+                    │  reporting.py ─> leaderboard + report   │
                     └──────────────┬────────────────────────┘
                                    │
                                    ▼
@@ -90,9 +96,12 @@
     │                    SHARED DATA LAYER                      │
     │                                                          │
     │  prompts.py ──── providers.py ──── adversaries.py        │
-    │  (templates)     (MODEL_COSTS)     (persona defs)        │
-    │                  (API keys)                               │
+    │  (templates)     (MODEL_COSTS)     (9 personas)          │
+    │                  (API keys)        (frozen dataclass)     │
     │                  (Bedrock)                                │
+    │                                                          │
+    │  core_types.py ── GauntletConfig, Concern, Evaluation,   │
+    │                   GauntletResult, PhaseMetrics, Medal     │
     └──────────────────────────────────────────────────────────┘
 ```
 
@@ -105,5 +114,6 @@
 Para    ParanoidSecurity adversary
 Burn    BurnedOncall adversary
 Dist    DistributedSystemsNerd adversary
+x9      9 adversary personas total
 Cl/au/de Claude CLI model route
 ```

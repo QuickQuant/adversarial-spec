@@ -78,7 +78,7 @@ CLI tools get `CLI_FILE_SAFETY_PREAMBLE` (models.py:112-120) prepended to preven
 
 | Resource | Callers | Synchronization | Risk |
 |----------|---------|-----------------|------|
-| `cost_tracker` (global singleton) | Multiple threads via `call_single_model()`, gauntlet phases | None (relies on GIL) | Dict updates to `by_model` not atomic — if two threads update same model key, one update may be lost. Cost is informational only. |
+| `cost_tracker` (global singleton) | Multiple threads via `call_single_model()`, gauntlet phases | `threading.Lock` in `CostTracker.add()` | Shared totals and `by_model` updates are serialized; contention is low because model calls are I/O-bound. |
 
 ## Configuration
 
@@ -87,7 +87,7 @@ CLI tools get `CLI_FILE_SAFETY_PREAMBLE` (models.py:112-120) prepended to preven
 | MODEL_COSTS | providers.py dict | Per-model input/output rates |
 | MAX_RETRIES | models.py constant | 3 |
 | RETRY_BASE_DELAY | models.py constant | 1.0 seconds |
-| Codex reasoning | `--codex-reasoning` CLI | DEFAULT_CODEX_REASONING from providers |
+| Codex reasoning | `--codex-reasoning` for critique/attack flows, `--eval-codex-reasoning` for gauntlet eval | DEFAULT_CODEX_REASONING from providers / gauntlet defaults |
 
 ## Integration Points
 
@@ -100,7 +100,7 @@ CLI tools get `CLI_FILE_SAFETY_PREAMBLE` (models.py:112-120) prepended to preven
 
 **Called by:**
 - `debate.py:run_critique()` — debate rounds
-- `gauntlet.py` — adversary calls (some phases use litellm directly)
+- `gauntlet/model_dispatch.py` and gauntlet phase modules — adversary/eval calls
 
 ## LLM Notes
 
