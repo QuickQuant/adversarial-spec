@@ -68,19 +68,23 @@ After consensus is reached but before finalization, offer the adversarial gauntl
    **Phase 4 is where cost explodes** — and it's advisory, because YOU (Claude) are the final
    evaluator when synthesizing results into spec changes.
 
-   **`--codex-reasoning` is GLOBAL** — it applies to attacks AND evaluations equally.
-   There is no way to use xhigh for attacks and medium for evaluation (or vice versa).
+   **Reasoning levels are now split** — attacks and evaluations have independent controls:
+   - `--attack-codex-reasoning low` (default) — cheap adversary generation
+   - `--eval-codex-reasoning xhigh` (default) — thorough evaluation verdicts
+
+   **Additional flags:**
+   - `--gauntlet-resume` — resume from checkpoint (reuse Phase 1 concerns, skip re-eval)
+   - `--unattended` — no stdin prompts + auto-checkpoint after expensive phases
 
    **Reasoning level guidance:**
 
    | Level | When to use | Trade-off |
    |-------|------------|-----------|
-   | `medium` | **Default for gauntlet runs.** Attack quality at medium is still high — adversary system prompts are well-crafted and do the heavy lifting. Eval quality at medium is fine because it's advisory (Claude does final evaluation). | Best cost/value ratio |
-   | `high` | User explicitly requests deeper analysis, or spec is unusually complex (>30 sections, multiple interacting systems) | 2-3× more quota than medium |
-   | `xhigh` | Almost never for gauntlet. 60 calls at xhigh will burn through Codex 5h queue in minutes. Only if user explicitly requests it AND understands the cost. | Can exhaust daily quota in one run |
-   | `low` | Quick exploratory gauntlet, draft specs, when you just want a rough signal | Fast but may miss subtle issues |
+   | `low` (attack default) | Adversary attacks — system prompts do the heavy lifting | Fast, good enough for concern generation |
+   | `medium` | Balanced option for either attack or eval | 2× attack cost, decent eval quality |
+   | `xhigh` (eval default) | Evaluation/adjudication — verdict quality matters | Expensive but accurate verdicts |
 
-   **Always pass `--codex-reasoning medium` unless the user explicitly requests otherwise.**
+   **Always use defaults** (`--attack-codex-reasoning low --eval-codex-reasoning xhigh`) unless the user explicitly requests otherwise.
 
    Present the cost estimate before launching:
    ```

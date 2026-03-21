@@ -24,7 +24,7 @@
 | Path | Purpose |
 |------|---------|
 | `scripts/debate.py` | Main CLI entry point (1485 lines) |
-| `scripts/gauntlet.py` | 7-phase adversarial review (4087 lines, largest file) |
+| `scripts/gauntlet/` | 7-phase adversarial review package (16 modules, extracted from monolith) |
 | `scripts/models.py` | LLM abstraction: LiteLLM + CLI tool routing (937 lines) |
 | `scripts/providers.py` | Model config, costs, credentials, Bedrock (683 lines) |
 | `scripts/prompts.py` | Prompt templates, focus areas, personas (505 lines) |
@@ -67,7 +67,7 @@
 | File | How It Starts | What It Does |
 |------|---------------|--------------|
 | `scripts/debate.py` | `adversarial-spec <action>` (pyproject.toml entry) | Main CLI: critique, gauntlet, info commands |
-| `scripts/gauntlet.py` | `python gauntlet.py` or called from debate.py | Standalone gauntlet CLI |
+| `scripts/gauntlet/cli.py` | `python -m gauntlet` or called from debate.py | Standalone gauntlet CLI |
 | `scripts/telegram_bot.py` | `python telegram_bot.py <cmd>` | Telegram setup, send, poll, notify |
 | `mcp_tasks/server.py` | `mcp-tasks` (pyproject.toml entry) | MCP task server for Claude Code |
 
