@@ -119,6 +119,9 @@ def call_model(
 # MODEL SELECTION (FREE-FIRST)
 # =============================================================================
 
+_PREFERRED_CODEX_EVAL_MODEL = "codex/gpt-5.4"
+_FALLBACK_CODEX_EVAL_MODEL = "codex/gpt-5.3-codex"
+
 
 def running_in_claude_code() -> bool:
     """Detect if we're running inside Claude Code environment."""
@@ -129,6 +132,34 @@ def running_in_claude_code() -> bool:
         or os.environ.get("CC_WORKSPACE")
         or os.environ.get("ANTHROPIC_API_KEY")
     )
+
+
+def _get_unavailable_models() -> set[str]:
+    """Return models explicitly marked unavailable for the current environment."""
+    import os
+
+    raw = os.environ.get("ADVERSARIAL_SPEC_UNAVAILABLE_MODELS", "")
+    return {model.strip() for model in raw.split(",") if model.strip()}
+
+
+def _select_codex_eval_model() -> str | None:
+    """Select the best available Codex evaluation model."""
+    if not CODEX_AVAILABLE:
+        return None
+
+    unavailable = _get_unavailable_models()
+    if _PREFERRED_CODEX_EVAL_MODEL not in unavailable:
+        return _PREFERRED_CODEX_EVAL_MODEL
+
+    if _FALLBACK_CODEX_EVAL_MODEL not in unavailable:
+        print(
+            f"Warning: {_PREFERRED_CODEX_EVAL_MODEL} unavailable, "
+            f"falling back to {_FALLBACK_CODEX_EVAL_MODEL}",
+            file=sys.stderr,
+        )
+        return _FALLBACK_CODEX_EVAL_MODEL
+
+    return None
 
 
 def select_adversary_model() -> str:
@@ -160,8 +191,9 @@ def select_eval_model() -> str:
     Priority: FREE frontier CLI tools, then strongest API.
     Evaluation needs to be rigorous - use the best available.
     """
-    if CODEX_AVAILABLE:
-        return "codex/gpt-5.3-codex"
+    codex_model = _select_codex_eval_model()
+    if codex_model:
+        return codex_model
 
     if GEMINI_CLI_AVAILABLE:
         return "gemini-cli/gemini-3-pro-preview"
@@ -202,8 +234,9 @@ def get_available_eval_models() -> list[str]:
 
     models = []
 
-    if CODEX_AVAILABLE:
-        models.append("codex/gpt-5.3-codex")
+    codex_model = _select_codex_eval_model()
+    if codex_model:
+        models.append(codex_model)
     if GEMINI_CLI_AVAILABLE:
         models.append("gemini-cli/gemini-3-pro-preview")
 

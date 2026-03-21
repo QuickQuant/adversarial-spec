@@ -14,6 +14,8 @@ assert SPEC and SPEC.loader
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 _validate_model_name = MODULE._validate_model_name
+select_eval_model = MODULE.select_eval_model
+get_available_eval_models = MODULE.get_available_eval_models
 
 
 def test_validate_model_name_accepts_expected_values():
@@ -43,3 +45,31 @@ def test_validate_model_name_accepts_expected_values():
 def test_validate_model_name_rejects_forbidden_patterns(model_name: str):
     with pytest.raises(ValueError):
         _validate_model_name(model_name)
+
+
+def test_select_eval_model_prefers_codex_gpt_5_4(monkeypatch):
+    monkeypatch.setattr(MODULE, "CODEX_AVAILABLE", True)
+    monkeypatch.setattr(MODULE, "GEMINI_CLI_AVAILABLE", True)
+    monkeypatch.delenv("ADVERSARIAL_SPEC_UNAVAILABLE_MODELS", raising=False)
+
+    assert select_eval_model() == "codex/gpt-5.4"
+
+
+def test_select_eval_model_warns_before_falling_back_to_gpt_5_3(monkeypatch, capsys):
+    monkeypatch.setattr(MODULE, "CODEX_AVAILABLE", True)
+    monkeypatch.setattr(MODULE, "GEMINI_CLI_AVAILABLE", True)
+    monkeypatch.setenv("ADVERSARIAL_SPEC_UNAVAILABLE_MODELS", "codex/gpt-5.4")
+
+    assert select_eval_model() == "codex/gpt-5.3-codex"
+    assert "codex/gpt-5.4 unavailable" in capsys.readouterr().err
+
+
+def test_get_available_eval_models_prefers_codex_gpt_5_4(monkeypatch):
+    monkeypatch.setattr(MODULE, "CODEX_AVAILABLE", True)
+    monkeypatch.setattr(MODULE, "GEMINI_CLI_AVAILABLE", True)
+    monkeypatch.delenv("ADVERSARIAL_SPEC_UNAVAILABLE_MODELS", raising=False)
+
+    assert get_available_eval_models()[:2] == [
+        "codex/gpt-5.4",
+        "gemini-cli/gemini-3-pro-preview",
+    ]

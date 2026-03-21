@@ -14,6 +14,23 @@ from typing import Optional
 from adversaries import ADVERSARIES, generate_concern_id
 
 # =============================================================================
+# SYNTHESIS TAXONOMY
+# =============================================================================
+
+
+SYNTHESIS_CATEGORIES: list[str] = [
+    "Correctness Bugs",
+    "Race Conditions",
+    "Failure Modes",
+    "Security",
+    "Operability",
+    "Scalability",
+    "Design Debt",
+    "Underspecification",
+]
+
+
+# =============================================================================
 # ENUMS
 # =============================================================================
 

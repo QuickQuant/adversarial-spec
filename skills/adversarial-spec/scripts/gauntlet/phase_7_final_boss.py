@@ -20,7 +20,6 @@ from gauntlet.core_types import (
 )
 from gauntlet.model_dispatch import call_model, select_eval_model
 from models import cost_tracker
-from providers import CODEX_AVAILABLE
 
 
 def run_final_boss_review(
@@ -51,10 +50,7 @@ def run_final_boss_review(
         model = "claude-opus-4-6"
     else:
         print("  Warning: Opus 4.6 not available, using best alternative", file=sys.stderr)
-        if CODEX_AVAILABLE:
-            model = "codex/gpt-5.3-codex"
-        else:
-            model = select_eval_model()
+        model = select_eval_model()
 
     system_prompt = FINAL_BOSS["ux_architect"].persona
 
