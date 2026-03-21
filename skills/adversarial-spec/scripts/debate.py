@@ -109,7 +109,13 @@ from providers import (  # noqa: E402
     validate_bedrock_models,
     validate_model_credentials,
 )
-from session import SESSIONS_DIR, SessionState, save_checkpoint, save_critique_responses  # noqa: E402
+from session import (  # noqa: E402
+    SESSIONS_DIR,
+    SessionState,
+    save_checkpoint,
+    save_critique_responses,
+)
+
 
 def log_input_stats(text: str, source: str = "stdin") -> None:
     """Log line count and SHA256 hash of input document.
@@ -491,12 +497,6 @@ def add_gauntlet_arguments(parser: argparse.ArgumentParser) -> None:
         help="Run Phase 5 Final Boss UX review (uses Opus 4.6, expensive but thorough)",
     )
     parser.add_argument(
-        "--attack-codex-reasoning",
-        default="low",
-        choices=["minimal", "low", "medium", "high", "xhigh"],
-        help="Codex reasoning effort for adversary attacks (default: low)",
-    )
-    parser.add_argument(
         "--eval-codex-reasoning",
         default="xhigh",
         choices=["minimal", "low", "medium", "high", "xhigh"],
@@ -511,6 +511,13 @@ def add_gauntlet_arguments(parser: argparse.ArgumentParser) -> None:
         "--unattended",
         action="store_true",
         help="Run gauntlet without stdin prompts + enable auto-checkpoint",
+    )
+    parser.add_argument(
+        "--show-manifest",
+        metavar="HASH",
+        nargs="?",
+        const="",
+        help="Show run manifest for a spec hash prefix (omit HASH for most recent) and exit",
     )
 
 
@@ -1014,6 +1021,23 @@ def handle_gauntlet(args: argparse.Namespace) -> None:
     Args:
         args: Parsed command-line arguments.
     """
+    if args.show_manifest is not None:
+        from gauntlet.persistence import load_run_manifest
+        from gauntlet.reporting import format_run_manifest
+
+        hash_prefix = args.show_manifest or None
+        manifest = load_run_manifest(hash_prefix)
+        if manifest:
+            print(format_run_manifest(manifest))
+        else:
+            label = (
+                f"for hash prefix: {args.show_manifest}"
+                if args.show_manifest
+                else "(most recent)"
+            )
+            print(f"No manifest found {label}", file=sys.stderr)
+        sys.exit(0 if manifest else 1)
+
     spec = sys.stdin.read().strip()
     if not spec:
         print("Error: No spec provided via stdin", file=sys.stderr)
@@ -1060,7 +1084,7 @@ def handle_gauntlet(args: argparse.Namespace) -> None:
             allow_rebuttals=not args.no_rebuttals,
             run_final_boss=args.final_boss,
             timeout=args.timeout,
-            attack_codex_reasoning=args.attack_codex_reasoning,
+            attack_codex_reasoning=args.codex_reasoning,
             eval_codex_reasoning=args.eval_codex_reasoning,
             resume=args.gauntlet_resume,
             unattended=args.unattended,

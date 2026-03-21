@@ -1,7 +1,7 @@
 """CLI entry point for standalone gauntlet runs.
 
 Extracted from gauntlet_monolith.py. Adds new flags:
---unattended, --resume, --eval-codex-reasoning, --show-manifest.
+--unattended, --resume, --eval-codex-reasoning.
 """
 
 from __future__ import annotations
@@ -19,7 +19,6 @@ def main():
     from gauntlet.persistence import (
         list_gauntlet_runs,
         load_gauntlet_run,
-        load_run_manifest,
     )
     from gauntlet.reporting import (
         format_gauntlet_report,
@@ -98,13 +97,6 @@ def main():
         help="Show details of a specific run by filename",
     )
     parser.add_argument(
-        "--show-manifest",
-        metavar="HASH",
-        nargs="?",
-        const="",
-        help="Show run manifest for a spec hash (default: most recent)",
-    )
-    parser.add_argument(
         "--pre-gauntlet",
         action="store_true",
         help="Run pre-gauntlet compatibility checks before adversary attacks",
@@ -152,17 +144,6 @@ def main():
             print(json.dumps(run_data, indent=2))
         else:
             print(f"Run not found: {args.show_run}", file=sys.stderr)
-            sys.exit(1)
-        return
-
-    if args.show_manifest is not None:
-        hash_prefix = args.show_manifest or None
-        manifest = load_run_manifest(hash_prefix)
-        if manifest:
-            print(json.dumps(manifest, indent=2))
-        else:
-            label = f"for hash {hash_prefix}" if hash_prefix else "(most recent)"
-            print(f"No manifest found {label}", file=sys.stderr)
             sys.exit(1)
         return
 
