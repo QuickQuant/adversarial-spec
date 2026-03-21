@@ -490,6 +490,28 @@ def add_gauntlet_arguments(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="Run Phase 5 Final Boss UX review (uses Opus 4.6, expensive but thorough)",
     )
+    parser.add_argument(
+        "--attack-codex-reasoning",
+        default="low",
+        choices=["minimal", "low", "medium", "high", "xhigh"],
+        help="Codex reasoning effort for adversary attacks (default: low)",
+    )
+    parser.add_argument(
+        "--eval-codex-reasoning",
+        default="xhigh",
+        choices=["minimal", "low", "medium", "high", "xhigh"],
+        help="Codex reasoning effort for evaluation/adjudication (default: xhigh)",
+    )
+    parser.add_argument(
+        "--gauntlet-resume",
+        action="store_true",
+        help="Resume gauntlet from checkpoint files if available",
+    )
+    parser.add_argument(
+        "--unattended",
+        action="store_true",
+        help="Run gauntlet without stdin prompts + enable auto-checkpoint",
+    )
 
 
 def add_execution_plan_arguments(parser: argparse.ArgumentParser) -> None:
@@ -1038,6 +1060,10 @@ def handle_gauntlet(args: argparse.Namespace) -> None:
             allow_rebuttals=not args.no_rebuttals,
             run_final_boss=args.final_boss,
             timeout=args.timeout,
+            attack_codex_reasoning=args.attack_codex_reasoning,
+            eval_codex_reasoning=args.eval_codex_reasoning,
+            resume=args.gauntlet_resume,
+            unattended=args.unattended,
         )
 
         if args.json:
