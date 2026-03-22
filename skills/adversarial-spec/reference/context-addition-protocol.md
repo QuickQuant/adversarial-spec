@@ -188,6 +188,8 @@ export async function placeOrder(
 
 The `.architecture/` directory (when it exists) contains high-level system overviews. These are useful but expensive in tokens.
 
+**Include `.architecture/primer.md` first when it exists.** It is the default small-context architecture payload.
+
 **Include `.architecture/overview.md` (or equivalent) when:**
 - Round 2 is the first round with context (opponents have no prior codebase knowledge)
 - The spec proposes a new component that interacts with multiple existing components
@@ -205,7 +207,13 @@ The `.architecture/` directory (when it exists) contains high-level system overv
 - Example: if the spec is about order execution, extract only the "Order Flow" or "Trading Pipeline" section from the architecture overview
 
 ```markdown
-### A0. Architecture Context: .architecture/overview.md (lines 34-58)
+### A0. Architecture Context: .architecture/primer.md
+
+> Compact system summary and key boundaries
+
+[Paste the full primer or the most relevant primer sections here.]
+
+### A0b. Architecture Context: .architecture/overview.md (lines 34-58)
 
 > Extracted subsection: "Order Execution Pipeline"
 

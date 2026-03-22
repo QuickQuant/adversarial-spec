@@ -1249,7 +1249,7 @@ def run_critique(
             file=sys.stderr,
         )
         print(
-            "  Consider: --context .architecture/overview.md --context <type-defs>",
+            "  Consider: --context .architecture/primer.md --context <type-defs>",
             file=sys.stderr,
         )
         print(
@@ -1259,6 +1259,7 @@ def run_critique(
         # Also hint at auto-detected files
         from pathlib import Path
         for candidate in (
+            ".architecture/primer.md",
             ".architecture/overview.md",
             ".architecture/structured/flows.md",
         ):

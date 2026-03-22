@@ -325,15 +325,19 @@ CONTEXT_FLAGS=""
 # containing links that opponent models cannot follow. It provides zero
 # substantive content. Pass the files it REFERENCES instead:
 if [ -d ".architecture" ]; then
-  # ALWAYS include overview.md — the single most valuable context file
-  [ -f ".architecture/overview.md" ] && CONTEXT_FLAGS="$CONTEXT_FLAGS --context .architecture/overview.md"
+  # Primer is the default small-context architecture payload
+  [ -f ".architecture/primer.md" ] && CONTEXT_FLAGS="$CONTEXT_FLAGS --context .architecture/primer.md"
 
   # Include component docs relevant to the spec's blast zone (2-4 files)
   # Match spec file paths/module names against .architecture/structured/components/
   # e.g., --context .architecture/structured/components/data-service.md
 
-  # For broad specs, flows.md covers data paths across the whole system
-  [ -f ".architecture/structured/flows.md" ] && CONTEXT_FLAGS="$CONTEXT_FLAGS --context .architecture/structured/flows.md"
+  # Add overview.md only when the round needs the full system narrative
+  # e.g. later architecture/design rounds or broad multi-component specs:
+  # [ -f ".architecture/overview.md" ] && CONTEXT_FLAGS="$CONTEXT_FLAGS --context .architecture/overview.md"
+
+  # For broad or cross-component specs, flows.md covers data paths across the whole system
+  # [ -f ".architecture/structured/flows.md" ] && CONTEXT_FLAGS="$CONTEXT_FLAGS --context .architecture/structured/flows.md"
 fi
 
 # 2. Source issues/requirements that motivated the spec
@@ -755,4 +759,3 @@ When consensus is reached and user opts for gauntlet, sync both session files pe
 2. **Pointer file** (`session-state.json`): set `current_phase: "gauntlet"`, `current_step`, `next_action`, `updated_at`
 
 If user declines gauntlet and proceeds directly to finalize, set `current_phase: "finalize"` instead.
-

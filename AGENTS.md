@@ -66,7 +66,7 @@ Critical rules (enforced by hooks):
 - Never log/print API keys or config objects containing secrets
 - Never use `git push --force`, `git reset --hard`, `rm -rf`
 - Always use `uv run` for Python commands
-- **Before exploring a codebase, read `.architecture/INDEX.md` first.** Do not glob/grep for orientation when architecture docs exist.
+- **Before exploring a codebase, read `.architecture/INDEX.md` first for navigation, then `.architecture/primer.md` when it exists for initial context.** Do not glob/grep for orientation when architecture docs exist.
 
 Token discipline (see `core-practices.md` §8 for rationale):
 - Hook blocks a command → switch tools immediately. Do NOT read hook source to diagnose.

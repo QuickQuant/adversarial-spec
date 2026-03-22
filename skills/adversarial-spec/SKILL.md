@@ -130,15 +130,30 @@ without re-reading source. Generate with /mapcodebase.
 [Run /mapcodebase now] [Skip - not needed yet]
 ```
 
-If architecture manifest EXISTS but may be stale:
+If architecture manifest EXISTS, validate schema and freshness:
 ```bash
-# Check if git hash in manifest matches current HEAD
+# Check schema + git hash
+ARCH_SCHEMA=$(python3 -c "import json; print(json.load(open('.architecture/manifest.json')).get('schema_version', '0'))" 2>/dev/null)
 ARCH_HASH=$(python3 -c "import json; print(json.load(open('.architecture/manifest.json')).get('git_hash', ''))" 2>/dev/null)
 CURRENT_HASH=$(git rev-parse --short HEAD 2>/dev/null)
+[ "$ARCH_SCHEMA" != "2.0" ] && echo "architecture mapping is legacy (schema $ARCH_SCHEMA)"
 [ "$ARCH_HASH" != "$CURRENT_HASH" ] && echo "architecture mapping may be stale (generated at $ARCH_HASH, now at $CURRENT_HASH)"
 ```
 
-If stale, show advisory (not blocking):
+If schema `< 2.0`, show migration advisory:
+```
+Architecture Mapping Advisory
+───────────────────────────────────────
+Schema: [arch_schema]
+Status: Legacy architecture docs detected
+
+Mapcodebase 3.0 expects primer.md, access-guide.md, and
+manifest schema 2.0. Run full /mapcodebase to regenerate.
+
+[Run /mapcodebase now] [Skip - continue without architecture priming]
+```
+
+If schema `2.0` exists but docs are stale, show advisory (not blocking):
 ```
 Architecture Mapping Advisory
 ───────────────────────────────────────
@@ -147,20 +162,26 @@ Current HEAD: [current_hash]
 Consider running /mapcodebase --update
 ```
 
-**On "Skip":** Proceed normally. Architecture mapping is advisory, not required.
+**On "Skip" with legacy docs:** Proceed without architecture priming. Do NOT pretend `v2.x` docs are equivalent to 3.0 docs.
+
+**On "Skip" with current docs:** Proceed normally. Architecture mapping is advisory, not required.
 
 **Load Architecture Context (REQUIRED when `.architecture/` exists):**
 
-If `.architecture/manifest.json` exists (mapping is available), load targeted architecture docs into your context **now** — before any phase work begins. The LLM makes decisions throughout the session (synthesis, critique evaluation, accept/reject) that are all better when grounded in actual architecture.
+If `.architecture/manifest.json` exists with `schema_version = 2.0`, load targeted architecture docs into your context **now** — before any phase work begins. The LLM makes decisions throughout the session (synthesis, critique evaluation, accept/reject) that are all better when grounded in actual architecture.
 
 ```bash
 # 1. Read INDEX.md to understand the component map (for YOUR navigation only)
 cat .architecture/INDEX.md 2>/dev/null
 
-# 2. ALWAYS read overview.md — the single most valuable context file
-cat .architecture/overview.md 2>/dev/null
+# 2. Read primer.md — the default small-context architecture payload
+cat .architecture/primer.md 2>/dev/null
 
-# 3. Select 2-4 component docs based on the session's blast zone
+# 3. Escalate to overview.md only if the phase needs more system context
+# e.g. target-architecture, debate round 2+, or gauntlet
+# [ -f ".architecture/overview.md" ] && cat .architecture/overview.md 2>/dev/null
+
+# 4. Select 2-4 component docs based on the session's blast zone
 # Parse the spec/session requirements_summary for file paths and module names
 # Match those against the INDEX component table
 # Read matching component docs from .architecture/structured/components/
@@ -169,10 +190,14 @@ cat .architecture/overview.md 2>/dev/null
 **Selection heuristic:**
 - Parse the spec (or session `requirements_summary`) for file paths and module names
 - Match those against the INDEX component table
-- Read the matching component docs + `overview.md`
-- If unsure which components are relevant, `overview.md` + `flows.md` covers ~80% of what any phase needs
+- Default load is `primer.md`
+- For `requirements` and early startup, `primer.md` is usually enough
+- For `target-architecture`, `debate` round 2+, and `gauntlet`, load `primer.md` plus matched component docs
+- Escalate to `overview.md` when the task needs the full system narrative
+- Escalate to `flows.md` only when the task crosses component boundaries
+- If unsure which components are relevant, `primer.md` + `overview.md` + matched component docs is the safest order
 
-**Cost:** ~400-600 lines of context. **Benefit:** Avoids context-blind debate/gauntlet rounds where models guess at codebase patterns.
+**Cost:** usually lower than the old overview-first flow. **Benefit:** Avoids context-blind debate/gauntlet rounds while keeping startup context smaller.
 
 **IMPORTANT:** `INDEX.md` is for YOUR navigation only. It contains links that opponent models cannot follow. Never pass `INDEX.md` as `--context` to `debate.py` — pass the substantive docs it references instead.
 

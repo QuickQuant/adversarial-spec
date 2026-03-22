@@ -41,7 +41,7 @@ If skip: log Decision Journal entry with `decision: "skip"`, transition directly
 Architecture drafted from scratch (Steps 3-5).
 
 **Brownfield (existing codebase):**
-1. Load `.architecture/overview.md` and relevant component docs
+1. Load `.architecture/primer.md`, then relevant component docs, then `.architecture/overview.md` only if the system narrative is still unclear
 2. List all `warning`/`error` patterns from `manifest.json` `patterns[]`
 3. Load gemini-bundle findings if available
 4. Focus: "what new patterns does this spec need?" + "which existing patterns need adjustment?"

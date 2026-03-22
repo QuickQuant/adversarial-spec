@@ -267,7 +267,8 @@ The Context Readiness Audit (between debate Round 1 and Round 2) should have pro
 
 Every adversary gets a feature briefing (~800 tokens):
 
-- **Architecture excerpt** — relevant subsection of `.architecture/overview.md` (NOT the whole file). If no architecture docs exist, note this as a gap.
+- **Architecture primer** — include `.architecture/primer.md` in full when present. If no architecture docs exist, note this as a gap.
+- **Architecture excerpt** — relevant subsection of `.architecture/overview.md` (NOT the whole file) when the adversary needs deeper system narrative.
 - **Target Architecture** — if `specs/<slug>/target-architecture.md` exists (from Phase 4), include it in full. This is the primary architecture context for ALL adversaries. If missing (Phase 4 skipped or legacy session), note: "No target architecture available — architecture-level concerns may be underrepresented."
 - **Files in blast zone** — file paths with one-line descriptions of what each does
 - **Recent git activity** — last 5 commits touching blast zone files
