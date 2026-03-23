@@ -101,37 +101,6 @@ Output ONLY ONE of:
 - "MATCH: [index]" - The explanation at [index] FULLY addresses this exact concern
 - "NO_MATCH" - No explanation fully covers this concern"""
 
-CLUSTERING_PROMPT = """You cluster near-duplicate engineering concerns.
-
-Goal: Merge concerns that describe the SAME underlying issue in different words.
-
-Rules:
-1. Merge ONLY when the root cause AND required mitigation are the same.
-2. Do NOT merge concerns that are thematically related but require different fixes.
-3. Every concern index must appear in exactly one cluster.
-4. When in doubt, keep concerns SEPARATE. Over-merging loses insights.
-
-## GOOD merges (same root cause, same fix):
-- "Fill events could be lost if DB write fails midway" + "No transactional guarantee for fill event insertion" → MERGE (both about atomicity of fill writes, same fix: wrap in transaction)
-- "getMyFills has no pagination" + "Fill query returns unbounded results" → MERGE (both about missing pagination on the same endpoint)
-- "Status filter uses wrong enum values" + "getActiveAlgoStates filters on 'executing' but DB has 'working'" → MERGE (same bug described at different abstraction levels)
-- "No auth check on /devtest" + "Dev test page accessible without authentication" → MERGE (identical concern, different wording)
-
-## BAD merges (related topic but DIFFERENT root causes or fixes):
-- "Fill events lost during concurrent writes" + "Fill events lost if mutation fails midway" → DO NOT MERGE (first is race condition needing locking, second is atomicity needing transactions)
-- "getMyFills missing exchange field" + "getMyExecutions missing exchange field" → DO NOT MERGE (different endpoints, different code paths, fixed independently)
-- "DMA orders show 0/0 progress" + "Arb orders show wrong leg count" → DO NOT MERGE (different order types, different display bugs, different fixes)
-- "No rate limiting on order placement" + "No rate limiting on fill queries" → DO NOT MERGE (different endpoints, different risk profiles)
-
-Output JSON only:
-{
-  "clusters": [
-    [1, 7, 14],
-    [2],
-    [3, 9]
-  ]
-}"""
-
 # =============================================================================
 # Phase 4: Evaluation
 # =============================================================================

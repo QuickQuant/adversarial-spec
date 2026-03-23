@@ -32,7 +32,7 @@ from gauntlet.persistence import (
     load_resolved_concerns,
     record_explanation_match,
 )
-from gauntlet.prompts import CLUSTERING_PROMPT, EXPLANATION_MATCHING_PROMPT
+from gauntlet.prompts import EXPLANATION_MATCHING_PROMPT
 from models import cost_tracker
 
 # =============================================================================
@@ -238,7 +238,9 @@ def cluster_concerns_with_provenance(
         for idx, c in enumerate(candidate_reps, 1)
     )
 
-    system_prompt = CLUSTERING_PROMPT
+    # NOTE: Clustering is bypassed in orchestrator.py (CR-8). This function
+    # is dead code kept for reference. Prompt was in gauntlet/prompts.py.
+    system_prompt = "You cluster near-duplicate engineering concerns."
 
     user_prompt = f"""Cluster these concerns by semantic equivalence.
 Remember: only merge when root cause AND fix are the same. When in doubt, keep separate.

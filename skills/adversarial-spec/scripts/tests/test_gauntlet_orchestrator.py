@@ -6,9 +6,11 @@ import threading
 from types import SimpleNamespace
 
 import pytest
-
 from gauntlet.core_types import BigPictureSynthesis, Concern, Evaluation
-from gauntlet.orchestrator import _load_approved_prompts, _resolve_and_filter_adversaries
+from gauntlet.orchestrator import (
+    _load_approved_prompts,
+    _resolve_and_filter_adversaries,
+)
 from models import CostTracker
 
 
@@ -94,7 +96,6 @@ def test_run_gauntlet_records_phase_metrics_in_manifest(monkeypatch, tmp_path):
     monkeypatch.setattr("gauntlet.orchestrator.get_spec_hash", lambda spec: "a" * 64)
     monkeypatch.setattr("gauntlet.orchestrator.get_config_hash", lambda *args, **kwargs: "cfg")
     monkeypatch.setattr("gauntlet.orchestrator.save_checkpoint", lambda *args, **kwargs: None)
-    monkeypatch.setattr("gauntlet.orchestrator.save_partial_clustering", lambda *args, **kwargs: None)
     monkeypatch.setattr("gauntlet.orchestrator._track_dedup_stats", lambda **kwargs: None)
     monkeypatch.setattr("gauntlet.orchestrator.add_resolved_concern", lambda *args, **kwargs: None)
     monkeypatch.setattr("gauntlet.orchestrator.update_adversary_stats", lambda result: None)
@@ -143,11 +144,7 @@ def test_run_gauntlet_records_phase_metrics_in_manifest(monkeypatch, tmp_path):
         "gauntlet.orchestrator.filter_concerns_with_explanations",
         fake_filter_concerns,
     )
-    monkeypatch.setattr("gauntlet.orchestrator.choose_clustering_model", lambda *args: "cluster-model")
-    monkeypatch.setattr(
-        "gauntlet.orchestrator.cluster_concerns_with_provenance",
-        fake_cluster_concerns,
-    )
+    # clustering removed (CR-8) — no longer need to monkeypatch cluster functions
     monkeypatch.setattr("gauntlet.orchestrator.evaluate_concerns", fake_evaluate_concerns)
     monkeypatch.setattr(
         "gauntlet.orchestrator.expand_clustered_evaluations",
@@ -170,7 +167,6 @@ def test_run_gauntlet_records_phase_metrics_in_manifest(monkeypatch, tmp_path):
         "phase_1",
         "phase_2",
         "phase_3",
-        "phase_3_5",
         "phase_4",
         "phase_5",
         "phase_6",

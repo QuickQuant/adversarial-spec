@@ -38,7 +38,6 @@ from gauntlet.persistence import (
     load_partial_run,
     save_checkpoint,
     save_gauntlet_run,
-    save_partial_clustering,
     update_adversary_stats,
     update_run_manifest,
 )
@@ -46,8 +45,6 @@ from gauntlet.phase_1_attacks import generate_attacks
 from gauntlet.phase_2_synthesis import generate_big_picture_synthesis
 from gauntlet.phase_3_filtering import (
     _track_dedup_stats,
-    choose_clustering_model,
-    cluster_concerns_with_provenance,
     expand_clustered_evaluations,
     filter_concerns_with_explanations,
 )
@@ -464,64 +461,23 @@ def run_gauntlet(
         # Preserve post-filter concerns for adversary-level stats before clustering.
         post_filter_concerns = concerns
 
-        # ── Phase 3.5: Cluster + Dedup ──
-        phase_3_5_started_at, phase_3_5_input, phase_3_5_output = _start_phase_capture()
-        phase_3_5_status = "completed"
-        clustering_model = ""
-        if "phase_3_5" in partial and not skip_filtering:
-            clustered_concerns = partial["phase_3_5"]["clustered_concerns"]
-            cluster_members = partial["phase_3_5"].get("cluster_members", {})
-            phase_3_5_status = "skipped_resume"
-            print(f"Phase 3.5: Resumed {len(clustered_concerns)} clustered concerns from checkpoint", file=sys.stderr)
-        else:
-            clustering_model = choose_clustering_model(attack_models, primary_attack_model)
-            print(f"Phase 3.5: Clustering near-duplicates ({clustering_model})...", file=sys.stderr)
-            clustered_concerns, cluster_members = cluster_concerns_with_provenance(
-                concerns, clustering_model, config,
-            )
+        # ── Phase 3.5: Skip clustering (pass-through) ──
+        # Clustering was removed: intermediate LLM dedup lost content (same failure
+        # class as v1 synthesis — haiku subagents missed 48% of concerns). Adversary
+        # scope design handles overlap upstream instead. See CR-8.
+        clustered_concerns = concerns
+        cluster_members: dict[str, list] = {}
+        print(f"Phase 3.5: Skipped clustering ({len(concerns)} concerns passed through)", file=sys.stderr)
 
-        cluster_deduped = len(concerns) - len(clustered_concerns)
-        reduction_pct = (cluster_deduped / len(concerns) * 100) if concerns else 0
-        print(
-            f"  Clustered: {len(concerns)} -> {len(clustered_concerns)} "
-            f"({cluster_deduped} merged, {reduction_pct:.0f}% reduction)",
-            file=sys.stderr,
-        )
-
-        # Auto-checkpoint after clustering (G-2: highest-cost crash failure mode)
-        if config.auto_checkpoint:
-            save_partial_clustering(spec_hash, clustered_concerns, config_hash)
-            print("  Clustering checkpointed", file=sys.stderr)
-
-        # Persist dedup stats for tracking over time
         _track_dedup_stats(
             spec_hash=spec_hash,
             raw_count=len(raw_concerns),
             post_filter_count=len(post_filter_concerns),
-            post_cluster_count=len(clustered_concerns),
-            cluster_deduped=cluster_deduped,
-            reduction_pct=reduction_pct,
+            post_cluster_count=len(concerns),
+            cluster_deduped=0,
+            reduction_pct=0.0,
             attack_models=attack_models,
-            clustering_model=clustering_model if "phase_3_5" not in partial else "resumed",
-        )
-
-        manifest_path = update_run_manifest(
-            manifest_path,
-            _build_phase_metrics(
-                "phase_3_5",
-                phase_3_5_started_at,
-                phase_3_5_input,
-                phase_3_5_output,
-                [] if phase_3_5_status == "skipped_resume" else [clustering_model],
-                config,
-                spec_hash,
-                status=phase_3_5_status,
-                extra={
-                    "pre_cluster": len(concerns),
-                    "post_cluster": len(clustered_concerns),
-                    "reduction_pct": round(reduction_pct, 1),
-                },
-            ),
+            clustering_model="none",
         )
 
         # ── Phase 4: Multi-Model Evaluation ──
