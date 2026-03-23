@@ -1,20 +1,21 @@
 {
   "schema_version": "1.3",
-  "active_session_id": "adv-spec-202603211620-adversary-system-redesign",
-  "context_name": "Adversary Redesign",
+  "active_session_id": "adv-spec-202603230138-concern-remediation-plan",
+  "context_name": "Concern Remediation Plan",
   "current_phase": "implementation",
-  "current_step": "Spec finalized (v7), execution plan created (11 tasks)",
-  "next_action": "Begin implementation per execution plan. Start with T4 (SYNTHESIS_CATEGORIES), then T1 (AdversaryTemplate + aliases).",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202603212043-adversary-redesign-finalized-execution-plan.md",
+  "current_step": "T3 complete. Task-store locking and atomic writes verified; next is CR-4 after commit/review handoff.",
+  "next_action": "1. Review and commit CR-3 changes. 2. Update .handoff.md review queue and move CR-3 to Review on Trello with the commit hash. 3. Begin CR-4 (silent error swallowing, test-first).",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202603230257-concern-remediation-t0-t2-complete-handoff-pending.md",
   "do_not_ask": [],
-  "updated_at": "2026-03-21T20:43:15Z",
-  "active_session": "adv-spec-202603211620-adversary-system-redesign",
-  "active_session_file": ".adversarial-spec/sessions/adv-spec-202603211620-adversary-system-redesign.json",
+  "updated_at": "2026-03-23T03:13:48Z",
+  "active_session": "adv-spec-202603230138-concern-remediation-plan",
+  "active_session_file": ".adversarial-spec/sessions/adv-spec-202603230138-concern-remediation-plan.json",
   "session_stack": [
+    "adv-spec-202603230138-concern-remediation-plan",
     "adv-spec-202603211620-adversary-system-redesign",
     "adv-spec-202603201800-gauntlet-refactor-quota-burn",
     "adv-spec-202603051555-philosophy-phase-and-arch-persona",
     "adv-spec-202602101754-phase-sync-gaps"
   ],
-  "completed_work": "Ran 9-adversary gauntlet on v6 (296 raw \u2192 131 clustered \u2192 15 accepted). Incorporated all 15 findings into spec v7. Ran guardrails (CONS: 2 fixed, SCOPE: clean, TRACE: skipped/no manifest). Finalized spec. Created execution plan: 11 tasks, 2 workstreams, 16-28hr estimated effort."
+  "completed_work": "T0: CON-002 invalidated with audit trail across 4 arch docs. T1: pydantic>=2.0 declared in pyproject.toml. T2: sys.path hacks removed from 17 test files, pythonpath configured. Trello cards CR-0 through CR-7 created. CR-0 Done, CR-1 In Progress. Phase 8 implementation doc read \u2014 identified that .handoff.md update was skipped and 2 review queue items from previous work stream (96772c9 T8, 72767e0 T11) are unreviewed. T3: Added locked read-modify-write helpers, atomic task-store writes, TASK_STORE_BUSY/TASK_STORE_CORRUPT errors, and new persistence tests. Also fixed the eval-model fallback mismatch so uv run pytest is green again."
 }
