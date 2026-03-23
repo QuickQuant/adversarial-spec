@@ -1,3 +1,25 @@
+> **FIRST ACTION upon entering this phase:** Create this TodoWrite immediately.
+> Do NOT read further until the TodoWrite is active.
+> Every `[GATE]` item must be marked completed before proceeding past it.
+
+```
+TodoWrite([
+  {content: "Select adversary personas and attack models", status: "in_progress", activeForm: "Selecting adversary personas and attack models"},
+  {content: "Present cost estimate to user", status: "pending", activeForm: "Presenting cost estimate"},
+  {content: "Arm Adversaries — scope classification + briefings [GATE]", status: "pending", activeForm: "Arming adversaries with scope briefings"},
+  {content: "Run gauntlet (respect Gemini rate limits)", status: "pending", activeForm: "Running gauntlet attacks"},
+  {content: "Extract concerns with code (jq/Python, NOT LLM)", status: "pending", activeForm: "Extracting concerns with code"},
+  {content: "Synthesize findings — one Opus pass, 8-category taxonomy", status: "pending", activeForm: "Synthesizing gauntlet findings"},
+  {content: "Revise spec with accepted concerns", status: "pending", activeForm: "Revising spec with accepted concerns"},
+  {content: "Run CONS guardrail on revised spec [GATE]", status: "pending", activeForm: "Running CONS guardrail on revised spec"},
+  {content: "Update session state with gauntlet_concerns_path", status: "pending", activeForm: "Updating session state"},
+])
+```
+
+Mark each step `completed` as you finish it. Mark the current step `in_progress`.
+
+---
+
 ### Step 5.5: Gauntlet Review (Optional)
 
 After consensus is reached but before finalization, offer the adversarial gauntlet:
@@ -108,6 +130,8 @@ After consensus is reached but before finalization, offer the adversarial gauntl
 
 4. **Arm Adversaries** (REQUIRED before running gauntlet). See below.
 
+**[GATE] TodoWrite: Mark "Arm Adversaries — scope classification + briefings" completed before proceeding to Step 5.**
+
 5. Run the gauntlet with armed briefings.
 
    **Gemini Rate Limit Staggering (REQUIRED):**
@@ -217,6 +241,8 @@ After consensus is reached but before finalization, offer the adversarial gauntl
    - **Run checkpoint guardrails (CONS) after incorporating the batch of fixes** — gauntlet fix incorporation can introduce cross-section contradictions. Run CONS to catch them. SCOPE and TRACE are not needed here (gauntlet fixes are evaluated by Claude, not automated scope additions).
    - If CONS finds issues, fix and re-run (max 2 attempts, then defer to user)
    - If significant changes were made, consider running another debate round
+
+**[GATE] TodoWrite: Mark "Run CONS guardrail on revised spec" completed before proceeding to Step 8 or phase transition.**
 
 8. Optionally run Final Boss (UX Architect review — expensive but thorough)
 

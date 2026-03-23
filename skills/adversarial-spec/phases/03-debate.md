@@ -1,22 +1,27 @@
-**TodoWrite (REQUIRED):** At the start of the debate phase, create a TodoWrite list tracking all major steps. Update it as you complete each step. Example:
+> **FIRST ACTION upon entering this phase:** Create this TodoWrite immediately.
+> Do NOT read further until the TodoWrite is active.
+> Every `[GATE]` item must be marked completed before proceeding past it.
 
 ```
 TodoWrite([
-  {content: "Verify roadmap exists (gate)", status: "in_progress", activeForm: "Verifying roadmap exists"},
+  {content: "Verify roadmap exists [GATE]", status: "in_progress", activeForm: "Verifying roadmap exists"},
   {content: "Load roadmap user stories", status: "pending", activeForm: "Loading roadmap user stories"},
   {content: "Load or generate initial document", status: "pending", activeForm: "Loading initial document"},
-  {content: "Information flow audit (technical/full)", status: "pending", activeForm: "Auditing information flows"},
-  {content: "External API interface verification (technical/full)", status: "pending", activeForm: "Verifying external API interfaces"},
   {content: "Select opponent models", status: "pending", activeForm: "Selecting opponent models"},
   {content: "Assemble context files (technical/full)", status: "pending", activeForm: "Assembling context files"},
-  {content: "Round 1: Requirements validation", status: "pending", activeForm: "Running Round 1 debate"},
-  {content: "Context readiness audit (technical/full)", status: "pending", activeForm: "Running context readiness audit"},
-  {content: "Round 2: Architecture & design", status: "pending", activeForm: "Running Round 2 debate"},
-  ...additional rounds as needed...
+  {content: "Round 1: Run debate + synthesize", status: "pending", activeForm: "Running Round 1 debate"},
+  {content: "Round 1: Run SCOPE + TRACE guardrails [GATE]", status: "pending", activeForm: "Running Round 1 guardrails"},
+  {content: "Context Readiness Audit (technical/full) [GATE]", status: "pending", activeForm: "Running context readiness audit"},
+  {content: "Round 2: Run debate + synthesize", status: "pending", activeForm: "Running Round 2 debate"},
+  {content: "Round 2: Run CONS + SCOPE + TRACE guardrails [GATE]", status: "pending", activeForm: "Running Round 2 guardrails"},
 ])
 ```
 
 Mark each step `completed` as you finish it. Mark the current step `in_progress`. Skip steps marked "technical/full" for product-depth specs.
+
+**Dynamic rounds:** For each round beyond Round 2, add two TodoWrite items before starting the round:
+- `{content: "Round N: Run debate + synthesize", status: "pending", activeForm: "Running Round N debate"}`
+- `{content: "Round N: Run CONS + SCOPE + TRACE guardrails [GATE]", status: "pending", activeForm: "Running Round N guardrails"}`
 
 ---
 
@@ -63,7 +68,7 @@ fi
 >
 > **Action:** Return to `02-roadmap.md` and complete all steps including artifact persistence.
 
-**Only proceed to Step 2 if roadmap verification passes.**
+**[GATE] TodoWrite: Mark "Verify roadmap exists" completed before proceeding to Step 2.**
 
 ---
 
@@ -302,18 +307,7 @@ More models = more perspectives = stricter convergence.
 
 **Before the first debate round**, assemble context files so opponent models can critique against the actual codebase, not hallucinated patterns.
 
-**Use TodoWrite** to track each context source as you check it:
-
-```
-TodoWrite([
-  {content: "Check architecture docs (.architecture/)", status: "in_progress", activeForm: "Checking architecture docs"},
-  {content: "Check source issues (.adversarial-spec/issues/)", status: "pending", activeForm: "Checking source issues"},
-  {content: "Check type definitions (API models, interfaces)", status: "pending", activeForm: "Checking type definitions"},
-  {content: "Check existing routes/endpoints", status: "pending", activeForm: "Checking existing routes"},
-  {content: "Validate context files contain substantive content", status: "pending", activeForm: "Validating context file content"},
-  {content: "Build --context flags and store in session", status: "pending", activeForm: "Building context flags"},
-])
-```
+Check each context source: architecture docs, source issues, type definitions, existing routes/endpoints. Validate all context files contain substantive content, then build `--context` flags and store in session.
 
 **Build the --context flags:**
 
@@ -373,15 +367,7 @@ Before passing any file via `--context`, verify it contains substantive content:
 
 The spec file on disk is the source of truth. Opponent models must see the exact same document the user approved. Any "optimization" that shortens the input invalidates the entire round.
 
-**Before EVERY debate round (use TodoWrite to track — do NOT skip):**
-
-```
-TodoWrite([
-  {content: "Write spec to disk as spec-draft-vN.md", status: "in_progress", activeForm: "Writing spec to disk"},
-  {content: "Verify spec file line count (wc -l)", status: "pending", activeForm: "Verifying spec file"},
-  {content: "Pipe spec from disk to debate.py (cat file | debate.py)", status: "pending", activeForm: "Running debate round N"},
-])
-```
+**Before EVERY debate round:**
 
 1. Write the current spec to `.adversarial-spec/specs/<slug>/spec-draft-vN.md`
 2. Verify the file exists and has expected content: `wc -l .adversarial-spec/specs/<slug>/spec-draft-vN.md`
@@ -607,6 +593,8 @@ for source in inventory.sources where status == "available" and path != null:
 
 Update `extended_state.context_files` in session state with the new list. Use these flags for ALL subsequent `debate.py critique` invocations.
 
+**[GATE] TodoWrite: Mark "Context Readiness Audit (technical/full)" completed before proceeding to Round 2.**
+
 ---
 
 **Round 2 Architecture & Design (For Spec documents):**
@@ -748,6 +736,8 @@ TRACE (requirements_tracer): 0 findings
 2. Present SCOPE additions for user approval or removal
 3. Restore TRACE-flagged coverage or explicitly descope with user approval
 4. Only after guardrails pass (or user explicitly overrides): proceed to the next round
+
+**[GATE] TodoWrite: Mark "Round N: Run CONS + SCOPE + TRACE guardrails" (or "SCOPE + TRACE" for Round 1) completed before proceeding to the next round.**
 
 ---
 

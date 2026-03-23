@@ -1,3 +1,25 @@
+> **FIRST ACTION upon entering this phase:** Create this TodoWrite immediately.
+> Do NOT read further until the TodoWrite is active.
+> Every `[GATE]` item must be marked completed before proceeding past it.
+
+```
+TodoWrite([
+  {content: "Load finalized spec and gauntlet concerns", status: "in_progress", activeForm: "Loading finalized spec and gauntlet concerns"},
+  {content: "Scope assessment — present to user", status: "pending", activeForm: "Assessing execution scope"},
+  {content: "Load target architecture and build Architecture Spine (if exists)", status: "pending", activeForm: "Building architecture spine"},
+  {content: "Decompose into tasks with gauntlet concern linkage", status: "pending", activeForm: "Decomposing spec into tasks"},
+  {content: "Assign test strategies (test-first/test-after)", status: "pending", activeForm: "Assigning test strategies"},
+  {content: "Over-decomposition guard check", status: "pending", activeForm: "Checking for over-decomposition"},
+  {content: "Present plan to user for approval [GATE]", status: "pending", activeForm: "Presenting execution plan for approval"},
+  {content: "Write execution plan to disk [GATE]", status: "pending", activeForm: "Writing execution plan to disk"},
+  {content: "Verify plan file exists and update session state", status: "pending", activeForm: "Verifying plan persistence"},
+])
+```
+
+Mark each step `completed` as you finish it. Mark the current step `in_progress`.
+
+---
+
 ## Execution Planning (Phase 7)
 
 After the spec is finalized and the gauntlet has been run, offer to generate an execution plan.
@@ -260,6 +282,8 @@ Task 8 → Task 5 (merge point)
 
 Wait for user approval before proceeding to Step 8.
 
+**[GATE] TodoWrite: Mark "Present plan to user for approval" completed before proceeding to Step 8.**
+
 ---
 
 ### Step 8: Persist Execution Plan
@@ -289,4 +313,6 @@ Where `<slug>` is the context name slugified (same as the manifest directory).
 - File is non-empty
 - Path recorded in session detail file
 
-Only after verification: proceed to Phase 7 (Implementation).
+**[GATE] TodoWrite: Mark "Write execution plan to disk" completed before proceeding to Phase 8 (Implementation).**
+
+Only after verification: proceed to Phase 8 (Implementation).

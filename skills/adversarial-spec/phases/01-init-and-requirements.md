@@ -1,3 +1,22 @@
+> **FIRST ACTION upon entering this phase:** Create this TodoWrite immediately.
+> Do NOT read further until the TodoWrite is active.
+> Every `[GATE]` item must be marked completed before proceeding past it.
+
+```
+TodoWrite([
+  {content: "Determine document type and depth", status: "in_progress", activeForm: "Determining document type"},
+  {content: "Identify starting point (file or concept)", status: "pending", activeForm: "Identifying starting point"},
+  {content: "Offer interview mode (spec only)", status: "pending", activeForm: "Offering interview mode"},
+  {content: "Conduct interview — cover all 8 topics", status: "pending", activeForm: "Conducting requirements interview"},
+  {content: "Build RequirementsSummary (user_types, features, integrations, unknowns)", status: "pending", activeForm: "Building requirements summary"},
+  {content: "User confirms requirements before roadmap [GATE]", status: "pending", activeForm: "Awaiting user requirements confirmation"},
+])
+```
+
+Mark each step `completed` as you finish it. Mark the current step `in_progress`. For debug investigations, mark "Offer interview mode" and "Conduct interview" as `completed` immediately (not applicable).
+
+---
+
 ## Task-Driven Workflow
 
 **CRITICAL: At the start of every adversarial-spec session, immediately set up Tasks to track the entire workflow.** This ensures you never lose track of where you are in the process.
@@ -660,5 +679,8 @@ If the user opts for interview mode, conduct a comprehensive interview using the
 
 **After interview completion:**
 1. Synthesize all answers into a RequirementsSummary
-2. Proceed to Step 1.6 (Roadmap Alignment)
+2. Present RequirementsSummary to user for confirmation
+3. Proceed to Step 1.6 (Roadmap Alignment)
+
+**[GATE] TodoWrite: Mark "User confirms requirements before roadmap" completed before proceeding to Step 1.6 (Roadmap).**
 

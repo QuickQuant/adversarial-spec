@@ -1,3 +1,24 @@
+> **FIRST ACTION upon entering this phase:** Create this TodoWrite immediately.
+> Do NOT read further until the TodoWrite is active.
+> Every `[GATE]` item must be marked completed before proceeding past it.
+
+```
+TodoWrite([
+  {content: "Build RequirementsSummary and assess complexity", status: "in_progress", activeForm: "Building requirements summary"},
+  {content: "Draft roadmap with user stories and milestones", status: "pending", activeForm: "Drafting roadmap"},
+  {content: "Roadmap debate round (medium/complex only)", status: "pending", activeForm: "Running roadmap debate round"},
+  {content: "User confirms roadmap [GATE]", status: "pending", activeForm: "Awaiting user roadmap confirmation"},
+  {content: "Persist roadmap artifacts to disk", status: "pending", activeForm: "Persisting roadmap artifacts"},
+  {content: "Verify artifacts exist on disk [GATE]", status: "pending", activeForm: "Verifying roadmap artifacts on disk"},
+  {content: "Create milestone and user story MCP Tasks", status: "pending", activeForm: "Creating roadmap MCP tasks"},
+  {content: "Update session state with roadmap_path", status: "pending", activeForm: "Updating session state"},
+])
+```
+
+Mark each step `completed` as you finish it. Mark the current step `in_progress`. For simple-tier specs, mark "Roadmap debate round" as `completed` immediately (not applicable).
+
+---
+
 ### Step 1.6: Roadmap Alignment (Spec Only, REQUIRED)
 
 **This step is MANDATORY for all spec documents.** It ensures user stories and testable milestones are defined BEFORE technical debate begins.
@@ -112,6 +133,8 @@ Synthesize questions surfaced and ask user before finalizing.
 
 **Do NOT proceed to adversarial debate until user confirms roadmap.**
 
+**[GATE] TodoWrite: Mark "User confirms roadmap" completed before proceeding to Step 6.**
+
 #### 6. Persist Roadmap Artifacts
 
 **For simple tier:**
@@ -154,6 +177,8 @@ echo "If artifacts are missing, create them NOW before proceeding to debate."
 ```
 
 **Do NOT proceed to Phase 3 (Debate) until artifacts are verified.**
+
+**[GATE] TodoWrite: Mark "Verify artifacts exist on disk" completed before proceeding to Phase 3.**
 
 **Update session with roadmap path:**
 

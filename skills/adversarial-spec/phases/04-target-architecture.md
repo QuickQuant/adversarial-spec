@@ -1,3 +1,24 @@
+> **FIRST ACTION upon entering this phase:** Create this TodoWrite immediately.
+> Do NOT read further until the TodoWrite is active.
+> Every `[GATE]` item must be marked completed before proceeding past it.
+
+```
+TodoWrite([
+  {content: "Scale check — assess if architecture phase needed [GATE]", status: "in_progress", activeForm: "Assessing architecture phase need"},
+  {content: "Assess starting point (greenfield vs brownfield)", status: "pending", activeForm: "Assessing starting point"},
+  {content: "Categorize application and confirm with user", status: "pending", activeForm: "Categorizing application"},
+  {content: "Research best practices for each dimension", status: "pending", activeForm: "Researching best practices"},
+  {content: "Draft target-architecture.md", status: "pending", activeForm: "Drafting target architecture"},
+  {content: "Debate architecture until convergence", status: "pending", activeForm: "Debating architecture"},
+  {content: "Dry-run verification of most complex flow [GATE]", status: "pending", activeForm: "Running dry-run verification"},
+  {content: "Record decisions in Decision Journal", status: "pending", activeForm: "Recording architecture decisions"},
+])
+```
+
+Mark each step `completed` as you finish it. Mark the current step `in_progress`. If scale check results in "Skip", mark all remaining items `completed` with note "skipped — below scale threshold."
+
+---
+
 ## Target Architecture (Phase 4)
 
 After spec debate converges, define the shared architecture patterns before the gauntlet.
@@ -33,6 +54,8 @@ Recommended: [Full architecture | Lightweight | Skip]
 **Skip criteria:** <3 user stories AND single-file scope, or pure library with no app layer.
 
 If skip: log Decision Journal entry with `decision: "skip"`, transition directly to gauntlet.
+
+**[GATE] TodoWrite: Mark "Scale check" completed before proceeding. If skip: mark all remaining items completed.**
 
 ---
 
@@ -141,6 +164,8 @@ Walk the most complex user flow through the architecture step-by-step:
 **The dry-run is the proof the architecture is complete.**
 
 If gaps found: revise architecture, re-debate the change.
+
+**[GATE] TodoWrite: Mark "Dry-run verification" completed before proceeding to Decision Journal.**
 
 ---
 

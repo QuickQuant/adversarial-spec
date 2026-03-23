@@ -1,3 +1,23 @@
+> **FIRST ACTION upon entering this phase:** Create this TodoWrite immediately.
+> Do NOT read further until the TodoWrite is active.
+> Every `[GATE]` item must be marked completed before proceeding past it.
+
+```
+TodoWrite([
+  {content: "Run final CONS guardrail [GATE]", status: "in_progress", activeForm: "Running final CONS guardrail"},
+  {content: "Run final SCOPE guardrail [GATE]", status: "pending", activeForm: "Running final SCOPE guardrail"},
+  {content: "Run final TRACE guardrail [GATE]", status: "pending", activeForm: "Running final TRACE guardrail"},
+  {content: "Quality verification (completeness, consistency, clarity, actionability)", status: "pending", activeForm: "Verifying spec quality"},
+  {content: "Write final spec to disk", status: "pending", activeForm: "Writing final spec to disk"},
+  {content: "Present to user for review [GATE]", status: "pending", activeForm: "Presenting spec for user review"},
+  {content: "Update session state with spec_path and manifest_path", status: "pending", activeForm: "Updating session state"},
+])
+```
+
+Mark each step `completed` as you finish it. Mark the current step `in_progress`.
+
+---
+
 ### Step 6: Finalize and Output Document
 
 When ALL opponent models AND you have said `[AGREE]` (and gauntlet is complete or skipped):
@@ -10,6 +30,8 @@ When ALL opponent models AND you have said `[AGREE]` (and gauntlet is complete o
 - **TRACE:** Requirements coverage — verify no user story was orphaned during revisions; this is the last chance to catch dropped requirements before execution planning
 
 Fix any CONS findings. Present SCOPE additions for user approval. Restore TRACE-flagged coverage or explicitly descope with user approval. Only proceed after guardrails pass or user overrides.
+
+**[GATE] TodoWrite: Mark all three guardrail items (CONS, SCOPE, TRACE) completed before proceeding to quality verification.**
 
 | Guardrail | Failure Mode | Action |
 |-----------|-------------|--------|

@@ -1,7 +1,7 @@
 {
   "session_id": "adv-spec-202603211620-adversary-system-redesign",
   "created_at": "2026-03-21T16:20:42Z",
-  "updated_at": "2026-03-21T20:44:43Z",
+  "updated_at": "2026-03-23T19:29:23Z",
   "spec_slug": "adversary-system-redesign",
   "title": "Adversary System Redesign: Dynamic Prompts, Roster, and Taxonomy",
   "phase": "requirements",
@@ -80,13 +80,43 @@
       "time": "2026-03-21T20:44:43Z",
       "event": "Generated manifest retroactively",
       "type": "maintenance"
+    },
+    {
+      "time": "2026-03-23T03:58:38Z",
+      "event": "Resumed via startup context intent check",
+      "type": "resume"
+    },
+    {
+      "time": "2026-03-23T05:57:41Z",
+      "event": "T8 structured JSON output + quality gate integration committed (cb53a41). Trello cleanup done, stale sessions closed.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-03-23T05:57:41Z",
+      "event": "Checkpoint saved: t8-structured-output-complete.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-03-23T19:24:44Z",
+      "event": "Task #1 (03-debate.md) in progress: master TodoWrite added at top, 2 of 3 fragment TodoWrites removed, 1 gate back-reference added. Still need: gate back-ref after guardrails section, verify no remaining fragments.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-03-23T19:24:44Z",
+      "event": "Checkpoint saved: todowrite-enforcement-plan-approved-debate-phase-in-progress.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-03-23T19:29:23Z",
+      "event": "Fixed phantom execution_plan_path \u2014 plan file now persisted to specs/adversary-system-redesign/execution-plan.md",
+      "type": "maintenance"
     }
   ],
   "current_phase": "implementation",
-  "current_step": "Spec finalized (v7), execution plan created (11 tasks)",
-  "completed_work": "Ran 9-adversary gauntlet on v6 (296 raw \u2192 131 clustered \u2192 15 accepted). Incorporated all 15 findings into spec v7. Ran guardrails (CONS: 2 fixed, SCOPE: clean, TRACE: skipped/no manifest). Finalized spec. Created execution plan: 11 tasks, 2 workstreams, 16-28hr estimated effort.",
-  "next_action": "Begin implementation per execution plan. Start with T4 (SYNTHESIS_CATEGORIES), then T1 (AdversaryTemplate + aliases).",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202603212043-adversary-redesign-finalized-execution-plan.md",
+  "current_step": "Task #1 (03-debate.md) in progress: master TodoWrite added at top, 2 of 3 fragment TodoWrites removed, 1 gate back-reference added. Still need: gate back-ref after guardrails section, verify no remaining fragments.",
+  "completed_work": "Investigated BracketBattleAI adversarial-spec failures. Fixed Gemini parse failure (3ff3bf9): CLI models now get numbered-list prompt. Fixed stale roster in 05-gauntlet.md (82e47fc): LAZY/PREV/COMP references updated. Killed 74 orphaned Trello MCP processes. Created and approved plan for TodoWrite enforcement across all 7 phase docs. Started execution: Task #1 (03-debate.md) partially complete \u2014 master TodoWrite with guardrail gates added, fragment TodoWrites being removed.",
+  "next_action": "Finish Task #1 (add remaining gate back-ref after guardrails section in 03-debate.md), then proceed through Tasks #2-#7 in priority order. Commit after all phases are done.",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202603231924-todowrite-enforcement-plan-approved-debate-phase-in-progress.md",
   "do_not_ask": [],
   "spec_path": ".adversarial-spec/specs/adversary-system-redesign/spec.md",
   "execution_plan_path": ".adversarial-spec/specs/adversary-system-redesign/execution-plan.md",
