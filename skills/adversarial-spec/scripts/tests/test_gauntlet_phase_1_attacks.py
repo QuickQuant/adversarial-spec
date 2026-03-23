@@ -339,6 +339,25 @@ class TestJsonFallbackChain:
         )
         assert captured["json_mode"] is False
 
+    def test_cli_model_uses_numbered_list_prompt(self, monkeypatch):
+        """CLI models should get the numbered-list prompt, not JSON prompt."""
+        captured = {}
+
+        def fake_call_model(model, system_prompt, user_message, timeout, codex_reasoning, json_mode=False):
+            captured["user_message"] = user_message
+            return "1. Missing error handling\n2. No timeout", 10, 5
+
+        monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
+        monkeypatch.setattr("gauntlet.phase_1_attacks.cost_tracker.add", lambda *a: None)
+
+        for cli_model in ["codex/gpt-5.4", "gemini-cli/gemini-3-pro-preview", "claude-cli/opus"]:
+            generate_attacks(
+                spec="spec", adversaries=["paranoid_security"],
+                models=[cli_model], config=GauntletConfig(),
+            )
+            assert "JSON" not in captured["user_message"], f"{cli_model} got JSON prompt"
+            assert "numbered list" in captured["user_message"], f"{cli_model} missing numbered list instruction"
+
     def test_litellm_model_uses_json_mode_flag(self, monkeypatch):
         """LiteLLM-path models should pass json_mode=True."""
         captured = {}

@@ -21,6 +21,7 @@ from gauntlet.model_dispatch import (
 )
 from gauntlet.prompts import (
     ATTACK_SYSTEM_PROMPT,
+    ATTACK_USER_PROMPT,
     ATTACK_USER_PROMPT_JSON,
 )
 from models import cost_tracker
@@ -177,12 +178,14 @@ def generate_attacks(
             )
 
         system_prompt = ATTACK_SYSTEM_PROMPT.format(persona=persona)
-        user_message = ATTACK_USER_PROMPT_JSON.format(spec=spec)
 
-        # Use json_mode for litellm-path models (non-CLI)
+        # CLI models (codex/, gemini-cli/, claude-cli/) can't enforce json_mode,
+        # so use the numbered-list prompt for them to avoid unparseable output.
         is_cli_model = any(
             model.startswith(p) for p in ("codex/", "gemini-cli/", "claude-cli/")
         )
+        prompt_template = ATTACK_USER_PROMPT if is_cli_model else ATTACK_USER_PROMPT_JSON
+        user_message = prompt_template.format(spec=spec)
 
         try:
             response, in_tokens, out_tokens = call_model(
