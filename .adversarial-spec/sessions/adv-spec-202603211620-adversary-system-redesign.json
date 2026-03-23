@@ -1,7 +1,7 @@
 {
   "session_id": "adv-spec-202603211620-adversary-system-redesign",
   "created_at": "2026-03-21T16:20:42Z",
-  "updated_at": "2026-03-23T19:29:23Z",
+  "updated_at": "2026-03-23T19:52:53Z",
   "spec_slug": "adversary-system-redesign",
   "title": "Adversary System Redesign: Dynamic Prompts, Roster, and Taxonomy",
   "phase": "requirements",
@@ -110,15 +110,21 @@
       "time": "2026-03-23T19:29:23Z",
       "event": "Fixed phantom execution_plan_path \u2014 plan file now persisted to specs/adversary-system-redesign/execution-plan.md",
       "type": "maintenance"
+    },
+    {
+      "time": "2026-03-23T19:52:53Z",
+      "event": "Phase transition: implementation \u2192 complete. All 11 tasks done.",
+      "type": "transition"
     }
   ],
-  "current_phase": "implementation",
-  "current_step": "Task #1 (03-debate.md) in progress: master TodoWrite added at top, 2 of 3 fragment TodoWrites removed, 1 gate back-reference added. Still need: gate back-ref after guardrails section, verify no remaining fragments.",
-  "completed_work": "Investigated BracketBattleAI adversarial-spec failures. Fixed Gemini parse failure (3ff3bf9): CLI models now get numbered-list prompt. Fixed stale roster in 05-gauntlet.md (82e47fc): LAZY/PREV/COMP references updated. Killed 74 orphaned Trello MCP processes. Created and approved plan for TodoWrite enforcement across all 7 phase docs. Started execution: Task #1 (03-debate.md) partially complete \u2014 master TodoWrite with guardrail gates added, fragment TodoWrites being removed.",
-  "next_action": "Finish Task #1 (add remaining gate back-ref after guardrails section in 03-debate.md), then proceed through Tasks #2-#7 in priority order. Commit after all phases are done.",
+  "current_phase": "complete",
+  "current_step": "All 11 execution plan tasks (T1-T11) implemented and committed. TodoWrite enforcement added as follow-up.",
+  "completed_work": "Investigated BracketBattleAI adversarial-spec failures. Fixed Gemini parse failure (3ff3bf9): CLI models now get numbered-list prompt. Fixed stale roster in 05-gauntlet.md (82e47fc): LAZY/PREV/COMP references updated. Killed 74 orphaned Trello MCP processes. Created and approved plan for TodoWrite enforcement across all 7 phase docs. Started execution: Task #1 (03-debate.md) partially complete \u2014 master TodoWrite with guardrail gates added, fragment TodoWrites being removed. All 11 Adversary Redesign tasks implemented (T1-T11). TodoWrite enforcement added to all 7 phase docs (0925d8e).",
+  "next_action": null,
   "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202603231924-todowrite-enforcement-plan-approved-debate-phase-in-progress.md",
   "do_not_ask": [],
   "spec_path": ".adversarial-spec/specs/adversary-system-redesign/spec.md",
   "execution_plan_path": ".adversarial-spec/specs/adversary-system-redesign/execution-plan.md",
-  "manifest_path": ".adversarial-spec/specs/adversary-system-redesign/manifest.json"
+  "manifest_path": ".adversarial-spec/specs/adversary-system-redesign/manifest.json",
+  "completed_at": "2026-03-23T19:52:53Z"
 }
