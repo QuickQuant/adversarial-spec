@@ -64,8 +64,14 @@ def call_model(
     user_message: str,
     timeout: int = 300,
     codex_reasoning: str = DEFAULT_CODEX_REASONING,
+    json_mode: bool = False,
 ) -> tuple[str, int, int]:
     """Call a model (CLI or API) and return response with token counts.
+
+    Args:
+        json_mode: Request JSON output via response_format (litellm path only).
+            CLI models (codex/, gemini-cli/, claude-cli/) ignore this flag —
+            use prompt-driven JSON requests for those.
 
     Returns:
         (response_text, input_tokens, output_tokens)
@@ -98,16 +104,20 @@ def call_model(
         )
 
     # Standard litellm path
-    response = completion(
-        model=model,
-        messages=[
+    kwargs: dict = {
+        "model": model,
+        "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},
         ],
-        max_tokens=4000,
-        temperature=0.7,
-        timeout=timeout,
-    )
+        "max_tokens": 4000,
+        "temperature": 0.7,
+        "timeout": timeout,
+    }
+    if json_mode:
+        kwargs["response_format"] = {"type": "json_object"}
+
+    response = completion(**kwargs)
     content = response.choices[0].message.content
     input_tokens = response.usage.prompt_tokens if response.usage else 0
     output_tokens = response.usage.completion_tokens if response.usage else 0

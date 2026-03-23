@@ -27,6 +27,15 @@ ATTACK_USER_PROMPT = """Review this specification and identify all potential pro
 
 Output your concerns as a numbered list. Be specific and cite parts of the spec."""
 
+ATTACK_USER_PROMPT_JSON = """Review this specification and identify all potential problems:
+
+{spec}
+
+Output your concerns as a JSON object with this exact schema:
+{{"concerns": [{{"text": "description of the concern", "severity": "high|medium|low"}}]}}
+
+Be specific and cite parts of the spec. Every concern must have both "text" and "severity"."""
+
 # =============================================================================
 # Phase 2: Big Picture Synthesis
 # =============================================================================

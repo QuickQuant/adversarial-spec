@@ -20,6 +20,7 @@ from gauntlet.core_types import (
     FinalBossResult,
     FinalBossVerdict,
     GauntletConfig,
+    GauntletExecutionError,
     GauntletResult,
     PhaseMetrics,
     Rebuttal,
@@ -41,7 +42,7 @@ from gauntlet.persistence import (
     update_adversary_stats,
     update_run_manifest,
 )
-from gauntlet.phase_1_attacks import generate_attacks
+from gauntlet.phase_1_attacks import check_phase1_quality, generate_attacks
 from gauntlet.phase_2_synthesis import generate_big_picture_synthesis
 from gauntlet.phase_3_filtering import (
     _track_dedup_stats,
@@ -370,6 +371,22 @@ def run_gauntlet(
             with open(raw_file, 'w') as f:
                 json.dump(attack_raw_responses, f, indent=2)
 
+        # ── Phase 1 Quality Gate ──
+        parse_failures = check_phase1_quality(concerns, attack_raw_responses)
+        if parse_failures:
+            for fail in parse_failures:
+                print(
+                    f"  PARSE FAILURE: {fail['adversary']}@{fail['model']}: "
+                    f"{fail['response_length']} chars, 0 concerns parsed",
+                    file=sys.stderr,
+                )
+            raise GauntletExecutionError(
+                f"Phase 1 parse failure: {len(parse_failures)} adversary×model pair(s) "
+                f"returned non-empty responses but 0 concerns were parsed. "
+                f"Raw responses saved to {gauntlet_dir / f'raw-responses-{spec_hash[:8]}.json'}. "
+                f"Review and re-run."
+            )
+
         manifest_path = update_run_manifest(
             manifest_path,
             _build_phase_metrics(
@@ -385,6 +402,7 @@ def run_gauntlet(
                     "concerns_generated": len(raw_concerns),
                     "attack_models": attack_models,
                     "adversaries": adversaries,
+                    "parse_failures": len(parse_failures),
                 },
             ),
         )

@@ -345,3 +345,110 @@ class TestResolveAndFilterAdversaries:
             approved_prompts=None,
         )
         assert resolved == ["burned_oncall", "minimalist", "paranoid_security"]
+
+
+# =============================================================================
+# T8: Quality gate integration in orchestrator
+# =============================================================================
+
+
+class TestPhase1QualityGate:
+    """Quality gate must halt pipeline when parse failures detected."""
+
+    def test_quality_gate_halts_on_parse_failures(self, monkeypatch, tmp_path):
+        """Non-empty response + 0 concerns → GauntletExecutionError before Phase 2."""
+        from gauntlet.core_types import GauntletExecutionError
+        from gauntlet.orchestrator import run_gauntlet
+
+        tracker = SimpleNamespace(
+            total_input_tokens=0, total_output_tokens=0, total_cost=0.0,
+        )
+
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setattr("gauntlet.orchestrator.cost_tracker", tracker)
+        monkeypatch.setattr("gauntlet.orchestrator.get_spec_hash", lambda spec: "a" * 64)
+        monkeypatch.setattr("gauntlet.orchestrator.get_config_hash", lambda *a, **kw: "cfg")
+        monkeypatch.setattr("gauntlet.orchestrator.save_checkpoint", lambda *a, **kw: None)
+        monkeypatch.setattr("gauntlet.orchestrator.update_run_manifest", lambda mp, pm: mp or str(tmp_path / "m.json"))
+        monkeypatch.setattr("gauntlet.orchestrator.add_resolved_concern", lambda *a, **kw: None)
+        monkeypatch.setattr("gauntlet.orchestrator.update_adversary_stats", lambda r: None)
+        monkeypatch.setattr("builtins.input", lambda prompt: "n")
+
+        def fake_generate_attacks(spec, adversaries, models, config, prompts=None):
+            # paranoid_security produces concerns, burned_oncall does not (parse failure)
+            concerns = [Concern(adversary="paranoid_security", text="c1", source_model="codex/gpt-5.4")]
+            timing = {"paranoid_security": 1.0, "burned_oncall": 1.5}
+            raw_responses = {
+                "paranoid_security@codex/gpt-5.4": "1. c1",
+                "burned_oncall@codex/gpt-5.4": "This spec has issues with error handling and retry logic...",
+            }
+            return concerns, timing, raw_responses
+
+        monkeypatch.setattr("gauntlet.orchestrator.generate_attacks", fake_generate_attacks)
+
+        with pytest.raises(GauntletExecutionError, match="parse failure"):
+            run_gauntlet(
+                spec="# Test Spec",
+                adversaries=["paranoid_security", "burned_oncall"],
+                attack_models=["codex/gpt-5.4"],
+                eval_models=["claude-opus-4-6"],
+                allow_rebuttals=False,
+                use_multi_model=False,
+                run_final_boss=False,
+            )
+
+    def test_quality_gate_passes_when_all_pairs_produce_concerns(self, monkeypatch, tmp_path):
+        """All adversary×model pairs produce concerns → no halt, pipeline continues."""
+        from gauntlet.orchestrator import run_gauntlet
+
+        tracker = SimpleNamespace(
+            total_input_tokens=0, total_output_tokens=0, total_cost=0.0,
+        )
+        synthesis = BigPictureSynthesis(
+            total_concerns=2, unique_texts=2,
+            real_issues=["c1"], hidden_connections=[], whats_missing=[],
+            meta_concern="c1", high_signal=["c1"], raw_response="summary",
+        )
+
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setattr("gauntlet.orchestrator.cost_tracker", tracker)
+        monkeypatch.setattr("gauntlet.orchestrator.get_spec_hash", lambda spec: "a" * 64)
+        monkeypatch.setattr("gauntlet.orchestrator.get_config_hash", lambda *a, **kw: "cfg")
+        monkeypatch.setattr("gauntlet.orchestrator.save_checkpoint", lambda *a, **kw: None)
+        monkeypatch.setattr("gauntlet.orchestrator._track_dedup_stats", lambda **kw: None)
+        monkeypatch.setattr("gauntlet.orchestrator.add_resolved_concern", lambda *a, **kw: None)
+        monkeypatch.setattr("gauntlet.orchestrator.update_adversary_stats", lambda r: None)
+        monkeypatch.setattr("gauntlet.orchestrator.save_gauntlet_run", lambda r, s: str(tmp_path / "run.json"))
+        monkeypatch.setattr("gauntlet.orchestrator.calculate_medals", lambda *a, **kw: [])
+        monkeypatch.setattr("gauntlet.orchestrator.save_medal_reports", lambda m: str(tmp_path / "medals.txt"))
+        monkeypatch.setattr("builtins.input", lambda prompt: "n")
+        monkeypatch.setattr("gauntlet.orchestrator.update_run_manifest", lambda mp, pm: mp or str(tmp_path / "m.json"))
+
+        def fake_generate_attacks(spec, adversaries, models, config, prompts=None):
+            concerns = [
+                Concern(adversary="paranoid_security", text="c1", source_model="codex/gpt-5.4"),
+            ]
+            timing = {"paranoid_security": 1.0}
+            raw_responses = {"paranoid_security@codex/gpt-5.4": "1. c1"}
+            return concerns, timing, raw_responses
+
+        monkeypatch.setattr("gauntlet.orchestrator.generate_attacks", fake_generate_attacks)
+        monkeypatch.setattr("gauntlet.orchestrator.generate_big_picture_synthesis", lambda c, m, cfg: synthesis)
+        monkeypatch.setattr("gauntlet.orchestrator.filter_concerns_with_explanations", lambda c, m, s, config: (c, [], []))
+        monkeypatch.setattr("gauntlet.orchestrator.evaluate_concerns", lambda s, c, m, cfg: [
+            Evaluation(concern=c[0], verdict="accepted", reasoning="Valid."),
+        ])
+        monkeypatch.setattr("gauntlet.orchestrator.expand_clustered_evaluations", lambda e, cm: e)
+
+        # Should complete without error
+        result = run_gauntlet(
+            spec="# Test Spec",
+            adversaries=["paranoid_security"],
+            attack_models=["codex/gpt-5.4"],
+            eval_models=["claude-opus-4-6"],
+            allow_rebuttals=False,
+            use_multi_model=False,
+            run_final_boss=False,
+        )
+        assert result is not None
+        assert len(result.concerns) >= 1

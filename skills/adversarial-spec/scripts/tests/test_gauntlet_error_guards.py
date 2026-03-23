@@ -7,9 +7,7 @@ caught with graceful fallbacks.
 """
 
 import pytest
-
 from gauntlet.core_types import PROGRAMMING_BUGS, Concern, GauntletConfig
-
 
 # =============================================================================
 # Phase 1: generate_attacks — adversary model call failure
@@ -21,7 +19,7 @@ class TestPhase1ErrorGuard:
 
     def test_type_error_propagates(self, monkeypatch):
         """TypeError in model call must NOT be swallowed."""
-        def raise_type_error(model, system_prompt, user_message, timeout, codex_reasoning):
+        def raise_type_error(model, system_prompt, user_message, timeout, codex_reasoning, json_mode=False):
             raise TypeError("unexpected keyword argument 'foo'")
 
         monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", raise_type_error)
@@ -39,7 +37,7 @@ class TestPhase1ErrorGuard:
 
     def test_runtime_error_caught_with_warning(self, monkeypatch, capsys):
         """Operational errors (like API failures) should be caught, not raised."""
-        def raise_runtime(model, system_prompt, user_message, timeout, codex_reasoning):
+        def raise_runtime(model, system_prompt, user_message, timeout, codex_reasoning, json_mode=False):
             raise RuntimeError("API rate limit exceeded")
 
         monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", raise_runtime)

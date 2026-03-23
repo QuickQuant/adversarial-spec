@@ -7,6 +7,7 @@ with rate-limited batching per provider.
 from __future__ import annotations
 
 import concurrent.futures
+import json
 import sys
 import time
 from collections import defaultdict
@@ -18,8 +19,56 @@ from gauntlet.model_dispatch import (
     call_model,
     get_rate_limit_config,
 )
-from gauntlet.prompts import ATTACK_SYSTEM_PROMPT, ATTACK_USER_PROMPT
+from gauntlet.prompts import (
+    ATTACK_SYSTEM_PROMPT,
+    ATTACK_USER_PROMPT_JSON,
+)
 from models import cost_tracker
+
+
+def _parse_json_concerns(
+    response: str, adversary_key: str, model: str,
+) -> list[Concern] | None:
+    """Try to parse concerns from a JSON response.
+
+    Returns list of Concern objects on success, None if response isn't valid JSON
+    or doesn't match the expected schema.
+    """
+    try:
+        data = json.loads(response)
+    except (json.JSONDecodeError, ValueError):
+        return None
+
+    if not isinstance(data, dict):
+        return None
+
+    concerns_list = data.get("concerns")
+    if not isinstance(concerns_list, list):
+        return None
+
+    parsed: list[Concern] = []
+    seen_texts: set[str] = set()
+    for item in concerns_list:
+        if not isinstance(item, dict):
+            continue
+        text = item.get("text", "")
+        if not isinstance(text, str) or not text.strip():
+            continue
+        text = text.strip()
+        if text in seen_texts:
+            continue
+        seen_texts.add(text)
+        severity = item.get("severity", "medium")
+        if severity not in ("high", "medium", "low"):
+            severity = "medium"
+        parsed.append(Concern(
+            adversary=adversary_key,
+            text=text,
+            severity=severity,
+            source_model=model,
+        ))
+
+    return parsed if parsed else None
 
 
 def generate_attacks(
@@ -54,8 +103,64 @@ def generate_attacks(
     timing: dict[str, float] = {}
     raw_responses: dict[str, str] = {}
 
+    def _parse_numbered_list(
+        response: str, adversary_key: str, model: str,
+    ) -> list[Concern]:
+        """Parse concerns from a numbered-list response (regex fallback)."""
+        local_concerns: list[Concern] = []
+        current_concern_lines: list[str] = []
+        seen_texts: set[str] = set()
+
+        def flush_concern() -> None:
+            if current_concern_lines:
+                full_text = " ".join(current_concern_lines)
+                if full_text and full_text not in seen_texts:
+                    seen_texts.add(full_text)
+                    local_concerns.append(
+                        Concern(
+                            adversary=adversary_key,
+                            text=full_text,
+                            source_model=model,
+                        )
+                    )
+                current_concern_lines.clear()
+
+        for line in response.split("\n"):
+            line = line.strip()
+            if not line:
+                continue
+
+            is_numbered = False
+            if line[0].isdigit() and (". " in line[:4] or ")" in line[:4]):
+                is_numbered = True
+            elif line.startswith("#"):
+                stripped_hashes = line.lstrip("# ")
+                if stripped_hashes and stripped_hashes[0].isdigit() and (
+                    ". " in stripped_hashes[:4] or ")" in stripped_hashes[:4]
+                ):
+                    is_numbered = True
+
+            if is_numbered:
+                flush_concern()
+                text = line.lstrip("#").lstrip(" ").lstrip("0123456789.-) ").strip()
+                if text:
+                    current_concern_lines.append(text)
+            elif line.startswith(("-", "•", "*")):
+                text = line.lstrip("-•* ").strip()
+                if text and current_concern_lines:
+                    current_concern_lines.append(text)
+            elif current_concern_lines:
+                current_concern_lines.append(line)
+
+        flush_concern()
+        return local_concerns
+
     def run_adversary_with_model(adversary_key: str, model: str) -> tuple[list[Concern], float, str]:
-        """Run one adversary with one model and return concerns with timing."""
+        """Run one adversary with one model and return concerns with timing.
+
+        Uses JSON prompt for all models. Parses response as JSON first;
+        falls back to numbered-list regex if JSON parsing fails.
+        """
         start = time.time()
         canonical_key = resolve_adversary_name(adversary_key)
         adversary = ADVERSARIES.get(canonical_key)
@@ -72,7 +177,12 @@ def generate_attacks(
             )
 
         system_prompt = ATTACK_SYSTEM_PROMPT.format(persona=persona)
-        user_message = ATTACK_USER_PROMPT.format(spec=spec)
+        user_message = ATTACK_USER_PROMPT_JSON.format(spec=spec)
+
+        # Use json_mode for litellm-path models (non-CLI)
+        is_cli_model = any(
+            model.startswith(p) for p in ("codex/", "gemini-cli/", "claude-cli/")
+        )
 
         try:
             response, in_tokens, out_tokens = call_model(
@@ -81,58 +191,24 @@ def generate_attacks(
                 user_message=user_message,
                 timeout=config.timeout,
                 codex_reasoning=config.attack_codex_reasoning,
+                json_mode=not is_cli_model,
             )
             cost_tracker.add(model, in_tokens, out_tokens)
 
-            # Parse concerns from response - group numbered items with their sub-bullets
-            local_concerns = []
-            current_concern_lines: list[str] = []
-            seen_texts: set[str] = set()
-
-            def flush_concern():
-                """Flush accumulated lines as a single concern."""
-                if current_concern_lines:
-                    full_text = " ".join(current_concern_lines)
-                    if full_text and full_text not in seen_texts:
-                        seen_texts.add(full_text)
-                        local_concerns.append(
-                            Concern(
-                                adversary=adversary_key,
-                                text=full_text,
-                                source_model=model,
-                            )
-                        )
-                    current_concern_lines.clear()
-
-            for line in response.split("\n"):
-                line = line.strip()
-                if not line:
-                    continue
-
-                # Detect numbered items: "1. ...", "1) ...", or Gemini "### 1. ..."
-                is_numbered = False
-                if line[0].isdigit() and (". " in line[:4] or ")" in line[:4]):
-                    is_numbered = True
-                elif line.startswith("#"):
-                    stripped_hashes = line.lstrip("# ")
-                    if stripped_hashes and stripped_hashes[0].isdigit() and (
-                        ". " in stripped_hashes[:4] or ")" in stripped_hashes[:4]
-                    ):
-                        is_numbered = True
-
-                if is_numbered:
-                    flush_concern()
-                    text = line.lstrip("#").lstrip(" ").lstrip("0123456789.-) ").strip()
-                    if text:
-                        current_concern_lines.append(text)
-                elif line.startswith(("-", "•", "*")):
-                    text = line.lstrip("-•* ").strip()
-                    if text and current_concern_lines:
-                        current_concern_lines.append(text)
-                elif current_concern_lines:
-                    current_concern_lines.append(line)
-
-            flush_concern()
+            # Try JSON parsing first, fall back to numbered-list regex
+            local_concerns = _parse_json_concerns(response, adversary_key, model)
+            if local_concerns is not None:
+                print(
+                    f"    {adversary_key}@{model}: parsed {len(local_concerns)} concerns (json)",
+                    file=sys.stderr,
+                )
+            else:
+                local_concerns = _parse_numbered_list(response, adversary_key, model)
+                if local_concerns:
+                    print(
+                        f"    {adversary_key}@{model}: parsed {len(local_concerns)} concerns (regex fallback)",
+                        file=sys.stderr,
+                    )
 
             for c in local_concerns:
                 if len(c.text) < 80 and ("quote" in c.text.lower() or c.text.startswith('"')):

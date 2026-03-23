@@ -1,10 +1,11 @@
 """Regression tests for Phase 1 attack generation."""
 
-import pytest
+import json
 
+import pytest
 from adversaries import MINIMALIST
 from gauntlet.core_types import Concern, GauntletConfig
-from gauntlet.phase_1_attacks import generate_attacks
+from gauntlet.phase_1_attacks import _parse_json_concerns, generate_attacks
 
 
 def test_generate_attacks_rejects_empty_adversary_list():
@@ -22,7 +23,7 @@ def test_generate_attacks_uses_prompt_override(monkeypatch):
     """Approved prompt text should override the static registry persona."""
     captured = {}
 
-    def fake_call_model(model, system_prompt, user_message, timeout, codex_reasoning):  # noqa: ANN001
+    def fake_call_model(model, system_prompt, user_message, timeout, codex_reasoning, json_mode=False):  # noqa: ANN001
         captured["system_prompt"] = system_prompt
         return "1. Override concern", 10, 5
 
@@ -47,7 +48,7 @@ def test_generate_attacks_resolves_alias_before_static_fallback(monkeypatch):
     """Legacy adversary names should inherit the canonical persona fallback."""
     captured = {}
 
-    def fake_call_model(model, system_prompt, user_message, timeout, codex_reasoning):  # noqa: ANN001
+    def fake_call_model(model, system_prompt, user_message, timeout, codex_reasoning, json_mode=False):  # noqa: ANN001
         captured["system_prompt"] = system_prompt
         return "1. Alias concern", 10, 5
 
@@ -76,7 +77,7 @@ def test_parse_detects_numbered_list(monkeypatch):
 2. No timeout configuration for API calls
 3. Authentication tokens are not rotated"""
 
-    def fake_call_model(model, system_prompt, user_message, timeout, codex_reasoning):
+    def fake_call_model(model, system_prompt, user_message, timeout, codex_reasoning, json_mode=False):
         return response, 100, 50
 
     monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
@@ -97,7 +98,7 @@ The API has no rate limiting which could lead to abuse.
 ### 2. No input validation
 User inputs are not sanitized before processing."""
 
-    def fake_call_model(model, system_prompt, user_message, timeout, codex_reasoning):
+    def fake_call_model(model, system_prompt, user_message, timeout, codex_reasoning, json_mode=False):
         return response, 100, 50
 
     monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
@@ -117,7 +118,7 @@ def test_parse_failure_detection_nonempty_response_zero_concerns(monkeypatch):
 The authentication mechanism is poorly defined and the error
 handling strategy is missing entirely from the document."""
 
-    def fake_call_model(model, system_prompt, user_message, timeout, codex_reasoning):
+    def fake_call_model(model, system_prompt, user_message, timeout, codex_reasoning, json_mode=False):
         return response, 100, 50
 
     monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
@@ -183,3 +184,174 @@ def test_quality_gate_ignores_empty_responses():
     # Only burned_oncall is a parse failure (non-empty + 0 concerns)
     assert len(failures) == 1
     assert failures[0]["adversary"] == "burned_oncall"
+
+
+# =============================================================================
+# T8: JSON parsing and fallback chain
+# =============================================================================
+
+
+class TestJsonParsing:
+    """Tests for structured JSON concern parsing."""
+
+    def test_parses_valid_json_concerns(self):
+        """Valid JSON with concerns array → list of Concern objects."""
+        response = json.dumps({
+            "concerns": [
+                {"text": "Missing error handling for API calls", "severity": "high"},
+                {"text": "No rate limiting configured", "severity": "medium"},
+            ]
+        })
+        result = _parse_json_concerns(response, "paranoid_security", "test-model")
+        assert result is not None
+        assert len(result) == 2
+        assert result[0].text == "Missing error handling for API calls"
+        assert result[0].severity == "high"
+        assert result[0].adversary == "paranoid_security"
+        assert result[0].source_model == "test-model"
+        assert result[1].severity == "medium"
+
+    def test_returns_none_for_non_json(self):
+        """Non-JSON response → None (triggers regex fallback)."""
+        result = _parse_json_concerns(
+            "1. Missing error handling\n2. No rate limiting",
+            "paranoid_security", "test-model",
+        )
+        assert result is None
+
+    def test_returns_none_for_empty_concerns(self):
+        """JSON with empty concerns array → None (triggers fallback)."""
+        result = _parse_json_concerns(
+            json.dumps({"concerns": []}),
+            "paranoid_security", "test-model",
+        )
+        assert result is None
+
+    def test_deduplicates_json_concerns(self):
+        """Duplicate text in JSON → deduplicated."""
+        response = json.dumps({
+            "concerns": [
+                {"text": "Same concern", "severity": "high"},
+                {"text": "Same concern", "severity": "medium"},
+            ]
+        })
+        result = _parse_json_concerns(response, "para", "m")
+        assert result is not None
+        assert len(result) == 1
+
+    def test_normalizes_invalid_severity(self):
+        """Unknown severity → defaults to medium."""
+        response = json.dumps({
+            "concerns": [{"text": "A concern", "severity": "critical"}]
+        })
+        result = _parse_json_concerns(response, "para", "m")
+        assert result is not None
+        assert result[0].severity == "medium"
+
+    def test_skips_items_without_text(self):
+        """Items missing text field → skipped."""
+        response = json.dumps({
+            "concerns": [
+                {"severity": "high"},
+                {"text": "Valid concern", "severity": "low"},
+                {"text": "", "severity": "medium"},
+            ]
+        })
+        result = _parse_json_concerns(response, "para", "m")
+        assert result is not None
+        assert len(result) == 1
+        assert result[0].text == "Valid concern"
+
+
+class TestJsonFallbackChain:
+    """Tests for JSON-first with regex fallback in generate_attacks."""
+
+    def test_json_response_parsed_as_json(self, monkeypatch):
+        """Model returns JSON → parsed via JSON path, not regex."""
+        json_response = json.dumps({
+            "concerns": [
+                {"text": "Missing auth", "severity": "high"},
+                {"text": "No retries", "severity": "medium"},
+            ]
+        })
+
+        def fake_call_model(model, system_prompt, user_message, timeout, codex_reasoning, json_mode=False):
+            return json_response, 100, 50
+
+        monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
+        monkeypatch.setattr("gauntlet.phase_1_attacks.cost_tracker.add", lambda *a: None)
+
+        concerns, _, raw = generate_attacks(
+            spec="spec", adversaries=["paranoid_security"],
+            models=["test-model"], config=GauntletConfig(),
+        )
+        assert len(concerns) == 2
+        assert concerns[0].severity == "high"
+
+    def test_numbered_list_falls_back_to_regex(self, monkeypatch):
+        """Model ignores JSON request, returns numbered list → regex fallback."""
+        response = "1. Missing error handling\n2. No timeout configuration"
+
+        def fake_call_model(model, system_prompt, user_message, timeout, codex_reasoning, json_mode=False):
+            return response, 100, 50
+
+        monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
+        monkeypatch.setattr("gauntlet.phase_1_attacks.cost_tracker.add", lambda *a: None)
+
+        concerns, _, _ = generate_attacks(
+            spec="spec", adversaries=["paranoid_security"],
+            models=["test-model"], config=GauntletConfig(),
+        )
+        assert len(concerns) == 2
+
+    def test_json_prompt_used(self, monkeypatch):
+        """Attack prompt should request JSON output format."""
+        captured = {}
+
+        def fake_call_model(model, system_prompt, user_message, timeout, codex_reasoning, json_mode=False):
+            captured["user_message"] = user_message
+            captured["json_mode"] = json_mode
+            return json.dumps({"concerns": [{"text": "c1", "severity": "low"}]}), 10, 5
+
+        monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
+        monkeypatch.setattr("gauntlet.phase_1_attacks.cost_tracker.add", lambda *a: None)
+
+        generate_attacks(
+            spec="spec", adversaries=["paranoid_security"],
+            models=["test-model"], config=GauntletConfig(),
+        )
+        assert "JSON" in captured["user_message"] or "json" in captured["user_message"]
+
+    def test_cli_model_does_not_use_json_mode_flag(self, monkeypatch):
+        """CLI models (codex/) should not pass json_mode=True."""
+        captured = {}
+
+        def fake_call_model(model, system_prompt, user_message, timeout, codex_reasoning, json_mode=False):
+            captured["json_mode"] = json_mode
+            return json.dumps({"concerns": [{"text": "c1", "severity": "low"}]}), 10, 5
+
+        monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
+        monkeypatch.setattr("gauntlet.phase_1_attacks.cost_tracker.add", lambda *a: None)
+
+        generate_attacks(
+            spec="spec", adversaries=["paranoid_security"],
+            models=["codex/gpt-5.4"], config=GauntletConfig(),
+        )
+        assert captured["json_mode"] is False
+
+    def test_litellm_model_uses_json_mode_flag(self, monkeypatch):
+        """LiteLLM-path models should pass json_mode=True."""
+        captured = {}
+
+        def fake_call_model(model, system_prompt, user_message, timeout, codex_reasoning, json_mode=False):
+            captured["json_mode"] = json_mode
+            return json.dumps({"concerns": [{"text": "c1", "severity": "low"}]}), 10, 5
+
+        monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
+        monkeypatch.setattr("gauntlet.phase_1_attacks.cost_tracker.add", lambda *a: None)
+
+        generate_attacks(
+            spec="spec", adversaries=["paranoid_security"],
+            models=["claude-opus-4-6"], config=GauntletConfig(),
+        )
+        assert captured["json_mode"] is True
