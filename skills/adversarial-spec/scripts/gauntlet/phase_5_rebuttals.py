@@ -13,33 +13,8 @@ from typing import Optional
 from adversaries import ADVERSARIES
 from gauntlet.core_types import PROGRAMMING_BUGS, Evaluation, GauntletConfig, Rebuttal
 from gauntlet.model_dispatch import call_model, get_rate_limit_config
+from gauntlet.prompts import REBUTTAL_PROMPT
 from models import cost_tracker
-
-# =============================================================================
-# PROMPT
-# =============================================================================
-
-REBUTTAL_PROMPT = """The frontier model dismissed your concern with this reasoning:
-
-{dismissal_reasoning}
-
-Evaluate this dismissal. You have two options:
-
-OPTION A - ACCEPT DISMISSAL:
-If the dismissal is logically sound, respond with:
-"ACCEPTED: [brief acknowledgment that the reasoning is valid]"
-
-OPTION B - CHALLENGE DISMISSAL:
-If the dismissal is NOT logically sound, respond with:
-"CHALLENGED: [specific counter-evidence or logical flaw]"
-
-RULES:
-1. No emotional language ("that's unfair", "they're ignoring me")
-2. No appeals to authority ("but I'm the security expert")
-3. Only logic and evidence
-4. If their reasoning is actually valid, accept it gracefully
-5. If you have new evidence, present it clearly
-"""
 
 
 def run_rebuttals(

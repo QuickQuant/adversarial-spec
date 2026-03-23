@@ -18,6 +18,7 @@ from gauntlet.model_dispatch import (
     call_model,
     get_rate_limit_config,
 )
+from gauntlet.prompts import ATTACK_SYSTEM_PROMPT, ATTACK_USER_PROMPT
 from models import cost_tracker
 
 
@@ -70,19 +71,8 @@ def generate_attacks(
                 or adversary.persona
             )
 
-        system_prompt = f"""You are an adversarial reviewer with this persona:
-
-{persona}
-
-Your job is to find problems with the specification below. Be aggressive.
-Output a numbered list of concerns. Each concern should be a potential problem
-you've identified. Don't hold back - even if you're not 100% sure, raise it."""
-
-        user_message = f"""Review this specification and identify all potential problems:
-
-{spec}
-
-Output your concerns as a numbered list. Be specific and cite parts of the spec."""
+        system_prompt = ATTACK_SYSTEM_PROMPT.format(persona=persona)
+        user_message = ATTACK_USER_PROMPT.format(spec=spec)
 
         try:
             response, in_tokens, out_tokens = call_model(

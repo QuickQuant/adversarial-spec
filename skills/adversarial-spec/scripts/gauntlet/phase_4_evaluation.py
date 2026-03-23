@@ -17,6 +17,7 @@ from gauntlet.model_dispatch import (
     call_model,
     get_rate_limit_config,
 )
+from gauntlet.prompts import EVALUATION_SYSTEM_PROMPT
 from models import cost_tracker
 
 
@@ -59,32 +60,7 @@ def evaluate_concerns(
             protocols_text += "Invalid dismissal: Be careful of handwaving\n"
             protocols_text += "Rule: Be rigorous\n"
 
-    system_prompt = f"""You are a senior engineer evaluating concerns raised by adversarial reviewers.
-
-For each concern, you must decide:
-- DISMISS: The concern is not valid (must cite specific evidence)
-- ACCEPT: The concern is valid (spec needs revision)
-- ACKNOWLEDGE: The concern is valid and insightful, but won't be addressed due to external constraints (out of scope, known tradeoff, business decision, etc.)
-- DEFER: Need more context to decide
-
-IMPORTANT: Use ACKNOWLEDGE when the adversary raised a GOOD point that you appreciate them thinking about, but you're choosing not to act on it for reasons they couldn't have known. This credits the adversary for valuable thinking without requiring spec changes.
-
-RESPONSE PROTOCOLS:{protocols_text}
-
-CRITICAL RULES:
-1. No emotional language - just logic and evidence
-2. For DISMISS: You MUST cite specific reasons from the spec or architecture
-3. For ACCEPT: Briefly note what needs to change
-4. For ACKNOWLEDGE: Note why the point is valid AND why it's not being addressed
-5. For DEFER: Note what information is missing
-
-Output your evaluation as JSON with this structure:
-{{
-  "evaluations": [
-    {{"concern_index": 0, "verdict": "dismissed|accepted|acknowledged|deferred", "reasoning": "..."}},
-    ...
-  ]
-}}"""
+    system_prompt = EVALUATION_SYSTEM_PROMPT.format(protocols_text=protocols_text)
 
     user_message = f"""## SPECIFICATION
 {spec}

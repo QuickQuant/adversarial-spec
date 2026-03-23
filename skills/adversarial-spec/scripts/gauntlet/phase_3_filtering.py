@@ -32,6 +32,7 @@ from gauntlet.persistence import (
     load_resolved_concerns,
     record_explanation_match,
 )
+from gauntlet.prompts import CLUSTERING_PROMPT, EXPLANATION_MATCHING_PROMPT
 from models import cost_tracker
 
 # =============================================================================
@@ -85,19 +86,7 @@ def find_matching_explanation(
         for i, c in relevant_with_conf
     )
 
-    system_prompt = """You are checking if a concern has already been addressed.
-
-Compare the NEW CONCERN against the EXISTING EXPLANATIONS.
-
-STRICT MATCHING RULES:
-1. Only match if the explanation DIRECTLY and COMPLETELY addresses the concern
-2. Partial matches = NO_MATCH (the concern has aspects not covered)
-3. Vague explanations = NO_MATCH (can't verify they apply)
-4. Consider the confidence level shown - low confidence means be MORE skeptical
-
-Output ONLY ONE of:
-- "MATCH: [index]" - The explanation at [index] FULLY addresses this exact concern
-- "NO_MATCH" - No explanation fully covers this concern"""
+    system_prompt = EXPLANATION_MATCHING_PROMPT
 
     user_prompt = f"""NEW CONCERN:
 {concern_text}
@@ -249,37 +238,7 @@ def cluster_concerns_with_provenance(
         for idx, c in enumerate(candidate_reps, 1)
     )
 
-    system_prompt = """You cluster near-duplicate engineering concerns.
-
-Goal: Merge concerns that describe the SAME underlying issue in different words.
-
-Rules:
-1. Merge ONLY when the root cause AND required mitigation are the same.
-2. Do NOT merge concerns that are thematically related but require different fixes.
-3. Every concern index must appear in exactly one cluster.
-4. When in doubt, keep concerns SEPARATE. Over-merging loses insights.
-
-## GOOD merges (same root cause, same fix):
-- "Fill events could be lost if DB write fails midway" + "No transactional guarantee for fill event insertion" → MERGE (both about atomicity of fill writes, same fix: wrap in transaction)
-- "getMyFills has no pagination" + "Fill query returns unbounded results" → MERGE (both about missing pagination on the same endpoint)
-- "Status filter uses wrong enum values" + "getActiveAlgoStates filters on 'executing' but DB has 'working'" → MERGE (same bug described at different abstraction levels)
-- "No auth check on /devtest" + "Dev test page accessible without authentication" → MERGE (identical concern, different wording)
-
-## BAD merges (related topic but DIFFERENT root causes or fixes):
-- "Fill events lost during concurrent writes" + "Fill events lost if mutation fails midway" → DO NOT MERGE (first is race condition needing locking, second is atomicity needing transactions)
-- "getMyFills missing exchange field" + "getMyExecutions missing exchange field" → DO NOT MERGE (different endpoints, different code paths, fixed independently)
-- "DMA orders show 0/0 progress" + "Arb orders show wrong leg count" → DO NOT MERGE (different order types, different display bugs, different fixes)
-- "No rate limiting on order placement" + "No rate limiting on fill queries" → DO NOT MERGE (different endpoints, different risk profiles)
-
-Output JSON only:
-{
-  "clusters": [
-    [1, 7, 14],
-    [2],
-    [3, 9]
-  ]
-}
-"""
+    system_prompt = CLUSTERING_PROMPT
 
     user_prompt = f"""Cluster these concerns by semantic equivalence.
 Remember: only merge when root cause AND fix are the same. When in doubt, keep separate.

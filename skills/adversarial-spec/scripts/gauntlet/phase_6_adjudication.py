@@ -11,6 +11,7 @@ import sys
 
 from gauntlet.core_types import PROGRAMMING_BUGS, Concern, GauntletConfig, Rebuttal
 from gauntlet.model_dispatch import call_model
+from gauntlet.prompts import ADJUDICATION_SYSTEM_PROMPT
 from models import cost_tracker
 
 
@@ -43,21 +44,7 @@ def final_adjudication(
         for i, r in enumerate(challenged)
     )
 
-    system_prompt = """You are making final decisions on challenged dismissals.
-
-For each challenge, decide:
-- UPHELD: The original dismissal was correct despite the challenge
-- OVERTURNED: The challenge reveals a valid concern that needs addressing
-
-Be rigorous. If the adversary raised a valid logical point, overturn the dismissal.
-
-Output as JSON:
-{
-  "decisions": [
-    {"challenge_index": 0, "verdict": "upheld|overturned", "reasoning": "..."},
-    ...
-  ]
-}"""
+    system_prompt = ADJUDICATION_SYSTEM_PROMPT
 
     user_message = f"""## SPECIFICATION
 {spec}

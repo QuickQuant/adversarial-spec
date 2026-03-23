@@ -8,64 +8,15 @@ from __future__ import annotations
 
 import sys
 
-from gauntlet.core_types import PROGRAMMING_BUGS, BigPictureSynthesis, Concern, GauntletConfig
+from gauntlet.core_types import (
+    PROGRAMMING_BUGS,
+    BigPictureSynthesis,
+    Concern,
+    GauntletConfig,
+)
 from gauntlet.model_dispatch import call_model
+from gauntlet.prompts import BIG_PICTURE_PROMPT, SYNTHESIS_SYSTEM_PROMPT
 from models import cost_tracker
-
-
-# =============================================================================
-# PROMPT
-# =============================================================================
-
-BIG_PICTURE_PROMPT = """You are analyzing ALL concerns raised by adversarial reviewers about a spec.
-Your job is to look at these concerns HOLISTICALLY and synthesize insights that individual
-evaluation would miss.
-
-## Concerns by Adversary
-
-{concerns_by_adversary}
-
-## Your Analysis
-
-Look at these concerns as a WHOLE. What story do they tell?
-
-1. **THE REAL ISSUES**: Looking across all adversaries, what are the 2-4 things that
-   actually matter most? Cut through the noise. What would you tell the spec author
-   if you only had 30 seconds?
-
-2. **HIDDEN CONNECTIONS**: Where do concerns from different adversaries connect in
-   ways they don't realize? Security concern X and operations concern Y might be
-   the same underlying issue.
-
-3. **WHAT'S MISSING**: Given all the concerns raised, what DIDN'T anyone catch?
-   Is there a blind spot? Sometimes the most important insight is what's absent.
-
-4. **THE META-CONCERN**: If these concerns had one parent concern that generated
-   them all, what would it be? "The spec doesn't understand X" or "The architecture
-   is fighting against Y."
-
-5. **HIGH-SIGNAL ALERTS**: If you had to prioritize the evaluator's attention,
-   which 2-3 concerns deserve the most careful review? Why?
-
-Be concise and insightful. Don't just summarize - synthesize.
-
-Format:
-
-REAL_ISSUES:
-- [Issue 1]
-- [Issue 2]
-
-HIDDEN_CONNECTIONS:
-- [Connection 1]
-
-WHATS_MISSING:
-- [Gap 1]
-
-META_CONCERN: [One sentence]
-
-HIGH_SIGNAL:
-- [Concern ID or quote]: [why it matters]
-"""
 
 
 def generate_big_picture_synthesis(
@@ -98,7 +49,7 @@ def generate_big_picture_synthesis(
     try:
         response, in_tokens, out_tokens = call_model(
             model=model,
-            system_prompt="You are an expert at pattern recognition and synthesis.",
+            system_prompt=SYNTHESIS_SYSTEM_PROMPT,
             user_message=prompt,
             timeout=config.timeout,
             codex_reasoning=config.attack_codex_reasoning,
