@@ -208,7 +208,7 @@ Use structured metadata to track tasks throughout the workflow. Different task t
   "doc_type": "spec",
   "depth": "technical",
   "round": 3,
-  "models": ["gpt-5.3", "gemini-3-pro"],
+  "models": ["gpt-5.4", "gemini-3-pro"],
   "roadmap_milestone": "M1"
 }
 
@@ -407,7 +407,7 @@ Large log files may exceed model context limits. Best practices:
 Round 1 - Initial Investigation:
 > User submits: "Orders page takes 60+ seconds to load, sometimes blank"
 >
-> Model A (codex/gpt-5.3-codex) suggests: "We need a caching layer with TTL and circuit breaker pattern"
+> Model A (codex/gpt-5.4) suggests: "We need a caching layer with TTL and circuit breaker pattern"
 >
 > Model B (claude) challenges: "Before designing infrastructure, what do the logs show? Have we measured where the 60 seconds is spent?"
 >
@@ -429,7 +429,7 @@ Round 3 - Proportional Fix:
 
 **Example invocation:**
 ```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.3-codex,gemini-cli/gemini-3-pro-preview --doc-type debug <<'SPEC_EOF'
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.4,gemini-cli/gemini-3-pro-preview --doc-type debug <<'SPEC_EOF'
 # Debug Investigation: Orders Page 60s Load Time
 
 ## Symptoms

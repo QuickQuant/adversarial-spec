@@ -9,6 +9,7 @@ After spec debate converges, define the shared architecture patterns before the 
 **Inputs:**
 - Converged spec draft
 - Roadmap / user stories
+- `.architecture/manifest.json` concerns[] (optional — from `/mapcodebase`)
 - `.architecture/manifest.json` patterns[] (optional — from `/mapcodebase`)
 - Framework documentation (via Context7 / web)
 - gemini-bundle findings (optional)
@@ -41,10 +42,11 @@ If skip: log Decision Journal entry with `decision: "skip"`, transition directly
 Architecture drafted from scratch (Steps 3-5).
 
 **Brownfield (existing codebase):**
-1. Load `.architecture/primer.md`, then relevant component docs, then `.architecture/overview.md` only if the system narrative is still unclear
-2. List all `warning`/`error` patterns from `manifest.json` `patterns[]`
-3. Load gemini-bundle findings if available
-4. Focus: "what new patterns does this spec need?" + "which existing patterns need adjustment?"
+1. Load `.architecture/primer.md`, then `.architecture/concerns.md` if it exists, then relevant component docs, then `.architecture/overview.md` only if the system narrative is still unclear
+2. List all `now` / `next` concerns from `manifest.json` `concerns[]` when available
+3. List all `warning`/`error` patterns from `manifest.json` `patterns[]`
+4. Load gemini-bundle findings if available
+5. Focus: "what new patterns does this spec need?" + "which existing patterns or concerns does it need to resolve rather than reinforce?"
 
 ---
 
@@ -103,6 +105,8 @@ Produce `specs/<slug>/target-architecture.md`:
 **Implementation sketch:** [code snippets or file structure]
 **Applies to:** [which user stories / features]
 ```
+
+If `concerns[]` available from mapcodebase: each `now` concern should either be addressed explicitly by the target architecture or explicitly declared out of scope with rationale.
 
 If `patterns[]` available from mapcodebase: each `warning`/`error` pattern gets a corresponding section explaining how it's addressed.
 

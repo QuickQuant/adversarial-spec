@@ -131,7 +131,7 @@ After the user review period, or if explicitly requested:
    ```
 
 **Use cases for additional cycles:**
-- First cycle with faster models (gemini-cli/gemini-3-flash-preview), second cycle with stronger models (codex/gpt-5.3-codex, gemini-cli/gemini-3-pro-preview)
+- First cycle with faster models (gemini-cli/gemini-3-flash-preview), second cycle with stronger models (codex/gpt-5.4, gemini-cli/gemini-3-pro-preview)
 - First cycle for structure and completeness, second cycle for security or performance focus
 - Fresh perspective after user-requested changes
 

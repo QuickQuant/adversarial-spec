@@ -177,11 +177,14 @@ cat .architecture/INDEX.md 2>/dev/null
 # 2. Read primer.md — the default small-context architecture payload
 cat .architecture/primer.md 2>/dev/null
 
-# 3. Escalate to overview.md only if the phase needs more system context
+# 3. Read concerns.md when you need fix-first architecture debt or drift context
+# [ -f ".architecture/concerns.md" ] && cat .architecture/concerns.md 2>/dev/null
+
+# 4. Escalate to overview.md only if the phase needs more system context
 # e.g. target-architecture, debate round 2+, or gauntlet
 # [ -f ".architecture/overview.md" ] && cat .architecture/overview.md 2>/dev/null
 
-# 4. Select 2-4 component docs based on the session's blast zone
+# 5. Select 2-4 component docs based on the session's blast zone
 # Parse the spec/session requirements_summary for file paths and module names
 # Match those against the INDEX component table
 # Read matching component docs from .architecture/structured/components/
@@ -191,6 +194,7 @@ cat .architecture/primer.md 2>/dev/null
 - Parse the spec (or session `requirements_summary`) for file paths and module names
 - Match those against the INDEX component table
 - Default load is `primer.md`
+- Read `concerns.md` when the session needs fix-first architecture debt or drift context
 - For `requirements` and early startup, `primer.md` is usually enough
 - For `target-architecture`, `debate` round 2+, and `gauntlet`, load `primer.md` plus matched component docs
 - Escalate to `overview.md` when the task needs the full system narrative

@@ -18,7 +18,7 @@ GLOBAL_CONFIG_PATH = Path.home() / ".claude" / "adversarial-spec" / "config.json
 MODEL_COSTS = {
     # OpenAI API models
     "gpt-4o": {"input": 2.50, "output": 10.00},
-    "gpt-5.3": {"input": 5.00, "output": 15.00},
+    "gpt-5.4": {"input": 5.00, "output": 15.00},
     "o1": {"input": 15.00, "output": 60.00},
     # Anthropic models
     "claude-sonnet-4-5-20250929": {"input": 3.00, "output": 15.00},
@@ -34,9 +34,9 @@ MODEL_COSTS = {
     "zhipu/glm-4": {"input": 1.40, "output": 1.40},
     "zhipu/glm-4-plus": {"input": 7.00, "output": 7.00},
     # Codex CLI models (uses ChatGPT subscription, no per-token cost)
-    "codex/gpt-5.3-codex": {"input": 0.0, "output": 0.0},
     "codex/gpt-5.4": {"input": 0.0, "output": 0.0},
-    "codex/gpt-5.1-codex-max": {"input": 0.0, "output": 0.0},
+    "codex/gpt-5.4": {"input": 0.0, "output": 0.0},
+    "codex/gpt-5.4": {"input": 0.0, "output": 0.0},
     "codex/gpt-5.1-codex-mini": {"input": 0.0, "output": 0.0},
     # Gemini CLI models (uses Google account, no per-token cost)
     "gemini-cli/gemini-3-pro-preview": {"input": 0.0, "output": 0.0},
@@ -281,7 +281,7 @@ def list_providers():
         print("-" * 60 + "\n")
 
     providers = [
-        ("OpenAI", "OPENAI_API_KEY", "gpt-5.3"),
+        ("OpenAI", "OPENAI_API_KEY", "gpt-5.4"),
         (
             "Anthropic",
             "ANTHROPIC_API_KEY",
@@ -294,7 +294,7 @@ def list_providers():
         (
             "OpenRouter",
             "OPENROUTER_API_KEY",
-            "openrouter/openai/gpt-5.3, openrouter/anthropic/claude-sonnet-4-5",
+            "openrouter/openai/gpt-5.4, openrouter/anthropic/claude-sonnet-4-5",
         ),
         ("Deepseek", "DEEPSEEK_API_KEY", "deepseek/deepseek-chat"),
         ("Zhipu", "ZHIPUAI_API_KEY", "zhipu/glm-4, zhipu/glm-4-plus"),
@@ -314,7 +314,7 @@ def list_providers():
     # Codex CLI (uses ChatGPT subscription, not API key)
     codex_status = "[installed]" if CODEX_AVAILABLE else "[not installed]"
     print(f"  {'Codex CLI':12} {'(ChatGPT subscription)':24} {codex_status}")
-    print("             Example models: codex/gpt-5.3-codex, codex/gpt-5.1-codex-max")
+    print("             Example models: codex/gpt-5.4, codex/gpt-5.4")
     print(
         "             Reasoning: --codex-reasoning (minimal, low, medium, high, xhigh)"
     )
@@ -396,7 +396,7 @@ def get_available_providers() -> list[tuple[str, Optional[str], str]]:
 
     # Add Codex CLI if available
     if CODEX_AVAILABLE:
-        available.append(("Codex CLI", None, "codex/gpt-5.3-codex"))
+        available.append(("Codex CLI", None, "codex/gpt-5.4"))
 
     # Add Gemini CLI if available
     if GEMINI_CLI_AVAILABLE:

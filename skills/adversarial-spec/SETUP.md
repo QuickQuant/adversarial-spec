@@ -13,16 +13,16 @@ This document covers provider configuration. For usage, see [SKILL.md](SKILL.md)
 
 | Provider   | API Key Env Var        | Example Models                              |
 |------------|------------------------|---------------------------------------------|
-| OpenAI     | `OPENAI_API_KEY`       | `gpt-5.3`                                   |
+| OpenAI     | `OPENAI_API_KEY`       | `gpt-5.4`                                   |
 | Anthropic  | `ANTHROPIC_API_KEY`    | `claude-sonnet-4-5-20250929`, `claude-opus-4-6`  |
 | Google     | `GEMINI_API_KEY`       | `gemini/gemini-3-pro`, `gemini/gemini-3-flash` |
 | xAI        | `XAI_API_KEY`          | `xai/grok-3`, `xai/grok-beta`               |
 | Mistral    | `MISTRAL_API_KEY`      | `mistral/mistral-large`, `mistral/codestral`|
 | Groq       | `GROQ_API_KEY`         | `groq/llama-3.3-70b-versatile`              |
-| OpenRouter | `OPENROUTER_API_KEY`   | `openrouter/openai/gpt-5.3`, `openrouter/anthropic/claude-sonnet-4-5` |
+| OpenRouter | `OPENROUTER_API_KEY`   | `openrouter/openai/gpt-5.4`, `openrouter/anthropic/claude-sonnet-4-5` |
 | Deepseek   | `DEEPSEEK_API_KEY`     | `deepseek/deepseek-chat`                    |
 | Zhipu      | `ZHIPUAI_API_KEY`      | `zhipu/glm-4`, `zhipu/glm-4-plus`           |
-| Codex CLI  | (ChatGPT subscription) | `codex/gpt-5.3-codex`, `codex/gpt-5.1-codex-max` |
+| Codex CLI  | (ChatGPT subscription) | `codex/gpt-5.4`, `codex/gpt-5.4` |
 | Gemini CLI | (Google account)       | `gemini-cli/gemini-3-pro-preview`, `gemini-cli/gemini-3-flash-preview` |
 
 Run `python3 ~/.claude/skills/adversarial-spec/scripts/debate.py providers` to see which keys are set.

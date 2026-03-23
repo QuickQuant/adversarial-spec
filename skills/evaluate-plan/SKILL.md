@@ -1,13 +1,13 @@
 ---
 name: evaluate-plan
-description: Evaluate a plan file against mapcodebase 3.0 architecture docs. Use when the user wants to review a plan, decide whether architecture docs are fresh enough, identify the blast zone and matched components, or determine what exploration should happen before adversarial-spec or implementation.
+description: Evaluate a plan file against mapcodebase 3.x architecture docs. Use when the user wants to review a plan, decide whether architecture docs are fresh enough, identify the blast zone and matched components, or determine what exploration should happen before adversarial-spec or implementation.
 ---
 
 # Evaluate Plan
 
 Take a plan file, determine how much the current architecture docs can be trusted, and produce a focused next-step recommendation.
 
-This skill is a thin consumer over `mapcodebase 3.0`. It should not invent a second architecture system and it should not rediscover the codebase from scratch when fresh architecture docs already exist.
+This skill is a thin consumer over `mapcodebase 3.x`. It should not invent a second architecture system and it should not rediscover the codebase from scratch when fresh architecture docs already exist.
 
 ## Usage
 
@@ -59,12 +59,12 @@ Classify the architecture state:
 
 - `fresh`
   - manifest exists
-  - `schema_version = 2.0`
+  - `schema_version >= 2.0`
   - `primer.md` and `access-guide.md` exist
   - `manifest.git_hash` matches current `HEAD`, or the manifest clearly reports `freshness_status = fresh`
 
 - `caution`
-  - schema `2.0` exists
+  - schema `2.x` exists
   - accessor files exist
   - but `HEAD` differs from `manifest.git_hash`, or the manifest reports caution/drift
 
@@ -91,7 +91,7 @@ Present these options:
 
 If the user chooses option 1:
 - use full `/mapcodebase` for legacy output
-- use `/mapcodebase --update` only for existing 3.0 output that is merely stale
+- use `/mapcodebase --update` only for existing 3.x output that is merely stale
 - stop the evaluation until mapcodebase completes
 
 ### 3. Fresh-Docs Path
@@ -101,17 +101,18 @@ If architecture state is `fresh`, use the accessor layer in this order:
 1. Read `.architecture/INDEX.md` for navigation only
 2. Read `.architecture/primer.md`
 3. Read `.architecture/access-guide.md` if it helps choose depth
-4. Use `manifest.access_paths.plan_evaluation` if present
-5. Match the blast zone against:
+4. Read `.architecture/concerns.md` or `manifest.access_paths.actionable_concerns` when the plan touches known debt, drift, or risk areas
+5. Use `manifest.access_paths.plan_evaluation` if present
+6. Match the blast zone against:
    - `components[].key_files`
    - `components[].intent_tags`
-6. Read the 2-4 most relevant component docs from `.architecture/structured/components/`
-7. Read `.architecture/structured/cross-references.md` if the plan changes:
+7. Read the 2-4 most relevant component docs from `.architecture/structured/components/`
+8. Read `.architecture/structured/cross-references.md` if the plan changes:
    - contracts
    - routes
    - auth boundaries
    - data model / RPC surfaces
-8. Read `.architecture/structured/flows.md` only if the plan crosses component boundaries or introduces a new end-to-end flow
+9. Read `.architecture/structured/flows.md` only if the plan crosses component boundaries or introduces a new end-to-end flow
 
 Do not read the full architecture corpus by default.
 
@@ -171,6 +172,7 @@ Return two sections.
 - `Matched components:` component names plus why they matched
 - `Docs used:` exact architecture docs relied on
 - `What the docs already answer:` the useful context already present
+- `Relevant concerns:` known fix-first concerns that overlap the blast zone, if any
 - `Key contracts and boundaries:` types, data model surfaces, access boundaries, reusable components
 - `Risks / mismatches:` where the plan conflicts with existing architecture or live-vs-target drift
 - `What still needs exploration:` specific unanswered questions and target files
@@ -188,6 +190,7 @@ Return two sections.
 
 - `INDEX.md` is navigation only. Never treat it as substantive context.
 - `primer.md` is the default initial payload.
+- `concerns.md` is optional but high-value when it exists.
 - Do not default to `overview.md` or `flows.md` first.
 - Fresh architecture docs should guide exploration, not be ignored.
 - Legacy docs should not be treated as “good enough” without an explicit user choice.

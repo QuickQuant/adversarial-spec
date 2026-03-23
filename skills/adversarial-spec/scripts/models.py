@@ -369,7 +369,7 @@ def call_codex_model(
     Args:
         system_prompt: System instructions for the model
         user_message: User prompt to send
-        model: Model name (e.g., "codex/gpt-5.3-codex" -> uses "gpt-5.3-codex")
+        model: Model name (e.g., "codex/gpt-5.4" -> uses "gpt-5.4")
         reasoning_effort: Thinking level (minimal, low, medium, high, xhigh). Default: xhigh
         timeout: Timeout in seconds (default 10 minutes)
         search: Enable web search capability for Codex

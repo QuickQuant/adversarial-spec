@@ -5,7 +5,7 @@
 Direct models to prioritize specific concerns using `--focus`:
 
 ```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.3-codex --focus security --doc-type tech <<'SPEC_EOF'
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.4 --focus security --doc-type tech <<'SPEC_EOF'
 <spec here>
 SPEC_EOF
 ```
@@ -25,7 +25,7 @@ Run `python3 ~/.claude/skills/adversarial-spec/scripts/debate.py focus-areas` to
 Have models critique from specific professional perspectives using `--persona`:
 
 ```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.3-codex --persona "security-engineer" --doc-type tech <<'SPEC_EOF'
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.4 --persona "security-engineer" --doc-type tech <<'SPEC_EOF'
 <spec here>
 SPEC_EOF
 ```
@@ -51,7 +51,7 @@ Custom personas also work: `--persona "fintech compliance officer"`
 Include existing documents as context for the critique using `--context`:
 
 ```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.3-codex --context ./existing-api.md --context ./schema.sql --doc-type tech <<'SPEC_EOF'
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.4 --context ./existing-api.md --context ./schema.sql --doc-type tech <<'SPEC_EOF'
 <spec here>
 SPEC_EOF
 ```
@@ -68,7 +68,7 @@ Long debates can crash or need to pause. Sessions save state automatically:
 
 ```bash
 # Start a named session
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.3-codex --session my-feature-spec --doc-type tech <<'SPEC_EOF'
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.4 --session my-feature-spec --doc-type tech <<'SPEC_EOF'
 <spec here>
 SPEC_EOF
 
@@ -105,7 +105,7 @@ Use these to rollback if a revision makes things worse.
 API calls automatically retry with exponential backoff (1s, 2s, 4s) up to 3 times. If a model times out or rate-limits, you'll see:
 
 ```
-Warning: codex/gpt-5.3-codex failed (attempt 1/3): rate limit exceeded. Retrying in 1.0s...
+Warning: codex/gpt-5.4 failed (attempt 1/3): rate limit exceeded. Retrying in 1.0s...
 ```
 
 If all retries fail, the error is reported and other models continue.
@@ -115,7 +115,7 @@ If all retries fail, the error is reported and other models continue.
 If a model provides critique but doesn't include proper `[SPEC]` tags, a warning is displayed:
 
 ```
-Warning: codex/gpt-5.3-codex provided critique but no [SPEC] tags found. Response may be malformed.
+Warning: codex/gpt-5.4 provided critique but no [SPEC] tags found. Response may be malformed.
 ```
 
 This catches cases where models forget to format their revised spec correctly.
@@ -125,7 +125,7 @@ This catches cases where models forget to format their revised spec correctly.
 Convergence can collapse toward lowest-common-denominator interpretations, sanding off novel design choices. The `--preserve-intent` flag makes removals expensive:
 
 ```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.3-codex --preserve-intent --doc-type tech <<'SPEC_EOF'
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.4 --preserve-intent --doc-type tech <<'SPEC_EOF'
 <spec here>
 SPEC_EOF
 ```
@@ -160,7 +160,7 @@ Total tokens: 12,543 in / 3,221 out
 Total cost: $0.0847
 
 By model:
-  codex/gpt-5.3-codex: $0.00 (8,234 in / 2,100 out) [subscription]
+  codex/gpt-5.4: $0.00 (8,234 in / 2,100 out) [subscription]
   gemini-cli/gemini-3-pro-preview: $0.00 (4,309 in / 1,121 out) [free tier]
 ```
 
@@ -172,7 +172,7 @@ Save frequently used configurations as profiles:
 
 **Create a profile:**
 ```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py save-profile strict-security --models codex/gpt-5.3-codex,gemini-cli/gemini-3-pro-preview --focus security --doc-type tech
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py save-profile strict-security --models codex/gpt-5.4,gemini-cli/gemini-3-pro-preview --focus security --doc-type tech
 ```
 
 **Use a profile:**
@@ -209,7 +209,7 @@ Use this to see exactly what changed between rounds. Helpful for:
 Extract actionable tasks from a finalized spec:
 
 ```bash
-cat spec-output.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py export-tasks --models codex/gpt-5.3-codex --doc-type prd
+cat spec-output.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py export-tasks --models codex/gpt-5.4 --doc-type prd
 ```
 
 Output includes:
@@ -222,6 +222,6 @@ Output includes:
 Use `--json` for structured output suitable for importing into issue trackers:
 
 ```bash
-cat spec-output.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py export-tasks --models codex/gpt-5.3-codex --doc-type prd --json > tasks.json
+cat spec-output.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py export-tasks --models codex/gpt-5.4 --doc-type prd --json > tasks.json
 ```
 

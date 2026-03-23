@@ -4,16 +4,16 @@ Adversarial spec debate script.
 Sends specs to multiple LLMs for critique using LiteLLM.
 
 Usage:
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --doc-type spec --depth product
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --doc-type spec --depth technical
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --doc-type debug
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --focus security
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --persona "security engineer"
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --context ./api.md --context ./schema.sql
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --profile strict-security
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --preserve-intent
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --session my-debate
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.4
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --doc-type spec --depth product
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --doc-type spec --depth technical
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --doc-type debug
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --focus security
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --persona "security engineer"
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --context ./api.md --context ./schema.sql
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --profile strict-security
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --preserve-intent
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --session my-debate
     python3 debate.py critique --resume my-debate
     echo "spec" | python3 debate.py diff --previous prev.md --current current.md
     echo "spec" | python3 debate.py export-tasks --doc-type spec --depth product
@@ -22,14 +22,14 @@ Usage:
     python3 debate.py sessions
 
 Supported providers (set corresponding API key):
-    OpenAI:     OPENAI_API_KEY       models: gpt-5.3
+    OpenAI:     OPENAI_API_KEY       models: gpt-5.4
     Anthropic:  ANTHROPIC_API_KEY    models: claude-opus-4-6, claude-sonnet-4-5-20250929
     Google:     GEMINI_API_KEY       models: gemini/gemini-3-pro, gemini/gemini-3-flash
     xAI:        XAI_API_KEY          models: xai/grok-4, xai/grok-4.1-fast
     Mistral:    MISTRAL_API_KEY      models: mistral/mistral-large-3, mistral/mistral-medium-3
     Groq:       GROQ_API_KEY         models: groq/llama-4-maverick, groq/llama-3.3-70b-versatile
-    OpenRouter: OPENROUTER_API_KEY   models: openrouter/openai/gpt-5.3, openrouter/anthropic/claude-sonnet-4-5
-    Codex CLI:  (ChatGPT subscription) models: codex/gpt-5.3-codex, codex/gpt-5.1-codex-max
+    OpenRouter: OPENROUTER_API_KEY   models: openrouter/openai/gpt-5.4, openrouter/anthropic/claude-sonnet-4-5
+    Codex CLI:  (ChatGPT subscription) models: codex/gpt-5.4, codex/gpt-5.4
                 Install: npm install -g @openai/codex && codex login
                 Reasoning: --codex-reasoning xhigh (minimal, low, medium, high, xhigh)
     Claude CLI: (Anthropic subscription) models: claude-cli/claude-sonnet-4-6, claude-cli/claude-opus-4-6
@@ -319,7 +319,7 @@ def add_core_arguments(parser: argparse.ArgumentParser) -> None:
         "--models",
         "-m",
         default=None,
-        help="Comma-separated list of models (e.g., codex/gpt-5.3-codex,gemini-cli/gemini-3-pro-preview)",
+        help="Comma-separated list of models (e.g., codex/gpt-5.4,gemini-cli/gemini-3-pro-preview)",
     )
     parser.add_argument(
         "--doc-type",
@@ -554,10 +554,10 @@ def create_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex
-  echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --focus security
-  echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --persona "security engineer"
-  echo "spec" | python3 debate.py critique --models codex/gpt-5.3-codex --context ./api.md
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.4
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --focus security
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --persona "security engineer"
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --context ./api.md
   echo "spec" | python3 debate.py critique --profile my-security-profile
   python3 debate.py diff --previous old.md --current new.md
   echo "spec" | python3 debate.py export-tasks --doc-type spec --depth product
@@ -565,7 +565,7 @@ Examples:
   python3 debate.py focus-areas
   python3 debate.py personas
   python3 debate.py profiles
-  python3 debate.py save-profile myprofile --models codex/gpt-5.3-codex,gemini-cli/gemini-3-pro-preview --focus security
+  python3 debate.py save-profile myprofile --models codex/gpt-5.4,gemini-cli/gemini-3-pro-preview --focus security
 
 Gauntlet commands (adversarial attack on specs):
   echo "spec" | python3 debate.py gauntlet                   # Run gauntlet with all adversaries
@@ -842,13 +842,13 @@ def parse_models(args: argparse.Namespace) -> list[str]:
             )
             print("\nAvailable providers:", file=sys.stderr)
             print(
-                "  Codex CLI: Install codex CLI for codex/gpt-5.3-codex (FREE with ChatGPT subscription)", file=sys.stderr
+                "  Codex CLI: Install codex CLI for codex/gpt-5.4 (FREE with ChatGPT subscription)", file=sys.stderr
             )
             print(
                 "  Gemini CLI: Install gemini CLI for gemini-cli/gemini-3-pro-preview (FREE)", file=sys.stderr
             )
             print(
-                "  OpenAI:    Set OPENAI_API_KEY for gpt-5.3", file=sys.stderr
+                "  OpenAI:    Set OPENAI_API_KEY for gpt-5.4", file=sys.stderr
             )
             print(
                 "  Anthropic: Set ANTHROPIC_API_KEY for claude-opus-4-6, claude-sonnet-4-5",
@@ -875,7 +875,7 @@ def parse_models(args: argparse.Namespace) -> list[str]:
                 "  Zhipu:     Set ZHIPUAI_API_KEY for zhipu/glm-4-plus",
                 file=sys.stderr,
             )
-            print("\nOr specify models explicitly: --models codex/gpt-5.3-codex", file=sys.stderr)
+            print("\nOr specify models explicitly: --models codex/gpt-5.4", file=sys.stderr)
             print(
                 "\nRun 'python3 debate.py providers' to see which keys are set.",
                 file=sys.stderr,

@@ -255,7 +255,7 @@ python3 ~/.claude/skills/adversarial-spec/scripts/debate.py providers
 Then present available models to the user using AskUserQuestion with multiSelect. Build the options list based on which API keys are set:
 
 **If OPENAI_API_KEY is set, include:**
-- `gpt-5.3` - Frontier reasoning
+- `gpt-5.4` - Frontier reasoning
 
 **If ANTHROPIC_API_KEY is set, include:**
 - `claude-sonnet-4-5-20250929` - Claude Sonnet 4.5, excellent reasoning
@@ -282,7 +282,7 @@ Then present available models to the user using AskUserQuestion with multiSelect
 - `zhipu/glm-4-plus` - Enhanced GLM model
 
 **If Codex CLI is installed, include:**
-- `codex/gpt-5.3-codex` - OpenAI Codex with extended reasoning
+- `codex/gpt-5.4` - OpenAI Codex with extended reasoning
 
 **If Gemini CLI is installed, include:**
 - `gemini-cli/gemini-3-pro-preview` - Google Gemini 3 Pro
