@@ -2,14 +2,10 @@
 
 import builtins
 import json
-import sys
 import threading
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from gauntlet.core_types import BigPictureSynthesis, Concern, Evaluation
 from gauntlet.orchestrator import _load_approved_prompts, _resolve_and_filter_adversaries

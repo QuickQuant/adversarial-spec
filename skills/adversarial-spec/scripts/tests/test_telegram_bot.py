@@ -1,11 +1,7 @@
 """Tests for telegram_bot module."""
 
-import sys
 from io import StringIO
-from pathlib import Path
 from unittest.mock import MagicMock, patch
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from telegram_bot import (
     MAX_MESSAGE_LENGTH,

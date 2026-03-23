@@ -27,6 +27,7 @@ dependencies = [
     "filelock==3.16.1",
     "litellm==1.80.13",
     "mcp>=1.0.0",
+    "pydantic>=2.0",
 ]
 
 [project.optional-dependencies]
@@ -75,6 +76,7 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["skills/adversarial-spec/scripts/tests"]
+pythonpath = ["skills/adversarial-spec/scripts"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]

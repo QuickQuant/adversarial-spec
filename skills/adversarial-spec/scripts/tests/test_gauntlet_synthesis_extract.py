@@ -1,10 +1,7 @@
 """Contract tests for the gauntlet synthesis extraction tool."""
 
 import json
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from gauntlet import synthesis_extract
 

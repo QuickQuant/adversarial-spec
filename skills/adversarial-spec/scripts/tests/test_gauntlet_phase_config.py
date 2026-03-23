@@ -1,10 +1,6 @@
 """Contract tests for phase config threading in extracted gauntlet modules."""
 
 import inspect
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from gauntlet.core_types import Concern, Evaluation, GauntletConfig, Rebuttal
 from gauntlet.phase_2_synthesis import generate_big_picture_synthesis

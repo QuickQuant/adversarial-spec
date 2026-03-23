@@ -1,11 +1,6 @@
 """Tests for model calling logic with mocked API responses."""
 
-import sys
-from pathlib import Path
 from unittest.mock import MagicMock, patch
-
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from models import (
     CostTracker,
@@ -291,7 +286,7 @@ class TestCodexModelPath:
     @patch("models.cost_tracker", CostTracker())
     def test_codex_unavailable_returns_error(self):
         result = call_single_model(
-            model="codex/gpt-5.3-codex",
+            model="codex/gpt-5.4",
             spec="# Spec",
             round_num=1,
             doc_type="tech",

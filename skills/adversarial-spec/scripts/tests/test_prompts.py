@@ -1,11 +1,5 @@
 """Tests for prompts module."""
 
-import sys
-from pathlib import Path
-
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from prompts import (
     EXPORT_TASKS_PROMPT,
     FOCUS_AREAS,

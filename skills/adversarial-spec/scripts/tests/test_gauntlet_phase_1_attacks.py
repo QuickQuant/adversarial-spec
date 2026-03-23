@@ -1,11 +1,6 @@
 """Regression tests for Phase 1 attack generation."""
 
-import sys
-from pathlib import Path
-
 import pytest
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from adversaries import MINIMALIST
 from gauntlet.core_types import Concern, GauntletConfig

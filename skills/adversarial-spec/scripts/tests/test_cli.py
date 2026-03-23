@@ -1,14 +1,10 @@
 """Tests for CLI argument parsing and command routing."""
 
 import json
-import sys
 import tempfile
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
-
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
 class TestCLIProviders:

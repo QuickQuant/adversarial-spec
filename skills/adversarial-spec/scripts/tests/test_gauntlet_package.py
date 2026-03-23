@@ -1,11 +1,5 @@
 """Regression tests for the gauntlet package public surface."""
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-
 def test_gauntlet_shim_exports_exact_public_surface():
     """Step 0 must expose only the documented public symbols."""
     import gauntlet

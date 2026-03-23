@@ -1,14 +1,16 @@
 """Tests for session module."""
 
-import sys
+import json
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
+import pytest
+from filelock import FileLock, Timeout
 from session import SessionState, save_checkpoint
+from task_manager import TaskManager
+
+import mcp_tasks.server as task_server
 
 
 class TestSessionState:
@@ -221,6 +223,112 @@ class TestSaveCheckpoint:
                 save_checkpoint("# Test Spec", 2, session_id="my-session")
 
                 assert (checkpoint_dir / "my-session-round-2.md").exists()
+
+
+def _init_task_store(tasks_file: Path, payload: dict | None = None) -> None:
+    tasks_file.parent.mkdir(parents=True, exist_ok=True)
+    tasks_file.write_text(json.dumps(payload or {"tasks": [], "next_id": 1}))
+
+
+class TestMcpTaskStoreLocking:
+    def test_mutate_tasks_holds_lock_across_mutation(self, tmp_path):
+        project_dir = tmp_path / "project"
+        tasks_file = project_dir / ".claude" / "tasks.json"
+        _init_task_store(tasks_file)
+        observed = {}
+
+        def mutate(data: dict) -> dict:
+            contender = FileLock(f"{tasks_file}.lock")
+            with pytest.raises(Timeout):
+                contender.acquire(timeout=0.01)
+            observed["lock_sidecar_during_mutation"] = Path(f"{tasks_file}.lock").exists()
+            data["tasks"].append({"id": "1", "subject": "task"})
+            return data["tasks"][0]
+
+        created = task_server._mutate_tasks(mutate, project_dir=str(project_dir))
+
+        assert created["id"] == "1"
+        assert observed["lock_sidecar_during_mutation"] is True
+        assert json.loads(tasks_file.read_text())["tasks"][0]["id"] == "1"
+
+    def test_mutate_tasks_raises_task_store_busy_when_lock_held(self, tmp_path, monkeypatch):
+        project_dir = tmp_path / "project"
+        tasks_file = task_server.get_tasks_file(str(project_dir))
+        _init_task_store(tasks_file)
+
+        held_lock = FileLock(f"{tasks_file}.lock")
+        held_lock.acquire(timeout=0.01)
+        monkeypatch.setattr(task_server, "TASK_LOCK_TIMEOUT_SECONDS", 0.01)
+
+        try:
+            with pytest.raises(RuntimeError, match="TASK_STORE_BUSY"):
+                task_server._mutate_tasks(lambda data: None, project_dir=str(project_dir))
+        finally:
+            held_lock.release()
+
+    def test_mutate_tasks_raises_task_store_corrupt_for_invalid_json(self, tmp_path):
+        project_dir = tmp_path / "project"
+        tasks_file = task_server.get_tasks_file(str(project_dir))
+        tasks_file.write_text("{not valid json")
+
+        with pytest.raises(RuntimeError, match="TASK_STORE_CORRUPT"):
+            task_server._mutate_tasks(lambda data: None, project_dir=str(project_dir))
+
+    def test_save_tasks_unlocked_preserves_original_file_on_replace_failure(self, tmp_path, monkeypatch):
+        project_dir = tmp_path / "project"
+        tasks_file = task_server.get_tasks_file(str(project_dir))
+        _init_task_store(tasks_file, {"tasks": [{"id": "1"}], "next_id": 2})
+        original = json.loads(tasks_file.read_text())
+
+        def broken_replace(src: str, dst: str) -> None:
+            raise OSError("replace failed")
+
+        monkeypatch.setattr(task_server.os, "replace", broken_replace)
+
+        with pytest.raises(OSError, match="replace failed"):
+            task_server._save_tasks_unlocked(
+                {"tasks": [{"id": "2"}], "next_id": 3},
+                project_dir=str(project_dir),
+            )
+
+        assert json.loads(tasks_file.read_text()) == original
+        assert list(tasks_file.parent.glob("tasks.json*.tmp")) == []
+
+
+class TestTaskManagerLocking:
+    def test_create_task_leaves_lock_sidecar(self, tmp_path):
+        tasks_file = tmp_path / "project" / ".claude" / "tasks.json"
+        _init_task_store(tasks_file)
+        manager = TaskManager(tasks_file=tasks_file)
+
+        task = manager.create_task("Subject", "Description")
+
+        assert task.id == "1"
+        assert Path(f"{tasks_file}.lock").exists()
+
+    def test_create_task_raises_task_store_busy_when_lock_held(self, tmp_path, monkeypatch):
+        tasks_file = tmp_path / "project" / ".claude" / "tasks.json"
+        _init_task_store(tasks_file)
+        manager = TaskManager(tasks_file=tasks_file)
+
+        held_lock = FileLock(f"{tasks_file}.lock")
+        held_lock.acquire(timeout=0.01)
+        monkeypatch.setattr("task_manager.TASK_LOCK_TIMEOUT_SECONDS", 0.01)
+
+        try:
+            with pytest.raises(RuntimeError, match="TASK_STORE_BUSY"):
+                manager.create_task("Subject", "Description")
+        finally:
+            held_lock.release()
+
+    def test_create_task_raises_task_store_corrupt_for_invalid_json(self, tmp_path):
+        tasks_file = tmp_path / "project" / ".claude" / "tasks.json"
+        tasks_file.parent.mkdir(parents=True, exist_ok=True)
+        tasks_file.write_text("{not valid json")
+        manager = TaskManager(tasks_file=tasks_file)
+
+        with pytest.raises(RuntimeError, match="TASK_STORE_CORRUPT"):
+            manager.create_task("Subject", "Description")
 
     def test_save_checkpoint_creates_nested_directories(self):
         # Mutation: parents=True → parents=False would fail

@@ -1,11 +1,6 @@
 """Tests for models module."""
 
-import sys
-from pathlib import Path
 from unittest.mock import Mock, patch
-
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from models import (
     MAX_RETRIES,
@@ -554,11 +549,11 @@ class TestCallCodexModel:
             stdout='{"type":"item.completed","item":{"type":"agent_message","text":"Response"}}\n{"type":"turn.completed","usage":{"input_tokens":100,"output_tokens":50}}',
             stderr="",
         )
-        response, inp, out = call_codex_model("sys", "user", "codex/gpt-5.3-codex")
+        response, inp, out = call_codex_model("sys", "user", "codex/gpt-5.4")
         # Verify model name was extracted and passed to command
         cmd = mock_run.call_args[0][0]
-        assert "gpt-5.3-codex" in cmd
-        assert "codex/gpt-5.3-codex" not in cmd
+        assert "gpt-5.4" in cmd
+        assert "codex/gpt-5.4" not in cmd
 
     @patch("models.CODEX_AVAILABLE", True)
     @patch("models.subprocess.run")

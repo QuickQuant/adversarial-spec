@@ -1,13 +1,9 @@
 """Tests for providers module."""
 
 import json
-import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
-
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from providers import (
     BEDROCK_MODEL_MAP,
@@ -27,13 +23,13 @@ class TestModelCosts:
     def test_model_costs_has_expected_models(self):
         expected = [
             "gpt-4o",
-            "gpt-5.3",
+            "gpt-5.4",
             "gemini/gemini-3-flash",
             "xai/grok-3",
             "mistral/mistral-large",
             "deepseek/deepseek-chat",
             "zhipu/glm-4",
-            "codex/gpt-5.3-codex",
+            "codex/gpt-5.4",
         ]
         for model in expected:
             assert model in MODEL_COSTS
@@ -831,14 +827,14 @@ class TestValidateModelCredentials:
         from providers import validate_model_credentials
 
         with patch("providers.CODEX_AVAILABLE", True):
-            valid, invalid = validate_model_credentials(["codex/gpt-5.3-codex"])
-            assert valid == ["codex/gpt-5.3-codex"]
+            valid, invalid = validate_model_credentials(["codex/gpt-5.4"])
+            assert valid == ["codex/gpt-5.4"]
             assert invalid == []
 
         with patch("providers.CODEX_AVAILABLE", False):
-            valid, invalid = validate_model_credentials(["codex/gpt-5.3-codex"])
+            valid, invalid = validate_model_credentials(["codex/gpt-5.4"])
             assert valid == []
-            assert invalid == ["codex/gpt-5.3-codex"]
+            assert invalid == ["codex/gpt-5.4"]
 
     def test_validates_gemini_cli_availability(self):
         from providers import validate_model_credentials
