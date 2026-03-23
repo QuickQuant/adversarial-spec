@@ -425,8 +425,9 @@ def add_codex_arguments(parser: argparse.ArgumentParser) -> None:
     """Add Codex CLI arguments to parser."""
     parser.add_argument(
         "--codex-reasoning",
+        "--attack-codex-reasoning",
         default=DEFAULT_CODEX_REASONING,
-        choices=["low", "medium", "high", "xhigh"],
+        choices=["minimal", "low", "medium", "high", "xhigh"],
         help=f"Reasoning effort for Codex CLI models (default: {DEFAULT_CODEX_REASONING})",
     )
     parser.add_argument(
@@ -471,19 +472,23 @@ def add_gauntlet_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--gauntlet-adversaries",
+        "--adversaries",
         default="all",
         help="Comma-separated adversaries or 'all' (paranoid_security,burned_oncall,lazy_developer,pedantic_nitpicker,asshole_loner)",
     )
     parser.add_argument(
         "--gauntlet-model",
+        "--adversary-model",
         help="Model for adversary attacks (default: auto-select free model)",
     )
     parser.add_argument(
         "--gauntlet-attack-models",
+        "--attack-models",
         help="Comma-separated models for adversary attacks (overrides --gauntlet-model)",
     )
     parser.add_argument(
         "--gauntlet-frontier",
+        "--eval-model",
         help="Model for evaluation (default: auto-select frontier model)",
     )
     parser.add_argument(
