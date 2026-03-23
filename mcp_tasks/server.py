@@ -6,15 +6,22 @@ Provides TaskCreate, TaskGet, TaskList, TaskUpdate tools for cross-agent task co
 Tasks are stored per-project in .claude/tasks.json relative to the working directory.
 """
 
+# ruff: noqa: N802, N803
+
 import json
 import os
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
+from filelock import FileLock, Timeout
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("Task Manager")
+
+TASK_LOCK_TIMEOUT_SECONDS = 10
+TASK_STORE_BUSY = "TASK_STORE_BUSY"
+TASK_STORE_CORRUPT = "TASK_STORE_CORRUPT"
 
 # Project directory detection - NO CACHING
 # Caching caused tasks to go to wrong project when server started from home dir
@@ -78,20 +85,53 @@ def get_tasks_file(project_dir: Optional[str] = None) -> Path:
     return tasks_dir / "tasks.json"
 
 
-def load_tasks(project_dir: Optional[str] = None) -> dict:
-    """Load tasks from the JSON file."""
-    tasks_file = get_tasks_file(project_dir)
-    if tasks_file.exists():
-        with open(tasks_file, "r") as f:
-            return json.load(f)
+def _empty_task_store() -> dict:
     return {"tasks": [], "next_id": 1}
 
 
-def save_tasks(data: dict, project_dir: Optional[str] = None) -> None:
-    """Save tasks to the JSON file."""
+def _load_tasks_unlocked(project_dir: Optional[str] = None) -> dict:
+    """Load tasks without taking the file lock."""
     tasks_file = get_tasks_file(project_dir)
-    with open(tasks_file, "w") as f:
-        json.dump(data, f, indent=2)
+    if tasks_file.exists():
+        try:
+            with open(tasks_file, "r") as f:
+                return json.load(f)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(f"{TASK_STORE_CORRUPT}: {tasks_file}") from exc
+    return _empty_task_store()
+
+
+def _save_tasks_unlocked(data: dict, project_dir: Optional[str] = None) -> None:
+    """Save tasks without taking the file lock."""
+    tasks_file = get_tasks_file(project_dir)
+    tmp_file = tasks_file.with_name(f"{tasks_file.name}.{os.getpid()}.tmp")
+    try:
+        with open(tmp_file, "w") as f:
+            json.dump(data, f, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_file, tasks_file)
+    except Exception:
+        tmp_file.unlink(missing_ok=True)
+        raise
+
+
+def _mutate_tasks(mutator, project_dir: Optional[str] = None):
+    """Hold the task-store lock across the full read-modify-write cycle.
+
+    Keep this pattern in sync with
+    skills/adversarial-spec/scripts/task_manager.py:TaskManager._mutate_tasks.
+    """
+    tasks_file = get_tasks_file(project_dir)
+    lock = FileLock(f"{tasks_file}.lock", timeout=TASK_LOCK_TIMEOUT_SECONDS)
+    try:
+        with lock:
+            data = _load_tasks_unlocked(project_dir)
+            result = mutator(data)
+            _save_tasks_unlocked(data, project_dir)
+            return result
+    except Timeout as exc:
+        raise RuntimeError(f"{TASK_STORE_BUSY}: {tasks_file}") from exc
 
 
 @mcp.tool()
@@ -113,27 +153,27 @@ def TaskCreate(
     Returns:
         The created task object with its assigned ID
     """
-    data = load_tasks()
+    def mutate(data: dict) -> dict:
+        now = datetime.utcnow().isoformat() + "Z"
+        task = {
+            "id": str(data["next_id"]),
+            "subject": subject,
+            "description": description,
+            "status": "pending",
+            "owner": None,
+            "blockedBy": [],
+            "blocks": [],
+            "activeForm": activeForm or f"Working on: {subject}",
+            "metadata": metadata or {},
+            "createdAt": now,
+            "updatedAt": now,
+        }
 
-    task = {
-        "id": str(data["next_id"]),
-        "subject": subject,
-        "description": description,
-        "status": "pending",
-        "owner": None,
-        "blockedBy": [],
-        "blocks": [],
-        "activeForm": activeForm or f"Working on: {subject}",
-        "metadata": metadata or {},
-        "createdAt": datetime.utcnow().isoformat() + "Z",
-        "updatedAt": datetime.utcnow().isoformat() + "Z",
-    }
+        data["tasks"].append(task)
+        data["next_id"] += 1
+        return task
 
-    data["tasks"].append(task)
-    data["next_id"] += 1
-    save_tasks(data)
-
-    return task
+    return _mutate_tasks(mutate)
 
 
 @mcp.tool()
@@ -147,7 +187,7 @@ def TaskGet(taskId: str) -> dict:
     Returns:
         The full task object including subject, description, status, dependencies, etc.
     """
-    data = load_tasks()
+    data = _load_tasks_unlocked()
 
     for task in data["tasks"]:
         if task["id"] == taskId:
@@ -176,7 +216,7 @@ def TaskList(
         If list_contexts=True: Summary of contexts with their task counts and last activity
         Otherwise: A summary of all tasks with their IDs, subjects, statuses, owners, and blockedBy lists
     """
-    data = load_tasks()
+    data = _load_tasks_unlocked()
 
     # If list_contexts is True, return context summary instead of task list
     if list_contexts:
@@ -286,80 +326,79 @@ def TaskUpdate(
     Returns:
         The updated task object
     """
-    data = load_tasks()
+    def mutate(data: dict) -> dict:
+        task = None
+        task_index = None
+        for i, t in enumerate(data["tasks"]):
+            if t["id"] == taskId:
+                task = t
+                task_index = i
+                break
 
-    task = None
-    task_index = None
-    for i, t in enumerate(data["tasks"]):
-        if t["id"] == taskId:
-            task = t
-            task_index = i
-            break
+        if task is None:
+            return {"error": f"Task with ID {taskId} not found"}
 
-    if task is None:
-        return {"error": f"Task with ID {taskId} not found"}
+        # Update simple fields
+        if status is not None:
+            if status not in ("pending", "in_progress", "completed"):
+                return {"error": f"Invalid status: {status}. Must be pending, in_progress, or completed"}
+            task["status"] = status
 
-    # Update simple fields
-    if status is not None:
-        if status not in ("pending", "in_progress", "completed"):
-            return {"error": f"Invalid status: {status}. Must be pending, in_progress, or completed"}
-        task["status"] = status
+        if subject is not None:
+            task["subject"] = subject
 
-    if subject is not None:
-        task["subject"] = subject
+        if description is not None:
+            task["description"] = description
 
-    if description is not None:
-        task["description"] = description
+        if activeForm is not None:
+            task["activeForm"] = activeForm
 
-    if activeForm is not None:
-        task["activeForm"] = activeForm
+        if owner is not None:
+            task["owner"] = owner
 
-    if owner is not None:
-        task["owner"] = owner
+        # Merge metadata
+        if metadata is not None:
+            existing_metadata = task.get("metadata", {})
+            for key, value in metadata.items():
+                if value is None:
+                    existing_metadata.pop(key, None)
+                else:
+                    existing_metadata[key] = value
+            task["metadata"] = existing_metadata
 
-    # Merge metadata
-    if metadata is not None:
-        existing_metadata = task.get("metadata", {})
-        for key, value in metadata.items():
-            if value is None:
-                existing_metadata.pop(key, None)
-            else:
-                existing_metadata[key] = value
-        task["metadata"] = existing_metadata
+        # Add to blocks list
+        if addBlocks:
+            existing_blocks = set(task.get("blocks", []))
+            existing_blocks.update(addBlocks)
+            task["blocks"] = list(existing_blocks)
 
-    # Add to blocks list
-    if addBlocks:
-        existing_blocks = set(task.get("blocks", []))
-        existing_blocks.update(addBlocks)
-        task["blocks"] = list(existing_blocks)
+            # Also update the blockedBy of the target tasks
+            for blocked_id in addBlocks:
+                for other in data["tasks"]:
+                    if other["id"] == blocked_id:
+                        other_blocked_by = set(other.get("blockedBy", []))
+                        other_blocked_by.add(taskId)
+                        other["blockedBy"] = list(other_blocked_by)
 
-        # Also update the blockedBy of the target tasks
-        for blocked_id in addBlocks:
-            for other in data["tasks"]:
-                if other["id"] == blocked_id:
-                    other_blocked_by = set(other.get("blockedBy", []))
-                    other_blocked_by.add(taskId)
-                    other["blockedBy"] = list(other_blocked_by)
+        # Add to blockedBy list
+        if addBlockedBy:
+            existing_blocked_by = set(task.get("blockedBy", []))
+            existing_blocked_by.update(addBlockedBy)
+            task["blockedBy"] = list(existing_blocked_by)
 
-    # Add to blockedBy list
-    if addBlockedBy:
-        existing_blocked_by = set(task.get("blockedBy", []))
-        existing_blocked_by.update(addBlockedBy)
-        task["blockedBy"] = list(existing_blocked_by)
+            # Also update the blocks of the blocking tasks
+            for blocker_id in addBlockedBy:
+                for other in data["tasks"]:
+                    if other["id"] == blocker_id:
+                        other_blocks = set(other.get("blocks", []))
+                        other_blocks.add(taskId)
+                        other["blocks"] = list(other_blocks)
 
-        # Also update the blocks of the blocking tasks
-        for blocker_id in addBlockedBy:
-            for other in data["tasks"]:
-                if other["id"] == blocker_id:
-                    other_blocks = set(other.get("blocks", []))
-                    other_blocks.add(taskId)
-                    other["blocks"] = list(other_blocks)
+        task["updatedAt"] = datetime.utcnow().isoformat() + "Z"
+        data["tasks"][task_index] = task
+        return task
 
-    task["updatedAt"] = datetime.utcnow().isoformat() + "Z"
-    data["tasks"][task_index] = task
-    save_tasks(data)
-
-    return task
+    return _mutate_tasks(mutate)
 
 
 if __name__ == "__main__":

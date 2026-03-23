@@ -35,6 +35,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from filelock import FileLock, Timeout
+
+TASK_LOCK_TIMEOUT_SECONDS = 10
+TASK_STORE_BUSY = "TASK_STORE_BUSY"
+TASK_STORE_CORRUPT = "TASK_STORE_CORRUPT"
+
 
 def get_working_dir() -> Path:
     """Get the working directory for task storage.
@@ -135,18 +141,48 @@ class TaskManager:
         """
         self.tasks_file = tasks_file or get_tasks_file(project_dir)
 
-    def _load(self) -> dict:
-        """Load tasks from JSON file."""
-        if self.tasks_file.exists():
-            with open(self.tasks_file) as f:
-                return json.load(f)
+    def _empty_store(self) -> dict:
         return {"tasks": [], "next_id": 1}
 
-    def _save(self, data: dict) -> None:
-        """Save tasks to JSON file."""
+    def _load_tasks_unlocked(self) -> dict:
+        """Load tasks without taking the file lock."""
+        if self.tasks_file.exists():
+            try:
+                with open(self.tasks_file) as f:
+                    return json.load(f)
+            except json.JSONDecodeError as exc:
+                raise RuntimeError(f"{TASK_STORE_CORRUPT}: {self.tasks_file}") from exc
+        return self._empty_store()
+
+    def _save_tasks_unlocked(self, data: dict) -> None:
+        """Save tasks without taking the file lock."""
         self.tasks_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.tasks_file, "w") as f:
-            json.dump(data, f, indent=2)
+        tmp_file = self.tasks_file.with_name(f"{self.tasks_file.name}.{os.getpid()}.tmp")
+        try:
+            with open(tmp_file, "w") as f:
+                json.dump(data, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_file, self.tasks_file)
+        except Exception:
+            tmp_file.unlink(missing_ok=True)
+            raise
+
+    def _mutate_tasks(self, mutator):
+        """Hold the task-store lock across the full read-modify-write cycle.
+
+        Keep this pattern in sync with mcp_tasks/server.py:_mutate_tasks.
+        """
+        self.tasks_file.parent.mkdir(parents=True, exist_ok=True)
+        lock = FileLock(f"{self.tasks_file}.lock", timeout=TASK_LOCK_TIMEOUT_SECONDS)
+        try:
+            with lock:
+                data = self._load_tasks_unlocked()
+                result = mutator(data)
+                self._save_tasks_unlocked(data)
+                return result
+        except Timeout as exc:
+            raise RuntimeError(f"{TASK_STORE_BUSY}: {self.tasks_file}") from exc
 
     def create_task(
         self,
@@ -158,41 +194,40 @@ class TaskManager:
         blocked_by: Optional[list[str]] = None,
     ) -> Task:
         """Create a new task."""
-        data = self._load()
-        now = datetime.utcnow().isoformat() + "Z"
+        def mutate(data: dict) -> Task:
+            now = datetime.utcnow().isoformat() + "Z"
+            task_dict = {
+                "id": str(data["next_id"]),
+                "subject": subject,
+                "description": description,
+                "status": "pending",
+                "owner": owner,
+                "blockedBy": blocked_by or [],
+                "blocks": [],
+                "activeForm": active_form or f"Working on: {subject}",
+                "metadata": metadata or {},
+                "createdAt": now,
+                "updatedAt": now,
+            }
 
-        task_dict = {
-            "id": str(data["next_id"]),
-            "subject": subject,
-            "description": description,
-            "status": "pending",
-            "owner": owner,
-            "blockedBy": blocked_by or [],
-            "blocks": [],
-            "activeForm": active_form or f"Working on: {subject}",
-            "metadata": metadata or {},
-            "createdAt": now,
-            "updatedAt": now,
-        }
+            # Update blocks for blocking tasks
+            if blocked_by:
+                for blocker_id in blocked_by:
+                    for t in data["tasks"]:
+                        if t["id"] == blocker_id:
+                            blocks = set(t.get("blocks", []))
+                            blocks.add(task_dict["id"])
+                            t["blocks"] = list(blocks)
 
-        # Update blocks for blocking tasks
-        if blocked_by:
-            for blocker_id in blocked_by:
-                for t in data["tasks"]:
-                    if t["id"] == blocker_id:
-                        blocks = set(t.get("blocks", []))
-                        blocks.add(task_dict["id"])
-                        t["blocks"] = list(blocks)
+            data["tasks"].append(task_dict)
+            data["next_id"] += 1
+            return Task.from_dict(task_dict)
 
-        data["tasks"].append(task_dict)
-        data["next_id"] += 1
-        self._save(data)
-
-        return Task.from_dict(task_dict)
+        return self._mutate_tasks(mutate)
 
     def get_task(self, task_id: str) -> Optional[Task]:
         """Get a task by ID."""
-        data = self._load()
+        data = self._load_tasks_unlocked()
         for t in data["tasks"]:
             if t["id"] == task_id:
                 return Task.from_dict(t)
@@ -205,7 +240,7 @@ class TaskManager:
         session_id: Optional[str] = None,
     ) -> list[Task]:
         """List tasks with optional filters."""
-        data = self._load()
+        data = self._load_tasks_unlocked()
         tasks = []
 
         for t in data["tasks"]:
@@ -228,52 +263,51 @@ class TaskManager:
         add_blocked_by: Optional[list[str]] = None,
     ) -> Optional[Task]:
         """Update a task."""
-        data = self._load()
+        def mutate(data: dict) -> Optional[Task]:
+            task = None
+            task_idx = None
+            for i, t in enumerate(data["tasks"]):
+                if t["id"] == task_id:
+                    task = t
+                    task_idx = i
+                    break
 
-        task = None
-        task_idx = None
-        for i, t in enumerate(data["tasks"]):
-            if t["id"] == task_id:
-                task = t
-                task_idx = i
-                break
+            if task is None:
+                return None
 
-        if task is None:
-            return None
+            if status is not None:
+                task["status"] = status
 
-        if status is not None:
-            task["status"] = status
+            if owner is not None:
+                task["owner"] = owner
 
-        if owner is not None:
-            task["owner"] = owner
+            if metadata is not None:
+                existing = task.get("metadata", {})
+                for k, v in metadata.items():
+                    if v is None:
+                        existing.pop(k, None)
+                    else:
+                        existing[k] = v
+                task["metadata"] = existing
 
-        if metadata is not None:
-            existing = task.get("metadata", {})
-            for k, v in metadata.items():
-                if v is None:
-                    existing.pop(k, None)
-                else:
-                    existing[k] = v
-            task["metadata"] = existing
+            if add_blocked_by:
+                blocked_by = set(task.get("blockedBy", []))
+                blocked_by.update(add_blocked_by)
+                task["blockedBy"] = list(blocked_by)
 
-        if add_blocked_by:
-            blocked_by = set(task.get("blockedBy", []))
-            blocked_by.update(add_blocked_by)
-            task["blockedBy"] = list(blocked_by)
+                # Update blocks on blocking tasks
+                for blocker_id in add_blocked_by:
+                    for t in data["tasks"]:
+                        if t["id"] == blocker_id:
+                            blocks = set(t.get("blocks", []))
+                            blocks.add(task_id)
+                            t["blocks"] = list(blocks)
 
-            # Update blocks on blocking tasks
-            for blocker_id in add_blocked_by:
-                for t in data["tasks"]:
-                    if t["id"] == blocker_id:
-                        blocks = set(t.get("blocks", []))
-                        blocks.add(task_id)
-                        t["blocks"] = list(blocks)
+            task["updatedAt"] = datetime.utcnow().isoformat() + "Z"
+            data["tasks"][task_idx] = task
+            return Task.from_dict(task)
 
-        task["updatedAt"] = datetime.utcnow().isoformat() + "Z"
-        data["tasks"][task_idx] = task
-        self._save(data)
-
-        return Task.from_dict(task)
+        return self._mutate_tasks(mutate)
 
     def complete_task(self, task_id: str) -> Optional[Task]:
         """Mark a task as completed."""
