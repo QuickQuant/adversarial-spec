@@ -18,10 +18,10 @@ def _concern() -> Concern:
 
 
 def test_phase_2_uses_attack_codex_reasoning(monkeypatch):
-    """Phase 2 should forward attack reasoning to direct Codex dispatch."""
+    """Phase 2 should forward attack reasoning through call_model."""
     captured = {}
     monkeypatch.setattr(
-        "gauntlet.phase_2_synthesis.call_codex_model",
+        "gauntlet.phase_2_synthesis.call_model",
         lambda **kwargs: (captured.update(kwargs) or ("REAL_ISSUES:\n- x\nHIDDEN_CONNECTIONS:\nWHATS_MISSING:\nMETA_CONCERN: y\nHIGH_SIGNAL:\n- z", 0, 0)),
     )
     monkeypatch.setattr("gauntlet.phase_2_synthesis.cost_tracker.add", lambda *args, **kwargs: None)
@@ -32,7 +32,7 @@ def test_phase_2_uses_attack_codex_reasoning(monkeypatch):
         GauntletConfig(timeout=123, attack_codex_reasoning="minimal"),
     )
 
-    assert captured["reasoning_effort"] == "minimal"
+    assert captured["codex_reasoning"] == "minimal"
     assert captured["timeout"] == 123
 
 

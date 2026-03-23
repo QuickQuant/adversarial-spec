@@ -1,29 +1,16 @@
 """Phase 2: Big Picture Synthesis.
 
 Extracted from gauntlet_monolith.py — holistic concern analysis before
-evaluation. Uses inline litellm dispatch (not call_model).
+evaluation. Uses call_model() for unified model dispatch.
 """
 
 from __future__ import annotations
 
 import sys
 
-from gauntlet.core_types import BigPictureSynthesis, Concern, GauntletConfig
-from models import (
-    call_claude_cli_model,
-    call_codex_model,
-    call_gemini_cli_model,
-    cost_tracker,
-)
-
-try:
-    from litellm import completion
-except ImportError:
-    print(
-        "Error: litellm package not installed. Run: pip install litellm",
-        file=sys.stderr,
-    )
-    raise
+from gauntlet.core_types import PROGRAMMING_BUGS, BigPictureSynthesis, Concern, GauntletConfig
+from gauntlet.model_dispatch import call_model
+from models import cost_tracker
 
 
 # =============================================================================
@@ -109,42 +96,13 @@ def generate_big_picture_synthesis(
     prompt = BIG_PICTURE_PROMPT.format(concerns_by_adversary=concerns_text)
 
     try:
-        # Use inline dispatch (not call_model) — extract as-is per spec
-        if model.startswith("codex/"):
-            response, in_tokens, out_tokens = call_codex_model(
-                model=model.replace("codex/", ""),
-                system_prompt="You are an expert at pattern recognition and synthesis.",
-                user_message=prompt,
-                reasoning_effort=config.attack_codex_reasoning,
-                timeout=config.timeout,
-            )
-        elif model.startswith("gemini-cli/"):
-            response, in_tokens, out_tokens = call_gemini_cli_model(
-                model=model.replace("gemini-cli/", ""),
-                system_prompt="You are an expert at pattern recognition and synthesis.",
-                user_message=prompt,
-                timeout=config.timeout,
-            )
-        elif model.startswith("claude-cli/"):
-            response, in_tokens, out_tokens = call_claude_cli_model(
-                system_prompt="You are an expert at pattern recognition and synthesis.",
-                user_message=prompt,
-                model=model,
-                timeout=config.timeout,
-            )
-        else:
-            result = completion(
-                model=model,
-                messages=[
-                    {"role": "system", "content": "Expert at pattern recognition."},
-                    {"role": "user", "content": prompt},
-                ],
-                timeout=config.timeout,
-            )
-            response = result.choices[0].message.content
-            in_tokens = result.usage.prompt_tokens if result.usage else 0
-            out_tokens = result.usage.completion_tokens if result.usage else 0
-
+        response, in_tokens, out_tokens = call_model(
+            model=model,
+            system_prompt="You are an expert at pattern recognition and synthesis.",
+            user_message=prompt,
+            timeout=config.timeout,
+            codex_reasoning=config.attack_codex_reasoning,
+        )
         cost_tracker.add(model, in_tokens, out_tokens)
 
         def extract_list(marker: str) -> list[str]:
@@ -195,6 +153,8 @@ def generate_big_picture_synthesis(
         )
 
     except Exception as e:
+        if isinstance(e, PROGRAMMING_BUGS):
+            raise
         print(f"Warning: Big picture synthesis failed: {e}", file=sys.stderr)
         return BigPictureSynthesis(
             total_concerns=len(concerns),
