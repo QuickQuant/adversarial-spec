@@ -11,21 +11,28 @@ After consensus is reached but before finalization, offer the adversarial gauntl
    python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet-adversaries
    ```
 
-   **Adversary Quick Reference (exact CLI names):**
+   **Gauntlet Adversary Quick Reference (exact CLI names):**
 
    | Prefix | CLI Name | Role |
    |--------|----------|------|
-   | COMP | `existing_system_compatibility` | Codebase compatibility (pre-gauntlet) |
    | PARA | `paranoid_security` | Security threats |
-   | BURN | `burned_oncall` | Operational failure modes |
-   | LAZY | `lazy_developer` | Unnecessary complexity |
-   | PEDA | `pedantic_nitpicker` | Edge cases |
-   | ASSH | `asshole_loner` | Design flaws |
-   | PREV | `prior_art_scout` | Existing code reuse |
+   | BURN | `burned_oncall` | Operational failure modes + recovery |
+   | MINI | `minimalist` | Unnecessary complexity + prior art (merged LAZY+PREV) |
+   | PEDA | `pedantic_nitpicker` | Data-level correctness (types, encoding, boundaries) |
+   | ASSH | `asshole_loner` | Design-level correctness (abstractions, contracts) |
    | AUDT | `assumption_auditor` | Unverified assumptions |
    | FLOW | `information_flow_auditor` | Architecture flow gaps |
    | ARCH | `architect` | Code structure, data flow, component boundaries |
-   | UXAR | `ux_architect` | User story coherence (final boss) |
+   | TRAF | `traffic_engineer` | Scalability, throughput, concurrency limits |
+
+   **Not available via `--gauntlet-adversaries`:**
+
+   | Prefix | CLI Name | Role | How to invoke |
+   |--------|----------|------|---------------|
+   | COMP | `existing_system_compatibility` | Codebase compatibility | Pre-gauntlet only (Step 4) |
+   | UXAR | `ux_architect` | User story coherence | Final boss only (Step 8) |
+
+   **Legacy aliases:** `lazy_developer` → `minimalist`, `prior_art_scout` → `minimalist`
 
    **NEVER invent adversary names.** If `gauntlet-adversaries` crashes, read its output carefully — it prints valid names before any traceback. Use those exact names.
 
@@ -112,12 +119,14 @@ After consensus is reached but before finalization, offer the adversarial gauntl
    - After launching each batch, do a quick `TaskOutput(block=false)` check at ~45s to catch quota errors early
    - Collect all results AFTER all batches are launched
 
-   **Example launch order** (8 adversaries, Gemini attack model):
+   **Example launch order** (9 adversaries, Gemini attack model):
    ```
-   Batch 1: PARA, BURN, LAZY, PEDA (launch together)
+   Batch 1: PARA, BURN, MINI, PEDA (launch together)
    sleep 61s
-   Batch 2: ASSH, PREV, AUDT, FLOW (launch together)
-   Collect all 8 results
+   Batch 2: ASSH, AUDT, FLOW, ARCH (launch together)
+   sleep 61s
+   Batch 3: TRAF (launch)
+   Collect all 9 results
    ```
 
 6. **Post-Gauntlet Synthesis (REQUIRED — this is where real evaluation happens).**
@@ -283,23 +292,24 @@ Each adversary has a specific lens. Give them ammunition for that lens:
 |-----------|-----------|--------|
 | **PARA** (paranoid_security) | Auth/authz patterns in blast zone, input validation boundaries, dependency audit results, API surface area | ~350 tok |
 | **BURN** (burned_oncall) | External dependency list with timeout configs, existing error handling patterns (retry, circuit breaker), monitoring status or explicit "none exists" note | ~280 tok |
-| **LAZY** (lazy_developer) | Installed SDK capabilities, platform features already available, existing utility functions, framework builtins that overlap with spec proposals | ~420 tok |
+| **MINI** (minimalist) | Installed SDK capabilities, platform features already available, existing utility functions, framework builtins, prior art search results | ~500 tok |
 | **PEDA** (pedantic_nitpicker) | Type definitions, enum values, schema constraints (nullable, unique, defaults), validation rules, test coverage report if available | ~380 tok |
 | **ASSH** (asshole_loner) | Design rationale / ADRs, known tech debt markers (TODO/FIXME/HACK in blast zone), broader architecture context beyond excerpt | ~200 tok |
-| **COMP** (existing_system) | Full build/test status, current vs proposed schema diff, naming conventions in area, pending migrations, duplicate file analysis | ~1,100 tok |
-| **PREV** (prior_art_scout) | Legacy/archive search results, dependency inventory (installed but unused SDKs), keyword search results across codebase, existing similar pattern analysis | ~650 tok |
+| **COMP** (existing_system) | Full build/test status, current vs proposed schema diff, naming conventions in area, pending migrations, duplicate file analysis (pre-gauntlet only) | ~1,100 tok |
 | **AUDT** (assumption_auditor) | External API doc excerpts, SDK type definitions, existing integration code showing how external systems actually behave | ~300 tok |
 | **FLOW** (info_flow_auditor) | FULL architecture overview (not just excerpt), data flow docs from `.architecture/structured/flows.md`, external API capabilities (REST/WS/webhook), existing latency data if available | ~900 tok |
 | **ARCH** (architect) | FULL target architecture doc (not just excerpt), component docs from `.architecture/structured/components/`, existing shared patterns/utilities inventory, first-feature propagation analysis | ~1,000 tok |
+| **TRAF** (traffic_engineer) | Expected traffic patterns, concurrency limits, queue/pool configs, existing rate limiter settings, load test results if available | ~400 tok |
 
 #### 4. Apply Relevance Filter
 
 Not every adversary needs every supplement for every spec:
 
 - Spec adds an API endpoint? → PARA gets auth patterns, FLOW gets data flow
-- Spec changes a data model? → PEDA gets constraints, COMP gets schema diff
-- Spec integrates external service? → AUDT gets API docs, PREV gets existing integrations
-- Spec is internal refactor? → LAZY gets utility inventory, ASSH gets design rationale
+- Spec changes a data model? → PEDA gets constraints, COMP gets schema diff (pre-gauntlet)
+- Spec integrates external service? → AUDT gets API docs, MINI gets existing integrations
+- Spec is internal refactor? → MINI gets utility inventory, ASSH gets design rationale
+- Spec expects high traffic? → TRAF gets load patterns, BURN gets timeout configs
 - If a supplement source was `NOT_AVAILABLE` or `NOT_APPLICABLE` in the audit, skip it and include a one-line note in the "Known Gaps" section of the briefing
 
 #### 5. Format Briefings
@@ -344,13 +354,13 @@ Adversary
 ──────────────────────────────────────────────────────────
 PARA  paranoid_security    800   1,400     350       2,550
 BURN  burned_oncall        800   1,400     280       2,480
-LAZY  lazy_developer       800   1,400     420       2,620
+MINI  minimalist           800   1,400     500       2,700
 PEDA  pedantic_nitpicker   800   1,400     380       2,580
 ASSH  asshole_loner        800   1,400     200       2,400
-COMP  existing_system      800   1,400   1,100       3,300
-PREV  prior_art_scout      800   1,400     650       2,850
 AUDT  assumption_auditor   800   1,400     300       2,500
 FLOW  info_flow_auditor    800   1,400     900       3,100
+ARCH  architect            800   1,400   1,000       3,200
+TRAF  traffic_engineer     800   1,400     400       2,600
 ──────────────────────────────────────────────────────────
 TOTALS                   7,200  12,600   4,580      24,380
 Previous (spec only):                               12,600
@@ -387,8 +397,8 @@ Instead of piping raw spec to all adversaries, pass each adversary its assembled
 # Each adversary gets its own briefing document via the debate.py gauntlet command
 # The briefings are assembled above and passed as the spec input
 # If generate_attacks() accepts a briefings dict, use it; otherwise pipe per-adversary
-cat briefing-COMP.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet \
-  --gauntlet-adversaries existing_system_compatibility
+cat briefing-PARA.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet \
+  --gauntlet-adversaries paranoid_security
 ```
 
 In practice, Claude assembles the briefings in memory and passes them to the gauntlet. The `generate_attacks()` function accepts an optional `briefings: dict[str, str]` parameter — if provided, each adversary gets its specific briefing instead of raw spec. If not provided, falls back to spec-only (backward compatible).
