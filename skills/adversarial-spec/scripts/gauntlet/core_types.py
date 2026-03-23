@@ -14,6 +14,15 @@ from typing import Optional
 from adversaries import ADVERSARIES, generate_concern_id
 
 # =============================================================================
+# ERROR CLASSIFICATION
+# =============================================================================
+
+# Programming bugs that must NEVER be swallowed by except-Exception blocks.
+# These indicate real code defects, not transient operational failures.
+# Excludes ValueError and KeyError — those often come from malformed API responses.
+PROGRAMMING_BUGS = (TypeError, NameError, AttributeError, ImportError, SyntaxError, AssertionError)
+
+# =============================================================================
 # SYNTHESIS TAXONOMY
 # =============================================================================
 

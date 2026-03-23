@@ -12,7 +12,7 @@ import time
 from collections import defaultdict
 
 from adversaries import ADVERSARIES, resolve_adversary_name
-from gauntlet.core_types import Concern, GauntletConfig
+from gauntlet.core_types import PROGRAMMING_BUGS, Concern, GauntletConfig
 from gauntlet.model_dispatch import (
     _get_model_provider,
     call_model,
@@ -156,6 +156,8 @@ Output your concerns as a numbered list. Be specific and cite parts of the spec.
             return local_concerns, elapsed, response
 
         except Exception as e:
+            if isinstance(e, PROGRAMMING_BUGS):
+                raise
             print(
                 f"Warning: Adversary {adversary_key} failed: {e}",
                 file=sys.stderr,

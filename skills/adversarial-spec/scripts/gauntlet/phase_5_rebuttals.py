@@ -11,7 +11,7 @@ import sys
 from typing import Optional
 
 from adversaries import ADVERSARIES
-from gauntlet.core_types import Evaluation, GauntletConfig, Rebuttal
+from gauntlet.core_types import PROGRAMMING_BUGS, Evaluation, GauntletConfig, Rebuttal
 from gauntlet.model_dispatch import call_model, get_rate_limit_config
 from models import cost_tracker
 
@@ -106,6 +106,8 @@ CHALLENGED: [counter-evidence or logical flaw] if the reasoning is flawed"""
             )
 
         except Exception as e:
+            if isinstance(e, PROGRAMMING_BUGS):
+                raise
             print(f"Warning: Rebuttal failed for {adversary_key}: {e}", file=sys.stderr)
             return None
 

@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import sys
 
-from gauntlet.core_types import Concern, GauntletConfig, Rebuttal
+from gauntlet.core_types import PROGRAMMING_BUGS, Concern, GauntletConfig, Rebuttal
 from gauntlet.model_dispatch import call_model
 from models import cost_tracker
 
@@ -91,6 +91,8 @@ Make your final decisions. Output valid JSON."""
             return surviving
 
     except Exception as e:
+        if isinstance(e, PROGRAMMING_BUGS):
+            raise
         print(f"Warning: Final adjudication failed: {e}", file=sys.stderr)
 
     # Conservative fallback: all challenged concerns survive

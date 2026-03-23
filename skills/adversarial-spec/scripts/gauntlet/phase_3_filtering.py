@@ -17,6 +17,7 @@ import time
 from typing import Optional
 
 from gauntlet.core_types import (
+    PROGRAMMING_BUGS,
     Concern,
     Evaluation,
     ExplanationMatch,
@@ -136,8 +137,9 @@ Does any existing explanation FULLY address this concern?"""
                             action=action,
                         )
 
-    except Exception:
-        pass  # On error, don't filter
+    except Exception as e:
+        if isinstance(e, PROGRAMMING_BUGS):
+            raise
 
     return None
 
