@@ -1,124 +1,141 @@
 # Filesystem Map: adversarial-spec
 
-> Generated: 2026-03-21 | Git: 12c5d3f
-> Skill version: 2.6 | Model: claude-opus-4-6
+> Generated: 2026-03-22 | Git: c3b5f8c
+> Skill version: 3.0 | Model: claude-opus-4-6
 
 ## Root Structure
 
 | Directory/File | Purpose |
 |----------------|---------|
-| `skills/adversarial-spec/` | Skill source — phases, scripts, reference docs |
+| `skills/adversarial-spec/` | Skill definition (phases, scripts, reference docs) |
 | `execution_planner/` | Gauntlet concern parsing (mostly deprecated) |
-| `mcp_tasks/` | MCP server for cross-agent task coordination |
-| `tests/` | Root-level pytest tests |
-| `onboarding/` | Project practices and core practices docs |
-| `wisdom/` | Accumulated learnings and CEO wisdom |
-| `docs/` | Documentation bundles (Gemini bundle) |
+| `mcp_tasks/` | MCP task server for cross-agent coordination |
+| `onboarding/` | Core practices and project practices docs |
 | `.architecture/` | Architecture documentation (this directory) |
-| `.adversarial-spec/` | Spec artifacts, session data, issue tracking |
-| `.claude/` | Claude Code hooks and settings |
+| `.adversarial-spec/` | Spec artifacts, session manifests, resolved concerns |
+| `.adversarial-spec-checkpoints/` | Debate round checkpoints (per-session) |
+| `.adversarial-spec-gauntlet/` | Gauntlet phase checkpoints (hash-keyed JSON + lock files) |
+| `.claude/` | Claude Code hooks, settings, task coordination |
+| `.coordination/` | Multi-agent coordination protocol |
+| `pyproject.toml` | Dependencies, build config, entry points |
 
 ## Key Areas
 
-### skills/adversarial-spec/
+### skills/adversarial-spec/scripts/
+
+The main source code directory. All Python scripts live here.
 
 | Path | Purpose |
 |------|---------|
-| `scripts/debate.py` | Main CLI entry point — debate + gauntlet commands (1535 lines) |
-| `scripts/gauntlet/` | 7-phase adversarial review package (16 modules, ~5200 lines total) |
-| `scripts/gauntlet/__init__.py` | Shim re-exporting 5 public symbols |
-| `scripts/gauntlet/__main__.py` | Module entry for `python -m gauntlet` |
-| `scripts/gauntlet/cli.py` | Standalone gauntlet CLI |
-| `scripts/gauntlet/core_types.py` | All dataclasses: Concern, Evaluation, GauntletConfig, PhaseMetrics, etc. |
-| `scripts/gauntlet/orchestrator.py` | `run_gauntlet()` — phase sequencing, resume, manifest telemetry |
-| `scripts/gauntlet/persistence.py` | File I/O, checkpoints, stats, run manifests (FileLock-based) |
-| `scripts/gauntlet/model_dispatch.py` | Model selection, validation, rate limiting |
-| `scripts/gauntlet/reporting.py` | Leaderboard, synergy analysis, gauntlet report |
-| `scripts/gauntlet/medals.py` | Medal calculation and persistence |
-| `scripts/gauntlet/phase_1_attacks.py` | Phase 1: Generate adversary attacks (196 lines) |
-| `scripts/gauntlet/phase_2_synthesis.py` | Phase 2: Big-picture synthesis (208 lines) |
-| `scripts/gauntlet/phase_3_filtering.py` | Phase 3: Filtering + clustering (456 lines) |
-| `scripts/gauntlet/phase_4_evaluation.py` | Phase 4: Multi-model evaluation (283 lines) |
-| `scripts/gauntlet/phase_5_rebuttals.py` | Phase 5: Adversary rebuttals (128 lines) |
-| `scripts/gauntlet/phase_6_adjudication.py` | Phase 6: Final adjudication (97 lines) |
-| `scripts/gauntlet/phase_7_final_boss.py` | Phase 7: Optional Final Boss review (330 lines) |
-| `scripts/gauntlet_monolith.py` | Compatibility shim (12 lines, raises ImportError) |
-| `scripts/models.py` | LLM abstraction: LiteLLM + CLI tool routing (944 lines) |
-| `scripts/providers.py` | Model config, costs, credentials, Bedrock (683 lines) |
-| `scripts/prompts.py` | Prompt templates, focus areas, personas (505 lines) |
-| `scripts/adversaries.py` | Named attacker persona definitions (914 lines) |
-| `scripts/session.py` | Session state and checkpoint management (109 lines) |
-| `scripts/scope.py` | Scope discovery (standalone, not currently imported) |
-| `scripts/task_manager.py` | Python API for task management (687 lines) |
-| `scripts/telegram_bot.py` | Telegram notification utilities (443 lines) |
-| `scripts/mutmut_config.py` | Mutation testing configuration |
-| `scripts/pre_gauntlet/` | Pre-gauntlet context collection subsystem |
-| `scripts/collectors/` | Git position and system state collectors |
-| `scripts/extractors/` | Spec-affected file extraction |
-| `scripts/integrations/` | Subprocess wrappers (git, process runner, knowledge service) |
-| `scripts/tests/` | Test suite (16 test files, 377+ tests) |
-| `phases/` | Phase documentation (01-init through 08-implementation) |
-| `reference/` | Reference docs for the skill |
-| `SKILL.md` | Skill definition with metadata and phase routing |
+| `debate.py` | Master CLI entrypoint (1500+ lines, 18 actions) |
+| `models.py` | LLM call abstraction, cost tracking, parallel dispatch |
+| `providers.py` | Model config, cost rates, Bedrock, CLI detection |
+| `adversaries.py` | Named attacker persona definitions (frozen dataclasses) |
+| `prompts.py` | System prompts, focus areas, personas templates |
+| `session.py` | Session state persistence for debate rounds |
+| `scope.py` | Scope discovery (606 lines, DEAD CODE — not imported) |
+| `telegram_bot.py` | Telegram notification bot (send, poll, notify) |
+| `task_manager.py` | Task state management + demo harness |
+| `gauntlet_monolith.py` | 12-line shim → delegates to gauntlet/cli.py |
 
-### execution_planner/
+### skills/adversarial-spec/scripts/gauntlet/
+
+The 16-module gauntlet package (extracted from 4087-line monolith).
 
 | Path | Purpose |
 |------|---------|
-| `__init__.py` | Exports GauntletConcernParser, load_concerns_for_spec |
-| `gauntlet_concerns.py` | Parses gauntlet concern files (the only surviving module) |
+| `__init__.py` | Public API exports (run_gauntlet, format_gauntlet_report, etc.) |
+| `__main__.py` | Enables `python -m gauntlet` invocation |
+| `cli.py` | Standalone gauntlet CLI (separate flag names from debate.py) |
+| `orchestrator.py` | 7-phase pipeline sequencing, state management, resume |
+| `core_types.py` | Data models: Concern, Evaluation, Rebuttal, GauntletConfig, etc. |
+| `model_dispatch.py` | Model selection, rate limiting, name validation |
+| `persistence.py` | FileLock-guarded checkpoint save/load, atomic writes |
+| `phase_1_attacks.py` | Attack generation (parallel adversary dispatch) |
+| `phase_2_synthesis.py` | Big-picture synthesis across all concerns |
+| `phase_3_filtering.py` | Concern filtering, clustering, explanation matching |
+| `phase_4_evaluation.py` | Frontier model evaluation (verdict assignment) |
+| `phase_5_rebuttals.py` | Adversary rebuttal for dismissed concerns |
+| `phase_6_adjudication.py` | Final adjudication and verdict aggregation |
+| `phase_7_final_boss.py` | Final boss review (pass/refine/reconsider) |
+| `medals.py` | Adversary accuracy scoring and medal awards |
+| `reporting.py` | Markdown report generation, leaderboard formatting |
 
-### mcp_tasks/
+### skills/adversarial-spec/scripts/pre_gauntlet/
+
+Pre-gauntlet context collection pipeline.
 
 | Path | Purpose |
 |------|---------|
-| `__init__.py` | Exports FastMCP server instance |
-| `server.py` | MCP tools: TaskCreate, TaskGet, TaskList, TaskUpdate |
+| `orchestrator.py` | Coordinate git/system/file collectors |
+| `models.py` | Pydantic models: GitPosition, SystemState, Concern |
+| `context_builder.py` | Assemble collected context into markdown |
+| `alignment_mode.py` | Interactive user validation of collected context |
+| `discovery.py` | Discovery result types |
 
-### .adversarial-spec/
-
-| Path | Purpose |
-|------|---------|
-| `session-state.json` | Active session pointer and phase tracking |
-| `sessions/` | Session files with journey arrays |
-| `specs/` | Generated spec artifacts with manifests |
-| `issues/` | Issue tracking docs |
-
-### .claude/
+### skills/adversarial-spec/scripts/collectors/
 
 | Path | Purpose |
 |------|---------|
-| `hooks/` | 12 safety hooks (deprecated models, codex timeout, secret leaks, etc.) |
-| `settings.json` | Project settings |
-| `settings.local.json` | Hook registration (PreToolUse, PostToolUse, Stop) |
-| `tasks.json` | MCP task storage |
+| `git_position.py` | Git branch, commits, staleness detection |
+| `system_state.py` | Build status, schema contents, directory trees |
+
+### skills/adversarial-spec/scripts/integrations/
+
+| Path | Purpose |
+|------|---------|
+| `git_cli.py` | Git subprocess wrapper (GitCli, GitCliError) |
+| `process_runner.py` | Generic subprocess runner with timeout |
+| `knowledge_service.py` | Knowledge base caching (IMPLEMENTED BUT UNWIRED) |
+
+### skills/adversarial-spec/scripts/tests/
+
+| Path | Purpose |
+|------|---------|
+| `test_models.py` | Tests for model calling, cost tracking |
+| `test_providers.py` | Tests for provider config, Bedrock |
+| `test_session.py` | Tests for session persistence |
+| `test_gauntlet/` | Gauntlet-specific tests (377+ passing) |
+
+### skills/adversarial-spec/phases/
+
+Skill phase documentation (markdown instructions for Claude Code).
+
+| Path | Purpose |
+|------|---------|
+| `01-philosophy.md` | Philosophical framing phase |
+| `02-user-stories.md` | User story anchoring |
+| `03-debate.md` | Multi-model debate execution |
+| `04-gauntlet.md` | Gauntlet stress-test instructions |
+| `05-gauntlet.md` | Gauntlet synthesis (cardinal rules) |
+| `06-execution.md` | Execution plan generation |
 
 ## Entry Points
 
 | File | How It Starts | What It Does |
 |------|---------------|--------------|
-| `scripts/debate.py` | `adversarial-spec <action>` (pyproject.toml entry) | Main CLI: critique, gauntlet, diff, export-tasks, providers, profiles, sessions |
-| `scripts/gauntlet/cli.py` | `python -m gauntlet` via `__main__.py` | Standalone gauntlet CLI with all flags |
-| `scripts/telegram_bot.py` | `python telegram_bot.py <cmd>` | Telegram setup, send, poll, notify |
-| `mcp_tasks/server.py` | `mcp-tasks` (pyproject.toml entry) | MCP task server for Claude Code |
+| `scripts/debate.py` | `adversarial-spec <action>` (pyproject.toml) | Master CLI — routes 18 actions |
+| `scripts/gauntlet/cli.py` | `python -m gauntlet` or direct | Standalone gauntlet CLI |
+| `scripts/telegram_bot.py` | Direct script execution | Telegram notification bot |
+| `mcp_tasks/server.py` | MCP protocol (registered entry point) | Task CRUD for cross-agent coordination |
 
 ## Configuration Files
 
 | File | Configures |
 |------|------------|
-| `pyproject.toml` | Dependencies (litellm, filelock, mcp), entry points, ruff/pytest config |
-| `uv.lock` | Locked dependency versions |
-| `CLAUDE.md` | Project instructions for Claude Code |
-| `.claude/hooks/` | Safety hooks (deprecated models, codex timeout, secret leaks, etc.) |
-| `.claude/settings.local.json` | Hook registration |
-| `~/.config/adversarial-spec/profiles/` | Saved user profiles (focus + persona combos) |
-| `~/.config/adversarial-spec/sessions/` | Session state files |
-| `~/.claude/adversarial-spec/config.json` | Global config (Bedrock settings) |
+| `pyproject.toml` | Dependencies (litellm, filelock, mcp), entry points, ruff, pytest |
+| `~/.claude/adversarial-spec/config.json` | Global Bedrock config (enabled, region, models) |
+| `~/.config/adversarial-spec/sessions/` | Debate session state (per session_id) |
+| `~/.config/adversarial-spec/profiles/` | Reusable model/API key profiles |
+| `~/.adversarial-spec/` | Adversary stats, medals, resolved concerns, runs |
+| `.adversarial-spec-gauntlet/` | Gauntlet phase checkpoints (hash-keyed) |
+| `.claude/hooks/` | Pre/post tool use hooks (deprecated model check, timeout guard) |
+| `.claude/settings.local.json` | Hook registrations |
 
 ## Notable Conventions
 
-- **Deployed vs source**: `skills/adversarial-spec/` is the source. `~/.claude/skills/adversarial-spec/` is the deployed copy (symlinked or manual `cp -r`).
-- **Tests alongside scripts**: Tests live in `scripts/tests/`, not a separate root `tests/` dir (root `tests/` exists but is minimal).
-- **Pre-gauntlet is isolated**: `pre_gauntlet/`, `collectors/`, `extractors/`, and `integrations/` form a self-contained subsystem with no imports from main debate/gauntlet modules.
-- **Checkpoint directories are local**: `.adversarial-spec-checkpoints/` (debate) and `.adversarial-spec-gauntlet/` (gauntlet) are created in the working directory.
-- **Two CLI entry points for gauntlet**: `debate.py gauntlet` (primary, adds `--show-manifest`, `--codex-reasoning`, `--gauntlet-resume`) and `python -m gauntlet` (standalone, has `--attack-codex-reasoning`).
+- **Scripts live under `skills/adversarial-spec/scripts/`**, not a standard `src/` directory. This matches the Claude Code skill deployment model.
+- **Tests live alongside source** in `scripts/tests/`, not a separate `tests/` directory at root.
+- **Two copies of the skill exist**: source in `skills/adversarial-spec/` and deployed in `~/.claude/skills/adversarial-spec/`. Changes require manual copy.
+- **Checkpoint files use hash-based names**: `{phase}-{spec_hash}.json` prevents overwrite of valid data.
+- **Lock files are sidecar files**: `.adversarial-spec-gauntlet/*.json.lock` next to their data files.

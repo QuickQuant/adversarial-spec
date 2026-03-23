@@ -1,119 +1,97 @@
 # System Overview Diagram
 
 ```
-                            ┌─────────────────────────────────────┐
-                            │           USER / CLAUDE CODE        │
-                            │         (CLI or Skill invocation)   │
-                            └──────────────┬──────────────────────┘
-                                           │ spec + args
-                                           ▼
-                    ┌──────────────────────────────────────────────────┐
-                    │                  DEBATE ENGINE                    │
-                    │              (debate.py:main():1493)              │
-                    │                                                   │
-                    │  ┌─────────┐  ┌──────────┐  ┌──────────────┐    │
-                    │  │ Session │  │ Profiles │  │  Arg Router  │    │
-                    │  │ Resume  │  │  Loader  │  │  (actions)   │    │
-                    │  └────┬────┘  └────┬─────┘  └──────┬───────┘    │
-                    │       │            │               │             │
-                    │       ▼            ▼               ▼             │
-                    │  ┌─────────────────────────────────────────┐    │
-                    │  │         run_critique():1206             │    │
-                    │  │  one round per invocation               │    │
-                    │  └──────────────┬──────────────────────────┘    │
-                    └─────────────────┼───────────────────────────────┘
-                                      │
-                    ┌─────────────────┼─────────────────┐
-                    │                 ▼                  │
-                    │        MODELS COMPONENT            │
-                    │     (call_models_parallel:901)     │
-                    │                                    │
-                    │   ┌────────┬────────┬────────┬──┐ │
-                    │   │LiteLLM│ Codex  │Gemini  │Cl│ │
-                    │   │ (API) │ (CLI)  │ (CLI)  │au│ │
-                    │   │       │        │        │de│ │
-                    │   └───┬───┴───┬────┴───┬────┴──┘ │
-                    │       │       │        │          │
-                    └───────┼───────┼────────┼──────────┘
-                            │       │        │
-                    ┌───────▼───────▼────────▼──────────┐
-                    │        EXTERNAL LLM PROVIDERS      │
-                    │  OpenAI  Anthropic  Google  Groq   │
-                    │  Mistral  xAI  Bedrock             │
-                    └───────────────────────────────────┘
+                            ┌─────────────────────────────────────────────┐
+                            │              CLI Entry Points               │
+                            │                                             │
+                            │  debate.py          gauntlet/cli.py         │
+                            │  (18 actions)       (standalone)            │
+                            └──────────┬──────────────────┬───────────────┘
+                                       │                  │
+                          ┌────────────▼─────┐   ┌───────▼────────┐
+                          │  Debate Engine   │   │   Pre-Gauntlet │
+                          │                  │   │                │
+                          │  run_critique()  │   │  Git/System    │
+                          │  Multi-round     │   │  Collectors    │
+                          │  consensus loop  │   │  Context Build │
+                          └────────┬─────────┘   └───────┬────────┘
+                                   │                     │
+                                   │              ┌──────▼────────────────────────────────┐
+                                   │              │         Gauntlet Pipeline              │
+                                   │              │                                       │
+                                   │              │  Phase 1: Attack Generation ──────|>   │
+                                   │              │  Phase 2: Big Picture Synthesis        │
+                                   │              │  Phase 3: Filtering & Clustering       │
+                                   │              │  Phase 4: Frontier Evaluation          │
+                                   │              │  Phase 5: Adversary Rebuttals          │
+                                   │              │  Phase 6: Adjudication & Medals        │
+                                   │              │  Phase 7: Final Boss Review            │
+                                   │              │                                       │
+                                   │              │  [Checkpoint after each phase]         │
+                                   │              └───────────────┬───────────────────────┘
+                                   │                              │
+                          ┌────────▼──────────────────────────────▼──────┐
+                          │              Models Layer                     │
+                          │                                              │
+                          │  call_models_parallel() ──> ThreadPoolExecutor│
+                          │                                              │
+                          │  ┌──────────┐  ┌───────────┐  ┌──────────┐  │
+                          │  │ LiteLLM  │  │ CLI Sub-  │  │  Cost    │  │
+                          │  │ (7+ APIs)│  │ process   │  │ Tracker  │  │
+                          │  │          │  │ (Codex,   │  │ (Lock)   │  │
+                          │  │ OpenAI   │  │  Gemini,  │  │          │  │
+                          │  │ Anthropic│  │  Claude)  │  │          │  │
+                          │  │ Google   │  │           │  │          │  │
+                          │  │ xAI      │  │  $0 cost  │  │          │  │
+                          │  │ Mistral  │  │  (subs)   │  │          │  │
+                          │  └──────────┘  └───────────┘  └──────────┘  │
+                          └─────────────────────────────────────────────┘
+                                              │
+                          ┌───────────────────▼──────────────────────────┐
+                          │              Support Layer                    │
+                          │                                              │
+                          │  ┌───────────┐  ┌──────────┐  ┌──────────┐  │
+                          │  │Adversaries│  │Providers │  │ Prompts  │  │
+                          │  │ 9+ named  │  │MODEL_COSTS│  │ System   │  │
+                          │  │ personas  │  │ Bedrock  │  │ prompts  │  │
+                          │  │ (frozen)  │  │ CLI avail│  │ Focus    │  │
+                          │  └───────────┘  └──────────┘  └──────────┘  │
+                          └──────────────────────────────────────────────┘
 
-                    ═══════════════════════════════════════
-                    After consensus (or directly via CLI):
-                    ═══════════════════════════════════════
+                          ┌──────────────────────────────────────────────┐
+                          │              Persistence Layer                │
+                          │                                              │
+                          │  Session State    Gauntlet Checkpoints        │
+                          │  ~/.config/...    .adversarial-spec-gauntlet/ │
+                          │  (no lock)        (FileLock + atomic write)   │
+                          │                                              │
+                          │  MCP Tasks        Adversary Stats/Medals      │
+                          │  .claude/tasks    ~/.adversarial-spec/        │
+                          │  (no lock)        (no lock)                   │
+                          └──────────────────────────────────────────────┘
 
-                    ┌───────────────────────────────────────┐
-                    │      GAUNTLET PIPELINE (gauntlet/)     │
-                    │  orchestrator.py:run_gauntlet():116    │
-                    │  GauntletConfig ─> all phases          │
-                    │                                        │
-                    │  Phase 1: ┌─────┐┌─────┐┌─────┐      │
-                    │  Attacks  │Para ││Burn ││Dist │ x9    │
-                    │  (parallel)│noid ││Oncl ││Sys  │      │
-                    │           └──┬──┘└──┬──┘└──┬──┘      │
-                    │              └──────┼──────┘          │
-                    │                     ▼                  │
-                    │  Phase 2: Big Picture Synthesis        │
-                    │  Phase 3: Filter + Cluster (FileLock)  │
-                    │  Phase 3.5: Checkpoint ────>  disk     │
-                    │  Phase 4: Multi-model Evaluation       │
-                    │  Phase 5: Adversary Rebuttals          │
-                    │  Phase 6: Final Adjudication           │
-                    │  Phase 7: [Optional] Final Boss (Opus) │
-                    │                                        │
-                    │  persistence.py ─> checkpoints/manifests│
-                    │  model_dispatch.py ─> validate + route  │
-                    │  reporting.py ─> leaderboard + report   │
-                    └──────────────┬────────────────────────┘
-                                   │
-                                   ▼
-                    ┌───────────────────────────────────────┐
-                    │        EXECUTION PLANNING              │
-                    │   (guidelines-based, via Claude)       │
-                    │                                        │
-                    │   spec + concerns ──> task DAG         │
-                    │   (gauntlet_concerns.py links          │
-                    │    concerns to implementation tasks)   │
-                    └───────────────────────────────────────┘
-
-    ════════════════════════════════════════════════════════════
-    Supporting Infrastructure:
-    ════════════════════════════════════════════════════════════
-
-    ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
-    │ Session  │   │ Telegram │   │MCP Tasks │   │Pre-Gaunt │
-    │ Manager  │   │   Bot    │   │  Server  │   │  let     │
-    │          │   │          │   │          │   │          │
-    │sessions/ │   │ HTTP API │   │tasks.json│   │collectors│
-    │*.json    │   │ polling  │   │ FastMCP  │   │extractors│
-    └──────────┘   └──────────┘   └──────────┘   └──────────┘
-
-    ┌──────────────────────────────────────────────────────────┐
-    │                    SHARED DATA LAYER                      │
-    │                                                          │
-    │  prompts.py ──── providers.py ──── adversaries.py        │
-    │  (templates)     (MODEL_COSTS)     (9 personas)          │
-    │                  (API keys)        (frozen dataclass)     │
-    │                  (Bedrock)                                │
-    │                                                          │
-    │  core_types.py ── GauntletConfig, Concern, Evaluation,   │
-    │                   GauntletResult, PhaseMetrics, Medal     │
-    └──────────────────────────────────────────────────────────┘
+Legend:
+  ────>  Data flow (synchronous)
+  ──|>   Async/parallel flow (ThreadPoolExecutor)
+  [text]  Conditional or note
 ```
 
-## Legend
+## Key Data Paths
 
 ```
-──>     synchronous data flow
-═══     phase boundary
-[ ]     optional component
-Para    ParanoidSecurity adversary
-Burn    BurnedOncall adversary
-Dist    DistributedSystemsNerd adversary
-x9      9 adversary personas total
-Cl/au/de Claude CLI model route
+Spec (stdin) ────> debate.py ────> call_models_parallel() ────> N model responses
+                       │                                              │
+                       │              [consensus?] ◄──────────────────┘
+                       │                  │
+                       │         [yes] ──> save checkpoint ──> done
+                       │         [no]  ──> next round
+                       │
+                       └──> gauntlet ──> Phase 1 ──|> adversary × model pairs
+                                              │
+                                         Phase 2-7 (sequential)
+                                              │
+                                         checkpoint per phase
+                                              │
+                                         FinalBossResult
+                                         (PASS / REFINE / RECONSIDER)
 ```

@@ -5,39 +5,35 @@
 | Property | Value |
 |----------|-------|
 | Purpose | Gauntlet concern parsing (mostly deprecated) |
-| Entry | `GauntletConcernParser` at execution_planner/gauntlet_concerns.py |
-| Key files | execution_planner/__init__.py, gauntlet_concerns.py |
-| Depends on | Adversaries (for ADVERSARY_PREFIXES, generate_concern_id) |
-| Used by | Debate Engine (optional, lazy-loaded) |
+| Entry | `execution_planner/gauntlet_concerns.py` |
+| Key files | execution_planner/__init__.py, execution_planner/gauntlet_concerns.py |
+| Depends on | Adversaries |
+| Used by | Execution plan generation |
+| Runtime status | partial |
+| Architecture status | deprecated |
 
 ## What This Component Does
 
-The execution planner was originally a full spec-to-task decomposition pipeline. **It is mostly deprecated** (Option B+ decision, Feb 2026). The pipeline approach was replaced by Claude creating plans directly using embedded guidelines in `phases/06-execution.md`. Dead modules have been deleted. Only `gauntlet_concerns.py` survives long-term — it parses structured gauntlet JSON to link concerns to spec sections.
-
-## Data Flow
-
-```
-IN:  gauntlet concern JSON files
-     └─> GauntletConcernParser.parse_file()
-
-PROCESS:
-     ├─> Parse concern JSON structure
-     ├─> Match concern IDs to adversary prefixes
-     └─> Link concerns to spec sections
-
-OUT: list[GauntletConcern] with linked spec references
-     └─> returned to caller
-```
+Originally a full execution planning pipeline, most modules were deleted in Feb 2026 as part of the execution-planner-deprecation spec. Only `gauntlet_concerns.py` remains, providing `GauntletConcernParser` for parsing gauntlet JSON output and linking concerns to spec sections. The `__init__.py` still exports types but Phase 3 cleanup (removing unused exports) is still pending.
 
 ## Key Functions
 
-| Function | Purpose | Location | Status |
-|----------|---------|----------|--------|
-| `GauntletConcernParser.parse_file()` | Parse gauntlet JSON | gauntlet_concerns.py | **KEEP** |
-| `load_concerns_for_spec()` | Load all concerns for a spec hash | gauntlet_concerns.py | **KEEP** |
+| Function | Purpose | Location |
+|----------|---------|----------|
+| `GauntletConcernParser` | Parse gauntlet JSON, link to spec sections | gauntlet_concerns.py |
+| `load_concerns_for_spec()` | Load concerns for a spec file | gauntlet_concerns.py |
+
+## Contracts
+
+### Type Contracts
+
+| Contract | Purpose | Owner | Consumed By |
+|----------|---------|-------|-------------|
+| `GauntletConcern` | Parsed concern with section refs | gauntlet_concerns.py:30 | Execution plan generation |
+| `LinkedConcern` | Concern linked to spec section | gauntlet_concerns.py:66 | Execution plan generation |
 
 ## LLM Notes
 
-- Only `gauntlet_concerns.py` and `__init__.py` exist in this directory now. Dead modules were deleted in the execution planner deprecation (Feb 2026).
-- `from execution_planner import ...` in debate.py is wrapped in try/except for graceful degradation.
-- The `__init__.py` exports: GauntletConcern, GauntletConcernParser, GauntletReport, LinkedConcern, load_concerns_for_spec.
+- This component is deprecated. Do not add new features here.
+- Phase 3 of the deprecation spec (cleanup exports in __init__.py) is still pending.
+- `GauntletConcern` is different from `gauntlet/core_types.Concern`. The former has section_refs, title, failure_mode, etc.

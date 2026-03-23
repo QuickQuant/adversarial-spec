@@ -1,73 +1,72 @@
 # System Overview: adversarial-spec
 
-> Generated: 2026-03-21 | Git: 12c5d3f | Target: /home/jason/PycharmProjects/adversarial-spec
-> Skill version: 2.6 | Model: claude-opus-4-6
+> Generated: 2026-03-22 | Git: c3b5f8c | Target: /home/jason/PycharmProjects/adversarial-spec
+> Skill version: 3.0 | Model: claude-opus-4-6
+> Freshness: fresh | Trust: Current HEAD with no relevant drift
 
 ## What This System Does
 
-adversarial-spec is a Claude Code skill that refines software specifications through multi-model debate and adversarial stress-testing. It sends specs to multiple LLMs (OpenAI, Anthropic, Google, xAI, Mistral, Groq, and CLI tools like Codex, Gemini CLI, Claude CLI) simultaneously for iterative critique until all models agree, then runs a gauntlet of 9 named adversary personas that attack the spec from different angles (security, scalability, UX, etc.). The result is a battle-tested specification with surviving concerns prioritized by severity.
+adversarial-spec is a Claude Code skill that refines product specifications through multi-model adversarial debate. Users pipe a spec into the CLI, which dispatches it to multiple LLMs for critique, collects responses, and drives iterative refinement until models reach consensus. For thorough stress-testing, a 7-phase gauntlet pipeline runs the spec through named adversary personas (security paranoid, scalability hawk, UX advocate, etc.), evaluates their concerns with frontier models, and produces a final pass/refine/reconsider verdict.
 
 ## Architecture at a Glance
 
-The system is built around two complementary flows sharing a common model abstraction layer. The **debate engine** (`debate.py`) orchestrates multi-round critiques where each round sends the current spec to selected models in parallel, collects their responses, checks for agreement, and saves checkpoints. The **gauntlet pipeline** (`gauntlet/` package, 16 modules) is a 7-phase pipeline that generates adversarial attacks, synthesizes a big-picture view, clusters and deduplicates concerns, evaluates them with frontier models, runs rebuttals for dismissed concerns, performs final adjudication, and optionally runs a "Final Boss" UX review.
+The system is built around two primary workflows sharing a common model-calling layer. The **debate engine** (`debate.py`) is the master CLI, routing 18 different actions through argparse dispatch. For standard critique rounds, it loads a spec (from stdin or a resumed session), calls `call_models_parallel()` to dispatch to all configured LLMs simultaneously via ThreadPoolExecutor, collects `ModelResponse` objects, checks for consensus, and prompts the user to continue or stop.
 
-Both flows rely on a unified model layer (`models.py`) that dispatches calls through LiteLLM for API providers or via subprocess for CLI tools (Codex, Gemini CLI, Claude CLI). A thread-safe `CostTracker` singleton accumulates token usage and cost across all calls. Provider configuration, API key validation, Bedrock support, and cost tables live in `providers.py`.
+The **gauntlet pipeline** (`gauntlet/orchestrator.py` + 16 submodules) is the heavy-duty path. It runs 7 sequential phases: attack generation (Phase 1, parallel across adversaries and models), big-picture synthesis (Phase 2), concern filtering and clustering (Phase 3/3.5), frontier-model evaluation (Phase 4), adversary rebuttals (Phase 5), adjudication with medals (Phase 6), and final boss review (Phase 7). Each phase checkpoints its output to `.adversarial-spec-gauntlet/` using FileLock-guarded atomic writes, enabling resume after crashes or quota exhaustion.
 
-Adversary personas are defined as frozen dataclasses in `adversaries.py`, each with a name, prefix (for concern IDs), persona prompt, and explicit dismissal/acceptance rules. The gauntlet package was extracted from a 4,087-line monolith into 16 focused modules, with a shim `__init__.py` re-exporting 5 public symbols for backwards compatibility.
+Both workflows share the **models layer** (`models.py`), which abstracts 7+ LLM providers through LiteLLM for API-based models and subprocess calls for CLI models (Codex, Gemini CLI, Claude CLI). A global thread-safe `CostTracker` accumulates token usage and costs across all parallel calls. The **providers layer** (`providers.py`) manages model configuration, cost rates, Bedrock routing, and CLI availability detection.
+
+The **adversaries module** (`adversaries.py`) defines 9+ named attacker personas as frozen dataclasses with structured evaluation protocols (valid/invalid dismissal rules). These drive the gauntlet's attack generation and evaluation phases.
+
+Supporting this are a **pre-gauntlet** context collector (git position, system state, spec-affected files), a **session** persistence layer for multi-round debate state, an **MCP task server** for cross-agent coordination, and an **execution planner** module (mostly deprecated, only gauntlet concern parsing remains).
 
 ## Primary Data Flows
 
-### Spec Critique Loop
+### Debate Critique Flow
 
-A spec arrives via stdin or session resume. `debate.py` formats it with system prompts (selected by doc type and depth), optional focus areas, and context files. `call_models_parallel()` at models.py:901 dispatches to N models simultaneously via `ThreadPoolExecutor`. Each model's response is parsed for `[AGREE]`/`[SPEC]` markers. Results are saved as round checkpoints and optionally sent via Telegram. The user iterates manually — each invocation is one round.
+A spec arrives via stdin, gets loaded into a `SessionState`, and is dispatched to N models in parallel via `call_models_parallel()`. Each model receives a system prompt (persona + focus area) and the spec as user message. Responses come back as `ModelResponse` objects with critique text, token counts, and agreement flags. If all models agree, the round ends. Otherwise, the user reviews the critiques and optionally continues to the next round. Session state and checkpoints persist to disk after each round at `debate.py:1206`.
 
-### Gauntlet Pipeline
+### Gauntlet Stress-Test Flow
 
-A spec enters `run_gauntlet()` at `gauntlet/orchestrator.py:116` and flows through 7 phases: (1) adversary personas generate concerns in parallel (`phase_1_attacks.py`), (2) an LLM synthesizes patterns across all concerns (`phase_2_synthesis.py`), (3) historical filtering removes resolved issues and semantic clustering deduplicates (`phase_3_filtering.py`), (3.5) checkpoint after clustering, (4) multiple evaluation models produce accept/dismiss/acknowledge/defer verdicts (`phase_4_evaluation.py`), (5) dismissed concerns get adversary rebuttals (`phase_5_rebuttals.py`), (6) sustained rebuttals get final adjudication (`phase_6_adjudication.py`), (7) optional Final Boss UX review (`phase_7_final_boss.py`). Results persist to `~/.adversarial-spec/runs/` via `persistence.py`. A `GauntletConfig` dataclass centralizes all timeout/reasoning/mode settings, and `PhaseMetrics` captures per-phase telemetry for the run manifest.
+The spec enters `run_gauntlet()` at `gauntlet/orchestrator.py:196` with a `GauntletConfig`. Phase 1 dispatches the spec to all adversary-model pairs in parallel, collecting raw `Concern` objects with stable hash-based IDs. Phase 2 synthesizes a big-picture view. Phase 3/3.5 filters and clusters concerns using a cheap model, with provenance tracking. Phase 4 sends clustered concerns to a frontier model for verdict assignment (dismiss/accept/acknowledge/defer). Phase 5 gives dismissed adversaries a rebuttal chance. Phase 6 aggregates verdicts and awards medals. Phase 7's final boss reviews everything and issues a pass/refine/reconsider verdict. Each phase checkpoints via `persistence.py` with FileLock coordination.
 
-### Cost Tracking
+### Cost Tracking Flow
 
-Every model call reports token counts (from API responses, CLI JSON output, or character-based estimation). A global `CostTracker` singleton at models.py:204 accumulates per-model and total costs using rates from `MODEL_COSTS` in `providers.py`. The tracker uses a `threading.Lock` for thread-safe accumulation across parallel calls.
-
-### Pre-Gauntlet Context Collection
-
-An optional pre-gauntlet phase (`pre_gauntlet/` package) runs before the gauntlet to collect codebase context — git position, build status, discovered services, and alignment checks. It enriches the spec with `context_markdown` before adversarial testing begins.
+Every model call (API or CLI) reports token usage to the global `cost_tracker` at `models.py:211`. API models look up `MODEL_COSTS` for per-token pricing. CLI models report zero cost (subscription-based). The tracker uses `threading.Lock` for thread-safe accumulation across ThreadPoolExecutor workers. Cost summaries appear in output and are included in run manifests.
 
 ## Key Architectural Decisions
 
-- **Single-invocation model**: No daemon. Each CLI invocation is one debate round or one gauntlet run. Session persistence enables manual multi-round iteration.
-- **Thread-per-model parallelism**: `ThreadPoolExecutor` dispatches to all models simultaneously. Cost tracking is lock-guarded.
-- **CLI subprocess routing**: Codex, Gemini, and Claude CLI called via subprocess for file access capability at zero token cost.
-- **LiteLLM abstraction**: 7+ API providers unified behind `litellm.completion()`.
-- **Checkpoint persistence with FileLock**: JSON files after each gauntlet phase; `filelock` ensures atomic writes for multi-process safety.
-- **Layered dependencies**: CLI → Orchestration → LLM → Config. No circular imports.
-- **Monolith extraction with shim**: `gauntlet/__init__.py` re-exports 5 public symbols for backwards compatibility.
-- **GauntletConfig centralization**: All timeout/reasoning/mode parameters flow through a single config dataclass, eliminating the scattered hardcoded defaults that caused a quota-burn bug.
+- **Single-invocation CLI, no daemon**: Each run is self-contained. Multi-round continuity comes from session files and checkpoints, not a running process.
+- **ThreadPoolExecutor for model parallelism**: Simple, effective for I/O-bound LLM calls. Up to 32 workers for gauntlet Phase 1.
+- **FileLock-guarded atomic checkpoints**: Prevents corrupted JSON on crash. Temp file + fsync + os.replace ensures durability.
+- **Hash-based checkpoint keys**: `spec_hash + config_hash` ensures stale checkpoints are detected and invalidated on resume.
+- **LiteLLM as provider abstraction**: Unifies OpenAI, Anthropic, Google, xAI, Mistral, Groq, and more behind a single `completion()` call.
+- **CLI subprocess routing for subscription models**: Codex, Gemini CLI, and Claude CLI run as subprocess calls, bypassing LiteLLM entirely.
+- **Frozen adversary dataclasses with version tracking**: `content_hash()` enables detecting when personas change, invalidating old evaluation data.
 
 ## Non-Obvious Things
 
-- **`debate.py` is both CLI and library**: It's the primary entry point for both debate and gauntlet subcommands, not just debates. The gauntlet has its own standalone CLI (`python -m gauntlet`) but debate.py adds `--show-manifest`, `--gauntlet-resume`, and `--codex-reasoning` flags.
-- **`--codex-reasoning` controls attack reasoning**: In debate.py, `--codex-reasoning` maps to `attack_codex_reasoning` in `run_gauntlet()`. There is no `--attack-codex-reasoning` in debate.py — that flag only exists in the standalone `gauntlet/cli.py`.
-- **`gauntlet_monolith.py` is a shim**: The original monolith was replaced by a 12-line file that raises `ImportError` directing callers to the package.
-- **`execution_planner/` is mostly deprecated**: Only `gauntlet_concerns.py` survives long-term. Generation logic moved to LLM guidelines in `phases/06-execution.md`.
-- **Skills are symlinked**: `~/.claude/skills/adversarial-spec/` is symlinked to `skills/adversarial-spec/` in the repo, so changes are deployed instantly.
-- **Adversary stats are cumulative**: `~/.adversarial-spec/adversary_stats.json` accumulates across all gauntlet runs, building a leaderboard over time.
-- **`scope.py` is unused**: Exists in scripts but not imported by any active module.
-- **Model name validation**: `gauntlet/model_dispatch.py` validates model names against a blocklist regex to prevent injection via `--models` flag.
+- **Two gauntlet CLIs exist**: `debate.py gauntlet` and `gauntlet/cli.py` accept different flag names for the same features. They share `run_gauntlet()` as the backend.
+- **gauntlet_monolith.py is a 12-line shim**: The entire 4087-line monolith was extracted into the `gauntlet/` package. The shim exists for backwards compatibility.
+- **scope.py (606 lines) is dead code**: Not imported anywhere. Either needs wiring into the debate workflow or deletion.
+- **knowledge_service.py is implemented but unwired**: Full caching implementation exists in `integrations/` but no code path calls it.
+- **Pydantic is an implicit dependency**: Used in `pre_gauntlet/models.py` but not declared in `pyproject.toml`.
+- **No "Spec" dataclass**: Specs flow as plain strings. Identity is tracked via SHA-256 hash, not a structured type.
+- **Unattended mode is a builtins.input monkey-patch**: Replaced globally during gauntlet runs, restored in a finally block.
 
 ## Component Map
 
 | Component | Purpose | Key Entry |
 |-----------|---------|-----------|
-| Debate Engine | Multi-model spec critique loop with CLI orchestration | `main()` at debate.py:1493 |
-| Gauntlet Pipeline | 7-phase adversarial stress-testing (16-module package) | `run_gauntlet()` at gauntlet/orchestrator.py:116 |
-| Model Layer | LLM call abstraction (LiteLLM + 3 CLI tools) | `call_models_parallel()` at models.py:901 |
-| Adversaries | 9 named adversary personas with dismissal rules | `ADVERSARIES` dict at adversaries.py |
-| Providers | API key validation, costs, profiles, Bedrock support | `validate_model_credentials()` at providers.py |
-| Prompts | System prompts, focus areas, doc-type templates | `get_system_prompt()` at prompts.py |
-| Pre-Gauntlet | Codebase context collection before gauntlet | `run_pre_gauntlet()` at pre_gauntlet/orchestrator.py |
-| MCP Tasks | Cross-agent task coordination server | `mcp` at mcp_tasks/server.py |
-| Execution Planner | Gauntlet concern parsing (deprecated) | `load_concerns_for_spec()` at execution_planner/ |
-| Session | Debate session state and checkpointing | `SessionState` at session.py:17 |
+| Debate Engine | CLI routing + multi-round debate | `main()` at debate.py:1493 |
+| Gauntlet Pipeline | 7-phase adversarial stress-test | `run_gauntlet()` at gauntlet/orchestrator.py:196 |
+| Models | LLM call abstraction (LiteLLM + CLI) | `call_models_parallel()` at models.py:901 |
+| Providers | Model config, costs, Bedrock | `providers.py` |
+| Adversaries | Named attacker personas | `adversaries.py` |
+| Prompts | Centralized prompt templates | `prompts.py` |
+| Pre-Gauntlet | Git/system context collection | `run_pre_gauntlet()` at pre_gauntlet/orchestrator.py:207 |
+| Session | Debate state persistence | `SessionState` at session.py:17 |
+| MCP Tasks | Cross-agent task coordination | `mcp.run()` at mcp_tasks/server.py:365 |
+| Execution Planner | Gauntlet concern parsing (mostly deprecated) | `execution_planner/gauntlet_concerns.py` |
 
 For detailed component docs, see `structured/components/`.

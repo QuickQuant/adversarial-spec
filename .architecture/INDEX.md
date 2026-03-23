@@ -1,27 +1,33 @@
 # Architecture: adversarial-spec
 
-> Generated: 2026-03-21 | Git: 12c5d3f | Target: /home/jason/PycharmProjects/adversarial-spec
-> Skill version: 2.6 | Model: claude-opus-4-6
+> Generated: 2026-03-22 | Git: c3b5f8c | Target: /home/jason/PycharmProjects/adversarial-spec
+> Skill version: 3.1 | Model: claude-opus-4-6
+> Freshness: fresh | Trust: Current HEAD with no relevant drift
 
 ## System Summary
 
-adversarial-spec is a Claude Code skill that refines product specifications through multi-model debate and adversarial stress-testing. A CLI tool sends specs to multiple LLMs in parallel, collects critiques, and iterates until consensus. A gauntlet mode runs specs through 9 named adversary personas (security paranoid, burned oncall, UX skeptic, etc.) in a 7-phase attack-evaluate-rebuttal pipeline implemented as a 16-module `gauntlet/` package. The system is stateless per invocation, with session persistence enabling manual multi-round iteration.
+adversarial-spec is a Claude Code skill for iterative spec refinement through multi-model adversarial debate. It dispatches specifications to multiple LLMs for critique, drives consensus through debate rounds, and stress-tests specs through a 7-phase gauntlet pipeline with named adversary personas. The system is CLI-driven, checkpoint-resumable, and uses ThreadPoolExecutor for parallel model calls.
+
+## Quick Start
+
+- **Primer first:** [primer.md](primer.md) is the default small-context entrypoint for LLMs and humans.
+- **Navigation only:** This file helps you choose what to read next. Do not treat it as a substitute for substantive architecture context.
+- **Need guided reading?** Start with [access-guide.md](access-guide.md).
 
 ## Components
 
-| Component | Purpose | Entry Point | Key Files |
-|-----------|---------|-------------|-----------|
-| Debate Engine | Multi-model spec critique CLI | `main()` at debate.py:1493 | debate.py, session.py |
-| Gauntlet Pipeline | 7-phase adversarial stress-testing | `run_gauntlet()` at gauntlet/orchestrator.py:116 | gauntlet/ (16 modules), adversaries.py |
-| Models | LLM call abstraction (LiteLLM + CLI) | `call_models_parallel()` at models.py:901 | models.py |
-| Providers | Config, credentials, costs, Bedrock | `validate_model_credentials()` at providers.py | providers.py |
-| Prompts | Templates, focus areas, personas | `get_system_prompt()` at prompts.py | prompts.py |
-| Adversaries | Named attacker persona definitions | `ADVERSARIES` dict | adversaries.py |
-| Session | State persistence and checkpoints | `SessionState` at session.py:17 | session.py |
-| Pre-Gauntlet | Git/system context collection | `run_pre_gauntlet()` at pre_gauntlet/orchestrator.py | pre_gauntlet/, collectors/, integrations/ |
-| MCP Tasks | Cross-agent task coordination | `mcp.run()` at mcp_tasks/server.py | mcp_tasks/server.py |
-| Task Manager | Python task management API | `TaskManager` at task_manager.py | task_manager.py |
-| Execution Planner | Gauntlet concern parsing (deprecated) | `GauntletConcernParser` | execution_planner/gauntlet_concerns.py |
+| Component | Purpose | Runtime | Architecture | Key Files |
+|-----------|---------|---------|--------------|-----------|
+| Debate Engine | CLI routing + multi-round debate orchestration | implemented | active_primary | debate.py |
+| Gauntlet Pipeline | 7-phase adversarial stress-test | implemented | active_primary | gauntlet/orchestrator.py, gauntlet/core_types.py |
+| Models | LLM call abstraction (LiteLLM + CLI subprocess) | implemented | active_primary | models.py |
+| Providers | Model config, cost rates, Bedrock, CLI detection | implemented | active_primary | providers.py |
+| Adversaries | Named attacker persona definitions | implemented | active_primary | adversaries.py |
+| Prompts | Centralized prompt templates and personas | implemented | active_primary | prompts.py |
+| Pre-Gauntlet | Git/system context collection before gauntlet | implemented | active_primary | pre_gauntlet/orchestrator.py |
+| Session | Debate state persistence (multi-round resume) | implemented | active_primary | session.py |
+| MCP Tasks | Cross-agent task coordination via MCP protocol | implemented | active_primary | mcp_tasks/server.py |
+| Execution Planner | Gauntlet concern parsing (mostly deprecated) | partial | deprecated | execution_planner/gauntlet_concerns.py |
 
 ## Navigation
 
@@ -29,22 +35,24 @@ adversarial-spec is a Claude Code skill that refines product specifications thro
 
 | Question | Read |
 |----------|------|
-| What does this system do? | [overview.md](overview.md) |
+| What does this system do? | [primer.md](primer.md) |
+| What should I read next? | [access-guide.md](access-guide.md) |
+| What does this system do in depth? | [overview.md](overview.md) |
 | Where is code located? | [filesystem-map.md](filesystem-map.md) |
-| What patterns does the code use? | [patterns.md](patterns.md) |
-| What architectural issues exist? | [findings.md](findings.md) |
+
+**Fix things:**
+
+| Question | Read |
+|----------|------|
+| What should I fix first? | [concerns.md](concerns.md) |
+| What are the architectural hazards? | [concerns.md](concerns.md) → [findings.md](findings.md) → [patterns.md](patterns.md) |
 
 **Work on specific tasks:**
 
 | Task | Read |
 |------|------|
-| Add a new model provider | [components/models.md](structured/components/models.md), [components/providers.md](structured/components/providers.md) |
-| Add a new adversary persona | [components/adversaries.md](structured/components/adversaries.md), [components/gauntlet.md](structured/components/gauntlet.md) |
-| Modify the critique flow | [components/debate-engine.md](structured/components/debate-engine.md) |
-| Change prompt templates | [components/prompts.md](structured/components/prompts.md) |
-| Work on gauntlet phases | [components/gauntlet.md](structured/components/gauntlet.md) |
-| Work on pre-gauntlet context | [components/pre-gauntlet.md](structured/components/pre-gauntlet.md) |
-| Modify MCP task tools | [components/mcp-tasks.md](structured/components/mcp-tasks.md) |
+| Evaluate a plan against the codebase | [primer.md](primer.md) → matched [component docs](structured/components/) → [cross-references.md](structured/cross-references.md) |
+| Deep-dive a component | [primer.md](primer.md) → [overview.md](overview.md) → [components/{relevant}.md](structured/components/) |
 
 **Deep reference:**
 
@@ -52,31 +60,34 @@ adversarial-spec is a Claude Code skill that refines product specifications thro
 |------|------|
 | All entry points | [entry-points.md](structured/entry-points.md) |
 | Flow-by-flow breakdown | [flows.md](structured/flows.md) |
-| Call graphs and data paths | [cross-references.md](structured/cross-references.md) |
+| Call graphs, contracts, and data paths | [cross-references.md](structured/cross-references.md) |
+| Cross-cutting patterns | [patterns.md](patterns.md) |
+| Architectural findings | [findings.md](findings.md) |
 | Visual diagrams (humans) | [HUMAN_READ_ONLY_visuals/](HUMAN_READ_ONLY_visuals/) |
 
 ## Architecture Decisions
 
 Key patterns in this codebase:
-- **Single-invocation CLI**: No daemon. Each command is one debate round or one gauntlet run. Sessions enable resumability.
-- **Thread-per-model parallelism**: ThreadPoolExecutor dispatches to all models simultaneously.
-- **CLI subprocess routing**: Codex/Gemini/Claude called via subprocess for file access capability at zero token cost.
-- **LiteLLM abstraction**: 7+ API providers unified behind `litellm.completion()`.
-- **Checkpoint persistence with FileLock**: JSON files after each gauntlet phase, using `filelock` for atomic writes.
-- **GauntletConfig centralization**: All timeout/reasoning/mode parameters flow through a single config dataclass.
-- **Layered dependencies**: CLI → Orchestration → LLM → Config. No circular imports.
-- **Isolated pre-gauntlet**: Context collection subsystem has zero imports from debate/gauntlet modules.
+- **Single-invocation CLI**: No daemon; multi-round continuity via session files and checkpoints
+- **ThreadPoolExecutor parallelism**: Up to 32 workers for I/O-bound LLM calls
+- **FileLock-guarded atomic checkpoints**: Temp file + fsync + os.replace for crash safety
+- **Hash-based checkpoint keys**: spec_hash + config_hash detects stale data on resume
+- **LiteLLM provider abstraction**: Unifies 7+ LLM providers behind a single completion() call
+- **CLI subprocess routing**: Codex/Gemini/Claude CLI bypass LiteLLM entirely (subscription models)
+- **Frozen adversary dataclasses**: Version-tracked personas with content_hash() for change detection
 
 ## Generation Info
 
 | Field | Value |
 |-------|-------|
 | Generated by | `/mapcodebase` |
-| Skill version | 2.6 |
+| Skill version | 3.0 |
+| Schema version | 2.0 |
 | Model | claude-opus-4-6 |
-| Generated | 2026-03-21 |
-| Git hash | 12c5d3f |
-| Update | `/mapcodebase --update` |
+| Generated | 2026-03-22 |
+| Git hash | c3b5f8c |
+| Freshness | fresh |
+| Update | `/mapcodebase --update` (3.0 output only) |
 | Full regen | `/mapcodebase` |
 
-To check if this mapping is stale, compare the skill version above against `~/.claude/skills/mapcodebase/VERSION.md`. Major version mismatch = full re-scan needed.
+Use `manifest.json` as the source of truth for freshness, trust notes, drift, and accessor paths. If `freshness_status` is `stale`, run `/mapcodebase` before relying on these docs.

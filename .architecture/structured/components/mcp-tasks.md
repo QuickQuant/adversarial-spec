@@ -6,74 +6,52 @@
 |----------|-------|
 | Purpose | Cross-agent task coordination via MCP protocol |
 | Entry | `mcp.run()` at mcp_tasks/server.py:365 |
-| Key files | mcp_tasks/server.py, scripts/task_manager.py |
-| Depends on | mcp (FastMCP), shared .claude/tasks.json storage |
-| Used by | Claude Code agents, debate.py (optional task tracking) |
+| Key files | mcp_tasks/server.py, skills/adversarial-spec/scripts/task_manager.py |
+| Depends on | mcp (FastMCP) |
+| Used by | Claude Code agents, Codex agents (cross-agent coordination) |
+| Runtime status | implemented |
+| Architecture status | active_primary |
 
 ## What This Component Does
 
-The MCP Tasks server provides a task management API accessible to Claude Code agents via the MCP protocol. It exposes four tools (TaskCreate, TaskGet, TaskList, TaskUpdate) that operate on a shared `.claude/tasks.json` file. The companion `task_manager.py` provides a Python API to the same storage, enabling debate.py to track round progress alongside MCP-based task management.
-
-## Data Flow
-
-```
-IN:  MCP protocol messages (tool calls from Claude Code)
-     └─> FastMCP server (server.py:365)
-
-PROCESS:
-     ├─> TaskCreate: generate ID, write to tasks.json
-     ├─> TaskGet: read by ID from tasks.json
-     ├─> TaskList: filter by session_id, context_name, status; or list_contexts mode
-     └─> TaskUpdate: modify status, metadata, blockedBy, addBlocks
-
-OUT: MCP protocol responses (JSON)
-     + .claude/tasks.json (shared file)
-```
+Provides a task CRUD API via the MCP (Model Context Protocol). Four tools — TaskCreate, TaskGet, TaskList, TaskUpdate — manage tasks stored in `.claude/tasks.json`. Used for cross-agent coordination between Claude and Codex working on the same project. task_manager.py provides a Python-native TaskManager class with the same storage format.
 
 ## Key Functions
 
 | Function | Purpose | Location |
 |----------|---------|----------|
-| `TaskCreate` (decorator) | Create new task | server.py:98 |
-| `TaskGet` (decorator) | Get task by ID | server.py:140 |
-| `TaskList` (decorator) | List tasks with filters or list contexts | server.py:160 |
-| `TaskUpdate` (decorator) | Update task status/metadata/dependencies | server.py:261 |
-| `TaskManager.__init__()` | Python API initialization | task_manager.py:114 |
-| `TaskManager.create_task()` | Python task creation | task_manager.py |
-| `create_adversarial_spec_session()` | Creates full phase-based task set | task_manager.py:301 |
+| `TaskCreate()` | Create task with subject/description | mcp_tasks/server.py:98 |
+| `TaskGet()` | Retrieve task by ID | mcp_tasks/server.py:140 |
+| `TaskList()` | List tasks with filtering | mcp_tasks/server.py:160 |
+| `TaskUpdate()` | Update task status/metadata | mcp_tasks/server.py:261 |
+| `load_tasks()` | Read .claude/tasks.json | mcp_tasks/server.py |
+| `save_tasks()` | Write .claude/tasks.json | mcp_tasks/server.py |
 
-## Common Patterns
+## Contracts
 
-### Shared Storage
+### Type Contracts
 
-Both the MCP server and Python TaskManager read/write the same `.claude/tasks.json`. This enables Claude Code's MCP tools and Python scripts to see each other's tasks without a separate coordination layer.
-
-### Working Directory Detection
-
-`get_working_dir()` checks `MCP_WORKING_DIR` → `PWD` → `os.getcwd()` to find the project root. This ensures tasks are stored per-project.
-
-### Context-Based Filtering
-
-TaskList supports `context_name` filtering and a `list_contexts` mode that returns a summary of all contexts with task counts and last activity, enabling work stream management.
+| Contract | Purpose | Owner | Consumed By |
+|----------|---------|-------|-------------|
+| Task | Task object (id, subject, status, owner, blocks/blockedBy) | server.py + task_manager.py | Cross-agent workflows |
 
 ## Error Handling
 
-- **File locking**: No explicit locking — assumes single writer at a time
-- **Missing file**: Created on first write with `{tasks: [], next_id: 1}` structure
-- **Invalid JSON**: Caught and returns empty task list
+- **No file locking on tasks.json**: Both MCP server and TaskManager read/write without locking. Known risk for concurrent access.
 
-## Integration Points
+## Concurrency Concerns
 
-**Calls out to:**
-- File system (`.claude/tasks.json`) — read/write
+| Resource | Callers | Synchronization | Risk |
+|----------|---------|-----------------|------|
+| `.claude/tasks.json` | MCP server, TaskManager | None | Medium — last-write-wins on concurrent access |
 
-**Called by:**
-- Claude Code agents via MCP protocol
-- `debate.py:get_task_manager()` — lazy-loaded Python API
-- `task_manager.py:create_adversarial_spec_session()` — batch task creation
+## Configuration
+
+| Config | Source | Default |
+|--------|--------|---------|
+| `MCP_WORKING_DIR` | env var | None (falls back to PWD) |
 
 ## LLM Notes
 
-- The MCP server uses FastMCP decorators, not explicit tool registration. Tools are defined as decorated functions.
-- `task_manager.py` is the Python equivalent of the MCP server — same storage, different interface.
-- Session-based filtering uses `metadata.session_id` field, not a top-level session property.
+- Task JSON uses `blockedBy` (camelCase) in storage but `blocked_by` (snake_case) in Python. Watch for key name mismatches.
+- task_manager.py has a `__name__ == "__main__"` demo block — don't confuse it with a real entry point.

@@ -1,7 +1,7 @@
 # Structured Flows
 
 > Every significant flow in structured notation. Optimized for LLM consumption.
-> Generated: 2026-03-21 | Git: 12c5d3f
+> Generated: 2026-03-22 | Git: c3b5f8c
 
 ## Notation
 
@@ -26,393 +26,416 @@ All 7 fields are required for every flow. If a field doesn't apply, write `none`
 
 ## Lifecycle Flows
 
-### FLOW: debate_startup
+### FLOW: cli_action_routing
 
 ```
-TRIGGER: User runs `debate.py critique` with spec input
-ENTRY: main() (scripts/debate.py:1493)
+TRIGGER: CLI invocation `adversarial-spec <action>`
+ENTRY: main() (debate.py:1493)
 STATUS: implemented
 
 STEPS:
-  1. create_parser() -> parse CLI arguments
-  2. [action == info_command] -> handle_info_command() | continue
-  3. [action == utility_command] -> handle_utility_command() | continue
-  4. [action == execution-plan] -> handle_execution_plan() | continue
-  5. [action == gauntlet] -> handle_gauntlet() | continue
-  6. apply_profile(args) -> merge profile settings into args
-  7. parse_models(args) -> resolve model list
-  8. [bedrock enabled] -> setup_bedrock() | continue
-  9. validate_models_before_run() -> check API keys
-  10. load_or_resume_session() -> get/create session state
-  11. run_critique() -> enter debate loop
+  1. create_parser() -> parse args
+  2. [action in info commands] -> handle_info_command() -> return
+  3. [action in utility commands] -> handle_utility_command() -> return
+  4. [action == "execution-plan"] -> handle_execution_plan() -> return
+  5. [action == "gauntlet"] -> handle_gauntlet() -> return
+  6. apply_profile() [if --profile] -> parse_models() -> setup_bedrock() [if --bedrock]
+  7. validate_models_before_run() -> load_or_resume_session()
+  8. [action == "send-final"] -> handle_send_final() -> return
+  9. [action == "export-tasks"] -> handle_export_tasks() -> return
+  10. run_critique() -> return
 
 DATA_IN:
-  - spec: str (markdown spec via stdin or --spec-file)
-  - models: list[str] (from --models or profile)
-  - doc_type: str (spec|prd|tech|debug)
-  - focus: Optional[str] (focus area name)
-  - persona: Optional[str] (persona name)
+  - args: argparse.Namespace (CLI arguments)
+  - stdin: str (spec text, for critique/gauntlet actions)
 
 DATA_OUT:
-  - none (outputs to stdout, session file, optional telegram)
+  - stdout: str (critique responses, reports, info listings)
+  - exit_code: int (0=success, 1=runtime error, 2=config error)
 
-EXITS_TO: debate_round_loop
+EXITS_TO: run_critique, handle_gauntlet, handle_info_command, handle_utility_command
 ```
 
-### FLOW: session_resume
+### FLOW: gauntlet_pipeline_init
 
 ```
-TRIGGER: User runs debate.py with --resume <session_id>
-ENTRY: load_or_resume_session() (scripts/debate.py)
+TRIGGER: handle_gauntlet() or direct run_gauntlet() call
+ENTRY: run_gauntlet() (gauntlet/orchestrator.py:196)
 STATUS: implemented
 
 STEPS:
-  1. SessionState.load(session_id) -> read JSON from sessions dir
-  2. Validate path is within SESSIONS_DIR (security check)
-  3. Restore spec, round number, models, focus, persona
-  4. [session has history] -> display last round summary | skip
-  5. Return restored session state
+  1. build GauntletConfig from arguments
+  2. resolve attack_models (explicit > adversary_model > auto-select)
+  3. resolve eval_models (multi-model > single > auto-select)
+  4. _validate_model_name() for all models
+  5. [unattended == True] -> monkey-patch builtins.input
+  6. create .adversarial-spec-gauntlet/ directory
+  7. resolve and filter adversaries
+  8. compute config_hash for checkpoint matching
+  9. [resume == True] -> load_partial_run() -> skip completed phases
+  10. execute phases 1-7 sequentially -> gauntlet_phase_execution
 
 DATA_IN:
-  - session_id: str (session identifier)
+  - spec: str (specification text)
+  - config: GauntletConfig (timeout, reasoning, resume flags)
+  - adversaries: list[str] (adversary keys)
+  - models: list[str] (model identifiers)
 
 DATA_OUT:
-  - session: SessionState (restored state with spec, round, history)
+  - result: GauntletResult (concerns, evaluations, rebuttals, verdict, cost)
 
-EXITS_TO: debate_round_loop
+EXITS_TO: gauntlet_phase_execution, checkpoint_persistence
 ```
 
 ---
 
 ## Data Processing Flows
 
-### FLOW: debate_round_loop
+### FLOW: debate_critique_round
 
 ```
-TRIGGER: Called from debate_startup after session is loaded
-ENTRY: run_critique() (scripts/debate.py:1206)
+TRIGGER: run_critique() called from main()
+ENTRY: run_critique() (debate.py:1206)
 STATUS: implemented
 
 STEPS:
-  1. log_input_stats() -> calculate line count and SHA256 hash
-  2. Build system prompt via get_system_prompt(doc_type, persona, focus)
-  3. Build user message via REVIEW_PROMPT_TEMPLATE with spec + context
-  4. call_models_parallel(models, system_prompt, user_message) -> list[ModelResponse]
-  5. Filter successful responses (no errors)
-  6. Extract agreement: all_agreed = all(r.agreed for r in successful)
-  7. [any response has revised spec] -> update session.spec | keep current
-  8. SessionState.save() -> persist round results
-  9. save_checkpoint(round_num, spec) -> write .adversarial-spec-checkpoints/
-  10. save_critique_responses(results, round_num) -> write critiques JSON
-  11. [telegram enabled] -> send_telegram_notification() | skip
-  12. output_results() -> JSON or formatted text to stdout
+  1. load/create session state (or None)
+  2. [optional] create MCP task for tracking
+  3. [technical spec without context] -> warn user
+  4. call_models_parallel(models, spec, round, doc_type, focus, persona, context)
+  5. aggregate responses -> check consensus ([AGREE] flags)
+  6. [all agree] -> save checkpoint -> return
+  7. [not agreed] -> extract_spec() from best response
+  8. prompt user "Continue to next round?"
+  9. [user says no] -> save checkpoint -> return
+  10. [user says yes] -> increment round -> goto step 4
 
 DATA_IN:
-  - session: SessionState (current spec, round number, models)
-  - args: argparse.Namespace (CLI options)
+  - spec: str (specification text)
+  - models: list[str] (model identifiers)
+  - round_num: int (current debate round)
+  - session: SessionState (optional, for resume)
 
 DATA_OUT:
-  - output: dict (JSON with responses, agreement status, cost)
-  - side_effects: session file updated, checkpoint written, critiques JSON saved
+  - responses: list[ModelResponse] (per-model critiques)
+  - checkpoint: file (round spec + critiques JSON)
 
-EXITS_TO: none (terminal - one round per invocation, user decides next round)
+EXITS_TO: model_parallel_dispatch, session_persistence
 ```
 
-### FLOW: model_call
+### FLOW: model_parallel_dispatch
 
 ```
-TRIGGER: Called from call_models_parallel() for each model
-ENTRY: call_single_model() (scripts/models.py:619)
+TRIGGER: run_critique() or gauntlet phase functions
+ENTRY: call_models_parallel() (models.py:901)
 STATUS: implemented
 
 STEPS:
-  1. [model starts with "codex/"] -> call_codex_model() | continue
-  2. [model starts with "gemini-cli/"] -> call_gemini_cli_model() | continue
-  3. [model starts with "claude-cli/"] -> call_claude_cli_model() | continue
-  4. litellm.completion(model, messages) -> raw response
-  5. Extract response text from completion
-  6. Detect agreement: search for "[AGREE]" marker
-  7. [has [SPEC]...[/SPEC] tags] -> extract revised spec | spec=None
-  8. cost_tracker.add(model, input_tokens, output_tokens)
-  9. Return ModelResponse
+  1. create ThreadPoolExecutor(max_workers=len(models))
+  2. for each model: submit(call_single_model, model, spec, ...)
+  3. route by model prefix:
+     a. [codex/] -> call_codex_model() with retry
+     b. [gemini-cli/] -> call_gemini_cli_model() with retry
+     c. [claude-cli/] -> call_claude_cli_model() with retry
+     d. [other] -> litellm.completion()
+  4. for each completed future: collect ModelResponse
+  5. cost_tracker.add() per response (thread-safe via Lock)
 
 DATA_IN:
-  - model: str (model identifier)
-  - system_prompt: str (instructions)
-  - user_message: str (spec + prompt)
+  - models: list[str] (model identifiers)
+  - system_prompt: str
+  - user_prompt: str (spec + instructions)
+  - timeout: int (seconds)
 
 DATA_OUT:
-  - response: ModelResponse (model, response, agreed, spec, tokens, cost)
+  - responses: list[ModelResponse] (model, response, tokens, cost, agreed)
 
-EXITS_TO: debate_round_loop (collected by ThreadPoolExecutor)
+EXITS_TO: cost_tracking
 ```
 
-### FLOW: gauntlet_pipeline
+### FLOW: gauntlet_phase_execution
 
 ```
-TRIGGER: User runs `debate.py gauntlet` or `python -m gauntlet`
-ENTRY: run_gauntlet() (scripts/gauntlet/orchestrator.py:116)
+TRIGGER: run_gauntlet() after init
+ENTRY: run_gauntlet() (gauntlet/orchestrator.py:331)
 STATUS: implemented
 
 STEPS:
-  1. Build GauntletConfig from CLI params (timeout, reasoning, resume, unattended)
-  2. Resolve models: attack_models (auto-select free CLI), eval_models (frontier)
-  3. _validate_model_name() for each model (blocklist regex: shell metachar, flags, control chars)
-  4. get_spec_hash(spec), get_config_hash(config) for checkpoint matching
-  5. Phase 1: generate_attacks() (phase_1_attacks.py)
-     - ThreadPoolExecutor per adversary, config.timeout per call
-     - Persist concerns + raw responses to .adversarial-spec-gauntlet/
-     - [config.resume and valid checkpoint exists] -> load from disk | generate
-     - Emit PhaseMetrics to run manifest
-  6. Phase 2: generate_big_picture_synthesis() (phase_2_synthesis.py)
-     - LLM synthesizes patterns: real_issues, hidden_connections, meta_concern, high_signal
-     - Uses config.eval_codex_reasoning for Codex calls
-  7. Phase 3: filter_concerns_with_explanations() (phase_3_filtering.py)
-     - Filter against resolved_concerns.json history
-     - Returns filtered, dropped, noted lists
-  8. Phase 3.5: cluster_concerns_with_provenance() (phase_3_filtering.py)
-     - Semantic clustering via LLM, uses config.timeout
-     - GauntletClusteringError on failure (no silent fallback - QUOTA BURN FIX 2)
-     - save_partial_clustering() for checkpoint
-     - [config.auto_checkpoint] -> checkpoint after clustering
-  9. Phase 4: evaluate_concerns_multi_model() (phase_4_evaluation.py)
-     - Batched (15 per batch), wave-based concurrency across eval models
-     - Verdicts: accepted/dismissed/acknowledged/deferred
-     - Uses config.eval_codex_reasoning, config.timeout
-     - Persist evaluations checkpoint
-  10. Phase 5: run_rebuttals() (phase_5_rebuttals.py)
-      - Adversary rebuts dismissed concerns
-      - Uses config.attack_codex_reasoning, config.timeout
-      - Returns sustained: bool per rebuttal
-  11. Phase 6: final_adjudication() (phase_6_adjudication.py)
-      - Reviews sustained rebuttals
-      - Uses config.eval_codex_reasoning, config.timeout
-  12. Phase 7: [run_final_boss or interactive] -> run_final_boss_review() (phase_7_final_boss.py)
-      - Final Boss (Opus 4.6) reviews holistically
-      - Returns FinalBossVerdict: PASS/REFINE/RECONSIDER
-  13. save_gauntlet_run(), update_adversary_stats(), calculate_medals()
-  14. format_gauntlet_report() -> formatted output
+  1. Phase 1: generate_attacks(spec, adversaries, models, config)
+     -> save_checkpoint("concerns", concerns)
+  2. Phase 2: generate_big_picture_synthesis(concerns, spec)
+     -> save_checkpoint("synthesis", synthesis)
+  3. Phase 3: filter_concerns_with_explanations(concerns, resolved_db)
+  4. Phase 3.5: cluster_concerns_with_provenance(concerns, spec, config)
+     -> AUTO-CHECKPOINT (quota burn safeguard)
+     -> save_checkpoint("clustered-concerns", clustered)
+  5. Phase 4: evaluate_concerns[_multi_model](clustered, spec, eval_models, config)
+     -> save_checkpoint("evaluations", evaluations)
+  6. Phase 5: run_rebuttals(dismissed_evals, spec, adversaries)
+  7. Phase 6: final_adjudication(evaluations, rebuttals)
+     -> calculate_medals() -> save medal reports
+  8. Phase 7: [optional] run_final_boss_review(result, spec, config)
+     -> save_checkpoint("final-boss", final_result)
+  9. save_run_manifest() -> return GauntletResult
 
 DATA_IN:
-  - spec: str (specification markdown)
-  - adversaries: list[str] (adversary names, or "all")
-  - attack_models: list[str], eval_models: list[str]
-  - timeout: int, attack_codex_reasoning: str, eval_codex_reasoning: str
-  - resume: bool, unattended: bool
+  - spec: str
+  - adversaries: list[str]
+  - models: list[str]
+  - config: GauntletConfig
 
 DATA_OUT:
-  - report: GauntletResult (concerns, evaluations, rebuttals, medals, big_picture, final_boss)
-  - side_effects: run files in ~/.adversarial-spec/runs/, stats updated, manifest with PhaseMetrics
+  - result: GauntletResult (all phase outputs aggregated)
 
-EXITS_TO: terminal (report output)
+EXITS_TO: checkpoint_persistence, model_parallel_dispatch
 ```
 
-### FLOW: gauntlet_checkpoint_resume
+### FLOW: attack_generation
 
 ```
-TRIGGER: --resume flag (debate.py --gauntlet-resume or gauntlet/cli.py --resume)
-ENTRY: load_partial_run() (scripts/gauntlet/persistence.py)
+TRIGGER: Phase 1 of gauntlet
+ENTRY: generate_attacks() (gauntlet/phase_1_attacks.py:24)
 STATUS: implemented
 
 STEPS:
-  1. Compute spec_hash + config_hash from current inputs
-  2. Look for .adversarial-spec-gauntlet/concerns-{hash}.json
-  3. [found and schema_version matches] -> load concerns, skip Phase 1
-  4. Look for clustered-concerns-{hash}.json
-  5. [found] -> load clusters, skip Phases 1-3.5
-  6. Look for evaluations-{hash}.json
-  7. [found] -> load evaluations, skip Phases 1-4
-  8. Return latest valid checkpoint data
+  1. group (adversary, model) pairs by provider
+  2. create ThreadPoolExecutor(max_workers=min(32, len(pairs)))
+  3. for each provider group: batch by rate limit
+  4. for each batch: submit run_adversary_with_model() futures
+  5. collect results via as_completed()
+  6. parse responses -> extract Concern objects
+  7. generate stable concern IDs via generate_concern_id(adversary, text)
+  8. deduplicate by text normalization
 
 DATA_IN:
-  - spec_hash: str (SHA256 of spec)
-  - config_hash: str (hash of GauntletConfig fields)
+  - spec: str
+  - adversaries: list[str] (adversary keys)
+  - models: list[str] (model identifiers)
+  - config: GauntletConfig
 
 DATA_OUT:
-  - partial_data: dict (loaded checkpoint data for resume)
+  - concerns: list[Concern] (adversary, text, severity, id)
+  - timing: dict[str, float] (per-adversary timing)
+  - raw_responses: dict[str, str] (raw model output)
 
-EXITS_TO: gauntlet_pipeline (resumes from appropriate phase)
+EXITS_TO: checkpoint_persistence
 ```
 
-### FLOW: cost_tracking
+### FLOW: concern_evaluation
 
 ```
-TRIGGER: Every model call completion
-ENTRY: CostTracker.add() (scripts/models.py:204)
+TRIGGER: Phase 4 of gauntlet
+ENTRY: evaluate_concerns() (gauntlet/phase_4_evaluation.py:23)
 STATUS: implemented
 
 STEPS:
-  1. Acquire threading.Lock
-  2. Look up model in MODEL_COSTS dict (providers.py)
-  3. Calculate: cost = (input_tokens/1M * input_rate) + (output_tokens/1M * output_rate)
-  4. [CLI model (codex/, gemini-cli/, claude-cli/)] -> cost = 0 | standard rate
-  5. Accumulate in global totals and per-model breakdown (by_model dict)
-  6. Release lock
-  7. [output requested] -> CostTracker.summary() formats human-readable string
+  1. format concerns as markdown (### Concern N from adversary_X)
+  2. extract evaluation protocols from Adversary definitions
+  3. construct system prompt with valid/invalid dismissal rules
+  4. call_model() to frontier model (Claude Opus or Codex)
+  5. regex parse verdict: DISMISS|ACCEPT|ACKNOWLEDGE|DEFER
+  6. extract reasoning text
+  7. normalize verdict: "dismiss" -> "dismissed", etc.
+  8. create Evaluation(concern, verdict, reasoning)
 
 DATA_IN:
-  - model: str (model identifier)
-  - input_tokens: int
-  - output_tokens: int
+  - concerns: list[Concern]
+  - spec: str
+  - model: str (frontier model identifier)
+  - config: GauntletConfig
 
 DATA_OUT:
-  - cost: float (accumulated in singleton, thread-safe)
+  - evaluations: list[Evaluation] (concern, verdict, reasoning)
 
-EXITS_TO: included in debate output, gauntlet report, PhaseMetrics telemetry
+EXITS_TO: checkpoint_persistence
 ```
 
-### FLOW: pre_gauntlet_context
+### FLOW: pre_gauntlet_context_collection
 
 ```
-TRIGGER: Called before gauntlet run when pre-gauntlet is enabled
-ENTRY: PreGauntletOrchestrator.run() (scripts/pre_gauntlet/orchestrator.py:51)
+TRIGGER: gauntlet/cli.py with --pre-gauntlet flag
+ENTRY: PreGauntletOrchestrator.run() (pre_gauntlet/orchestrator.py:51)
 STATUS: implemented
 
 STEPS:
-  1. Check if pre-gauntlet enabled for doc type (config.get_doc_type_rule)
-  2. Extract spec-affected files (regex analysis of spec)
-  3. [require_git] -> GitPositionCollector.collect() | skip
-     - Current branch, commits, staleness check
-  4. [require_build] -> SystemStateCollector.collect() | skip
-     - Run build command with timeout, extract schemas, walk dirs
-  5. build_context() -> assemble markdown document
-  6. [alignment_mode] -> run_alignment_mode() (LLM confirms context matches spec) | skip
+  1. [disabled by config or doc_type] -> return spec as-is
+  2. extract_spec_affected_files() -> list of files mentioned in spec
+  3. [require_git] -> GitPositionCollector.collect() -> git position + concerns
+  4. [require_build/schema/trees] -> SystemStateCollector.collect() -> system state
+  5. build_context(git_position, system_state, spec, max_chars=200k)
+  6. [priming_context exists] -> prepend to context markdown
+  7. return PreGauntletResult with context_markdown
 
 DATA_IN:
-  - spec_text: str (specification)
-  - doc_type: DocType
-  - config: CompatibilityConfig
+  - spec_text: str
+  - doc_type: str
+  - repo_root: Path
 
 DATA_OUT:
   - result: PreGauntletResult (status, context_markdown, concerns, timings)
 
-EXITS_TO: gauntlet_pipeline (context passed as additional input)
+EXITS_TO: none (result consumed by gauntlet pipeline)
 ```
 
 ---
 
 ## Background Flows
 
-### FLOW: telegram_notification
+### FLOW: checkpoint_persistence
 
 ```
-TRIGGER: Round completion when --telegram flag is set
-ENTRY: send_telegram_notification() (scripts/debate.py:185)
+TRIGGER: After each gauntlet phase completes
+ENTRY: save_checkpoint() (gauntlet/persistence.py:250)
 STATUS: implemented
 
 STEPS:
-  1. Format round results into message text
-  2. telegram_bot.send_long_message() -> split at 4096 char boundaries
-  3. For each chunk: api_call("sendMessage", {chat_id, text}) -> HTTP POST
-  4. [poll_timeout > 0] -> poll_for_reply() with getUpdates | skip
-  5. [reply received] -> return user feedback text | return None
+  1. serialize dataclasses to dicts (_serialize_dataclass)
+  2. canonical JSON form (deterministic ordering)
+  3. compute SHA256 integrity hash
+  4. acquire FileLock for target path
+  5. create NamedTemporaryFile in same directory
+  6. json.dump(data, tmp) -> flush -> fsync
+  7. os.replace(tmp, target) (atomic rename)
+  8. release FileLock
 
 DATA_IN:
-  - results: list[ModelResponse]
-  - round_num: int
-  - poll_timeout: int (seconds)
+  - phase: str (phase identifier)
+  - data: dataclass (phase output)
+  - spec_hash: str
+  - config_hash: str
 
 DATA_OUT:
-  - feedback: Optional[str] (user's Telegram reply)
+  - checkpoint_file: file (.adversarial-spec-gauntlet/{phase}-{hash}.json)
 
-EXITS_TO: debate_round_loop (feedback available for next round)
+EXITS_TO: none
+```
+
+### FLOW: session_persistence
+
+```
+TRIGGER: After each debate round in run_critique()
+ENTRY: SessionState.save() (session.py:42)
+STATUS: implemented
+
+STEPS:
+  1. set updated_at to current timestamp
+  2. validate session_id (path traversal check via is_relative_to)
+  3. serialize SessionState to JSON dict
+  4. write to ~/.config/adversarial-spec/sessions/{session_id}.json
+
+DATA_IN:
+  - session: SessionState (session_id, spec, round, models, history)
+
+DATA_OUT:
+  - session_file: file (~/.config/adversarial-spec/sessions/{id}.json)
+
+EXITS_TO: none
+```
+
+### FLOW: cost_tracking
+
+```
+TRIGGER: Every model call completion
+ENTRY: cost_tracker.add() (models.py:165)
+STATUS: implemented
+
+STEPS:
+  1. lookup MODEL_COSTS by model name
+  2. calculate: (input_tokens / 1M) * input_rate + (output_tokens / 1M) * output_rate
+  3. acquire threading.Lock
+  4. add to totals (total_input_tokens, total_output_tokens, total_cost)
+  5. add to by_model[model] dict
+  6. release Lock
+  7. return cost
+
+DATA_IN:
+  - model: str
+  - input_tokens: int
+  - output_tokens: int
+
+DATA_OUT:
+  - cost: float (cost for this call)
+
+EXITS_TO: none
 ```
 
 ---
 
 ## Error Recovery Flows
 
-### FLOW: model_call_retry
+### FLOW: checkpoint_resume
 
 ```
-TRIGGER: Model call failure (timeout, API error, subprocess error)
-ENTRY: call_single_model() retry loop (scripts/models.py:619)
+TRIGGER: run_gauntlet() with resume=True
+ENTRY: load_partial_run() (gauntlet/persistence.py:675)
 STATUS: implemented
 
 STEPS:
-  1. Attempt model call
-  2. [success] -> return ModelResponse | continue
-  3. [attempt < MAX_RETRIES (3)] -> sleep(RETRY_BASE_DELAY * 2^attempt) -> retry | fail
-  4. [all retries exhausted] -> return ModelResponse with error field set
+  1. compute spec_hash and config_hash
+  2. for each known phase (1, 2, 3.5, 4, 7):
+     a. construct checkpoint filename
+     b. _load_json_safe(path) with FileLock
+     c. validate checkpoint version == CHECKPOINT_SCHEMA_VERSION
+     d. validate data_hash matches stored hash
+     e. [valid] -> add to partial[phase_name]
+     f. [invalid/missing] -> skip
+  3. return partial dict (empty if no valid checkpoints)
+
+DATA_IN:
+  - spec_hash: str
+  - config_hash: str
+  - gauntlet_dir: Path
+
+DATA_OUT:
+  - partial: dict[str, dict] (phase_name -> {data, timing})
+
+EXITS_TO: gauntlet_pipeline_init (informs which phases to skip)
+```
+
+### FLOW: model_call_retry
+
+```
+TRIGGER: call_single_model() encounters exception
+ENTRY: call_single_model() (models.py:678)
+STATUS: implemented
+
+STEPS:
+  1. for attempt in range(MAX_RETRIES=3):
+     a. call provider function
+     b. [success] -> return ModelResponse
+     c. [exception] -> log error
+     d. sleep(RETRY_BASE_DELAY * 2^attempt) [1s, 2s, 4s]
+  2. [all retries exhausted] -> return error ModelResponse
 
 DATA_IN:
   - model: str
   - system_prompt: str
-  - user_message: str
+  - user_prompt: str
 
 DATA_OUT:
-  - response: ModelResponse (may have error field populated)
+  - response: ModelResponse (with error field if all retries failed)
 
-EXITS_TO: call_models_parallel (error responses filtered by debate loop)
+EXITS_TO: model_parallel_dispatch (collected by executor)
 ```
 
-### FLOW: gauntlet_clustering_failure
+### FLOW: unattended_mode_guard
 
 ```
-TRIGGER: Phase 3.5 clustering LLM returns unparseable result
-ENTRY: cluster_concerns_with_provenance() (scripts/gauntlet/phase_3_filtering.py)
+TRIGGER: --unattended CLI flag
+ENTRY: run_gauntlet() (gauntlet/orchestrator.py:277)
 STATUS: implemented
 
 STEPS:
-  1. Attempt clustering via LLM
-  2. [parse failure] -> retry once with different prompt formatting
-  3. [second failure] -> raise GauntletClusteringError (QUOTA BURN FIX 2)
-  4. Pipeline halts with exit code 3
+  1. save original builtins.input
+  2. replace builtins.input with lambda raising RuntimeError
+  3. [Phase 7 calls input()] -> caught as (EOFError, RuntimeError) -> skip Final Boss
+  4. finally: restore builtins.input = original_input
 
 DATA_IN:
-  - concerns: list[Concern]
-  - config: GauntletConfig
+  - config.unattended: bool
 
 DATA_OUT:
-  - error: GauntletClusteringError (no silent fallback to singleton clusters)
-
-EXITS_TO: terminal (sys.exit(3))
-```
-
-### FLOW: session_state_persistence
-
-```
-TRIGGER: Round completion, session save, or checkpoint
-ENTRY: SessionState.save() (scripts/session.py:32)
-STATUS: implemented
-
-STEPS:
-  1. Serialize session state to JSON
-  2. Validate path is within SESSIONS_DIR (prevent directory traversal via is_relative_to)
-  3. Write JSON to sessions/{session_id}.json
-  4. [checkpoint] -> write spec to .adversarial-spec-checkpoints/round-{N}.md
-  5. [critique responses] -> write JSON to checkpoints/round-{N}-critiques.json
-
-DATA_IN:
-  - session: SessionState
-
-DATA_OUT:
-  - none (file system side effects)
+  - none (side effect: input() blocked during pipeline)
 
 EXITS_TO: none
-```
-
-### FLOW: provider_validation
-
-```
-TRIGGER: Before model calls in debate startup
-ENTRY: validate_model_credentials() (scripts/providers.py)
-STATUS: implemented
-
-STEPS:
-  1. For each model: determine provider from prefix (gpt-, claude-, gemini/, etc.)
-  2. Check required env var (OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY, etc.)
-  3. [CLI tool model] -> check shutil.which() for binary availability | check env var
-  4. [bedrock mode] -> resolve friendly name to Bedrock model ID, check AWS config
-  5. Return (valid_models, invalid_models)
-  6. [any invalid] -> print error, sys.exit(2) | continue
-
-DATA_IN:
-  - models: list[str] (model identifiers)
-
-DATA_OUT:
-  - valid_models: list[str]
-  - invalid_models: list[str]
-
-EXITS_TO: debate_round_loop (if all valid) or sys.exit(2)
 ```
