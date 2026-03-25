@@ -6,23 +6,202 @@ After the execution plan is generated, offer to proceed with implementation:
 
 ---
 
-### CRITICAL: Setup Checklist (REQUIRED before writing ANY code)
+### Agent Identity (REQUIRED)
 
-**Do NOT write any code, read source files, or start implementation until ALL of these are done:**
+You must identify yourself with a stable agent name for cross-agent review enforcement.
+The pipeline skips Review cards where `last_agent == requesting agent` — without a
+stable name, cross-agent review breaks.
+
+| Agent | Name to pass |
+|-------|-------------|
+| Claude Code | `claude` |
+| Codex | `codex` |
+| Gemini CLI | `gemini` |
+
+Pass your agent name in every `pipeline_*` call.
+
+---
+
+### Setup Checklist (REQUIRED before the self-pickup loop)
+
+**Do NOT enter the self-pickup loop until ALL of these are done:**
 
 ```
 Implementation Setup
 ───────────────────────────────────────
-[ ] Trello cards created for all execution plan tasks
-[ ] .handoff.md updated with agent assignments and wave plan
-[ ] Review queue checked (reviews before new work)
-[ ] First card moved to "In Progress" on Trello
-[ ] TodoWrite created with setup steps + first wave tasks
+[ ] Session ID and Board ID identified
+[ ] Trello cards loaded (pipeline_load or manual creation)
+    — verify with pipeline_lane_state(pipeline="task")
+[ ] Context loaded (see Context Loading below)
 ```
 
-**Why:** Without this gate, agents read the phase doc, understand the steps, and then skip them to start coding. The Trello cards and handoff file are how multi-agent coordination works — skipping them means Codex has no visibility into the work and can't pick up parallel tasks.
+**Session ID discovery:**
+1. If provided at invocation, use it
+2. Otherwise: read `.adversarial-spec/session-state.json` → `active_session_id`
+3. If no active session: stop and report — cannot self-pick without a session
 
-**After completing setup**, add the first wave's code tasks to TodoWrite and begin implementation.
+**Board ID discovery:**
+Read the Trello Management section of `CLAUDE.md` or `AGENTS.md` for the board ID.
+Always pass `board_id` explicitly. Never call `set_active_board`.
+
+**If cards are not yet loaded:** The execution plan must be converted to Trello cards first.
+Use `pipeline_load(plan_path, session_id)` with the `trello-plan.json` from the execution phase.
+
+---
+
+### Context Loading (REQUIRED before implementing any card)
+
+Before entering the loop, load these in order. Without this context, you will make
+implementation decisions that contradict the spec or the codebase's existing patterns.
+
+#### 1. Project conventions
+- Read `CLAUDE.md` (or `AGENTS.md` for Codex) — project rules, test/lint commands, key paths
+
+#### 2. Architecture docs
+- Read `.architecture/INDEX.md` for navigation (your reference, not context to carry)
+- Read `.architecture/primer.md` — system summary, components, contracts, gotchas
+- If the session touches known debt areas: read `.architecture/concerns.md`
+- Read 2-4 matched component docs from `.architecture/structured/components/` based on
+  which modules the execution plan modifies
+
+**How to match components:**
+- Read the execution plan's file list (or the session file's `requirements_summary`)
+- Compare file paths against the INDEX component table's "Key Files" column
+- Read the matching component docs
+
+#### 3. The spec
+- Read the spec output: path is in the session file's `spec_path` field,
+  or at `.adversarial-spec/specs/<slug>/spec-output.md`
+- This is the debated and gauntleted specification. Implementation must conform to it.
+- Pay attention to: Goals/Non-Goals, acceptance criteria, gauntlet concerns that were accepted
+
+#### 4. The execution plan
+- Read the execution plan: path is in the session file's `execution_plan_path` field,
+  or at `.adversarial-spec/specs/<slug>/execution-plan.md`
+- This defines: task breakdown, wave ordering, file structure (Architecture Spine),
+  validation strategies, dependency graph, and parallelization guidance
+
+**Context budget note:** For large specs/plans, read the sections relevant to your
+current wave rather than loading the entire document. The card description has the
+specific task requirements; the spec and plan provide the "why" and "how it fits."
+
+---
+
+### The Self-Pickup Loop
+
+This is the core implementation protocol. All agents (Claude, Codex, Gemini) follow the same loop.
+
+#### Step 1: Get Next Task
+
+```
+pipeline_do_next_task(
+  session_id = SESSION_ID,
+  pipeline   = "task",
+  agent      = AGENT_NAME,
+  board_id   = BOARD_ID
+)
+```
+
+The pipeline walks lanes in priority order and returns the next qualifying card:
+
+| Priority | Lane | Selection Rule |
+|----------|------|----------------|
+| 1 | Failed Review | First card (any agent) |
+| 2 | Review | First card where `last_agent != requesting agent` |
+| 3 | Untested | First card |
+| 4 | New Todo | First card where all `depends_on` are in completed lanes |
+| 5 | Passed Test | Only when lanes 1-4 are all empty |
+
+Returns: `{card_id, task_id, action_string, lane, effort, strategy}` or idle.
+
+#### Step 2: Execute Based on Action
+
+**action = "implement" (from New Todo)**
+
+1. Read the card description: `get_card_description(card_id)`
+2. Read checklists for acceptance criteria: `get_card_checklists(card_id)`
+3. If `.conductor/config.json` exists and conductor is enabled:
+   - Claim files before editing: `bq conductor claim create PATH --workflow SLUG --agent AGENT`
+4. Implement the changes:
+   - Follow structural conformance rules (see below)
+   - Follow validation strategy from `strategy` field (test-first or test-after)
+   - Address all acceptance criteria
+5. Run project tests and lint (commands from CLAUDE.md / AGENTS.md)
+6. Commit with card reference: `[TASK_ID] Short description`
+7. Complete: `pipeline_complete_task(session_id, card_id, agent, commit_hash, board_id)`
+8. If conductor enabled: release claims
+9. **Return to Step 1**
+
+**action = "fix" (from Failed Review)**
+
+Same as "implement" but:
+1. Read the card's review notes for what failed (in the state block or card comments)
+2. Fix the specific issues raised by the reviewer
+3. Do not rewrite the entire implementation — address the review feedback
+
+**action = "review" (from Review lane, cross-agent enforced)**
+
+1. Read the card description and state block
+2. Identify the `commit_hash` from the state block
+3. Review the change set:
+   - `git diff` / `git log` to inspect changes
+   - Does it satisfy the card's acceptance criteria?
+   - Does it follow project conventions?
+   - Do tests pass?
+4. Submit verdict:
+   ```
+   pipeline_review(session_id, card_id, agent, verdict, board_id, notes)
+   ```
+   - `verdict`: `"approved"` or `"changes_requested"`
+   - `notes`: **REQUIRED** for `"changes_requested"` — explain what needs fixing
+5. **Return to Step 1**
+
+**action = "test" (from Untested)**
+
+1. Read the card description and `commit_hash`
+2. Run the project's test suite
+3. Submit result:
+   ```
+   pipeline_test(session_id, card_id, agent, result, summary, board_id)
+   ```
+   - `result`: `"passed"` or `"failed"`
+   - `summary`: brief test results
+4. **Return to Step 1**
+
+**action = "sweep" (from Passed Test, only when all other lanes empty)**
+
+1. Call: `pipeline_sweep(session_id, agent, summary, board_id)`
+2. **Return to Step 1**
+
+**action = "idle" (no qualifying cards)**
+
+1. Report status to the user:
+   - If reason mentions self-review skip: "Cards exist in Review but need a different agent to review them."
+   - If all lanes empty: "All cards completed. Implementation done."
+2. **Stop the loop.** Do not continue polling.
+
+#### Step 3: Iterate
+
+After each completed action, immediately return to Step 1. The loop continues
+until the pipeline returns "idle."
+
+---
+
+### Cross-Agent Review: The Core Value Proposition
+
+The pipeline enforces that the implementer cannot review their own work:
+
+1. `pipeline_do_next_task` skips Review cards where `last_agent == requesting agent`
+2. `pipeline_review` rejects the call if `implementer == reviewer`
+
+This means:
+- Agent A implements a card → card moves to Review
+- Agent B (different agent) reviews it
+- If B requests changes → card moves to Failed Review → Agent A or C picks it up
+- Cycle continues until a different agent approves
+
+**Every change gets a genuinely independent review.** This eliminates self-confirming bias
+without requiring human involvement.
 
 ---
 
@@ -68,155 +247,33 @@ When a user asks "can you check X" or "I want to see Y working":
 - Switching into "fix it now" mode, abandoning the process
 - Treating passing tests as proof that module boundaries are correct
 
-**Correct pattern:**
-```
-User: "I want to see X working"
-
-1. Is X in our current task list?
-   - If yes: Continue with that task
-   - If no: "This appears to be new work. Should I add it to our tasks?"
-
-2. Add Trello comment on relevant card (or create new card):
-   - Investigation scope
-   - Acceptance criteria for the fix
-
-3. Targeted investigation (2-3 queries max)
-
-4. Report findings:
-   "Root cause: [clear explanation]
-   Fix needed: [specific change]
-   Shall I proceed with this fix?"
-```
-
 ---
 
-### Trello Integration
+### Trello Context Discipline
 
-**Trello is the task tracker.** Card state must always match actual work state.
+**Board pinning:** Always pass `board_id` explicitly to every Trello MCP call. Never use `set_active_board` — it changes global state and causes cross-project drift.
 
-#### Adding Implementation Tasks
-
-For each task in the execution plan, create a Trello card on the appropriate wave list with:
-- **Name:** Task title (e.g., `[W0-1] Define Pydantic schemas in schemas.py`)
-- **Description:** Full task description with acceptance criteria from the execution plan
-- **Labels:** Agent label (`claude` or `codex`) if pre-assigned
-
-**Trello subagent rule:** Always use a subagent with a low-reasoning model (haiku for Claude, or equivalent lightweight model for Codex/Gemini) for Trello MCP operations. Trello API responses return large JSON payloads that bloat main context. The subagent performs the operation and returns only the relevant result (card ID, success/failure). This applies to:
-- Creating cards
-- Moving cards between lists
-- Adding comments
-- Bulk reads (fetching cards from multiple lists)
+**Subagent rule (Claude only):** Use a subagent with a low-reasoning model (haiku) for bulk Trello reads. Trello API responses return large JSON payloads that bloat main context. This applies to:
+- Creating cards in bulk
+- Fetching cards from multiple lists
 - Any MCP call that returns unbounded data
 
-**Board pinning:** Always pass `boardId` explicitly to every Trello MCP call. Never use `set_active_board` — it changes global state and causes cross-project drift.
-
-#### Card Flow During Implementation
-
-```
-Wave N list → In Progress → Review → Done
-```
-
-| Action | Trello Update |
-|--------|---------------|
-| Pick up a card | Move → "In Progress", add comment: `Starting: <agent-name>` |
-| Commit | Add comment: `<hash> <summary>`, move → "Review" |
-| Review LGTM | Move → "Done" |
-| Review needs changes | Move → "In Progress", comment with issues |
+For single-card operations (get_card_description, pipeline_do_next_task, pipeline_complete_task), direct calls are fine.
 
 ---
 
-### Multi-Agent Coordination (`.handoff.md`)
+### Validation Strategy
 
-When two agents (Claude and Codex) work in parallel on the same branch, `.handoff.md` is the local sync file. Read the full protocol at `.coordination/PROTOCOL.md`.
-
-#### Before Starting Any Work
-
-1. **Read `.handoff.md`** — check what the other agent is working on and which files they own
-2. **Check the Review Queue** — reviewing the other agent's commit takes priority over new work
-3. **Pick a card with no file overlap** — never edit a file the other agent is actively working on
-
-#### Handoff File Structure
-
-```markdown
-## Active Work
-| Agent  | State   | Card  | Files        | Started    |
-|--------|---------|-------|--------------|------------|
-| claude | working | W1-1  | compiler.py  | 2026-03-15 |
-| codex  | idle    | —     | —            | 2026-03-15 |
-
-## Review Queue
-- [ ] `abc1234` W1-1 (claude) — Implement DatabaseCompiler
-
-## Recent
-- [x] `def5678` W0-1 (codex) — Define schemas — LGTM
-```
-
-#### Rules
-
-- **Only update your own row** in the Active Work table
-- **Both agents** may append to Review Queue and Recent sections
-- **Reviews before new work** — always check Review Queue first
-- **File conflicts** — the Files column declares ownership; if there's overlap, pick a different card
-- **After every commit**: update `.handoff.md` review queue, move Trello card → "Review", add comment with commit hash
-
-#### Codex-Specific Notes
-
-Codex works asynchronously and cannot read Trello directly. It relies on:
-- `.handoff.md` for coordination state
-- Git log for commit history
-- The execution plan for task definitions
-- Trello comments left by Claude for review feedback
-
-When handing work to Codex:
-- Ensure the card description in `.handoff.md` is self-contained (Codex can't follow Trello links)
-- Include the specific acceptance criteria from the execution plan
-- List the exact files Codex should touch
-
-When reviewing Codex's work:
-- Check `.handoff.md` agent-to-agent messages for Codex's review notes
-- Codex posts detailed validation reports — read them before reviewing the diff
-- Confirm the referenced commit is still the branch tip before reviewing
-
----
-
-### Task Execution
-
-Work through implementation tasks in dependency order:
-
-1. Read `.handoff.md` — check for reviews, check file ownership
-2. Pick up card: move to "In Progress" on Trello, update `.handoff.md`
-3. Read the full task description from the execution plan
-4. **Verify target files** — confirm every file you plan to create/modify is in the Architecture Spine
-5. Follow the validation strategy (test-first or test-after)
-6. Address all acceptance criteria, including those from gauntlet concerns
-7. Run tests, lint, type-check
-8. Commit with card reference: `[W0-1] Short description`
-9. Move card to "Review", update `.handoff.md` review queue
-10. Pick up next card (reviews first)
-
-**After completing the last task in a wave:** Run `/checkpoint` before starting the next wave.
-
-**High-risk tasks** (3+ concerns) use test-first validation:
+**High-risk tasks** (3+ concerns, or `strategy: "test-first"`) use test-first validation:
 - Write tests based on acceptance criteria before implementation
 - Ensure tests cover failure modes from concerns
 - Implementation must pass all tests
 
-**Lower-risk tasks** use test-after validation:
+**Lower-risk tasks** (`strategy: "test-after"`) use test-after validation:
 - Implement the feature
 - Write tests after
 - Still address all acceptance criteria
 
-### Parallelization
-
-If the plan recommends multi-agent execution and multiple workstreams:
-
-1. Review the workstream assignments
-2. Consider parallel execution for independent streams
-3. Coordinate at merge points via `.handoff.md`
-4. Follow the recommended branch pattern
-5. Use Trello labels to track agent ownership
-
-The execution plan's `parallelization` section provides:
-- `streams` — Independent workstreams with task IDs
-- `merge_sequence` — Order and risk of merging streams
-- `branch_pattern` — Recommended git branching strategy
+**Skip tasks** (`strategy: "skip"`):
+- No tests needed (documentation, config-only changes)
+- Still verify the change works

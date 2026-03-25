@@ -6,6 +6,7 @@
 TodoWrite([
   {content: "Load finalized spec and gauntlet concerns", status: "in_progress", activeForm: "Loading finalized spec and gauntlet concerns"},
   {content: "Scope assessment — present to user", status: "pending", activeForm: "Assessing execution scope"},
+  {content: "Load codebase architecture docs [GATE] — read primer.md + matched components before any exploration", status: "pending", activeForm: "Loading codebase architecture docs"},
   {content: "Load target architecture and build Architecture Spine (if exists)", status: "pending", activeForm: "Building architecture spine"},
   {content: "Decompose into tasks with gauntlet concern linkage", status: "pending", activeForm: "Decomposing spec into tasks"},
   {content: "Assign test strategies (test-first/test-after)", status: "pending", activeForm: "Assigning test strategies"},
@@ -13,6 +14,7 @@ TodoWrite([
   {content: "Present plan to user for approval [GATE]", status: "pending", activeForm: "Presenting execution plan for approval"},
   {content: "Write execution plan to disk [GATE]", status: "pending", activeForm: "Writing execution plan to disk"},
   {content: "Verify plan file exists and update session state", status: "pending", activeForm: "Verifying plan persistence"},
+  {content: "Generate trello-plan.json and load into pipeline [GATE]", status: "pending", activeForm: "Loading execution plan into Trello pipeline"},
 ])
 ```
 
@@ -78,9 +80,31 @@ Proceed with task decomposition? [Y/n]
 
 ---
 
-### Step 2.5: Architecture Spine (if Target Architecture exists)
+### Step 2.5: Load Codebase Architecture (REQUIRED before decomposition)
 
-**Load target architecture:**
+**Do NOT decompose into tasks, launch Explore agents, or glob/grep the codebase until you have read the architecture docs.** The architecture docs tell you what components exist, what contracts matter, and what gotchas to avoid. Without them, you will invent file structures that conflict with the existing codebase.
+
+**Load project architecture docs:**
+```bash
+# Check for architecture docs
+[ -f .architecture/manifest.json ] && echo "exists" || echo "missing"
+```
+
+If `.architecture/manifest.json` exists:
+1. Read `.architecture/INDEX.md` — for YOUR navigation only (component table, key files)
+2. Read `.architecture/primer.md` — system summary, components, contracts, gotchas
+3. Match the spec's scope against the INDEX component table:
+   - Which components does the spec touch?
+   - Which key files will need modification?
+4. Read 2-4 matched component docs from `.architecture/structured/components/`
+5. If the spec crosses component boundaries: read `.architecture/structured/flows.md`
+6. If the spec touches known debt: read `.architecture/concerns.md`
+
+If `.architecture/` does NOT exist:
+- Warn the user: "No architecture docs found. Consider running `/mapcodebase` first."
+- If proceeding without: use targeted file reads (not broad Explore agents) to understand the blast zone
+
+**Then load target architecture (from Phase 4, if it exists):**
 ```bash
 # Check for target architecture from Phase 4
 ls .adversarial-spec/specs/*/target-architecture.md 2>/dev/null | head -1
@@ -313,6 +337,78 @@ Where `<slug>` is the context name slugified (same as the manifest directory).
 - File is non-empty
 - Path recorded in session detail file
 
-**[GATE] TodoWrite: Mark "Write execution plan to disk" completed before proceeding to Phase 8 (Implementation).**
+**[GATE] TodoWrite: Mark "Write execution plan to disk" completed before proceeding to Step 9.**
 
-Only after verification: proceed to Phase 8 (Implementation).
+---
+
+### Step 9: Load into Trello Pipeline
+
+**This step connects the execution plan to the self-pickup loop.** Without it, cards are just text on disk — no agent can pick them up via `pipeline_do_next_task`.
+
+**Generate `trello-plan.json`:**
+
+Write a JSON file alongside the execution plan:
+```
+.adversarial-spec/specs/<slug>/trello-plan.json
+```
+
+The JSON must follow the pipeline schema:
+```json
+{
+  "session_id": "<active_session_id from session-state.json>",
+  "tasks": [
+    {
+      "task_id": "T1",
+      "title": "Task title from execution plan",
+      "description": "Full task description with acceptance criteria",
+      "wave": 0,
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [],
+      "concern_refs": ["PARA-abc", "BURN-def"]
+    },
+    {
+      "task_id": "T2",
+      "title": "Second task",
+      "description": "Description with acceptance criteria",
+      "wave": 1,
+      "effort": "S",
+      "strategy": "test-after",
+      "depends_on": ["T1"],
+      "concern_refs": []
+    }
+  ]
+}
+```
+
+**Field mapping from execution plan:**
+- `task_id`: Use the task numbering from the plan (T1, T2, ... or W0-1, W1-1, etc.)
+- `title`: Task title
+- `description`: Full description including acceptance criteria
+- `wave`: Wave number from the plan
+- `effort`: S / M / L
+- `strategy`: test-first / test-after / skip
+- `depends_on`: List of task_ids this task depends on (from dependency graph)
+- `concern_refs`: List of gauntlet concern IDs linked to this task
+
+**Load into pipeline:**
+```
+pipeline_load(
+  plan_path = ".adversarial-spec/specs/<slug>/trello-plan.json",
+  session_id = "<active_session_id>",
+  board_id = BOARD_ID
+)
+```
+
+This creates cards in the **New Todo** lane with proper state blocks. `pipeline_do_next_task` can now walk these cards, check dependencies, and assign them to agents.
+
+**Verify:**
+```
+pipeline_lane_state(pipeline="task", board_id=BOARD_ID)
+```
+
+Confirm cards appear in New Todo with correct count.
+
+**[GATE] TodoWrite: Mark "Generate trello-plan.json and load into pipeline" completed before proceeding to Phase 8 (Implementation).**
+
+Only after pipeline loading: proceed to Phase 8 (Implementation).
