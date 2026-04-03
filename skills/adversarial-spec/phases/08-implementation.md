@@ -106,11 +106,24 @@ The pipeline walks lanes in priority order and returns the next qualifying card:
 
 | Priority | Lane | Selection Rule |
 |----------|------|----------------|
-| 1 | Failed Review | First card (any agent) |
-| 2 | Review | First card where `last_agent != requesting agent` |
+| 1 | Failed Review | First unclaimed card (claim-wait-verify) |
+| 2 | Review | First card where `implementer_agent != requesting agent` |
 | 3 | Untested | First card |
-| 4 | New Todo | First card where all `depends_on` are in completed lanes |
+| 4 | New Todo | First unclaimed card where all `depends_on` are satisfied (claim-wait-verify) |
 | 5 | Passed Test | Only when lanes 1-4 are all empty |
+
+**Card Claiming Protocol (built into MCP):**
+For Failed Review and New Todo lanes, the pipeline uses a claim-wait-verify protocol
+to prevent two agents from working on the same card simultaneously:
+
+1. **Write claim:** Set `claimed_by` + `claimed_at` in the card's state/metadata
+2. **Wait 3 seconds:** Race-condition window — if another agent also claimed, their
+   write may overwrite ours
+3. **Re-read and verify:** Fetch the card again. If `claimed_by` still matches our
+   agent name, the claim succeeded. If not, skip the card and try the next one.
+
+Claims expire after 10 minutes (stale claims are ignored). This is fully automatic —
+agents don't need to do anything special beyond calling `pipeline_do_next_task`.
 
 Returns: `{card_id, task_id, action_string, lane, effort, strategy}` or idle.
 
@@ -170,8 +183,11 @@ Same as "implement" but:
 
 **action = "sweep" (from Passed Test, only when all other lanes empty)**
 
-1. Call: `pipeline_sweep(session_id, agent, summary, board_id)`
-2. **Return to Step 1**
+1. **Do NOT call pipeline_sweep yet.** All cards in Passed Test means implementation
+   is done, but verification hasn't run.
+2. **Transition to Phase 9: Verification.** Follow `09-verification.md`.
+3. Verification produces a report and either sweeps (all pass) or fails specific cards.
+4. **Stop the self-pickup loop.** Phase 9 takes over from here.
 
 **action = "idle" (no qualifying cards)**
 
