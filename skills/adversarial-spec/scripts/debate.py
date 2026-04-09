@@ -970,10 +970,20 @@ def handle_send_final(args: argparse.Namespace, models: list[str]) -> None:
 def handle_export_tasks(args: argparse.Namespace, models: list[str]) -> None:
     """Handle export-tasks action.
 
+    DEPRECATED: Execution plans are now created directly by Claude using embedded
+    guidelines in Phase 7 (07-execution.md). This command is retained for backward
+    compatibility but should not be used in new workflows.
+
     Args:
         args: Parsed command-line arguments.
         models: List of model identifiers.
     """
+    print(
+        "WARNING: export-tasks is deprecated. Execution plans are now created directly\n"
+        "by Claude using guidelines in phases/07-execution.md.\n"
+        "See: ~/.claude/skills/adversarial-spec/phases/07-execution.md\n",
+        file=sys.stderr,
+    )
     spec = sys.stdin.read().strip()
     if not spec:
         print("Error: No spec provided via stdin", file=sys.stderr)

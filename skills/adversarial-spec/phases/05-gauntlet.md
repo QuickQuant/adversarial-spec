@@ -4,7 +4,7 @@
 
 ```
 TodoWrite([
-  {content: "Select adversary personas and attack models", status: "in_progress", activeForm: "Selecting adversary personas and attack models"},
+  {content: "Review adversary leaderboard + versions, select personas and attack models", status: "in_progress", activeForm: "Reviewing adversary stats and selecting personas"},
   {content: "Present cost estimate to user", status: "pending", activeForm: "Presenting cost estimate"},
   {content: "Arm Adversaries — scope classification + briefings [GATE]", status: "pending", activeForm: "Arming adversaries with scope briefings"},
   {content: "Run gauntlet (respect Gemini rate limits)", status: "pending", activeForm: "Running gauntlet attacks"},
@@ -12,6 +12,7 @@ TodoWrite([
   {content: "Synthesize findings — one Opus pass, 8-category taxonomy", status: "pending", activeForm: "Synthesizing gauntlet findings"},
   {content: "Revise spec with accepted concerns", status: "pending", activeForm: "Revising spec with accepted concerns"},
   {content: "Run CONS guardrail on revised spec [GATE]", status: "pending", activeForm: "Running CONS guardrail on revised spec"},
+  {content: "Display adversary leaderboard + medal standings", status: "pending", activeForm: "Displaying adversary performance results"},
   {content: "Update session state with gauntlet_concerns_path", status: "pending", activeForm: "Updating session state"},
 ])
 ```
@@ -28,10 +29,19 @@ After consensus is reached but before finalization, offer the adversarial gauntl
 
 **If user accepts gauntlet:**
 
-1. Ask which adversary personas to use (or use 'all'):
+1. Review adversary versions and performance before selecting:
    ```bash
+   # Show version history of adversary personas
+   python3 ~/.claude/skills/adversarial-spec/scripts/debate.py adversary-versions
+
+   # Show performance leaderboard from all previous gauntlet runs
+   python3 ~/.claude/skills/adversarial-spec/scripts/debate.py adversary-stats
+
+   # List available adversary personas
    python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet-adversaries
    ```
+
+   Use the leaderboard to inform adversary selection — high signal-score adversaries find more valuable concerns. Consider dropping consistently low-performing adversaries to save quota.
 
    **Gauntlet Adversary Quick Reference (exact CLI names):**
 
@@ -244,7 +254,19 @@ After consensus is reached but before finalization, offer the adversarial gauntl
 
 **[GATE] TodoWrite: Mark "Run CONS guardrail on revised spec" completed before proceeding to Step 8 or phase transition.**
 
-8. Optionally run Final Boss (UX Architect review — expensive but thorough)
+8. **Display adversary leaderboard and medal standings** (REQUIRED after every gauntlet run).
+
+   ```bash
+   # Updated leaderboard with this run's results
+   python3 ~/.claude/skills/adversarial-spec/scripts/debate.py adversary-stats
+
+   # Medal awards (runs with 6+ adversaries)
+   python3 ~/.claude/skills/adversarial-spec/scripts/debate.py medal-leaderboard
+   ```
+
+   Present the leaderboard to the user. Note any adversaries whose signal score dropped below -0.1 — recommend tuning or replacing them. Note any adversaries that earned gold medals — their unique catches justify their continued inclusion.
+
+9. Optionally run Final Boss (UX Architect review — expensive but thorough)
 
 **If user declines gauntlet:**
 - Proceed directly to finalize phase

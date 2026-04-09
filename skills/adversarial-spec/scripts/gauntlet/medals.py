@@ -40,7 +40,7 @@ def _get_concern_keywords(text: str) -> set[str]:
     return words - _STOPWORDS
 
 
-def _concerns_are_similar(concern1: str, concern2: str, threshold: float = 0.3) -> bool:
+def _concerns_are_similar(concern1: str, concern2: str, threshold: float = 0.10) -> bool:
     """Check if two concerns are semantically similar using keyword overlap."""
     kw1 = _get_concern_keywords(concern1)
     kw2 = _get_concern_keywords(concern2)
@@ -61,9 +61,9 @@ def calculate_medals(result: GauntletResult, spec_hash: str, run_id: str) -> lis
     """Calculate medal awards for a gauntlet run.
 
     Medal criteria (only when 6+ adversaries):
-    - GOLD: Critical insight (high severity), only this adversary caught it
-    - SILVER: Critical + 2 adversaries caught it, OR minor + only this adversary
-    - BRONZE: Minor fix, fewer than half of adversaries caught it
+    - GOLD: High severity, exclusive catch (only 1 adversary)
+    - SILVER: High + 2-3 catchers, OR medium + exclusive catch, OR low + exclusive
+    - BRONZE: Medium + fewer than half caught it, OR low + fewer than half
     """
     active_adversaries = set(c.adversary for c in result.concerns)
     if len(active_adversaries) < 6:
@@ -91,6 +91,7 @@ def calculate_medals(result: GauntletResult, spec_hash: str, run_id: str) -> lis
 
         num_catchers = len(similar_adversaries)
         is_critical = concern.severity == "high"
+        is_medium = concern.severity == "medium"
         is_minor = concern.severity == "low"
         half_adversaries = len(active_adversaries) / 2
 
@@ -100,18 +101,19 @@ def calculate_medals(result: GauntletResult, spec_hash: str, run_id: str) -> lis
         if is_critical and num_catchers == 1:
             medal_type = "gold"
             uniqueness = f"Critical insight caught exclusively by {adversary} - no other adversary identified this issue"
-        elif is_critical and num_catchers == 2:
-            other = [a for a in similar_adversaries if a != adversary][0]
+        elif is_critical and num_catchers <= 3:
+            others = sorted(a for a in similar_adversaries if a != adversary)
             medal_type = "silver"
-            uniqueness = f"Critical insight caught by {adversary} and {other}"
+            uniqueness = f"Critical insight caught by {adversary} and {', '.join(others)}"
+        elif is_medium and num_catchers == 1:
+            medal_type = "silver"
+            uniqueness = f"Medium severity insight caught exclusively by {adversary}"
         elif is_minor and num_catchers == 1:
             medal_type = "silver"
             uniqueness = f"Minor fix caught exclusively by {adversary}"
-        elif is_minor and num_catchers < half_adversaries:
+        elif num_catchers < half_adversaries:
             medal_type = "bronze"
-            uniqueness = f"Minor fix caught by {num_catchers}/{len(active_adversaries)} adversaries"
-        elif is_critical and num_catchers > 2:
-            medal_type = "silver"
+            uniqueness = f"{concern.severity.title()} concern caught by {num_catchers}/{len(active_adversaries)} adversaries"
             uniqueness = f"Critical insight caught by {num_catchers} adversaries: {', '.join(sorted(similar_adversaries))}"
 
         if medal_type:
