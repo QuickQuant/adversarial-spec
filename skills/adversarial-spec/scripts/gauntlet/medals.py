@@ -60,10 +60,13 @@ def _concerns_are_similar(concern1: str, concern2: str, threshold: float = 0.10)
 def calculate_medals(result: GauntletResult, spec_hash: str, run_id: str) -> list[Medal]:
     """Calculate medal awards for a gauntlet run.
 
+    Severity is assigned by the eval model in Phase 4, not by the attack model.
+    This gives informed, relative judgments based on the full spec context.
+
     Medal criteria (only when 6+ adversaries):
-    - GOLD: High severity, exclusive catch (only 1 adversary)
-    - SILVER: High + 2-3 catchers, OR medium + exclusive catch, OR low + exclusive
-    - BRONZE: Medium + fewer than half caught it, OR low + fewer than half
+    - GOLD: High severity + exclusive catch (only 1 adversary found it)
+    - SILVER: High + 2 catchers, OR low/medium + exclusive catch
+    - BRONZE: Low/medium + fewer than half of adversaries caught it
     """
     active_adversaries = set(c.adversary for c in result.concerns)
     if len(active_adversaries) < 6:
@@ -81,6 +84,9 @@ def calculate_medals(result: GauntletResult, spec_hash: str, run_id: str) -> lis
     for eval_item in valuable_evals:
         concern = eval_item.concern
         adversary = concern.adversary
+        # Use eval-assigned severity (informed by full spec context),
+        # falling back to concern severity for legacy runs
+        severity = eval_item.severity if eval_item.severity in ("high", "medium", "low") else concern.severity
 
         similar_adversaries = {adversary}
         for other_eval in valuable_evals:
@@ -90,9 +96,8 @@ def calculate_medals(result: GauntletResult, spec_hash: str, run_id: str) -> lis
                 similar_adversaries.add(other_eval.concern.adversary)
 
         num_catchers = len(similar_adversaries)
-        is_critical = concern.severity == "high"
-        is_medium = concern.severity == "medium"
-        is_minor = concern.severity == "low"
+        is_critical = severity == "high"
+        is_minor = severity in ("medium", "low")
         half_adversaries = len(active_adversaries) / 2
 
         medal_type = None
@@ -101,19 +106,18 @@ def calculate_medals(result: GauntletResult, spec_hash: str, run_id: str) -> lis
         if is_critical and num_catchers == 1:
             medal_type = "gold"
             uniqueness = f"Critical insight caught exclusively by {adversary} - no other adversary identified this issue"
-        elif is_critical and num_catchers <= 3:
-            others = sorted(a for a in similar_adversaries if a != adversary)
+        elif is_critical and num_catchers == 2:
+            other = [a for a in similar_adversaries if a != adversary][0]
             medal_type = "silver"
-            uniqueness = f"Critical insight caught by {adversary} and {', '.join(others)}"
-        elif is_medium and num_catchers == 1:
-            medal_type = "silver"
-            uniqueness = f"Medium severity insight caught exclusively by {adversary}"
+            uniqueness = f"Critical insight caught by {adversary} and {other}"
         elif is_minor and num_catchers == 1:
             medal_type = "silver"
-            uniqueness = f"Minor fix caught exclusively by {adversary}"
-        elif num_catchers < half_adversaries:
+            uniqueness = f"{severity.title()} severity insight caught exclusively by {adversary}"
+        elif is_minor and num_catchers < half_adversaries:
             medal_type = "bronze"
-            uniqueness = f"{concern.severity.title()} concern caught by {num_catchers}/{len(active_adversaries)} adversaries"
+            uniqueness = f"{severity.title()} concern caught by {num_catchers}/{len(active_adversaries)} adversaries"
+        elif is_critical and num_catchers > 2:
+            medal_type = "silver"
             uniqueness = f"Critical insight caught by {num_catchers} adversaries: {', '.join(sorted(similar_adversaries))}"
 
         if medal_type:
@@ -128,7 +132,7 @@ def calculate_medals(result: GauntletResult, spec_hash: str, run_id: str) -> lis
                     adversary_version=adv_version,
                     concern_id=concern.id,
                     concern_text=concern.text,
-                    severity=concern.severity,
+                    severity=severity,
                     uniqueness=uniqueness,
                     report="",
                     timestamp=timestamp,

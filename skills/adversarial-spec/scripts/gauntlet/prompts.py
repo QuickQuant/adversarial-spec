@@ -32,9 +32,9 @@ ATTACK_USER_PROMPT_JSON = """Review this specification and identify all potentia
 {spec}
 
 Output your concerns as a JSON object with this exact schema:
-{{"concerns": [{{"text": "description of the concern", "severity": "high|medium|low"}}]}}
+{{"concerns": [{{"text": "description of the concern"}}]}}
 
-Be specific and cite parts of the spec. Every concern must have both "text" and "severity"."""
+Be specific and cite parts of the spec. Focus on finding problems, not rating them."""
 
 # =============================================================================
 # Phase 2: Big Picture Synthesis
@@ -133,10 +133,17 @@ CRITICAL RULES:
 4. For ACKNOWLEDGE: Note why the point is valid AND why it's not being addressed
 5. For DEFER: Note what information is missing
 
+SEVERITY ASSESSMENT (for accepted/acknowledged concerns):
+Rate each non-dismissed concern relative to the others in this batch:
+- HIGH: Breaks a core invariant, causes data loss, or creates a security hole. Would block implementation.
+- MEDIUM: Real problem that needs fixing but has workarounds. Would cause bugs or confusion.
+- LOW: Valid but minor — naming issues, edge cases unlikely in practice, cosmetic inconsistencies.
+Use the full range. If everything is "medium," you aren't differentiating. Dismissed concerns don't need severity.
+
 Output your evaluation as JSON with this structure:
 {{
   "evaluations": [
-    {{"concern_index": 0, "verdict": "dismissed|accepted|acknowledged|deferred", "reasoning": "..."}},
+    {{"concern_index": 0, "verdict": "dismissed|accepted|acknowledged|deferred", "severity": "high|medium|low", "reasoning": "..."}},
     ...
   ]
 }}"""

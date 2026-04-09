@@ -102,9 +102,12 @@ class Evaluation:
     concern: Concern
     verdict: str  # dismissed, accepted, acknowledged, deferred
     reasoning: str
+    severity: str = ""  # high, medium, low — assigned by eval model, not attack model
 
     def __post_init__(self):
         self.verdict = normalize_verdict(self.verdict)
+        if self.severity not in ("high", "medium", "low"):
+            self.severity = self.concern.severity  # fallback to attack-assigned
 
 
 @dataclass
@@ -339,11 +342,14 @@ class GauntletResult:
             return result
 
         def eval_to_dict(e: Evaluation) -> dict:
-            return {
+            d = {
                 "concern": concern_to_dict(e.concern),
                 "verdict": e.verdict,
                 "reasoning": e.reasoning,
             }
+            if e.severity:
+                d["severity"] = e.severity
+            return d
 
         def rebuttal_to_dict(r: Rebuttal) -> dict:
             return {

@@ -244,6 +244,7 @@ def _deserialize_evaluation(data: dict[str, Any]) -> Evaluation:
         concern=_deserialize_concern(data["concern"]),
         verdict=data["verdict"],
         reasoning=data.get("reasoning", ""),
+        severity=data.get("severity", ""),
     )
 
 

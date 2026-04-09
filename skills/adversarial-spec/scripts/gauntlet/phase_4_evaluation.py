@@ -90,11 +90,15 @@ Evaluate each concern according to the response protocols. Output valid JSON."""
             for eval_data in data.get("evaluations", []):
                 idx = eval_data.get("concern_index", 0)
                 if idx < len(concerns):
+                    severity = eval_data.get("severity", "")
+                    if severity not in ("high", "medium", "low"):
+                        severity = ""
                     evaluations.append(
                         Evaluation(
                             concern=concerns[idx],
                             verdict=eval_data.get("verdict", "deferred"),
                             reasoning=eval_data.get("reasoning", ""),
+                            severity=severity,
                         )
                     )
             return evaluations
@@ -221,6 +225,7 @@ def evaluate_concerns_multi_model(
         for i, concern in enumerate(batch):
             verdicts = {}
             reasonings = {}
+            severities = {}
 
             for model in eval_models:
                 batch_results = model_all_results.get(model, {}).get(batch_idx, [])
@@ -228,6 +233,8 @@ def evaluate_concerns_multi_model(
                     eval_item = batch_results[i]
                     verdicts[model] = eval_item.verdict
                     reasonings[model] = eval_item.reasoning
+                    if eval_item.severity in ("high", "medium", "low"):
+                        severities[model] = eval_item.severity
 
             verdict_counts = {}
             for v in verdicts.values():
@@ -250,6 +257,15 @@ def evaluate_concerns_multi_model(
                 if len(set(verdicts.values())) > 1:
                     disagreements += 1
 
+                # Severity consensus: take the highest (most conservative)
+                severity_order = {"high": 3, "medium": 2, "low": 1}
+                consensus_severity = ""
+                if severities:
+                    consensus_severity = max(
+                        severities.values(),
+                        key=lambda s: severity_order.get(s, 0),
+                    )
+
                 combined_reasoning = f"[Consensus: {dict(verdict_counts)}] "
                 combined_reasoning += reasonings.get(eval_models[0], "")
 
@@ -257,6 +273,7 @@ def evaluate_concerns_multi_model(
                     concern=concern,
                     verdict=consensus_verdict,
                     reasoning=combined_reasoning,
+                    severity=consensus_severity,
                 ))
 
     if disagreements > 0:
