@@ -11,6 +11,20 @@ from typing import Optional
 
 SESSIONS_DIR = Path.home() / ".config" / "adversarial-spec" / "sessions"
 CHECKPOINTS_DIR = Path.cwd() / ".adversarial-spec-checkpoints"
+SESSION_STATE_PATH = Path.cwd() / ".adversarial-spec" / "session-state.json"
+
+
+def detect_active_session() -> Optional[str]:
+    """Read active_session_id from .adversarial-spec/session-state.json in CWD.
+
+    Returns the session ID or None if no active session exists.
+    """
+    try:
+        data = json.loads(SESSION_STATE_PATH.read_text())
+        sid = data.get("active_session_id")
+        return sid if sid else None
+    except (FileNotFoundError, json.JSONDecodeError, KeyError):
+        return None
 
 
 @dataclass
@@ -72,7 +86,13 @@ class SessionState:
 
 
 def save_checkpoint(spec: str, round_num: int, session_id: Optional[str] = None):
-    """Save spec checkpoint for this round."""
+    """Save spec checkpoint for this round.
+
+    Auto-detects active session from .adversarial-spec/session-state.json
+    when session_id is not provided.
+    """
+    if session_id is None:
+        session_id = detect_active_session()
     CHECKPOINTS_DIR.mkdir(parents=True, exist_ok=True)
     prefix = f"{session_id}-" if session_id else ""
     path = CHECKPOINTS_DIR / f"{prefix}round-{round_num}.md"
@@ -89,7 +109,12 @@ def save_critique_responses(
 
     This ensures debate output is recoverable even if the conversation
     is lost. Each model's full response text is preserved.
+
+    Auto-detects active session from .adversarial-spec/session-state.json
+    when session_id is not provided.
     """
+    if session_id is None:
+        session_id = detect_active_session()
     CHECKPOINTS_DIR.mkdir(parents=True, exist_ok=True)
     prefix = f"{session_id}-" if session_id else ""
     path = CHECKPOINTS_DIR / f"{prefix}round-{round_num}-critiques.json"

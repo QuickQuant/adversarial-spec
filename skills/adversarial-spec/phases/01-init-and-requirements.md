@@ -15,37 +15,53 @@ TodoWrite([
 
 Mark each step `completed` as you finish it. Mark the current step `in_progress`. For debug investigations, mark "Offer interview mode" and "Conduct interview" as `completed` immediately (not applicable).
 
+### Treatment-Originated Session Shortcut
+
+If the active session has `"origin": "treatcodebase"` in its session detail file:
+
+1. Mark ALL Phase 1 TodoWrite items as `completed` (requirements already captured from diagnosis merge)
+2. Present pre-plan summary to user:
+   ```
+   Treatment Session Detected
+   ───────────────────────────────────────
+   Origin: treatcodebase ({N}-model diagnosis)
+   Concerns: {N} (now: {N}, next: {N}, later: {N})
+   Milestones: {N} proposed
+   Tests: {N} pseudocode tests in tests-pseudo.md
+
+   [Review roadmap] [Show pre-plan] [Start fresh]
+   ```
+3. On **"Review roadmap"**: Transition to Phase 02. The Phase 02 pre-plan detection handles the rest.
+4. On **"Show pre-plan"**: Print the Diagnosis Summary and Top 3 Concerns from the pre-plan, then ask again.
+5. On **"Start fresh"**: Clear `origin` and `pre_plan_path` from session detail file. Proceed with normal Phase 01 flow (interview, requirements gathering). The pre-plan remains on disk for reference.
+
 ---
 
 ## Task-Driven Workflow
 
-**CRITICAL: At the start of every adversarial-spec session, immediately set up Tasks to track the entire workflow.** This ensures you never lose track of where you are in the process.
+**CRITICAL: At the start of every adversarial-spec session, set up tracking at two levels.** This ensures you never lose track of where you are in the process.
 
-### Using MCP Tasks
+### Tracking System
 
-Use these tools throughout the workflow:
+Adversarial-spec uses two complementary tracking mechanisms:
 
-| Tool | Purpose | Example |
-|------|---------|---------|
-| `TaskCreate` | Create a new task | `TaskCreate(subject="Run debate round 1", description="...")` |
-| `TaskUpdate` | Update status, add blockers | `TaskUpdate(taskId="3", status="completed", owner="adv-spec:debate")` |
-| `TaskList` | See tasks or list contexts | `TaskList(context_name="OMS Implementation")` |
-| `TaskGet` | Get full task details | `TaskGet(taskId="3")` |
+| Level | Mechanism | What it tracks | Persists across sessions? |
+|-------|-----------|---------------|--------------------------|
+| **Session/Pipeline** | Fizzy pipeline | Which phase the session is in, debate round count, gate completions | Yes — visible on the board |
+| **Step** | TodoWrite | Individual steps within the current phase (scale check, concern assessment, etc.) | No — per-conversation only |
 
-**TaskList parameters:**
-- `session_id`: Filter by session_id in metadata
-- `context_name`: Filter by context_name in metadata (preferred - human-readable)
-- `status`: Filter by status (pending, in_progress, completed)
-- `list_contexts`: If true, returns summary of all active contexts instead of task list
+**Fizzy pipeline** (session-level):
+- Every session gets a card via `pipeline_create_session` on the project's Fizzy board
+- Card moves through lanes: Evaluated Plans → Debate → Pre-Gauntlet → Gauntlet → Finalization
+- Card state block tracks: `debate_round`, `spec_path`, `last_agent`, `gauntlet_complete`
+- Use `pipeline_advance` for phase transitions (enforces gate checks)
+- Use `pipeline_patch_state` after each debate round to keep the card current
 
-**IMPORTANT:** Use `TaskList(list_contexts=True)` at session start to detect active work streams. Then use `TaskList(context_name="...")` to see tasks for the selected context.
-
-**Key fields (via TaskUpdate):**
-- **`owner`** - Who's responsible: `adv-spec:orchestrator`, `adv-spec:debate`, `adv-spec:planner`, `adv-spec:impl:backend`
-- **`addBlockedBy`** - Dependencies: task IDs that must complete first
-- **`metadata`** - Context: `{"phase": "debate", "round": 1, "session_id": "...", "concern_ids": [...]}`
-
-Tasks are stored globally but filtered by `session_id` in metadata.
+**TodoWrite** (step-level):
+- Each phase doc defines its own TodoWrite checklist (see the phase file you're entering)
+- Mark steps `in_progress` when starting, `completed` when done
+- `[GATE]` items must complete before proceeding past them
+- TodoWrite is conversation-scoped — it resets on context switch. That's fine; the Fizzy card preserves cross-session state.
 
 ### Initial Task Structure
 
@@ -163,113 +179,27 @@ Phase 6: Implementation (if proceeding with code execution)
 - [ ] Final integration verification
 ```
 
-**Task Management Rules:**
-1. Mark each task `in_progress` when you start it (use `TaskUpdate` with `status: "in_progress"`)
-2. Mark each task `completed` immediately when done - don't batch completions
-3. Add sub-tasks dynamically as they emerge (e.g., each debate round gets its own tasks)
-4. Remove tasks that don't apply (e.g., if user skips interview, mark as completed with note)
-5. When execution planning generates implementation tasks, add them to Phase 7 with effort/risk
-6. Only one task should be `in_progress` at a time per owner
-7. Never skip phases without explicitly marking skipped tasks
-8. If user makes a choice that eliminates a phase, mark those tasks as completed with "skipped" note
+**Step Management Rules:**
+1. Mark each TodoWrite step `in_progress` when you start it
+2. Mark each step `completed` immediately when done — don't batch completions
+3. `[GATE]` steps must pass before proceeding past them
+4. Add dynamic steps as they emerge (e.g., each debate round beyond Round 2)
+5. If user makes a choice that eliminates a phase, skip those steps with a note
 
-**Ownership Conventions:**
-- `adv-spec:orchestrator` - Main agent running the skill (Phases 1-4)
-- `adv-spec:debate` - Debate round coordination
-- `adv-spec:gauntlet` - Gauntlet execution
-- `adv-spec:planner` - Execution planning (Phase 5)
-- `adv-spec:impl:{workstream}` - Implementation workstreams (e.g., `adv-spec:impl:backend`)
-
-**Dependency Patterns:**
-- **Phase-level:** Each phase's first task is `blockedBy` the previous phase's last task
-- **Round-level:** Debate round N+1 is `blockedBy` round N
-- **Parallel tasks:** Gauntlet adversary attacks can run in parallel (same `blockedBy`)
-- **Implementation:** Use execution plan's dependency graph for `blockedBy`
-
-**Metadata Fields:**
-
-Use structured metadata to track tasks throughout the workflow. Different task types use different fields:
-
-```json
-// Milestone task (from roadmap)
-{
-  "schema_version": "1.0",
-  "source": "roadmap",
-  "task_type": "milestone",
-  "session_id": "adv-spec-20260124-150000",
-  "context_name": "OMS Implementation",
-  "phase": "roadmap",
-  "milestone_id": "M1",
-  "roadmap_path": "roadmap/manifest.json",
-  "test_summary": {"total": 5, "passing": 2, "failing": 1, "not_started": 2}
-}
-
-// User story task (from roadmap)
-{
-  "schema_version": "1.0",
-  "source": "roadmap",
-  "task_type": "user_story",
-  "session_id": "adv-spec-20260124-150000",
-  "context_name": "OMS Implementation",
-  "phase": "roadmap",
-  "milestone_id": "M1",
-  "user_story_id": "US-1",
-  "test_cases": ["TC-1.1", "TC-1.2"]
-}
-
-// Debate round task
-{
-  "schema_version": "1.0",
-  "task_type": "debate",
-  "session_id": "adv-spec-20260124-150000",
-  "context_name": "OMS Implementation",
-  "phase": "debate",
-  "doc_type": "spec",
-  "depth": "technical",
-  "round": 3,
-  "models": ["gpt-5.4", "gemini-3-pro"],
-  "roadmap_milestone": "M1"
-}
-
-// Implementation task (from execution plan)
-{
-  "schema_version": "1.0",
-  "task_type": "implementation",
-  "session_id": "adv-spec-20260124-150000",
-  "context_name": "OMS Implementation",
-  "phase": "implementation",
-  "milestone_id": "M1",
-  "user_story_ids": ["US-1", "US-2"],
-  "concern_ids": ["PARA-abc123"],
-  "spec_refs": ["Section 3.2"],
-  "workstream": "backend",
-  "risk_level": "high",
-  "effort": "M",
-  "test_strategy": "test-first"
-}
-```
-
-**Required fields for all tasks:**
-- `schema_version`: Always "1.0"
-- `task_type`: One of `milestone`, `user_story`, `test_case`, `debate`, `implementation`
-- `session_id`: Format `adv-spec-YYYYMMDD-HHMMSS`
-- `context_name`: Human-readable name for the work stream (e.g., "OMS Implementation")
-- `phase`: One of `roadmap`, `debate`, `gauntlet`, `implementation`
-
-**Roadmap-linked fields:**
-- `milestone_id`: Links task to roadmap milestone (e.g., "M1")
-- `user_story_id`: Links task to user story (e.g., "US-1")
-- `roadmap_path`: Path to manifest.json
-- `test_summary`: Progress tracking for milestones
+**Fizzy Sync Rules:**
+- After each debate round: `pipeline_patch_state` with updated `debate_round`
+- On phase transition: `pipeline_advance` (enforces gates) + comment with evidence
+- On checkpoint: verify Fizzy card state matches session state
+- Never let the card go stale — if 2+ rounds pass without a sync, something is wrong
 
 **Handling Optional Phases:**
-- **Interview**: If user declines, remove all 8 interview sub-tasks
-- **Debug investigations**: Remove interview sub-tasks (debug doesn't use interview); Phase 5/6 may still apply if debug leads to implementation tasks
-- **Gauntlet**: If user declines, remove entire Phase 3
-- **Execution Planning**: If user declines, remove Phase 5
-- **Implementation**: If user just wanted the plan, remove Phase 6
+- **Interview**: If user declines, skip interview steps in TodoWrite
+- **Debug investigations**: Skip interview steps (debug doesn't use interview)
+- **Gauntlet**: If user declines, skip Phase 3; note in Fizzy comment
+- **Execution Planning**: If user declines, skip Phase 5
+- **Implementation**: If user just wanted the plan, skip Phase 6
 
-**Why this matters:** Long adversarial sessions can span many rounds and phases. Without explicit task tracking, it's easy to lose context about what phase you're in, what's been completed, and what comes next. MCP Tasks provide a persistent roadmap visible to both you and the user, with dependencies ensuring work happens in the right order. The task list persists across sessions - if the user returns later, they can see exactly where they left off. When the skill is used from another project, tasks are stored in that project's `.claude/tasks.json` and visible via `TaskList`.
+**Why this matters:** Long adversarial sessions can span many rounds, phases, and context switches. The Fizzy card preserves cross-session state so a fresh agent can pick up where the last one left off. TodoWrite keeps the current conversation focused on the right step. Together they prevent the failure pattern where sessions advance through phases with no gate enforcement or external visibility.
 
 ## Setup
 
@@ -448,7 +378,7 @@ Round 3 - Proportional Fix:
 
 **Example invocation:**
 ```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.4,gemini-cli/gemini-3-pro-preview --doc-type debug <<'SPEC_EOF'
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.4,gemini-cli/gemini-3.1-pro-preview --doc-type debug <<'SPEC_EOF'
 # Debug Investigation: Orders Page 60s Load Time
 
 ## Symptoms

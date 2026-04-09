@@ -44,9 +44,11 @@ DEPRECATED_MODELS = {
     "o3-mini": "Use codex/gpt-5.2-codex-medium (free with ChatGPT subscription)",
 
     # Old Gemini models
-    "gemini-pro": "Use gemini/gemini-3-pro or gemini-cli/gemini-3-pro-preview (free)",
-    "gemini-1.5-pro": "Use gemini/gemini-3-pro or gemini-cli/gemini-3-pro-preview (free)",
-    "gemini-1.5-flash": "Use gemini/gemini-3-flash or gemini-cli/gemini-3-flash-preview (free)",
+    "gemini-pro": "Use gemini-cli/gemini-3.1-pro-preview (free) or gemini-cli/gemini-3-flash-preview (free)",
+    "gemini-1.5-pro": "Use gemini-cli/gemini-3.1-pro-preview (free) or gemini-cli/gemini-3-flash-preview (free)",
+    "gemini-1.5-flash": "Use gemini-cli/gemini-3-flash-preview (free)",
+    "gemini-2.5-pro": "Use gemini-cli/gemini-3.1-pro-preview (free). WARNING: 2.5 Pro shares quota with 3.1 Pro",
+    "gemini-3-pro-preview": "Use gemini-cli/gemini-3.1-pro-preview (free). 3 Pro superseded by 3.1 Pro",
 
     # Old Claude models
     "claude-3-opus": "Use claude-opus-4-5-20250514",
@@ -130,7 +132,7 @@ def main():
         print("", file=sys.stderr)
         print("Free options with no API cost:", file=sys.stderr)
         print("  • codex/gpt-5.2-codex (requires ChatGPT subscription + npm install -g @openai/codex)", file=sys.stderr)
-        print("  • gemini-cli/gemini-3-pro-preview (requires Google account + install gemini CLI)", file=sys.stderr)
+        print("  • gemini-cli/gemini-3.1-pro-preview (requires Google account + install gemini CLI)", file=sys.stderr)
 
         sys.exit(2)  # Block the command
 

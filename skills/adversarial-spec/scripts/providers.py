@@ -39,7 +39,7 @@ MODEL_COSTS = {
     "codex/gpt-5.4": {"input": 0.0, "output": 0.0},
     "codex/gpt-5.1-codex-mini": {"input": 0.0, "output": 0.0},
     # Gemini CLI models (uses Google account, no per-token cost)
-    "gemini-cli/gemini-3-pro-preview": {"input": 0.0, "output": 0.0},
+    "gemini-cli/gemini-3.1-pro-preview": {"input": 0.0, "output": 0.0},
     "gemini-cli/gemini-3-flash-preview": {"input": 0.0, "output": 0.0},
     # Claude CLI models (uses Anthropic subscription via claude command, no per-token cost)
     "claude-cli/claude-sonnet-4-6": {"input": 0.0, "output": 0.0},
@@ -325,7 +325,7 @@ def list_providers():
     gemini_cli_status = "[installed]" if GEMINI_CLI_AVAILABLE else "[not installed]"
     print(f"  {'Gemini CLI':12} {'(Google account)':24} {gemini_cli_status}")
     print(
-        "             Example models: gemini-cli/gemini-3-pro-preview, gemini-cli/gemini-3-flash-preview"
+        "             Example models: gemini-cli/gemini-3.1-pro-preview, gemini-cli/gemini-3-flash-preview"
     )
     print("             Install: npm install -g @google/gemini-cli && gemini auth")
     print()
@@ -400,7 +400,7 @@ def get_available_providers() -> list[tuple[str, Optional[str], str]]:
 
     # Add Gemini CLI if available
     if GEMINI_CLI_AVAILABLE:
-        available.append(("Gemini CLI", None, "gemini-cli/gemini-3-pro-preview"))
+        available.append(("Gemini CLI", None, "gemini-cli/gemini-3.1-pro-preview"))
 
     # Add Claude CLI if available
     if CLAUDE_CLI_AVAILABLE:

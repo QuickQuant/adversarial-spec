@@ -18,7 +18,7 @@ get_available_eval_models = MODULE.get_available_eval_models
 def test_validate_model_name_accepts_expected_values():
     _validate_model_name("codex/gpt-5.4")
     _validate_model_name("claude-opus-4-6")
-    _validate_model_name("gemini-cli/gemini-3-pro-preview")
+    _validate_model_name("gemini-cli/gemini-3.1-pro-preview")
     _validate_model_name("gemini/gemini-3-flash")
     _validate_model_name("deepseek/deepseek-v4")
 
@@ -68,5 +68,5 @@ def test_get_available_eval_models_prefers_codex_gpt_5_4(monkeypatch):
 
     assert get_available_eval_models()[:2] == [
         "codex/gpt-5.4",
-        "gemini-cli/gemini-3-pro-preview",
+        "gemini-cli/gemini-3.1-pro-preview",
     ]

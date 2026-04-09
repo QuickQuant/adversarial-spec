@@ -1,4 +1,4 @@
 interface:
   display_name: "Adversarial Spec"
-  short_description: "Debate, gauntlet, and implementation self-pickup via Trello pipeline."
+  short_description: "Debate, gauntlet, and implementation self-pickup via Fizzy pipeline."
   default_prompt: "Run adversarial-spec: read session-state.json, determine current phase, and continue. If in implementation phase, enter the self-pickup loop via pipeline_do_next_task."

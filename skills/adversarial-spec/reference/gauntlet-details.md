@@ -40,7 +40,7 @@ cat spec.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntl
 # Run with specific adversaries and multiple attack models
 cat spec.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet \
   --gauntlet-adversaries paranoid_security,burned_oncall \
-  --gauntlet-attack-models "codex/gpt-5.4,gemini-cli/gemini-3-pro-preview"
+  --gauntlet-attack-models "codex/gpt-5.4,gemini-cli/gemini-3.1-pro-preview"
 
 # Resume from checkpoint (reuse Phase 1-3 concerns)
 cat spec.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet \

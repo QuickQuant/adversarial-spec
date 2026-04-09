@@ -692,7 +692,7 @@ class TestCallGeminiCliModel:
         import pytest
 
         with pytest.raises(RuntimeError, match="Gemini CLI not found"):
-            call_gemini_cli_model("system", "user", "gemini-cli/gemini-3-pro-preview")
+            call_gemini_cli_model("system", "user", "gemini-cli/gemini-3.1-pro-preview")
 
     @patch("models.GEMINI_CLI_AVAILABLE", True)
     @patch("models.subprocess.run")
@@ -703,11 +703,11 @@ class TestCallGeminiCliModel:
             stderr="",
         )
         response, inp, out = call_gemini_cli_model(
-            "sys", "user", "gemini-cli/gemini-3-pro-preview"
+            "sys", "user", "gemini-cli/gemini-3.1-pro-preview"
         )
         cmd = mock_run.call_args[0][0]
-        assert "gemini-3-pro-preview" in cmd
-        assert "gemini-cli/gemini-3-pro-preview" not in " ".join(cmd)
+        assert "gemini-3.1-pro-preview" in cmd
+        assert "gemini-cli/gemini-3.1-pro-preview" not in " ".join(cmd)
 
     @patch("models.GEMINI_CLI_AVAILABLE", True)
     @patch("models.subprocess.run")
@@ -1093,9 +1093,9 @@ class TestCallSingleModel:
     def test_routes_gemini_cli_model_to_handler(self, mock_gemini):
         mock_gemini.return_value = ("[AGREE]\n[SPEC]spec[/SPEC]", 100, 50)
 
-        result = call_single_model("gemini-cli/gemini-3-pro-preview", "spec", 1, "prd")
+        result = call_single_model("gemini-cli/gemini-3.1-pro-preview", "spec", 1, "prd")
         mock_gemini.assert_called_once()
-        assert result.model == "gemini-cli/gemini-3-pro-preview"
+        assert result.model == "gemini-cli/gemini-3.1-pro-preview"
 
     @patch("models.call_gemini_cli_model")
     @patch("models.GEMINI_CLI_AVAILABLE", True)
@@ -1103,7 +1103,7 @@ class TestCallSingleModel:
     def test_gemini_cli_retries_on_failure(self, mock_sleep, mock_gemini):
         mock_gemini.side_effect = [Exception("First fail"), ("[AGREE]", 10, 5)]
 
-        result = call_single_model("gemini-cli/gemini-3-pro-preview", "spec", 1, "prd")
+        result = call_single_model("gemini-cli/gemini-3.1-pro-preview", "spec", 1, "prd")
         assert mock_gemini.call_count == 2
         assert result.agreed is True
 
@@ -1112,7 +1112,7 @@ class TestCallSingleModel:
     def test_gemini_cli_extracts_spec_from_response(self, mock_gemini):
         mock_gemini.return_value = ("Critique\n[SPEC]Extracted spec[/SPEC]", 100, 50)
 
-        result = call_single_model("gemini-cli/gemini-3-pro-preview", "spec", 1, "prd")
+        result = call_single_model("gemini-cli/gemini-3.1-pro-preview", "spec", 1, "prd")
         assert result.spec == "Extracted spec"
 
     @patch("models.call_gemini_cli_model")
@@ -1125,7 +1125,7 @@ class TestCallSingleModel:
             ("[AGREE]", 10, 5),
         ]
 
-        call_single_model("gemini-cli/gemini-3-pro-preview", "spec", 1, "prd")
+        call_single_model("gemini-cli/gemini-3.1-pro-preview", "spec", 1, "prd")
         calls = mock_sleep.call_args_list
         assert calls[0][0][0] == 1.0  # First delay
         assert calls[1][0][0] == 2.0  # Second delay

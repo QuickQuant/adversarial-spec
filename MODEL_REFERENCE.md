@@ -54,7 +54,7 @@ Why pay for `deepseek/r1-distill` at $0.03/1M when `codex/gpt-5.3-codex` is **$0
 
 | Model | Use Case | Notes |
 |-------|----------|-------|
-| `gemini-cli/gemini-3-pro-preview` | **Best for debate** | Top LMArena (1501 Elo) |
+| `gemini-cli/gemini-3.1-pro-preview` | **Best for debate** | Top LMArena (1501 Elo) |
 | `gemini-cli/gemini-3-flash-preview` | Fast iteration | Pro-level at Flash speed |
 
 **Free tier**: 60 requests/min, 1000/day with personal Google account
@@ -129,7 +129,7 @@ Only use these when CLI tools are unavailable.
 
 | Tier | Old Reference | Current Model | Notes |
 |------|---------------|---------------|-------|
-| Frontier | - | `gemini-cli/gemini-3-pro-preview` | Full Gemini 3 Pro |
+| Frontier | - | `gemini-cli/gemini-3.1-pro-preview` | Full Gemini 3 Pro |
 | Fast | - | `gemini-cli/gemini-3-flash-preview` | Fast iteration |
 
 ### xAI (API: `XAI_API_KEY`)
@@ -185,10 +185,10 @@ Routes to other providers. Update prefixes to match current models:
 ### Best (FREE - CLI tools):
 ```bash
 # Frontier models, zero cost
-codex/gpt-5.3-codex,gemini-cli/gemini-3-pro-preview
+codex/gpt-5.3-codex,gemini-cli/gemini-3.1-pro-preview
 
 # Add Flash for a third perspective (still free, still strong)
-codex/gpt-5.3-codex,gemini-cli/gemini-3-pro-preview,gemini-cli/gemini-3-flash-preview
+codex/gpt-5.3-codex,gemini-cli/gemini-3.1-pro-preview,gemini-cli/gemini-3-flash-preview
 ```
 
 ### If no subscriptions (API fallback):
@@ -214,10 +214,10 @@ When updating documentation, **use CLI tools** (free + frontier):
 | Old (2024 model) | New (CLI - FREE + frontier) |
 |------------------|----------------------------|
 | `gpt-4o` | `codex/gpt-5.3-codex` |
-| `gpt-4o,gemini/gemini-2.0-flash` | `codex/gpt-5.3-codex,gemini-cli/gemini-3-pro-preview` |
+| `gpt-4o,gemini/gemini-2.0-flash` | `codex/gpt-5.3-codex,gemini-cli/gemini-3.1-pro-preview` |
 | `o1` | `codex/gpt-5.3-codex` (defaults to xhigh reasoning) |
 | `gemini/gemini-2.0-flash` | `gemini-cli/gemini-3-flash-preview` |
-| `gemini/gemini-pro` | `gemini-cli/gemini-3-pro-preview` |
+| `gemini/gemini-pro` | `gemini-cli/gemini-3.1-pro-preview` |
 
 **API fallback** (only if no subscriptions):
 

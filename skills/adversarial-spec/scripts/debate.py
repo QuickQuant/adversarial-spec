@@ -20,20 +20,18 @@ Usage:
     python3 debate.py providers
     python3 debate.py profiles
     python3 debate.py sessions
-
-Supported providers (set corresponding API key):
+Unsupported providers (use CLI instead):
     OpenAI:     OPENAI_API_KEY       models: gpt-5.4
     Anthropic:  ANTHROPIC_API_KEY    models: claude-opus-4-6, claude-sonnet-4-5-20250929
     Google:     GEMINI_API_KEY       models: gemini/gemini-3-pro, gemini/gemini-3-flash
-    xAI:        XAI_API_KEY          models: xai/grok-4, xai/grok-4.1-fast
-    Mistral:    MISTRAL_API_KEY      models: mistral/mistral-large-3, mistral/mistral-medium-3
-    Groq:       GROQ_API_KEY         models: groq/llama-4-maverick, groq/llama-3.3-70b-versatile
+Supported providers (set corresponding API key):
     OpenRouter: OPENROUTER_API_KEY   models: openrouter/openai/gpt-5.4, openrouter/anthropic/claude-sonnet-4-5
     Codex CLI:  (ChatGPT subscription) models: codex/gpt-5.4, codex/gpt-5.4
                 Install: npm install -g @openai/codex && codex login
                 Reasoning: --codex-reasoning xhigh (minimal, low, medium, high, xhigh)
     Claude CLI: (Anthropic subscription) models: claude-cli/claude-sonnet-4-6, claude-cli/claude-opus-4-6
-                Install: npm install -g @anthropic-ai/claude-code && claude setup-token
+                Install: npm install -g @anthropic-ai/claude-code && claude setup-token                                                                                                                                                                                                                                                                                                   
+    Gemini CLI:  (Google account) models: gemini-cli/gemini-3.1-pro-preview, gemini-cli/gemini-3-flash-preview  
 
 Document types:
     spec  - Specification (default). Use --depth to control focus:
@@ -319,7 +317,7 @@ def add_core_arguments(parser: argparse.ArgumentParser) -> None:
         "--models",
         "-m",
         default=None,
-        help="Comma-separated list of models (e.g., codex/gpt-5.4,gemini-cli/gemini-3-pro-preview)",
+        help="Comma-separated list of models (e.g., codex/gpt-5.4,gemini-cli/gemini-3.1-pro-preview)",
     )
     parser.add_argument(
         "--doc-type",
@@ -570,7 +568,7 @@ Examples:
   python3 debate.py focus-areas
   python3 debate.py personas
   python3 debate.py profiles
-  python3 debate.py save-profile myprofile --models codex/gpt-5.4,gemini-cli/gemini-3-pro-preview --focus security
+  python3 debate.py save-profile myprofile --models codex/gpt-5.4,gemini-cli/gemini-3.1-pro-preview --focus security
 
 Gauntlet commands (adversarial attack on specs):
   echo "spec" | python3 debate.py gauntlet                   # Run gauntlet with all adversaries
@@ -850,7 +848,7 @@ def parse_models(args: argparse.Namespace) -> list[str]:
                 "  Codex CLI: Install codex CLI for codex/gpt-5.4 (FREE with ChatGPT subscription)", file=sys.stderr
             )
             print(
-                "  Gemini CLI: Install gemini CLI for gemini-cli/gemini-3-pro-preview (FREE)", file=sys.stderr
+                "  Gemini CLI: Install gemini CLI for gemini-cli/gemini-3.1-pro-preview (FREE)", file=sys.stderr
             )
             print(
                 "  OpenAI:    Set OPENAI_API_KEY for gpt-5.4", file=sys.stderr
@@ -1313,8 +1311,13 @@ def run_critique(
     all_agreed = all(r.agreed for r in successful) if successful else False
 
     session_id = session_state.session_id if session_state else args.session
+    # save_checkpoint and save_critique_responses auto-detect active session
+    # from .adversarial-spec/session-state.json when session_id is None
     if session_id or args.session:
         save_checkpoint(spec, args.round, session_id)
+    else:
+        # No explicit session — still save checkpoint if auto-detection finds one
+        save_checkpoint(spec, args.round)
 
     # Save raw critique responses to disk (makes parsing errors recoverable)
     save_critique_responses(results, args.round, session_id)

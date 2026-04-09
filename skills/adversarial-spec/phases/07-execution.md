@@ -14,7 +14,8 @@ TodoWrite([
   {content: "Present plan to user for approval [GATE]", status: "pending", activeForm: "Presenting execution plan for approval"},
   {content: "Write execution plan to disk [GATE]", status: "pending", activeForm: "Writing execution plan to disk"},
   {content: "Verify plan file exists and update session state", status: "pending", activeForm: "Verifying plan persistence"},
-  {content: "Generate trello-plan.json and load into pipeline [GATE]", status: "pending", activeForm: "Loading execution plan into Trello pipeline"},
+  {content: "Generate fizzy-plan.json and load into pipeline [GATE]", status: "pending", activeForm: "Loading execution plan into Fizzy pipeline"},
+  {content: "Add concern context comments to all cards [GATE]", status: "pending", activeForm: "Adding concern context comments to Fizzy cards"},
 ])
 ```
 
@@ -341,15 +342,15 @@ Where `<slug>` is the context name slugified (same as the manifest directory).
 
 ---
 
-### Step 9: Load into Trello Pipeline
+### Step 9: Load into Fizzy Pipeline
 
 **This step connects the execution plan to the self-pickup loop.** Without it, cards are just text on disk — no agent can pick them up via `pipeline_do_next_task`.
 
-**Generate `trello-plan.json`:**
+**Generate `fizzy-plan.json`:**
 
 Write a JSON file alongside the execution plan:
 ```
-.adversarial-spec/specs/<slug>/trello-plan.json
+.adversarial-spec/specs/<slug>/fizzy-plan.json
 ```
 
 The JSON must follow the pipeline schema:
@@ -365,7 +366,8 @@ The JSON must follow the pipeline schema:
       "effort": "M",
       "strategy": "test-first",
       "depends_on": [],
-      "concern_refs": ["PARA-abc", "BURN-def"]
+      "concern_refs": ["PARA-abc", "BURN-def"],
+      "test_refs": ["TC-1.1", "TC-1.2"]
     },
     {
       "task_id": "T2",
@@ -375,7 +377,8 @@ The JSON must follow the pipeline schema:
       "effort": "S",
       "strategy": "test-after",
       "depends_on": ["T1"],
-      "concern_refs": []
+      "concern_refs": [],
+      "test_refs": ["TC-2.1"]
     }
   ]
 }
@@ -390,11 +393,12 @@ The JSON must follow the pipeline schema:
 - `strategy`: test-first / test-after / skip
 - `depends_on`: List of task_ids this task depends on (from dependency graph)
 - `concern_refs`: List of gauntlet concern IDs linked to this task
+- `test_refs`: List of test case IDs from `tests-spec.md` (e.g., `["TC-1.1", "TC-1.2"]`). Every task that touches behavior MUST reference ≥1 test. Tasks without test refs that modify behavior should be flagged for user review.
 
 **Load into pipeline:**
 ```
 pipeline_load(
-  plan_path = ".adversarial-spec/specs/<slug>/trello-plan.json",
+  plan_path = ".adversarial-spec/specs/<slug>/fizzy-plan.json",
   session_id = "<active_session_id>",
   board_id = BOARD_ID
 )
@@ -409,6 +413,36 @@ pipeline_lane_state(pipeline="task", board_id=BOARD_ID)
 
 Confirm cards appear in New Todo with correct count.
 
-**[GATE] TodoWrite: Mark "Generate trello-plan.json and load into pipeline" completed before proceeding to Phase 8 (Implementation).**
+**[GATE] TodoWrite: Mark "Generate fizzy-plan.json and load into pipeline" completed before proceeding to Step 10.**
 
-Only after pipeline loading: proceed to Phase 8 (Implementation).
+---
+
+### Step 10: Add Concern Context Comments to Cards
+
+**This step makes each card self-contained for human readers.** Without it, a person opening a single Fizzy card sees acceptance criteria but has no idea WHY the task exists, what production problem it prevents, or which gauntlet findings shaped the approach. They'd have to read the full spec to orient — defeating the purpose of card-level task breakdown.
+
+**For each card created in Step 9, add a comment that includes:**
+
+1. **Which concern(s) it addresses** — e.g., "CON-001: Gateway token refresh has no mutex"
+2. **The problem in plain language** — what's broken, what happened (production incidents, data corruption, etc.)
+3. **Why the fix takes this shape** — key gauntlet findings that constrained the approach (e.g., "gauntlet FM-2: can't cross-package import because gateway tsconfig restricts rootDir")
+4. **How it connects to other cards** — dependencies, fallback relationships (e.g., "if this task's transition fails, T8's stuck detector catches it as the safe fallback")
+
+**Format:**
+```
+**Context: CON-XXX — [short problem description]**
+
+[1-3 paragraphs: what's broken, what the fix does, which gauntlet findings matter]
+```
+
+**Guidelines:**
+- Write for a human who will read ONE card, not the full spec
+- Include gauntlet concern IDs (e.g., RC-1, FM-2) so they can trace back to the gauntlet findings doc
+- For prerequisite/audit tasks (no concern), explain what downstream tasks need from this one
+- Keep each comment under 200 words — enough to orient, not a spec restatement
+
+**Efficiency:** All card comments are independent — make all `add_comment` calls in parallel.
+
+**[GATE] TodoWrite: Mark "Add concern context comments to cards" completed before proceeding to Phase 8 (Implementation).**
+
+Only after concern context comments: proceed to Phase 8 (Implementation).

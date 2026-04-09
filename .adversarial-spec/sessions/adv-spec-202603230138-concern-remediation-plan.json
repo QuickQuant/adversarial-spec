@@ -1,0 +1,124 @@
+{
+  "session_id": "adv-spec-202603230138-concern-remediation-plan",
+  "context_name": "Concern Remediation Plan",
+  "created_at": "2026-03-23T01:38:00Z",
+  "updated_at": "2026-03-23T03:57:03Z",
+  "current_phase": "complete",
+  "current_step": "All 8 concern remediation tasks (CR-0 through CR-8) committed. 442 tests passing.",
+  "doc_type": "spec",
+  "depth": "technical",
+  "requirements_summary": {
+    "context": "Architecture concern remediation plan from mapcodebase 3.1. 8 steps addressing 7 valid concerns (CON-001 through CON-008, excluding invalid CON-002). Touches gauntlet phases, MCP tasks, model dispatch, test infrastructure, CLI flags, prompts, and pyproject.toml.",
+    "blast_zone": [
+      "pyproject.toml",
+      "mcp_tasks/server.py",
+      "skills/adversarial-spec/scripts/task_manager.py",
+      "skills/adversarial-spec/scripts/gauntlet/phase_1_attacks.py",
+      "skills/adversarial-spec/scripts/gauntlet/phase_2_synthesis.py",
+      "skills/adversarial-spec/scripts/gauntlet/phase_3_filtering.py",
+      "skills/adversarial-spec/scripts/gauntlet/phase_4_evaluation.py",
+      "skills/adversarial-spec/scripts/gauntlet/phase_5_rebuttals.py",
+      "skills/adversarial-spec/scripts/gauntlet/phase_6_adjudication.py",
+      "skills/adversarial-spec/scripts/gauntlet/prompts.py",
+      "skills/adversarial-spec/scripts/debate.py",
+      "skills/adversarial-spec/scripts/tests/*.py"
+    ],
+    "key_decisions": [
+      "CON-002 (dead code) is invalid \u2014 scope.py, knowledge_service.py, gauntlet_monolith.py are all active",
+      "CON-004: inverse re-raise pattern instead of _RECOVERABLE tuple (LiteLLM exceptions don't inherit from RuntimeError)",
+      "CON-003: only eliminate Path 3 (inline dispatch), keep Path 1 and Path 2 as-is",
+      "CON-005: defer integration tests, only fix sys.path hacks",
+      "CON-006: add pydantic to pyproject.toml, don't convert to dataclasses"
+    ]
+  },
+  "journey": [
+    {
+      "time": "2026-03-23T01:38:00Z",
+      "event": "Session created for concern remediation plan debate",
+      "type": "init"
+    },
+    {
+      "time": "2026-03-23T01:38:00Z",
+      "event": "Architecture context loaded (primer.md, concerns.md, component docs)",
+      "type": "context"
+    },
+    {
+      "time": "2026-03-23T01:38:00Z",
+      "event": "Phase transition: init \u2192 debate",
+      "type": "transition"
+    },
+    {
+      "time": "2026-03-23T01:46:29Z",
+      "event": "Round 1 debate complete \u2014 synthesis presented with 3 key corrections identified",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-03-23T01:46:29Z",
+      "event": "Checkpoint saved: concern-remediation-round-1-complete.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-03-23T02:14:32Z",
+      "event": "Phase transition: debate -> finalize (3 rounds, consensus on substance)",
+      "type": "transition"
+    },
+    {
+      "time": "2026-03-23T02:27:54Z",
+      "event": "Phase transition: finalize -> execution (plan written to disk)",
+      "type": "transition"
+    },
+    {
+      "time": "2026-03-23T02:30:29Z",
+      "event": "Execution plan written \u2014 8 tasks (T0-T7), sequential, ~2hr estimated",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-03-23T02:30:29Z",
+      "event": "Checkpoint saved: concern-remediation-execution-plan-complete.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-03-23T02:57:32Z",
+      "event": "T0-T2 complete. Handoff.md and review queue need updating before T3.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-03-23T02:57:32Z",
+      "event": "Checkpoint saved: concern-remediation-t0-t2-complete-handoff-pending.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-03-23T03:13:48Z",
+      "event": "T3 complete \u2014 task store now uses FileLock-guarded atomic mutations; full pytest suite green.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-03-23T03:53:56Z",
+      "event": "CR-0 through CR-7 all committed and Trello cards moved to Done. CR-8 (remove clustering) created in Backlog.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-03-23T03:53:56Z",
+      "event": "Checkpoint saved: concern-remediation-cr0-cr7-complete.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-03-23T03:57:03Z",
+      "event": "CR-8 committed (39cba1e). All concern remediation complete.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-03-23T03:57:03Z",
+      "event": "Phase transition: implementation \u2192 complete",
+      "type": "transition"
+    }
+  ],
+  "completed_work": "CR-0: CON-002 invalidated with audit trail. CR-1: pydantic dep declared. CR-2: sys.path hacks removed from 17 test files. CR-3: FileLock canonical mutation path with 12 tests. CR-4: PROGRAMMING_BUGS re-raise guard across 5 phase files with 14 tests. CR-5: phase 2 inline dispatch replaced with call_model. CR-6: 9 prompts extracted to gauntlet/prompts.py. CR-7: CLI flag aliases added. All 442 tests passing. CR-8 created for clustering removal based on user feedback about v1 synthesis failure. CR-8: Clustering step removed from gauntlet pipeline (commit 39cba1e).",
+  "next_action": "Work stream complete. Remaining follow-ups: deploy skill files, run /mapcodebase --update.",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202603230353-concern-remediation-cr0-cr7-complete.md",
+  "do_not_ask": [],
+  "status": "complete",
+  "spec_path": ".adversarial-spec/specs/concern-remediation-plan/spec-final.md",
+  "execution_plan_path": ".adversarial-spec/specs/concern-remediation-plan/execution-plan.md",
+  "completed_at": "2026-03-23T03:57:03Z"
+}

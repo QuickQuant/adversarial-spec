@@ -29,7 +29,7 @@ $DEBATE gauntlet --gauntlet-adversaries all < spec.md                    # All a
 $DEBATE gauntlet --gauntlet-adversaries paranoid_security,burned_oncall  # Specific ones
 $DEBATE gauntlet --gauntlet-adversaries all --gauntlet-resume            # Resume from checkpoint
 $DEBATE gauntlet --gauntlet-adversaries all \
-  --gauntlet-attack-models "codex/gpt-5.4,gemini-cli/gemini-3-pro-preview"  # Multi-model attacks
+  --gauntlet-attack-models "codex/gpt-5.4,gemini-cli/gemini-3.1-pro-preview"  # Multi-model attacks
 $DEBATE gauntlet --show-manifest                                         # Show latest run manifest
 $DEBATE gauntlet --show-manifest abc1234                                 # Show specific run manifest
 $DEBATE gauntlet-adversaries  # List available adversary names

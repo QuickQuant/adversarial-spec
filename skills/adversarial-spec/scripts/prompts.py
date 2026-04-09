@@ -145,6 +145,17 @@ You will receive a Product Requirements Document (PRD) from another AI model. Yo
    - Edge cases in user workflows
    - If major use cases are missing, flag them.
 
+4. **Goal Alignment (Human Guardrail):** Do the user stories actually serve the stated goals?
+   - For each user story, consider: if this story is implemented SUCCESSFULLY, could the
+     result violate a stated goal or execute a stated non-goal?
+   - Look for CONTRADICTIONS: a story that adds data to responses in a project whose goal
+     is reducing response data is self-defeating — flag as CRITICAL
+   - Do NOT assume the human noticed the conflict. The human wrote both the goals and the
+     stories, but may not have seen the tension between them.
+   - If the document contains Goals/Non-Goals, every user story must be checked against them.
+   - If no Goals/Non-Goals section exists, flag that as a gap — stories can't be validated
+     without knowing what they're supposed to serve.
+
 **If the PRD lacks user stories or a clear user journey, this is a CRITICAL gap that must be raised BEFORE discussing other requirements.**
 
 Analyze the PRD for:
@@ -206,6 +217,17 @@ You will receive a Technical Specification from another AI model. Your job is to
    - Error recovery and troubleshooting
    - Upgrade and migration paths
    - **If major technical scenarios are missing, flag them.**
+
+4. **Goal Alignment (Human Guardrail):** Do the user stories actually serve the stated goals?
+   - For each user story, consider: if this story is implemented SUCCESSFULLY, could the
+     result violate a stated goal or execute a stated non-goal?
+   - Look for CONTRADICTIONS: a story that adds data to responses in a project whose goal
+     is reducing response data is self-defeating — flag as CRITICAL
+   - Do NOT assume the human noticed the conflict. The human wrote both the goals and the
+     stories, but may not have seen the tension between them.
+   - If the document contains Goals/Non-Goals, every user story must be checked against them.
+   - If no Goals/Non-Goals section exists, flag that as a gap — stories can't be validated
+     without knowing what they're supposed to serve.
 
 **If the spec lacks a "Getting Started" section or clear setup workflow, this is a CRITICAL gap that must be raised BEFORE discussing implementation details.**
 

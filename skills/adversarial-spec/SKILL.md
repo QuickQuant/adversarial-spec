@@ -10,6 +10,92 @@ Generate and refine specifications through iterative debate with multiple LLMs u
 
 **Important: Claude is an active participant in this debate, not just an orchestrator.** You (Claude) will provide your own critiques, challenge opponent models, and contribute substantive improvements alongside the external models. Make this clear to the user throughout the process.
 
+## ZEROTH ACTION - Conductor Registration (ALWAYS, before session state)
+
+Every `/adversarial-spec` invocation registers the session with the project conductor and launches a dispatch wake listener. Workers are always listening — the process is tiny, and a worker that cannot receive conductor signals is purposeless.
+
+### Step 0a: Detect Role
+
+Determine which CLI is running this session from environment variables:
+- `$CLAUDE_PROJECT_DIR` set → role = **claude** (conductor)
+- `$GEMINI_PROJECT_DIR` set → role = **gemini** (worker)
+- Codex CLI detected (e.g. `$CODEX_PROJECT_DIR` or equivalent) → role = **codex** (worker)
+
+### Step 0b: Check Invocation Mode
+
+- If `$ADVSPEC_INVOKED_BY_CONDUCTOR=1`: this session was spawned by the conductor with a specific dispatch. Read `$ADVSPEC_DISPATCH_FILE` (a path to a JSON task payload) and handle the task. Skip to Step 0d (listener relaunch) after completion.
+- Otherwise: self-invoked (Jason opened this terminal manually). Proceed to Step 0c (self-registration).
+
+### Step 0c: Self-Registration
+
+Write `.conductor/agents/<role>.json` with `{role, pid, started_at, is_conductor, dispatch_log, session_state}`. Use atomic write (tmp + rename).
+
+**`is_conductor` field (REQUIRED):** Set `true` if this session is the conductor (the CLI that ran `/conductor`), `false` if this session is a worker. Hooks read this field to gate behavior — e.g., `worker-signal-conductor` skips if `is_conductor: true`, and `require-listener.sh` checks the Telegram listener for conductors vs dispatch listener for workers.
+
+**This field survives compaction.** After a context compact, re-read your own registration file (`.conductor/agents/<role>.json`) to recover your role. The role does not change mid-session.
+
+**PID handling:** Use the host PID when available. If running in a sandbox where `os.getpid()` returns a low number (< 100, e.g. PID 2 in bubblewrap), write `"pid": "sandboxed"` instead. PID is advisory — the conductor treats it as a liveness hint, not a contract.
+
+This is **passive registration** — no handshake with the conductor. The conductor reads `.conductor/agents/` whenever it needs to know who is available. It does not need to be running when workers register.
+
+Do **not** keep a resident shell alive solely to own an EXIT trap for this marker. Registration is a point-in-time write, not a daemon. If the session dies uncleanly, stale markers are acceptable; the conductor must treat `pid` as advisory and ignore dead processes.
+
+### Step 0d: Launch Dispatch Wake Listener
+
+Each role needs a background listener so it can be woken by external signals. The mechanism varies by CLI.
+
+Before launching, check if one is already running:
+1. Derive the PID file path (see below per role)
+2. If the PID file exists and the PID is alive, reuse the existing listener
+3. Only if no live listener exists, launch a new one
+
+#### Conductor (claude): Telegram Wake Listener
+
+PID file: `/tmp/claude-telegram-wake-<project>.pid`
+Launch: `~/.claude/bin/telegram-wake-listener` via Bash tool with `run_in_background=true`
+Enforced by `require-listener.sh` stop hook.
+
+#### Workers (gemini, codex): Dispatch Wake Listener
+
+PID file: `/tmp/claude-dispatch-wake-<project>-<role>.pid`
+Script: `~/.claude/bin/dispatch-wake-listener <role>`
+
+**IMPORTANT:** `run_in_background=true` is a Claude Code feature. Gemini CLI and Codex CLI must use their own background process mechanism:
+- **Gemini CLI:** Run the script as a background shell process (e.g., `nohup script &`, or your CLI's equivalent)
+- **Codex CLI:** Same approach, accounting for bubblewrap sandbox constraints on `/tmp` writes
+
+The listener is a simple polling loop that tails `.conductor/dispatch/<role>/updates.jsonl` and exits on the first new line. When it exits, the parent session should be notified (mechanism is CLI-dependent).
+
+**If your CLI cannot launch background processes at all**, fall back to inline dispatch checking at the top of each self-pickup loop iteration:
+```bash
+DISPATCH_LOG=".conductor/dispatch/<role>/updates.jsonl"
+CURRENT=$(wc -l < "$DISPATCH_LOG" 2>/dev/null || echo 0)
+# Compare against baseline from registration; read new lines if any
+```
+
+If the expected listener binary (`~/.claude/bin/dispatch-wake-listener`) is missing, report the exact missing path and stop.
+
+### Chicken-and-Egg Resolution (DESIGN NOTE)
+
+Workers do NOT search for the conductor and the conductor does NOT handshake with workers. Workers write presence markers and enter the self-pickup loop. The conductor reads `.conductor/agents/` when it has something to dispatch. If the conductor is down, workers stay idle. When it comes back, it sees them. No discovery, no ordering, no race.
+
+### Bootstrap Boundary (CRITICAL)
+
+Registration and startup-context checks are metadata-only. During Step 0 through the Startup Context Intent Gate:
+
+- Do **not** start `fizzy-mcp`, `fizzy-mcp --http`, app servers, Docker Compose stacks, or any other service transport
+- Do **not** probe by launching a new server "just to see if it starts"
+- If runtime state matters, inspect existing processes, PID files, sockets, logs, or config first
+- Only launch a service when the current phase explicitly requires it and you have first verified it is not already running
+
+This bootstrap path exists to discover context, not to mutate the runtime environment.
+
+### Step 0e: Continue to FIRST ACTION
+
+After registration and listener launch complete, proceed to the normal session state read below.
+
+---
+
 ## FIRST ACTION - Read Local Session State
 
 **BEFORE DOING ANYTHING ELSE**, check for an active session in the current project:
@@ -159,7 +245,7 @@ Architecture Mapping Advisory
 ───────────────────────────────────────
 Generated at: [arch_hash]
 Current HEAD: [current_hash]
-Consider running /mapcodebase --update
+Consider running /mapcodebase
 ```
 
 **On "Skip" with legacy docs:** Proceed without architecture priming. Do NOT pretend `v2.x` docs are equivalent to 3.0 docs.
@@ -235,6 +321,18 @@ No active session.
 [Start new] [Resume recent] [Continue without tracking]
 ```
 
+### Creating a New Session
+
+When the user selects **[New session]** or **[Start new]**, create BOTH tracking artifacts:
+
+1. Create session file (`sessions/<id>.json`) and update pointer (`session-state.json`) — the local session state
+2. **Call `pipeline_create_session(board_id, session_id, title, plan_path)`** — the Fizzy pipeline card in Evaluated Plans
+3. **Store `fizzy_card_id`** in the session detail file (`sessions/<id>.json`) — the card ID returned by step 2. This is required for all subsequent Fizzy sync operations.
+
+Step 2 is REQUIRED. A session without a Fizzy card is invisible to the pipeline and will advance through phases without any board-level tracking.
+
+Step 3 is REQUIRED. Without the stored card ID, phase transitions and debate rounds cannot sync to the board, and the card becomes stale immediately after creation. (See process failure: "Trello Board Ignored During Entire Spec Session", 2026-03-26.)
+
 ### Schema Migration (v1.1 → v1.3)
 
 **CRITICAL:** If session-state.json exists but `schema_version` < 1.3, trigger migration:
@@ -254,7 +352,7 @@ No active session.
      - `extended_state` (preserve rich fields like `gauntlet_results`, `dev_instance`, etc.)
    - Create `specs/<project>-roadmap/manifest.json` if roadmap data can be inferred from:
      - Tasks MCP (extract milestones from completed/pending tasks)
-     - Trello board (if linked)
+     - Fizzy board (if linked)
      - Checkpoint files (extract user stories, test cases)
    - Update session-state.json to v1.3 pointer format
    - Log to journey: `{"time": "ISO8601", "event": "Migrated from v1.1 to v1.3", "type": "migration"}`
@@ -374,7 +472,19 @@ Do NOT run `debate.py critique` when the user wants the gauntlet, and vice versa
 2. **Pointer file** (`session-state.json`) — update second:
    - Set `current_phase`, `current_step`, `next_action`, `updated_at`
 
-**Detail file first, pointer second.** If interrupted between writes, the pointer stays behind (safe — it catches up on next transition). The reverse would leave a pointer ahead of a stale detail file.
+3. **Fizzy card** (if `fizzy_card_id` exists in session detail file):
+   - Add a comment summarizing the transition: `"Phase: <old> → <new>. <1-line summary of what was accomplished>."`
+   - Call `pipeline_patch_state(card_id, session_id, patch)` with relevant state updates (e.g., `debate_round`, `last_agent`)
+   - Use a **haiku subagent** for the Fizzy call to keep MCP response payload out of main context
+
+4. **Telegram notification** (if project has telegram config):
+   - Send a concise summary to Telegram via `~/.claude/bin/telegram-send <project> "<message>"`
+   - Message format: `"Phase: <old> → <new>. <1-2 sentence summary of what was accomplished and what's next>."`
+   - **Wait 120 seconds** after sending to allow human interruption (Ctrl+C to intervene)
+   - If the human doesn't interrupt, proceed normally
+   - Use `time.sleep(120)` or equivalent — this is a deliberate pause, not a bug
+
+**Detail file first, pointer second, Fizzy third, Telegram fourth.** If interrupted between writes, the pointer stays behind (safe — it catches up on next transition). Fizzy is last-but-one because it's the least critical for local resumption. Telegram is truly last — it's a notification, not state.
 
 **Artifact path fields** — set in the detail file at specific transitions:
 
@@ -393,6 +503,33 @@ Do NOT run `debate.py critique` when the user wants the gauntlet, and vice versa
 Both writes must use atomic pattern (temp file + rename).
 
 **Backward compatibility:** If the detail file lacks `current_phase` (legacy sessions), add it — do not error. The schema is flexible.
+
+### Major Milestone Notifications (Telegram)
+
+**In addition to phase transitions**, send Telegram notifications + 120s pause at these intra-phase milestones. These are the moments where the human needs to stay oriented, and where an interruption could save hours of wasted work.
+
+**When to notify (and pause 120s):**
+
+| Milestone | Message template |
+|-----------|-----------------|
+| Debate round complete | `"R{N} complete: {count} findings ({critical} critical, {major} major, {minor} minor) applied to spec. Guardrails next."` |
+| Guardrail results | `"R{N} guardrails: SCOPE {pass/fail}, TRACE {pass/fail}, CONS {pass/fail}. {fix_count} fixes applied."` |
+| Convergence declared | `"Convergence after {N} rounds. Severity trend: {R1 summary} → {RN summary}. Proceeding to finalize."` |
+| Spec finalized | `"Spec finalized: {filename} ({lines} lines, {tc_count} TCs, {us_count} US). Proceeding to execution planning."` |
+| Execution plan loaded | `"Execution plan: {task_count} tasks across {stream_count} workstreams loaded into pipeline. Cards {first}-{last} in New Todo."` |
+| Gauntlet batch complete | `"Gauntlet batch {N}: {adversary_count} adversaries, {raw} raw → {unique} unique → {accepted} accepted concerns."` |
+
+**How to notify:**
+```bash
+~/.claude/bin/telegram-send <project> "<message>"
+sleep 120  # Allow human interruption
+```
+
+**Rules:**
+- Check `has_telegram_config` before attempting (fail open if no config)
+- The 120s pause is mandatory — it gives the human time to read and Ctrl+C if they want to redirect
+- If telegram-send fails, log to stderr and continue (never block on notification infra)
+- These are in ADDITION to Fizzy card comments — Fizzy is board state, Telegram is human attention
 
 ---
 
@@ -556,4 +693,5 @@ Only read these when you need specific information:
 - `~/.claude/skills/adversarial-spec/reference/advanced-features.md` - Focus modes, personas, profiles
 - `~/.claude/skills/adversarial-spec/reference/script-commands.md` - debate.py CLI reference
 - `~/.claude/skills/adversarial-spec/reference/gauntlet-details.md` - Adversarial gauntlet details
-- `~/.claude/skills/adversarial-spec/reference/convergence-and-telegram.md` - Convergence rules, Telegram
+- `~/.claude/skills/adversarial-spec/reference/convergence-and-telegram.md` - Convergence rules, debate.py `--telegram` flag
+- `~/.claude/skills/adversarial-spec/reference/telegram-bridge.md` - Agent reference for per-project Telegram bots (mobile human-gated review)

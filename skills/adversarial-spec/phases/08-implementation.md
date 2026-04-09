@@ -30,7 +30,7 @@ Pass your agent name in every `pipeline_*` call.
 Implementation Setup
 ───────────────────────────────────────
 [ ] Session ID and Board ID identified
-[ ] Trello cards loaded (pipeline_load or manual creation)
+[ ] Fizzy cards loaded (pipeline_load or manual creation)
     — verify with pipeline_lane_state(pipeline="task")
 [ ] Context loaded (see Context Loading below)
 ```
@@ -41,11 +41,12 @@ Implementation Setup
 3. If no active session: stop and report — cannot self-pick without a session
 
 **Board ID discovery:**
-Read the Trello Management section of `CLAUDE.md` or `AGENTS.md` for the board ID.
-Always pass `board_id` explicitly. Never call `set_active_board`.
+Board is **not** pinned implicitly at server startup for implementation work. Identify the target board from the session, card state, or project config, then pass `board_id` explicitly on every board-scoped `pipeline_*` call.
 
-**If cards are not yet loaded:** The execution plan must be converted to Trello cards first.
-Use `pipeline_load(plan_path, session_id)` with the `trello-plan.json` from the execution phase.
+If you do not know the board ID yet, stop and discover it before entering the self-pickup loop. Do **not** rely on `FIZZY_BOARD_ID` as a hidden default.
+
+**If cards are not yet loaded:** The execution plan must be converted to Fizzy cards first.
+Use `pipeline_load(plan_path, session_id)` with the `fizzy-plan.json` from the execution phase.
 
 ---
 
@@ -251,10 +252,10 @@ If you believe a new file is needed that the plan doesn't list, **stop and updat
 When a user asks "can you check X" or "I want to see Y working":
 
 1. **Check scope first** — Is this part of the current session's tasks?
-2. **Track it** — Add the investigation as a Trello card or comment on the relevant card
+2. **Track it** — Add the investigation as a Fizzy card or comment on the relevant card
 3. **Targeted queries only** — Don't burn context with ad-hoc debugging
 4. **Identify root cause** — Don't just poke values to make things "look right"
-5. **Propose fix through process** — Update Trello card with the fix needed
+5. **Propose fix through process** — Update Fizzy card with the fix needed
 
 **Anti-patterns to avoid:**
 - Spending 50+ turns on ad-hoc debugging without tracking the work
@@ -265,11 +266,11 @@ When a user asks "can you check X" or "I want to see Y working":
 
 ---
 
-### Trello Context Discipline
+### Fizzy Context Discipline
 
-**Board pinning:** Always pass `board_id` explicitly to every Trello MCP call. Never use `set_active_board` — it changes global state and causes cross-project drift.
+**Board targeting:** Treat `board_id` as an explicit per-call routing parameter for board-scoped operations. Never assume the active board from server startup state or `FIZZY_BOARD_ID`.
 
-**Subagent rule (Claude only):** Use a subagent with a low-reasoning model (haiku) for bulk Trello reads. Trello API responses return large JSON payloads that bloat main context. This applies to:
+**Subagent rule (Claude only):** Use a subagent with a low-reasoning model (haiku) for bulk Fizzy reads. Fizzy API responses are smaller than Trello's (native metadata, no description-embedded state), but bulk operations still bloat main context. This applies to:
 - Creating cards in bulk
 - Fetching cards from multiple lists
 - Any MCP call that returns unbounded data

@@ -9,6 +9,16 @@ Take a plan file, determine how much the current architecture docs can be truste
 
 This skill is a thin consumer over `mapcodebase 3.x`. It should not invent a second architecture system and it should not rediscover the codebase from scratch when fresh architecture docs already exist.
 
+## Prerequisites
+
+**Plan mode must NOT be active.** If you are currently in plan mode, call `ExitPlanMode` first and wait for the user to approve or reject the plan before running this skill. `/evaluate-plan` is a post-planning step — it evaluates a finished plan, not one still being drafted.
+
+If plan mode is active when this skill is invoked, tell the user:
+
+> "Cannot evaluate a plan while plan mode is active. Exit plan mode first (`ExitPlanMode`), then re-run `/evaluate-plan`."
+
+Do not proceed until plan mode is exited.
+
 ## Usage
 
 ```text
@@ -185,6 +195,47 @@ Return two sections.
 - `open_questions:` unresolved items that matter for debate/spec work
 - `explore_targets:` files or boundaries to inspect next
 - `trust_notes:` freshness caveats to carry forward
+
+## Trello Integration
+
+After producing the evaluation, if there are **no critical blockers** (architecture is not `legacy`/`stale` without user override, no unresolvable risks), create a session card on the project's Trello board using `pipeline_create_session`.
+
+### On successful evaluation:
+
+1. Call `pipeline_create_session` with:
+   - `session_id`: use the adversarial-spec session ID if one exists, otherwise generate one from the plan filename
+   - `title`: the plan title (first `# heading` from the plan file)
+   - `plan_path`: the plan file path
+   - `spec_path`: the spec path if one exists in the session
+
+   This places the card in the **Evaluated Plans** lane.
+
+2. Patch the card state to reflect the Architecture Gate result from step 2:
+   - If architecture status is `fresh`: `pipeline_patch_state` with `{ "mapcodebase_fresh": true }`
+   - If architecture status is `caution` or user chose stale docs: leave `mapcodebase_fresh: false` (the default)
+   - This must happen immediately after card creation — do not rely on a later step to set it.
+
+3. Add a comment to the card summarizing the evaluation:
+   - Architecture status
+   - Blast zone (compact)
+   - Recommendation
+   - Open questions (if any)
+
+4. Tell the user the card is in "Evaluated Plans" and what moves it forward:
+   > "Plan evaluated and placed in **Evaluated Plans** on Trello. When you're ready to proceed, the card advances through the pipeline as work progresses."
+
+   Note: steps 1-2 (card creation + state patch) should happen in the same subagent call to avoid forgetting the patch.
+
+### On critical blockers:
+
+Do NOT create a Trello card. Instead, tell the user what must be resolved first (e.g., "Run `/mapcodebase` before this plan can be evaluated").
+
+### Card lifecycle after evaluate-plan:
+
+The card follows the standard session pipeline from here:
+- **Evaluated Plans** → user accepts → **Pre-Roadmap** (if roadmap needed) or **Debate** (if spec debate needed)
+- The card advances via `pipeline_advance` as the user progresses through adversarial-spec phases
+- This skill only places the card; it does not advance it
 
 ## Rules
 

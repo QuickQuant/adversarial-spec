@@ -1,0 +1,379 @@
+{
+  "session_id": "adv-spec-202604021743-phase4-architecture-rewrite",
+  "context_name": "Phase 4 Architecture Rewrite",
+  "current_phase": "finalize",
+  "current_step": "Spec finalized. Awaiting user review.",
+  "created_at": "2026-04-02T17:43:00Z",
+  "updated_at": "2026-04-03T03:08:00.616301+00:00",
+  "trello_card_id": "69cebd6811e103656ffbde6d",
+  "requirements_summary": {
+    "goal": "Rewrite Phase 4 (Target Architecture) of the adversarial-spec workflow to add cross-cutting concern guidance, context-aware modes (greenfield/brownfield feature/brownfield debug), architectural invariants, and expanded dimension lists",
+    "preplan_path": ".adversarial-spec/specs/phase4-architecture-rewrite/preplan.md",
+    "blast_zone": [
+      "skills/adversarial-spec/phases/04-target-architecture.md",
+      "skills/adversarial-spec/phases/02-roadmap.md",
+      "skills/adversarial-spec/phases/05-gauntlet.md",
+      "skills/adversarial-spec/phases/07-execution.md"
+    ],
+    "downstream_consumers": [
+      "skills/evaluate-plan/SKILL.md",
+      "skills/mapcodebase/",
+      "skills/diagnosecodebase/"
+    ],
+    "depth": "technical",
+    "doc_type": "spec",
+    "user_stories": [
+      {
+        "id": "US-1",
+        "persona": "spec author",
+        "action": "have opponent models critique the Phase 4 rewrite",
+        "milestone": "M1"
+      },
+      {
+        "id": "US-2",
+        "persona": "spec author",
+        "action": "have adversary personas try to break the spec",
+        "milestone": "M2"
+      },
+      {
+        "id": "US-3",
+        "persona": "spec author",
+        "action": "have the finalized spec deployed as 04-target-architecture.md",
+        "milestone": "M3"
+      }
+    ],
+    "goals": [
+      "Debate and stress-test spec until consensus",
+      "Finalize and implement as the new 04-target-architecture.md"
+    ],
+    "non_goals": [
+      "Rewriting the spec from scratch (v1 is comprehensive)",
+      "Implementing downstream tool integrations (future work)"
+    ]
+  },
+  "debate_state": {
+    "round": 7,
+    "models": [
+      "codex/gpt-5.4",
+      "gemini-cli/gemini-3.1-pro-preview"
+    ],
+    "round_1_synthesis": "Accepted: execution surfaces, framework profiles, machine-readable invariants, non-request dry-runs, missing dimensions, concurrency control, concern interactions, mode-aware dry-run, Phase 2 test integration. Rejected: GPT-5.4 full restructure, security as 8th concern, separate taxonomy file.",
+    "round_2_synthesis": "Gemini agreed. GPT-5.4: framework profile needs version/runtime/deployment, add Identity/AuthZ + Data Access concerns (7->9), invariant lifecycle (status/supersedes), dry-run read+write archetypes.",
+    "round_3_synthesis": "Gemini agreed. GPT-5.4: surface consistency fix, framework guardrails accuracy (Next.js DAL/DTO), triggered concerns (Security/Trust + Integration Delivery), mandatory concern x surface matrix.",
+    "round_4_synthesis": "Gemini agreed (4th). GPT-5.4: realtime/streaming surface, explicit Bootstrap section, version-aware guardrails (updateTag), mode-specific completion criteria, SSRF/tenant in Security.",
+    "round_5_synthesis": "Both models critiqued (Gemini broke 4-round agreement streak). Accepted: Goals/Non-Goals, Getting Started prerequisites, schema-versioned JSON artifacts, blocking error list. Initially rejected deployment/migration/testing sections as over-engineering \u2014 corrected after user pointed out this IS a technical spec. Remediation in progress.",
+    "round_6_synthesis": "Both models critiqued on same theme: formalize all artifact schemas as normative contracts. Accepted: bootstrap state machine (status enum, lock, resume), normative schemas for all 5 artifacts (phase4_bootstrap, architecture-invariants.json, decision_journal, dry_run_results, architecture_taxonomy), upsert for tests-pseudo.md, release_id deployment, Phase 4 security (path validation, subprocess safety, secret redaction), testable perf targets, [GATE] on context mode, blocking error codes.",
+    "round_7_synthesis": "Gemini agreed. GPT-5.4: 6 issues \u2014 canonical surface_id enum, run_fingerprint + idempotency_key for rerun dedup, session mutation contract, deployment/runtime separation (REL_* vs P4_*), lightweight roadmap alignment gate, stale lock handling. All accepted."
+  },
+  "roadmap_path": "specs/phase4-architecture-rewrite/roadmap/manifest.json",
+  "tests_pseudo_path": "specs/phase4-architecture-rewrite/tests-pseudo.md",
+  "journey": [
+    {
+      "time": "2026-04-02T17:43:00Z",
+      "event": "Session created from pre-plan at specs/phase4-architecture-rewrite/preplan.md",
+      "type": "start"
+    },
+    {
+      "time": "2026-04-02T17:44:00Z",
+      "event": "Requirements fast-tracked from pre-plan, roadmap drafted",
+      "type": "artifact"
+    },
+    {
+      "time": "2026-04-02T17:46:00Z",
+      "event": "Phase transition: requirements -> debate. Spec draft v1 written.",
+      "type": "transition"
+    },
+    {
+      "time": "2026-04-02T17:55:00Z",
+      "event": "Debate round 1 complete. GPT-5.4: 6 issues. Gemini: 5 issues. Claude: 6 issues. Synthesized into v2.",
+      "type": "debate"
+    },
+    {
+      "time": "2026-04-02T18:05:00Z",
+      "event": "Debate round 2 complete. Gemini agreed. GPT-5.4: 5 issues (framework profile, 2 new concerns, invariant lifecycle, dry-run archetypes). Synthesized into v3.",
+      "type": "debate"
+    },
+    {
+      "time": "2026-04-02T18:20:00Z",
+      "event": "Debate round 3 complete. Gemini agreed (3rd). GPT-5.4: 4 issues (surface consistency, framework accuracy, triggered concerns, matrix). Synthesized into v4.",
+      "type": "debate"
+    },
+    {
+      "time": "2026-04-02T18:35:00Z",
+      "event": "Debate round 4 complete. Gemini agreed (4th). GPT-5.4: 5 issues (realtime surface, Bootstrap, version-aware guardrails, mode completion, SSRF). Synthesized into v5.",
+      "type": "debate"
+    },
+    {
+      "time": "2026-04-02T18:45:00Z",
+      "event": "Checkpoint before round 5. v5 written with all round 4 changes.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-04-02T18:35:38Z",
+      "event": "Spec draft v5 written with 4 debate rounds complete (Gemini agreed 4x, GPT-5.4 incrementally refining)",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-04-02T18:35:38Z",
+      "event": "Checkpoint saved: debate-round4-complete-v5-written.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-04-02T19:03:25Z",
+      "event": "Trello card migrated from Brainquarters board (old: 69ceab0c314cd87d8512ca9c) to Adversarial Spec board (new: 69cebd6811e103656ffbde6d). Placed in Debate lane with corrected state (round 5, spec_path set).",
+      "type": "maintenance"
+    },
+    {
+      "time": "2026-04-02T19:05:41Z",
+      "event": "Remediated session metadata: added depth=technical, doc_type=spec, user stories, goals/non-goals, extended_state, updated debate_state to round 5.",
+      "type": "maintenance"
+    },
+    {
+      "time": "2026-04-02T19:07:05Z",
+      "event": "Context Readiness Audit complete. 13 available, 2 not_available, 1 N/A. ~55K tokens available. Context files selected for debate: 4 files.",
+      "type": "audit"
+    },
+    {
+      "time": "2026-04-02T19:43:38Z",
+      "event": "Debate round 6 complete. Both critiqued on schema formalization. v7 written (913 lines) with normative schemas for all 5 artifacts, bootstrap state machine, dry_run_results artifact, blocking error codes, release_id deployment, Phase 4 security, upsert tests-pseudo.",
+      "type": "debate"
+    },
+    {
+      "time": "2026-04-02T19:45:55Z",
+      "event": "Round 6 complete, v7 written (913 lines). All 5 artifact schemas formalized, bootstrap state machine, blocking error codes. Process gaps remediated.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-04-02T19:45:55Z",
+      "event": "Checkpoint saved: debate-round6-complete-v7-written-remediation-done.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-04-02T20:58:06Z",
+      "event": "Debate round 7 complete. Gemini agreed. GPT-5.4 critiqued (6 issues: surface IDs, idempotency, mutation contract, deployment separation, alignment gate, stale locks). v8 written (991 lines) incorporating all. Also updated 01-init-and-requirements.md to replace Tasks MCP with Trello pipeline + TodoWrite.",
+      "type": "debate"
+    },
+    {
+      "time": "2026-04-02T20:58:57Z",
+      "event": "Round 7 complete, v8 written (991 lines). Canonical surface IDs, idempotency keys, mutation contract, REL_* codes, stale lock handling.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-04-02T20:58:57Z",
+      "event": "Checkpoint saved: debate-round7-complete-v8-written.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-04-02T22:13:52Z",
+      "event": "Debate converged at Round 10. Gemini agreed R10. GPT-5.4 in scope-expansion cycle (rounds 8-10). Claude + Gemini agree spec is gauntlet-ready. v10 = 1169 lines. Minor fixes applied: release log separation, skip stub shape, tests-pseudo creation contract.",
+      "type": "transition"
+    },
+    {
+      "time": "2026-04-02T22:13:52Z",
+      "event": "Phase transition: debate \u2192 gauntlet",
+      "type": "transition"
+    },
+    {
+      "time": "2026-04-02T23:08:29Z",
+      "event": "Debate converged at Round 10. v10 written (1169 lines). Session transitioned to gauntlet phase. Pre-gauntlet setup complete: adversaries selected (7 of 9), attack models chosen (codex + gemini-cli), cost estimate prepared.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-04-02T23:08:29Z",
+      "event": "Checkpoint saved: debate-converged-r10-v10-pre-gauntlet.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-04-03T02:04:04.258018+00:00",
+      "event": "Gauntlet complete: 65 concerns from 7 adversaries (Gemini only, Codex unavailable). 18 accepted, 4 acknowledged. v11 written (1191 lines). CONS guardrail passed after 3 fixes (architecture_fingerprint formula, profile_type examples, dry-run schema).",
+      "type": "transition"
+    },
+    {
+      "time": "2026-04-03T03:01:07.810849+00:00",
+      "event": "Phase transition: gauntlet \u2192 finalize",
+      "type": "transition"
+    },
+    {
+      "time": "2026-04-03T03:08:00.616301+00:00",
+      "event": "Spec finalized: .adversarial-spec/specs/phase4-architecture-rewrite/spec-output.md. 10 debate rounds + gauntlet (7 adversaries). CONS/SCOPE/TRACE guardrails passed. tests-spec.md promoted.",
+      "type": "artifact"
+    }
+  ],
+  "completed_work": "Debate rounds 8-10 complete. R8: both critiqued, synthesized v9 (1102 lines). R9: both critiqued, synthesized v10 (1166\u21921169 lines). R10: Gemini agreed, GPT-5.4 scope-expanding \u2014 convergence declared. Key v9-v10 additions: two-fingerprint model, path resolution, gate_approvals, dry_run_check_id enum, journey idempotency_key, artifact_publish_state, optional multi-component, release log separation, skip stub shape, tests-pseudo creation contract. Session state + Trello synced for debate\u2192gauntlet transition.",
+  "next_action": "User reviews spec-output.md and decides: accept, request changes, or re-debate.",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202604022308-debate-converged-r10-v10-pre-gauntlet.md",
+  "do_not_ask": [],
+  "status": "active",
+  "extended_state": {
+    "slug": "phase4-architecture-rewrite",
+    "opponent_models": [
+      "codex/gpt-5.4",
+      "gemini-cli/gemini-3.1-pro-preview"
+    ],
+    "context_files": [
+      ".architecture/primer.md",
+      "skills/adversarial-spec/phases/04-target-architecture.md",
+      ".adversarial-spec/specs/phase4-architecture-rewrite/preplan.md",
+      ".adversarial-spec/specs/phase4-architecture-rewrite/tests-pseudo.md"
+    ],
+    "spec_draft_path": ".adversarial-spec/specs/phase4-architecture-rewrite/spec-draft-v8.md",
+    "context_inventory": {
+      "schema_version": "1.0",
+      "audit_timestamp": "2026-04-02T19:07:05Z",
+      "git_hash": "14398b9",
+      "blast_zone": [
+        "skills/adversarial-spec/phases/04-target-architecture.md",
+        "skills/adversarial-spec/phases/02-roadmap.md",
+        "skills/adversarial-spec/phases/05-gauntlet.md",
+        "skills/adversarial-spec/phases/07-execution.md"
+      ],
+      "sources": {
+        "architecture_primer": {
+          "status": "available",
+          "path": ".architecture/primer.md",
+          "summary": "Architecture primer with system summary, components, contracts, gotchas, concerns",
+          "est_tokens": 2200,
+          "actionable": false,
+          "task_id": null
+        },
+        "architecture_overview": {
+          "status": "available",
+          "path": ".architecture/overview.md",
+          "summary": "Full system narrative \u2014 useful for cross-component context",
+          "est_tokens": 2800,
+          "actionable": false,
+          "task_id": null
+        },
+        "architecture_concerns": {
+          "status": "available",
+          "path": ".architecture/concerns.md",
+          "summary": "Actionable concern rollup \u2014 CON-001 through CON-003 plus invalidations",
+          "est_tokens": 6400,
+          "actionable": false,
+          "task_id": null
+        },
+        "component_gauntlet": {
+          "status": "available",
+          "path": ".architecture/structured/components/gauntlet.md",
+          "summary": "Gauntlet pipeline component doc \u2014 references Phase 4 invariant consumption",
+          "est_tokens": 3000,
+          "actionable": false,
+          "task_id": null
+        },
+        "component_adversaries": {
+          "status": "available",
+          "path": ".architecture/structured/components/adversaries.md",
+          "summary": "Adversary persona definitions \u2014 consumes Phase 4 surface maps and concern lists",
+          "est_tokens": 2000,
+          "actionable": false,
+          "task_id": null
+        },
+        "current_phase4": {
+          "status": "available",
+          "path": "skills/adversarial-spec/phases/04-target-architecture.md",
+          "summary": "Current Phase 4 doc being replaced \u2014 225 lines, the baseline",
+          "est_tokens": 3200,
+          "actionable": false,
+          "task_id": null
+        },
+        "phase5_gauntlet": {
+          "status": "available",
+          "path": "skills/adversarial-spec/phases/05-gauntlet.md",
+          "summary": "Gauntlet phase doc \u2014 downstream consumer of Phase 4 artifacts",
+          "est_tokens": 6700,
+          "actionable": false,
+          "task_id": null
+        },
+        "phase7_execution": {
+          "status": "available",
+          "path": "skills/adversarial-spec/phases/07-execution.md",
+          "summary": "Execution phase doc \u2014 consumes invariants and surface maps for task planning",
+          "est_tokens": 6400,
+          "actionable": false,
+          "task_id": null
+        },
+        "preplan": {
+          "status": "available",
+          "path": ".adversarial-spec/specs/phase4-architecture-rewrite/preplan.md",
+          "summary": "Original pre-plan with problem statement, BracketBattleAI evidence, proposed structure",
+          "est_tokens": 5800,
+          "actionable": false,
+          "task_id": null
+        },
+        "tests_pseudo": {
+          "status": "available",
+          "path": ".adversarial-spec/specs/phase4-architecture-rewrite/tests-pseudo.md",
+          "summary": "Test pseudocode \u2014 63 lines of test cases for Phase 4 behavior",
+          "est_tokens": 1900,
+          "actionable": false,
+          "task_id": null
+        },
+        "dependency_inventory": {
+          "status": "available",
+          "path": "pyproject.toml",
+          "summary": "Python project config and dependencies",
+          "est_tokens": 400,
+          "actionable": false,
+          "task_id": null
+        },
+        "process_failure_report": {
+          "status": "available",
+          "path": "adversarial-spec-process-failure-report.md",
+          "summary": "Process lessons learned \u2014 directly relevant to how Phase 4 should prevent failures",
+          "est_tokens": 11000,
+          "actionable": false,
+          "task_id": null
+        },
+        "evaluate_plan": {
+          "status": "available",
+          "path": "skills/evaluate-plan/SKILL.md",
+          "summary": "Downstream consumer: evaluate-plan skill references architecture docs",
+          "est_tokens": 3000,
+          "actionable": false,
+          "task_id": null
+        },
+        "mapcodebase_skill": {
+          "status": "not_available",
+          "path": null,
+          "summary": "Downstream consumer: mapcodebase skill not in this repo (deployed separately)",
+          "est_tokens": 0,
+          "actionable": false,
+          "task_id": null
+        },
+        "diagnosecodebase_skill": {
+          "status": "not_available",
+          "path": null,
+          "summary": "Downstream consumer: diagnosecodebase skill not in this repo (deployed separately)",
+          "est_tokens": 0,
+          "actionable": false,
+          "task_id": null
+        },
+        "git_history": {
+          "status": "available",
+          "path": null,
+          "summary": "5 recent commits touching blast zone \u2014 TodoWrite enforcement, gauntlet roster, multi-agent loop",
+          "est_tokens": 200,
+          "actionable": false,
+          "task_id": null
+        },
+        "monitoring_metrics": {
+          "status": "not_applicable",
+          "path": null,
+          "summary": "CLI tool, no runtime monitoring",
+          "est_tokens": 0,
+          "actionable": false,
+          "task_id": null
+        }
+      },
+      "total_available_tokens": 55200,
+      "gaps_noted": [
+        "mapcodebase and diagnosecodebase skills not in this repo \u2014 cannot verify Phase 4 invariant consumption contract",
+        "Architecture docs stale (c3b5f8c vs 14398b9) \u2014 advisory only, no blast zone files changed"
+      ]
+    }
+  },
+  "gauntlet_concerns_path": ".adversarial-spec/gauntlet-concerns-2026-04-03.json",
+  "spec_path": ".adversarial-spec/specs/phase4-architecture-rewrite/spec-output.md",
+  "tests_spec_path": ".adversarial-spec/specs/phase4-architecture-rewrite/tests-spec.md",
+  "manifest_path": "specs/phase4-architecture-rewrite/roadmap/manifest.json"
+}

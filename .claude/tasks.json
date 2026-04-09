@@ -388,7 +388,161 @@
       },
       "createdAt": "2026-01-24T20:13:24.681154Z",
       "updatedAt": "2026-01-24T20:13:24.681154Z"
+    },
+    {
+      "id": "20",
+      "subject": "[M1] Debate spec-draft-v1",
+      "description": "Run 2+ debate rounds on spec-draft-v1.md with opponent models. All 6 focus areas must be addressed. Synthesize and revise to v2.",
+      "status": "pending",
+      "owner": null,
+      "blockedBy": [],
+      "blocks": [
+        "22",
+        "21"
+      ],
+      "activeForm": "Debating spec-draft-v1",
+      "metadata": {
+        "schema_version": "1.0",
+        "source": "roadmap",
+        "task_type": "milestone",
+        "milestone_id": "M1",
+        "session_id": "adv-spec-202604021743-phase4-architecture-rewrite",
+        "context_name": "Phase 4 Architecture Rewrite"
+      },
+      "createdAt": "2026-04-02T18:04:38.237093Z",
+      "updatedAt": "2026-04-02T18:04:38.237093Z"
+    },
+    {
+      "id": "21",
+      "subject": "[US-1] Critique Phase 4 rewrite across 6 focus areas",
+      "description": "As a spec author, I want opponent models to critique the Phase 4 rewrite across the 6 focus areas so I can find gaps before committing to it. Focus areas: (1) cross-cutting concern taxonomy completeness, (2) brownfield scoping, (3) invariant enforcement format, (4) debug decision tree, (5) scale check for brownfield, (6) test interaction.",
+      "status": "pending",
+      "owner": null,
+      "blockedBy": [
+        "20"
+      ],
+      "blocks": [],
+      "activeForm": "Running debate critiques",
+      "metadata": {
+        "schema_version": "1.0",
+        "source": "roadmap",
+        "task_type": "user_story",
+        "milestone_id": "M1",
+        "user_story_id": "US-1",
+        "test_cases": [
+          "TC-1.1",
+          "TC-1.2",
+          "TC-1.3"
+        ],
+        "session_id": "adv-spec-202604021743-phase4-architecture-rewrite",
+        "context_name": "Phase 4 Architecture Rewrite"
+      },
+      "createdAt": "2026-04-02T18:04:41.778088Z",
+      "updatedAt": "2026-04-02T18:04:56.550734Z"
+    },
+    {
+      "id": "22",
+      "subject": "[M2] Gauntlet stress test",
+      "description": "Run gauntlet with full adversary roster against finalized spec. Address surviving concerns or explicitly accept them. Achieve pass/refine verdict.",
+      "status": "pending",
+      "owner": null,
+      "blockedBy": [
+        "20"
+      ],
+      "blocks": [
+        "23",
+        "24"
+      ],
+      "activeForm": "Running gauntlet stress test",
+      "metadata": {
+        "schema_version": "1.0",
+        "source": "roadmap",
+        "task_type": "milestone",
+        "milestone_id": "M2",
+        "session_id": "adv-spec-202604021743-phase4-architecture-rewrite",
+        "context_name": "Phase 4 Architecture Rewrite"
+      },
+      "createdAt": "2026-04-02T18:04:43.558228Z",
+      "updatedAt": "2026-04-02T18:04:57.076544Z"
+    },
+    {
+      "id": "23",
+      "subject": "[US-2] Adversary stress test on spec",
+      "description": "As a spec author, I want adversary personas to try to break the spec so I know it holds up under hostile scrutiny.",
+      "status": "pending",
+      "owner": null,
+      "blockedBy": [
+        "22"
+      ],
+      "blocks": [],
+      "activeForm": "Running adversary attacks",
+      "metadata": {
+        "schema_version": "1.0",
+        "source": "roadmap",
+        "task_type": "user_story",
+        "milestone_id": "M2",
+        "user_story_id": "US-2",
+        "test_cases": [
+          "TC-2.1",
+          "TC-2.2"
+        ],
+        "session_id": "adv-spec-202604021743-phase4-architecture-rewrite",
+        "context_name": "Phase 4 Architecture Rewrite"
+      },
+      "createdAt": "2026-04-02T18:04:45.335508Z",
+      "updatedAt": "2026-04-02T18:04:57.566759Z"
+    },
+    {
+      "id": "24",
+      "subject": "[M3] Finalize and implement",
+      "description": "Write finalized spec to 04-target-architecture.md. Update cross-references in 02-roadmap, 05-gauntlet, 07-execution. Deploy to ~/.claude/skills/adversarial-spec/.",
+      "status": "pending",
+      "owner": null,
+      "blockedBy": [
+        "22"
+      ],
+      "blocks": [
+        "25"
+      ],
+      "activeForm": "Finalizing and implementing",
+      "metadata": {
+        "schema_version": "1.0",
+        "source": "roadmap",
+        "task_type": "milestone",
+        "milestone_id": "M3",
+        "session_id": "adv-spec-202604021743-phase4-architecture-rewrite",
+        "context_name": "Phase 4 Architecture Rewrite"
+      },
+      "createdAt": "2026-04-02T18:04:47.181960Z",
+      "updatedAt": "2026-04-02T18:04:57.905610Z"
+    },
+    {
+      "id": "25",
+      "subject": "[US-3] Write finalized spec to 04-target-architecture.md and deploy",
+      "description": "As a spec author, I want the finalized spec written to 04-target-architecture.md and deployed so the new workflow is live.",
+      "status": "pending",
+      "owner": null,
+      "blockedBy": [
+        "24"
+      ],
+      "blocks": [],
+      "activeForm": "Writing and deploying finalized spec",
+      "metadata": {
+        "schema_version": "1.0",
+        "source": "roadmap",
+        "task_type": "user_story",
+        "milestone_id": "M3",
+        "user_story_id": "US-3",
+        "test_cases": [
+          "TC-3.1",
+          "TC-3.2"
+        ],
+        "session_id": "adv-spec-202604021743-phase4-architecture-rewrite",
+        "context_name": "Phase 4 Architecture Rewrite"
+      },
+      "createdAt": "2026-04-02T18:04:49.068025Z",
+      "updatedAt": "2026-04-02T18:04:58.834205Z"
     }
   ],
-  "next_id": 20
+  "next_id": 26
 }

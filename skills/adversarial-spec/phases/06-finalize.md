@@ -31,6 +31,8 @@ When ALL opponent models AND you have said `[AGREE]` (and gauntlet is complete o
 
 Fix any CONS findings. Present SCOPE additions for user approval. Restore TRACE-flagged coverage or explicitly descope with user approval. Only proceed after guardrails pass or user overrides.
 
+**TEST guardrail (when `tests_pseudo_path` exists):** Verify test cases don't exceed requirement boundaries. Tests for behaviors not in any user story or requirement are scope drift — flag via SCOPE.
+
 **[GATE] TodoWrite: Mark all three guardrail items (CONS, SCOPE, TRACE) completed before proceeding to quality verification.**
 
 | Guardrail | Failure Mode | Action |
@@ -59,6 +61,7 @@ Then verify:
 - Security section addresses authentication, authorization, encryption, and input validation
 - Performance targets include specific latency, throughput, and availability numbers
 - **Getting Started** section exists with clear bootstrap workflow
+- Test cases exist for all user stories with clear success conditions (if `tests-pseudo.md` was generated)
 
 **For Debug Investigations, verify:**
 - Evidence gathered before hypotheses formed (no guessing without data)
@@ -67,6 +70,17 @@ Then verify:
 - Proposed fix is proportional to the problem (not over-engineered)
 - Verification plan exists with specific steps to confirm the fix
 - Prevention section identifies tests to add and documentation updates
+
+**Promote tests-pseudo → tests-spec (when `tests_pseudo_path` exists):**
+
+Before writing the final spec, promote the test pseudocode to formalized acceptance tests:
+
+1. Read `tests-pseudo.md` (now refined by debate + gauntlet)
+2. Validate schema refs against actual codebase schemas (read schema files, check field names exist)
+3. Write `tests-spec.md` to the same spec directory — concrete field names, validated schema refs, complete error cases
+4. Coverage completeness check: every user story in the spec maps to ≥1 test in `tests-spec.md`, every test maps to a user story. Flag orphan tests (tests without stories) and uncovered stories (stories without tests).
+5. `tests-pseudo.md` stays as-is (audit trail — do NOT delete)
+6. Set `tests_spec_path` in session detail file
 
 **Output the final document:**
 
@@ -95,9 +109,13 @@ Then verify:
    - Detail file (`sessions/<id>.json`): set `spec_path` to the written file path (`"spec-output.md"` or `"debug-output.md"`)
    - If gauntlet was run, also set `gauntlet_concerns_path` to the saved concerns JSON (if not already set during gauntlet → finalize transition)
    - If a spec manifest was created (`specs/<slug>/manifest.json`), set `manifest_path` to its path
+   - If `tests-spec.md` was generated, set `tests_spec_path` to its path
    - Append journey: `{"time": "ISO8601", "event": "Spec finalized: <path>", "type": "artifact"}`
    - Update both files with `current_phase: "finalize"`, `current_step: "Document finalized, awaiting user review"`
    - Use atomic writes for both files
+6. **Fizzy sync** (if `fizzy_card_id` exists in session detail file):
+   - Use a **haiku subagent** to add a comment: `"Spec finalized: <spec_path>. <total rounds> debate rounds, consensus reached."`
+   - If the card should advance in the pipeline (e.g., out of Evaluated Plans), call `pipeline_advance(card_id, session_id, agent)` via the subagent
 
 ### Step 7: User Review Period
 
@@ -153,7 +171,7 @@ After the user review period, or if explicitly requested:
    ```
 
 **Use cases for additional cycles:**
-- First cycle with faster models (gemini-cli/gemini-3-flash-preview), second cycle with stronger models (codex/gpt-5.4, gemini-cli/gemini-3-pro-preview)
+- First cycle with faster models (gemini-cli/gemini-3-flash-preview), second cycle with stronger models (codex/gpt-5.4, gemini-cli/gemini-3.1-pro-preview)
 - First cycle for structure and completeness, second cycle for security or performance focus
 - Fresh perspective after user-requested changes
 

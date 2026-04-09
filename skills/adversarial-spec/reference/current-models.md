@@ -12,7 +12,7 @@ Models that find issues in specs. Diverse perspectives matter more than raw powe
 | Provider | Model ID | Notes |
 |----------|----------|-------|
 | Codex CLI | `codex/gpt-5.4` | **Primary.** Free via ChatGPT subscription. Token-efficient. |
-| Gemini CLI | `gemini-cli/gemini-3-pro-preview` | Free. Strong on unique angles. Parser may need sanity check (outputs `### N.` headers). |
+| Gemini CLI | `gemini-cli/gemini-3.1-pro-preview` | Free. Strong on unique angles. Parser may need sanity check (outputs `### N.` headers). |
 | Claude CLI | `claude-cli/claude-sonnet-4-6` | Free. Cannot nest inside a Claude session — use only from Codex or standalone. |
 | Gemini CLI | `gemini-cli/gemini-3-flash-preview` | Free. Faster, cheaper, good for quick passes. |
 
@@ -23,7 +23,7 @@ Models that evaluate whether concerns are valid. The pipeline auto-selects eval 
 | Provider | Model ID | Notes |
 |----------|----------|-------|
 | Codex CLI | `codex/gpt-5.4` | Default eval model. Use `--eval-codex-reasoning medium` for gauntlet evals. |
-| Gemini CLI | `gemini-cli/gemini-3-pro-preview` | Second eval model for multi-model consensus. |
+| Gemini CLI | `gemini-cli/gemini-3.1-pro-preview` | Second eval model for multi-model consensus. |
 
 ### Frontier (deep analysis, final boss)
 For tasks requiring maximum reasoning depth.
@@ -40,6 +40,9 @@ For tasks requiring maximum reasoning depth.
 | `codex/gpt-5.3-codex` | `codex/gpt-5.4` | 2026-03-05 (GPT-5.4 release) |
 | `codex/gpt-5.1-codex-max` | `codex/gpt-5.4` | 2026-03-05 |
 | `gpt-5.3` (API) | `gpt-5.4` (if using API) | 2026-03-05 |
+| `gemini-cli/gemini-3-pro-preview` | `gemini-cli/gemini-3.1-pro-preview` | 2026-03-28 (Gemini 3.1 Pro release) |
+
+> **WARNING:** Do NOT use `gemini-2.5-pro` (API or CLI). It shares the same quota as `gemini-3.1-pro-preview` and will burn through your free-tier allowance. Always use `gemini-3.1-pro-preview` instead — it is strictly better.
 
 ## Paid API Models (avoid for adversarial-spec debates)
 

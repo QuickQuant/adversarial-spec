@@ -10,17 +10,20 @@ TodoWrite([
   {content: "Select opponent models", status: "pending", activeForm: "Selecting opponent models"},
   {content: "Assemble context files (technical/full)", status: "pending", activeForm: "Assembling context files"},
   {content: "Round 1: Run debate + synthesize", status: "pending", activeForm: "Running Round 1 debate"},
+  {content: "Round 1: Update tests-pseudo.md to match spec [GATE]", status: "pending", activeForm: "Updating tests-pseudo.md"},
   {content: "Round 1: Run SCOPE + TRACE guardrails [GATE]", status: "pending", activeForm: "Running Round 1 guardrails"},
   {content: "Context Readiness Audit (technical/full) [GATE]", status: "pending", activeForm: "Running context readiness audit"},
   {content: "Round 2: Run debate + synthesize", status: "pending", activeForm: "Running Round 2 debate"},
+  {content: "Round 2: Update tests-pseudo.md to match spec [GATE]", status: "pending", activeForm: "Updating tests-pseudo.md"},
   {content: "Round 2: Run CONS + SCOPE + TRACE guardrails [GATE]", status: "pending", activeForm: "Running Round 2 guardrails"},
 ])
 ```
 
 Mark each step `completed` as you finish it. Mark the current step `in_progress`. Skip steps marked "technical/full" for product-depth specs.
 
-**Dynamic rounds:** For each round beyond Round 2, add two TodoWrite items before starting the round:
+**Dynamic rounds:** For each round beyond Round 2, add three TodoWrite items before starting the round:
 - `{content: "Round N: Run debate + synthesize", status: "pending", activeForm: "Running Round N debate"}`
+- `{content: "Round N: Update tests-pseudo.md to match spec [GATE]", status: "pending", activeForm: "Updating tests-pseudo.md"}`
 - `{content: "Round N: Run CONS + SCOPE + TRACE guardrails [GATE]", status: "pending", activeForm: "Running Round N guardrails"}`
 
 ---
@@ -290,7 +293,7 @@ Then present available models to the user using AskUserQuestion with multiSelect
 - `codex/gpt-5.4` - OpenAI Codex with extended reasoning
 
 **If Gemini CLI is installed, include:**
-- `gemini-cli/gemini-3-pro-preview` - Google Gemini 3 Pro
+- `gemini-cli/gemini-3.1-pro-preview` - Google Gemini 3 Pro
 - `gemini-cli/gemini-3-flash-preview` - Google Gemini 3 Flash
 
 Use AskUserQuestion like this:
@@ -356,6 +359,17 @@ Before passing any file via `--context`, verify it contains substantive content:
 - `INDEX.md` or any file that's primarily navigation/links
 - Files over 500 lines without trimming to relevant sections
 - Files unrelated to the spec's scope
+
+**4. Test pseudocode (when available — ALWAYS include if it exists)**
+```bash
+# Include tests-pseudo.md so opponents can critique test coverage.
+# This is not optional — opponents must see tests to catch spec/test drift.
+if [ -n "$TESTS_PSEUDO_PATH" ] && [ -f ".adversarial-spec/$TESTS_PSEUDO_PATH" ]; then
+  CONTEXT_FLAGS="$CONTEXT_FLAGS --context .adversarial-spec/$TESTS_PSEUDO_PATH"
+fi
+```
+When tests-pseudo.md is included as context, opponents will naturally critique misaligned assertions.
+If an opponent flags a test/spec mismatch, that is a valid critique — address it in the Test-Spec Sync gate.
 
 **Store assembled context list in session state** (`extended_state.context_files`) for reuse across rounds.
 
@@ -518,6 +532,7 @@ After Round 1 validates requirements and before Round 2 debates architecture, au
    | Legacy/archive dirs | `find . -type d -name "_legacy" -o -name "deprecated"` | PREV |
    | Design rationale (ADRs) | Check for decision docs, spec history | ASSH |
    | Existing similar features | Grep for feature keywords across codebase | PREV, LAZY |
+   | Test pseudocode | Check `tests_pseudo_path` in session, verify file exists | PEDA, COMP, BURN |
 
 3. **Classify each source:** `AVAILABLE`, `PARTIAL`, `NOT_AVAILABLE`, or `NOT_APPLICABLE`.
 
@@ -674,8 +689,9 @@ If the model was being lazy and now has critiques, continue the debate normally.
    # This is the source of truth for the next debate.py invocation
    ```
    Verify the file was written: `wc -l .adversarial-spec/specs/<slug>/spec-draft-v{N+1}.md`
-8. **Run checkpoint guardrails** (see Checkpoint Guardrails section below)
-9. Go back to Step 4, piping the NEW file from disk: `cat spec-draft-v{N+1}.md | debate.py ...`
+8. **Update tests-pseudo.md to match the revised spec [GATE]** (see Test-Spec Sync section below)
+9. **Run checkpoint guardrails** (see Checkpoint Guardrails section below)
+10. Go back to Step 4, piping the NEW file from disk: `cat spec-draft-v{N+1}.md | debate.py ...`
 
 **Handling conflicting critiques:**
 - If models suggest contradictory changes, evaluate each on merit
@@ -684,6 +700,47 @@ If the model was being lazy and now has critiques, continue the debate normally.
 - Note the tradeoff in your response
 
 ---
+
+### Test-Spec Sync (GATE — after each round incorporation)
+
+> **This is a GATE, not advisory.** Tests that drift from the spec produce false confidence —
+> the gauntlet and implementation phases trust tests-pseudo.md as ground truth for what the
+> spec actually requires. Stale tests mean stale implementation targets.
+
+After writing the revised spec to disk (Step 5 item 7) and BEFORE running checkpoint guardrails:
+
+**1. Diff the spec changes against tests-pseudo.md:**
+- For each spec section that changed in this round, check whether the corresponding test cases still assert the correct behavior
+- Pay special attention to: field names/schemas, formulas, API contracts, edge case rules, error codes
+
+**2. Update tests-pseudo.md for EVERY spec change that affects observable behavior:**
+- **Changed formula** → update the assertion values (e.g., `pnl_variance` → `pnl_stddev`)
+- **Changed API contract** → update request/response fields in test setup/assertions
+- **New edge case specified** → add a test case
+- **Removed behavior** → remove or update the test case
+- **Changed semantics** → update the `given/when/then` to match
+
+**3. Add test cases for new behaviors introduced by this round's critiques:**
+- Each accepted critique that changes spec behavior should have ≥1 test covering the fixed behavior
+- If a critique says "division by zero when X" and the spec now handles it, there must be a test: "given X, when computed, then no error and result is Y"
+
+**4. Apply the Test Design Methodology (02-roadmap.md §9) to all new/changed tests:**
+- **Data strategy annotation** — every test must have a `Strategy:` line (REAL-DATA, SYNTHETIC, MOCK, etc.). Default to REAL-DATA. Only use SYNTHETIC when the condition genuinely cannot occur in real data.
+- **BVA** — scan spec changes for new/modified numeric boundaries. Add at-boundary and just-outside tests marked `[BVA]`.
+- **State transitions** — if this round changed state machine behavior (new states, new transitions), update the state transition table and add tests for new transitions.
+- **Decision tables** — if this round changed combinatorial logic, update the decision table and add tests for new rows.
+
+**5. Verify completeness:**
+- Every user story still has ≥1 test in tests-pseudo.md
+- Every numeric boundary has BVA tests
+- Every state transition has a test (cross-reference table)
+- Every decision table row has a test
+- Tests that verify behaviors NOT in any user story = scope drift (flag via SCOPE guardrail)
+- No test asserts behavior that contradicts the current spec draft
+
+**6. Write updated tests-pseudo.md to disk.** The file path is in `session.tests_pseudo_path`.
+
+**[GATE] TodoWrite: Mark "Round N: Update tests-pseudo.md to match spec" completed before proceeding to guardrails.**
 
 ---
 
@@ -738,6 +795,42 @@ TRACE (requirements_tracer): 0 findings
 4. Only after guardrails pass (or user explicitly overrides): proceed to the next round
 
 **[GATE] TodoWrite: Mark "Round N: Run CONS + SCOPE + TRACE guardrails" (or "SCOPE + TRACE" for Round 1) completed before proceeding to the next round.**
+
+### Fizzy Sync (after each round — REQUIRED)
+
+After completing a debate round (synthesis + spec revision + guardrails), sync the Fizzy pipeline card. Read `fizzy_card_id` from the session detail file (`sessions/<id>.json`).
+
+**If `fizzy_card_id` exists:**
+1. Use a **haiku subagent** (to keep MCP payload out of main context) to:
+   - `pipeline_patch_state(card_id, session_id, {"debate_round": N, "last_agent": "claude-opus-4-6"})` where N is the round just completed
+   - `add_comment(card_id, "Round N complete: <1-2 sentence synthesis summary>. Spec version: vN.")`
+2. Board is pinned at Fizzy server startup. The `board_id` parameter is optional and validated.
+
+**If `fizzy_card_id` is missing:** Log a warning but do not block. The card may not have been created (legacy session) or the session predates this sync requirement.
+
+**Why this matters:** Without per-round sync, the Fizzy card becomes stale immediately after creation. The board is the only external visibility into session progress — other agents, the conductor, and the user all depend on it. (See process failure: "Trello Board Ignored During Entire Spec Session", 2026-03-26.)
+
+### Telegram Notification (after each round — REQUIRED)
+
+After Fizzy sync, send a Telegram summary and pause for human interruption. See SKILL.md "Major Milestone Notifications" for full protocol.
+
+**After debate round synthesis + guardrails:**
+```bash
+~/.claude/bin/telegram-send <project> "R<N> complete: <count> findings (<critical> critical, <major> major, <minor> minor) applied. Guardrails: SCOPE <pass/fail>, TRACE <pass/fail>, CONS <pass/fail>."
+sleep 120  # 2 min pause for human interruption
+```
+
+**After convergence declared:**
+```bash
+~/.claude/bin/telegram-send <project> "Convergence after <N> rounds. <severity trend summary>. Proceeding to finalize."
+sleep 120
+```
+
+**Rules:**
+- Check telegram config first (`has_telegram_config` or `telegram-registry-lookup`). Skip if no config.
+- The 120s pause is mandatory — gives human time to read and Ctrl+C to redirect.
+- If `telegram-send` fails, log to stderr and continue.
+- This is the human's primary mobile channel for staying oriented during long autonomous runs.
 
 ---
 

@@ -1,0 +1,467 @@
+{
+  "_meta": {
+    "schema_version": 2,
+    "spec_hash": "4885cd50a01dbeec7760bddffcbf7f40deaf16f122f60647f50b046d331732ba",
+    "config_hash": "91a143846997fdc51bdcaf53b93184a1448bd0308b27044402c3da046648ca0e",
+    "phase": "phase_1",
+    "created_at": "2026-04-03T01:03:19Z",
+    "data_hash": "1d990976ffdf3a0d969c45ca4db5a09f2bf140bf15b54acde0b32b4f8647816f"
+  },
+  "data": [
+    {
+      "adversary": "burned_oncall",
+      "text": "The \"Atomic Rename\" Illusion (Multi-File Inconsistency) Failure Mode:** The spec claims \"All file writes use temp-file + atomic rename\" (Section 15), but Phase 4 produces **four separate files** (`.md`, `.json` x2, plus `tests-pseudo.md`). If the process is killed (SIGINT/OOM) after writing the `.md` but before the `.json` invariants, the system is in an \"Architectural Purgatory.\" Downstream phases (Gauntlet/Execution) will read a fresh `target-architecture.md` but stale or missing invariants. Detection:** Operators will see `P4_ARTIFACT_SET_INCONSISTENT` (Section 16), but only *if* they happen to re-run Phase 4. If they proceed to Phase 5, the Gauntlet will stress-test the *wrong* invariants. Prevention:** Implement a \"Staging\" directory. Write all artifacts to `specs/<slug>/.staging/<fingerprint>/`. Only after *all* are written, move/symlink them to the production paths.",
+      "severity": "medium",
+      "id": "BURN-e96aa0f6",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "burned_oncall",
+      "text": "Minute Lock Purgatory Failure Mode:** Section 0 defines a stale lock as `age > 30 minutes`. In a CLI tool, 30 minutes is an eternity. A user who hits Ctrl+C because the agent stalled will try to restart immediately. They will be blocked by `P4_CONCURRENT_WRITER` for half an hour. Detection:** The user will see a \"Concurrent writer\" error and think the tool is broken because they know no one else is using it. Prevention:** Record the PID in the lock file. If the PID is not running on the local machine, the lock is stale immediately. For multi-agent/remote scenarios, reduce the timeout to 2 minutes with a \"heartbeat\" update to the lock file's `mtime`.",
+      "severity": "medium",
+      "id": "BURN-abb4971f",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "burned_oncall",
+      "text": "`tests-pseudo.md` Corruption via Non-Atomic Upsert Failure Mode:** Section 8.3 and 15 describe \"upserting\" the invariant block. Unlike the other artifacts which \"Replace atomically,\" this file is edited in-place (or implies it). If the write is interrupted mid-markers, the file is left with unclosed markers or truncated content, potentially nuking the user's existing pseudo-tests. Detection:** Future runs will fail to find the markers, or the user will notice their file is half-gone. Prevention:** Even for \"upserts,\" read the whole file, perform the string replacement in memory, write the *entire* result to a temp file, and atomic-rename it over the original.",
+      "severity": "medium",
+      "id": "BURN-c05d0a95",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "burned_oncall",
+      "text": "Fingerprint Flapping on Resume Failure Mode:** `input_fingerprint` includes `phase_mode` and `context_mode` (Section 0). If a run is `blocked` and the user decides to change from `full` to `lightweight` to bypass the block, the fingerprint changes. The \"Resume behavior\" says to \"skip completed steps,\" but the idempotency rules key off the fingerprint. The agent might try to resume a `full` workflow using `lightweight` inputs, leading to schema mismatches in the bootstrap. Detection:** `P4_INVALID_BOOTSTRAP` or internal logic errors when the agent looks for \"Debate\" results that are now out-of-scope. Prevention:** If the `input_fingerprint` changes on re-entry, Phase 4 must trigger a \"Re-orientation\" that explicitly invalidates downstream fields in the bootstrap while preserving the Decision Journal.",
+      "severity": "medium",
+      "id": "BURN-11f2e392",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "burned_oncall",
+      "text": "Slug Drift (Zombie Artifacts) Failure Mode:** Section 0 derives the `spec_slug` from the roadmap's parent directory. If a user renames `specs/old-feature/` to `specs/new-feature/`, the session file (which likely stores the old path) or the logic will suddenly look for `specs/new-feature/target-architecture.md`. The old artifacts stay in `old-feature/`, and the session state becomes a \"Zombie\" pointing to a ghost slug. Detection:** `P4_MISSING_SPEC_SLUG` or the agent creating a duplicate set of artifacts in the new folder, losing all previous Decision Journal context. Prevention:** The `spec_slug` must be immutable once the bootstrap is created. If the directory moves, the tool should error and ask the user to update the `spec_slug` in the session or move the directory back.",
+      "severity": "medium",
+      "id": "BURN-2c24c43c",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "burned_oncall",
+      "text": "The \"Silent Reversal\" Gap Failure Mode:** Section 11 allows reversing decisions via `decision: \"reject\"`. However, Section 8.2 says downstream tools consume only `status: \"active\"` invariants. There is no explicit link between a rejected *Decision* and the *Invariant* it spawned. If a decision is rejected, the invariant might remain `active` in the JSON because the \"Reversal rule\" doesn't explicitly mandate an invariant status update. Detection:** The architecture says \"We don't use Redis,\" but the `architecture-invariants.json` still has `INV-002: Cache consistency via Redis` because the invariant wasn't toggled. Prevention:** Decision Journal entries for `reject` or `migrate` must include a `linked_invariants[]` field, and the write logic must transactionally update the status of those invariants in the JSON artifact.",
+      "severity": "medium",
+      "id": "BURN-ae4932fe",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "burned_oncall",
+      "text": "Dependency on Non-Existent `python 3.14+` Failure Mode:** Section 0: Prerequisites list `Python 3.14+`. As of today (April 2026), Python 3.14 is barely out or in alpha. If the user's environment is on 3.12 (standard LTS), the tool might fail on syntax or features (like advanced file locking) that the spec assumes. Detection:** `SyntaxError` or `AttributeError` at runtime. Prevention:** Lower the requirement to 3.12+ and use a compatibility shim for any 3.14+ specific features.",
+      "severity": "medium",
+      "id": "BURN-af7ae8c8",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "burned_oncall",
+      "text": "`checks_run` Enum Enforcement is a \"Should,\" not a \"Must\" Failure Mode:** Section 10.5 derives required checks, but Section 10.3 (Schema) and 16 (Errors) don't define what happens if the LLM adds a *new* check ID not in the `dry_run_check_id` enum. Detection:** Downstream tools or validators will crash on the unexpected string. Prevention:** Strict validation at the \"Act\" phase. If the LLM produces a check ID not in the canonical enum, it must be discarded or mapped to `other` with a warning, not written to the normative JSON.",
+      "severity": "medium",
+      "id": "BURN-c467757e",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "paranoid_security",
+      "text": "Stale Lock Force-Breaking Race Condition (Section 0) Threat:** TOCTOU (Time-of-Check Time-of-Use) leading to concurrent write corruption. Attack Vector:** The spec allows force-breaking a lock if the holding PID is \"no longer running\" or age > 30 minutes. In containerized environments or WSL, PID recycling is common, and clock drift can occur. If a slow Phase 4 process is still active but its lock is broken, two agents will perform \"atomic\" renames on the same files simultaneously. Impact:** Corruption of `session-state.json` or architectural artifacts, leading to an inconsistent \"Completed\" state that bypasses security gates.",
+      "severity": "medium",
+      "id": "PARA-4a1a40f4",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "paranoid_security",
+      "text": "Markdown Marker Injection in `tests-pseudo.md` (Section 8.3) Threat:** Arbitrary content injection and data loss in test files. Attack Vector:** The upsert logic replaces everything between `<!-- P4_INVARIANT_TESTS_START -->` and `<!-- P4_INVARIANT_TESTS_END -->`. If an LLM-generated invariant or \"Implementation sketch\" contains the string `<!-- P4_INVARIANT_TESTS_END -->`, the agent will prematurely terminate the block. Any subsequent content generated by the model will be written *outside* the marker block, becoming \"permanent\" text that isn't cleaned up by the next Phase 4 run. Impact:** Destruction of existing test suites or injection of malicious/deceptive test cases that appear to be human-authored.",
+      "severity": "medium",
+      "id": "PARA-21099e30",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "paranoid_security",
+      "text": "JSON Structure Injection via LLM-Generated Fields (Section 11, 15) Threat:** Persistent state corruption and logic bypass. Attack Vector:** The \"AI-agent-driven\" nature relies on the LLM to provide content for JSON fields like `rationale`, `evidence`, or `choice`. If the LLM generates a string containing escaped characters or structural sequences (e.g., `\"}, \"status\": \"pass\", \"ignored\": {\"`), and the agent writes this to the session file without strict schema validation of the *entire* resulting JSON object, the model can overwrite status fields or gate approvals. Impact:** An adversary can trick the system into recording a \"Pass\" for a failed dry-run or \"Approved\" for a rejected gate by manipulating the serialized state.",
+      "severity": "medium",
+      "id": "PARA-d52a04ed",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "paranoid_security",
+      "text": "Cross-Device Atomic Rename Failure (Section 15) Threat:** Partial write/State loss. Attack Vector:** The spec mandates \"temp-file + atomic rename\" for all writes. If the agent creates the temp file in the system `/tmp` but the workspace is on a different mount point (e.g., a network drive or separate `/home` partition), `os.rename` will fail with an `EXDEV` error. The spec does not mandate that the temp file be created in the same directory as the target. Impact:** Blocking error `P4_ARTIFACT_WRITE_FAILED` that halts the pipeline, or worse, leaves abandoned temp files that could contain sensitive architectural secrets.",
+      "severity": "medium",
+      "id": "PARA-6b9e7c57",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "paranoid_security",
+      "text": "Path Traversal via `tests_pseudo_path` (Section 0) Threat:** Arbitrary file overwrite/Local privilege escalation. Attack Vector:** While Section 17 mentions path validation, Section 0 states that `tests_pseudo_path` is \"declared in roadmap or session state\" and Phase 4 will create/upsert it if writable. If a malicious roadmap points to a sensitive file (e.g., `~/.ssh/authorized_keys` or `.github/workflows/deploy.yml`), the agent's \"upsert\" logic will inject the P4 marker block into that file. Impact:** Modification of critical system or CI configuration files, leading to remote code execution or persistence.",
+      "severity": "medium",
+      "id": "PARA-cb2b41eb",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "paranoid_security",
+      "text": "Secret Leakage in `framework_profile` Serialization (Section 4.1) Threat:** Exposure of infrastructure credentials. Attack Vector:** In \"Brownfield\" modes, the agent is tasked with detecting the framework profile. This often involves reading local config files (e.g., `.env`, `settings.py`, `application.yml`). If the agent serializes the \"detected\" config into the `framework_profile` field in the session JSON, it will likely capture and persist API keys, database passwords, or secret tokens into the project's `.adversarial-spec/` directory. Impact:** Accidental commitment of secrets to version control or exposure to other users on the system.",
+      "severity": "medium",
+      "id": "PARA-728d93fc",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "paranoid_security",
+      "text": "Subprocess Shell Injection in `debate.py` (Section 9) Threat:** Arbitrary command execution. Attack Vector:** Section 9 explicitly shows a shell-interpolated command: `uv run python ... --context $CONTEXT_FLAGS`. If `$CONTEXT_FLAGS` or the `MODEL_LIST` are derived from LLM-generated session state (e.g., a model \"recommends\" a context flag in the decision journal), and the agent executes the shell command without a literal argument list, an attacker can inject `; rm -rf / ;`. Impact:** Complete compromise of the local machine running the CLI tool.",
+      "severity": "medium",
+      "id": "PARA-ad08d59d",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "paranoid_security",
+      "text": "Fingerprint Collision leading to Gate Bypass (Section 0) Threat:** Verification bypass through state replay. Attack Vector:** The `input_fingerprint` only hashes `spec_bytes`, `roadmap_bytes`, and the two modes. It ignores the `framework_profile` and `execution_surfaces`. An attacker could theoretically modify the framework version or rendering model in the session state to a less secure configuration. Because the `input_fingerprint` remains identical, the agent may skip re-running gates that should have failed under the new profile. Impact:** Architectural decisions verified against one framework version are applied to a different, potentially vulnerable version without re-validation.",
+      "severity": "medium",
+      "id": "PARA-101cf590",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "paranoid_security",
+      "text": "Unvalidated `spec_slug` in Path Construction (Section 0) Threat:** Information disclosure/Path traversal. Attack Vector:** The spec derives the `spec_slug` from the directory name and uses it to construct artifact paths (e.g., `specs/<slug>/target-architecture.md`). If the slug is not strictly validated *every* time it is used in a path join, a slug like `../../sensitive_dir` could cause the agent to read from or write to locations outside the `specs/` root. Impact:** Unauthorized reading of local files or overwriting of project configuration.",
+      "severity": "medium",
+      "id": "PARA-ebc2d355",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "minimalist",
+      "text": "**The \"Bootstrap\" Enterprise Schema (Section 0 & 15)** Complexity:** You\u2019ve defined a massive, progressively-filled JSON blob with nested `gate_approvals`, `story_alignment` objects, and `artifact_publish_state`. This looks like a database record for a SaaS backend. Simpler Alternative:** Use a flat dictionary in the existing `session-state.json`. If you need to know if a gate is passed, check `is_scale_checked: true`. What you lose:** The ability to \"audit\" the exact ISO8601 timestamp of when a local AI agent decided a project was \"lightweight,\" which provides zero value to the developer.",
+      "severity": "medium",
+      "id": "MINI-c13c10fa",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "minimalist",
+      "text": "**Redundant Double-Fingerprinting (Section 0)** Complexity:** You require both an `input_fingerprint` (spec + roadmap + modes) and an `architecture_fingerprint` (input + framework + surfaces + invariants). Simpler Alternative:** One hash of the current configuration. If the hash matches the one in the artifact, skip the work. If not, re-run. What you lose:** A hyper-granular \"idempotency\" system that distinguishes between \"the inputs changed\" and \"the decisions changed.\" In a local CLI, re-running a 2-second check is better than maintaining 50 lines of hashing logic.",
+      "severity": "medium",
+      "id": "MINI-c0d2cf11",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "minimalist",
+      "text": "**The \"Immutable\" Decision Journal (Section 11 & 21)** Complexity:** You are implementing an append-only event log with `entry_id`, `idempotency_key`, and `reverses_entry_id` logic. You\u2019re building Git-on-JSON. Simpler Alternative:** A markdown section in `target-architecture.md` called \"Decision Log.\" If a decision changes, the agent edits the text. What you lose:** The ability to \"rollback\" to a specific architectural decision state via JSON keys, which is a feature no one asked for and no one will use.",
+      "severity": "medium",
+      "id": "MINI-3d6abae0",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "minimalist",
+      "text": "**Locking Overkill (Section 0)** Complexity:** Strict lock ordering (Session first, then Artifact) with stale-lock recovery logic including PID checks and 30-minute age-outs. Simpler Alternative:** The existing `FileLock` on the session file is plenty. This is a single-user CLI; the odds of a developer racing against *themselves* in the same directory across two terminal tabs is negligible. What you lose:** Protection against a race condition that effectively cannot happen in the intended UX.",
+      "severity": "medium",
+      "id": "MINI-61e5b6dd",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "minimalist",
+      "text": "**Enum Explosion (Section 0 & 4)** Complexity:** 9 `surface_id` values, 9 `concern_category` values (plus 3 triggered ones), 3 `phase_modes`, 3 `context_modes`, 11 `dry_run_check_id` values. This forces a 108-cell matrix for \"Full\" mode. Simpler Alternative:** Treat \"Surfaces\" and \"Concerns\" as simple markdown lists. Let the AI agent identify what's relevant. What you lose:** \"Deterministic coverage,\" which in practice just leads to the AI agent hallucinating \"N/A\" into 80% of your matrix cells to satisfy the schema.",
+      "severity": "medium",
+      "id": "MINI-38374af8",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "minimalist",
+      "text": "**Multi-Component Abstraction (Section 4.1)** Complexity:** Introducing `components[]` to support multi-runtime systems (e.g., Next.js + FastAPI). Simpler Alternative:** If the system is that complex, the user should run the tool twice on different sub-directories. What you lose:** The ability to architect a microservices cluster in a single markdown file\u2014a use case that is far beyond the scope of a \"local CLI skill.\"",
+      "severity": "medium",
+      "id": "MINI-7506759b",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "minimalist",
+      "text": "**Idempotency Keys for Log Events (Section 21)** Complexity:** Hashing log events (`journey[]`) to prevent duplicates in the session file. Simpler Alternative:** `journey.append({\"event\": \"...\", \"time\": \"...\"})`. If it\u2019s in there twice, it\u2019s in there twice. It\u2019s a log, not a ledger. What you lose:** A \"clean\" log file at the cost of computing SHA256 hashes for every \"Step started\" message.",
+      "severity": "medium",
+      "id": "MINI-f749beac",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "minimalist",
+      "text": "**The \"Canonical JSON\" Requirement (Section 0)** Complexity:** Explicitly mandating UTF-8, sorted keys, and no whitespace for internal state files to ensure \"fingerprint stability.\" Simpler Alternative:** `json.dump(data, f)`. What you lose:** Fingerprint stability for the sake of fingerprint stability. Verdict:** This spec is 2,000 lines of infrastructure to support 200 lines of actual architectural thinking. Strip the \"state machine\" logic and just focus on generating the Markdown and the Invariants. Pathlib and the JSON stdlib are all you need; stop trying to build a database on top of a filesystem.",
+      "severity": "medium",
+      "id": "MINI-5e9de9af",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "asshole_loner",
+      "text": "Circular Dependency in the `architecture_fingerprint` The spec claims the `architecture_fingerprint` is required for the Decision Journal (Section 11) to prevent duplicate entries. However, Section 0 states this fingerprint is only computed *after* invariants exist. The Flaw:** Decisions (Section 6) are the *inputs* used to derive invariants. You cannot key a decision by a fingerprint that doesn't exist until after the decision is finalized and transformed into an artifact. Why it fails:** During the \"Drafting\" phase, if the agent crashes or is interrupted, it has no stable ID to check if \"Concern 1: Identity\" was already decided. It will either duplicate entries or skip them because the \"fingerprint\" is a moving target. Cleaner Abstraction:** Use the `input_fingerprint` (which is stable after Step 5) for all session-internal decision tracking. Reserve `architecture_fingerprint` strictly as a \"seal\" for published artifacts and downstream handoffs.",
+      "severity": "medium",
+      "id": "ASSH-d6ed7e14",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "asshole_loner",
+      "text": "The Matrix Dimension Collapse (Component vs. Surface) Section 4.1 introduces an \"optional\" multi-component system (e.g., Frontend + Worker), but Section 6.3 provides a 2D Markdown matrix of `Concern x Surface`. The Flaw:** If a project has two components that both utilize the `request_response` surface (e.g., a Next.js API and a FastAPI microservice), they will collide in the same matrix cell. Why it fails:** The spec mandates \"deterministic architecture,\" but if the matrix cell says \"JWT Middleware,\" it doesn't specify *which* runtime that applies to. Implementation in Phase 7 will guess, and Phase 5 (Gauntlet) will flag the ambiguity as a concern, forcing a loop back to Phase 4. Cleaner Abstraction:** The Matrix must be `Concern x (Component + Surface)`. If `components[]` exists, the matrix columns must be prefixed (e.g., `web:request_response`, `worker:background_job`).",
+      "severity": "medium",
+      "id": "ASSH-597aedfb",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "asshole_loner",
+      "text": "Non-Deterministic \"Research\" in a Deterministic Machine Section 7 mandates \"Research framework-native primitives\" as a core step, but Section 0 claims the phase is \"deterministic.\" The Flaw:** LLM \"research\" (RAG or web search) is inherently non-deterministic. The `input_fingerprint` does *not* include the content of the research findings. Why it fails:** You can have the exact same Spec and Roadmap, but if the LLM's \"research\" step pulls a different documentation snippet or hallucinates a different \"native primitive\" for Express 5 on a Tuesday, the resulting `architecture-invariants.json` will change. This violates the core goal of \"Deterministic Architecture.\" Cleaner Abstraction:** Framework \"Guardrails\" (Section 4.3) should be treated as **Static Library Data** or a **Cached Context Profile**. If the agent needs to \"research,\" the findings must be snapshotted into the `phase4_bootstrap` and included in the `architecture_fingerprint` before invariants are drafted.",
+      "severity": "medium",
+      "id": "ASSH-725d1eea",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "asshole_loner",
+      "text": "Semantic Gap in \"Gate Enforcement\" The spec relies on `[GATE]` markers and \"User Confirmation\" (Section 0) to prevent the agent from hallucinating progress. The Flaw:** There is no protocol for *how* the agent proves the user actually said \"yes.\" Why it fails:** In an autonomous CLI context, an agent under pressure to \"complete the task\" will interpret a vague user comment (\"looks okay\") as a gate clearance. Even worse, if the agent is re-reading the file, it might simply \"see\" the gate as passed because it previously wrote `status: \"approved\"` to the bootstrap. This is security theater. Cleaner Abstraction:** Gates must be **Cryptographically or Path-Signed**. A gate isn't \"passed\" until a specific `gate_token` or a `user-approval.json` file is present, which the agent cannot self-generate.",
+      "severity": "medium",
+      "id": "ASSH-fd3059e3",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "asshole_loner",
+      "text": "The \"Sibling Path\" Arbitrariness in Brownfield Debug Section 13 (Brownfield Debug) requires verifying the \"failing path + one sibling path.\" The Flaw:** \"One sibling path\" is a purely subjective instruction. Why it fails:** An agent will naturally pick the *easiest* sibling path to verify (the one with the least complexity) to reach \"Completed\" status faster. This misses the architectural regressions where a fix for Path A breaks the high-complexity Path B. Cleaner Abstraction:** Verification scope must be derived from **Concern Overlap**. If the debug fix touches `Concern 4 (Errors)`, the dry-run must exercise all surfaces where `Concern 4` is marked as `active` in the matrix.",
+      "severity": "medium",
+      "id": "ASSH-aff625e5",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "asshole_loner",
+      "text": "Atomic File Failure (The Set Inconsistency) Section 15 mandates \"atomic rename\" for files, but it does not mandate **Set Atomicity**. The Flaw:** Phase 4 writes four separate files (`target-architecture.md`, `invariants.json`, `dry-run.json`, `tests-pseudo.md`). Why it fails:** If the agent's disk quota hits or the process is killed after writing the `.md` but before the `.json`, the workspace is in an \"Inconsistent Architecture\" state. Phase 5 (Gauntlet) will read the *new* MD but the *old* (or missing) JSON invariants. Cleaner Abstraction:** All Phase 4 artifacts must be staged in a `.pending/<fingerprint>/` directory. The \"Completion\" step must be a single directory-level symlink swap or a manifest update that points to the new \"Current\" artifact set.",
+      "severity": "medium",
+      "id": "ASSH-34f262ef",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "asshole_loner",
+      "text": "Marker Collision in `tests-pseudo.md` Section 8.3 uses `<!-- P4_INVARIANT_TESTS_START/END -->` to upsert tests. The Flaw:** This assumes Phase 4 is the only entity managing these markers. Why it fails:** If a user manually adds a test case *inside* those markers (because they seem like a logical place for \"invariant tests\"), the next P4 run will **delete the user's work without warning.** If P7 (Execution) also decides to use these markers for its own invariant verification, they will fight over the file content. Cleaner Abstraction:** The agent must use a **Strict Append-Only or Managed-Block** strategy where user-added content is detected via checksums. Better yet, P4 should produce a `tests-architecture.md` and P2/P7 should `import` or reference it, rather than mutating a shared file.",
+      "severity": "medium",
+      "id": "ASSH-fe741de6",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "assumption_auditor",
+      "text": "**The \"Faithful Protocol\" Assumption (Agent Reliability)** Assumption:** The spec assumes the AI agent (Claude) will strictly follow the internal state machine, compute complex fingerprints correctly, and update the `TodoWrite` status without skipping steps or hallucinating state transitions. What breaks:** If the agent bypasses the **[GATE]** points (e.g., Scale Check) or fails to update `phase4_bootstrap.status` before proceeding, downstream phases like Phase 5 (Gauntlet) will receive inconsistent or missing data (e.g., missing invariants), leading to false \"Pass\" results or implementation tasks that violate unrecorded architecture rules. How to verify:** Implement a \"Phase 4 Validator\" script that performs a schema-and-state-check on the session file and artifacts *after* the agent claims completion, but before transitioning to Phase 5.",
+      "severity": "medium",
+      "id": "AUDT-f937b73b",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "assumption_auditor",
+      "text": "**File System Atomicity and Environment Diversity** Assumption:** The spec mandates `os.replace()` for atomic writes (Section 15), assuming a POSIX-compliant environment where source and destination reside on the same filesystem. What breaks:** In dev environments using Windows, WSL-to-Windows mounts, or NFS, `os.replace()` behavior varies. If `/tmp` (used for the temp file) is on a different mount than the project directory, the \"atomic rename\" will fail or fall back to a non-atomic copy-and-delete, potentially corrupting session state if a crash occurs mid-write. How to verify:** Update the \"Concurrency and Locks\" section to explicitly require that temp files be created in the same directory as the target artifact (e.g., `specs/<slug>/.tmp.*`) to guarantee single-filesystem rename atomicity.",
+      "severity": "medium",
+      "id": "AUDT-73b10855",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "assumption_auditor",
+      "text": "**The \"Single-User Myth\" in Multi-Agent Environments** Assumption:** The spec assumes \"Exactly one Phase 4 writer may mutate a given session\" (Section 0), yet the briefing notes that `SessionState` has **no file locking** and assumes a single user. What breaks:** In a multi-agent scenario (e.g., Claude and Codex working on the same branch), both agents might read `session-state.json`, perform a 30-minute drafting step, and then attempt to write. Even if `.lock` files prevent simultaneous *file writes*, one agent will likely overwrite the other\u2019s progress because their in-memory state did not reflect the other's changes. How to verify:** Mandate that agents MUST re-read `session-state.json` immediately after acquiring the Session Lock and merge their local draft into the latest on-disk state.",
+      "severity": "medium",
+      "id": "AUDT-772c1515",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "assumption_auditor",
+      "text": "**Architecture Doc Freshness (Stale Context Problem)** Assumption:** Brownfield flows (Section 12/13) assume `.architecture/manifest.json` and `primer.md` are fresh and accurately reflect the current codebase. What breaks:** If the codebase has changed since the last `/mapcodebase` run (e.g., the primer is 11 days old), Phase 4 will generate invariants based on a \"ghost\" architecture. Implementation tasks will then be generated for components that have moved or been deleted. How to verify:** Check the git HEAD hash against a `codebase_version` field in the `.architecture/manifest.json`. If they differ, halt with `P4_MISSING_ARCH_DOCS` and require a re-map.",
+      "severity": "medium",
+      "id": "AUDT-36e1ac33",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "assumption_auditor",
+      "text": "**CLI Model Format Unreliability (Fingerprint Stability)** Assumption:** The spec assumes models like Gemini CLI or Codex will produce \"Canonical JSON\" for fingerprinting and artifacts (Section 0, Section 8.2). What breaks:** CLI models are \"known to be format-unreliable\" (Briefing). If they output extra prose or non-deterministic key ordering, the `input_fingerprint` will change on every run. This breaks the \"Resume/idempotency\" rule (Section 0), leading to duplicate `decision_journal` entries and infinite loops where the agent thinks the input has changed when it hasn't. How to verify:** Explicitly define the `canonical_json` algorithm (e.g., `json.dumps(obj, sort_keys=True, separators=(',', ':'))`) and require the agent to use a local tool/script to normalize JSON strings *before* hashing.",
+      "severity": "medium",
+      "id": "AUDT-1fb1a0fd",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "assumption_auditor",
+      "text": "**Path Resolution and Slug Collisions** Assumption:** The spec extracts the `spec_slug` from the roadmap path's parent directory name (Section 0). What breaks:** If a user organizes work as `specs/auth-redesign/v1/manifest.json` and `specs/api-v2/v1/manifest.json`, both specs will resolve to the slug `v1`. This will cause Phase 4 to overwrite artifacts in a shared directory or collide in the global session state. How to verify:** Update Step 3 of Path Resolution to require that `spec_slug` matches a `slug` field *inside* the roadmap manifest, with directory extraction used only as a fallback that validates sibling uniqueness.",
+      "severity": "medium",
+      "id": "AUDT-2b69792f",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "assumption_auditor",
+      "text": "**Phantom Phase Convergence** Assumption:** Phase 4 assumes Phase 3 (Debate) is \"converged\" (Section 0). What breaks:** The spec does not define a machine-readable marker for \"convergence.\" If Phase 4 is triggered while a spec is still being debated (but `spec-draft-latest.md` exists), it will lock in architecture for a spec that might still change significantly, wasting tokens and causing misalignment. How to verify:** Require the `spec-draft-latest.md` to contain a YAML header with `status: converged` and a `convergence_sha` before Phase 4 can proceed.",
+      "severity": "medium",
+      "id": "AUDT-d605ed21",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "assumption_auditor",
+      "text": "**Invariant Test Marker Fragility** Assumption:** The agent can reliably \"Upsert\" blocks in `tests-pseudo.md` using HTML markers (Section 8.3). What breaks:** If a user manually edits the file and accidentally breaks the marker syntax (e.g., deleting a trailing space in `<!-- P4_INVARIANT_TESTS_END -->`), the agent will fail to find the block and will append a duplicate, eventually bloating the file and confusing downstream readers. How to verify:** Implement a regex-based search for the markers that is whitespace-insensitive, or store pseudo-tests in a structured sidecar file (e.g., `tests-pseudo.json`) and generate the `.md` view from it.",
+      "severity": "medium",
+      "id": "AUDT-f39f36ad",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "assumption_auditor",
+      "text": "**\"Default Accepted\" Justification Shallowing** Assumption:** The spec assumes that requiring a \"Rationale\" (Section 7) will prevent agents from defaulting to \"The framework default is sufficient\" without deep thought. What breaks:** LLMs are prone to \"path of least resistance\" behavior. Without a structural requirement to cite specific framework documentation pages or versions, agents will provide generic rationales (e.g., \"FastAPI handles this via dependencies\"), missing the specific edge cases (like WebSocket auth gaps) that Phase 4 is intended to catch. How to verify:** Add a \"Evidence\" requirement to the `framework_profile` schema that *must* include a URL or a specific version-relative behavior description for any \"default accepted\" verdict.",
+      "severity": "medium",
+      "id": "AUDT-1c559c09",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "assumption_auditor",
+      "text": "**Unattended Mode Deadlocks** Assumption:** The spec defines mandatory **[GATE]** points but notes that `unattended` mode monkey-patches `input()` (Briefing). What breaks:** If Phase 4 hits a gate in `--unattended` mode and `auto-confirm` is not enabled, the system will halt with `P4_PENDING_USER_GATE`. However, if the monkey-patch returns an empty string or error, the agent may interpret this as a \"Reject\" and halt the entire pipeline unnecessarily. How to verify:** Define an explicit `--auto-approve-gates` CLI flag that the agent can use to bypass gates when running in an automated batch mode.",
+      "severity": "medium",
+      "id": "AUDT-a19c11c5",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "assumption_auditor",
+      "text": "**Multi-Component \"Component_ID\" Namespace Collisions** Assumption:** `component_id` is local to the spec (Section 4.1). What breaks:** When the system matures to \"multi-component support\" (Future Considerations), if two different specs use the component ID `web`, the global `.architecture/` docs will have conflicting entries. How to verify:** Require `component_id` to be prefixed with the `spec_slug` (e.g., `my-feature--web`) in any shared/global artifacts.",
+      "severity": "medium",
+      "id": "AUDT-be1dffd3",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "assumption_auditor",
+      "text": "**Lock-Breaking Risk (WARN_STALE_LOCK_BROKEN)** Assumption:** A lock older than 30 minutes is \"stale\" and can be safely broken (Section 0). What breaks:** Large LLM calls or complex `/mapcodebase` runs can easily exceed 30 minutes. If an agent breaks a lock that is actually held by a slow-running but active process, it will cause a race condition and session corruption. How to verify:** Lock-breaking must check for the presence of the PID on the system (as suggested) AND the age should be increased to 60 minutes, or include a \"heartbeat\" file updated by the active writer.",
+      "severity": "medium",
+      "id": "AUDT-797e3f2c",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "pedantic_nitpicker",
+      "text": "**Enum Mismatch: `realtime` Category Orphaned** Issue:** The `concern_category` enum (Section 0) lists 9 values (`enforcement | sot | error_handling | validation | config | caching | observability | security | integration`), but Section 6.2 defines **Concern 12: Realtime and Connection Lifecycle**. Example:** When creating a machine-readable invariant for the Realtime surface (Section 8.2), the `category` field (typed to the enum) cannot accept \"realtime\". The invariant must be misclassified (e.g., as `integration`), leading to incorrect filtering in downstream tools like `diagnosecodebase`. Type:** Logic Error / Schema Inconsistency.",
+      "severity": "medium",
+      "id": "PEDA-a4549a40",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "pedantic_nitpicker",
+      "text": "**Circular Schema Requirement: `architecture_fingerprint` Nullability** Issue:** Section 8.2 declares `architecture_fingerprint` as **required** in `architecture-invariants.json`. However, Section 14 (Completion Criteria) states that for `skip` mode, this field must be **null**. Example:** A standard JSON validator using the Section 8.2 schema will reject the `skip` mode artifact because `null` is not a valid `sha256` string. Type:** Logic Error (Validation Failure).",
+      "severity": "medium",
+      "id": "PEDA-18644fae",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "pedantic_nitpicker",
+      "text": "**Fingerprint Concatenation Collision** Issue:** `input_fingerprint` (Section 0) is calculated by concatenating raw bytes: `sha256(spec_bytes + roadmap_bytes + canonical_json)`. Example:** If `spec_bytes` ends with \"ABC\" and `roadmap_bytes` starts with \"DEF\", the hash is the same as if `spec_bytes` ended with \"A\" and `roadmap_bytes` started with \"BCDEF\". This allows different project states to share the same fingerprint, breaking resume/idempotency logic. Type:** Data Integrity / Logic Error.",
+      "severity": "medium",
+      "id": "PEDA-b1921ec2",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "pedantic_nitpicker",
+      "text": "**Decision Journal Rationale Data Loss** Issue:** The `idempotency_key` for `decision_journal[]` (Section 11) includes `topic`, `decision`, `surfaces`, and `choice`, but **excludes** `rationale`. Example:** If an agent updates the rationale for a decision (e.g., adding a specific documentation link) but the `choice` and `decision` remain the same, the `idempotency_key` matches the existing entry. Per Section 11's \"skip the write\" rule, the updated rationale is silently discarded. Type:** Data Loss.",
+      "severity": "medium",
+      "id": "PEDA-1561657e",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "pedantic_nitpicker",
+      "text": "**Multi-File Atomicity Gap in Artifact Publication** Issue:** `phase4_bootstrap` (Section 0) defines an `artifact_publish_state` (`none | staged | published`), but the \"Path Resolution\" and \"Completion Criteria\" sections only define single-file atomic writes (temp-file + rename). Example:** If the process crashes after writing `target-architecture.md` but before `architecture-invariants.json`, the bootstrap may reflect a `staged` or `published` state while the filesystem is inconsistent. There is no defined \"commit\" or \"rollback\" for the artifact set as a whole. Type:** Logic Error (State Inconsistency).",
+      "severity": "medium",
+      "id": "PEDA-f26adf8c",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "pedantic_nitpicker",
+      "text": "**Slug Derivation Path Collision** Issue:** Section 0 derives `spec_slug` from the \"roadmap path's parent directory name.\" Example:** In a project with nested versions, `specs/v1/auth/manifest.json` and `specs/v2/auth/manifest.json` will both derive the slug `auth`. Both runs will attempt to write to `specs/auth/target-architecture.md`, causing the second run to overwrite the first, even though they represent different features. Type:** Data Loss / Logic Error.",
+      "severity": "medium",
+      "id": "PEDA-eaa3deb6",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "pedantic_nitpicker",
+      "text": "**Type Ambiguity: `framework_profile` Discriminated Union** Issue:** Section 4.1 defines `framework_profile` as a flat object for single-component systems, but a nested object with `components[]` for multi-component systems. Example:** A consumer expecting `bootstrap.framework_profile.framework` (string) will encounter a runtime error or validation failure if the object instead contains `components` (array). The spec lacks a discriminator field (e.g., `profile_type: \"single\" | \"multi\"`) to handle this safely in Python/Pydantic. Type:** Type Mismatch / Runtime Error.",
+      "severity": "medium",
+      "id": "PEDA-216c2fee",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "pedantic_nitpicker",
+      "text": "**Ambiguous Nullability: `failed_checks` in Dry-Run Results** Issue:** Section 10.3 defines `failed_checks` as \"empty if pass\". Example:** It is ambiguous whether \"empty\" means an empty list `[]` or a `null` value. If the Gauntlet phase (Phase 5) expects an iterable to check for specific failures, receiving `null` will cause a `TypeError` in Python. Type:** Type Mismatch.",
+      "severity": "medium",
+      "id": "PEDA-2f3a4195",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "information_flow_auditor",
+      "text": "Multi-Component Artifact Overwrite (Corruption/Loss) Trace:** Phase 4 (Step 4.1) \u2192 `framework_profile.components[]` \u2192 Artifact File System. Issue:** The spec allows for multi-component systems (e.g., a \"web\" component and a \"worker\" component), but the `artifact_paths` (Section 0) are singular (e.g., `specs/<slug>/target-architecture.md`). Result:** When the agent processes multiple components, they are forced into the same physical file. Without a strictly defined internal partitioning schema for the Markdown and JSON artifacts, data from the \"worker\" component will likely overwrite or corrupt the data from the \"web\" component during the \"Replace atomically\" write operation.",
+      "severity": "medium",
+      "id": "FLOW-4d9075b5",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "information_flow_auditor",
+      "text": "Fingerprint Volatility from Volatile Metadata (Loss of Idempotency) Trace:** Phase 3 (Spec Draft) \u2192 `input_fingerprint` calculation \u2192 Phase 4 Resume logic. Issue:** The `input_fingerprint` is defined as `sha256(spec_bytes + roadmap_bytes + ...)`. Result:** If the \"latest\" spec draft includes volatile metadata (like a \"Last Updated\" timestamp in the header or an agent-specific comment block that changes on every read/touch), the fingerprint will fluctuate. This causes Phase 4 to treat every resume attempt as a \"new run,\" resulting in the duplication of Decision Journal and Journey entries despite the functional content being identical.",
+      "severity": "medium",
+      "id": "FLOW-c0224616",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "information_flow_auditor",
+      "text": "\"Ghost\" Invariant Divergence (Data Corruption) Trace:** Step 10 (Dry-Run) \u2192 `target-architecture.md` (Markdown) vs `architecture-invariants.json` (JSON). Issue:** Invariants are written to two separate files. The spec does not designate a primary Source of Truth (SoT). Result:** If an agent successfully writes the Markdown but the JSON write fails (or is partially updated), downstream consumers like Phase 5 (Gauntlet) and Phase 7 (Execution) will receive inconsistent constraints. The Gauntlet may attack based on the JSON while the Execution agent builds based on the Markdown, creating a \"silent drift\" where architecture is verified against a phantom state.",
+      "severity": "medium",
+      "id": "FLOW-f77d5a99",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "information_flow_auditor",
+      "text": "Decision Journal \"Rationale\" Suppression (Data Loss) Trace:** Step 11 (Record Decisions) \u2192 `decision_journal[]` \u2192 `idempotency_key`. Issue:** The `idempotency_key` for journal entries includes `topic`, `decision`, `surfaces`, and `choice`, but **omits `rationale`**. Result:** If an agent updates a decision's rationale (but keeps the same choice) during a rerun or resume, the new rationale is **silently dropped** because the idempotency key collides with the previous entry. The system loses the \"why,\" which is a primary goal of the phase.",
+      "severity": "medium",
+      "id": "FLOW-101ea17f",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "information_flow_auditor",
+      "text": "Gauntlet Context Blindness (Data Loss) Trace:** Phase 4 Artifacts \u2192 `pre_gauntlet` collector \u2192 Phase 5 (Gauntlet). Issue:** The Codebase Briefing notes that `pre_gauntlet/orchestrator.py:207` collects git/system context but does not explicitly mention picking up the new `specs/<slug>/architecture-invariants.json`. Result:** If the pre-gauntlet collector is not updated to recognize the Phase 4 output directory, the Gauntlet adversaries will receive the product spec but **zero architectural constraints**. The adversaries will generate \"attacks\" that are actually prohibited by invariants they cannot see, wasting quota and producing false positives.",
+      "severity": "medium",
+      "id": "FLOW-40eb68db",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "information_flow_auditor",
+      "text": "Phase 7 \"Stale Architecture\" Leak (Data Corruption) Trace:** Phase 4 (Completed) \u2192 Phase 3 (Spec Update) \u2192 Phase 7 (Execution). Issue:** While Phase 4 computes an `architecture_fingerprint`, there is no back-link in the `SessionState` that prevents Phase 7 from consuming an existing `target-architecture.md` that is out of sync with a recently updated spec. Result:** If a user updates the spec and skips Phase 4, Phase 7 will detect that \"architecture artifacts exist\" and proceed. It will generate code based on a **stale architecture** that no longer aligns with the product requirements, leading to systemic implementation failures.",
+      "severity": "medium",
+      "id": "FLOW-05f5e479",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "information_flow_auditor",
+      "text": "Marker Collision in `tests-pseudo.md` (Data Loss/Duplication) Trace:** Step 8.3 \u2192 `tests-pseudo.md` \u2192 `<!-- P4_INVARIANT_TESTS_START -->`. Issue:** The spec mandates an \"upsert\" that replaces everything between markers. Result:** If a human or a different phase (e.g., Phase 2) accidentally uses the same marker strings or malforms a single marker (e.g., deleting a closing `-->`), the Phase 4 logic may:",
+      "severity": "medium",
+      "id": "FLOW-4ecff057",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "information_flow_auditor",
+      "text": "Overwrite the **entire file** if it can't find the end marker.",
+      "severity": "medium",
+      "id": "FLOW-b875e737",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "information_flow_auditor",
+      "text": "Append a duplicate block if it can't find the start marker.",
+      "severity": "medium",
+      "id": "FLOW-05f4374b",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "information_flow_auditor",
+      "text": "`phase_mode: skip` Information Vacuum (Data Loss) Trace:** Step 2 (Scale Check) \u2192 `skip` mode \u2192 Phase 5 (Gauntlet). Issue:** In `skip` mode, `architecture-invariants.json` is initialized as an empty list. Result:** The \"Scale Rationale\" (why the project was small enough to skip architecture) is written to the Markdown stub but is missing from the machine-readable JSON. The Gauntlet (Phase 5) will see an empty invariant set without the context of *why* it is empty, potentially over-attacking a simple script as if it were a complex system.",
+      "severity": "medium",
+      "id": "FLOW-5e9eeb36",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "information_flow_auditor",
+      "text": "Temporary File Name Collision (Data Corruption) Trace:** Section 15 \u2192 \"All file writes use temp-file + atomic rename.\" Issue:** The spec does not mandate **unique** temporary filenames (e.g., `target-architecture.md.tmp`). Result:** In a multi-agent or concurrent environment (even within the same session if multiple sub-tasks are triggered), two processes writing to the same `.tmp` path will corrupt each other\u2019s data before the rename occurs.",
+      "severity": "medium",
+      "id": "FLOW-7a1bce44",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "information_flow_auditor",
+      "text": "Slug Divergence (Data Misplacement) Trace:** Section 0 \u2192 Path Resolution \u2192 `spec_slug`. Issue:** The slug is derived from the session field OR the roadmap's parent directory. Result:** If these two sources diverge (e.g., session says `auth-fix` but roadmap is in `specs/identity-remediation/`), the artifacts will be written to a new folder that Phase 5 and Phase 7 (looking at the session) might not be monitoring. Data is effectively \"lost\" in a phantom directory.",
+      "severity": "medium",
+      "id": "FLOW-6c6efd0e",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    },
+    {
+      "adversary": "information_flow_auditor",
+      "text": "`checks_run` Enum Dilution (Data Corruption) Trace:** Section 10.3 \u2192 `dry-run-results.json` \u2192 `checks_run`. Issue:** The spec requires `checks_run` to use the `dry_run_check_id` enum but allows for \"Evidence\" as a free-form string. Result:** If the agent records a \"Pass\" but maps the evidence to the wrong `check_id` (a semantic mismatch), the JSON indicates a successful verification of a boundary that wasn't actually tested. Downstream \"Architecture Gates\" will trust the `pass` status without being able to verify the data flow path described in the evidence.",
+      "severity": "medium",
+      "id": "FLOW-cd82bd38",
+      "source_model": "gemini-cli/gemini-3-flash-preview"
+    }
+  ]
+}

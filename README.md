@@ -444,7 +444,7 @@ Execution plans include:
 | Tool       | Requirement            | Models                                       |
 |------------|------------------------|----------------------------------------------|
 | Codex CLI  | ChatGPT Plus/Pro       | `codex/gpt-5.2-codex`, `codex/gpt-5.1-codex-max` |
-| Gemini CLI | Google account         | `gemini-cli/gemini-3-pro-preview`, `gemini-cli/gemini-3-flash-preview` |
+| Gemini CLI | Google account         | `gemini-cli/gemini-3.1-pro-preview`, `gemini-cli/gemini-3-flash-preview` |
 
 **API providers** (pay-per-token fallback):
 
@@ -562,11 +562,11 @@ python3 ~/.claude/skills/adversarial-spec/scripts/debate.py providers
 npm install -g @google/gemini-cli && gemini auth
 
 # Use Gemini CLI models (prefix with gemini-cli/)
-python3 debate.py critique --models gemini-cli/gemini-3-pro-preview < spec.md
+python3 debate.py critique --models gemini-cli/gemini-3.1-pro-preview < spec.md
 ```
 
 **Available Gemini CLI models:**
-- `gemini-cli/gemini-3-pro-preview` - Gemini 3 Pro via CLI
+- `gemini-cli/gemini-3.1-pro-preview` - Gemini 3 Pro via CLI
 - `gemini-cli/gemini-3-flash-preview` - Gemini 3 Flash via CLI
 
 Check Gemini CLI installation status:
@@ -611,7 +611,7 @@ You will be prompted for:
 
 1. **Document type**: PRD (business/product focus) or tech spec (engineering focus)
 2. **Interview mode**: Optional in-depth requirements gathering session
-3. **Opponent models**: Comma-separated list (e.g., `codex/gpt-5.2-codex,gemini-cli/gemini-3-pro-preview`)
+3. **Opponent models**: Comma-separated list (e.g., `codex/gpt-5.2-codex,gemini-cli/gemini-3.1-pro-preview`)
 
 More models = more perspectives = stricter convergence.
 
@@ -817,7 +817,7 @@ Total cost: $0.0847
 
 By model:
   codex/gpt-5.2-codex: $0.00 (8,234 in / 2,100 out)  # FREE with subscription
-  gemini-cli/gemini-3-pro-preview: $0.00 (4,309 in / 1,121 out)  # FREE
+  gemini-cli/gemini-3.1-pro-preview: $0.00 (4,309 in / 1,121 out)  # FREE
 ```
 
 ### Saved Profiles
@@ -827,7 +827,7 @@ Save frequently used configurations:
 ```bash
 # Create a profile
 python3 debate.py save-profile strict-security \
-  --models codex/gpt-5.2-codex,gemini-cli/gemini-3-pro-preview \
+  --models codex/gpt-5.2-codex,gemini-cli/gemini-3.1-pro-preview \
   --focus security \
   --doc-type tech
 

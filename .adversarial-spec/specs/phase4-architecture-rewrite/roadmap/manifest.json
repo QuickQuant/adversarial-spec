@@ -1,0 +1,100 @@
+{
+  "schema_version": "1.0",
+  "context_name": "Phase 4 Architecture Rewrite",
+  "session_id": "adv-spec-202604021743-phase4-architecture-rewrite",
+  "complexity_tier": "medium",
+  "complexity_score": 6,
+  "goals": [
+    "Debate and stress-test spec-draft-v1 until consensus",
+    "Finalize and implement as the new 04-target-architecture.md"
+  ],
+  "non_goals": [
+    "Rewriting the spec from scratch (v1 is comprehensive)",
+    "Implementing downstream tool integrations (future work)"
+  ],
+  "requirements_summary": {
+    "user_types": ["spec-author", "opponent-model", "downstream-tool"],
+    "feature_groups": [
+      "cross-cutting-concern-guidance",
+      "context-aware-modes",
+      "architectural-invariants",
+      "expanded-dimension-lists",
+      "expanded-dry-run-questions"
+    ],
+    "external_integrations": [
+      "mapcodebase-invariant-consumption",
+      "diagnosecodebase-invariant-checking",
+      "evaluate-plan-compatibility"
+    ],
+    "unknowns": [
+      "invariant-format-for-downstream-tools",
+      "brownfield-scope-boundary-validation",
+      "scale-check-threshold-differences"
+    ],
+    "bootstrap_steps": [
+      "Read current 04-target-architecture.md",
+      "Choose mode (greenfield/brownfield-feature/brownfield-debug)",
+      "Follow mode-specific steps"
+    ]
+  },
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "Debate spec-draft-v1",
+      "user_stories": [
+        {
+          "id": "US-1",
+          "persona": "spec author",
+          "action": "have opponent models critique the Phase 4 rewrite across the 6 focus areas",
+          "benefit": "find gaps before committing to it",
+          "test_cases": ["TC-1.1", "TC-1.2"]
+        }
+      ],
+      "success_criteria": [
+        "Spec debated through at least 2 rounds with opponent models",
+        "All 6 debate focus areas addressed",
+        "Critiques synthesized and spec revised to v2"
+      ],
+      "dependencies": []
+    },
+    {
+      "id": "M2",
+      "name": "Gauntlet stress test",
+      "user_stories": [
+        {
+          "id": "US-2",
+          "persona": "spec author",
+          "action": "have adversary personas try to break the spec",
+          "benefit": "know it holds up under hostile scrutiny",
+          "test_cases": ["TC-2.1", "TC-2.2"]
+        }
+      ],
+      "success_criteria": [
+        "Gauntlet run with full adversary roster",
+        "Surviving concerns addressed or explicitly accepted",
+        "Pass/refine verdict achieved"
+      ],
+      "dependencies": ["M1"]
+    },
+    {
+      "id": "M3",
+      "name": "Finalize and Implement",
+      "user_stories": [
+        {
+          "id": "US-3",
+          "persona": "spec author",
+          "action": "have the finalized spec written to 04-target-architecture.md and deployed",
+          "benefit": "the new workflow is live",
+          "test_cases": ["TC-3.1", "TC-3.2"]
+        }
+      ],
+      "success_criteria": [
+        "04-target-architecture.md rewritten with finalized spec",
+        "Cross-references updated in 02-roadmap, 05-gauntlet, 07-execution",
+        "Deployed to ~/.claude/skills/adversarial-spec/"
+      ],
+      "dependencies": ["M2"]
+    }
+  ],
+  "tests_pseudo_path": "specs/phase4-architecture-rewrite/tests-pseudo.md"
+}

@@ -1,1 +1,1 @@
-checkpoint-202603231924-todowrite-enforcement-plan-approved-debate-phase-in-progress.md
+checkpoint-202604022308-debate-converged-r10-v10-pre-gauntlet.md

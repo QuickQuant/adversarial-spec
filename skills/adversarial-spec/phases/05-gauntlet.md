@@ -69,7 +69,7 @@ After consensus is reached but before finalization, offer the adversarial gauntl
 
    **Recommended lineup (if available):**
    - `codex/gpt-5.4` — GPT-5.4 via Codex CLI (free, token-efficient)
-   - `gemini-cli/gemini-3-pro-preview` — Gemini 3 Pro (free via CLI)
+   - `gemini-cli/gemini-3.1-pro-preview` — Gemini 3 Pro (free via CLI)
    - `claude-cli/claude-sonnet-4-6` — Claude Sonnet 4.6 (free via CLI)
 
    These become `--gauntlet-attack-models` (comma-separated). The frontier evaluation model is selected automatically.
@@ -327,6 +327,18 @@ Each adversary has a specific lens. Give them ammunition for that lens:
 | **ARCH** (architect) | FULL target architecture doc (not just excerpt), component docs from `.architecture/structured/components/`, existing shared patterns/utilities inventory, first-feature propagation analysis | ~1,000 tok |
 | **TRAF** (traffic_engineer) | Expected traffic patterns, concurrency limits, queue/pool configs, existing rate limiter settings, load test results if available | ~400 tok |
 
+**Test pseudocode supplement (when `tests_pseudo_path` exists in session):**
+
+| Adversary | Gets test pseudocode? | Why |
+|-----------|----------------------|-----|
+| **PEDA** | YES — full `tests-pseudo.md` | Schema constraint validation, assertion completeness |
+| **COMP** | YES — full `tests-pseudo.md` | Coverage analysis, integration test gaps |
+| **BURN** | YES — full `tests-pseudo.md` | Boundary/error case identification, timeout/retry gaps |
+| **PARA** | Relevant sections only | Auth-related test cases |
+| Others | NO | Not their lens |
+
+New test cases identified by adversaries get **appended** to `tests-pseudo.md` with adversary attribution: `Source: BURN-<concern-hash>`.
+
 #### 4. Apply Relevance Filter
 
 Not every adversary needs every supplement for every spec:
@@ -336,6 +348,7 @@ Not every adversary needs every supplement for every spec:
 - Spec integrates external service? → AUDT gets API docs, MINI gets existing integrations
 - Spec is internal refactor? → MINI gets utility inventory, ASSH gets design rationale
 - Spec expects high traffic? → TRAF gets load patterns, BURN gets timeout configs
+- Spec has test pseudocode? → PEDA/COMP/BURN get `tests-pseudo.md`, others get nothing
 - If a supplement source was `NOT_AVAILABLE` or `NOT_APPLICABLE` in the audit, skip it and include a one-line note in the "Known Gaps" section of the briefing
 
 #### 5. Format Briefings
@@ -438,6 +451,7 @@ In practice, Claude assembles the briefings in memory and passes them to the gau
 | Base context (per adversary) | 600–1,000 tok | Architecture excerpt + blast zone + git. Orientation, not drowning. |
 | Per-adversary supplement | 200–1,200 tok | COMP/FLOW need more (audit structure). ASSH needs less (attacks logic). |
 | Total per adversary | 800–2,200 tok added | Never more than 2x the spec size in added context. |
+| Test pseudocode (per adversary) | 150–400 tok | PEDA/COMP get full; BURN gets boundary tests only; others skip. |
 | Total across all adversaries | < 100% increase | Doubling total input is the upper bound. |
 
 **If budget is exceeded:**

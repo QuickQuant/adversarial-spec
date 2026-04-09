@@ -1,0 +1,263 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-04-03T01:56:45.179460Z",
+  "spec_version": "v10",
+  "revised_version": "v11",
+  "spec_hash": "4885cd50a01dbeec7760bddffcbf7f40deaf16f122f60647f50b046d331732ba",
+  "adversaries": [
+    "paranoid_security",
+    "burned_oncall",
+    "minimalist",
+    "pedantic_nitpicker",
+    "asshole_loner",
+    "assumption_auditor",
+    "information_flow_auditor"
+  ],
+  "attack_models": [
+    "gemini-cli/gemini-3-flash-preview"
+  ],
+  "eval_models": [
+    "gemini-cli/gemini-3.1-pro-preview"
+  ],
+  "notes": "Codex/gpt-5.4 was unavailable (DNS/service outage). All 65 concerns from Gemini only.",
+  "total_raw_concerns": 65,
+  "pipeline_verdicts": {
+    "accepted": 30,
+    "deferred": 35
+  },
+  "claude_synthesis": {
+    "unique_themes": 22,
+    "accepted": 18,
+    "acknowledged": 4,
+    "dismissed_themes": 9,
+    "categories": {
+      "correctness_bugs": 6,
+      "race_conditions": 2,
+      "failure_modes": 5,
+      "security": 2,
+      "operability": 2,
+      "scalability": 0,
+      "design_debt": 3,
+      "underspecification": 2
+    }
+  },
+  "accepted_concerns": [
+    {
+      "id": "CB-1",
+      "category": "correctness_bugs",
+      "summary": "Fingerprint concatenation collision \u2014 no delimiter between components",
+      "sources": [
+        "PEDA-b1921ec2",
+        "FLOW-c0224616"
+      ],
+      "fix": "Added \\x00 byte separators between concatenated inputs"
+    },
+    {
+      "id": "CB-2",
+      "category": "correctness_bugs",
+      "summary": "architecture_fingerprint nullability contradiction \u2014 required but null in skip mode",
+      "sources": [
+        "PEDA-18644fae",
+        "ASSH-d6ed7e14"
+      ],
+      "fix": "Made nullable in schema, clarified computation order"
+    },
+    {
+      "id": "CB-3",
+      "category": "correctness_bugs",
+      "summary": "realtime concern_category orphaned \u2014 no enum value for Concern 12",
+      "sources": [
+        "PEDA-a4549a40"
+      ],
+      "fix": "Added realtime to concern_category enum"
+    },
+    {
+      "id": "CB-4",
+      "category": "correctness_bugs",
+      "summary": "Decision journal rationale data loss \u2014 idempotency key excludes rationale",
+      "sources": [
+        "PEDA-1561657e",
+        "FLOW-101ea17f"
+      ],
+      "fix": "Added rationale to idempotency key"
+    },
+    {
+      "id": "CB-5",
+      "category": "correctness_bugs",
+      "summary": "framework_profile discriminated union \u2014 no discriminator field",
+      "sources": [
+        "PEDA-216c2fee"
+      ],
+      "fix": "Added profile_type discriminator"
+    },
+    {
+      "id": "CB-6",
+      "category": "correctness_bugs",
+      "summary": "failed_checks nullability ambiguous \u2014 unclear if [] or null",
+      "sources": [
+        "PEDA-2f3a4195"
+      ],
+      "fix": "Specified explicit [] (never null)"
+    },
+    {
+      "id": "RC-1",
+      "category": "race_conditions",
+      "summary": "Stale lock TOCTOU \u2014 check+break not atomic, 30min too long",
+      "sources": [
+        "PARA-4a1a40f4",
+        "AUDT-797e3f2c"
+      ],
+      "fix": "Atomic break-lock protocol, reduced to 5min interactive / 60min batch, added signal handler"
+    },
+    {
+      "id": "FM-1",
+      "category": "failure_modes",
+      "summary": "Multi-file artifact inconsistency \u2014 no set atomicity",
+      "sources": [
+        "BURN-e96aa0f6",
+        "ASSH-34f262ef",
+        "PEDA-f26adf8c",
+        "FLOW-f77d5a99"
+      ],
+      "fix": "Added staging protocol with ordered renames and resume cleanup"
+    },
+    {
+      "id": "FM-2",
+      "category": "failure_modes",
+      "summary": "Lock purgatory after Ctrl+C \u2014 30min stale threshold too long",
+      "sources": [
+        "BURN-abb4971f"
+      ],
+      "fix": "Reduced to 5min, added SIGINT handler and --break-lock escape"
+    },
+    {
+      "id": "FM-3",
+      "category": "failure_modes",
+      "summary": "Slug drift creating zombie artifacts \u2014 directory rename breaks paths",
+      "sources": [
+        "BURN-2c24c43c",
+        "PEDA-eaa3deb6",
+        "AUDT-2b69792f",
+        "FLOW-6c6efd0e"
+      ],
+      "fix": "Required slug field in manifest.json, directory extraction as validated fallback"
+    },
+    {
+      "id": "FM-4",
+      "category": "failure_modes",
+      "summary": "Fingerprint flapping on resume \u2014 volatile metadata in spec hash",
+      "sources": [
+        "BURN-11f2e392",
+        "FLOW-c0224616"
+      ],
+      "fix": "Strip volatile metadata before hashing"
+    },
+    {
+      "id": "FM-5",
+      "category": "failure_modes",
+      "summary": "Silent decision reversal gap \u2014 reversed decisions don't invalidate invariants",
+      "sources": [
+        "BURN-ae4932fe"
+      ],
+      "fix": "Reversal marks affected invariants as reversed, dry-run must re-verify"
+    },
+    {
+      "id": "SEC-1",
+      "category": "security",
+      "summary": "Cross-device atomic rename failure \u2014 /tmp vs project dir",
+      "sources": [
+        "PARA-6b9e7c57",
+        "AUDT-73b10855"
+      ],
+      "fix": "Temp files must be in same directory as target"
+    },
+    {
+      "id": "SEC-2",
+      "category": "security",
+      "summary": "Markdown marker injection \u2014 LLM output could corrupt upsert",
+      "sources": [
+        "PARA-21099e30",
+        "ASSH-fe741de6",
+        "FLOW-4ecff057"
+      ],
+      "fix": "Added marker integrity check + P4_MARKER_INTEGRITY_FAILED error"
+    },
+    {
+      "id": "OP-1",
+      "category": "operability",
+      "summary": "Phase 7 stale architecture consumption \u2014 no fingerprint back-link",
+      "sources": [
+        "FLOW-05f5e479",
+        "AUDT-36e1ac33"
+      ],
+      "fix": "Added spec_fingerprint to phase_artifacts for staleness detection"
+    },
+    {
+      "id": "OP-2",
+      "category": "operability",
+      "summary": "Skip mode information vacuum \u2014 empty invariants without context",
+      "sources": [
+        "FLOW-5e9eeb36"
+      ],
+      "fix": "Added skip_rationale to invariants JSON"
+    },
+    {
+      "id": "DD-1",
+      "category": "design_debt",
+      "summary": "Non-deterministic research in deterministic machine",
+      "sources": [
+        "ASSH-725d1eea"
+      ],
+      "fix": "Research findings snapshotted into bootstrap, included in fingerprint"
+    },
+    {
+      "id": "DD-2",
+      "category": "design_debt",
+      "summary": "Matrix dimension collapse \u2014 multi-component surface collision",
+      "sources": [
+        "ASSH-597aedfb"
+      ],
+      "fix": "Component-prefixed matrix columns when components[] exists"
+    },
+    {
+      "id": "US-1",
+      "category": "underspecification",
+      "summary": "canonical_json algorithm not specified exactly",
+      "sources": [
+        "AUDT-1fb1a0fd"
+      ],
+      "fix": "Specified json.dumps(obj, sort_keys=True, separators=(',',':'), ensure_ascii=False)"
+    }
+  ],
+  "acknowledged_concerns": [
+    {
+      "id": "RC-2",
+      "summary": "Temp file name collision \u2014 valid but session lock prevents",
+      "sources": [
+        "FLOW-7a1bce44"
+      ]
+    },
+    {
+      "id": "SEC-2-ack",
+      "summary": "Marker injection full fix (separate file) deferred to v2",
+      "sources": [
+        "PARA-21099e30"
+      ]
+    },
+    {
+      "id": "DD-3",
+      "summary": "Agent protocol adherence assumption \u2014 fundamental to LLM workflows",
+      "sources": [
+        "AUDT-f937b73b"
+      ]
+    },
+    {
+      "id": "US-2",
+      "summary": "checks_run enum enforcement \u2014 added note, full enforcement is impl detail",
+      "sources": [
+        "BURN-c467757e",
+        "FLOW-cd82bd38"
+      ]
+    }
+  ]
+}

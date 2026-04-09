@@ -467,7 +467,7 @@ def call_gemini_cli_model(
     Args:
         system_prompt: System instructions for the model
         user_message: User prompt to send
-        model: Model name (e.g., "gemini-cli/gemini-3-pro-preview" -> uses "gemini-3-pro-preview")
+        model: Model name (e.g., "gemini-cli/gemini-3.1-pro-preview" -> uses "gemini-3.1-pro-preview")
         timeout: Timeout in seconds (default 10 minutes)
 
     Returns:

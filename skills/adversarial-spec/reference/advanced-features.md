@@ -161,7 +161,7 @@ Total cost: $0.0847
 
 By model:
   codex/gpt-5.4: $0.00 (8,234 in / 2,100 out) [subscription]
-  gemini-cli/gemini-3-pro-preview: $0.00 (4,309 in / 1,121 out) [free tier]
+  gemini-cli/gemini-3.1-pro-preview: $0.00 (4,309 in / 1,121 out) [free tier]
 ```
 
 Cost is also included in JSON output and Telegram notifications.
@@ -172,7 +172,7 @@ Save frequently used configurations as profiles:
 
 **Create a profile:**
 ```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py save-profile strict-security --models codex/gpt-5.4,gemini-cli/gemini-3-pro-preview --focus security --doc-type tech
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py save-profile strict-security --models codex/gpt-5.4,gemini-cli/gemini-3.1-pro-preview --focus security --doc-type tech
 ```
 
 **Use a profile:**

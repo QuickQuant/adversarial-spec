@@ -206,7 +206,7 @@ def select_eval_model() -> str:
         return codex_model
 
     if GEMINI_CLI_AVAILABLE:
-        return "gemini-cli/gemini-3-pro-preview"
+        return "gemini-cli/gemini-3.1-pro-preview"
 
     import os
 
@@ -248,7 +248,7 @@ def get_available_eval_models() -> list[str]:
     if codex_model:
         models.append(codex_model)
     if GEMINI_CLI_AVAILABLE:
-        models.append("gemini-cli/gemini-3-pro-preview")
+        models.append("gemini-cli/gemini-3.1-pro-preview")
 
     if len(models) < 2:
         if os.environ.get("ANTHROPIC_API_KEY"):
