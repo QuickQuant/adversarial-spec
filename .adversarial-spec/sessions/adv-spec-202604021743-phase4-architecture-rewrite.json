@@ -2,9 +2,9 @@
   "session_id": "adv-spec-202604021743-phase4-architecture-rewrite",
   "context_name": "Phase 4 Architecture Rewrite",
   "current_phase": "finalize",
-  "current_step": "Spec finalized. Awaiting user review.",
+  "current_step": "Wired orphaned debate.py features into pipeline, fixed dead medal system, moved severity assessment to Phase 4 eval",
   "created_at": "2026-04-02T17:43:00Z",
-  "updated_at": "2026-04-03T03:08:00.616301+00:00",
+  "updated_at": "2026-04-09T19:55:06Z",
   "trello_card_id": "69cebd6811e103656ffbde6d",
   "requirements_summary": {
     "goal": "Rewrite Phase 4 (Target Architecture) of the adversarial-spec workflow to add cross-cutting concern guidance, context-aware modes (greenfield/brownfield feature/brownfield debug), architectural invariants, and expanded dimension lists",
@@ -197,11 +197,21 @@
       "time": "2026-04-03T03:08:00.616301+00:00",
       "event": "Spec finalized: .adversarial-spec/specs/phase4-architecture-rewrite/spec-output.md. 10 debate rounds + gauntlet (7 adversaries). CONS/SCOPE/TRACE guardrails passed. tests-spec.md promoted.",
       "type": "artifact"
+    },
+    {
+      "time": "2026-04-09T19:55:06Z",
+      "event": "Wired orphaned debate.py features into pipeline, fixed dead medal system, moved severity assessment to Phase 4 eval",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-04-09T19:55:06Z",
+      "event": "Checkpoint saved: orphaned-features-wired-medal-system-fixed.",
+      "type": "checkpoint"
     }
   ],
-  "completed_work": "Debate rounds 8-10 complete. R8: both critiqued, synthesized v9 (1102 lines). R9: both critiqued, synthesized v10 (1166\u21921169 lines). R10: Gemini agreed, GPT-5.4 scope-expanding \u2014 convergence declared. Key v9-v10 additions: two-fingerprint model, path resolution, gate_approvals, dry_run_check_id enum, journey idempotency_key, artifact_publish_state, optional multi-component, release log separation, skip stub shape, tests-pseudo creation contract. Session state + Trello synced for debate\u2192gauntlet transition.",
-  "next_action": "User reviews spec-output.md and decides: accept, request changes, or re-debate.",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202604022308-debate-converged-r10-v10-pre-gauntlet.md",
+  "completed_work": "Card 189 (Wire Orphaned Features): (1) Wired adversary-stats, adversary-versions, medal-leaderboard into 05-gauntlet.md as required pre/post-gauntlet steps. (2) Fixed medal similarity threshold 0.3\u21920.10 (old was unreachable, max observed 0.289). (3) Moved severity assessment from attack prompt (Phase 1) to eval prompt (Phase 4) \u2014 root cause of 99.2% medium severity was CLI models never asked for severity. (4) Added severity field to Evaluation dataclass with fallback for legacy runs. (5) Deprecated export-tasks. (6) Fixed Fizzy board ID in CLAUDE.md. (7) Committed large accumulated delta (112 files) from Apr 2-9 sessions. 3 commits total: d346f01, 64d880b, faa9423.",
+  "next_action": "Next gauntlet run will produce real severity distribution and medal awards. Consider running adversary-stats to view 138 runs of historical data. Card 189 can be closed on Fizzy.",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202604091955-orphaned-features-wired-medal-system-fixed.md",
   "do_not_ask": [],
   "status": "active",
   "extended_state": {
