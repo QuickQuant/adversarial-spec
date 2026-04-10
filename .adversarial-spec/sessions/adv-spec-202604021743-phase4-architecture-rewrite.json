@@ -1,12 +1,25 @@
 {
   "session_id": "adv-spec-202604021743-phase4-architecture-rewrite",
   "context_name": "Phase 4 Architecture Rewrite",
-  "current_phase": "finalize",
-  "current_step": "v17 finalized — CONS/SCOPE/TRACE guardrails passed, awaiting execution transition",
+  "current_phase": "complete",
+  "current_step": "All 8 tasks (T1-T8) Passed Test, swept to Completed-Unmapped. Session card in Completed-Unmapped. Release p4-20260410-fda7a98 deployed.",
+  "execution_plan_path": ".adversarial-spec/specs/phase4-architecture-rewrite/execution-plan.md",
   "created_at": "2026-04-02T17:43:00Z",
-  "updated_at": "2026-04-10T07:20:00Z",
+  "updated_at": "2026-04-10T09:10:00Z",
   "trello_card_id": "69cebd6811e103656ffbde6d",
-  "fizzy_card_id": "211",
+  "fizzy_card_id": "250",
+  "fizzy_card_id_legacy": "211",
+  "fizzy_plan_path": ".adversarial-spec/specs/phase4-architecture-rewrite/fizzy-plan.json",
+  "fizzy_task_card_ids": {
+    "T1": "251",
+    "T2": "252",
+    "T3": "253",
+    "T4": "254",
+    "T5": "255",
+    "T6": "256",
+    "T7": "257",
+    "T8": "258"
+  },
   "requirements_summary": {
     "goal": "Rewrite Phase 4 (Target Architecture) of the adversarial-spec workflow to add cross-cutting concern guidance, context-aware modes (greenfield/brownfield feature/brownfield debug), architectural invariants, and expanded dimension lists",
     "preplan_path": ".adversarial-spec/specs/phase4-architecture-rewrite/preplan.md",
@@ -252,7 +265,7 @@
   ],
   "completed_work": "Auto-saved before compaction",
   "next_action": "Resume in new conversation",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202604100643-pre-compaction-auto-checkpoint.md",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202604100832-pre-compaction-auto-checkpoint.md",
   "do_not_ask": [],
   "status": "active",
   "extended_state": {
