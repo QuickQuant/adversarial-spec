@@ -86,7 +86,7 @@ These enums are normative. All artifacts, schemas, and references must use these
 ### Prerequisites
 
 Before entering Phase 4, these must exist:
-- **Converged spec** from Phase 3 debate (`specs/<slug>/spec-draft-latest.md`)
+- **Converged spec** from Phase 3 debate (`.adversarial-spec/specs/<slug>/spec-draft-vN.md`, or an explicit `spec_path` / `extended_state.spec_draft_path` session pointer)
 - **Roadmap manifest** with goals, non-goals, milestones, and user stories
 - **`tests-pseudo.md` path** declared in roadmap or session state. If `tests_pseudo_path` is set but the file does not exist and its parent directory is writable, Phase 4 creates it with a heading and the `<!-- P4_INVARIANT_TESTS_START/END -->` marker block. If the path is invalid or the parent is not writable, halt with `P4_INVALID_TESTS_PATH`.
 - **For brownfield work:** `.architecture/manifest.json` (schema 2.0) and `.architecture/primer.md`
@@ -105,13 +105,13 @@ Path resolution is deterministic and occurs in this order:
 
 1. Read `.adversarial-spec/session-state.json`
 2. Open the file at `active_session_file`
-3. Resolve `spec_slug`: prefer session detail field `spec_slug`; then try `slug` field inside `manifest.json`; then extract from the roadmap path's parent directory name (e.g., `specs/my-feature/manifest.json` → `my-feature`). All sources must match `^[a-z0-9][a-z0-9-]*$`. If directory extraction is used, validate it is unique among sibling spec directories. If absent, invalid, or conflicting, halt with `P4_MISSING_SPEC_SLUG`
+3. Resolve `spec_slug`: prefer session detail field `spec_slug`; then try `slug` field inside `manifest.json`; then extract from the roadmap path's parent directory name (e.g., `.adversarial-spec/specs/my-feature/roadmap/manifest.json` → `my-feature`). All sources must match `^[a-z0-9][a-z0-9-]*$`. If directory extraction is used, validate it is unique among sibling spec directories. If absent, invalid, or conflicting, halt with `P4_MISSING_SPEC_SLUG`
 4. Resolve canonical paths:
-   - Spec draft: `specs/<slug>/spec-draft-latest.md`
-   - Roadmap: `specs/<slug>/manifest.json` (unless session detail contains explicit override)
-   - Target architecture: `specs/<slug>/target-architecture.md`
-   - Invariants: `specs/<slug>/architecture-invariants.json`
-   - Dry-run results: `specs/<slug>/dry-run-results.json`
+   - Spec draft: explicit `spec_path` or `extended_state.spec_draft_path` if present; otherwise `.adversarial-spec/specs/<slug>/spec-draft-vN.md`
+   - Roadmap: explicit `roadmap_path` from session detail if present; otherwise `.adversarial-spec/specs/<slug>/roadmap/manifest.json`, then `.adversarial-spec/specs/<slug>/manifest.json`
+   - Target architecture: `.adversarial-spec/specs/<slug>/target-architecture.md`
+   - Invariants: `.adversarial-spec/specs/<slug>/architecture-invariants.json`
+   - Dry-run results: `.adversarial-spec/specs/<slug>/dry-run-results.json`
    - Tests pseudo: exact repo-relative path from roadmap manifest
 5. Reject absolute paths, `..` traversal, and non-matching slugs
 
@@ -120,7 +120,7 @@ Path resolution is deterministic and occurs in this order:
 Exactly one Phase 4 writer may mutate a given session at a time. Acquire locks in this order:
 
 1. **Session lock:** `<session-detail-path>.lock`
-2. **Artifact lock:** `specs/<slug>/.phase4.lock`
+2. **Artifact lock:** `.adversarial-spec/specs/<slug>/.phase4.lock`
 
 Release both on completion or error. Lock order is strict — always session first, artifact second — to prevent deadlocks.
 
@@ -179,11 +179,11 @@ The bootstrap is a progressively-filled record in the session detail file. It is
   "phase_mode": "skip | lightweight | full (required, set at Step 2)",
   "context_mode": "greenfield | brownfield_feature | brownfield_debug (required, set at Step 3)",
   "artifact_paths": {
-    "target_architecture": "specs/<slug>/target-architecture.md (required)",
-    "invariants": "specs/<slug>/architecture-invariants.json (required)",
+    "target_architecture": ".adversarial-spec/specs/<slug>/target-architecture.md (required)",
+    "invariants": ".adversarial-spec/specs/<slug>/architecture-invariants.json (required)",
     "tests_pseudo": "string (required, from roadmap)",
-    "dry_run_results": "specs/<slug>/dry-run-results.json (required for non-skip)",
-    "middleware_candidates": "specs/<slug>/middleware-candidates.json (required for full, optional for lightweight, absent for skip)"
+    "dry_run_results": ".adversarial-spec/specs/<slug>/dry-run-results.json (required for non-skip)",
+    "middleware_candidates": ".adversarial-spec/specs/<slug>/middleware-candidates.json (required for full, optional for lightweight, absent for skip)"
   },
   "framework_profile": "{} (required for non-skip, set at Step 4)",
   "execution_surfaces": "[] (required for non-skip, set at Step 4)",
@@ -692,7 +692,7 @@ This prevents "web-brain bias" where a CLI project forces its ingress through `r
 
 ### Draft Format
 
-Each section in `specs/<slug>/target-architecture.md`:
+Each section in `.adversarial-spec/specs/<slug>/target-architecture.md`:
 
 ```markdown
 ### [Concern or Dimension]
@@ -750,7 +750,7 @@ An interface qualifies as a middleware candidate when ALL of:
 - **`lightweight`:** Identify candidates and write `middleware-candidates.json` (advisory — does not block execution planning, middleware-creator phase is optional)
 - **`full`:** Identify candidates and write `middleware-candidates.json`; artifact is normative input to middleware-creator phase
 
-### Output Artifact: `specs/<slug>/middleware-candidates.json`
+### Output Artifact: `.adversarial-spec/specs/<slug>/middleware-candidates.json`
 
 **Normative schema — all fields required unless marked optional:**
 
@@ -870,10 +870,10 @@ Schema refs: route registration, action registry, webhook handler list
 ## Section 9: Debate (full mode only)
 
 ```bash
-cat specs/<slug>/target-architecture.md | \
+cat .adversarial-spec/specs/<slug>/target-architecture.md | \
   uv run python ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
-  --models MODEL_LIST --doc-type architecture --round N \
-  --context specs/<slug>/spec-draft-latest.md $CONTEXT_FLAGS
+  --models MODEL_LIST --doc-type architecture --round N --json \
+  --context .adversarial-spec/specs/<slug>/spec-draft-vN.md $CONTEXT_FLAGS
 ```
 
 Debate checks: framework fit (version-accurate), surface completeness (including realtime when applicable), cache consistency semantics, invariant verifiability, brownfield compatibility, requirement traceability, whether any decision merely restates defaults without project-specific justification.
@@ -1039,10 +1039,10 @@ Replaces greenfield Steps 5-8 with blast-zone-scoped versions. Steps 1-4 and 9-1
 ## Section 14: Outputs and Completion
 
 **Artifacts (all modes):**
-- `specs/<slug>/target-architecture.md`
-- `specs/<slug>/architecture-invariants.json`
-- `specs/<slug>/dry-run-results.json` (non-skip only)
-- `specs/<slug>/middleware-candidates.json` (full only; lightweight advisory)
+- `.adversarial-spec/specs/<slug>/target-architecture.md`
+- `.adversarial-spec/specs/<slug>/architecture-invariants.json`
+- `.adversarial-spec/specs/<slug>/dry-run-results.json` (non-skip only)
+- `.adversarial-spec/specs/<slug>/middleware-candidates.json` (full only; lightweight advisory)
 - Decision journal entries in session detail file
 - Architecture taxonomy in session detail file
 - `phase4_bootstrap` in session detail file
@@ -1100,7 +1100,7 @@ Phase 4 may only mutate these session detail file keys:
 
 Phase 4 must NOT mutate: `requirements_summary`, `roadmap_path`, `debate_state`, `completed_work`, `fizzy_card_id` (or legacy `trello_card_id`), or any key not listed above.
 
-**File artifacts** (written to `specs/<slug>/`, not session state):
+**File artifacts** (written to `.adversarial-spec/specs/<slug>/`, not session state):
 
 | Artifact | Mutation Rule |
 |----------|--------------|
@@ -1110,7 +1110,7 @@ Phase 4 must NOT mutate: `requirements_summary`, `roadmap_path`, `debate_state`,
 | `middleware-candidates.json` | Replace atomically (non-skip only) |
 | `tests-pseudo.md` | Upsert between `<!-- P4_INVARIANT_TESTS_START -->` and `<!-- P4_INVARIANT_TESTS_END -->` markers |
 
-All file writes use temp-file + atomic rename. No in-place mutation. **Temp files must be created in the same directory as the target** (e.g., `specs/<slug>/.tmp.<filename>.<pid>`) to guarantee single-filesystem rename atomicity. Never write temp files to `/tmp` or any other mount point.
+All file writes use temp-file + atomic rename. No in-place mutation. **Temp files must be created in the same directory as the target** (e.g., `.adversarial-spec/specs/<slug>/.tmp.<filename>.<pid>`) to guarantee single-filesystem rename atomicity. Never write temp files to `/tmp` or any other mount point.
 
 **Artifact set staging:** Phase 4 writes multiple artifacts that must be consistent. To prevent partial-write inconsistency (crash between writing `target-architecture.md` and `architecture-invariants.json`), use a staging protocol:
 1. Write all artifacts to temp files in the target directory
@@ -1206,9 +1206,9 @@ Phase 4's own operational security (not the target system being architected):
 
 Phase 4 depends on two external contracts that it consumes but does not own. These are specified here so an implementor does not need to reverse-engineer them from other phase docs.
 
-### Roadmap Manifest (`specs/<slug>/manifest.json` or `roadmap/manifest.json`)
+### Roadmap Manifest (`.adversarial-spec/specs/<slug>/roadmap/manifest.json` or `.adversarial-spec/specs/<slug>/manifest.json`)
 
-Phase 4 reads the roadmap manifest and normalizes it into an internal `normalized_roadmap` record. The manifest location is resolved from session pointers: `roadmap_path` in session detail, then `specs/<slug>/roadmap/manifest.json`, then `specs/<slug>/manifest.json`.
+Phase 4 reads the roadmap manifest and normalizes it into an internal `normalized_roadmap` record. The manifest location is resolved from session pointers: `roadmap_path` in session detail, then `.adversarial-spec/specs/<slug>/roadmap/manifest.json`, then `.adversarial-spec/specs/<slug>/manifest.json`.
 
 **Supported manifest shapes:**
 
@@ -1280,12 +1280,13 @@ Phase 4 invokes `debate.py critique` as a subprocess during the debate step (§9
 **Invocation:**
 
 ```bash
-cat specs/<slug>/target-architecture.md | \
+cat .adversarial-spec/specs/<slug>/target-architecture.md | \
   uv run python ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
   --models MODEL_LIST \
   --doc-type architecture \
   --round N \
-  --context specs/<slug>/spec-draft-latest.md \
+  --json \
+  --context .adversarial-spec/specs/<slug>/spec-draft-vN.md \
   $CONTEXT_FLAGS
 ```
 
@@ -1298,23 +1299,30 @@ cat specs/<slug>/target-architecture.md | \
 - **`$CONTEXT_FLAGS`:** Optional additional context flags (e.g., `--codex-reasoning` for deeper analysis)
 
 **Output:**
-- **stdout:** JSON array of critique objects, one per model:
+- **stdout:** JSON object when `--json` is passed:
   ```json
-  [
-    {
-      "model": "string (model identifier)",
-      "agreed": "boolean (true = no critiques, false = has critiques)",
-      "critiques": ["... (structured critique objects, schema varies by model)"],
-      "response": "string (full text response including revised spec if agreed=false)"
-    }
-  ]
+  {
+    "all_agreed": "boolean",
+    "round": "integer",
+    "doc_type": "architecture",
+    "models": ["string"],
+    "results": [
+      {
+        "model": "string (model identifier)",
+        "agreed": "boolean (true = no critiques, false = has critiques)",
+        "response": "string (full text response)",
+        "spec": "string | null",
+        "error": "string | null"
+      }
+    ]
+  }
   ```
 - **stderr:** Progress logging, model invocation status
 - **Exit codes:** `0` = success (critiques returned), `1` = model invocation failure, `2` = invalid arguments
 
 **Timeout:** The subprocess may run for several minutes per model. Phase 4 should not impose a hard timeout shorter than 10 minutes per model. On timeout or exit code ≠ 0, halt with a descriptive error — do not silently skip the debate round.
 
-**Output handling:** Phase 4 reads the JSON array from stdout, saves it to `.adversarial-spec-checkpoints/` as `<session_id>-round-N-critiques.json`, and synthesizes the critiques into the next spec version. If all models return `agreed: true`, debate has converged.
+**Output handling:** Because the invocation includes `--json`, Phase 4 may parse the JSON object from stdout and synthesize the next draft from `results[]`. `debate.py` also auto-saves `.adversarial-spec-checkpoints/<session_id>-round-N-critiques.json` via `save_critique_responses()`, so Phase 4 must not duplicate that write. If `--json` is removed, treat stdout as human-readable text and rely on the auto-saved critique file for machine-readable recovery.
 
 ---
 
