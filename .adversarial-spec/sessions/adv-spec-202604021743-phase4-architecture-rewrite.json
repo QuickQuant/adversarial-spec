@@ -2,10 +2,11 @@
   "session_id": "adv-spec-202604021743-phase4-architecture-rewrite",
   "context_name": "Phase 4 Architecture Rewrite",
   "current_phase": "finalize",
-  "current_step": "Wired orphaned debate.py features into pipeline, fixed dead medal system, moved severity assessment to Phase 4 eval",
+  "current_step": "v17 finalized — CONS/SCOPE/TRACE guardrails passed, awaiting execution transition",
   "created_at": "2026-04-02T17:43:00Z",
-  "updated_at": "2026-04-09T19:55:06Z",
+  "updated_at": "2026-04-10T07:20:00Z",
   "trello_card_id": "69cebd6811e103656ffbde6d",
+  "fizzy_card_id": "211",
   "requirements_summary": {
     "goal": "Rewrite Phase 4 (Target Architecture) of the adversarial-spec workflow to add cross-cutting concern guidance, context-aware modes (greenfield/brownfield feature/brownfield debug), architectural invariants, and expanded dimension lists",
     "preplan_path": ".adversarial-spec/specs/phase4-architecture-rewrite/preplan.md",
@@ -207,11 +208,51 @@
       "time": "2026-04-09T19:55:06Z",
       "event": "Checkpoint saved: orphaned-features-wired-medal-system-fixed.",
       "type": "checkpoint"
+    },
+    {
+      "time": "2026-04-10T05:27:03Z",
+      "event": "Synthesized v15 (roadmap normalization + fingerprint fix + framework_adapter deferred). Round 13 guardrails running. Tests-spec updated with 15 new test cases.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-04-10T05:27:03Z",
+      "event": "Checkpoint saved: v15-round13-running-overnight-mode.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-04-10T05:33:16Z",
+      "event": "Context about to compact",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-04-10T05:33:16Z",
+      "event": "Checkpoint saved: pre-compaction-auto-checkpoint.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-04-10T07:00:00Z",
+      "event": "Resumed post-compaction. Round 13 re-run: Gemini Flash (4 critiques on non-web categories), Codex xhigh timeout at 1800s. v16 synthesized with non-web surfaces + extended dry_run_check_id enum + TodoWrite stage/publish step + schema_ref in middleware.",
+      "type": "debate"
+    },
+    {
+      "time": "2026-04-10T07:05:00Z",
+      "event": "Round 14: Codex CLI exit code 1 (not timeout), Gemini Flash 3 polish critiques. v17 synthesized: observability mandate for CLI/data_stream, linked_goals in middleware, non-web matrix column constraint. Debate closed at round 14 (past 5-round hard stop).",
+      "type": "debate"
+    },
+    {
+      "time": "2026-04-10T07:15:00Z",
+      "event": "CONS/SCOPE/TRACE guardrails run manually by Claude (Codex CLI flaky). CONS: 3 fixes (fingerprint schema comment, TodoWrite gate markers, fizzy_card_id reference). SCOPE: no drift. TRACE: US-1/US-2/US-3 all covered.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-04-10T07:20:00Z",
+      "event": "Spec finalized v17 (1481 lines + 448 test lines). Ready for finalize -> execution transition.",
+      "type": "artifact"
     }
   ],
-  "completed_work": "Card 189 (Wire Orphaned Features): (1) Wired adversary-stats, adversary-versions, medal-leaderboard into 05-gauntlet.md as required pre/post-gauntlet steps. (2) Fixed medal similarity threshold 0.3\u21920.10 (old was unreachable, max observed 0.289). (3) Moved severity assessment from attack prompt (Phase 1) to eval prompt (Phase 4) \u2014 root cause of 99.2% medium severity was CLI models never asked for severity. (4) Added severity field to Evaluation dataclass with fallback for legacy runs. (5) Deprecated export-tasks. (6) Fixed Fizzy board ID in CLAUDE.md. (7) Committed large accumulated delta (112 files) from Apr 2-9 sessions. 3 commits total: d346f01, 64d880b, faa9423.",
-  "next_action": "Next gauntlet run will produce real severity distribution and medal awards. Consider running adversary-stats to view 138 runs of historical data. Card 189 can be closed on Fizzy.",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202604091955-orphaned-features-wired-medal-system-fixed.md",
+  "completed_work": "Auto-saved before compaction",
+  "next_action": "Resume in new conversation",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202604100643-pre-compaction-auto-checkpoint.md",
   "do_not_ask": [],
   "status": "active",
   "extended_state": {

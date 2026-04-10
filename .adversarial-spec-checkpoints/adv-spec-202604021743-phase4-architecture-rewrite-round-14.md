@@ -1,10 +1,6 @@
-# Phase 4: Target Architecture — Spec Final v17
+# Phase 4: Target Architecture — Spec Draft v16
 
-> Finalize pass (v17 final, Claude): CONS/SCOPE/TRACE guardrails completed manually by Claude (Codex CLI flaky — timeout at 1800s in round 13, exit code 1 in round 14). CONS fixes: (1) Bootstrap `architecture_fingerprint` schema comment aligned with freeze-time lifecycle; (2) §1 TodoWrite [GATE] markers reconciled with §0 Human Gate Protocol's four gates (added explicit `draft_review` and `final_approval` TodoWrite items, removed [GATE] from non-gate steps dry-run and stage-and-publish); (3) §15 session mutation allowlist updated to reference `fizzy_card_id` (current) with `trello_card_id` as legacy. SCOPE: all content traces to the 5 roadmap feature groups (cross-cutting-concern-guidance, context-aware-modes, architectural-invariants, expanded-dimension-lists, expanded-dry-run-questions); no drift past non-goals (no rewrite from scratch, no downstream tool implementation — middleware-creator explicitly unregistered). TRACE: US-1/US-2/US-3 all covered by TC-1.x/TC-2.x/TC-3.x; supplementary tests TC-4 through TC-13 exercise spec-internal contracts that emerged during debate. Spec frozen for finalize → execution transition.
-
-> Round 15 synthesis (v16→v17, Gemini Flash): Mandated `observability` check for CLI and Data Pipeline surfaces in §10.5 — exit codes and stream signals ARE the observability mechanism for non-web orchestrators (R14-G1). Added `linked_goals` to `middleware-candidates.json` schema for explicit traceability to high-level NFRs (R14-G2). Added explicit constraint in §6.3 that the concern matrix for non-web categories (`cli`, `library`, `data-pipeline`) must use the category-native surfaces as columns (R14-G3). Debate closed at round 14 — past the 3-round default and the 5-round hard-stop threshold — these polish items land as the final iteration before finalize.
->
-> Round 14 synthesis (v15→v16, Gemini Flash): Expanded `surface_id` enum to include `cli_command`, `public_api`, `data_stream` so non-web categories (cli, library, data-pipeline) have concrete surfaces instead of falling to "other" (R13-G1). Expanded `dry_run_check_id` enum with `cli_parsing`, `idempotency`, `api_compatibility`, `data_integrity` (R13-G2). Added "Stage and publish artifacts atomically [GATE]" step to §1 TodoWrite checklist before "Record decisions" (R13-G3). Extended `middleware-candidates.json` input/output schema with optional `schema_ref` for structured type references (R13-G4).
+> Round 14 synthesis (v15→v16, Gemini Flash): Expanded `surface_id` enum to include `cli_command`, `public_api`, `data_stream` so non-web categories (cli, library, data-pipeline) have concrete surfaces instead of falling to "other" (R13-G1). Expanded `dry_run_check_id` enum with `cli_parsing`, `idempotency`, `api_compatibility`, `data_integrity` (R13-G2). Added "Stage and publish artifacts atomically [GATE]" step to §1 TodoWrite checklist before "Record decisions" (R13-G3). Extended `middleware-candidates.json` input/output schema with optional `schema_ref` for structured type references (R13-G4). Codex xhigh timed out at 1800s attempting round 13 critique; Gemini Flash was the surviving voice for this round — a Codex re-run at `high` reasoning will be attempted before finalize.
 >
 > Round 13 synthesis (v14→v15): Fixed fingerprint state machine bug — compute `architecture_fingerprint` into bootstrap BEFORE dry-run, then inject into artifact headers at publish (R12-C2). Added roadmap normalization layer supporting v1 (milestones[].user_stories[]) and v2 (top-level user_stories[]) manifest shapes, with P4_UNSUPPORTED_ROADMAP_SHAPE halt (R12-C1). Deferred framework_adapter + flow_kind to Open Questions — single-agent execution means prose guardrails are the right abstraction (R12-C3).
 >
@@ -162,7 +158,7 @@ The bootstrap is a progressively-filled record in the session detail file. It is
   "session_id": "string (required)",
   "spec_slug": "string (required)",
   "input_fingerprint": "sha256 (required, see Fingerprints below)",
-  "architecture_fingerprint": "sha256 | null (computed at freeze, after framework_profile + execution_surfaces + active_invariants + research_findings exist and debate has converged)",
+  "architecture_fingerprint": "sha256 | null (set after framework profile + invariants exist)",
   "phase_mode": "skip | lightweight | full (required, set at Step 2)",
   "context_mode": "greenfield | brownfield_feature | brownfield_debug (required, set at Step 3)",
   "artifact_paths": {
@@ -348,10 +344,8 @@ TodoWrite([
   {content: "Define architectural invariants (markdown + JSON)", status: "pending", activeForm: "Defining invariants"},
   {content: "Upsert invariant-derived tests to tests-pseudo.md", status: "pending", activeForm: "Upserting invariant tests"},
   {content: "Debate architecture (full mode only)", status: "pending", activeForm: "Debating architecture"},
-  {content: "Draft review — present draft for user approval [GATE]", status: "pending", activeForm: "Awaiting draft review approval"},
-  {content: "Dry-run per phase_mode scope", status: "pending", activeForm: "Running dry-run verification"},
-  {content: "Final approval — present dry-run results for user approval [GATE]", status: "pending", activeForm: "Awaiting final approval"},
-  {content: "Stage and publish artifacts atomically", status: "pending", activeForm: "Staging and publishing artifacts"},
+  {content: "Dry-run per phase_mode scope [GATE]", status: "pending", activeForm: "Running dry-run verification"},
+  {content: "Stage and publish artifacts atomically [GATE]", status: "pending", activeForm: "Staging and publishing artifacts"},
   {content: "Record decisions and dry-run results in session", status: "pending", activeForm: "Recording decisions"},
 ])
 ```
@@ -666,14 +660,6 @@ After assessing all concerns, produce a matrix in `target-architecture.md`:
 
 Each cell names: primitive, enforcement owner, bypass risk, and invariant IDs.
 
-**Category-native columns (non-web projects):** The example matrix above uses web-oriented surfaces. For non-web projects, the matrix columns MUST be the category-native surfaces declared in §4.2, not the web defaults. Specifically:
-- `architecture_taxonomy.category == "cli"`: columns must include `cli_command` and any web surfaces the CLI also exposes (e.g., a CLI with an embedded HTTP admin port uses both `cli_command` and `request_response`)
-- `architecture_taxonomy.category == "library"`: columns must include `public_api`; omit web surfaces unless the library bundles a server
-- `architecture_taxonomy.category == "data-pipeline"`: columns must include `data_stream` and typically `scheduled_work` / `background_job` depending on trigger model
-- Mixed projects declare the union of applicable surfaces as columns
-
-This prevents "web-brain bias" where a CLI project forces its ingress through `request_response` cells and leaves cli-specific concerns unassessed.
-
 **Why unconditional:** Even frameworks with a single enforcement model can have surfaces that slip through. The matrix forces explicit coverage declaration.
 
 ### 6.4 Concern Interactions Checklist
@@ -791,7 +777,6 @@ An interface qualifies as a middleware candidate when ALL of:
       "linked_invariants": ["INV-NNN (required, ≥1)"],
       "linked_user_stories": ["US-X (required, ≥1)"],
       "complexity_estimate": "trivial | moderate | complex (required)",
-      "linked_goals": ["G-X (required, ≥1, from normalized_roadmap.goals)"],
       "rationale": "why this qualifies as middleware (required)"
     }
   ]
@@ -802,7 +787,7 @@ An interface qualifies as a middleware candidate when ALL of:
 - Empty `candidates: []` is valid — not every spec has middleware
 - `architecture_fingerprint` must match the parent `target-architecture.md` — stale candidates are invalid
 - Dependency ordering: if MW-002 `depends_on` MW-001, MW-001 must be implemented first. The middleware-creator phase consumes this ordering to sequence Fizzy cards.
-- Each candidate must link to ≥1 invariant, ≥1 user story, AND ≥1 goal (traceability to user features + high-level NFRs). Goal links prevent middleware from being "over-engineered" without a grounded product rationale
+- Each candidate must link to ≥1 invariant and ≥1 user story (traceability)
 - Candidates identified here feed directly into `pipeline_create_middleware_fanout` during the middleware-creator phase — the `id`, `name`, `purpose`, `inputs`, `outputs`, `sync_async`, and `depends_on` fields map 1:1 to Fizzy card metadata
 - `schema_ref` is optional but recommended for typed languages (TypeScript, Python typed, Go, Rust): a repo-relative path to the structural type definition, optionally anchored to a specific type (`path#TypeName`). When present, the middleware-creator phase can resolve the type directly instead of re-deriving it from the `type` string
 
@@ -983,9 +968,9 @@ Required checks per archetype are derived from the surface type and active conce
 - **Any mutating surface:** add `sot_owner`; if cached, add `cache_consistency`
 - **Trust-boundary surfaces** (when security concern is triggered): add `security_boundary`
 - **Async/integration surfaces** (`background_job`, `scheduled_work`, `outbound_integration`, `webhook`): add `delivery_semantics`
-- **CLI surfaces** (`cli_command`): add `cli_parsing` (argv/flag/env precedence verified), `idempotency` (re-running with the same flags on the same state is safe or explicitly blocked), and `observability` (exit codes and stdout/stderr signals are deterministic, documented, and conform to the spec — these are the non-web analog of HTTP status + response body and are the primary surface orchestrators and CI systems observe)
+- **CLI surfaces** (`cli_command`): add `cli_parsing` (argv/flag/env precedence verified) and `idempotency` (re-running with the same flags on the same state is safe or explicitly blocked)
 - **Library surfaces** (`public_api`): add `api_compatibility` (exported signatures, types, and semver promises checked against previous fingerprint)
-- **Data pipeline surfaces** (`data_stream`): add `data_integrity` (schema/record contract and write-once or upsert semantics verified), `idempotency` (replay of the same input batch produces the same sink state), and `observability` (per-batch success/failure signals, records-in/out counts, and DLQ/poison-pill routing are emitted to the orchestrator surface)
+- **Data pipeline surfaces** (`data_stream`): add `data_integrity` (schema/record contract and write-once or upsert semantics verified) and `idempotency` (replay of the same input batch produces the same sink state)
 
 An archetype passes only if:
 - Every `required_check` is present in `checks_run`
@@ -1115,7 +1100,7 @@ Phase 4 may only mutate these session detail file keys:
 | `current_step` | Update at each gate |
 | `updated_at` | Update on every mutation |
 
-Phase 4 must NOT mutate: `requirements_summary`, `roadmap_path`, `debate_state`, `completed_work`, `fizzy_card_id` (or legacy `trello_card_id`), or any key not listed above.
+Phase 4 must NOT mutate: `requirements_summary`, `roadmap_path`, `debate_state`, `completed_work`, `trello_card_id`, or any key not listed above.
 
 **File artifacts** (written to `specs/<slug>/`, not session state):
 
