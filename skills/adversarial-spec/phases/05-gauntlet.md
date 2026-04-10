@@ -326,7 +326,11 @@ Every adversary gets a feature briefing (~800 tokens):
 
 - **Architecture primer** — include `.architecture/primer.md` in full when present. If no architecture docs exist, note this as a gap.
 - **Architecture excerpt** — relevant subsection of `.architecture/overview.md` (NOT the whole file) when the adversary needs deeper system narrative.
-- **Target Architecture** — if `specs/<slug>/target-architecture.md` exists (from Phase 4), include it in full. This is the primary architecture context for ALL adversaries. If missing (Phase 4 skipped or legacy session), note: "No target architecture available — architecture-level concerns may be underrepresented."
+- **Target Architecture** — if `.adversarial-spec/specs/<slug>/target-architecture.md` exists (from Phase 4), include it in full. This is the primary architecture context for ALL adversaries. The briefing must explicitly surface:
+  - framework profile + execution surface map from `04-target-architecture.md`
+  - concern + triggered-concern decisions and the concern x surface matrix from `04-target-architecture.md` §6 (normative source)
+  - invariant set from `04-target-architecture.md` §8 (normative source)
+  If missing (Phase 4 skipped or legacy session), note: "No target architecture available — architecture-level concerns may be underrepresented."
 - **Files in blast zone** — file paths with one-line descriptions of what each does
 - **Recent git activity** — last 5 commits touching blast zone files
 
@@ -335,6 +339,15 @@ Every adversary gets a feature briefing (~800 tokens):
 #### 3. Assemble Per-Adversary Supplements
 
 Each adversary has a specific lens. Give them ammunition for that lens:
+
+**Phase 4 concern-routing rule:** `04-target-architecture.md` §6 is the normative source for concern definitions, triggered concerns, and the concern x surface matrix. `04-target-architecture.md` §8 is the normative source for invariants. Use those sections to route emphasis by adversary:
+
+| Adversary | Phase 4 concern emphasis |
+|-----------|--------------------------|
+| **PARA** | Enforcement, auth, security, and trust-boundary concerns from §6 |
+| **BURN** | Observability and realtime concerns from §6, plus the invariants in §8 that protect recovery and delivery semantics |
+| **LAZY** (legacy alias now routed to **MINI**) | Enforcement-bypass opportunities from the §6 concern x surface matrix; use §8 invariants to show where shortcuts would violate the architecture |
+| **COMP** | Source-of-truth and brownfield compatibility concerns from §6, cross-checked against §8 invariants guarding existing-system behavior |
 
 | Adversary | Supplement | Budget |
 |-----------|-----------|--------|
