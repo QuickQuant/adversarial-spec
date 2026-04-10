@@ -408,11 +408,22 @@ Based on `current_phase` from session state, read the appropriate file:
 | target-architecture | `~/.claude/skills/adversarial-spec/phases/04-target-architecture.md` |
 | gauntlet | `~/.claude/skills/adversarial-spec/phases/05-gauntlet.md` |
 | finalize | `~/.claude/skills/adversarial-spec/phases/06-finalize.md` |
+| middleware-creator (optional) | `~/.claude/skills/adversarial-spec/phases/middleware-creator.md` — runs only after `finalize` and only if `middleware-candidates.json` exists from Phase 4. See note below. |
 | execution | `~/.claude/skills/adversarial-spec/phases/07-execution.md` |
 | implementation | `~/.claude/skills/adversarial-spec/phases/08-implementation.md` |
 | complete | Ask user: "Start new work? Or continue with follow-up?" |
 
 **Read the file for your current phase using the Read tool.** Don't load all phases at once.
+
+**Router shape (canonical order):**
+
+```
+requirements → roadmap → debate → target-architecture → gauntlet → finalize → middleware-creator? → execution → implementation → complete
+```
+
+`middleware-creator?` is an **optional phase** slotted between `finalize` and `execution`. It runs only when Phase 4 produced a `middleware-candidates.json` that the user chose to materialize into shared infrastructure before the execution plan is generated. When the candidate list is empty or the user skips, the router transitions `finalize → execution` directly — the optional phase is a no-op.
+
+**Prerequisite note:** This router slot is currently **passive**. The phase document at `~/.claude/skills/adversarial-spec/phases/middleware-creator.md` is not authored by Phase 4 Architecture Rewrite v17 (per its explicit non-goals). Until that phase doc exists, treat `middleware-creator?` as a reserved name: the router MUST NOT dispatch into it, and agents encountering `current_phase: "middleware-creator"` in a session should fall back to `finalize → execution` flow with a warning. No phase dispatch logic changes ship with v17 — only this documentation of the intended router shape.
 
 ### User Language → Phase Mapping
 
