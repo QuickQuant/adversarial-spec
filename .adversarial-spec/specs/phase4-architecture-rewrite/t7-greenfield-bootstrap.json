@@ -1,0 +1,116 @@
+{
+  "schema_version": "1.0",
+  "status": "drafting",
+  "session_id": "t7-greenfield-smoke-run",
+  "spec_slug": "t7-greenfield-smoke",
+  "input_fingerprint": "4250f9b086ecdeb7ac72b0f5eed151171f7b66f2202987ffe4fba94570ff939b",
+  "architecture_fingerprint": null,
+  "phase_mode": "full",
+  "context_mode": "greenfield",
+  "artifact_paths": {
+    "target_architecture": ".adversarial-spec/specs/t7-greenfield-smoke/target-architecture.md",
+    "invariants": ".adversarial-spec/specs/t7-greenfield-smoke/architecture-invariants.json",
+    "tests_pseudo": ".adversarial-spec/specs/t7-greenfield-smoke/tests-pseudo.md",
+    "dry_run_results": ".adversarial-spec/specs/t7-greenfield-smoke/dry-run-results.json",
+    "middleware_candidates": ".adversarial-spec/specs/t7-greenfield-smoke/middleware-candidates.json"
+  },
+  "framework_profile": {
+    "profile_type": "single",
+    "category": "web-app",
+    "framework": "Next.js App Router",
+    "framework_version": "16.x",
+    "runtime": "node",
+    "deployment_target": "serverless",
+    "enabled_features": [
+      "serverActions"
+    ],
+    "subprofiles": {
+      "rendering_model": "RSC+streaming",
+      "data_access_model": "DAL/repository",
+      "mutation_model": "server actions",
+      "cache_model": "use cache + updateTag",
+      "error_model": "error boundaries + route handler exceptions"
+    },
+    "enforcement_model": "Authoritative authn in DAL and route handlers; validation at mutation entrypoints"
+  },
+  "execution_surfaces": [
+    "request_response",
+    "mutation_entrypoint"
+  ],
+  "roadmap_ref": {
+    "goals": [
+      "G-1 Create workspace",
+      "G-2 Invite collaborator"
+    ],
+    "non_goals": [
+      "NG-1 No external integrations in v1"
+    ],
+    "user_stories": [
+      "US-1 Create workspace",
+      "US-2 Invite collaborator",
+      "US-3 Add note item"
+    ]
+  },
+  "current_gate": null,
+  "blocking_error": null,
+  "started_at": "2026-04-10T08:50:30Z",
+  "updated_at": "2026-04-10T08:50:30Z",
+  "completed_at": null,
+  "story_alignment": [
+    {
+      "story_id": "US-1",
+      "goal_ids": [
+        "G-1"
+      ],
+      "conflicting_non_goal_ids": [],
+      "verdict": "aligned",
+      "rationale": "Workspace creation is directly required by the first goal."
+    },
+    {
+      "story_id": "US-2",
+      "goal_ids": [
+        "G-2"
+      ],
+      "conflicting_non_goal_ids": [],
+      "verdict": "aligned",
+      "rationale": "Inviting a collaborator maps directly to the second goal."
+    },
+    {
+      "story_id": "US-3",
+      "goal_ids": [
+        "G-1"
+      ],
+      "conflicting_non_goal_ids": [],
+      "verdict": "aligned",
+      "rationale": "Adding a note item is an in-workspace behavior that supports the workspace goal without conflicting with the v1 non-goal."
+    }
+  ],
+  "research_findings": [],
+  "artifact_publish_state": "none",
+  "gate_approvals": {
+    "scale_check": {
+      "status": "approved",
+      "recommended": "full",
+      "final_value": "full",
+      "decided_by": "auto",
+      "decided_at": "2026-04-10T08:50:30Z"
+    },
+    "context_mode": {
+      "status": "approved",
+      "recommended": "greenfield",
+      "final_value": "greenfield",
+      "decided_by": "auto",
+      "decided_at": "2026-04-10T08:50:30Z"
+    },
+    "draft_review": {
+      "status": "pending",
+      "decided_by": "human",
+      "decided_at": null
+    },
+    "final_approval": {
+      "status": "pending",
+      "decided_by": "human",
+      "decided_at": null
+    }
+  }
+}
