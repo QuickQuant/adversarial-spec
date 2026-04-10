@@ -49,6 +49,23 @@ Generate `tests-pseudo.md` alongside the roadmap:
 
 **`tests-pseudo.md` is the canonical source of truth for tests.** `roadmap/manifest.json` links to it via path but does not duplicate test content.
 
+**Phase 4 Invariant Tests — Upsert Protocol (CRITICAL):**
+
+Phase 4 (target-architecture) injects invariant-derived test cases into `tests-pseudo.md` via a marker-delimited upsert block:
+
+```
+<!-- P4_INVARIANT_TESTS_START -->
+... invariant test cases, regenerated each Phase 4 run ...
+<!-- P4_INVARIANT_TESTS_END -->
+```
+
+**Rules:**
+- When Phase 4 runs (or reruns), the entire block between `<!-- P4_INVARIANT_TESTS_START -->` and `<!-- P4_INVARIANT_TESTS_END -->` is **replaced atomically**, not appended. Reruns MUST NOT produce duplicate or stacking invariant test entries.
+- Content outside the marker block (the user-story tests authored in this phase) is **never touched** by Phase 4.
+- If the markers are missing, Phase 4 appends a new block at the end of the file — but on the *next* run it will use the marker boundaries for replacement.
+- Roadmap authors SHOULD leave the markers in place once they appear; deleting them forces Phase 4 to re-append.
+- The **normative source** for the marker protocol and upsert semantics is [`04-target-architecture.md` §8.3](./04-target-architecture.md). Do not redefine the contract here.
+
 Add TodoWrite item after "Draft roadmap": `{content: "Generate test pseudocode for user stories", status: "pending", activeForm: "Generating test pseudocode"}`
 
 ---
