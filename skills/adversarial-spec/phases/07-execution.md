@@ -111,6 +111,32 @@ If `.architecture/` does NOT exist:
 ls .adversarial-spec/specs/*/target-architecture.md 2>/dev/null | head -1
 ```
 
+**Staleness check (REQUIRED when target architecture exists):**
+
+Phase 4 records a `phase_artifacts` block in the session detail file with `spec_fingerprint` (SHA256 of the spec file at the time Phase 4 published) and `architecture_fingerprint`. Before consuming the target architecture, Phase 7 MUST verify that the spec has not drifted:
+
+1. Read `phase_artifacts.spec_fingerprint` from the session detail file
+2. Compute the current spec's SHA256 and compare
+3. **If fingerprints match:** target architecture is fresh — proceed with consumption
+4. **If fingerprints do NOT match:** target architecture is stale
+   - Block with a clear message: "Spec has changed since Phase 4 published target architecture (old fingerprint `<hash>`, current `<hash>`). Rerun Phase 4 to refresh target-architecture.md, middleware-candidates.json, and invariant set, or explicitly override."
+   - User can override with `--ignore-stale-architecture`, in which case log the override to the session journey and proceed with a warning banner in the execution plan
+5. Normative source for the fingerprint contract: [`04-target-architecture.md` §7 (Required Headers)](./04-target-architecture.md) and [`04-target-architecture.md` §15 (Session Mutation Contract)](./04-target-architecture.md). Phase 7 MUST NOT mutate `architecture_fingerprint` or `spec_fingerprint` — those are set by Phase 4 and read-only here.
+
+**Consume middleware candidates (when present):**
+
+If Phase 4 identified shared middleware (cross-cutting code surfaces that multiple tasks would otherwise duplicate), it publishes `middleware-candidates.json` alongside the target architecture:
+
+```bash
+ls .adversarial-spec/specs/*/middleware-candidates.json 2>/dev/null | head -1
+```
+
+Consumption depends on depth:
+- **Lightweight spec (simple/medium tier):** Advisory. Surface candidates in the plan's "Uncovered Concerns / Advisory" section so the user can opt-in. Do not auto-create Wave 0 tasks for middleware unless the user asks.
+- **Full spec (complex tier or any tier with `bootstrap_steps`):** Normative. Each candidate in `middleware-candidates.json` with `linked_goals` pointing at roadmap goals MUST become a Wave 0 task ahead of the feature tasks that would otherwise reimplement the same surface. The middleware task inherits the candidate's `linked_goals` as acceptance criteria anchors.
+
+If `middleware-candidates.json` is missing entirely (Phase 4 found no shared surfaces), skip this step — not every project needs middleware.
+
 If found, extract cross-cutting patterns and add an Architecture Spine section to the execution plan:
 
 ```markdown
@@ -169,6 +195,20 @@ For each concern in the gauntlet JSON, match its `section_refs` to your tasks. W
 - Add the concern's `detection` strategy as a test case
 - Note the concern severity - critical/high concerns make the task higher risk
 
+**Link target-architecture invariants and surfaces to tasks (when Phase 4 ran):**
+
+Each task's metadata MUST reference the invariant IDs and surface scope it touches. Read [`04-target-architecture.md` §8 (invariants)](./04-target-architecture.md) and §6 (concern x surface matrix), then for every task add:
+- `invariant_refs`: list of invariant IDs (e.g. `INV-7`, `INV-12`) whose protection the task's code paths must preserve. An invariant applies to a task when any of its enforcing surfaces, data flows, or guarded modules intersect the task's declared file scope.
+- `surface_scope`: list of surface IDs from §6 canonical enums (`cli_command`, `public_api`, `data_stream`, etc.) that the task exposes or mutates.
+
+Surface the linkage in the task entry so reviewers can audit coverage:
+```markdown
+- **Invariants touched:** INV-3, INV-7, INV-12
+- **Surfaces:** public_api, data_stream
+```
+
+**Invariant coverage check:** After decomposition, every invariant listed in §8 MUST be referenced by at least one task. If an invariant has no task, either it is out of scope (document why in the "Uncovered Concerns" section) or you missed a task — revisit decomposition.
+
 ---
 
 ### Step 4: Test Strategy Assignment
@@ -178,6 +218,7 @@ Assign test-first or test-after to each task based on risk:
 **Use test-first when:**
 - Task has 3+ gauntlet concerns linked to it
 - Any linked concern is critical or high severity
+- **Task has 3+ `invariant_refs` from `04-target-architecture.md` §8** — high-invariant-density tasks are inherently high-risk and MUST be test-first regardless of concern count
 - Task involves security-sensitive logic
 - Task implements complex business rules
 - Task has external API integrations
