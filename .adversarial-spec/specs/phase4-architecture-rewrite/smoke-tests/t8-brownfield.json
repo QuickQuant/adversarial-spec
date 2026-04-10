@@ -1,0 +1,47 @@
+{
+  "task_id": "T8",
+  "scenario": "brownfield",
+  "timestamp": "2026-04-10T08:55:00Z",
+  "executor": "gemini-3-flash-preview",
+  "deployed_file": "/home/jason/.claude/skills/adversarial-spec/phases/04-target-architecture.md",
+  "deployed_commit": "fda7a98",
+  "scenario_1_brownfield_feature": {
+    "mode_selected": "brownfield_feature",
+    "blast_zone": [
+      "Authentication service files",
+      "Credential storage/database logic",
+      "Credential rotation scheduler/worker"
+    ],
+    "touched_surfaces": ["request_response", "scheduled_work", "mutation_entrypoint"],
+    "touched_concerns": [
+      "Identity, Session, and Authorization",
+      "Security and Trust Boundaries",
+      "Enforcement Points"
+    ],
+    "concern_fitness_verdict": "needs_extension",
+    "debt_flagged": true
+  },
+  "scenario_2_brownfield_debug": {
+    "mode_selected": "brownfield_debug",
+    "failed_concern": "Identity, Session, and Authorization",
+    "failed_surface": "request_response",
+    "local_vs_systemic_verdict": "systemic",
+    "invariant_gap_classification": "invariant existed but was violated (add enforcement)"
+  },
+  "ac_results": {
+    "AC1": {"pass": true, "evidence": "§3 defines brownfield_feature as 'Adding/improving feature in existing codebase'. §0 entry criteria requires .architecture/manifest.json (schema 2.0) and .architecture/primer.md"},
+    "AC2": {"pass": true, "evidence": "§12 drives classification: 1) Reading blast zone (primer.md/patterns), 2) Tracing entrypoints per affected surface, 3) Assessing concern fitness for touched concerns"},
+    "AC3": {"pass": true, "evidence": "§12.3/12.4 mandates assessment of 'adequate | needs_extension | missing | conflicts' and production of a matrix with existing primitive, adequacy verdict, debt interaction, proposed delta"},
+    "AC4": {"pass": true, "evidence": "§12.3: 'Existing debt flag: adequate but has now concern? Flag reinforcement risk.' §3: 'Must not reinforce known anti-patterns.'"},
+    "AC5": {"pass": true, "evidence": "§13 flow: identify failed concern/surface → local-vs-systemic decision (3-lines/instances/new-dev tests) → design/verify → dry-run (failing + sibling) → classify invariant gap"},
+    "AC6": {"pass": true, "evidence": "§22: 'Phase 7 must verify phase_artifacts.spec_fingerprint matches the current spec's fingerprint before consuming architecture artifacts. If mismatched, warn the user that architecture may be stale and offer to re-run Phase 4.'"}
+  },
+  "tc_results": {
+    "TC-2.2": {"pass": true, "note": "§2 includes 'Brownfield exception' note explicitly stating even small brownfield_debug may require 'full' mode"},
+    "TC-3.1": {"pass": true, "note": "§3 table and §0 prerequisites distinguish greenfield from brownfield via existing codebase vs no codebase triggers and required .architecture/ artifacts"},
+    "TC-3.2": {"pass": true, "note": "Spec uses a [GATE] in §3 and Step 5 of §0 ('Detect and confirm context_mode') to resolve ambiguity via interactive gate rather than specifying a 'winning' mode"}
+  },
+  "overall_verdict": "pass",
+  "blockers": [],
+  "summary": "Phase 4 document successfully supports brownfield_feature and brownfield_debug scenarios with explicit scoping rules, fitness assessments, and systemic-failure decision logic."
+}
