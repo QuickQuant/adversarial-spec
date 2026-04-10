@@ -119,11 +119,11 @@ Phase 4 records a `phase_artifacts` block in the session detail file with `spec_
 2. Compute the current spec's SHA256 and compare
 3. **If fingerprints match:** target architecture is fresh — proceed with consumption
 4. **If fingerprints do NOT match:** target architecture is stale
-   - Block with a clear message: "Spec has changed since Phase 4 published target architecture (old fingerprint `<hash>`, current `<hash>`). Rerun Phase 4 to refresh target-architecture.md, middleware-candidates.json, and invariant set, or explicitly override."
-   - User can override with `--ignore-stale-architecture`, in which case log the override to the session journey and proceed with a warning banner in the execution plan
+   - Block with a clear message: "Spec has changed since Phase 4 published target architecture (old fingerprint `<hash>`, current `<hash>`). Rerun Phase 4 to refresh target-architecture.md, middleware-candidates.json, and invariant set, or explicitly acknowledge the drift to continue."
+   - If the user explicitly acknowledges the drift (interactive confirmation or equivalent session-level override), log the acknowledgement to the session journey and proceed with a warning banner in the execution plan noting the known drift. No CLI flag for this is defined in v17 — the acknowledgement path is ad-hoc until a formal override is specified.
 5. Normative source for the fingerprint contract: [`04-target-architecture.md` §7 (Required Headers)](./04-target-architecture.md) and [`04-target-architecture.md` §15 (Session Mutation Contract)](./04-target-architecture.md). Phase 7 MUST NOT mutate `architecture_fingerprint` or `spec_fingerprint` — those are set by Phase 4 and read-only here.
 
-**Consume middleware candidates (when present):**
+**Consume middleware candidates (when present — advisory only in v17):**
 
 If Phase 4 identified shared middleware (cross-cutting code surfaces that multiple tasks would otherwise duplicate), it publishes `middleware-candidates.json` alongside the target architecture:
 
@@ -131,9 +131,10 @@ If Phase 4 identified shared middleware (cross-cutting code surfaces that multip
 ls .adversarial-spec/specs/*/middleware-candidates.json 2>/dev/null | head -1
 ```
 
-Consumption depends on depth:
-- **Lightweight spec (simple/medium tier):** Advisory. Surface candidates in the plan's "Uncovered Concerns / Advisory" section so the user can opt-in. Do not auto-create Wave 0 tasks for middleware unless the user asks.
-- **Full spec (complex tier or any tier with `bootstrap_steps`):** Normative. Each candidate in `middleware-candidates.json` with `linked_goals` pointing at roadmap goals MUST become a Wave 0 task ahead of the feature tasks that would otherwise reimplement the same surface. The middleware task inherits the candidate's `linked_goals` as acceptance criteria anchors.
+**Important:** [`04-target-architecture.md` §0](./04-target-architecture.md) declares that until the `middleware-creator` phase is registered in SKILL.md's router and authored, `middleware-candidates.json` is a **passive artifact with no active consumer**. The normative consumer is the middleware-creator phase, not Phase 7. In v17, Phase 7's role is strictly advisory:
+
+- **Every tier (simple, medium, complex):** Surface the candidates in the plan's "Uncovered Concerns / Advisory" section so the user can see what Phase 4 identified. Do NOT auto-create Wave 0 tasks from `middleware-candidates.json` — that materialization is reserved for the middleware-creator phase once it is registered and authored.
+- If the user explicitly asks Phase 7 to promote a candidate into a Wave 0 task, record it as a user-initiated decision in the session journey. The default remains "surface only".
 
 If `middleware-candidates.json` is missing entirely (Phase 4 found no shared surfaces), skip this step — not every project needs middleware.
 
