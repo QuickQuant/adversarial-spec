@@ -1,21 +1,22 @@
 {
   "schema_version": "1.3",
-  "active_session_id": "adv-spec-202604021743-phase4-architecture-rewrite",
-  "context_name": "Phase 4 Architecture Rewrite",
-  "current_phase": "complete",
-  "current_step": "All 8 tasks (T1-T8) Passed Test, swept to Completed-Unmapped. Release p4-20260410-fda7a98 deployed. Session card advanced to Completed-Unmapped.",
-  "next_action": "Session complete. Pop session stack or start new work.",
+  "active_session_id": null,
+  "context_name": null,
+  "current_phase": "idle",
+  "current_step": "No active session. All stacked sessions complete and archived.",
+  "next_action": "Start new spec or other work.",
   "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202604111906-phase4-architecture-rewrite-complete.md",
   "do_not_ask": [],
-  "updated_at": "2026-04-11T19:06:02Z",
-  "active_session": "adv-spec-202604021743-phase4-architecture-rewrite",
-  "active_session_file": ".adversarial-spec/sessions/adv-spec-202604021743-phase4-architecture-rewrite.json",
-  "session_stack": [
+  "updated_at": "2026-04-11T19:12:00Z",
+  "active_session": null,
+  "active_session_file": null,
+  "session_stack": [],
+  "completed_sessions": [
     "adv-spec-202604021743-phase4-architecture-rewrite",
     "adv-spec-202603211620-adversary-system-redesign",
     "adv-spec-202603230138-concern-remediation-plan",
     "adv-spec-202603201800-gauntlet-refactor-quota-burn",
     "adv-spec-202603051555-philosophy-phase-and-arch-persona"
   ],
-  "completed_work": "Phase 4 Architecture Rewrite v17: T1 rewrite 04-target-architecture.md, T2 invariant-upsert protocol in 02-roadmap.md, T3 gauntlet briefing refs, T4 Phase 7 invariant/middleware/staleness (advisory-only per spec \u00a70), T5 middleware-creator SKILL.md registration, T6 deploy with absolute-path backup, T7 greenfield smoke test (7/7 ACs 5/5 TCs), T8 brownfield smoke test (6/6 ACs 3/3 TCs). Multi-agent execution with Codex parallel worker and Gemini Flash reviews. Telegram notification sent."
+  "completed_work": "Phase 4 Architecture Rewrite v17: T1 rewrite 04-target-architecture.md, T2 invariant-upsert protocol in 02-roadmap.md, T3 gauntlet briefing refs, T4 Phase 7 invariant/middleware/staleness (advisory-only per spec §0), T5 middleware-creator SKILL.md registration, T6 deploy with absolute-path backup, T7 greenfield smoke test (7/7 ACs 5/5 TCs), T8 brownfield smoke test (6/6 ACs 3/3 TCs). Multi-agent execution with Codex parallel worker and Gemini Flash reviews. Telegram notification sent."
 }
