@@ -11,9 +11,9 @@ Hook Type: PreToolUse
 Matcher: Bash
 """
 
-import sys
 import json
 import re
+import sys
 
 # Patterns that indicate pip package installation
 PIP_PATTERNS = [

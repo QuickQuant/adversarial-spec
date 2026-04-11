@@ -14,9 +14,9 @@ Hook Type: PreToolUse
 Matcher: Bash
 """
 
-import sys
 import json
 import re
+import sys
 from pathlib import Path
 
 # =============================================================================
@@ -150,7 +150,7 @@ def main():
 
     if has_always_block:
         # Always block recursive/wildcard/bulk operations
-        print(f"🛑 DANGEROUS FILESYSTEM COMMAND - BLOCKED", file=sys.stderr)
+        print("🛑 DANGEROUS FILESYSTEM COMMAND - BLOCKED", file=sys.stderr)
         print("", file=sys.stderr)
 
         for cmd, message, severity in violations:
@@ -165,7 +165,7 @@ def main():
     elif has_mode_dependent:
         if MODE == "strict":
             # Block in strict mode
-            print(f"🛑 FILE DELETION - BLOCKED [STRICT MODE]", file=sys.stderr)
+            print("🛑 FILE DELETION - BLOCKED [STRICT MODE]", file=sys.stderr)
             print("", file=sys.stderr)
 
             for cmd, message, severity in violations:
@@ -177,7 +177,7 @@ def main():
             sys.exit(2)
         else:
             # Warn in flexible mode
-            print(f"⚠️ FILE DELETION - WARNING [FLEXIBLE MODE]", file=sys.stderr)
+            print("⚠️ FILE DELETION - WARNING [FLEXIBLE MODE]", file=sys.stderr)
             print("", file=sys.stderr)
 
             for cmd, message, severity in violations:

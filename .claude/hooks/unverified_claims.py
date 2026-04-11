@@ -13,9 +13,9 @@ Claude states something as fact without hedging (so assumption_detection
 doesn't catch it) but also without verification.
 """
 
-import sys
 import json
 import re
+import sys
 from pathlib import Path
 
 # =============================================================================
@@ -137,16 +137,16 @@ def has_lookup_evidence(transcript_lines: list[str]) -> bool:
     for line in transcript_lines:
         try:
             entry = json.loads(line)
-            
+
             # Check for direct tool use
             tool_name = entry.get("tool_name", "")
             if any(lookup.lower() in tool_name.lower() for lookup in LOOKUP_TOOLS):
                 return True
-            
+
             # Check message content for tool_use blocks
             msg = entry.get("message", {})
             content = msg.get("content", [])
-            
+
             if isinstance(content, list):
                 for block in content:
                     if isinstance(block, dict):
@@ -156,10 +156,10 @@ def has_lookup_evidence(transcript_lines: list[str]) -> bool:
                                 return True
                         if block.get("type") == "tool_result":
                             return True  # There was a tool result in context
-                            
+
         except json.JSONDecodeError:
             continue
-    
+
     return False
 
 def get_last_assistant_response(lines: list[str]) -> str:
@@ -170,7 +170,7 @@ def get_last_assistant_response(lines: list[str]) -> str:
             if entry.get("type") == "assistant":
                 msg = entry.get("message", {})
                 content = msg.get("content", "")
-                
+
                 if isinstance(content, str):
                     return content
                 elif isinstance(content, list):
@@ -188,47 +188,47 @@ def main():
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError:
         sys.exit(0)
-    
+
     transcript_path = input_data.get("transcript_path", "")
     if not transcript_path:
         sys.exit(0)
-    
+
     try:
         with open(transcript_path, 'r') as f:
             lines = f.readlines()
     except Exception as e:
         print(f"Error reading transcript: {e}", file=sys.stderr)
         sys.exit(0)
-    
+
     last_response = get_last_assistant_response(lines)
     if not last_response:
         sys.exit(0)
-    
+
     claims = has_doc_claims(last_response)
-    
+
     if claims and is_domain_claim(last_response) and not has_lookup_evidence(lines):
         behavior = EXIT_BEHAVIOR[MODE]
-        
+
         print(f"🚨 UNVERIFIED CLAIM DETECTED [{MODE.upper()} MODE]", file=sys.stderr)
         print("", file=sys.stderr)
         print("You made claims about features/capabilities without checking first:", file=sys.stderr)
-        
+
         for claim in claims[:5]:
             print(f"  ❌ \"{claim}\"", file=sys.stderr)
-        
+
         if len(claims) > 5:
             print(f"  ... and {len(claims) - 5} more", file=sys.stderr)
-        
+
         print("", file=sys.stderr)
         print("No evidence of lookup found in this session (web_search, Read, etc.)", file=sys.stderr)
-        
+
         if behavior["action"] == "block":
             print("", file=sys.stderr)
             print("Search the docs or codebase before stating what is/isn't possible.", file=sys.stderr)
             print("If you're uncertain, say so explicitly rather than stating as fact.", file=sys.stderr)
-        
+
         sys.exit(behavior["on_violation"])
-    
+
     sys.exit(0)
 
 if __name__ == "__main__":

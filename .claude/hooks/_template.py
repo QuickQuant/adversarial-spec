@@ -11,9 +11,9 @@ Hook Type: <Stop|PreToolUse|PostToolUse>
 Matcher: <matcher pattern or empty>
 """
 
-import sys
 import json
 import re
+import sys
 from pathlib import Path
 
 # =============================================================================
@@ -84,27 +84,27 @@ def get_last_assistant_response(transcript_path: str) -> str:
     try:
         with open(transcript_path, 'r') as f:
             lines = f.readlines()
-        
+
         for line in reversed(lines):
             try:
                 entry = json.loads(line)
                 if entry.get("type") == "assistant":
                     msg = entry.get("message", {})
                     content = msg.get("content", "")
-                    
+
                     if isinstance(content, str):
                         return content
                     elif isinstance(content, list):
                         return " ".join(
-                            block.get("text", "") 
-                            for block in content 
+                            block.get("text", "")
+                            for block in content
                             if isinstance(block, dict) and block.get("type") == "text"
                         )
             except json.JSONDecodeError:
                 continue
     except Exception:
         pass
-    
+
     return ""
 
 # =============================================================================
@@ -118,14 +118,14 @@ def get_tool_content(input_data: dict) -> tuple[str, str]:
     """
     tool_input = input_data.get("tool_input", {})
     tool_response = input_data.get("tool_response", {})
-    
+
     filepath = tool_input.get("file_path", tool_input.get("path", ""))
     content = tool_input.get("content", tool_input.get("file_text", ""))
-    
+
     # For Edit operations, content might be in response
     if not content and tool_response:
         content = tool_response.get("result", "")
-    
+
     return filepath, content
 
 # =============================================================================
@@ -139,7 +139,7 @@ def detect_violations(text: str) -> list[tuple[str, str]]:
     """
     violations = []
     patterns = get_patterns()
-    
+
     for pattern, message in patterns:
         matches = re.finditer(pattern, text, re.IGNORECASE)
         for match in matches:
@@ -147,7 +147,7 @@ def detect_violations(text: str) -> list[tuple[str, str]]:
             # Skip if this matches an acceptable pattern
             if not is_acceptable(matched):
                 violations.append((matched, message))
-    
+
     return violations
 
 # =============================================================================
@@ -157,58 +157,58 @@ def detect_violations(text: str) -> list[tuple[str, str]]:
 def main():
     # Read hook payload from stdin
     try:
-        input_data = json.load(sys.stdin)
+        json.load(sys.stdin)
     except json.JSONDecodeError:
         sys.exit(0)  # No input, nothing to check
-    
+
     # ---------------------------------------------------------------------
     # CHOOSE ONE: Uncomment the appropriate section based on hook type
     # ---------------------------------------------------------------------
-    
+
     # --- FOR STOP HOOKS ---
     # transcript_path = input_data.get("transcript_path", "")
     # if not transcript_path:
     #     sys.exit(0)
     # text_to_check = get_last_assistant_response(transcript_path)
-    
+
     # --- FOR POST/PRE TOOL USE HOOKS ---
     # filepath, text_to_check = get_tool_content(input_data)
     # if not text_to_check:
     #     sys.exit(0)
-    
+
     # ---------------------------------------------------------------------
     # DETECTION
     # ---------------------------------------------------------------------
-    
+
     # Placeholder - replace with actual text source
     text_to_check = ""
-    
+
     if not text_to_check:
         sys.exit(0)
-    
+
     violations = detect_violations(text_to_check)
-    
+
     if violations:
         behavior = EXIT_BEHAVIOR[MODE]
-        
+
         # Output to stderr (shown to user, fed to Claude if exit 2)
         print(f"🚨 <HOOK_NAME> VIOLATION [{MODE.upper()} MODE]", file=sys.stderr)
         print("", file=sys.stderr)
-        
+
         for matched, message in violations[:5]:  # Limit output
             print(f"  ❌ \"{matched}\"", file=sys.stderr)
             print(f"     → {message}", file=sys.stderr)
             print("", file=sys.stderr)
-        
+
         if len(violations) > 5:
             print(f"  ... and {len(violations) - 5} more", file=sys.stderr)
-        
+
         if behavior["action"] == "block":
             print("", file=sys.stderr)
             print("Revise to address these violations.", file=sys.stderr)
-        
+
         sys.exit(behavior["on_violation"])
-    
+
     # No violations
     sys.exit(0)
 

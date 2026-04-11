@@ -9,9 +9,9 @@ Checks that Python commands use `uv run` instead of direct `python` calls.
 Runs on PostToolUse for Write|Edit|MultiEdit operations (documentation/scripts).
 """
 
-import sys
 import json
 import re
+import sys
 from pathlib import Path
 
 # =============================================================================
@@ -82,37 +82,37 @@ def scan_for_wrong_python_usage(content: str, filepath: str) -> list[tuple[int, 
     """Returns list of (line_number, line_content, suggestion) tuples."""
     violations = []
     lines = content.split('\n')
-    
+
     # Check in markdown, shell scripts, and documentation
     relevant_extensions = ['.md', '.sh', '.bash', '.rst', '.txt']
     is_relevant = any(filepath.endswith(ext) for ext in relevant_extensions)
-    
+
     # Also check code blocks in any file
     in_code_block = False
-    
+
     patterns = get_wrong_patterns()
-    
+
     for i, line in enumerate(lines, 1):
         # Track code blocks
         if line.strip().startswith('```'):
             in_code_block = not in_code_block
             continue
-        
+
         # Skip if line is acceptable
         if is_acceptable(line):
             continue
-        
+
         # Only check in code blocks or relevant files
         if not (in_code_block or is_relevant):
             continue
-        
+
         # Check each wrong pattern
         stripped = line.strip()
         for pattern, suggestion in patterns:
             if re.search(pattern, stripped, re.IGNORECASE):
                 violations.append((i, stripped[:80], suggestion))
                 break
-    
+
     return violations
 
 def main():
@@ -120,43 +120,43 @@ def main():
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError:
         sys.exit(0)
-    
+
     tool_input = input_data.get("tool_input", {})
-    
+
     filepath = tool_input.get("file_path", tool_input.get("path", ""))
     content = tool_input.get("content", tool_input.get("file_text", ""))
-    
+
     if not content or not filepath:
         sys.exit(0)
-    
+
     violations = scan_for_wrong_python_usage(content, filepath)
-    
+
     if violations:
         behavior = EXIT_BEHAVIOR[MODE]
-        
+
         print(f"⚠️ PYTHON ENVIRONMENT VIOLATION [{MODE.upper()} MODE]", file=sys.stderr)
         print("", file=sys.stderr)
         print("This project uses uv for Python dependency management.", file=sys.stderr)
         print(f"File: {filepath}", file=sys.stderr)
         print("", file=sys.stderr)
-        
+
         for line_num, line_content, suggestion in violations[:5]:
             print(f"  Line {line_num}: {line_content}", file=sys.stderr)
             print(f"    → {suggestion}", file=sys.stderr)
             print("", file=sys.stderr)
-        
+
         if len(violations) > 5:
             print(f"  ... and {len(violations) - 5} more", file=sys.stderr)
-        
+
         print("", file=sys.stderr)
         print("Correct commands:", file=sys.stderr)
         print("  uv run python script.py", file=sys.stderr)
         print("  uv run python -m <module>", file=sys.stderr)
         print("  uv run pytest", file=sys.stderr)
         print("  uvx ruff check --fix", file=sys.stderr)
-        
+
         sys.exit(behavior["on_violation"])
-    
+
     sys.exit(0)
 
 if __name__ == "__main__":

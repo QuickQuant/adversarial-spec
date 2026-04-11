@@ -1,5 +1,24 @@
 ## Verification (Phase 9)
 
+> **FIRST ACTION upon entering this phase:** Create this TodoWrite immediately.
+> Do NOT read further until the TodoWrite is active.
+
+```
+TaskCreate([
+  {subject: "Collect verification inputs (spec, test spec, execution plan, gauntlet concerns, architecture docs, pipeline state)", status: "pending", activeForm: "Collecting verification inputs"},
+  {subject: "Run goal coverage check", status: "pending", activeForm: "Checking goal coverage"},
+  {subject: "Run non-goal audit", status: "pending", activeForm: "Auditing non-goals"},
+  {subject: "Run user story validation", status: "pending", activeForm: "Validating user stories"},
+  {subject: "Run concern mitigation audit", status: "pending", activeForm: "Auditing concern mitigations"},
+  {subject: "Run structural conformance check", status: "pending", activeForm: "Checking structural conformance"},
+  {subject: "Run regression test sweep", status: "pending", activeForm: "Running regression tests"},
+  {subject: "Write verification report", status: "pending", activeForm: "Writing verification report"},
+  {subject: "Execute pipeline sweep or sweep_fail", status: "pending", activeForm: "Sweeping pipeline"},
+])
+```
+
+**[GATE] Task 1 (collect inputs) must be marked `completed` before running any checks (tasks 2-7). Architecture docs are required inputs — not optional.**
+
 After all implementation cards reach Passed Test, the verification phase runs a
 final alignment check before sweeping cards to Completed-Unmapped. This replaces
 the old `pipeline_sweep` as a trivial batch move with a substantive spec

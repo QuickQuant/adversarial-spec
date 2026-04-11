@@ -35,8 +35,6 @@ MODEL_COSTS = {
     "zhipu/glm-4-plus": {"input": 7.00, "output": 7.00},
     # Codex CLI models (uses ChatGPT subscription, no per-token cost)
     "codex/gpt-5.4": {"input": 0.0, "output": 0.0},
-    "codex/gpt-5.4": {"input": 0.0, "output": 0.0},
-    "codex/gpt-5.4": {"input": 0.0, "output": 0.0},
     "codex/gpt-5.1-codex-mini": {"input": 0.0, "output": 0.0},
     # Gemini CLI models (uses Google account, no per-token cost)
     "gemini-cli/gemini-3.1-pro-preview": {"input": 0.0, "output": 0.0},

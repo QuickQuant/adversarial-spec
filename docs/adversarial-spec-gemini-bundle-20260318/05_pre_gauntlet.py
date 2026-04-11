@@ -122,17 +122,6 @@ from integrations.git_cli import GitCliError
 
 from .alignment_mode import run_alignment_mode
 from .context_builder import build_context
-from .discovery import DiscoveryResult
-from .models import (
-    CompatibilityConfig,
-    ContextSummary,
-    DiscoveredServiceSummary,
-    DiscoverySummary,
-    DocType,
-    PreGauntletResult,
-    PreGauntletStatus,
-    Timings,
-)
 
 
 class PreGauntletOrchestrator:
@@ -1544,7 +1533,7 @@ from pathlib import Path
 # Add parent to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from integrations.git_cli import GitCli, GitCliError
+from integrations.git_cli import GitCli
 from pre_gauntlet.models import (
     CommitSummary,
     Concern,
@@ -1811,12 +1800,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from integrations.process_runner import ProcessRunner
 from pre_gauntlet.models import (
     BuildStatus,
-    Concern,
-    ConcernCategory,
-    ConcernSeverity,
     DirectoryTree,
-    EvidenceRef,
-    EvidenceType,
     FileSnapshot,
     SystemState,
     ValidationCommand,
@@ -2493,14 +2477,12 @@ Provides documentation lookup via Context7 MCP tools with:
 from __future__ import annotations
 
 import gzip
-import hashlib
-import json
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable
+from typing import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -2978,9 +2960,6 @@ Shell=False only, argument arrays only.
 
 from __future__ import annotations
 
-import re
-import subprocess
-import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -3225,7 +3204,6 @@ Parses spec text to identify file paths referenced in the spec.
 
 from __future__ import annotations
 
-import re
 import sys
 from pathlib import Path
 

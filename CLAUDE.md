@@ -1,5 +1,5 @@
 # CLAUDE.md
-<!-- Base: Brainquarters v1.9 | Project: v1.7 | Last synced: 2026-04-05 -->
+<!-- Base: Brainquarters v2.0 | Project: v1.7 | Last synced: 2026-04-09 -->
 <!-- Last reviewed: 2026-04-04 | Next review: 2026-04-25 -->
 <!-- Target: 60-100 lines | If >100 lines, prune or move to .active_context.md -->
 
@@ -74,13 +74,14 @@ Don't pre-load domain context. Load when needed:
 
 ## Multi-Agent Coordination (Claude + Codex)
 
-Two agents work **in parallel on the same branch**. Coordination via `.handoff.md` + pipeline board.
+Agents work **in parallel on the same branch**. Coordination via **pipeline board + dispatch JSONL + Telegram**.
 
-- **Before picking up a card**: Read `.handoff.md`, update your row, check for file conflicts
+- **Card pickup**: Use `pipeline_do_next_task` — walks lanes in priority order, respects dependencies
 - **State gates, not commit gates**: Advance pipeline state only when exit criteria are satisfied
-- **When work is review-ready**: Update `.handoff.md` review queue, move card → "Review" with evidence (commit hash + checks)
-- **Reviews before new work**: Check review queue first — reviewing the other agent's review-ready change set takes priority over picking up a new card
+- **When work is review-ready**: `pipeline_complete_task` moves card → "Review" with commit hash evidence
+- **Reviews before new work**: `pipeline_do_next_task` checks Review lane first — reviewing takes priority
 - **Don't stall**: If there are pending todos or cards, just do the work — don't ask "Shall I proceed?"
+- **Scope discipline**: Fix adjacent issues only within your card's declared file scope. Flag out-of-scope issues as comments on the dependent card.
 - **Full protocol**: Read `.coordination/PROTOCOL.md`
 
 Board: Fizzy `03fw5alxw15iqwh6hq15vfdsb` (adversarial-spec) | Trello `69be407deef7267a2cea1feb` (legacy, read-only)

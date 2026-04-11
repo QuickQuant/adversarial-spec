@@ -3,7 +3,6 @@
 import json
 
 import pytest
-
 from gauntlet.core_types import Concern, Evaluation, GauntletConfig, PhaseMetrics
 from gauntlet.persistence import (
     CONCERNS_PHASE,

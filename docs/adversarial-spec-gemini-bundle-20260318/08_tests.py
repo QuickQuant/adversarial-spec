@@ -1093,12 +1093,9 @@ from models import (
     MAX_RETRIES,
     RETRY_BASE_DELAY,
     CostTracker,
-    ModelResponse,
     call_claude_cli_model,
     call_codex_model,
     call_gemini_cli_model,
-    call_models_parallel,
-    call_single_model,
     detect_agreement,
     extract_spec,
     extract_tasks,
@@ -2455,7 +2452,7 @@ class TestArchPersona:
         assert ADVERSARIES["architect"] is ARCHITECT
 
     def test_arch_prefix(self):
-        from adversaries import ARCHITECT, ADVERSARY_PREFIXES
+        from adversaries import ADVERSARY_PREFIXES, ARCHITECT
         assert ARCHITECT.prefix == "ARCH"
         assert ADVERSARY_PREFIXES["architect"] == "ARCH"
 
@@ -2695,9 +2692,7 @@ class TestFocusAreaStringIntegrity:
 # ══════════════════════════════════════════════════════════════
 """Tests for providers module."""
 
-import json
 import sys
-import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -3571,7 +3566,6 @@ class TestValidateModelCredentials:
 """Tests for session module."""
 
 import sys
-import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -3898,9 +3892,8 @@ class TestListSessionsEdgeCases:
 """Tests for telegram_bot module."""
 
 import sys
-from io import StringIO
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 

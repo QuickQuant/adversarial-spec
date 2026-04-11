@@ -1,5 +1,23 @@
 ## Implementation (Phase 8)
 
+> **FIRST ACTION upon entering this phase:** Create this TodoWrite immediately.
+> Do NOT read further until the TodoWrite is active.
+
+```
+TaskCreate([
+  {subject: "Identify agent name, session ID, and board ID", status: "pending", activeForm: "Identifying agent and session"},
+  {subject: "Load Fizzy cards (pipeline_load or verify existing)", status: "pending", activeForm: "Loading Fizzy cards"},
+  {subject: "Read CLAUDE.md / AGENTS.md for project conventions", status: "pending", activeForm: "Reading project conventions"},
+  {subject: "Read .architecture/INDEX.md + primer.md", status: "pending", activeForm: "Reading architecture docs"},
+  {subject: "Read matched component docs from .architecture/structured/components/", status: "pending", activeForm: "Reading component architecture"},
+  {subject: "Read the converged spec", status: "pending", activeForm: "Reading spec"},
+  {subject: "Read the execution plan", status: "pending", activeForm: "Reading execution plan"},
+  {subject: "Enter self-pickup loop", status: "pending", activeForm: "Running self-pickup loop"},
+])
+```
+
+**[GATE] All context-loading tasks (items 3-7) must be marked `completed` before starting the self-pickup loop (item 8). Skipping architecture docs causes implementation decisions that contradict existing patterns — this is a confirmed failure mode.**
+
 After the execution plan is generated, offer to proceed with implementation:
 
 > "Execution plan generated with N tasks. Would you like to proceed with implementation?"
@@ -85,6 +103,8 @@ implementation decisions that contradict the spec or the codebase's existing pat
 **Context budget note:** For large specs/plans, read the sections relevant to your
 current wave rather than loading the entire document. The card description has the
 specific task requirements; the spec and plan provide the "why" and "how it fits."
+
+**[GATE] TaskCreate: Mark "Read .architecture/INDEX.md + primer.md" and "Read matched component docs" completed before entering the self-pickup loop. This gate exists because a confirmed failure (2026-04-10) shipped 3 tasks without reading architecture docs, missing pattern conformance checks during both implementation and review.**
 
 ---
 

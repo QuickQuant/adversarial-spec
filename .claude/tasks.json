@@ -128,7 +128,7 @@
       "id": "7",
       "subject": "Check available API providers",
       "description": "Run providers command to see which APIs are configured",
-      "status": "pending",
+      "status": "completed",
       "owner": "adv-spec:orchestrator",
       "blockedBy": [
         "6"
@@ -143,7 +143,7 @@
         "phase": "debate"
       },
       "createdAt": "2026-01-24T20:02:23.667583Z",
-      "updatedAt": "2026-01-24T20:02:23.667583Z"
+      "updatedAt": "2026-04-10T07:06:09.930364Z"
     },
     {
       "id": "8",
@@ -211,8 +211,8 @@
     {
       "id": "11",
       "subject": "Run gauntlet phases",
-      "description": "Phase 1: Adversary attacks, Phase 2: Evaluation, Phase 3: Rebuttals, Phase 4: Summary, Phase 5: Final Boss (optional)",
-      "status": "pending",
+      "description": "T2 (1c81be2) in Review, T3 (9bc21fb) in Passed Test, T4 pending. Committing cross-ref updates for Phase 4 architecture rewrite.",
+      "status": "completed",
       "owner": "adv-spec:orchestrator",
       "blockedBy": [
         "10"
@@ -227,13 +227,13 @@
         "phase": "gauntlet"
       },
       "createdAt": "2026-01-24T20:02:23.669054Z",
-      "updatedAt": "2026-01-24T20:02:23.669054Z"
+      "updatedAt": "2026-04-10T08:35:57.283320Z"
     },
     {
       "id": "12",
       "subject": "Integrate accepted concerns",
       "description": "Add mitigations for accepted concerns into spec, save concerns JSON",
-      "status": "pending",
+      "status": "completed",
       "owner": "adv-spec:orchestrator",
       "blockedBy": [
         "11"
@@ -248,13 +248,13 @@
         "phase": "gauntlet"
       },
       "createdAt": "2026-01-24T20:02:23.669460Z",
-      "updatedAt": "2026-01-24T20:02:23.669460Z"
+      "updatedAt": "2026-04-10T08:35:57.680770Z"
     },
     {
       "id": "13",
       "subject": "Perform quality checks",
       "description": "Check completeness, consistency, clarity, actionability. Document-specific verification.",
-      "status": "pending",
+      "status": "completed",
       "owner": "adv-spec:orchestrator",
       "blockedBy": [
         "12"
@@ -269,13 +269,13 @@
         "phase": "finalization"
       },
       "createdAt": "2026-01-24T20:02:23.669778Z",
-      "updatedAt": "2026-01-24T20:02:23.669778Z"
+      "updatedAt": "2026-04-10T08:43:14.451571Z"
     },
     {
       "id": "14",
       "subject": "Output final document",
       "description": "Print to terminal, write to file, send summary, Telegram if enabled",
-      "status": "pending",
+      "status": "completed",
       "owner": "adv-spec:orchestrator",
       "blockedBy": [
         "13"
@@ -290,7 +290,7 @@
         "phase": "finalization"
       },
       "createdAt": "2026-01-24T20:02:23.670109Z",
-      "updatedAt": "2026-01-24T20:02:23.670109Z"
+      "updatedAt": "2026-04-10T09:09:10.274721Z"
     },
     {
       "id": "15",
@@ -542,7 +542,33 @@
       },
       "createdAt": "2026-04-02T18:04:49.068025Z",
       "updatedAt": "2026-04-02T18:04:58.834205Z"
+    },
+    {
+      "id": "26",
+      "subject": "Add concern context comments to all 8 cards",
+      "description": "Per 07-execution.md Step 10, add a comment to each of T1-T8 cards (fizzy 251-258) explaining: (1) which concern(s) it addresses, (2) the problem in plain language, (3) why the fix takes this shape, (4) how it connects to other cards. Make all add_comment calls in parallel. [GATE] item.",
+      "status": "completed",
+      "owner": null,
+      "blockedBy": [],
+      "blocks": [],
+      "activeForm": "Adding concern context comments to cards",
+      "metadata": {},
+      "createdAt": "2026-04-10T07:05:52.401964Z",
+      "updatedAt": "2026-04-10T07:06:30.063884Z"
+    },
+    {
+      "id": "27",
+      "subject": "Execute T1: Rewrite 04-target-architecture.md",
+      "description": "Full rewrite of skills/adversarial-spec/phases/04-target-architecture.md from v17 spec (1481 lines). See fizzy card 251 for acceptance criteria. Claude-only (not dispatched).",
+      "status": "completed",
+      "owner": null,
+      "blockedBy": [],
+      "blocks": [],
+      "activeForm": "Rewriting 04-target-architecture.md",
+      "metadata": {},
+      "createdAt": "2026-04-10T07:05:55.239240Z",
+      "updatedAt": "2026-04-10T07:06:30.357989Z"
     }
   ],
-  "next_id": 26
+  "next_id": 28
 }

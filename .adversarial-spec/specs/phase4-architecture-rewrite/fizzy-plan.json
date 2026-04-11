@@ -1,0 +1,260 @@
+{
+  "session_id": "adv-spec-202604021743-phase4-architecture-rewrite",
+  "tasks": [
+    {
+      "task_id": "T1",
+      "title": "Rewrite 04-target-architecture.md from v17 spec",
+      "description": "Rewrite skills/adversarial-spec/phases/04-target-architecture.md (currently 225 lines) to match the full v17 specification (1481 lines). This is a complete replacement, not incremental. Concerns addressed: all 19 accepted gauntlet concerns (CB-1..CB-6, RC-1, FM-1..FM-5, SEC-1, SEC-2, OP-1, OP-2, DD-1, DD-2, US-1). Spec refs: v17 spec \u00a7\u00a70\u201322. Dispatch: Claude (large rewrite, do not delegate).",
+      "wave": 1,
+      "effort": "M",
+      "strategy": "test-after",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Target file: skills/adversarial-spec/phases/04-target-architecture.md",
+        "Contains phase-doc entry TodoWrite block (\u00a71) including draft_review and final_approval [GATE] items",
+        "Contains all three context modes: greenfield, brownfield_feature, brownfield_debug (\u00a7\u00a73, 7, 12, 13)",
+        "Canonical enums section present with cli_command, public_api, data_stream, plus cli_parsing/idempotency/api_compatibility/data_integrity (\u00a7\u00a70.25, 0.41)",
+        "Bootstrap Contract with fingerprint lifecycle (\u00a70.5) \u2014 freeze-state computation",
+        "Human Gate Protocol (\u00a70) defining scale_check, context_mode, draft_review, final_approval",
+        "Required headers for target-architecture.md yaml include architecture_fingerprint (\u00a77)",
+        "\u00a77.5 Middleware Interface Identification with linked_goals in candidate schema",
+        "\u00a710.5 Required Check Derivation mandates observability for CLI and data_stream surfaces",
+        "\u00a715 Session Mutation Contract references fizzy_card_id (not trello_card_id)",
+        "\u00a76.3 category-native matrix column constraint present",
+        "All sections \u00a70 through \u00a722 + Open Questions present",
+        "YAML frontmatter / heading style matches sibling phase docs (02-roadmap, 03-debate, 05-gauntlet, 06-finalize, 07-execution)"
+      ],
+      "architecture_refs": [],
+      "concern_refs": [
+        "CB-1",
+        "CB-2",
+        "CB-3",
+        "CB-4",
+        "CB-5",
+        "CB-6",
+        "RC-1",
+        "FM-1",
+        "FM-2",
+        "FM-3",
+        "FM-4",
+        "FM-5",
+        "SEC-1",
+        "SEC-2",
+        "OP-1",
+        "OP-2",
+        "DD-1",
+        "DD-2",
+        "US-1"
+      ],
+      "test_refs": [
+        "TC-3.1",
+        "TC-4.1",
+        "TC-4.2",
+        "TC-4.3",
+        "TC-4.4",
+        "TC-5.1",
+        "TC-5.2",
+        "TC-5.3",
+        "TC-6.1",
+        "TC-6.2",
+        "TC-6.3",
+        "TC-6.4",
+        "TC-7.1",
+        "TC-7.2",
+        "TC-8.1",
+        "TC-8.2",
+        "TC-8.3",
+        "TC-8.4",
+        "TC-9.1",
+        "TC-9.2",
+        "TC-9.3",
+        "TC-9.4",
+        "TC-9.5",
+        "TC-10.1",
+        "TC-11.1",
+        "TC-11.2",
+        "TC-12.1",
+        "TC-12.2",
+        "TC-13.1",
+        "TC-13.2",
+        "TC-13.3",
+        "TC-13.4"
+      ]
+    },
+    {
+      "task_id": "T2",
+      "title": "Update 02-roadmap.md cross-references for invariant-tests integration",
+      "description": "Update skills/adversarial-spec/phases/02-roadmap.md to reference the invariant-tests upsert protocol defined in the new Phase 4 spec. Spec refs: v17 \u00a720 Migration Plan \u2192 Cross-Reference Updates. Dispatch: Gemini CLI or Codex CLI.",
+      "wave": 1,
+      "effort": "S",
+      "strategy": "test-after",
+      "depends_on": [
+        "T1"
+      ],
+      "acceptance_criteria": [
+        "Target file: skills/adversarial-spec/phases/02-roadmap.md",
+        "References <!-- P4_INVARIANT_TESTS_START --> / <!-- P4_INVARIANT_TESTS_END --> marker protocol for tests-pseudo.md upsert",
+        "Notes that Phase 4 upserts invariant tests and this is NOT appended repeatedly on reruns",
+        "Points to 04-target-architecture.md \u00a78.3 as the normative source for the upsert contract"
+      ],
+      "architecture_refs": [],
+      "concern_refs": [],
+      "test_refs": [
+        "TC-3.2"
+      ]
+    },
+    {
+      "task_id": "T3",
+      "title": "Update 05-gauntlet.md cross-references for adversary briefing inputs",
+      "description": "Update skills/adversarial-spec/phases/05-gauntlet.md to reference the adversary briefing inputs defined in the new Phase 4 spec. Spec refs: v17 \u00a722 Phase Interactions \u2192 Phase 5. Dispatch: Gemini CLI or Codex CLI.",
+      "wave": 1,
+      "effort": "S",
+      "strategy": "test-after",
+      "depends_on": [
+        "T1"
+      ],
+      "acceptance_criteria": [
+        "Target file: skills/adversarial-spec/phases/05-gauntlet.md",
+        "Adversary briefing inputs reference framework profile, surface map, concern x surface matrix, invariant set, and triggered concerns",
+        "Adversary-to-concern mapping documented: BURN\u2192observability+realtime, PARA\u2192enforcement/auth/security/trust, LAZY\u2192enforcement bypass, COMP\u2192SoT/brownfield compatibility",
+        "Points to 04-target-architecture.md \u00a7\u00a76, 8 as the normative source for concern + invariant definitions"
+      ],
+      "architecture_refs": [],
+      "concern_refs": [],
+      "test_refs": [
+        "TC-3.2"
+      ]
+    },
+    {
+      "task_id": "T4",
+      "title": "Update 07-execution.md cross-references for invariant/middleware consumption",
+      "description": "Update skills/adversarial-spec/phases/07-execution.md to reference invariant and middleware consumption contracts from the new Phase 4 spec. Concerns addressed: OP-1 (Phase 7 stale architecture consumption). Spec refs: v17 \u00a722 Phase Interactions \u2192 Phase 7, \u00a715 Session Mutation Contract. Dispatch: Gemini CLI or Codex CLI.",
+      "wave": 1,
+      "effort": "S",
+      "strategy": "test-after",
+      "depends_on": [
+        "T1"
+      ],
+      "acceptance_criteria": [
+        "Target file: skills/adversarial-spec/phases/07-execution.md",
+        "Documents consumption of middleware-candidates.json when present (advisory in lightweight, normative in full)",
+        "Documents staleness check: Phase 7 must verify phase_artifacts.spec_fingerprint against current spec before consuming architecture artifacts",
+        "Task generation references invariant IDs and surface scope",
+        "High-risk tasks (3+ invariants) marked test-first"
+      ],
+      "architecture_refs": [],
+      "concern_refs": [
+        "OP-1"
+      ],
+      "test_refs": [
+        "TC-3.2"
+      ]
+    },
+    {
+      "task_id": "T5",
+      "title": "Register middleware-creator as optional phase in SKILL.md",
+      "description": "Update skills/adversarial-spec/SKILL.md to register middleware-creator as an optional phase between finalize and execution. Spec refs: v17 \u00a722 Phase Interactions \u2192 Middleware-Creator. Dispatch: Claude (touches SKILL.md which is sensitive).",
+      "wave": 1,
+      "effort": "S",
+      "strategy": "test-after",
+      "depends_on": [
+        "T1"
+      ],
+      "acceptance_criteria": [
+        "Target file: skills/adversarial-spec/SKILL.md",
+        "Phase router documents: requirements | roadmap | debate | target-architecture | gauntlet | finalize | middleware-creator? | execution | implementation",
+        "middleware-creator explicitly marked optional and preceded by finalize",
+        "Prerequisite note: phase is passive until a phases/middleware-creator.md doc is written \u2014 v17 does not author that doc (per non-goals)",
+        "No phase dispatch logic changes \u2014 only documentation of the intended router shape"
+      ],
+      "architecture_refs": [],
+      "concern_refs": [],
+      "test_refs": [
+        "TC-3.2"
+      ]
+    },
+    {
+      "task_id": "T6",
+      "title": "Deploy phase docs to ~/.claude/skills/adversarial-spec/ with backup",
+      "description": "Deploy the updated phase docs from the repo to the user's Claude Code skills directory with proper backup and checksum verification. Spec refs: v17 \u00a719 Deployment Strategy. Dispatch: Claude (deployment touches user home dir).",
+      "wave": 2,
+      "effort": "S",
+      "strategy": "test-after",
+      "depends_on": [
+        "T1",
+        "T2",
+        "T3",
+        "T4",
+        "T5"
+      ],
+      "acceptance_criteria": [
+        "Generate release_id: p4-YYYYMMDD-<short-hash>",
+        "Backup current deployed files to ~/.claude/skills/adversarial-spec/.backup/<release_id>/",
+        "Copy updated phase docs: 02-roadmap.md, 04-target-architecture.md, 05-gauntlet.md, 07-execution.md, SKILL.md",
+        "Use atomic rename (write to temp path, then mv)",
+        "Checksum verification: sha256sum source vs deployed match for each file",
+        "Record deployment to .adversarial-spec/release-log.jsonl with release_id and file list"
+      ],
+      "architecture_refs": [],
+      "concern_refs": [],
+      "test_refs": [
+        "TC-3.1"
+      ]
+    },
+    {
+      "task_id": "T7",
+      "title": "Smoke-run greenfield scenario against deployed Phase 4 doc",
+      "description": "Verify deployed Phase 4 doc works end-to-end for a greenfield scenario. Spec refs: v17 \u00a7\u00a71\u201311 (greenfield flow). Dispatch: Can dispatch to Gemini CLI as read+describe worker; Claude runs verification pass.",
+      "wave": 2,
+      "effort": "M",
+      "strategy": "test-after",
+      "depends_on": [
+        "T6"
+      ],
+      "acceptance_criteria": [
+        "Fresh agent reads ~/.claude/skills/adversarial-spec/phases/04-target-architecture.md",
+        "Agent can identify the required TodoWrite block including draft_review and final_approval gates",
+        "Agent can list all 12 surface_id enum values (including cli_command, public_api, data_stream)",
+        "Agent can list all 15 dry_run_check_id enum values",
+        "Agent can describe fingerprint lifecycle (scaffold \u2192 draft \u2192 frozen \u2192 published)",
+        "Given a synthetic 3-story / 2-surface / 2-concern roadmap, agent produces valid phase4_bootstrap record, phase_mode selection, and context_mode selection without halt",
+        "No dangling references to removed Phase 4 concepts (verify via grep)"
+      ],
+      "architecture_refs": [],
+      "concern_refs": [],
+      "test_refs": [
+        "TC-3.1",
+        "TC-5.1",
+        "TC-9.1",
+        "TC-9.2",
+        "TC-10.1"
+      ]
+    },
+    {
+      "task_id": "T8",
+      "title": "Smoke-run brownfield scenario against deployed Phase 4 doc",
+      "description": "Verify deployed Phase 4 doc works end-to-end for brownfield feature and brownfield debug scenarios. Spec refs: v17 \u00a7\u00a712, 13 (brownfield feature + brownfield debug flows). Dispatch: Can dispatch to Gemini CLI; Claude verifies.",
+      "wave": 2,
+      "effort": "M",
+      "strategy": "test-after",
+      "depends_on": [
+        "T6"
+      ],
+      "acceptance_criteria": [
+        "Fresh agent can select brownfield_feature given 'adding feature to existing codebase' scenario",
+        "Agent produces blast zone + touched surfaces + touched concerns",
+        "Agent runs concern fitness assessment: adequate | needs_extension | missing | conflicts",
+        "Agent flags now-severity existing debt when concern is adequate but reinforces anti-pattern",
+        "Brownfield_debug variant: agent identifies failed concern + failed surface, runs local-vs-systemic decision, classifies invariant gap",
+        "Agent references \u00a722 to confirm Phase 7 staleness check applies"
+      ],
+      "architecture_refs": [],
+      "concern_refs": [],
+      "test_refs": [
+        "TC-2.2",
+        "TC-3.1",
+        "TC-3.2"
+      ]
+    }
+  ]
+}

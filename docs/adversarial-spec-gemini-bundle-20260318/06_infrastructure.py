@@ -21,8 +21,8 @@ Tasks are stored per-project in .claude/tasks.json relative to the working direc
 
 import json
 import os
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
@@ -412,10 +412,7 @@ Usage:
     )
 """
 
-import json
-import os
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -1096,8 +1093,6 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
-import json
-import os
 import sys
 import time
 from typing import Any, Optional
@@ -1559,9 +1554,7 @@ for richer execution plans.
 
 from __future__ import annotations
 
-import json
 import re
-import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -1575,7 +1568,7 @@ if not _SCRIPTS_PATH.exists():
 if str(_SCRIPTS_PATH) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_PATH))
 
-from adversaries import ADVERSARY_PREFIXES, generate_concern_id  # noqa: E402
+from adversaries import generate_concern_id  # noqa: E402
 
 
 @dataclass
@@ -1812,7 +1805,6 @@ class GauntletConcernParser:
         Updates the report's linked_concerns list with references to
         specific spec elements (data models, endpoints, etc.).
         """
-        from execution_planner.spec_intake import SpecDocument
 
         report.linked_concerns = []
 
@@ -1914,10 +1906,7 @@ Key concepts:
 
 from __future__ import annotations
 
-import json
-import re
 from dataclasses import dataclass, field
-from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Optional

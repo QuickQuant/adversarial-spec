@@ -3,13 +3,12 @@
 from dataclasses import FrozenInstanceError
 
 import pytest
-
 from adversaries import (
     ADVERSARIES,
     ADVERSARY_PREFIXES,
     ADVERSARY_TEMPLATES,
-    AdversaryTemplate,
     GUARDRAILS,
+    AdversaryTemplate,
     _validate_scope_guidelines,
     resolve_adversary_name,
 )

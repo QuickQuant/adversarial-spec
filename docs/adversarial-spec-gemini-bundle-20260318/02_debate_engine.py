@@ -112,7 +112,13 @@ from providers import (  # noqa: E402
     validate_bedrock_models,
     validate_model_credentials,
 )
-from session import SESSIONS_DIR, SessionState, save_checkpoint, save_critique_responses  # noqa: E402
+from session import (  # noqa: E402
+    SESSIONS_DIR,
+    SessionState,
+    save_checkpoint,
+    save_critique_responses,
+)
+
 
 def log_input_stats(text: str, source: str = "stdin") -> None:
     """Log line count and SHA256 hash of input document.
@@ -1495,12 +1501,8 @@ if __name__ == "__main__":
 
 from __future__ import annotations
 
-import json
 import sys
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
-from pathlib import Path
-from typing import Optional
 
 SESSIONS_DIR = Path.home() / ".config" / "adversarial-spec" / "sessions"
 CHECKPOINTS_DIR = Path.cwd() / ".adversarial-spec-checkpoints"

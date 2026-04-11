@@ -24,9 +24,9 @@ Exit Codes:
 - 2: Hard block (not used by this hook)
 """
 
-import sys
 import json
 import re
+import sys
 from pathlib import Path
 
 # =============================================================================

@@ -30,8 +30,8 @@ Supported providers (set corresponding API key):
                 Install: npm install -g @openai/codex && codex login
                 Reasoning: --codex-reasoning xhigh (minimal, low, medium, high, xhigh)
     Claude CLI: (Anthropic subscription) models: claude-cli/claude-sonnet-4-6, claude-cli/claude-opus-4-6
-                Install: npm install -g @anthropic-ai/claude-code && claude setup-token                                                                                                                                                                                                                                                                                                   
-    Gemini CLI:  (Google account) models: gemini-cli/gemini-3.1-pro-preview, gemini-cli/gemini-3-flash-preview  
+                Install: npm install -g @anthropic-ai/claude-code && claude setup-token
+    Gemini CLI:  (Google account) models: gemini-cli/gemini-3.1-pro-preview, gemini-cli/gemini-3-flash-preview
 
 Document types:
     spec  - Specification (default). Use --depth to control focus:

@@ -947,14 +947,11 @@ def call_models_parallel(
 
 from __future__ import annotations
 
-import json
 import os
 import shutil
 import sys
-from pathlib import Path
-from typing import Optional
 
-from prompts import FOCUS_AREAS, PERSONAS
+from prompts import PERSONAS
 
 PROFILES_DIR = Path.home() / ".config" / "adversarial-spec" / "profiles"
 GLOBAL_CONFIG_PATH = Path.home() / ".claude" / "adversarial-spec" / "config.json"
@@ -1635,8 +1632,6 @@ def handle_bedrock_command(subcommand: str, arg: Optional[str], region: Optional
 
 from __future__ import annotations
 
-from typing import Optional
-
 PRESERVE_INTENT_PROMPT = """
 **PRESERVE ORIGINAL INTENT**
 This document represents deliberate design choices. Before suggesting ANY removal or substantial modification:
@@ -2153,7 +2148,6 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
 
 @dataclass(frozen=True)

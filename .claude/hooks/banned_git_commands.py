@@ -12,9 +12,9 @@ Hook Type: PreToolUse
 Matcher: Bash
 """
 
-import sys
 import json
 import re
+import sys
 from pathlib import Path
 
 # =============================================================================
@@ -128,7 +128,7 @@ def main():
 
     if violations:
         # ALWAYS block - this is a hard constraint
-        print(f"🛑 BANNED GIT COMMAND - BLOCKED", file=sys.stderr)
+        print("🛑 BANNED GIT COMMAND - BLOCKED", file=sys.stderr)
         print("", file=sys.stderr)
         print("These commands can cause irreversible data loss.", file=sys.stderr)
         print("", file=sys.stderr)

@@ -12,9 +12,9 @@ CRITICAL: This is a HARD CONSTRAINT with no exceptions.
 Both flexible and strict modes BLOCK on violation.
 """
 
-import sys
 import json
 import re
+import sys
 from pathlib import Path
 
 # =============================================================================
@@ -60,11 +60,11 @@ EXPOSURE_PATTERNS_FLEXIBLE = [
     (r"print\s*\(\s*os\.getenv\s*\(\s*['\"](" + "|".join(SECRET_ENV_VARS) + r")['\"]", "Direct print of secret env var"),
     (r"print\s*\(\s*['\"].*\{.*(" + "|".join(SECRET_ENV_VARS).lower() + r").*\}.*['\"]", "F-string with secret variable"),
     (r"print\s*\(\s*config", "Print of config object (may contain secrets)"),
-    
+
     # Logging secrets
     (r"log(ger)?\.(?:info|debug|warn|error)\s*\([^)]*(" + "|".join(SECRET_ENV_VARS).lower() + r")", "Logging secret variable"),
     (r"log(ger)?\.(?:info|debug|warn|error)\s*\(\s*f['\"].*\{.*(?:key|secret|token|password).*\}", "Logging f-string with secret"),
-    
+
     # Console.log (JavaScript/TypeScript)
     (r"console\.log\s*\([^)]*(?:apiKey|apiSecret|password|token|secret)", "console.log with secret"),
 ]
@@ -112,24 +112,24 @@ def scan_for_secret_exposure(content: str, filepath: str) -> list[tuple[int, str
     """Returns list of (line_number, line_content, violation_reason) tuples."""
     violations = []
     lines = content.split('\n')
-    
+
     # Only check code files
     code_extensions = ['.py', '.ts', '.js', '.tsx', '.jsx', '.sh', '.bash']
     if not any(filepath.endswith(ext) for ext in code_extensions):
         return violations
-    
+
     patterns = get_exposure_patterns()
-    
+
     for i, line in enumerate(lines, 1):
         # Skip if it matches an acceptable pattern
         if is_acceptable_pattern(line):
             continue
-        
+
         for pattern, reason in patterns:
             if re.search(pattern, line, re.IGNORECASE):
                 violations.append((i, line.strip()[:100], reason))
                 break  # One violation per line is enough
-    
+
     return violations
 
 def main():
@@ -137,41 +137,41 @@ def main():
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError:
         sys.exit(0)
-    
-    tool_name = input_data.get("tool_name", "")
+
+    input_data.get("tool_name", "")
     tool_input = input_data.get("tool_input", {})
     tool_response = input_data.get("tool_response", {})
-    
+
     # Get file path and content
     filepath = tool_input.get("file_path", tool_input.get("path", ""))
     content = tool_input.get("content", tool_input.get("file_text", ""))
-    
+
     # For Edit operations, we might need to check the result
     if not content and tool_response:
         content = tool_response.get("result", "")
-    
+
     if not content or not filepath:
         sys.exit(0)
-    
+
     violations = scan_for_secret_exposure(content, filepath)
-    
+
     if violations:
         behavior = EXIT_BEHAVIOR[MODE]
-        
+
         print("🚨 SECRET EXPOSURE DETECTED - BLOCKING", file=sys.stderr)
         print("", file=sys.stderr)
         print("This is a HARD CONSTRAINT violation. The following code may expose secrets:", file=sys.stderr)
         print(f"File: {filepath}", file=sys.stderr)
         print("", file=sys.stderr)
-        
+
         for line_num, line_content, reason in violations[:5]:
             print(f"  Line {line_num}: {reason}", file=sys.stderr)
             print(f"    {line_content}", file=sys.stderr)
             print("", file=sys.stderr)
-        
+
         if len(violations) > 5:
             print(f"  ... and {len(violations) - 5} more violations", file=sys.stderr)
-        
+
         print("", file=sys.stderr)
         print("ACCEPTABLE alternatives:", file=sys.stderr)
         print("  ✓ Check if var exists: if not os.getenv('API_KEY'): print('Missing API_KEY')", file=sys.stderr)
@@ -179,9 +179,9 @@ def main():
         print("  ✓ Report missing vars: print(f'Missing: {missing_vars}')", file=sys.stderr)
         print("", file=sys.stderr)
         print("Revise the code to use acceptable patterns.", file=sys.stderr)
-        
+
         sys.exit(behavior["on_violation"])
-    
+
     sys.exit(0)
 
 if __name__ == "__main__":

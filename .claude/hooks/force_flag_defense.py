@@ -19,9 +19,9 @@ Hook Type: PreToolUse
 Matcher: Bash
 """
 
-import sys
 import json
 import re
+import sys
 from pathlib import Path
 
 # =============================================================================
