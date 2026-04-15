@@ -285,13 +285,13 @@ A task is `behavior_change: false` only for:
 
 This classification is a best-effort LLM judgment. Edge cases (config with conditional runtime effects, refactors that preserve behavior) are inherently subjective. **Gate V4 (Exception Review) is the explicit human correction point** where the user can override any classification the LLM got wrong.
 
-**Contract with fizzy-pipeline-mcp:** fizzy consumes these fields with a `declared_` prefix to distinguish plan-time declarations from execution-time evidence. Field mapping:
+**Contract with fizzy-pipeline-mcp:** fizzy consumes these fields with a `declared_` prefix to distinguish plan-time declarations from execution-time evidence. `test_refs` and `test_files` stay distinct in the plan, but fizzy may persist them as one declared target bundle. Field mapping:
 
 | adversarial-spec field | fizzy metadata field |
 |------------------------|----------------------|
 | `behavior_change` | `behavior_change` |
 | `verification_mode` | `verification_mode` |
-| `test_targets` (aliases: `test_refs`, `test_files`) | `declared_test_targets` |
+| `test_refs`, `test_files` | `declared_test_targets` |
 | `verify_commands` | `declared_verify_commands` |
 | `exemption_reason` | `declared_exemption_reason` |
 | `verification_scope` | `verification_scope` |
