@@ -9,9 +9,13 @@ TodoWrite([
   {content: "Load codebase architecture docs [GATE] — read primer.md + matched components before any exploration", status: "pending", activeForm: "Loading codebase architecture docs"},
   {content: "Load target architecture and build Architecture Spine (if exists)", status: "pending", activeForm: "Building architecture spine"},
   {content: "Decompose into tasks with gauntlet concern linkage", status: "pending", activeForm: "Decomposing spec into tasks"},
+  {content: "Classify behavior_change and verification_mode for every task [GATE]", status: "pending", activeForm: "Classifying verification modes"},
   {content: "Assign test strategies (test-first/test-after)", status: "pending", activeForm: "Assigning test strategies"},
+  {content: "Attach test_refs, test_files, or exemption_reason for every task [GATE]", status: "pending", activeForm: "Completing verification mapping"},
   {content: "Over-decomposition guard check", status: "pending", activeForm: "Checking for over-decomposition"},
   {content: "Present plan to user for approval [GATE]", status: "pending", activeForm: "Presenting execution plan for approval"},
+  {content: "Review verification coverage report before pipeline_load [GATE]", status: "pending", activeForm: "Reviewing verification coverage"},
+  {content: "Review every exemption with the user [GATE]", status: "pending", activeForm: "Reviewing verification exemptions"},
   {content: "Write execution plan to disk [GATE]", status: "pending", activeForm: "Writing execution plan to disk"},
   {content: "Verify plan file exists and update session state", status: "pending", activeForm: "Verifying plan persistence"},
   {content: "Generate fizzy-plan.json and load into pipeline [GATE]", status: "pending", activeForm: "Loading execution plan into Fizzy pipeline"},
@@ -171,6 +175,129 @@ W0-4  Create component boundary template  S   Blocks: Tasks 3, 4, 5
 
 ---
 
+### Verification Schema (v2) — Reference
+
+**This section defines the verification contract every task in `fizzy-plan.json` must satisfy.** It is read once before decomposition (Step 3) and referenced by Gates V1-V4 and Step 9. The schema is LLM-enforced via TodoWrite gates, not runtime-validated by fizzy-pipeline-mcp; the gates work by structuring the LLM's workflow, not by programmatic enforcement.
+
+**Plan-level version marker** — add to the root of `fizzy-plan.json`:
+
+```json
+{
+  "plan_schema_version": 2,
+  "session_id": "adv-spec-...",
+  "tasks": [...]
+}
+```
+
+- Version 2: requires the verification block below per task.
+- Version 1 (legacy): loads with warnings during the migration window. Missing fields are flagged per-task but do not block `pipeline_load`.
+
+**Per-task verification block** — add these fields to each task object:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `behavior_change` | boolean | always | Whether this task modifies runtime behavior. Determines gate enforcement strictness. |
+| `verification_mode` | string enum | always | How this task will be verified. Determines which other fields are required. |
+| `verification_scope` | string enum | always | Whether verification targets this task specifically or runs the full suite. |
+| `test_refs` | string[] | conditional | Test case IDs from `tests-spec.md` or roadmap. Required when `verification_mode` starts with `automated-`. |
+| `test_files` | string[] | conditional | Repo-relative test file paths expected to cover this task. Required for `automated-*` and `test-producer`. |
+| `verify_commands` | string[] | conditional | Shell command strings the tester runs. Required for `automated-*` and `test-producer`. |
+| `verification_notes` | string\|null | optional | Free-text notes about constraints, edge cases, or special considerations. |
+| `exemption_reason` | string\|null | conditional | Why this task does not require automated test evidence. Required for `artifact-sync`, `static-check`, `manual-ux`. |
+
+**`verification_mode` enum values:**
+
+| Mode | Meaning | Required fields (beyond always-required) |
+|------|---------|------------------------------------------|
+| `automated-unit` | Verified by unit tests | `test_refs`, `test_files`, `verify_commands` |
+| `automated-integration` | Verified by integration tests | `test_refs`, `test_files`, `verify_commands` |
+| `automated-contract` | Verified by API contract tests | `test_refs`, `test_files`, `verify_commands` |
+| `automated-component` | Verified by component tests (render, interaction) | `test_refs`, `test_files`, `verify_commands` |
+| `static-check` | Verified by linter, type checker, or static analysis | `exemption_reason` (`verify_commands` optional if a validator exists) |
+| `manual-ux` | Requires human visual/UX verification | `exemption_reason` |
+| `artifact-sync` | Docs, manifests, config sync — no behavioral change | `exemption_reason` |
+| `test-producer` | This task writes/expands the test suite itself | `test_files`, `verify_commands` (NOT exempt) |
+
+**Important:** `test-producer` is NOT exempt. A task whose job is "write the tests" still requires concrete `test_files` and `verify_commands` proving the produced suite runs. It does not get an `exemption_reason`.
+
+**`verification_scope` enum values:**
+
+| Scope | Meaning |
+|-------|---------|
+| `targeted` | Run only the tests declared in `verify_commands` for this task |
+| `full-suite` | Run the entire test suite (e.g., `uv run pytest`) |
+| `static` | No runtime tests — static analysis or manual review |
+| `manual` | Human verification only |
+
+**Mode-to-scope compatibility matrix:**
+
+| `verification_mode` | Valid `verification_scope` values |
+|---------------------|----------------------------------|
+| `automated-unit` | `targeted`, `full-suite` |
+| `automated-integration` | `targeted`, `full-suite` |
+| `automated-contract` | `targeted`, `full-suite` |
+| `automated-component` | `targeted`, `full-suite` |
+| `static-check` | `static` |
+| `manual-ux` | `manual` |
+| `artifact-sync` | `static` |
+| `test-producer` | `targeted`, `full-suite` |
+
+Invalid combinations (e.g., `automated-unit` + `manual`, or `static-check` + `targeted`) are rejected at Gate V2.
+
+**Path and command validation rules:**
+
+- `test_files` must be repo-relative paths rooted at the git repository root. No absolute paths, no `..` traversal. Example: `tests/test_api.py`, not `/home/user/project/tests/test_api.py`.
+- `verify_commands` are shell command strings (`string[]`). Each entry is a single command to be executed in a shell. They must be literal — no template interpolation (`${VAR}`), no environment variable expansion. Phase 07 stores commands; Phase 08-09 execute them.
+- Empty strings and whitespace-only strings are invalid for all required fields. `test_refs: [""]` or `exemption_reason: "  "` fail validation.
+
+**Typed validation error codes** (used in Gate V2 and coverage report):
+
+| Error code | Meaning |
+|------------|---------|
+| `missing_verification_mode` | Task has no `verification_mode` |
+| `missing_verification_scope` | Task has no `verification_scope` |
+| `missing_behavior_change` | Task has no `behavior_change` classification |
+| `missing_required_test_refs` | `automated-*` task with empty `test_refs` |
+| `missing_required_test_files` | `automated-*` or `test-producer` task with empty `test_files` |
+| `missing_required_verify_commands` | `automated-*` or `test-producer` task with empty `verify_commands` |
+| `missing_exemption_reason` | Exempt mode with no `exemption_reason` |
+| `invalid_scope_for_mode` | `verification_scope` not in the valid set for `verification_mode` |
+| `invalid_test_file_path` | Path is absolute or contains `..` traversal |
+| `empty_or_whitespace_value` | A required field contains an empty or whitespace-only string |
+
+Each error identifies the affected `task_id`.
+
+**Behavior-change classification criteria:**
+
+A task is `behavior_change: true` if it modifies any of:
+- Runtime logic or control flow
+- Public interfaces, APIs, or contracts
+- Data persistence semantics or migrations
+- Validation or authorization behavior
+- Rendering behavior or user-visible state
+- Test-enforced behavior (changes that would break existing tests)
+
+A task is `behavior_change: false` only for:
+- Documentation-only changes (README, inline comments, `docs/`)
+- Manifest or config-file sync with no runtime effect
+- Formatting-only changes (whitespace, linting fixes)
+- Pure metadata maintenance (labels, descriptions)
+
+This classification is a best-effort LLM judgment. Edge cases (config with conditional runtime effects, refactors that preserve behavior) are inherently subjective. **Gate V4 (Exception Review) is the explicit human correction point** where the user can override any classification the LLM got wrong.
+
+**Contract with fizzy-pipeline-mcp:** fizzy consumes these fields with a `declared_` prefix to distinguish plan-time declarations from execution-time evidence. Field mapping:
+
+| adversarial-spec field | fizzy metadata field |
+|------------------------|----------------------|
+| `behavior_change` | `behavior_change` |
+| `verification_mode` | `verification_mode` |
+| `test_targets` (aliases: `test_refs`, `test_files`) | `declared_test_targets` |
+| `verify_commands` | `declared_verify_commands` |
+| `exemption_reason` | `declared_exemption_reason` |
+| `verification_scope` | `verification_scope` |
+
+---
+
 ### Step 3: Task Decomposition
 
 Create implementation tasks from the spec. For each major spec section or feature:
@@ -212,6 +339,28 @@ Surface the linkage in the task entry so reviewers can audit coverage:
 
 ---
 
+### Gate V1: Verification Classification
+
+**Position:** After Step 3 (Task Decomposition), before Step 4 (Test Strategy Assignment).
+
+**TodoWrite item:**
+```
+{content: "Classify behavior_change and verification_mode for every task [GATE]", status: "pending", activeForm: "Classifying verification modes"}
+```
+
+**Rule:** Do not proceed until every task in your decomposition has:
+- `behavior_change` (boolean, per the classification criteria in the Verification Schema reference)
+- `verification_mode` (one of the 8 enum values)
+- `verification_scope` (must be valid for the chosen mode per the compatibility matrix)
+
+Assign these **during decomposition**, not as a deferred second pass. If you cannot confidently classify a task, surface it explicitly rather than picking a fallback mode.
+
+**Nature of this gate:** This is an LLM-enforced process gate that structures your workflow. It is not a runtime validator — no code checks the output. The enforcement mechanism is the TodoWrite checklist: mark V1 `completed` only when every task in your internal list has all three fields assigned. Gate V4 is the human correction point for any classification that turns out to be wrong.
+
+**[GATE] TodoWrite: Mark "Classify behavior_change and verification_mode for every task" completed before proceeding to Step 4.**
+
+---
+
 ### Step 4: Test Strategy Assignment
 
 Assign test-first or test-after to each task based on risk:
@@ -246,6 +395,36 @@ Create DB schema             | test-after  | 0 concerns, standard CRUD
 Implement order placement    | test-first  | 5 concerns (2 high)
 Add error response codes     | test-after  | 1 low concern
 ```
+
+---
+
+### Gate V2: Mapping Completeness
+
+**Position:** After Step 4 (Test Strategy Assignment), before Step 5 (Over-Decomposition Guard).
+
+**TodoWrite item:**
+```
+{content: "Attach test_refs, test_files, or exemption_reason for every task [GATE]", status: "pending", activeForm: "Completing verification mapping"}
+```
+
+**Rules** (must all hold for every task):
+
+- If `verification_mode` starts with `automated-`: require non-empty `test_refs`, non-empty `test_files`, and non-empty `verify_commands`.
+- If `verification_mode` is `test-producer`: require non-empty `test_files` and non-empty `verify_commands`. (`test-producer` is NOT exempt.)
+- If `verification_mode` is `artifact-sync`, `static-check`, or `manual-ux`: require non-empty `exemption_reason`.
+- Mode-to-scope compatibility must hold per the Verification Schema matrix.
+- `test_files` paths must be repo-relative (no absolute paths, no `..` traversal).
+- `verify_commands` must be literal shell strings (no template interpolation).
+- No required field may be empty or whitespace-only.
+
+**Typed validation errors** (surface these by `task_id` when they fire):
+
+Refer to the "Typed validation error codes" table in the Verification Schema reference. The 10 codes are:
+`missing_verification_mode`, `missing_verification_scope`, `missing_behavior_change`, `missing_required_test_refs`, `missing_required_test_files`, `missing_required_verify_commands`, `missing_exemption_reason`, `invalid_scope_for_mode`, `invalid_test_file_path`, `empty_or_whitespace_value`.
+
+**Nature of this gate:** LLM-enforced process gate. Mark V2 `completed` only when every task satisfies all rules above. If any task fails a rule, either fix the task's verification block or surface the failure explicitly and loop back to Step 3/4 to reclassify.
+
+**[GATE] TodoWrite: Mark "Attach test_refs, test_files, or exemption_reason for every task" completed before proceeding to Step 5.**
 
 ---
 
@@ -349,7 +528,120 @@ Task 8 → Task 5 (merge point)
 
 Wait for user approval before proceeding to Step 8.
 
-**[GATE] TodoWrite: Mark "Present plan to user for approval" completed before proceeding to Step 8.**
+**[GATE] TodoWrite: Mark "Present plan to user for approval" completed before proceeding to Gate V3.**
+
+---
+
+### Gate V3: Coverage Report
+
+**Position:** After Step 7 (Present Final Plan), before Step 8 (Persist Execution Plan). The user must see coverage before approving the plan for persistence.
+
+**TodoWrite item:**
+```
+{content: "Review verification coverage report before pipeline_load [GATE]", status: "pending", activeForm: "Reviewing verification coverage"}
+```
+
+**Rule:** Emit both a human-readable summary AND a machine-readable JSON block. Write the JSON to `.adversarial-spec/specs/<slug>/verification-coverage.json` alongside the execution plan.
+
+**Human-readable format:**
+
+```
+Verification Coverage Report
+───────────────────────────────────────
+Total tasks:              38
+Behavior-changing:        23
+Non-behavior-changing:    15
+
+By mode:
+  automated-unit:          8
+  automated-integration:   5
+  automated-contract:      4
+  automated-component:     3
+  static-check:            2
+  artifact-sync:           6
+  test-producer:           3
+  manual-ux:               4
+  UNMAPPED:                3  ← BLOCKING
+
+Unmapped behavior-changing tasks:
+  T12: "Update config loader" — has AC mentioning tests
+  T15: "Add retry logic" — behavior-changing, no verification
+  T22: "Frontend polish" — needs at least manual-ux classification
+```
+
+**Machine-readable JSON** (persist to `.adversarial-spec/specs/<slug>/verification-coverage.json`):
+
+```json
+{
+  "report_schema_version": 1,
+  "total_tasks": 38,
+  "behavior_changing_count": 23,
+  "non_behavior_changing_count": 15,
+  "counts_by_mode": {
+    "automated-unit": 8,
+    "automated-integration": 5,
+    "automated-contract": 4,
+    "automated-component": 3,
+    "static-check": 2,
+    "artifact-sync": 6,
+    "test-producer": 3,
+    "manual-ux": 4
+  },
+  "exempt_tasks": [
+    {"task_id": "T5", "mode": "artifact-sync", "reason": "Roadmap/manifest sync"},
+    {"task_id": "T9", "mode": "static-check", "reason": "Config schema validated by ruff"}
+  ],
+  "unmapped_behavior_tasks": ["T12", "T15", "T22"],
+  "unmapped_non_behavior_tasks": [],
+  "validation_errors": []
+}
+```
+
+**Blocking rule:** Refuse `pipeline_load` if `unmapped_behavior_tasks` is non-empty. Non-behavior-changing tasks with no mapping produce a warning, not a block. `validation_errors` must be empty or Gate V2 was skipped in error — loop back to V2.
+
+**Nature of this gate:** LLM-enforced process gate. Mark V3 `completed` only after the JSON file exists on disk at the declared path AND the human-readable summary has been shown to the user.
+
+**[GATE] TodoWrite: Mark "Review verification coverage report before pipeline_load" completed before proceeding to Gate V4.**
+
+---
+
+### Gate V4: Exception Review
+
+**Position:** After Gate V3, before Step 8 (Persist Execution Plan). Must happen in the same user-approval flow as V3.
+
+**TodoWrite item:**
+```
+{content: "Review every exemption with the user [GATE]", status: "pending", activeForm: "Reviewing verification exemptions"}
+```
+
+**Rule:** Surface all exempt tasks explicitly to the user. Exempt modes are `artifact-sync`, `static-check`, and `manual-ux`. **`test-producer` tasks are NOT exempt** and do not appear in this review — they require `test_files` and `verify_commands` like automated modes.
+
+**Presentation format:**
+
+```
+Exempt Tasks (require user acknowledgement)
+───────────────────────────────────────
+  T5  artifact-sync   "Roadmap/manifest sync — no behavioral change"
+  T9  static-check    "Config schema validated by ruff type check"
+  T14 manual-ux       "Visual heatmap quality — cannot assert programmatically"
+  T18 artifact-sync   "README update — docs only"
+
+Acknowledge exemptions? [Y/n/modify]
+```
+
+**User response handling:**
+
+- `Y` — proceed to Step 8.
+- `n` — loop back to Step 3 to reclassify one or more tasks.
+- `modify` — for each task the user corrects:
+  1. Update the affected task's fields (mode, scope, test_refs, exemption_reason, or `behavior_change`)
+  2. Re-validate that single task against Gate V2 rules
+  3. Regenerate `verification-coverage.json` (Gate V3)
+  4. Re-present only the changed tasks for confirmation
+
+**Nature of this gate:** This is the human correction point for any classification the LLM got wrong at Gate V1 or V2. The gate is LLM-enforced only in the sense that the LLM must ask; the *answer* is a human decision. Record the user's acknowledgement in the session journey.
+
+**[GATE] TodoWrite: Mark "Review every exemption with the user" completed before proceeding to Step 8.**
 
 ---
 
@@ -388,6 +680,8 @@ Where `<slug>` is the context name slugified (same as the manifest directory).
 
 **This step connects the execution plan to the self-pickup loop.** Without it, cards are just text on disk — no agent can pick them up via `pipeline_do_next_task`.
 
+**Prerequisites:** Gates V3 (Coverage Report) and V4 (Exception Review) must be completed. Do not invoke `pipeline_load` while `unmapped_behavior_tasks` in `verification-coverage.json` is non-empty.
+
 **Generate `fizzy-plan.json`:**
 
 Write a JSON file alongside the execution plan:
@@ -395,39 +689,63 @@ Write a JSON file alongside the execution plan:
 .adversarial-spec/specs/<slug>/fizzy-plan.json
 ```
 
-The JSON must follow the pipeline schema:
+The JSON must follow the v2 pipeline schema. The root includes `plan_schema_version: 2` and every task carries the verification block defined in the Verification Schema (v2) reference:
+
 ```json
 {
+  "plan_schema_version": 2,
   "session_id": "<active_session_id from session-state.json>",
   "tasks": [
     {
       "task_id": "T1",
-      "title": "Task title from execution plan",
+      "title": "Implement trade telemetry API",
       "description": "Full task description with acceptance criteria",
       "wave": 0,
       "effort": "M",
       "strategy": "test-first",
       "depends_on": [],
       "concern_refs": ["PARA-abc", "BURN-def"],
-      "test_refs": ["TC-1.1", "TC-1.2"]
+      "invariant_refs": ["INV-3", "INV-7"],
+      "surface_scope": ["public_api", "data_stream"],
+
+      "behavior_change": true,
+      "verification_mode": "automated-contract",
+      "verification_scope": "targeted",
+      "test_refs": ["TC-5.2", "TC-5.4"],
+      "test_files": ["tests/test_t5_api_contracts.py"],
+      "verify_commands": ["uv run pytest tests/test_t5_api_contracts.py -q"],
+      "verification_notes": "Trade telemetry keys must remain optional for older payloads.",
+      "exemption_reason": null
     },
     {
       "task_id": "T2",
-      "title": "Second task",
-      "description": "Description with acceptance criteria",
+      "title": "Update roadmap manifest",
+      "description": "Sync roadmap.json with Wave 1 task IDs",
       "wave": 1,
       "effort": "S",
       "strategy": "test-after",
       "depends_on": ["T1"],
       "concern_refs": [],
-      "test_refs": ["TC-2.1"]
+      "invariant_refs": [],
+      "surface_scope": [],
+
+      "behavior_change": false,
+      "verification_mode": "artifact-sync",
+      "verification_scope": "static",
+      "test_refs": [],
+      "test_files": [],
+      "verify_commands": [],
+      "verification_notes": null,
+      "exemption_reason": "Roadmap/manifest sync — no runtime effect"
     }
   ]
 }
 ```
 
 **Field mapping from execution plan:**
-- `task_id`: Use the task numbering from the plan (T1, T2, ... or W0-1, W1-1, etc.)
+
+Core fields (unchanged from v1):
+- `task_id`: Task numbering from the plan (T1, T2, ... or W0-1, W1-1, etc.)
 - `title`: Task title
 - `description`: Full description including acceptance criteria
 - `wave`: Wave number from the plan
@@ -435,7 +753,17 @@ The JSON must follow the pipeline schema:
 - `strategy`: test-first / test-after / skip
 - `depends_on`: List of task_ids this task depends on (from dependency graph)
 - `concern_refs`: List of gauntlet concern IDs linked to this task
-- `test_refs`: List of test case IDs from `tests-spec.md` (e.g., `["TC-1.1", "TC-1.2"]`). Every task that touches behavior MUST reference ≥1 test. Tasks without test refs that modify behavior should be flagged for user review.
+- `invariant_refs`, `surface_scope`: Populated when Phase 4 ran (see Step 3)
+
+Verification block fields (v2, see Verification Schema reference above for full semantics):
+- `behavior_change`, `verification_mode`, `verification_scope`: always required
+- `test_refs`, `test_files`, `verify_commands`: required per mode
+- `exemption_reason`: required for exempt modes (`artifact-sync`, `static-check`, `manual-ux`)
+- `verification_notes`: optional free-text
+
+**Plan-level version marker:** include `plan_schema_version: 2` at the root. fizzy-pipeline-mcp uses this to select the strict validation path at `pipeline_load`. Plans missing this marker (or with version `1`) load with warnings during the migration window.
+
+**Emit verification-coverage.json:** If Gate V3 did not already write it, write the coverage report to `.adversarial-spec/specs/<slug>/verification-coverage.json` now using the `report_schema_version: 1` shape documented in Gate V3.
 
 **Load into pipeline:**
 ```

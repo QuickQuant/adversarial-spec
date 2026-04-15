@@ -154,48 +154,56 @@ def evaluate_concerns_multi_model(
     print(f"  Processing {len(concerns)} concerns in {len(batches)} batches", file=sys.stderr)
 
     def run_all_batches_for_model(model: str) -> dict[int, list[Evaluation]]:
-        """Run all batches for a single model, respecting its rate limit."""
+        """Run all batches for a single model, respecting its rate limit.
+
+        Launches waves with staggered delays but does NOT wait for a wave
+        to finish before launching the next. All batches run concurrently
+        within a single executor — the delay is only between submission
+        moments, not between completions.
+        """
         rate_batch_size, rate_delay = get_rate_limit_config(model)
         results: dict[int, list[Evaluation]] = {}
 
-        for wave_start in range(0, len(batches), rate_batch_size):
-            wave_end = min(wave_start + rate_batch_size, len(batches))
-            wave_batches = list(range(wave_start, wave_end))
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(batches)) as executor:
+            future_to_idx = {}
 
-            if wave_start > 0:
-                print(
-                    f"  {model}: rate limit pause {rate_delay}s before wave "
-                    f"{wave_start // rate_batch_size + 1}...",
-                    file=sys.stderr,
-                )
-                time.sleep(rate_delay)
+            for wave_start in range(0, len(batches), rate_batch_size):
+                wave_end = min(wave_start + rate_batch_size, len(batches))
+                wave_batches = list(range(wave_start, wave_end))
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=len(wave_batches)) as wave_executor:
-                future_to_idx = {}
+                if wave_start > 0:
+                    print(
+                        f"  {model}: rate limit pause {rate_delay}s before wave "
+                        f"{wave_start // rate_batch_size + 1}...",
+                        file=sys.stderr,
+                    )
+                    time.sleep(rate_delay)
+
                 for batch_idx in wave_batches:
-                    future = wave_executor.submit(
+                    future = executor.submit(
                         evaluate_concerns, spec, batches[batch_idx], model, config
                     )
                     future_to_idx[future] = batch_idx
 
-                for future in concurrent.futures.as_completed(future_to_idx):
-                    batch_idx = future_to_idx[future]
-                    try:
-                        evals = future.result()
-                        results[batch_idx] = evals
-                        print(
-                            f"  {model}: batch {batch_idx + 1}/{len(batches)} done "
-                            f"({len(evals)} evals)",
-                            file=sys.stderr,
-                        )
-                    except Exception as e:
-                        if isinstance(e, PROGRAMMING_BUGS):
-                            raise
-                        print(
-                            f"  Warning: {model} batch {batch_idx + 1} failed: {e}",
-                            file=sys.stderr,
-                        )
-                        results[batch_idx] = []
+            # Collect all results after all waves launched
+            for future in concurrent.futures.as_completed(future_to_idx):
+                batch_idx = future_to_idx[future]
+                try:
+                    evals = future.result()
+                    results[batch_idx] = evals
+                    print(
+                        f"  {model}: batch {batch_idx + 1}/{len(batches)} done "
+                        f"({len(evals)} evals)",
+                        file=sys.stderr,
+                    )
+                except Exception as e:
+                    if isinstance(e, PROGRAMMING_BUGS):
+                        raise
+                    print(
+                        f"  Warning: {model} batch {batch_idx + 1} failed: {e}",
+                        file=sys.stderr,
+                    )
+                    results[batch_idx] = []
 
         return results
 

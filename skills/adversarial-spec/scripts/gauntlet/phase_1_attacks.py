@@ -248,6 +248,8 @@ def generate_attacks(
             raw_responses[f"{adv_key}@{model}"] = raw_response
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=min(32, len(pairs) or 1)) as executor:
+        all_futures: dict[concurrent.futures.Future, tuple[str, str]] = {}
+
         for provider, provider_pairs in by_provider.items():
             batch_size, batch_delay = get_rate_limit_config(provider_pairs[0][1])
 
@@ -261,13 +263,13 @@ def generate_attacks(
                     )
                     time.sleep(batch_delay)
 
-                batch_futures = {
-                    executor.submit(run_adversary_with_model, adv, model): (adv, model)
-                    for adv, model in batch
-                }
-                for future in concurrent.futures.as_completed(batch_futures):
-                    adv_key, model = batch_futures[future]
-                    collect_result(future, adv_key, model)
+                for adv, model in batch:
+                    future = executor.submit(run_adversary_with_model, adv, model)
+                    all_futures[future] = (adv, model)
+
+        for future in concurrent.futures.as_completed(all_futures):
+            adv_key, model = all_futures[future]
+            collect_result(future, adv_key, model)
 
     if timing:
         sorted_timing = sorted(timing.items(), key=lambda x: x[1], reverse=True)
