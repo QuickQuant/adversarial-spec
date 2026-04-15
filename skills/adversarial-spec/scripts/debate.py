@@ -341,6 +341,13 @@ def add_core_arguments(parser: argparse.ArgumentParser) -> None:
         default=1,
         help="Total rounds completed (used with send-final)",
     )
+    parser.add_argument(
+        "--cwd",
+        default=None,
+        help="Working directory for CLI model subprocesses (avoids loading project AGENTS.md)",
+    )
+
+
 def add_output_arguments(parser: argparse.ArgumentParser) -> None:
     """Add output formatting arguments to parser."""
     parser.add_argument("--json", "-j", action="store_true", help="Output as JSON")
@@ -1290,6 +1297,7 @@ def run_critique(
         file=sys.stderr,
     )
 
+    session_id_for_parallel = session_state.session_id if session_state else args.session
     results = call_models_parallel(
         models,
         spec,
@@ -1306,6 +1314,8 @@ def run_critique(
         bedrock_mode,
         bedrock_region,
         getattr(args, "depth", None),
+        session_id=session_id_for_parallel,
+        cwd=getattr(args, "cwd", None),
     )
 
     errors = [r for r in results if r.error]
