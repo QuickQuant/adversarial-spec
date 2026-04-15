@@ -204,7 +204,8 @@ class TestSessionState:
 
 
 class TestSaveCheckpoint:
-    def test_save_checkpoint_creates_file(self):
+    @patch("session.detect_active_session", return_value=None)
+    def test_save_checkpoint_creates_file(self, mock_detect):
         with tempfile.TemporaryDirectory() as tmpdir:
             checkpoint_dir = Path(tmpdir) / "checkpoints"
 
@@ -330,7 +331,8 @@ class TestTaskManagerLocking:
         with pytest.raises(RuntimeError, match="TASK_STORE_CORRUPT"):
             manager.create_task("Subject", "Description")
 
-    def test_save_checkpoint_creates_nested_directories(self):
+    @patch("session.detect_active_session", return_value=None)
+    def test_save_checkpoint_creates_nested_directories(self, mock_detect):
         # Mutation: parents=True → parents=False would fail
         with tempfile.TemporaryDirectory() as tmpdir:
             checkpoint_dir = Path(tmpdir) / "deep" / "nested" / "checkpoints"
@@ -354,7 +356,8 @@ class TestTaskManagerLocking:
                 assert len(files) == 1
                 assert files[0].name == "test-session-round-5.md"
 
-    def test_save_checkpoint_exist_ok(self):
+    @patch("session.detect_active_session", return_value=None)
+    def test_save_checkpoint_exist_ok(self, mock_detect):
         # Mutation: exist_ok=True → exist_ok=False would fail on second call
         with tempfile.TemporaryDirectory() as tmpdir:
             checkpoint_dir = Path(tmpdir) / "checkpoints"
