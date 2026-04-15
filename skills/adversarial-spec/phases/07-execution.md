@@ -764,7 +764,7 @@ Verification block fields (v2, see Verification Schema reference above for full 
 
 **Plan-level version marker:** include `plan_schema_version: 2` at the root. fizzy-pipeline-mcp uses this to select the strict validation path at `pipeline_load`. Plans missing this marker (or with version `1`) load with warnings during the migration window.
 
-**Emit verification-coverage.json:** If Gate V3 did not already write it, write the coverage report to `.adversarial-spec/specs/<slug>/verification-coverage.json` now using the `report_schema_version: 1` shape documented in Gate V3.
+**Emit verification-coverage.json:** If Gate V3 did not already write it, write the coverage report to `.adversarial-spec/specs/<slug>/verification-coverage.json` now using the `report_schema_version: 1` shape documented in Gate V3. Keep it alongside `fizzy-plan.json` so reviewers can inspect both artifacts from the same session directory.
 
 **Load into pipeline:**
 ```
