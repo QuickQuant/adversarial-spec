@@ -1,1 +1,1 @@
-checkpoint-202604111906-phase4-architecture-rewrite-complete.md
+checkpoint-202604112245-pre-compaction-auto-checkpoint.md

@@ -1,0 +1,196 @@
+{
+  "plan_schema_version": 2,
+  "session_id": "adv-spec-202604111912-test-mapping-verification-gates",
+  "tasks": [
+    {
+      "task_id": "TMV1",
+      "title": "Add Verification Schema (v2) reference section to 07-execution.md",
+      "description": "Insert a new 'Verification Schema (v2)' subsection in 07-execution.md between Step 2.5 and Step 3. Content: plan_schema_version: 2 marker; per-task field table; verification_mode enum (8 modes); verification_scope enum (4 scopes); mode-to-scope compatibility matrix; path/command validation rules; 10 typed validation error codes; behavior_change classification criteria; contract field mapping to fizzy-pipeline-mcp.",
+      "wave": 0,
+      "effort": "M",
+      "strategy": "test-after",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Section inserted between Step 2.5 and Step 3 in skills/adversarial-spec/phases/07-execution.md",
+        "All 8 verification_mode values documented with required fields per mode",
+        "Mode-to-scope compatibility matrix present (8 modes x 4 scopes)",
+        "All 10 typed validation error codes listed",
+        "Path validation rules stated (repo-relative, no .. traversal, no absolute paths)",
+        "verify_commands rules stated (literal shell strings, no template interpolation)",
+        "Behavior-change classification criteria included (true and false buckets)",
+        "Contract field mapping to fizzy-pipeline-mcp documented (declared_ prefix table)",
+        "test-producer explicitly noted as NOT exempt"
+      ],
+      "concern_refs": ["PEDA-schema-precision", "ARCH-contract-completeness"],
+      "invariant_refs": [],
+      "surface_scope": [],
+
+      "behavior_change": false,
+      "verification_mode": "artifact-sync",
+      "verification_scope": "static",
+      "test_refs": [],
+      "test_files": [],
+      "verify_commands": [],
+      "verification_notes": "Phase 07 reference prose. Validation is human review during PR.",
+      "exemption_reason": "Phase doc prose — no runtime validation"
+    },
+    {
+      "task_id": "TMV2",
+      "title": "Insert Gates V1-V4 in 07-execution.md at correct positions",
+      "description": "Insert 4 LLM-enforced gates: V1 (Verification Classification) after Step 3, V2 (Mapping Completeness) after Step 4, V3 (Coverage Report) after Step 7, V4 (Exception Review) after V3. Each gate includes TodoWrite item, position note, rule text, blocking behavior, and (for V3) human-readable + machine-readable coverage report templates.",
+      "wave": 0,
+      "effort": "M",
+      "strategy": "test-after",
+      "depends_on": ["TMV1"],
+      "acceptance_criteria": [
+        "Gate V1 inserted between Step 3 and Step 4",
+        "Gate V2 inserted between Step 4 and Step 5",
+        "Gate V3 inserted between Step 7 and Step 8",
+        "Gate V4 inserted between Gate V3 and Step 8",
+        "V1 rule: every task has behavior_change + verification_mode + verification_scope",
+        "V2 rules: conditional-required fields per mode, mode-to-scope matrix, path validation, no whitespace-only strings",
+        "V3 emits human-readable summary AND report_schema_version: 1 JSON written to verification-coverage.json",
+        "V3 blocking rule: refuse pipeline_load if unmapped_behavior_tasks is non-empty",
+        "V4 lists exempt tasks (artifact-sync, static-check, manual-ux) and explicitly excludes test-producer",
+        "V4 includes user response handling (Y / n / modify) and re-validation loop",
+        "Each gate explicitly notes 'LLM-enforced process gate, not runtime validator'"
+      ],
+      "concern_refs": ["MINI-honest-framing", "AUDT-human-override"],
+      "invariant_refs": [],
+      "surface_scope": [],
+
+      "behavior_change": false,
+      "verification_mode": "artifact-sync",
+      "verification_scope": "static",
+      "test_refs": [],
+      "test_files": [],
+      "verify_commands": [],
+      "verification_notes": "Gates are TodoWrite items in markdown. Human review at PR is the validation.",
+      "exemption_reason": "Phase doc prose — LLM-enforced gates are markdown"
+    },
+    {
+      "task_id": "TMV3",
+      "title": "Update Phase 07 TodoWrite template",
+      "description": "Replace the existing TodoWrite template at top of 07-execution.md with the expanded 16-item version. Add 4 new [GATE] items in the correct order relative to existing steps. Existing gates preserved.",
+      "wave": 0,
+      "effort": "S",
+      "strategy": "test-after",
+      "depends_on": ["TMV2"],
+      "acceptance_criteria": [
+        "TodoWrite template at top of 07-execution.md contains 16 items",
+        "Item: 'Classify behavior_change and verification_mode for every task [GATE]' present after decomposition",
+        "Item: 'Attach test_refs, test_files, or exemption_reason for every task [GATE]' present after test strategy assignment",
+        "Item: 'Review verification coverage report before pipeline_load [GATE]' present before write-to-disk",
+        "Item: 'Review every exemption with the user [GATE]' present after coverage review",
+        "Existing gates (Load architecture, Present plan, Write to disk, Load pipeline, Add comments) all preserved",
+        "Item ordering matches Phase 07 step order"
+      ],
+      "concern_refs": ["MINI-clarity-of-process"],
+      "invariant_refs": [],
+      "surface_scope": [],
+
+      "behavior_change": false,
+      "verification_mode": "artifact-sync",
+      "verification_scope": "static",
+      "test_refs": [],
+      "test_files": [],
+      "verify_commands": [],
+      "verification_notes": null,
+      "exemption_reason": "Phase doc prose — TodoWrite template is markdown"
+    },
+    {
+      "task_id": "TMV4",
+      "title": "Update Step 9 to emit v2 schema and coverage report",
+      "description": "Update Step 9 (Load into Fizzy Pipeline) of 07-execution.md to use the v2 fizzy-plan.json schema, reference the T1 schema section, gate on V3/V4 prerequisites, and document writing verification-coverage.json.",
+      "wave": 0,
+      "effort": "M",
+      "strategy": "test-after",
+      "depends_on": ["TMV1"],
+      "acceptance_criteria": [
+        "Step 9 example JSON includes plan_schema_version: 2 at the root",
+        "Example tasks include the full verification block (behavior_change, verification_mode, verification_scope, test_refs, test_files, verify_commands, exemption_reason)",
+        "Both an automated and an exempt task example are present",
+        "Step 9 explicitly states V3 + V4 are prerequisites before pipeline_load is called",
+        "Step 9 references the Verification Schema (v2) reference section for full semantics",
+        "Step 9 documents writing .adversarial-spec/specs/<slug>/verification-coverage.json with report_schema_version: 1"
+      ],
+      "concern_refs": ["PEDA-schema-precision"],
+      "invariant_refs": [],
+      "surface_scope": [],
+
+      "behavior_change": false,
+      "verification_mode": "artifact-sync",
+      "verification_scope": "static",
+      "test_refs": [],
+      "test_files": [],
+      "verify_commands": [],
+      "verification_notes": null,
+      "exemption_reason": "Phase doc prose — JSON template is in markdown fence"
+    },
+    {
+      "task_id": "TMV5",
+      "title": "Deploy updated 07-execution.md to ~/.claude/skills/",
+      "description": "Ensure the updated 07-execution.md is reflected at ~/.claude/skills/adversarial-spec/phases/07-execution.md so the next /adversarial-spec invocation picks up the new gates. Note: in this repo, ~/.claude/skills/adversarial-spec is a symlink to the source path, so the deploy is implicitly satisfied by editing the source.",
+      "wave": 0,
+      "effort": "S",
+      "strategy": "test-after",
+      "depends_on": ["TMV2", "TMV3", "TMV4"],
+      "acceptance_criteria": [
+        "diff between source and ~/.claude/skills/adversarial-spec/phases/07-execution.md is empty",
+        "Both paths resolve to the same content (or same inode via symlink)",
+        "No other phase docs modified during deploy"
+      ],
+      "concern_refs": [],
+      "invariant_refs": [],
+      "surface_scope": [],
+
+      "behavior_change": false,
+      "verification_mode": "artifact-sync",
+      "verification_scope": "static",
+      "test_refs": [],
+      "test_files": [],
+      "verify_commands": [],
+      "verification_notes": "Symlink deployment — no copy needed in this repo.",
+      "exemption_reason": "File copy / symlink — no logic change"
+    },
+    {
+      "task_id": "TMV6",
+      "title": "Dogfood — generate v2 fizzy-plan.json for this session",
+      "description": "Walk this execution plan through all 4 gates manually and produce two artifacts: a v2 fizzy-plan.json and a verification-coverage.json. Validation: Python assertions on schema and shape. This task is itself a test-producer because it creates the first v2 artifact.",
+      "wave": 0,
+      "effort": "S",
+      "strategy": "test-after",
+      "depends_on": ["TMV5"],
+      "acceptance_criteria": [
+        ".adversarial-spec/specs/test-mapping-verification-gates/fizzy-plan.json exists with plan_schema_version: 2",
+        "All 6 tasks include behavior_change, verification_mode, verification_scope",
+        "Automated and test-producer tasks have non-empty test_refs/test_files/verify_commands as required",
+        "Exempt tasks have non-empty exemption_reason",
+        ".adversarial-spec/specs/test-mapping-verification-gates/verification-coverage.json exists with report_schema_version: 1",
+        "Coverage counts match plan contents (total_tasks: 6, behavior_changing_count: 1, non_behavior_changing_count: 5)",
+        "verification-coverage.json unmapped_behavior_tasks is empty",
+        "verify_commands python assertions both succeed",
+        "Gate V2 validator script reports 'All 6 tasks pass Gate V2 rules'",
+        "Plan loads into fizzy pipeline without PLAN_INVALID errors"
+      ],
+      "concern_refs": [],
+      "invariant_refs": [],
+      "surface_scope": [],
+
+      "behavior_change": true,
+      "verification_mode": "test-producer",
+      "verification_scope": "targeted",
+      "test_refs": [],
+      "test_files": [
+        ".adversarial-spec/specs/test-mapping-verification-gates/fizzy-plan.json",
+        ".adversarial-spec/specs/test-mapping-verification-gates/verification-coverage.json"
+      ],
+      "verify_commands": [
+        "python3 -c \"import json; p = json.load(open('.adversarial-spec/specs/test-mapping-verification-gates/fizzy-plan.json')); assert p['plan_schema_version'] == 2; assert all('verification_mode' in t for t in p['tasks']); assert all('behavior_change' in t for t in p['tasks']); print('OK', len(p['tasks']), 'tasks')\"",
+        "python3 -c \"import json; r = json.load(open('.adversarial-spec/specs/test-mapping-verification-gates/verification-coverage.json')); assert r['report_schema_version'] == 1; assert r['total_tasks'] == 6; assert not r['unmapped_behavior_tasks']; print('OK coverage report')\""
+      ],
+      "verification_notes": "test-producer is NOT exempt — it requires test_files and verify_commands like automated modes.",
+      "exemption_reason": null
+    }
+  ]
+}

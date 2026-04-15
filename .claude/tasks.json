@@ -65,7 +65,7 @@
       "id": "4",
       "subject": "Conduct interview",
       "description": "Interview covering: Problem/Context, Users/Stakeholders, Functional Requirements, Technical Constraints, UI/UX, Tradeoffs, Risks, Success Criteria",
-      "status": "pending",
+      "status": "in_progress",
       "owner": "adv-spec:orchestrator",
       "blockedBy": [
         "3"
@@ -80,7 +80,7 @@
         "phase": "requirements"
       },
       "createdAt": "2026-01-24T20:02:23.666736Z",
-      "updatedAt": "2026-01-24T20:02:23.666736Z"
+      "updatedAt": "2026-04-11T22:34:27.868457Z"
     },
     {
       "id": "5",

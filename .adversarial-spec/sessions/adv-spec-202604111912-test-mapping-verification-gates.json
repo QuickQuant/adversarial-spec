@@ -1,0 +1,95 @@
+{
+  "session_id": "adv-spec-202604111912-test-mapping-verification-gates",
+  "context_name": "Test Mapping & Verification Gates",
+  "doc_type": "spec",
+  "depth": "technical",
+  "current_phase": "execution",
+  "current_step": "Plan loaded into Fizzy. All 6 task cards (891-897 minus 894) ready in New Todo with concern context comments.",
+  "status": "active",
+  "created_at": "2026-04-11T19:32:21Z",
+  "updated_at": "2026-04-11T23:15:00Z",
+  "spec_path": ".adversarial-spec/specs/test-mapping-verification-gates/spec-output.md",
+  "execution_plan_path": ".adversarial-spec/specs/test-mapping-verification-gates/execution-plan.md",
+  "source_file": "/home/jason/PycharmProjects/ETB/docs/adversarial-spec-test-mapping-proposal.md",
+  "requirements_summary": {
+    "problem": "Phase 07 produces execution plans where 66% of cards lack test mapping, including test-first cards. Verification intent is underspecified.",
+    "proposal": "Per-card verification block with typed modes, 4 hard gates before pipeline_load",
+    "target": "adversarial-spec phases 07-execution.md and fizzy-plan.json schema"
+  },
+  "journey": [
+    {
+      "time": "2026-04-11T19:32:21Z",
+      "event": "Session created from ETB test-mapping proposal",
+      "type": "creation"
+    },
+    {
+      "time": "2026-04-11T19:51:25Z",
+      "event": "Debate R1: Codex critiqued (10 findings), Gemini Flash agreed",
+      "type": "debate"
+    },
+    {
+      "time": "2026-04-11T19:51:25Z",
+      "event": "Debate R2: Codex agreed, Gemini 3.1 Pro critiqued (2 findings). Convergence.",
+      "type": "debate"
+    },
+    {
+      "time": "2026-04-11T20:47:22Z",
+      "event": "Gauntlet: 4 adversaries x 2 models, 168 raw -> 125 accepted. 10 fixes applied.",
+      "type": "gauntlet"
+    },
+    {
+      "time": "2026-04-11T20:47:22Z",
+      "event": "Phase transition: gauntlet -> finalize",
+      "type": "transition"
+    },
+    {
+      "time": "2026-04-11T21:16:28Z",
+      "event": "Context about to compact",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-04-11T21:16:28Z",
+      "event": "Checkpoint saved: pre-compaction-auto-checkpoint.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-04-11T22:45:00Z",
+      "event": "Phase transition: finalize -> execution. Execution plan written (6 tasks, 1 workstream).",
+      "type": "transition"
+    },
+    {
+      "time": "2026-04-11T23:15:00Z",
+      "event": "TMV1-TMV4 source edits to 07-execution.md complete (schema section, gates V1-V4, TodoWrite template, Step 9 v2 example). TMV5 implicitly satisfied by symlink.",
+      "type": "implementation"
+    },
+    {
+      "time": "2026-04-11T23:15:00Z",
+      "event": "TMV6 dogfood: fizzy-plan.json + verification-coverage.json written. Both verify_commands pass. Custom Gate V2 validator passes all 6 tasks.",
+      "type": "implementation"
+    },
+    {
+      "time": "2026-04-11T23:15:00Z",
+      "event": "Reconciled session card 572 through Pre-Roadmap → Debate → Pre-Gauntlet → Gauntlet → Reconciliation → Finalization (gates G1/G2/G3 patched manually since lane workflow was bypassed during earlier phases). Plan loaded: 6 task cards 891-897 (skipping 894) created in New Todo with TMV1-TMV6 task_ids (renamed from T1-T6 to dodge board-wide dedup collision with phase4-architecture-rewrite).",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-04-11T23:15:00Z",
+      "event": "Concern context comments added to all 6 task cards.",
+      "type": "milestone"
+    }
+  ],
+  "fizzy_card_id": "572",
+  "task_card_ids": ["891", "892", "893", "895", "896", "897"],
+  "task_id_mapping": {
+    "T1": "TMV1 (card 891)",
+    "T2": "TMV2 (card 892)",
+    "T3": "TMV3 (card 893)",
+    "T4": "TMV4 (card 895)",
+    "T5": "TMV5 (card 896)",
+    "T6": "TMV6 (card 897)"
+  },
+  "completed_work": "All 6 source-of-truth phase doc edits complete. Dogfood artifacts written. Plan loaded into Fizzy with concern context. Implementation work for this session is functionally complete — the only remaining step is review/test/deploy gates per implementation pipeline.",
+  "next_action": "Move to phase 08 (implementation) for review+test of cards 891-897 OR mark execution complete since all source edits already exist on disk.",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202604112245-pre-compaction-auto-checkpoint.md",
+  "do_not_ask": []
+}

@@ -1,0 +1,26 @@
+{
+  "report_schema_version": 1,
+  "total_tasks": 6,
+  "behavior_changing_count": 1,
+  "non_behavior_changing_count": 5,
+  "counts_by_mode": {
+    "automated-unit": 0,
+    "automated-integration": 0,
+    "automated-contract": 0,
+    "automated-component": 0,
+    "static-check": 0,
+    "artifact-sync": 5,
+    "test-producer": 1,
+    "manual-ux": 0
+  },
+  "exempt_tasks": [
+    {"task_id": "TMV1", "mode": "artifact-sync", "reason": "Phase doc prose — no runtime validation"},
+    {"task_id": "TMV2", "mode": "artifact-sync", "reason": "Phase doc prose — LLM-enforced gates are markdown"},
+    {"task_id": "TMV3", "mode": "artifact-sync", "reason": "Phase doc prose — TodoWrite template is markdown"},
+    {"task_id": "TMV4", "mode": "artifact-sync", "reason": "Phase doc prose — JSON template is in markdown fence"},
+    {"task_id": "TMV5", "mode": "artifact-sync", "reason": "File copy / symlink — no logic change"}
+  ],
+  "unmapped_behavior_tasks": [],
+  "unmapped_non_behavior_tasks": [],
+  "validation_errors": []
+}

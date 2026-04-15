@@ -326,3 +326,755 @@
 {"ts": "2026-04-11T19:07:00.328465+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
 {"ts": "2026-04-11T19:09:38.932598+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
 {"ts": "2026-04-11T19:28:43.166763+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:30:34.832364+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:31:31.633747+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:35:23.767250+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:38:05.100366+00:00", "session_id": "019d7e0d-19b4-7520-a2e7-5d712c2aec20", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T19:38:05.152274+00:00", "session_id": "019d7e0d-19b4-7520-a2e7-5d712c2aec20", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:38:08.766990+00:00", "session_id": "68138d43-6eb5-4352-b73a-fe797e3d0eeb", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-11T19:38:09.567829+00:00", "session_id": "68138d43-6eb5-4352-b73a-fe797e3d0eeb", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:38:39.079277+00:00", "session_id": "68138d43-6eb5-4352-b73a-fe797e3d0eeb", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-11T19:39:09.630608+00:00", "session_id": "019d7e0d-19b4-7520-a2e7-5d712c2aec20", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:45:03.246827+00:00", "session_id": "019d7e13-7be3-7480-951a-a3a3f1534773", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T19:45:03.301872+00:00", "session_id": "019d7e13-7be3-7480-951a-a3a3f1534773", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:45:06.570282+00:00", "session_id": "f6108684-6985-4a5b-8405-d74c6d867180", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-11T19:45:07.343432+00:00", "session_id": "f6108684-6985-4a5b-8405-d74c6d867180", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:46:03.053012+00:00", "session_id": "f6108684-6985-4a5b-8405-d74c6d867180", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-11T19:46:34.263924+00:00", "session_id": "019d7e13-7be3-7480-951a-a3a3f1534773", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:52:53.852434+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:55:01.916204+00:00", "session_id": "019d7e1c-9cf4-7b70-b8da-6eae12aec419", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T19:55:01.964230+00:00", "session_id": "019d7e1c-9cf4-7b70-b8da-6eae12aec419", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:55:02.304118+00:00", "session_id": "019d7e1c-9d66-7933-96b2-ff7b7ed07bd3", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T19:55:02.347102+00:00", "session_id": "019d7e1c-9d66-7933-96b2-ff7b7ed07bd3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:55:02.686599+00:00", "session_id": "019d7e1c-9be7-7b63-a294-fe58ca54b67e", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T19:55:02.739875+00:00", "session_id": "019d7e1c-9be7-7b63-a294-fe58ca54b67e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:55:02.812125+00:00", "session_id": "019d7e1c-9d83-7f10-8eb8-40855b91e07a", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T19:55:02.863713+00:00", "session_id": "019d7e1c-9d83-7f10-8eb8-40855b91e07a", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:55:44.150857+00:00", "session_id": "019d7e1c-9d83-7f10-8eb8-40855b91e07a", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:56:01.216479+00:00", "session_id": "019d7e1c-9cf4-7b70-b8da-6eae12aec419", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:56:08.462221+00:00", "session_id": "019d7e1c-9d66-7933-96b2-ff7b7ed07bd3", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:56:12.598676+00:00", "session_id": "019d7e1c-9be7-7b63-a294-fe58ca54b67e", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:56:21.083240+00:00", "session_id": "ff339fb4-6119-43e3-8bff-690d8ec136a2", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-11T19:56:21.381703+00:00", "session_id": "a7d4beca-6adb-4477-b0ab-4471855d5834", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-11T19:56:21.514678+00:00", "session_id": "ff339fb4-6119-43e3-8bff-690d8ec136a2", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:56:21.825379+00:00", "session_id": "a7d4beca-6adb-4477-b0ab-4471855d5834", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:56:21.965751+00:00", "session_id": "66722081-028f-4c6b-939a-71af41eb4eab", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-11T19:56:22.454781+00:00", "session_id": "66722081-028f-4c6b-939a-71af41eb4eab", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-11T19:56:40.114028+00:00", "session_id": "ff339fb4-6119-43e3-8bff-690d8ec136a2", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-11T19:56:41.367749+00:00", "session_id": "a7d4beca-6adb-4477-b0ab-4471855d5834", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-11T19:56:47.298575+00:00", "session_id": "66722081-028f-4c6b-939a-71af41eb4eab", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-11T20:01:16.224026+00:00", "session_id": "2e11e395-7aaa-45df-9634-15d29695a803", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-11T20:01:17.114809+00:00", "session_id": "2e11e395-7aaa-45df-9634-15d29695a803", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:01:38.487364+00:00", "session_id": "2e11e395-7aaa-45df-9634-15d29695a803", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-11T20:05:44.655497+00:00", "session_id": "019d7e26-6d79-71b2-a524-3e796471a166", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:05:44.711889+00:00", "session_id": "019d7e26-6d79-71b2-a524-3e796471a166", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:02.376218+00:00", "session_id": "019d7e26-6d79-71b2-a524-3e796471a166", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:08.914778+00:00", "session_id": "019d7e26-c7b3-73a3-8589-a99d7729ada2", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:06:08.978608+00:00", "session_id": "019d7e26-c7b3-73a3-8589-a99d7729ada2", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:09.376484+00:00", "session_id": "019d7e26-c792-74a2-9ee4-b0cfdc9da39c", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:06:09.431605+00:00", "session_id": "019d7e26-c792-74a2-9ee4-b0cfdc9da39c", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:09.505764+00:00", "session_id": "019d7e26-cafc-7410-bb51-097f3e7c6857", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:06:09.522804+00:00", "session_id": "019d7e26-ca5c-7d30-9ae5-bd24dfca5754", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:06:09.569440+00:00", "session_id": "019d7e26-cafc-7410-bb51-097f3e7c6857", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:09.586050+00:00", "session_id": "019d7e26-ca5c-7d30-9ae5-bd24dfca5754", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:10.235789+00:00", "session_id": "019d7e26-cb3b-7500-b5ee-d3be47abe742", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:06:10.290918+00:00", "session_id": "019d7e26-cb3b-7500-b5ee-d3be47abe742", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:14.169476+00:00", "session_id": "019d7e26-ca5c-7d30-9ae5-bd24dfca5754", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:14.852370+00:00", "session_id": "019d7e26-cafc-7410-bb51-097f3e7c6857", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:18.451681+00:00", "session_id": "019d7e26-cb3b-7500-b5ee-d3be47abe742", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:19.592888+00:00", "session_id": "019d7e26-c7b3-73a3-8589-a99d7729ada2", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:19.636993+00:00", "session_id": "019d7e26-c792-74a2-9ee4-b0cfdc9da39c", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:20.718710+00:00", "session_id": "019d7e26-f9ac-70e2-9c29-cd3792c9ae06", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:06:20.783849+00:00", "session_id": "019d7e26-f9ac-70e2-9c29-cd3792c9ae06", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:23.134556+00:00", "session_id": "019d7e26-f5bf-7cb0-ad65-dacc1d180a50", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:06:23.190769+00:00", "session_id": "019d7e26-f5bf-7cb0-ad65-dacc1d180a50", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:24.140321+00:00", "session_id": "019d7e27-069f-72b1-9dcf-78b5c9f5e794", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:06:24.200764+00:00", "session_id": "019d7e27-069f-72b1-9dcf-78b5c9f5e794", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:24.924432+00:00", "session_id": "019d7e27-0a45-7611-9f12-1f7e409d3e17", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:06:24.978656+00:00", "session_id": "019d7e27-0a91-7bb2-b12d-f63de9c681fc", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:06:24.985727+00:00", "session_id": "019d7e27-0a45-7611-9f12-1f7e409d3e17", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:25.033438+00:00", "session_id": "019d7e27-0a91-7bb2-b12d-f63de9c681fc", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:28.096462+00:00", "session_id": "019d7e27-069f-72b1-9dcf-78b5c9f5e794", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:29.181706+00:00", "session_id": "019d7e26-f5bf-7cb0-ad65-dacc1d180a50", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:30.208323+00:00", "session_id": "019d7e26-f9ac-70e2-9c29-cd3792c9ae06", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:31.533406+00:00", "session_id": "019d7e27-0a45-7611-9f12-1f7e409d3e17", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:33.936003+00:00", "session_id": "019d7e27-2cf5-7af1-8abe-17e5e20caa6b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:06:33.997297+00:00", "session_id": "019d7e27-2cf5-7af1-8abe-17e5e20caa6b", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:34.942699+00:00", "session_id": "019d7e27-3113-7320-8279-7ea7eb9c103c", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:06:34.997310+00:00", "session_id": "019d7e27-3113-7320-8279-7ea7eb9c103c", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:36.823642+00:00", "session_id": "019d7e27-3943-75d2-ae3d-47a1293b8b6b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:06:36.873421+00:00", "session_id": "019d7e27-3943-75d2-ae3d-47a1293b8b6b", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:36.959404+00:00", "session_id": "019d7e27-35b2-7862-b2ef-55454beb1ca8", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:06:37.018705+00:00", "session_id": "019d7e27-35b2-7862-b2ef-55454beb1ca8", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:37.591925+00:00", "session_id": "019d7e27-2cf5-7af1-8abe-17e5e20caa6b", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:41.913384+00:00", "session_id": "019d7e27-3113-7320-8279-7ea7eb9c103c", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:42.875859+00:00", "session_id": "019d7e27-3943-75d2-ae3d-47a1293b8b6b", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:43.002814+00:00", "session_id": "019d7e27-5177-7de1-9f00-c32890dce6c9", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:06:43.060498+00:00", "session_id": "019d7e27-5177-7de1-9f00-c32890dce6c9", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:46.124795+00:00", "session_id": "019d7e27-5177-7de1-9f00-c32890dce6c9", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:47.149389+00:00", "session_id": "019d7e27-35b2-7862-b2ef-55454beb1ca8", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:47.430726+00:00", "session_id": "019d7e27-6233-7c73-8aac-5189f4fab7a5", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:06:47.498557+00:00", "session_id": "019d7e27-6233-7c73-8aac-5189f4fab7a5", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:49.134002+00:00", "session_id": "019d7e27-6614-7b82-93ee-7a966a32a7f4", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:06:49.202756+00:00", "session_id": "019d7e27-6614-7b82-93ee-7a966a32a7f4", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:51.908167+00:00", "session_id": "019d7e27-72cc-7cf2-9178-b914152e5fa5", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:06:51.954737+00:00", "session_id": "019d7e27-72cc-7cf2-9178-b914152e5fa5", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:52.455833+00:00", "session_id": "019d7e27-76bb-7183-8809-da38b6a3ffd5", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:06:52.506381+00:00", "session_id": "019d7e27-76bb-7183-8809-da38b6a3ffd5", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:54.803646+00:00", "session_id": "019d7e27-6233-7c73-8aac-5189f4fab7a5", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:55.294201+00:00", "session_id": "019d7e27-6614-7b82-93ee-7a966a32a7f4", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:55.925907+00:00", "session_id": "019d7e27-0a91-7bb2-b12d-f63de9c681fc", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:06:58.018685+00:00", "session_id": "019d7e27-72cc-7cf2-9178-b914152e5fa5", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:00.555493+00:00", "session_id": "019d7e27-9619-7171-8ba1-e256ec31ec8e", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:00.618925+00:00", "session_id": "019d7e27-9619-7171-8ba1-e256ec31ec8e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:00.664692+00:00", "session_id": "019d7e27-955b-7420-8828-68096ca4168d", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:00.728496+00:00", "session_id": "019d7e27-955b-7420-8828-68096ca4168d", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:01.916127+00:00", "session_id": "019d7e27-76bb-7183-8809-da38b6a3ffd5", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:02.610297+00:00", "session_id": "019d7e27-a0cb-7282-86da-4fa4ea87fea6", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:02.662976+00:00", "session_id": "019d7e27-a0cb-7282-86da-4fa4ea87fea6", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:02.811583+00:00", "session_id": "019d7e27-98a1-7c72-bdae-4c232b913bec", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:02.863434+00:00", "session_id": "019d7e27-98a1-7c72-bdae-4c232b913bec", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:06.500474+00:00", "session_id": "019d7e27-98a1-7c72-bdae-4c232b913bec", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:07.239949+00:00", "session_id": "019d7e27-b01d-7623-959a-34af6c9632df", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:07.294908+00:00", "session_id": "019d7e27-b01d-7623-959a-34af6c9632df", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:07.421470+00:00", "session_id": "019d7e27-9619-7171-8ba1-e256ec31ec8e", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:10.853662+00:00", "session_id": "019d7e27-a0cb-7282-86da-4fa4ea87fea6", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:11.548911+00:00", "session_id": "019d7e27-c0d2-7723-9a4f-d54f7be0d6c0", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:11.600209+00:00", "session_id": "019d7e27-c0d2-7723-9a4f-d54f7be0d6c0", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:12.721224+00:00", "session_id": "019d7e27-b01d-7623-959a-34af6c9632df", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:13.833603+00:00", "session_id": "019d7e27-c491-7103-836a-f6ef6fa36fe3", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:13.886977+00:00", "session_id": "019d7e27-c491-7103-836a-f6ef6fa36fe3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:17.090795+00:00", "session_id": "019d7e27-c491-7103-836a-f6ef6fa36fe3", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:17.307812+00:00", "session_id": "019d7e27-d3a2-7892-a248-46722f18954b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:17.362595+00:00", "session_id": "019d7e27-d3a2-7892-a248-46722f18954b", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:17.887110+00:00", "session_id": "019d7e27-da7c-7741-a1e1-e15894c2a1b4", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:17.955325+00:00", "session_id": "019d7e27-da7c-7741-a1e1-e15894c2a1b4", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:19.224545+00:00", "session_id": "019d7e27-c0d2-7723-9a4f-d54f7be0d6c0", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:19.225131+00:00", "session_id": "019d7e27-955b-7420-8828-68096ca4168d", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:20.875478+00:00", "session_id": "019d7e27-da7c-7741-a1e1-e15894c2a1b4", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:21.822376+00:00", "session_id": "019d7e27-d3a2-7892-a248-46722f18954b", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:22.118937+00:00", "session_id": "019d7e27-ea6b-77c1-8ab7-84e7653a0d60", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:22.182903+00:00", "session_id": "019d7e27-ea6b-77c1-8ab7-84e7653a0d60", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:24.546583+00:00", "session_id": "019d7e27-f2e5-77c1-9bae-5fb85c03ae80", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:24.611468+00:00", "session_id": "019d7e27-f2e5-77c1-9bae-5fb85c03ae80", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:24.804536+00:00", "session_id": "019d7e27-f49c-7bd0-b4e0-80a0fc1c110a", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:24.855112+00:00", "session_id": "019d7e27-f49c-7bd0-b4e0-80a0fc1c110a", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:26.227280+00:00", "session_id": "019d7e27-faef-7821-b26a-440d4eca62ab", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:26.292077+00:00", "session_id": "019d7e27-faef-7821-b26a-440d4eca62ab", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:26.736422+00:00", "session_id": "019d7e27-ea6b-77c1-8ab7-84e7653a0d60", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:27.192391+00:00", "session_id": "019d7e27-fe2c-7b13-883b-7e5b3f23161f", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:27.242698+00:00", "session_id": "019d7e27-fe2c-7b13-883b-7e5b3f23161f", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:27.917056+00:00", "session_id": "019d7e27-f2e5-77c1-9bae-5fb85c03ae80", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:28.896375+00:00", "session_id": "019d7e27-f49c-7bd0-b4e0-80a0fc1c110a", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:29.766266+00:00", "session_id": "019d7e27-faef-7821-b26a-440d4eca62ab", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:32.065884+00:00", "session_id": "019d7e27-fe2c-7b13-883b-7e5b3f23161f", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:33.783307+00:00", "session_id": "019d7e28-1602-70b2-96ce-189115dfbed8", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:33.842252+00:00", "session_id": "019d7e28-1602-70b2-96ce-189115dfbed8", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:33.953990+00:00", "session_id": "019d7e28-1032-74f3-ade8-38f8cd33cd33", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:34.009222+00:00", "session_id": "019d7e28-1032-74f3-ade8-38f8cd33cd33", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:34.632614+00:00", "session_id": "019d7e28-1a1f-7be1-99cb-6f45a2412a49", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:34.694380+00:00", "session_id": "019d7e28-1a1f-7be1-99cb-6f45a2412a49", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:37.355484+00:00", "session_id": "019d7e28-1032-74f3-ade8-38f8cd33cd33", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:37.794137+00:00", "session_id": "019d7e28-1602-70b2-96ce-189115dfbed8", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:37.809489+00:00", "session_id": "019d7e28-25dc-7872-9ea2-f8e262fe731c", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:37.858738+00:00", "session_id": "019d7e28-25dc-7872-9ea2-f8e262fe731c", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:39.100746+00:00", "session_id": "019d7e28-1a1f-7be1-99cb-6f45a2412a49", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:41.203819+00:00", "session_id": "019d7e28-25dc-7872-9ea2-f8e262fe731c", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:43.567030+00:00", "session_id": "019d7e28-3b8d-7890-8625-1ab27bfebdf3", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:43.627365+00:00", "session_id": "019d7e28-3b8d-7890-8625-1ab27bfebdf3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:44.165779+00:00", "session_id": "019d7e28-3a7e-7413-8f69-4b170e0850a8", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:44.218473+00:00", "session_id": "019d7e28-3a7e-7413-8f69-4b170e0850a8", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:45.288028+00:00", "session_id": "019d7e28-425b-7883-b527-ffaa2d8115ad", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:45.338888+00:00", "session_id": "019d7e28-425b-7883-b527-ffaa2d8115ad", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:46.282881+00:00", "session_id": "019d7e28-1c6d-7320-858c-8b25f5704f9b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:46.350076+00:00", "session_id": "019d7e28-1c6d-7320-858c-8b25f5704f9b", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:46.745795+00:00", "session_id": "019d7e28-4af3-7911-9540-83aa376c5193", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:46.795370+00:00", "session_id": "019d7e28-4af3-7911-9540-83aa376c5193", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:47.806274+00:00", "session_id": "019d7e28-3a7e-7413-8f69-4b170e0850a8", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:48.675222+00:00", "session_id": "019d7e28-3b8d-7890-8625-1ab27bfebdf3", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:49.673353+00:00", "session_id": "019d7e28-425b-7883-b527-ffaa2d8115ad", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:51.722325+00:00", "session_id": "019d7e28-1c6d-7320-858c-8b25f5704f9b", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:52.736073+00:00", "session_id": "019d7e28-4af3-7911-9540-83aa376c5193", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:53.496376+00:00", "session_id": "019d7e28-6375-77f0-83ee-505a7710d381", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:53.571919+00:00", "session_id": "019d7e28-6375-77f0-83ee-505a7710d381", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:55.256488+00:00", "session_id": "019d7e28-6a8f-7e73-a20a-d61f4d93232c", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:55.325392+00:00", "session_id": "019d7e28-6a8f-7e73-a20a-d61f4d93232c", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:56.476946+00:00", "session_id": "019d7e28-6826-7ea3-8761-572817991199", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:56.531347+00:00", "session_id": "019d7e28-6826-7ea3-8761-572817991199", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:57.186866+00:00", "session_id": "019d7e28-6375-77f0-83ee-505a7710d381", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:58.160630+00:00", "session_id": "019d7e28-7682-7713-b9bf-c669d871c451", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:58.224813+00:00", "session_id": "019d7e28-7682-7713-b9bf-c669d871c451", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:07:58.289405+00:00", "session_id": "019d7e28-7380-7c72-a5a5-b83ef60e5004", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:07:58.351199+00:00", "session_id": "019d7e28-7380-7c72-a5a5-b83ef60e5004", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:00.670090+00:00", "session_id": "019d7e28-6826-7ea3-8761-572817991199", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:01.602759+00:00", "session_id": "019d7e28-6a8f-7e73-a20a-d61f4d93232c", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:01.792264+00:00", "session_id": "019d7e28-7682-7713-b9bf-c669d871c451", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:02.653419+00:00", "session_id": "019d7e28-8840-7900-a651-24317b9f4e00", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:02.742405+00:00", "session_id": "019d7e28-8840-7900-a651-24317b9f4e00", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:03.220158+00:00", "session_id": "019d7e28-7380-7c72-a5a5-b83ef60e5004", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:05.175692+00:00", "session_id": "019d7e28-8840-7900-a651-24317b9f4e00", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:06.405716+00:00", "session_id": "019d7e28-95a1-7bc2-9765-aa8a272e7e80", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:06.470437+00:00", "session_id": "019d7e28-95a1-7bc2-9765-aa8a272e7e80", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:07.461000+00:00", "session_id": "019d7e28-9a56-7570-b365-7d3018dc306b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:07.520660+00:00", "session_id": "019d7e28-9a56-7570-b365-7d3018dc306b", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:08.078455+00:00", "session_id": "019d7e28-98fb-78a3-bc40-ce81b076fecb", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:08.123953+00:00", "session_id": "019d7e28-98fb-78a3-bc40-ce81b076fecb", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:08.953327+00:00", "session_id": "019d7e28-a1a4-7a80-bd0a-009298ed3618", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:09.017651+00:00", "session_id": "019d7e28-a1a4-7a80-bd0a-009298ed3618", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:10.794718+00:00", "session_id": "019d7e28-a7a8-7ad3-ada3-c3ae121c51ad", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:10.804996+00:00", "session_id": "019d7e28-95a1-7bc2-9765-aa8a272e7e80", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:10.844048+00:00", "session_id": "019d7e28-a7a8-7ad3-ada3-c3ae121c51ad", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:12.606292+00:00", "session_id": "019d7e28-9a56-7570-b365-7d3018dc306b", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:13.166087+00:00", "session_id": "019d7e28-a1a4-7a80-bd0a-009298ed3618", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:14.180126+00:00", "session_id": "019d7e28-98fb-78a3-bc40-ce81b076fecb", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:15.178698+00:00", "session_id": "019d7e28-a7a8-7ad3-ada3-c3ae121c51ad", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:16.034225+00:00", "session_id": "019d7e28-bd1d-7140-91b7-2627a16b2fa6", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:16.101572+00:00", "session_id": "019d7e28-bd1d-7140-91b7-2627a16b2fa6", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:18.335580+00:00", "session_id": "019d7e28-c478-7090-88da-e9b67bea57c7", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:18.386523+00:00", "session_id": "019d7e28-c478-7090-88da-e9b67bea57c7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:18.675719+00:00", "session_id": "019d7e28-c5fc-7cb3-aefe-3e1bc37dc5ca", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:18.732189+00:00", "session_id": "019d7e28-c5fc-7cb3-aefe-3e1bc37dc5ca", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:20.336779+00:00", "session_id": "019d7e28-bd1d-7140-91b7-2627a16b2fa6", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:20.519566+00:00", "session_id": "019d7e28-cbe8-7d71-976b-a90aa99b417f", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:20.577522+00:00", "session_id": "019d7e28-cbe8-7d71-976b-a90aa99b417f", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:20.865219+00:00", "session_id": "019d7e28-ce3b-7d53-8a49-c330ffa70560", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:20.921844+00:00", "session_id": "019d7e28-ce3b-7d53-8a49-c330ffa70560", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:24.263774+00:00", "session_id": "019d7e28-c478-7090-88da-e9b67bea57c7", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:24.298967+00:00", "session_id": "019d7e28-c5fc-7cb3-aefe-3e1bc37dc5ca", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:24.790419+00:00", "session_id": "019d7e28-ce3b-7d53-8a49-c330ffa70560", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:25.750176+00:00", "session_id": "019d7e28-e25e-7622-af14-e870c3f5ebc2", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:25.819892+00:00", "session_id": "019d7e28-e25e-7622-af14-e870c3f5ebc2", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:28.358287+00:00", "session_id": "019d7e28-cbe8-7d71-976b-a90aa99b417f", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:29.836598+00:00", "session_id": "019d7e28-f106-7e31-9d4e-708f42c18f82", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:29.905539+00:00", "session_id": "019d7e28-f106-7e31-9d4e-708f42c18f82", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:30.148968+00:00", "session_id": "019d7e28-f2cb-79b0-bb67-68f219ab0d76", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:30.225998+00:00", "session_id": "019d7e28-f2cb-79b0-bb67-68f219ab0d76", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:30.431992+00:00", "session_id": "019d7e28-e25e-7622-af14-e870c3f5ebc2", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:30.574147+00:00", "session_id": "019d7e28-f398-7c40-a08a-4edec001c018", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:30.645409+00:00", "session_id": "019d7e28-f398-7c40-a08a-4edec001c018", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:33.657646+00:00", "session_id": "019d7e29-019e-7351-8721-d0a18112b690", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:33.707570+00:00", "session_id": "019d7e29-019e-7351-8721-d0a18112b690", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:35.133550+00:00", "session_id": "019d7e28-f2cb-79b0-bb67-68f219ab0d76", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:35.236481+00:00", "session_id": "019d7e28-f106-7e31-9d4e-708f42c18f82", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:36.055791+00:00", "session_id": "019d7e28-f398-7c40-a08a-4edec001c018", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:37.408501+00:00", "session_id": "019d7e29-019e-7351-8721-d0a18112b690", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:37.517978+00:00", "session_id": "019d7e29-09d5-76e0-815f-8adc1c0dbf72", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:37.610107+00:00", "session_id": "019d7e29-09d5-76e0-815f-8adc1c0dbf72", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:40.706346+00:00", "session_id": "019d7e29-1bb8-7213-9c18-67c3a44fc89a", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:40.763159+00:00", "session_id": "019d7e29-1bb8-7213-9c18-67c3a44fc89a", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:40.979598+00:00", "session_id": "019d7e29-1d2f-7231-9d43-00a53c612c2f", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:41.052153+00:00", "session_id": "019d7e29-1d2f-7231-9d43-00a53c612c2f", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:41.125174+00:00", "session_id": "019d7e29-09d5-76e0-815f-8adc1c0dbf72", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:41.520186+00:00", "session_id": "019d7e29-1fb9-7b02-9f16-32bcf449ec09", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:41.588869+00:00", "session_id": "019d7e29-1fb9-7b02-9f16-32bcf449ec09", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:43.140991+00:00", "session_id": "019d7e29-2611-7ef3-ae0c-b3eadd3058fd", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:43.203334+00:00", "session_id": "019d7e29-2611-7ef3-ae0c-b3eadd3058fd", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:45.445046+00:00", "session_id": "019d7e29-1bb8-7213-9c18-67c3a44fc89a", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:45.979974+00:00", "session_id": "019d7e29-1d2f-7231-9d43-00a53c612c2f", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:46.681932+00:00", "session_id": "019d7e29-1fb9-7b02-9f16-32bcf449ec09", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:48.490444+00:00", "session_id": "019d7e29-2611-7ef3-ae0c-b3eadd3058fd", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:51.197988+00:00", "session_id": "019d7e29-4562-7ce2-874f-106c3842c8ae", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:51.259108+00:00", "session_id": "019d7e29-4562-7ce2-874f-106c3842c8ae", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:54.106570+00:00", "session_id": "019d7e29-5174-70d2-af81-927426875a76", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:54.153165+00:00", "session_id": "019d7e29-5174-70d2-af81-927426875a76", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:54.227659+00:00", "session_id": "019d7e29-4562-7ce2-874f-106c3842c8ae", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:57.769884+00:00", "session_id": "019d7e29-3388-7750-9532-cfedadba7f6d", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:57.888093+00:00", "session_id": "019d7e29-3388-7750-9532-cfedadba7f6d", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:08:59.600765+00:00", "session_id": "019d7e29-669e-7461-b97e-6613336756db", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:08:59.661554+00:00", "session_id": "019d7e29-669e-7461-b97e-6613336756db", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:00.708214+00:00", "session_id": "019d7e29-6a93-7912-a566-c70939beac5f", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:00.758602+00:00", "session_id": "019d7e29-6a93-7912-a566-c70939beac5f", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:01.117211+00:00", "session_id": "019d7e29-6d7a-76c1-8061-47d05b8237de", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:01.166356+00:00", "session_id": "019d7e29-6d7a-76c1-8061-47d05b8237de", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:01.285014+00:00", "session_id": "019d7e29-5174-70d2-af81-927426875a76", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:03.083477+00:00", "session_id": "019d7e29-669e-7461-b97e-6613336756db", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:04.953015+00:00", "session_id": "019d7e29-6a93-7912-a566-c70939beac5f", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:05.470722+00:00", "session_id": "019d7e29-6d7a-76c1-8061-47d05b8237de", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:06.397789+00:00", "session_id": "019d7e29-8220-7063-87ad-c72657e2bb21", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:06.462074+00:00", "session_id": "019d7e29-8220-7063-87ad-c72657e2bb21", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:08.319005+00:00", "session_id": "019d7e29-894e-7ca1-bfe2-3ddd3a99c9d3", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:08.364650+00:00", "session_id": "019d7e29-894e-7ca1-bfe2-3ddd3a99c9d3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:10.266535+00:00", "session_id": "019d7e29-8f92-78f0-ad2a-3ca700da9820", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:10.320081+00:00", "session_id": "019d7e29-8f92-78f0-ad2a-3ca700da9820", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:10.667551+00:00", "session_id": "019d7e29-9228-75f3-a204-a6f5195cc901", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:10.729193+00:00", "session_id": "019d7e29-9228-75f3-a204-a6f5195cc901", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:14.251161+00:00", "session_id": "019d7e29-8f92-78f0-ad2a-3ca700da9820", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:14.817128+00:00", "session_id": "019d7e29-9228-75f3-a204-a6f5195cc901", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:16.324436+00:00", "session_id": "019d7e29-894e-7ca1-bfe2-3ddd3a99c9d3", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:19.260146+00:00", "session_id": "019d7e29-b3c2-7910-bfdc-cfd8fbed4dcb", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:19.324346+00:00", "session_id": "019d7e29-b3c2-7910-bfdc-cfd8fbed4dcb", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:20.091820+00:00", "session_id": "019d7e29-8220-7063-87ad-c72657e2bb21", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:21.145305+00:00", "session_id": "019d7e29-be1e-7403-aad1-d10bef20ad41", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:21.204838+00:00", "session_id": "019d7e29-be1e-7403-aad1-d10bef20ad41", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:22.439370+00:00", "session_id": "019d7e29-b662-73d1-9e41-ff48a2d65553", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:22.507991+00:00", "session_id": "019d7e29-b662-73d1-9e41-ff48a2d65553", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:25.777911+00:00", "session_id": "019d7e29-cc73-7293-b482-55f6e038c67a", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:25.835712+00:00", "session_id": "019d7e29-cc73-7293-b482-55f6e038c67a", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:26.364687+00:00", "session_id": "019d7e29-b662-73d1-9e41-ff48a2d65553", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:26.951263+00:00", "session_id": "019d7e29-b3c2-7910-bfdc-cfd8fbed4dcb", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:27.917830+00:00", "session_id": "019d7e29-be1e-7403-aad1-d10bef20ad41", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:30.511558+00:00", "session_id": "019d7e29-cc73-7293-b482-55f6e038c67a", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:32.059900+00:00", "session_id": "019d7e29-e3d9-71e2-bdf5-0af1c89ec699", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:32.186360+00:00", "session_id": "019d7e29-e3d9-71e2-bdf5-0af1c89ec699", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:33.138712+00:00", "session_id": "019d7e29-e8bc-7481-9c30-fc95245010b1", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:33.203484+00:00", "session_id": "019d7e29-e8bc-7481-9c30-fc95245010b1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:33.982475+00:00", "session_id": "019d7e29-ea7f-70e0-b295-ecc554549cfe", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:34.047187+00:00", "session_id": "019d7e29-ea7f-70e0-b295-ecc554549cfe", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:35.981184+00:00", "session_id": "019d7e29-3388-7750-9532-cfedadba7f6d", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:36.152174+00:00", "session_id": "019d7e29-f5af-7763-9226-74d3adc76ff1", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:36.218517+00:00", "session_id": "019d7e29-f5af-7763-9226-74d3adc76ff1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:37.256562+00:00", "session_id": "019d7e29-ea7f-70e0-b295-ecc554549cfe", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:38.505850+00:00", "session_id": "019d7e29-e3d9-71e2-bdf5-0af1c89ec699", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:39.729847+00:00", "session_id": "019d7e29-e8bc-7481-9c30-fc95245010b1", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:40.760579+00:00", "session_id": "019d7e29-f5af-7763-9226-74d3adc76ff1", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:42.789534+00:00", "session_id": "019d7e2a-0aaa-7363-8d4d-2534aab1bd93", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:43.002678+00:00", "session_id": "019d7e2a-0aaa-7363-8d4d-2534aab1bd93", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:43.458897+00:00", "session_id": "019d7e2a-0f48-7483-a2f4-13ebb5a14c7c", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:43.626938+00:00", "session_id": "019d7e2a-0f48-7483-a2f4-13ebb5a14c7c", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:46.316781+00:00", "session_id": "019d7e2a-1831-7171-a05e-9a71ded89331", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:46.379227+00:00", "session_id": "019d7e2a-1831-7171-a05e-9a71ded89331", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:46.856364+00:00", "session_id": "019d7e2a-0aaa-7363-8d4d-2534aab1bd93", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:47.174942+00:00", "session_id": "019d7e2a-1d87-74a3-b36d-272650dde296", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:47.242010+00:00", "session_id": "019d7e2a-1d87-74a3-b36d-272650dde296", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:48.929257+00:00", "session_id": "019d7e2a-1e63-7512-b343-1d50b4ffc329", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:48.997244+00:00", "session_id": "019d7e2a-1e63-7512-b343-1d50b4ffc329", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:49.269696+00:00", "session_id": "019d7e2a-0f48-7483-a2f4-13ebb5a14c7c", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:51.137650+00:00", "session_id": "019d7e2a-1d87-74a3-b36d-272650dde296", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:51.531953+00:00", "session_id": "019d7e2a-1e63-7512-b343-1d50b4ffc329", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:51.711910+00:00", "session_id": "019d7e2a-1831-7171-a05e-9a71ded89331", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:55.752531+00:00", "session_id": "019d7e2a-3da7-7232-9597-58b468e10cb3", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:55.804981+00:00", "session_id": "019d7e2a-3553-7370-b893-d341f6871d48", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:55.819129+00:00", "session_id": "019d7e2a-3da7-7232-9597-58b468e10cb3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:55.870100+00:00", "session_id": "019d7e2a-3553-7370-b893-d341f6871d48", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:57.780668+00:00", "session_id": "019d7e2a-4678-7632-8200-a4e157aaf2db", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:57.841884+00:00", "session_id": "019d7e2a-4678-7632-8200-a4e157aaf2db", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:58.049241+00:00", "session_id": "019d7e2a-467a-7032-96fc-36df9e8d3a0b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:58.114677+00:00", "session_id": "019d7e2a-467a-7032-96fc-36df9e8d3a0b", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:09:58.491157+00:00", "session_id": "019d7e2a-47c0-7752-bb4c-72b4edd49ff6", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:09:58.555793+00:00", "session_id": "019d7e2a-47c0-7752-bb4c-72b4edd49ff6", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:01.144232+00:00", "session_id": "019d7e2a-3553-7370-b893-d341f6871d48", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:01.720492+00:00", "session_id": "019d7e2a-3da7-7232-9597-58b468e10cb3", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:01.875858+00:00", "session_id": "019d7e2a-467a-7032-96fc-36df9e8d3a0b", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:02.178803+00:00", "session_id": "019d7e2a-47c0-7752-bb4c-72b4edd49ff6", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:02.376699+00:00", "session_id": "019d7e2a-4678-7632-8200-a4e157aaf2db", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:09.157979+00:00", "session_id": "019d7e2a-6e90-7ef0-9946-252946768883", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:09.221721+00:00", "session_id": "019d7e2a-6e90-7ef0-9946-252946768883", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:09.546120+00:00", "session_id": "019d7e2a-6f48-7f50-b46f-22309cbe5638", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:09.607411+00:00", "session_id": "019d7e2a-6f48-7f50-b46f-22309cbe5638", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:09.695682+00:00", "session_id": "019d7e2a-73d2-7e80-b656-cc987b9b2d7d", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:09.759150+00:00", "session_id": "019d7e2a-73d2-7e80-b656-cc987b9b2d7d", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:10.733849+00:00", "session_id": "019d7e2a-72a0-73d2-aa07-2f64a19bc105", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:10.796348+00:00", "session_id": "019d7e2a-72a0-73d2-aa07-2f64a19bc105", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:11.670771+00:00", "session_id": "019d7e2a-71c3-7561-b320-322fa83c0549", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:11.727230+00:00", "session_id": "019d7e2a-71c3-7561-b320-322fa83c0549", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:13.284078+00:00", "session_id": "019d7e2a-6e90-7ef0-9946-252946768883", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:14.227218+00:00", "session_id": "019d7e2a-6f48-7f50-b46f-22309cbe5638", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:14.998016+00:00", "session_id": "019d7e2a-71c3-7561-b320-322fa83c0549", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:15.085375+00:00", "session_id": "019d7e2a-72a0-73d2-aa07-2f64a19bc105", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:18.987973+00:00", "session_id": "019d7e2a-9b8d-7fd3-ab5c-a1cdf3b2fac2", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:19.054940+00:00", "session_id": "019d7e2a-9b8d-7fd3-ab5c-a1cdf3b2fac2", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:19.140738+00:00", "session_id": "019d7e2a-73d2-7e80-b656-cc987b9b2d7d", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:20.698790+00:00", "session_id": "019d7e2a-a163-7193-8b85-f170bf3d1898", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:20.780575+00:00", "session_id": "019d7e2a-a163-7193-8b85-f170bf3d1898", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:21.020216+00:00", "session_id": "019d7e2a-a28c-7342-a900-83b113a17a8a", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:21.098776+00:00", "session_id": "019d7e2a-a28c-7342-a900-83b113a17a8a", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:21.951908+00:00", "session_id": "019d7e2a-a322-70e0-a94c-ff4a8cc2028a", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:22.100491+00:00", "session_id": "019d7e2a-a322-70e0-a94c-ff4a8cc2028a", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:24.715941+00:00", "session_id": "019d7e2a-9b8d-7fd3-ab5c-a1cdf3b2fac2", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:24.771789+00:00", "session_id": "019d7e2a-a163-7193-8b85-f170bf3d1898", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:24.879649+00:00", "session_id": "019d7e2a-a322-70e0-a94c-ff4a8cc2028a", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:26.020160+00:00", "session_id": "019d7e2a-b207-7f01-98cc-6f16af5f5481", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:26.094456+00:00", "session_id": "019d7e2a-b207-7f01-98cc-6f16af5f5481", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:26.355795+00:00", "session_id": "019d7e2a-a28c-7342-a900-83b113a17a8a", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:28.572123+00:00", "session_id": "019d7e2a-b207-7f01-98cc-6f16af5f5481", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:31.319638+00:00", "session_id": "019d7e2a-c951-73d3-93dc-e25012f9654a", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:31.409686+00:00", "session_id": "019d7e2a-c951-73d3-93dc-e25012f9654a", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:31.573885+00:00", "session_id": "019d7e2a-caff-7ca0-a6bd-2d56fa534d44", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:31.633383+00:00", "session_id": "019d7e2a-caff-7ca0-a6bd-2d56fa534d44", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:32.769829+00:00", "session_id": "019d7e2a-d096-79a1-b172-146388386975", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:32.823536+00:00", "session_id": "019d7e2a-d096-79a1-b172-146388386975", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:34.079272+00:00", "session_id": "019d7e2a-d7bb-7c52-838f-1dc80674a025", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:34.143991+00:00", "session_id": "019d7e2a-d7bb-7c52-838f-1dc80674a025", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:36.611754+00:00", "session_id": "019d7e2a-d096-79a1-b172-146388386975", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:37.760952+00:00", "session_id": "019d7e2a-caff-7ca0-a6bd-2d56fa534d44", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:37.858832+00:00", "session_id": "019d7e2a-c951-73d3-93dc-e25012f9654a", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:42.072903+00:00", "session_id": "019d7e2a-cb17-7fe1-a390-6574e6e86e22", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:42.135200+00:00", "session_id": "019d7e2a-cb17-7fe1-a390-6574e6e86e22", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:42.374702+00:00", "session_id": "019d7e2a-f664-7441-853e-419c0efb5efa", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:42.443493+00:00", "session_id": "019d7e2a-f664-7441-853e-419c0efb5efa", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:43.774880+00:00", "session_id": "019d7e2a-fc5f-7a23-8a2b-c781c152d500", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:43.842913+00:00", "session_id": "019d7e2a-fc5f-7a23-8a2b-c781c152d500", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:45.078939+00:00", "session_id": "019d7e2a-fec8-77a2-956d-e0b4132d6fc8", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:45.135398+00:00", "session_id": "019d7e2a-fec8-77a2-956d-e0b4132d6fc8", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:45.890968+00:00", "session_id": "019d7e2a-cb17-7fe1-a390-6574e6e86e22", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:47.853584+00:00", "session_id": "019d7e2a-d7bb-7c52-838f-1dc80674a025", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:49.099107+00:00", "session_id": "019d7e2a-f664-7441-853e-419c0efb5efa", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:49.140238+00:00", "session_id": "019d7e2a-fc5f-7a23-8a2b-c781c152d500", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:49.667715+00:00", "session_id": "019d7e2a-fec8-77a2-956d-e0b4132d6fc8", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:51.650501+00:00", "session_id": "019d7e2b-1bda-77b1-a2e6-f584be6573e6", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:51.768256+00:00", "session_id": "019d7e2b-1bda-77b1-a2e6-f584be6573e6", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:55.310660+00:00", "session_id": "019d7e2b-22b1-7970-884d-324ad69dd25e", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:55.376951+00:00", "session_id": "019d7e2b-22b1-7970-884d-324ad69dd25e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:55.522210+00:00", "session_id": "019d7e2b-281b-7583-a238-c06f65d9bf0b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:55.584510+00:00", "session_id": "019d7e2b-281b-7583-a238-c06f65d9bf0b", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:55.761508+00:00", "session_id": "019d7e2b-2b12-7831-bbfb-7a5c3e819fd0", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:55.820020+00:00", "session_id": "019d7e2b-2b12-7831-bbfb-7a5c3e819fd0", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:56.568609+00:00", "session_id": "019d7e2b-1bda-77b1-a2e6-f584be6573e6", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:56.795765+00:00", "session_id": "019d7e2b-2b7e-7083-a5ad-571f81cd4273", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:10:56.855623+00:00", "session_id": "019d7e2b-2b7e-7083-a5ad-571f81cd4273", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:59.758267+00:00", "session_id": "019d7e2b-22b1-7970-884d-324ad69dd25e", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:10:59.919519+00:00", "session_id": "019d7e2b-281b-7583-a238-c06f65d9bf0b", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:00.431839+00:00", "session_id": "019d7e2b-2b12-7831-bbfb-7a5c3e819fd0", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:00.992315+00:00", "session_id": "019d7e2b-2b7e-7083-a5ad-571f81cd4273", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:03.265361+00:00", "session_id": "019d7e2b-4594-7680-bc35-0813b33f1a85", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:03.460801+00:00", "session_id": "019d7e2b-4594-7680-bc35-0813b33f1a85", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:06.603825+00:00", "session_id": "019d7e2b-5453-71d2-87cb-56f9e5ed1ae8", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:06.658260+00:00", "session_id": "019d7e2b-5453-71d2-87cb-56f9e5ed1ae8", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:06.884881+00:00", "session_id": "019d7e2b-5236-7740-bf8d-b89fdd31228e", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:06.948543+00:00", "session_id": "019d7e2b-5236-7740-bf8d-b89fdd31228e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:07.001920+00:00", "session_id": "019d7e2b-52e4-7a60-a108-33a116623e45", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:07.061721+00:00", "session_id": "019d7e2b-52e4-7a60-a108-33a116623e45", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:07.613849+00:00", "session_id": "019d7e2b-5978-7b82-86e4-c7aa8b216987", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:07.676688+00:00", "session_id": "019d7e2b-5978-7b82-86e4-c7aa8b216987", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:09.230155+00:00", "session_id": "019d7e2b-4594-7680-bc35-0813b33f1a85", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:10.510263+00:00", "session_id": "019d7e2b-5978-7b82-86e4-c7aa8b216987", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:10.720683+00:00", "session_id": "019d7e2b-52e4-7a60-a108-33a116623e45", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:11.925934+00:00", "session_id": "019d7e2b-5236-7740-bf8d-b89fdd31228e", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:12.341319+00:00", "session_id": "019d7e2b-5453-71d2-87cb-56f9e5ed1ae8", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:15.304827+00:00", "session_id": "019d7e2b-7714-79c1-a51d-25139738b0b5", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:15.369503+00:00", "session_id": "019d7e2b-7714-79c1-a51d-25139738b0b5", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:17.170617+00:00", "session_id": "019d7e2b-7e91-7360-ba5a-d6922d3de4a5", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:17.235653+00:00", "session_id": "019d7e2b-7e91-7360-ba5a-d6922d3de4a5", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:18.660303+00:00", "session_id": "019d7e2b-8272-7141-9c09-98690667d63e", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:18.674444+00:00", "session_id": "019d7e2b-83cc-7ca3-b533-ecbbfaaaa510", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:18.721565+00:00", "session_id": "019d7e2b-8272-7141-9c09-98690667d63e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:18.738392+00:00", "session_id": "019d7e2b-83cc-7ca3-b533-ecbbfaaaa510", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:18.785175+00:00", "session_id": "019d7e2b-7c47-7bd1-be89-3f86fd45b75b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:18.839743+00:00", "session_id": "019d7e2b-7c47-7bd1-be89-3f86fd45b75b", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:19.210704+00:00", "session_id": "019d7e2b-7714-79c1-a51d-25139738b0b5", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:20.359528+00:00", "session_id": "019d7e2b-7e91-7360-ba5a-d6922d3de4a5", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:22.251310+00:00", "session_id": "019d7e2b-83cc-7ca3-b533-ecbbfaaaa510", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:22.670268+00:00", "session_id": "019d7e2b-8272-7141-9c09-98690667d63e", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:25.021830+00:00", "session_id": "019d7e2b-9d81-7da1-b9c5-c379e052f023", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:25.142388+00:00", "session_id": "019d7e2b-9d81-7da1-b9c5-c379e052f023", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:26.208726+00:00", "session_id": "019d7e2b-a27c-7ce3-a09c-baffd57a605e", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:26.268031+00:00", "session_id": "019d7e2b-a27c-7ce3-a09c-baffd57a605e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:26.479087+00:00", "session_id": "019d7e2b-7c47-7bd1-be89-3f86fd45b75b", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:27.479568+00:00", "session_id": "019d7e2b-aacd-7d51-9e5d-edbb97eec097", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:27.548203+00:00", "session_id": "019d7e2b-aacd-7d51-9e5d-edbb97eec097", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:27.768961+00:00", "session_id": "019d7e2b-a8e2-79a2-9c1d-1dbf65552d73", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:27.838192+00:00", "session_id": "019d7e2b-a8e2-79a2-9c1d-1dbf65552d73", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:28.792553+00:00", "session_id": "019d7e2b-9d81-7da1-b9c5-c379e052f023", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:30.456012+00:00", "session_id": "019d7e2b-a27c-7ce3-a09c-baffd57a605e", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:31.830204+00:00", "session_id": "019d7e2b-b8c7-7653-9811-e4875ad37a60", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:31.895599+00:00", "session_id": "019d7e2b-b8c7-7653-9811-e4875ad37a60", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:32.808909+00:00", "session_id": "019d7e2b-aacd-7d51-9e5d-edbb97eec097", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:35.013741+00:00", "session_id": "019d7e2b-a8e2-79a2-9c1d-1dbf65552d73", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:35.477661+00:00", "session_id": "019d7e2b-c2f6-7ca0-9d24-4d97274f2155", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:35.538076+00:00", "session_id": "019d7e2b-c2f6-7ca0-9d24-4d97274f2155", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:35.893825+00:00", "session_id": "019d7e2b-b8c7-7653-9811-e4875ad37a60", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:37.987982+00:00", "session_id": "019d7e2b-d115-7a82-97ef-6839608cd7c2", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:38.063171+00:00", "session_id": "019d7e2b-d115-7a82-97ef-6839608cd7c2", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:38.201428+00:00", "session_id": "019d7e2b-c938-7b40-afd0-33b89aa9e688", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:38.289704+00:00", "session_id": "019d7e2b-c938-7b40-afd0-33b89aa9e688", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:40.442088+00:00", "session_id": "019d7e2b-c2f6-7ca0-9d24-4d97274f2155", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:40.641026+00:00", "session_id": "019d7e2b-da73-78b2-8c4a-c6fb9c7f8bf5", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:40.711015+00:00", "session_id": "019d7e2b-da73-78b2-8c4a-c6fb9c7f8bf5", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:40.947201+00:00", "session_id": "019d7e2b-c938-7b40-afd0-33b89aa9e688", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:41.446331+00:00", "session_id": "019d7e2b-dde1-7e20-a010-0d845120cd41", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:41.522722+00:00", "session_id": "019d7e2b-dde1-7e20-a010-0d845120cd41", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:43.001001+00:00", "session_id": "019d7e2b-d115-7a82-97ef-6839608cd7c2", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:43.711556+00:00", "session_id": "019d7e2b-da73-78b2-8c4a-c6fb9c7f8bf5", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:46.203935+00:00", "session_id": "019d7e2b-dde1-7e20-a010-0d845120cd41", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:46.907734+00:00", "session_id": "019d7e2b-f1c0-7913-942d-af4ebca4b572", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:46.968554+00:00", "session_id": "019d7e2b-f1c0-7913-942d-af4ebca4b572", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:47.922269+00:00", "session_id": "019d7e2b-f5fd-75f3-978e-2ef4e7f60b4f", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:47.992161+00:00", "session_id": "019d7e2b-f5fd-75f3-978e-2ef4e7f60b4f", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:49.153698+00:00", "session_id": "019d7e2b-faba-7512-b180-b2d3d3bd30f8", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:49.231479+00:00", "session_id": "019d7e2b-faba-7512-b180-b2d3d3bd30f8", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:50.912777+00:00", "session_id": "019d7e2b-f5fd-75f3-978e-2ef4e7f60b4f", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:51.064609+00:00", "session_id": "019d7e2b-fe0b-75e3-9a87-1f0cc93235df", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:51.125848+00:00", "session_id": "019d7e2b-fe0b-75e3-9a87-1f0cc93235df", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:51.985394+00:00", "session_id": "019d7e2c-06d3-7271-aa97-c70264a0624b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:52.051377+00:00", "session_id": "019d7e2c-06d3-7271-aa97-c70264a0624b", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:52.544652+00:00", "session_id": "019d7e2b-f1c0-7913-942d-af4ebca4b572", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:53.226462+00:00", "session_id": "019d7e2b-faba-7512-b180-b2d3d3bd30f8", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:56.600899+00:00", "session_id": "019d7e2c-06d3-7271-aa97-c70264a0624b", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:56.909510+00:00", "session_id": "019d7e2c-19ac-77c2-9578-85271b49cb77", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:56.968713+00:00", "session_id": "019d7e2c-19ac-77c2-9578-85271b49cb77", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:58.959899+00:00", "session_id": "019d7e2b-fe0b-75e3-9a87-1f0cc93235df", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:59.254293+00:00", "session_id": "019d7e2c-2198-7253-9c40-75e0056fb349", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:59.389304+00:00", "session_id": "019d7e2c-2198-7253-9c40-75e0056fb349", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:11:59.403805+00:00", "session_id": "019d7e2c-226c-7010-a5d5-8b0306cbe3f1", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:11:59.506815+00:00", "session_id": "019d7e2c-226c-7010-a5d5-8b0306cbe3f1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:02.401684+00:00", "session_id": "019d7e2c-2eb5-7c30-89e8-b31f2253d7bb", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:02.464091+00:00", "session_id": "019d7e2c-2eb5-7c30-89e8-b31f2253d7bb", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:02.517974+00:00", "session_id": "019d7e2c-19ac-77c2-9578-85271b49cb77", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:02.815721+00:00", "session_id": "019d7e2c-226c-7010-a5d5-8b0306cbe3f1", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:04.579174+00:00", "session_id": "019d7e2c-37ff-7ff3-a3a8-ad15713ef57f", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:04.661769+00:00", "session_id": "019d7e2c-37ff-7ff3-a3a8-ad15713ef57f", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:05.656177+00:00", "session_id": "019d7e2c-2198-7253-9c40-75e0056fb349", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:07.333096+00:00", "session_id": "019d7e2c-2eb5-7c30-89e8-b31f2253d7bb", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:08.174321+00:00", "session_id": "019d7e2c-46b0-7850-89b8-7700f5198590", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:08.240891+00:00", "session_id": "019d7e2c-46b0-7850-89b8-7700f5198590", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:08.242947+00:00", "session_id": "019d7e2c-4742-7290-945a-99f14213747c", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:08.309297+00:00", "session_id": "019d7e2c-4742-7290-945a-99f14213747c", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:09.507167+00:00", "session_id": "019d7e2c-37ff-7ff3-a3a8-ad15713ef57f", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:11.397246+00:00", "session_id": "019d7e2c-52f6-7271-97d9-3db3528ec387", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:11.480002+00:00", "session_id": "019d7e2c-52f6-7271-97d9-3db3528ec387", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:12.042097+00:00", "session_id": "019d7e2c-46b0-7850-89b8-7700f5198590", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:12.823142+00:00", "session_id": "019d7e2c-590e-7142-9431-d0cc7f525753", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:12.888086+00:00", "session_id": "019d7e2c-590e-7142-9431-d0cc7f525753", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:13.393750+00:00", "session_id": "019d7e2c-4742-7290-945a-99f14213747c", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:14.745456+00:00", "session_id": "019d7e2c-6104-7340-9f46-ac83f62d0a81", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:14.809813+00:00", "session_id": "019d7e2c-6104-7340-9f46-ac83f62d0a81", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:16.027796+00:00", "session_id": "019d7e2c-52f6-7271-97d9-3db3528ec387", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:16.225862+00:00", "session_id": "019d7e2c-590e-7142-9431-d0cc7f525753", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:17.717589+00:00", "session_id": "019d7e2c-6c09-7532-91e5-5381efd8874a", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:17.797985+00:00", "session_id": "019d7e2c-6c09-7532-91e5-5381efd8874a", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:21.518027+00:00", "session_id": "019d7e2c-6c09-7532-91e5-5381efd8874a", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:21.675563+00:00", "session_id": "019d7e2c-7c1a-7760-9ede-70f42c0430d0", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:21.692198+00:00", "session_id": "019d7e2c-7ba1-7eb3-9f17-64360cb19d6c", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:21.736773+00:00", "session_id": "019d7e2c-7c1a-7760-9ede-70f42c0430d0", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:21.757579+00:00", "session_id": "019d7e2c-7ba1-7eb3-9f17-64360cb19d6c", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:23.936857+00:00", "session_id": "019d7e2c-6104-7340-9f46-ac83f62d0a81", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:25.863948+00:00", "session_id": "019d7e2c-7ba1-7eb3-9f17-64360cb19d6c", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:27.736073+00:00", "session_id": "019d7e2c-9105-73b1-8897-e58b8d7659c3", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:27.803295+00:00", "session_id": "019d7e2c-9105-73b1-8897-e58b8d7659c3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:28.845434+00:00", "session_id": "019d7e2c-9543-7951-bfc2-adc03c87bd63", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:28.905586+00:00", "session_id": "019d7e2c-9543-7951-bfc2-adc03c87bd63", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:29.345129+00:00", "session_id": "019d7e2c-99c7-7c63-b2fb-863bd6d1108a", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:29.408999+00:00", "session_id": "019d7e2c-99c7-7c63-b2fb-863bd6d1108a", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:31.152538+00:00", "session_id": "019d7e2c-a145-77c0-91e4-0b724ae4b520", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:31.216231+00:00", "session_id": "019d7e2c-a145-77c0-91e4-0b724ae4b520", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:32.072179+00:00", "session_id": "019d7e2c-9105-73b1-8897-e58b8d7659c3", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:32.818381+00:00", "session_id": "019d7e2c-99c7-7c63-b2fb-863bd6d1108a", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:36.872009+00:00", "session_id": "019d7e2c-7c1a-7760-9ede-70f42c0430d0", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:37.118796+00:00", "session_id": "019d7e2c-a145-77c0-91e4-0b724ae4b520", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:38.238148+00:00", "session_id": "019d7e2c-ba37-7151-8150-cee8cebbaef9", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:38.290101+00:00", "session_id": "019d7e2c-bc2a-7fa2-880b-d771b8a28f40", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:38.308286+00:00", "session_id": "019d7e2c-ba37-7151-8150-cee8cebbaef9", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:38.363266+00:00", "session_id": "019d7e2c-bc2a-7fa2-880b-d771b8a28f40", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:40.373169+00:00", "session_id": "019d7e2c-9543-7951-bfc2-adc03c87bd63", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:42.022575+00:00", "session_id": "019d7e2c-ba37-7151-8150-cee8cebbaef9", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:42.862025+00:00", "session_id": "019d7e2c-cdc9-7533-8129-411d33c36e95", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:42.917235+00:00", "session_id": "019d7e2c-bc2a-7fa2-880b-d771b8a28f40", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:42.924806+00:00", "session_id": "019d7e2c-cdc9-7533-8129-411d33c36e95", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:44.004330+00:00", "session_id": "019d7e2c-cd13-7670-b5dd-3764be3b720c", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:44.080919+00:00", "session_id": "019d7e2c-cd13-7670-b5dd-3764be3b720c", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:45.957780+00:00", "session_id": "019d7e2c-d998-7703-9ea5-7f968c0ef03b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:46.026661+00:00", "session_id": "019d7e2c-d998-7703-9ea5-7f968c0ef03b", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:47.908031+00:00", "session_id": "019d7e2c-e1a0-78b2-b8eb-74174041f6df", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:47.965178+00:00", "session_id": "019d7e2c-e1a0-78b2-b8eb-74174041f6df", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:48.160031+00:00", "session_id": "019d7e2c-cd13-7670-b5dd-3764be3b720c", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:48.542347+00:00", "session_id": "019d7e2c-e3fb-7f22-9899-52de044f377d", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:12:48.614535+00:00", "session_id": "019d7e2c-e3fb-7f22-9899-52de044f377d", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:49.843260+00:00", "session_id": "019d7e2c-d998-7703-9ea5-7f968c0ef03b", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:50.282689+00:00", "session_id": "019d7e2c-cdc9-7533-8129-411d33c36e95", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:52.136214+00:00", "session_id": "019d7e2c-e1a0-78b2-b8eb-74174041f6df", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:12:53.602215+00:00", "session_id": "019d7e2c-e3fb-7f22-9899-52de044f377d", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:13:03.669279+00:00", "session_id": "019d7e2d-105f-7a73-b529-4e7707004fb8", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:13:03.701674+00:00", "session_id": "019d7e2d-1018-7913-a5ee-782a2d0e6fa6", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:13:03.729668+00:00", "session_id": "019d7e2d-1111-7a41-a80b-8a06d81fd8dd", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:13:03.735084+00:00", "session_id": "019d7e2d-105f-7a73-b529-4e7707004fb8", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:13:03.780000+00:00", "session_id": "019d7e2d-1018-7913-a5ee-782a2d0e6fa6", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:13:03.803823+00:00", "session_id": "019d7e2d-1111-7a41-a80b-8a06d81fd8dd", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:13:03.864269+00:00", "session_id": "019d7e2d-0f4f-70c1-8275-22375d229a13", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:13:03.931847+00:00", "session_id": "019d7e2d-0f4f-70c1-8275-22375d229a13", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:13:04.005865+00:00", "session_id": "019d7e2d-17d7-7bb1-ae5c-10e66fa7deca", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:13:04.027388+00:00", "session_id": "019d7e2d-103e-7280-8701-f65b98f33941", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:13:04.083102+00:00", "session_id": "019d7e2d-17d7-7bb1-ae5c-10e66fa7deca", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:13:04.096923+00:00", "session_id": "019d7e2d-103e-7280-8701-f65b98f33941", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:13:04.564765+00:00", "session_id": "019d7e2d-0f2e-7023-9309-46077fa88c2c", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:13:04.636217+00:00", "session_id": "019d7e2d-0f2e-7023-9309-46077fa88c2c", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:13:04.648564+00:00", "session_id": "019d7e2d-1027-7050-98f8-325a5ea3295d", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:13:04.710908+00:00", "session_id": "019d7e2d-1027-7050-98f8-325a5ea3295d", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:13:05.668392+00:00", "session_id": "019d7e2d-0f6a-73d1-85f5-98ada77667ed", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:13:05.825317+00:00", "session_id": "019d7e2d-0f6a-73d1-85f5-98ada77667ed", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:13:07.078418+00:00", "session_id": "bc4d5b14-5dbb-497c-9eb9-9433d80ff3ec", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-11T20:13:07.127929+00:00", "session_id": "8a29bb2c-afc3-459f-8a32-3802463b556e", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-11T20:13:07.181775+00:00", "session_id": "019d7e2d-17ab-77e2-957b-74ba01241291", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:13:07.250851+00:00", "session_id": "019d7e2d-17ab-77e2-957b-74ba01241291", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:13:07.497987+00:00", "session_id": "643d04d9-0ec3-4dce-8ae1-d3b0c469bd94", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-11T20:13:07.518836+00:00", "session_id": "bc4d5b14-5dbb-497c-9eb9-9433d80ff3ec", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:13:07.570021+00:00", "session_id": "8a29bb2c-afc3-459f-8a32-3802463b556e", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:13:07.963831+00:00", "session_id": "643d04d9-0ec3-4dce-8ae1-d3b0c469bd94", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:13:58.878786+00:00", "session_id": "bc4d5b14-5dbb-497c-9eb9-9433d80ff3ec", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-11T20:14:02.059468+00:00", "session_id": "019d7e2d-17d7-7bb1-ae5c-10e66fa7deca", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:14:03.590275+00:00", "session_id": "019d7e2d-0f2e-7023-9309-46077fa88c2c", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:14:04.854003+00:00", "session_id": "8a29bb2c-afc3-459f-8a32-3802463b556e", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-11T20:14:09.259798+00:00", "session_id": "643d04d9-0ec3-4dce-8ae1-d3b0c469bd94", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-11T20:14:10.208506+00:00", "session_id": "019d7e2d-103e-7280-8701-f65b98f33941", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:14:18.022889+00:00", "session_id": "019d7e2d-1027-7050-98f8-325a5ea3295d", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:14:25.196444+00:00", "session_id": "019d7e2d-17ab-77e2-957b-74ba01241291", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:14:25.413238+00:00", "session_id": "019d7e2d-1018-7913-a5ee-782a2d0e6fa6", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:14:44.718974+00:00", "session_id": "019d7e2d-105f-7a73-b529-4e7707004fb8", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:14:50.160446+00:00", "session_id": "019d7e2d-1111-7a41-a80b-8a06d81fd8dd", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:15:06.114954+00:00", "session_id": "019d7e2d-0f4f-70c1-8275-22375d229a13", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:15:17.316275+00:00", "session_id": "019d7e2d-0f6a-73d1-85f5-98ada77667ed", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:15:25.118875+00:00", "session_id": "019d7e2f-467a-71b3-b8f7-8b11ec7e054d", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:15:25.181323+00:00", "session_id": "019d7e2f-467a-71b3-b8f7-8b11ec7e054d", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:15:35.770172+00:00", "session_id": "019d7e2f-467a-7da0-b897-430f4475fe00", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:15:35.833196+00:00", "session_id": "019d7e2f-467a-7da0-b897-430f4475fe00", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:16:01.003666+00:00", "session_id": "019d7e2f-467a-7da0-b897-430f4475fe00", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:16:33.268401+00:00", "session_id": "019d7e2f-467a-71b3-b8f7-8b11ec7e054d", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:18:35.127314+00:00", "session_id": "eb68f628-e338-450a-bd60-69f7d62a7f19", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-11T20:18:35.439530+00:00", "session_id": "d9652844-7d89-46d8-8b5a-2437de6360ec", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-11T20:18:35.477860+00:00", "session_id": "1829920a-c46a-4c92-915d-04bfdbf3a964", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-11T20:18:35.595471+00:00", "session_id": "eb68f628-e338-450a-bd60-69f7d62a7f19", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:18:35.860766+00:00", "session_id": "d9652844-7d89-46d8-8b5a-2437de6360ec", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:18:35.899686+00:00", "session_id": "1829920a-c46a-4c92-915d-04bfdbf3a964", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:19:16.999201+00:00", "session_id": "1829920a-c46a-4c92-915d-04bfdbf3a964", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-11T20:19:25.553736+00:00", "session_id": "d9652844-7d89-46d8-8b5a-2437de6360ec", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-11T20:19:29.969033+00:00", "session_id": "eb68f628-e338-450a-bd60-69f7d62a7f19", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-11T20:23:54.403454+00:00", "session_id": "387f71ca-b667-4ea3-b268-0040c7076589", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-11T20:23:54.418983+00:00", "session_id": "a8bb382a-59fd-4aef-8653-d7290b6d8e3f", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-11T20:23:54.727900+00:00", "session_id": "aa287269-d276-4e55-bca1-e10a719c815b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-11T20:23:54.847571+00:00", "session_id": "a8bb382a-59fd-4aef-8653-d7290b6d8e3f", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:23:54.877989+00:00", "session_id": "387f71ca-b667-4ea3-b268-0040c7076589", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:23:55.170261+00:00", "session_id": "aa287269-d276-4e55-bca1-e10a719c815b", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:24:26.997482+00:00", "session_id": "387f71ca-b667-4ea3-b268-0040c7076589", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-11T20:24:28.843264+00:00", "session_id": "a8bb382a-59fd-4aef-8653-d7290b6d8e3f", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-11T20:24:38.941133+00:00", "session_id": "aa287269-d276-4e55-bca1-e10a719c815b", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-11T20:29:04.348271+00:00", "session_id": "a859f2b2-2266-49a4-b9a1-561e6b017cb7", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-11T20:29:04.366133+00:00", "session_id": "cfa85a2c-4cf3-4676-83a2-722bbc5bd454", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-11T20:29:04.689144+00:00", "session_id": "33f2805f-4ed7-443b-b1c4-3c59fe76e7a3", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-11T20:29:04.792788+00:00", "session_id": "cfa85a2c-4cf3-4676-83a2-722bbc5bd454", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:29:04.793241+00:00", "session_id": "a859f2b2-2266-49a4-b9a1-561e6b017cb7", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:29:05.368393+00:00", "session_id": "33f2805f-4ed7-443b-b1c4-3c59fe76e7a3", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:29:27.174628+00:00", "session_id": "cfa85a2c-4cf3-4676-83a2-722bbc5bd454", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-11T20:29:49.933814+00:00", "session_id": "a859f2b2-2266-49a4-b9a1-561e6b017cb7", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-11T20:29:52.911337+00:00", "session_id": "33f2805f-4ed7-443b-b1c4-3c59fe76e7a3", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-11T20:34:03.420336+00:00", "session_id": "019d7e40-4972-7120-ba50-34edd955146a", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:03.489182+00:00", "session_id": "019d7e40-49b5-70f0-983c-43d03b01fc69", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:03.496043+00:00", "session_id": "019d7e40-4972-7120-ba50-34edd955146a", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:03.500161+00:00", "session_id": "019d7e40-4980-7042-945c-b83d69a8305a", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:03.563235+00:00", "session_id": "019d7e40-49b5-70f0-983c-43d03b01fc69", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:03.568367+00:00", "session_id": "019d7e40-4980-7042-945c-b83d69a8305a", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:03.580576+00:00", "session_id": "019d7e40-48d5-7a53-8bc3-20ab3311672f", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:03.612805+00:00", "session_id": "019d7e40-4981-7430-9476-9ba35a28d3d8", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:03.675718+00:00", "session_id": "019d7e40-49ea-7100-97f6-8f6750bf563d", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:03.693609+00:00", "session_id": "019d7e40-48d5-7a53-8bc3-20ab3311672f", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:03.695275+00:00", "session_id": "019d7e40-4981-7430-9476-9ba35a28d3d8", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:03.702044+00:00", "session_id": "019d7e40-494f-7e10-95d2-18fdb626a53e", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:03.713044+00:00", "session_id": "019d7e40-4b16-7b00-a3c2-fe0eb753728f", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:03.724944+00:00", "session_id": "019d7e40-48ea-7c53-a46a-8bc0433e4bb8", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:03.745921+00:00", "session_id": "019d7e40-4af3-7640-bf96-95f30e783e39", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:03.768528+00:00", "session_id": "019d7e40-49ea-7100-97f6-8f6750bf563d", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:03.775941+00:00", "session_id": "019d7e40-494f-7e10-95d2-18fdb626a53e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:03.801725+00:00", "session_id": "019d7e40-48ea-7c53-a46a-8bc0433e4bb8", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:03.810992+00:00", "session_id": "019d7e40-4b16-7b00-a3c2-fe0eb753728f", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:03.830621+00:00", "session_id": "019d7e40-4af3-7640-bf96-95f30e783e39", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:08.086587+00:00", "session_id": "019d7e40-4b16-7b00-a3c2-fe0eb753728f", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:08.144787+00:00", "session_id": "019d7e40-48d5-7a53-8bc3-20ab3311672f", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:08.169633+00:00", "session_id": "019d7e40-4af3-7640-bf96-95f30e783e39", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:08.254629+00:00", "session_id": "019d7e40-494f-7e10-95d2-18fdb626a53e", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:08.271069+00:00", "session_id": "019d7e40-4980-7042-945c-b83d69a8305a", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:08.546595+00:00", "session_id": "019d7e40-49ea-7100-97f6-8f6750bf563d", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:08.967623+00:00", "session_id": "019d7e40-4981-7430-9476-9ba35a28d3d8", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:09.417587+00:00", "session_id": "019d7e40-49b5-70f0-983c-43d03b01fc69", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:11.229781+00:00", "session_id": "019d7e40-48ea-7c53-a46a-8bc0433e4bb8", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:12.146243+00:00", "session_id": "019d7e40-4972-7120-ba50-34edd955146a", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:23.900105+00:00", "session_id": "019d7e40-996f-7162-b46a-e308f2deade2", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:23.985325+00:00", "session_id": "019d7e40-996f-7162-b46a-e308f2deade2", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:24.007452+00:00", "session_id": "019d7e40-998a-7ff3-b0b4-b9966cc1210d", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:24.073254+00:00", "session_id": "019d7e40-998a-7ff3-b0b4-b9966cc1210d", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:24.237937+00:00", "session_id": "019d7e40-9a29-7022-ac4e-3a19b9f65f85", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:24.297098+00:00", "session_id": "019d7e40-9a29-7022-ac4e-3a19b9f65f85", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:24.301667+00:00", "session_id": "019d7e40-9925-7493-906a-4bc65395c20b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:24.358781+00:00", "session_id": "019d7e40-9925-7493-906a-4bc65395c20b", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:24.418477+00:00", "session_id": "019d7e40-9982-76d2-83c4-ca0f38cbd90b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:24.448986+00:00", "session_id": "019d7e40-9926-7642-b6f8-a56fc18245ab", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:24.481674+00:00", "session_id": "019d7e40-9982-76d2-83c4-ca0f38cbd90b", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:24.519275+00:00", "session_id": "019d7e40-9926-7642-b6f8-a56fc18245ab", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:24.572413+00:00", "session_id": "019d7e40-a2df-73c3-84a9-29b76599747c", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:24.635530+00:00", "session_id": "019d7e40-a2df-73c3-84a9-29b76599747c", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:25.140797+00:00", "session_id": "019d7e40-a31d-7f20-8f06-283f7f8cc57d", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:25.205665+00:00", "session_id": "019d7e40-a31d-7f20-8f06-283f7f8cc57d", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:26.082768+00:00", "session_id": "019d7e40-9aa0-7143-9c1e-f0b40b0a43c1", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:26.140180+00:00", "session_id": "019d7e40-9aa0-7143-9c1e-f0b40b0a43c1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:26.660949+00:00", "session_id": "019d7e40-996f-7162-b46a-e308f2deade2", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:27.721431+00:00", "session_id": "019d7e40-99ae-7b40-9dc3-d5de07e930ce", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:27.789687+00:00", "session_id": "019d7e40-99ae-7b40-9dc3-d5de07e930ce", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:28.423063+00:00", "session_id": "019d7e40-a2df-73c3-84a9-29b76599747c", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:28.917704+00:00", "session_id": "019d7e40-9982-76d2-83c4-ca0f38cbd90b", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:29.283069+00:00", "session_id": "019d7e40-9aa0-7143-9c1e-f0b40b0a43c1", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:31.350028+00:00", "session_id": "019d7e40-9a29-7022-ac4e-3a19b9f65f85", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:32.180748+00:00", "session_id": "019d7e40-9926-7642-b6f8-a56fc18245ab", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:34.068583+00:00", "session_id": "019d7e40-a31d-7f20-8f06-283f7f8cc57d", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:34.446306+00:00", "session_id": "019d7e40-9925-7493-906a-4bc65395c20b", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:35.419397+00:00", "session_id": "019d7e40-998a-7ff3-b0b4-b9966cc1210d", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:42.722747+00:00", "session_id": "019d7e40-99ae-7b40-9dc3-d5de07e930ce", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:53.922881+00:00", "session_id": "019d7e41-1084-7520-8225-4c226e49964f", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:53.977918+00:00", "session_id": "019d7e41-1084-7520-8225-4c226e49964f", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:54.214325+00:00", "session_id": "019d7e41-108d-7a11-9244-ab40b345d3eb", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:54.224598+00:00", "session_id": "019d7e41-1091-74e1-9e64-b2c0ea89c3d3", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:54.274206+00:00", "session_id": "019d7e41-108d-7a11-9244-ab40b345d3eb", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:54.285473+00:00", "session_id": "019d7e41-1091-74e1-9e64-b2c0ea89c3d3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:54.292557+00:00", "session_id": "019d7e41-107b-7663-89a1-82bdedb24e10", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:54.342388+00:00", "session_id": "019d7e41-1057-7ba0-9746-b554da3a0ad3", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:54.357203+00:00", "session_id": "019d7e41-107b-7663-89a1-82bdedb24e10", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:54.404135+00:00", "session_id": "019d7e41-1057-7ba0-9746-b554da3a0ad3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:54.505869+00:00", "session_id": "019d7e41-176d-7d50-aafe-415ca628dc5d", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:54.516185+00:00", "session_id": "019d7e41-108f-7a23-90d4-61afb467be12", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:54.575469+00:00", "session_id": "019d7e41-176d-7d50-aafe-415ca628dc5d", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:54.578525+00:00", "session_id": "019d7e41-108f-7a23-90d4-61afb467be12", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:55.108868+00:00", "session_id": "019d7e41-1173-7ad3-b7b9-0a2de1540eb1", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:55.164383+00:00", "session_id": "019d7e41-1173-7ad3-b7b9-0a2de1540eb1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:55.870544+00:00", "session_id": "019d7e41-17f7-7cb2-87ac-04a84193472d", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:55.928374+00:00", "session_id": "019d7e41-17f7-7cb2-87ac-04a84193472d", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:56.655937+00:00", "session_id": "019d7e41-1073-7f20-a1c3-4ce2a0901925", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:34:56.712736+00:00", "session_id": "019d7e41-1073-7f20-a1c3-4ce2a0901925", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:58.424806+00:00", "session_id": "019d7e41-1084-7520-8225-4c226e49964f", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:58.766019+00:00", "session_id": "019d7e41-108d-7a11-9244-ab40b345d3eb", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:59.331054+00:00", "session_id": "019d7e41-108f-7a23-90d4-61afb467be12", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:34:59.364158+00:00", "session_id": "019d7e41-1057-7ba0-9746-b554da3a0ad3", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:35:00.700740+00:00", "session_id": "019d7e41-176d-7d50-aafe-415ca628dc5d", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:35:00.823025+00:00", "session_id": "019d7e41-1073-7f20-a1c3-4ce2a0901925", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:35:00.895082+00:00", "session_id": "019d7e41-1091-74e1-9e64-b2c0ea89c3d3", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:35:02.371327+00:00", "session_id": "019d7e41-17f7-7cb2-87ac-04a84193472d", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:35:02.576343+00:00", "session_id": "019d7e41-107b-7663-89a1-82bdedb24e10", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:35:04.613122+00:00", "session_id": "019d7e41-1173-7ad3-b7b9-0a2de1540eb1", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:35:13.326563+00:00", "session_id": "019d7e41-64f8-7033-97ea-b301b23305f9", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:35:13.381241+00:00", "session_id": "019d7e41-64f8-7033-97ea-b301b23305f9", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:35:13.616266+00:00", "session_id": "019d7e41-69e6-7940-8aa2-e8ddb7b3c465", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:35:13.673453+00:00", "session_id": "019d7e41-69e6-7940-8aa2-e8ddb7b3c465", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:35:13.884801+00:00", "session_id": "019d7e41-6976-7192-bc3c-de5b3167354c", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:35:13.905636+00:00", "session_id": "019d7e41-64f2-7320-ac51-064eff5a08c0", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:35:13.942737+00:00", "session_id": "019d7e41-6976-7192-bc3c-de5b3167354c", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:35:13.968221+00:00", "session_id": "019d7e41-64f2-7320-ac51-064eff5a08c0", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:35:17.781507+00:00", "session_id": "019d7e41-64f8-7033-97ea-b301b23305f9", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:35:20.053706+00:00", "session_id": "019d7e41-6976-7192-bc3c-de5b3167354c", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:35:26.401034+00:00", "session_id": "019d7e41-64f2-7320-ac51-064eff5a08c0", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:35:57.642291+00:00", "session_id": "019d7e41-69e6-7940-8aa2-e8ddb7b3c465", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:36:04.691083+00:00", "session_id": "019d7e42-2f48-7472-819a-786491bfb11f", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.4"}
+{"ts": "2026-04-11T20:36:04.740682+00:00", "session_id": "019d7e42-2f48-7472-819a-786491bfb11f", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:36:39.028343+00:00", "session_id": "019d7e42-2f48-7472-819a-786491bfb11f", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T20:45:22.819659+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T21:13:12.629178+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T21:16:11.648709+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T21:20:35.671667+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T21:25:21.772030+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "SessionStart", "project": "adversarial-spec", "source": "compact", "model": "claude-opus-4-6"}
+{"ts": "2026-04-11T21:30:49.487906+00:00", "session_id": "019d75bd-128c-7ab3-a64b-e5e3deedf1f4", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T21:32:28.148882+00:00", "session_id": "019d75bd-128c-7ab3-a64b-e5e3deedf1f4", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-04-11T22:32:12.322251+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T22:33:10.679601+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T22:36:48.024896+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-11T22:50:17.202376+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "SessionStart", "project": "adversarial-spec", "source": "compact", "model": "claude-opus-4-6"}
+{"ts": "2026-04-12T00:22:31.374157+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-12T14:51:27.802554+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-12T15:44:50.490245+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-13T03:26:54.720647+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "SessionEnd", "project": "adversarial-spec", "reason": "other"}
+{"ts": "2026-04-13T03:26:55.260065+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-13T03:27:07.413985+00:00", "session_id": "db9e4ba0-6d85-42da-84e5-2adb93900fe6", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-13T04:22:27.296229+00:00", "session_id": "6457f4f5-4068-48ca-a65f-c4adae175503", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "claude-opus-4-6"}
+{"ts": "2026-04-13T04:22:32.797499+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "SessionStart", "project": "adversarial-spec", "source": "resume", "model": "claude-opus-4-6"}
+{"ts": "2026-04-13T04:40:30.381203+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-13T04:42:13.710945+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-14T17:44:48.191664+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-14T17:44:48.781948+00:00", "session_id": "579e0f89-a89e-4ab4-a950-3cdc62d84974", "event": "SessionEnd", "project": "adversarial-spec", "reason": "other"}
+{"ts": "2026-04-15T02:43:01.258079+00:00", "session_id": "fc217d9c-c19a-41f5-b041-6bb5ebb98c06", "event": "SessionEnd", "project": "adversarial-spec", "reason": "other"}
+{"ts": "2026-04-15T16:20:57.612055+00:00", "session_id": "b4565e92-56cb-4b9e-b320-b44fa7a353fe", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "claude-opus-4-6[1m]"}
+{"ts": "2026-04-15T17:59:55.222911+00:00", "session_id": "b4565e92-56cb-4b9e-b320-b44fa7a353fe", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-15T18:09:26.342520+00:00", "session_id": "b4565e92-56cb-4b9e-b320-b44fa7a353fe", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-15T18:12:26.927386+00:00", "session_id": "b4565e92-56cb-4b9e-b320-b44fa7a353fe", "event": "UserPromptSubmit", "project": "adversarial-spec"}

@@ -39,5 +39,19 @@
       "gemini-cli/gemini-3-flash-preview"
     ],
     "clustering_model": "none"
+  },
+  {
+    "timestamp": "2026-04-11T20:12:54.441096+00:00",
+    "spec_hash": "e9e66808",
+    "raw_concerns": 168,
+    "post_filter": 168,
+    "post_cluster": 168,
+    "cluster_deduped": 0,
+    "reduction_pct": 0.0,
+    "attack_models": [
+      "codex/gpt-5.4",
+      "gemini-cli/gemini-3-flash-preview"
+    ],
+    "clustering_model": "none"
   }
 ]
