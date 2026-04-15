@@ -977,7 +977,7 @@ def _save_partial_result(
     are still running.
     """
     try:
-        from .session import CHECKPOINTS_DIR, detect_active_session
+        from session import CHECKPOINTS_DIR, detect_active_session
 
         if session_id is None:
             session_id = detect_active_session()

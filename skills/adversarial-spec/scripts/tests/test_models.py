@@ -1,5 +1,8 @@
 """Tests for models module."""
 
+import json
+import tempfile
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 from models import (
@@ -7,6 +10,7 @@ from models import (
     RETRY_BASE_DELAY,
     CostTracker,
     ModelResponse,
+    _save_partial_result,
     call_claude_cli_model,
     call_codex_model,
     call_gemini_cli_model,
@@ -1226,6 +1230,31 @@ class TestCallModelsParallel:
         assert call_args[0][1] == "spec"  # spec
         assert call_args[0][2] == 5  # round_num
         assert call_args[0][3] == "rfc"  # doc_type
+
+
+class TestSavePartialResult:
+    def test_writes_partial_result_to_checkpoint_dir(self):
+        result = ModelResponse(
+            model="codex/gpt-5.4",
+            response="[AGREE]\n[SPEC]spec[/SPEC]",
+            agreed=True,
+            spec="spec",
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            checkpoint_dir = Path(tmpdir) / "checkpoints"
+
+            with patch("session.CHECKPOINTS_DIR", checkpoint_dir):
+                _save_partial_result(result, 2, session_id="active-session")
+
+            output_path = checkpoint_dir / "active-session-round-2-codex_gpt-5.4.json"
+            assert output_path.exists()
+
+            saved = json.loads(output_path.read_text())
+            assert saved["model"] == "codex/gpt-5.4"
+            assert saved["agreed"] is True
+            assert saved["spec"] == "spec"
+            assert saved["error"] is None
 
 
 class TestConstants:
