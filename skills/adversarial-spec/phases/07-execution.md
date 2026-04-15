@@ -24,6 +24,7 @@ TodoWrite([
 ```
 
 Mark each step `completed` as you finish it. Mark the current step `in_progress`.
+Do not reorder the new verification `[GATE]` items; they are sequenced to match the Phase 07 steps below.
 
 ---
 
