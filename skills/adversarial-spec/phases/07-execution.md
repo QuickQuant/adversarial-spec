@@ -415,7 +415,7 @@ Add error response codes     | test-after  | 1 low concern
 - Mode-to-scope compatibility must hold per the Verification Schema matrix.
 - `test_files` paths must be repo-relative (no absolute paths, no `..` traversal).
 - `verify_commands` must be literal shell strings (no template interpolation).
-- No required field may be empty or whitespace-only.
+- No required field may be empty or whitespace-only. Array entries such as `test_refs: ["  "]` still fail this gate.
 
 **Typed validation errors** (surface these by `task_id` when they fire):
 
