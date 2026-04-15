@@ -218,7 +218,7 @@ W0-4  Create component boundary template  S   Blocks: Tasks 3, 4, 5
 | `artifact-sync` | Docs, manifests, config sync — no behavioral change | `exemption_reason` |
 | `test-producer` | This task writes/expands the test suite itself | `test_files`, `verify_commands` (NOT exempt) |
 
-**Important:** `test-producer` is NOT exempt. A task whose job is "write the tests" still requires concrete `test_files` and `verify_commands` proving the produced suite runs. It does not get an `exemption_reason`.
+**Important:** `test-producer` is NOT exempt. A task whose job is "write the tests" still requires concrete `test_files` and `verify_commands` proving the produced suite runs. It never gets an `exemption_reason`.
 
 **`verification_scope` enum values:**
 
