@@ -362,7 +362,6 @@ def call_codex_model(
     reasoning_effort: str = DEFAULT_CODEX_REASONING,
     timeout: int = 600,
     search: bool = False,
-    cwd: str | None = None,
 ) -> tuple[str, int, int]:
     """
     Call Codex CLI in headless mode using ChatGPT subscription.
@@ -404,22 +403,22 @@ USER REQUEST:
             "--json",
             "--full-auto",
             "--skip-git-repo-check",
-            "--disable",
-            "codex_hooks",
-            "-c",
-            "mcp_servers={}",
             "--model",
             actual_model,
             "-c",
             f'model_reasoning_effort="{reasoning_effort}"',
         ]
-        if cwd:
-            cmd.extend(["-C", cwd])
         if search:
             cmd.append("--search")
         cmd.append("-")  # Read prompt from stdin to avoid ARG_MAX limits
 
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, input=full_prompt, cwd=cwd)
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            input=full_prompt,
+        )
 
         if result.returncode != 0:
             error_msg = (
@@ -467,7 +466,6 @@ def call_gemini_cli_model(
     user_message: str,
     model: str,
     timeout: int = 600,
-    cwd: str | None = None,
 ) -> tuple[str, int, int]:
     """
     Call Gemini CLI for model inference using Google account authentication.
@@ -511,7 +509,7 @@ USER REQUEST:
         ]  # -y for auto-approve (no tool calls expected)
 
         result = subprocess.run(
-            cmd, input=full_prompt, capture_output=True, text=True, timeout=timeout, cwd=cwd
+            cmd, input=full_prompt, capture_output=True, text=True, timeout=timeout
         )
 
         if result.returncode != 0:
@@ -553,7 +551,6 @@ def call_claude_cli_model(
     user_message: str,
     model: str,
     timeout: int = 600,
-    cwd: str | None = None,
 ) -> tuple[str, int, int]:
     """
     Call Claude CLI (claude -p) for model inference using Anthropic subscription.
@@ -599,7 +596,7 @@ USER REQUEST:
         ]
 
         result = subprocess.run(
-            cmd, input=full_prompt, capture_output=True, text=True, timeout=timeout, cwd=cwd
+            cmd, input=full_prompt, capture_output=True, text=True, timeout=timeout
         )
 
         if result.returncode != 0:
@@ -648,7 +645,6 @@ def call_single_model(
     bedrock_mode: bool = False,
     bedrock_region: Optional[str] = None,
     depth: Optional[str] = None,
-    cwd: str | None = None,
 ) -> ModelResponse:
     """Send spec to a single model and return response with retry on failure."""
     # Handle Bedrock routing
@@ -694,7 +690,6 @@ def call_single_model(
                     reasoning_effort=codex_reasoning,
                     timeout=timeout,
                     search=codex_search,
-                    cwd=cwd,
                 )
                 agreed = "[AGREE]" in content
                 extracted = extract_spec(content)
@@ -745,7 +740,6 @@ def call_single_model(
                     user_message=user_message,
                     model=model,
                     timeout=timeout,
-                    cwd=cwd,
                 )
                 agreed = "[AGREE]" in content
                 extracted = extract_spec(content)
@@ -796,7 +790,6 @@ def call_single_model(
                     user_message=user_message,
                     model=model,
                     timeout=timeout,
-                    cwd=cwd,
                 )
                 agreed = "[AGREE]" in content
                 extracted = extract_spec(content)
@@ -927,15 +920,8 @@ def call_models_parallel(
     bedrock_mode: bool = False,
     bedrock_region: Optional[str] = None,
     depth: Optional[str] = None,
-    session_id: Optional[str] = None,
-    cwd: str | None = None,
 ) -> list[ModelResponse]:
-    """Call multiple models in parallel and collect responses.
-
-    Each model result is written to disk immediately upon completion so that
-    killing the process (e.g. when one model is stuck retrying) does not lose
-    results from models that already finished.
-    """
+    """Call multiple models in parallel and collect responses."""
     results = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(models)) as executor:
         future_to_model = {
@@ -956,45 +942,9 @@ def call_models_parallel(
                 bedrock_mode,
                 bedrock_region,
                 depth,
-                cwd,
             ): model
             for model in models
         }
         for future in concurrent.futures.as_completed(future_to_model):
-            result = future.result()
-            results.append(result)
-            _save_partial_result(result, round_num, session_id)
+            results.append(future.result())
     return results
-
-
-def _save_partial_result(
-    result: "ModelResponse", round_num: int, session_id: Optional[str] = None
-) -> None:
-    """Write a single model result to disk immediately.
-
-    Saved to .adversarial-spec/checkpoints/<session>-round-<N>-<model>.json
-    so completed results survive if the process is killed while other models
-    are still running.
-    """
-    try:
-        from .session import CHECKPOINTS_DIR, detect_active_session
-
-        if session_id is None:
-            session_id = detect_active_session()
-        CHECKPOINTS_DIR.mkdir(parents=True, exist_ok=True)
-        prefix = f"{session_id}-" if session_id else ""
-        safe_model = result.model.replace("/", "_").replace(" ", "_")
-        path = CHECKPOINTS_DIR / f"{prefix}round-{round_num}-{safe_model}.json"
-        if not path.resolve().is_relative_to(CHECKPOINTS_DIR.resolve()):
-            return
-        data = {
-            "model": result.model,
-            "agreed": result.agreed,
-            "response": result.response,
-            "spec": result.spec,
-            "error": result.error,
-        }
-        path.write_text(json.dumps(data, indent=2))
-        print(f"Partial result saved: {path}", file=sys.stderr)
-    except Exception:
-        pass  # best-effort — don't break the debate if disk write fails
