@@ -375,46 +375,69 @@ If an opponent flags a test/spec mismatch, that is a valid critique — address 
 
 **Do NOT run `debate.py critique` without --context for technical/full specs that reference an existing codebase.** Product-depth specs about new greenfield projects may not need context.
 
-### Step 4: Send to Opponent Models for Critique
+### Step 4: Dispatch Critics via Pipeline Tools
 
-**CRITICAL: Always pass the COMPLETE spec document from disk. NEVER summarize, condense, or rewrite it from memory.**
+**CRITICAL: Use pipeline tools to run the debate. Do NOT call debate.py directly.**
 
-The spec file on disk is the source of truth. Opponent models must see the exact same document the user approved. Any "optimization" that shortens the input invalidates the entire round.
+The pipeline tools handle workspace creation, MCP isolation, subprocess launching, and per-model tracking. This ensures every debate round is tracked on the Fizzy card.
+
+**CRITICAL: Always pass the COMPLETE spec document from disk. NEVER summarize, condense, or rewrite it from memory.** The spec file on disk is the source of truth. Opponent models must see the exact same document the user approved.
 
 **Before EVERY debate round:**
 
 1. Write the current spec to `.adversarial-spec/specs/<slug>/spec-draft-vN.md`
 2. Verify the file exists and has expected content: `wc -l .adversarial-spec/specs/<slug>/spec-draft-vN.md`
-3. Use `cat <file> | debate.py ...` — the file IS the input, never a heredoc
+3. Read the spec content from disk — the file IS the source of truth, never memory
 
-```bash
-# CORRECT: pipe from disk (structurally safe)
-cat .adversarial-spec/specs/<slug>/spec-draft-vN.md | \
-  python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
-  --models MODEL_LIST --doc-type spec --depth DEPTH \
-  --round N \
-  $CONTEXT_FLAGS
+**4a. Begin the round:**
+```
+pipeline_begin_debate_round(
+    session_id=SESSION_ID,
+    card_id=FIZZY_CARD_ID,
+    round_number=N,
+    models=["codex/gpt-5.4", "gemini-cli/gemini-3.1-pro-preview"],
+    board_id=BOARD_ID,
+    domain_context="Optional project-specific context"
+)
+```
+This creates the isolated workspace, writes critic AGENTS.md, creates per-model checklist items on the card.
+
+**4b. Dispatch each model individually:**
+For each model, call:
+```
+result = pipeline_dispatch_single_agent_debate(
+    session_id=SESSION_ID,
+    card_id=FIZZY_CARD_ID,
+    round_number=N,
+    round_instance_id=begin_result["round_instance_id"],
+    model="codex/gpt-5.4",
+    spec_content=spec_text,  # full spec read from disk
+    board_id=BOARD_ID
+)
+```
+The tool launches the critic subprocess with full isolation (MCP disabled, workspace-only instruction file) and returns when the critic finishes.
+
+**4c. Register each model's return:**
+After each dispatch returns:
+```
+pipeline_register_debate_agent_return(
+    session_id=SESSION_ID,
+    card_id=FIZZY_CARD_ID,
+    round_instance_id=begin_result["round_instance_id"],
+    dispatch_id=result["dispatch_id"],
+    model="codex/gpt-5.4",
+    status=result["status"],
+    findings_count=result["findings_count"],
+    agreed=result["agreed"],
+    artifact_relpath=result["artifact_relpath"],
+    board_id=BOARD_ID
+)
 ```
 
-**NEVER do this:**
-```bash
-# WRONG: heredoc from memory — LLM will condense the spec
-python3 debate.py critique --models ... <<'SPEC_EOF'
-<LLM rewrites spec from memory here — WILL lose sections>
-SPEC_EOF
-```
+**4d. The conductor can skip models or stop early.**
+If a model is hanging or you have enough critiques, register remaining models as `status="skipped"` and proceed.
 
-Replace:
-- `<slug>`: spec directory name (from session)
-- `vN`: current version number (v1 for Round 1, v2 for Round 2, etc.)
-- `MODEL_LIST`: comma-separated models from user selection
-- `DEPTH`: `product`, `technical`, or `full` (based on spec depth from Phase 1)
-- `N`: current round number
-- `$CONTEXT_FLAGS`: assembled in Step 3.5 (empty for product-depth greenfield specs)
-
-For debug investigations, use `--doc-type debug` (no --depth needed).
-
-The script calls all models in parallel and returns each model's critique or `[AGREE]`. It logs the input line count and SHA256 hash — verify these match the file you piped.
+**Fallback:** If pipeline tools are unavailable, standalone `debate.py critique --cwd /tmp` still works but won't track state on the Fizzy card.
 
 ### Step 5: Review, Critique, and Iterate
 
@@ -798,7 +821,9 @@ TRACE (requirements_tracer): 0 findings
 
 ### Fizzy Sync (after each round — REQUIRED)
 
-After completing a debate round (synthesis + spec revision + guardrails), sync the Fizzy pipeline card. Read `fizzy_card_id` from the session detail file (`sessions/<id>.json`).
+**When using pipeline tools (Step 4):** Per-round sync is handled automatically. `pipeline_begin_debate_round`, `pipeline_register_debate_agent_return`, and `pipeline_advance_debate_round` update the Fizzy card with round state, per-model checklist items, and comments. No manual sync needed.
+
+**Fallback (debate.py without pipeline tools):** If pipeline tools were unavailable and you used standalone `debate.py`, manually sync the Fizzy pipeline card. Read `fizzy_card_id` from the session detail file (`sessions/<id>.json`).
 
 **If `fizzy_card_id` exists:**
 1. Use a **haiku subagent** (to keep MCP payload out of main context) to:
