@@ -1,0 +1,7 @@
+{
+  "model": "model-succeed",
+  "agreed": true,
+  "response": "[AGREE]\n[SPEC]\n# Spec\n[/SPEC]",
+  "spec": "# Spec",
+  "error": null
+}

@@ -1,0 +1,7 @@
+{
+  "model": "gemini/gemini-2.0-flash",
+  "agreed": false,
+  "response": "Issues found.\n[SPEC]\n# Revised\n[/SPEC]",
+  "spec": "# Revised",
+  "error": null
+}

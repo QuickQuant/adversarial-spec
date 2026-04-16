@@ -4,10 +4,10 @@
   "doc_type": "spec",
   "depth": "technical",
   "current_phase": "execution",
-  "current_step": "Plan loaded into Fizzy. All 6 task cards (891-897 minus 894) ready in New Todo with concern context comments.",
+  "current_step": "All 6 TMV cards reviewed, tested, and swept to Completed-Unmapped. 6 phase4 orphan cards also restored and swept. Board clean: 14 Completed-Unmapped, 0 in active lanes.",
   "status": "active",
   "created_at": "2026-04-11T19:32:21Z",
-  "updated_at": "2026-04-11T23:15:00Z",
+  "updated_at": "2026-04-16T01:39:46Z",
   "spec_path": ".adversarial-spec/specs/test-mapping-verification-gates/spec-output.md",
   "execution_plan_path": ".adversarial-spec/specs/test-mapping-verification-gates/execution-plan.md",
   "source_file": "/home/jason/PycharmProjects/ETB/docs/adversarial-spec-test-mapping-proposal.md",
@@ -69,17 +69,34 @@
     },
     {
       "time": "2026-04-11T23:15:00Z",
-      "event": "Reconciled session card 572 through Pre-Roadmap → Debate → Pre-Gauntlet → Gauntlet → Reconciliation → Finalization (gates G1/G2/G3 patched manually since lane workflow was bypassed during earlier phases). Plan loaded: 6 task cards 891-897 (skipping 894) created in New Todo with TMV1-TMV6 task_ids (renamed from T1-T6 to dodge board-wide dedup collision with phase4-architecture-rewrite).",
+      "event": "Reconciled session card 572 through Pre-Roadmap \u2192 Debate \u2192 Pre-Gauntlet \u2192 Gauntlet \u2192 Reconciliation \u2192 Finalization (gates G1/G2/G3 patched manually since lane workflow was bypassed during earlier phases). Plan loaded: 6 task cards 891-897 (skipping 894) created in New Todo with TMV1-TMV6 task_ids (renamed from T1-T6 to dodge board-wide dedup collision with phase4-architecture-rewrite).",
       "type": "milestone"
     },
     {
       "time": "2026-04-11T23:15:00Z",
       "event": "Concern context comments added to all 6 task cards.",
       "type": "milestone"
+    },
+    {
+      "time": "2026-04-16T01:39:46Z",
+      "event": "All 6 TMV cards reviewed, tested, and swept to Completed-Unmapped. 6 phase4 orphan cards also restored and swept. Board clean: 14 Completed-Unmapped, 0 in active lanes.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-04-16T01:39:46Z",
+      "event": "Checkpoint saved: tmv-review-complete-board-clean.",
+      "type": "checkpoint"
     }
   ],
   "fizzy_card_id": "572",
-  "task_card_ids": ["891", "892", "893", "895", "896", "897"],
+  "task_card_ids": [
+    "891",
+    "892",
+    "893",
+    "895",
+    "896",
+    "897"
+  ],
   "task_id_mapping": {
     "T1": "TMV1 (card 891)",
     "T2": "TMV2 (card 892)",
@@ -88,8 +105,8 @@
     "T5": "TMV5 (card 896)",
     "T6": "TMV6 (card 897)"
   },
-  "completed_work": "All 6 source-of-truth phase doc edits complete. Dogfood artifacts written. Plan loaded into Fizzy with concern context. Implementation work for this session is functionally complete — the only remaining step is review/test/deploy gates per implementation pipeline.",
-  "next_action": "Move to phase 08 (implementation) for review+test of cards 891-897 OR mark execution complete since all source edits already exist on disk.",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202604112245-pre-compaction-auto-checkpoint.md",
+  "completed_work": "Committed skill source changes (d2feafa) and session artifacts (5c7aed4). Reviewed TMV3/4/5/6 and tested all 6 TMV cards. Caught and fixed models.py relative import bug (from .session \u2192 from session). Identified Codex revert-then-restore of runtime edits. Moved 6 phase4 orphan cards from New Todo back to Completed-Unmapped. Pipeline sweep complete for both sessions.",
+  "next_action": "Decide: (a) commit the models.py import fix, (b) run /mapcodebase to refresh stale architecture docs (24 days), (c) start new spec session, or (d) mark TMV session complete in session-state.json",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202604160139-tmv-review-complete-board-clean.md",
   "do_not_ask": []
 }

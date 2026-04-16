@@ -3,13 +3,13 @@
   "active_session_id": "adv-spec-202604111912-test-mapping-verification-gates",
   "context_name": "Test Mapping & Verification Gates",
   "current_phase": "execution",
-  "current_step": "Plan loaded into Fizzy. All 6 task cards (891, 892, 893, 895, 896, 897) ready in New Todo with concern context comments. Source edits already complete on disk.",
-  "next_action": "Decide whether to (a) advance to implementation phase for formal review+test loop or (b) mark execution complete since all source edits already exist on disk and the dogfood artifacts validate the schema.",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202604112245-pre-compaction-auto-checkpoint.md",
+  "current_step": "All 6 TMV cards reviewed, tested, and swept to Completed-Unmapped. 6 phase4 orphan cards also restored and swept. Board clean: 14 Completed-Unmapped, 0 in active lanes.",
+  "next_action": "Decide: (a) commit the models.py import fix, (b) run /mapcodebase to refresh stale architecture docs (24 days), (c) start new spec session, or (d) mark TMV session complete in session-state.json",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202604160139-tmv-review-complete-board-clean.md",
   "execution_plan_path": ".adversarial-spec/specs/test-mapping-verification-gates/execution-plan.md",
   "spec_path": ".adversarial-spec/specs/test-mapping-verification-gates/spec-output.md",
   "do_not_ask": [],
-  "updated_at": "2026-04-11T23:15:00Z",
+  "updated_at": "2026-04-16T01:39:46Z",
   "active_session": "adv-spec-202604111912-test-mapping-verification-gates",
   "active_session_file": ".adversarial-spec/sessions/adv-spec-202604111912-test-mapping-verification-gates.json",
   "session_stack": [
@@ -22,5 +22,5 @@
     "adv-spec-202603201800-gauntlet-refactor-quota-burn",
     "adv-spec-202603051555-philosophy-phase-and-arch-persona"
   ],
-  "completed_work": "Auto-saved before compaction"
+  "completed_work": "Committed skill source changes (d2feafa) and session artifacts (5c7aed4). Reviewed TMV3/4/5/6 and tested all 6 TMV cards. Caught and fixed models.py relative import bug (from .session \u2192 from session). Identified Codex revert-then-restore of runtime edits. Moved 6 phase4 orphan cards from New Todo back to Completed-Unmapped. Pipeline sweep complete for both sessions."
 }

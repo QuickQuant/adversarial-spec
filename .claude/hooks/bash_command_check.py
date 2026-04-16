@@ -13,9 +13,9 @@ Checks Bash commands BEFORE execution for:
 Runs on PreToolUse for Bash operations.
 """
 
-import sys
 import json
 import re
+import sys
 from pathlib import Path
 
 # =============================================================================
@@ -103,12 +103,12 @@ BLOCKED_PATTERNS_STRICT = BLOCKED_PATTERNS_FLEXIBLE + [
     # More aggressive python checks
     (r"^python\s+-m\s+", "Use 'uv run python -m <module>' instead", "block"),
     (r"^pip\s+", "Use uv equivalents for all pip commands", "block"),
-    
+
     # Dangerous operations (warn in flexible, block in strict)
     (r"rm\s+-rf\s+/", "Dangerous: recursive delete from root", "block"),
     (r"rm\s+-rf\s+~", "Dangerous: recursive delete from home", "block"),
     (r">\s*/dev/sd", "Dangerous: writing directly to disk device", "block"),
-    
+
     # Git operations that might need review
     (r"git\s+push\s+--force", "Force push requires confirmation", "warn"),
     (r"git\s+reset\s+--hard", "Hard reset requires confirmation", "warn"),
@@ -188,13 +188,13 @@ def main():
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError:
         sys.exit(0)
-    
+
     tool_input = input_data.get("tool_input", {})
     command = tool_input.get("command", "")
-    
+
     if not command:
         sys.exit(0)
-    
+
     # Check each line of the command (for multi-line commands)
     violations = []
     for line in command.split('\n'):
@@ -210,30 +210,30 @@ def main():
     truncation_result = check_truncation_waste(command)
     if truncation_result:
         violations.append((command[:60] + "...", truncation_result[1], truncation_result[2]))
-    
+
     if violations:
         # Determine overall severity
         severities = [v[2] for v in violations]
         overall_severity = "block" if "block" in severities else "warn"
-        
+
         behavior = EXIT_BEHAVIOR[MODE]
         exit_code = behavior[overall_severity]
-        
+
         action = "BLOCKING" if exit_code == 2 else "WARNING"
         print(f"⚠️ COMMAND CHECK [{MODE.upper()} MODE] - {action}", file=sys.stderr)
         print("", file=sys.stderr)
-        
+
         for cmd, message, severity in violations:
             icon = "🛑" if severity == "block" else "⚠️"
             print(f"  {icon} {cmd}", file=sys.stderr)
             print(f"     → {message}", file=sys.stderr)
             print("", file=sys.stderr)
-        
+
         if exit_code == 2:
             print("Revise the command before proceeding.", file=sys.stderr)
-        
+
         sys.exit(exit_code)
-    
+
     sys.exit(0)
 
 if __name__ == "__main__":

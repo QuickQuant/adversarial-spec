@@ -1,0 +1,7 @@
+{
+  "model": "gpt-4o",
+  "agreed": true,
+  "response": "Response from gpt-4o",
+  "spec": "spec",
+  "error": null
+}
