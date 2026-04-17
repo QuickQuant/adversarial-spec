@@ -335,6 +335,26 @@ Include the annotation as a **Strategy:** line immediately after the test case t
 **Strategy: SYNTHETIC** — Zero histogram median cannot occur in real market data (MARA is volatile).
 ```
 
+**MOCK falsification requirement (REQUIRED for every `Strategy: MOCK*` test).** Any test labeled `MOCK`, `MOCK-EXTERNAL`, or any other `MOCK*` variant MUST carry an additional `why_impossible_to_reproduce_live:` field whose value is a specific technical condition that cannot be forced with dev infrastructure + small real money. A `scope:` descriptor (e.g., *"scope: Kalshi REST response"*) is a topic pointer, not an impossibility claim — it does not satisfy this requirement.
+
+Valid examples:
+- *"Kalshi maintenance-mode 503 (controlled outage only; dev account has no mechanism to induce)"*
+- *"Network partition between gateway host and exchange (no dev hook to simulate without disabling host networking)"*
+
+Invalid (trivially falsifiable — use REAL-DATA instead):
+- *">100 positions required for pagination"* → fund dev, open >100 sub-dollar positions
+- *"rate-limit behavior under burst"* → rapid-fire real orders, gain real telemetry
+- *"error-code generation"* → malformed orders, invalid tickers, bad credentials
+- *"cancel-failure path"* → cancel a nonexistent, already-filled, or malformed order ID
+
+If the `why_impossible_to_reproduce_live:` value is empty, hand-wavy, or names a condition that a reviewer can force live, the classification is a process failure — promote the test to REAL-DATA.
+
+```markdown
+### TC-M2.8: Kalshi maintenance-mode 503 retry backoff
+**Strategy: MOCK-EXTERNAL** — scope: Kalshi REST response
+**why_impossible_to_reproduce_live:** Kalshi maintenance 503 is a controlled exchange-side outage; no dev-account mechanism induces it.
+```
+
 ##### 9b. Boundary Value Analysis (REQUIRED for numeric specs)
 
 Every numeric boundary in the spec MUST have at-boundary and just-outside tests. When writing or updating tests-pseudo.md, scan the spec for:

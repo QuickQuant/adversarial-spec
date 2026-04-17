@@ -371,6 +371,12 @@ fi
 When tests-pseudo.md is included as context, opponents will naturally critique misaligned assertions.
 If an opponent flags a test/spec mismatch, that is a valid critique — address it in the Test-Spec Sync gate.
 
+**MOCK falsification directive (REQUIRED in every debate round's prompt preamble).** When `tests-pseudo.md` is in context, append this sentence to the debate prompt so both debaters (and Claude) attack weak mock justifications:
+
+> *"For any test with `Strategy: MOCK*`, challenge the `why_impossible_to_reproduce_live` claim. If you can name one plausible live reproduction path against dev infrastructure or small real money (e.g., fund a dev account, rapid-fire real orders, submit malformed inputs, cancel a nonexistent order), report it as a correction — the test should be promoted to REAL-DATA."*
+
+This adds zero new adversary launches. Both debaters already see `tests-pseudo.md`; this directive just tells them what to attack in it.
+
 **Store assembled context list in session state** (`extended_state.context_files`) for reuse across rounds.
 
 **Do NOT run `debate.py critique` without --context for technical/full specs that reference an existing codebase.** Product-depth specs about new greenfield projects may not need context.

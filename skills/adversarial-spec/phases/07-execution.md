@@ -6,9 +6,10 @@
 TodoWrite([
   {content: "Load finalized spec and gauntlet concerns", status: "in_progress", activeForm: "Loading finalized spec and gauntlet concerns"},
   {content: "Scope assessment — present to user", status: "pending", activeForm: "Assessing execution scope"},
-  {content: "Load codebase architecture docs [GATE] — read primer.md + matched components before any exploration", status: "pending", activeForm: "Loading codebase architecture docs"},
+  {content: "Load codebase architecture docs [GATE] — read ALL .architecture/ files (INDEX, primer, overview, concerns, access-guide, patterns, flows, and every structured/components/*.md) before decomposition or architecture_refs assignment", status: "pending", activeForm: "Loading codebase architecture docs"},
   {content: "Load target architecture and build Architecture Spine (if exists)", status: "pending", activeForm: "Building architecture spine"},
   {content: "Decompose into tasks with gauntlet concern linkage", status: "pending", activeForm: "Decomposing spec into tasks"},
+  {content: "Assign architecture_refs per task [GATE] — grounded in actual doc content, no filename guessing", status: "pending", activeForm: "Assigning architecture_refs per task"},
   {content: "Classify behavior_change and verification_mode for every task [GATE]", status: "pending", activeForm: "Classifying verification modes"},
   {content: "Assign test strategies (test-first/test-after)", status: "pending", activeForm: "Assigning test strategies"},
   {content: "Attach test_refs, test_files, or exemption_reason for every task [GATE]", status: "pending", activeForm: "Completing verification mapping"},
@@ -88,7 +89,7 @@ Proceed with task decomposition? [Y/n]
 
 ### Step 2.5: Load Codebase Architecture (REQUIRED before decomposition)
 
-**Do NOT decompose into tasks, launch Explore agents, or glob/grep the codebase until you have read the architecture docs.** The architecture docs tell you what components exist, what contracts matter, and what gotchas to avoid. Without them, you will invent file structures that conflict with the existing codebase.
+**Do NOT decompose into tasks, launch Explore agents, or glob/grep the codebase until you have read EVERY architecture doc.** The architecture docs tell you what components exist, what contracts matter, and what gotchas to avoid. Pattern-matching filenames to card titles is not reading the architecture. The whole point of the `.architecture/` folder is to ground implementation work in the system's real design — that only happens if every file is actually read before task decomposition and before `architecture_refs` assignment.
 
 **Load project architecture docs:**
 ```bash
@@ -96,19 +97,37 @@ Proceed with task decomposition? [Y/n]
 [ -f .architecture/manifest.json ] && echo "exists" || echo "missing"
 ```
 
-If `.architecture/manifest.json` exists:
-1. Read `.architecture/INDEX.md` — for YOUR navigation only (component table, key files)
-2. Read `.architecture/primer.md` — system summary, components, contracts, gotchas
-3. Match the spec's scope against the INDEX component table:
-   - Which components does the spec touch?
-   - Which key files will need modification?
-4. Read 2-4 matched component docs from `.architecture/structured/components/`
-5. If the spec crosses component boundaries: read `.architecture/structured/flows.md`
-6. If the spec touches known debt: read `.architecture/concerns.md`
+If `.architecture/manifest.json` exists, read **all** of the following. Do not cherry-pick based on filename or title — read the content:
+
+1. `.architecture/INDEX.md` (navigation + component table)
+2. `.architecture/primer.md` (system summary, contracts, gotchas)
+3. `.architecture/overview.md` (full system narrative)
+4. `.architecture/concerns.md` (known debt, CON-xxx items)
+5. `.architecture/access-guide.md` (guided reading paths)
+6. `.architecture/patterns.md` (cross-cutting conventions)
+7. `.architecture/filesystem-map.md` (if present)
+8. `.architecture/findings.md` (if present)
+9. `.architecture/action-plan.md` (if present)
+10. `.architecture/structured/flows.md` (if present — cross-component flow docs)
+11. **Every file under `.architecture/structured/components/`** — no skipping based on hunch
+
+**Context discipline:** If reading all of this would blow your context budget, use a fresh subagent whose entire job is to read them all, the final spec, and the task list, then emit per-task `architecture_refs` with rationale. Do not skip reading — delegate reading. Filename-based guessing is a process failure.
+
+**After reading — per-task architecture_refs assignment (REQUIRED):**
+
+For every task you will decompose in Step 3, record `architecture_refs[]` — the set of architecture docs whose content actually describes something the task touches. Ground the assignment in:
+- The task's declared file scope (`context_map.modify/create/read`)
+- Component responsibilities as claimed in the component doc itself
+- Cross-component flows the task crosses
+
+Rules:
+- **No filename-guessing.** A ref must exist because the component doc's content overlaps the task's scope — not because the filename resembles the task title.
+- **2–4 refs per task is typical.** 6+ is usually over-inclusion; 0 is a gate failure.
+- **Use full repo-relative paths** rooted at `.architecture/` — e.g., `.architecture/structured/components/gateway.md`, not just `gateway.md`.
 
 If `.architecture/` does NOT exist:
 - Warn the user: "No architecture docs found. Consider running `/mapcodebase` first."
-- If proceeding without: use targeted file reads (not broad Explore agents) to understand the blast zone
+- If proceeding without: use targeted file reads (not broad Explore agents) to understand the blast zone. `architecture_refs` may be empty on tasks in this case, recorded in the validation trail as an acknowledged exemption.
 
 **Then load target architecture (from Phase 4, if it exists):**
 ```bash
@@ -200,6 +219,7 @@ W0-4  Create component boundary template  S   Blocks: Tasks 3, 4, 5
 | `behavior_change` | boolean | always | Whether this task modifies runtime behavior. Determines gate enforcement strictness. |
 | `verification_mode` | string enum | always | How this task will be verified. Determines which other fields are required. |
 | `verification_scope` | string enum | always | Whether verification targets this task specifically or runs the full suite. |
+| `architecture_refs` | string[] | always | Repo-relative paths to `.architecture/` docs whose content overlaps this task's scope. Populated from Step 2.5's per-task assignment. Must be non-empty when `.architecture/` exists; empty only when acknowledged as exempt (no architecture docs in repo). |
 | `test_refs` | string[] | conditional | Test case IDs from `tests-spec.md` or roadmap. Required when `verification_mode` starts with `automated-`. |
 | `test_files` | string[] | conditional | Repo-relative test file paths expected to cover this task. Required for `automated-*` and `test-producer`. |
 | `verify_commands` | string[] | conditional | Shell command strings the tester runs. Required for `automated-*` and `test-producer`. |
@@ -258,12 +278,14 @@ Invalid combinations (e.g., `automated-unit` + `manual`, or `static-check` + `ta
 | `missing_verification_mode` | Task has no `verification_mode` |
 | `missing_verification_scope` | Task has no `verification_scope` |
 | `missing_behavior_change` | Task has no `behavior_change` classification |
+| `missing_architecture_refs` | `.architecture/` exists in repo but task's `architecture_refs` is empty and no exemption was acknowledged |
 | `missing_required_test_refs` | `automated-*` task with empty `test_refs` |
 | `missing_required_test_files` | `automated-*` or `test-producer` task with empty `test_files` |
 | `missing_required_verify_commands` | `automated-*` or `test-producer` task with empty `verify_commands` |
 | `missing_exemption_reason` | Exempt mode with no `exemption_reason` |
 | `invalid_scope_for_mode` | `verification_scope` not in the valid set for `verification_mode` |
 | `invalid_test_file_path` | Path is absolute or contains `..` traversal |
+| `invalid_architecture_ref_path` | `architecture_refs` entry is not a repo-relative path rooted at `.architecture/` |
 | `empty_or_whitespace_value` | A required field contains an empty or whitespace-only string |
 
 Each error identifies the affected `task_id`.
@@ -296,6 +318,7 @@ This classification is a best-effort LLM judgment. Edge cases (config with condi
 | `verify_commands` | `declared_verify_commands` |
 | `exemption_reason` | `declared_exemption_reason` |
 | `verification_scope` | `verification_scope` |
+| `architecture_refs` | `architecture_refs` |
 
 ---
 
@@ -342,7 +365,7 @@ Surface the linkage in the task entry so reviewers can audit coverage:
 
 ### Gate V1: Verification Classification
 
-**Position:** After Step 3 (Task Decomposition), before Step 4 (Test Strategy Assignment).
+**Position:** After Step 3 (Task Decomposition), before Step 4 (Test Scheduling Assignment).
 
 **TodoWrite item:**
 ```
@@ -362,7 +385,9 @@ Assign these **during decomposition**, not as a deferred second pass. If you can
 
 ---
 
-### Step 4: Test Strategy Assignment
+### Step 4: Test Scheduling Assignment
+
+> **Note:** This step assigns *when* tests are written relative to implementation (test-first vs test-after vs skip). It is distinct from the Phase 2 `Strategy:` label on individual test cases (REAL-DATA / SYNTHETIC / MOCK / FRONTEND / STATIC), which classifies *what data* a test uses. Don't conflate them — the two concepts collide only in name.
 
 Assign test-first or test-after to each task based on risk:
 
@@ -388,9 +413,9 @@ Assign test-first or test-after to each task based on risk:
 
 Present as a table:
 ```
-Test Strategy
+Test Scheduling
 ───────────────────────────────────────
-Task                          | Strategy    | Reason
+Task                          | Scheduling  | Reason
 Implement auth middleware     | test-first  | 3 concerns (1 critical)
 Create DB schema             | test-after  | 0 concerns, standard CRUD
 Implement order placement    | test-first  | 5 concerns (2 high)
@@ -401,7 +426,7 @@ Add error response codes     | test-after  | 1 low concern
 
 ### Gate V2: Mapping Completeness
 
-**Position:** After Step 4 (Test Strategy Assignment), before Step 5 (Over-Decomposition Guard).
+**Position:** After Step 4 (Test Scheduling Assignment), before Step 5 (Over-Decomposition Guard).
 
 **TodoWrite item:**
 ```
@@ -417,6 +442,7 @@ Add error response codes     | test-after  | 1 low concern
 - `test_files` paths must be repo-relative (no absolute paths, no `..` traversal).
 - `verify_commands` must be literal shell strings (no template interpolation).
 - No required field may be empty or whitespace-only. Array entries such as `test_refs: ["  "]` still fail this gate.
+- **`architecture_refs` must be non-empty** if `.architecture/` exists in the repo. Every entry must be a repo-relative path rooted at `.architecture/` (e.g., `.architecture/structured/components/gateway.md`). Filename-based guesses where the referenced doc's content does not overlap the task's scope fail this gate in spirit; if you cannot articulate in one sentence why each ref belongs, remove it.
 
 **Typed validation errors** (surface these by `task_id` when they fire):
 
@@ -712,6 +738,10 @@ The JSON must follow the v2 pipeline schema. The root includes `plan_schema_vers
       "behavior_change": true,
       "verification_mode": "automated-contract",
       "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/structured/components/telemetry-api.md",
+        ".architecture/structured/flows.md"
+      ],
       "test_refs": ["TC-5.2", "TC-5.4"],
       "test_files": ["tests/test_t5_api_contracts.py"],
       "verify_commands": ["uv run pytest tests/test_t5_api_contracts.py -q"],
@@ -733,6 +763,7 @@ The JSON must follow the v2 pipeline schema. The root includes `plan_schema_vers
       "behavior_change": false,
       "verification_mode": "artifact-sync",
       "verification_scope": "static",
+      "architecture_refs": [".architecture/INDEX.md"],
       "test_refs": [],
       "test_files": [],
       "verify_commands": [],
@@ -758,6 +789,7 @@ Core fields (unchanged from v1):
 
 Verification block fields (v2, see Verification Schema reference above for full semantics):
 - `behavior_change`, `verification_mode`, `verification_scope`: always required
+- `architecture_refs`: always required when `.architecture/` exists (populated from Step 2.5's per-task assignment)
 - `test_refs`, `test_files`, `verify_commands`: required per mode
 - `exemption_reason`: required for exempt modes (`artifact-sync`, `static-check`, `manual-ux`)
 - `verification_notes`: optional free-text

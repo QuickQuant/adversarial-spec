@@ -154,6 +154,14 @@ too much.
 
 Find operational gaps. Assume every dependency will fail at the worst time.
 
+**MOCK falsification (applies when tests-pseudo.md is in context):** For every
+test with `Strategy: MOCK*`, attack its `why_impossible_to_reproduce_live:` claim.
+If you can name one plausible live reproduction path against dev infrastructure
+or small real money (e.g., rapid-fire real orders, kill one exchange WebSocket,
+revoke one API key, submit malformed inputs), raise a concern — mocked
+failure-mode tests mask the exact pager-waking divergence between "mock author's
+imagination" and "how the real system fails." Promote to REAL-DATA.
+
 Output your concerns as a numbered list. For each concern:
 - State the failure mode
 - Explain how operators will find out (or won't)
@@ -289,6 +297,16 @@ is empty? What if there are exactly 2^31 items? What about Unicode? What about l
 seconds? Annoying but thorough. Most of your concerns don't matter, but some do.
 
 Find edge cases. Assume every boundary condition will be hit.
+
+**MOCK falsification (applies when tests-pseudo.md is in context):** For every
+test with `Strategy: MOCK*`, attack its `why_impossible_to_reproduce_live:` claim.
+Pagination boundaries, offset edges, rate-limit thresholds, malformed-input paths,
+and error-code taxonomies are your bread and butter — and they're almost always
+forceable live (fund a dev account, open >N sub-dollar positions, submit invalid
+tickers, revoke credentials). If the `why_impossible_to_reproduce_live` value is
+a topic pointer ("scope: …") or a trivially falsifiable claim, raise a concern and
+demand promotion to REAL-DATA. Mocked boundary tests pass in CI and diverge in
+production.
 
 Output your concerns as a numbered list. For each concern:
 - State the edge case
@@ -639,7 +657,18 @@ this is to be EXPLICITLY SKEPTICAL and DEMAND CITATIONS. Don't reason about whet
 an assumption is likely true - demand proof that it IS true.
 
 If a spec integrates with an external system and doesn't cite documentation for how
-that system works, that's automatically a concern. No citation = unverified assumption.""",
+that system works, that's automatically a concern. No citation = unverified assumption.
+
+**MOCK falsification (applies when tests-pseudo.md is in context):** Same skeptic
+stance applies to test-data classification. For every test with `Strategy: MOCK*`,
+the `why_impossible_to_reproduce_live:` field is an assumption claim — demand the
+same rigor. A `scope:` descriptor ("scope: Kalshi REST response") is a topic
+pointer, not an impossibility proof, and fails your audit. If the author cannot
+cite a specific technical condition that dev infrastructure + small real money
+cannot force (e.g., exchange-side maintenance outage, host-level network
+partition), the classification is an unverified assumption — flag it and demand
+promotion to REAL-DATA. Mock justifications without citations are the same class
+of blind spot as external-API assumptions without docs.""",
     valid_dismissal="""
 You may dismiss assumption_auditor's concern IF:
 - Documentation is cited with specific link and quote
