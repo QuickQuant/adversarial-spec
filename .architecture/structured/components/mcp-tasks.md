@@ -5,16 +5,16 @@
 | Property | Value |
 |----------|-------|
 | Purpose | Cross-agent task coordination via MCP protocol |
-| Entry | `mcp.run()` at mcp_tasks/server.py:365 |
+| Entry | `mcp.run()` at mcp_tasks/server.py:404 |
 | Key files | mcp_tasks/server.py, skills/adversarial-spec/scripts/task_manager.py |
-| Depends on | mcp (FastMCP) |
+| Depends on | mcp (FastMCP), filelock |
 | Used by | Claude Code agents, Codex agents (cross-agent coordination) |
 | Runtime status | implemented |
 | Architecture status | active_primary |
 
 ## What This Component Does
 
-Provides a task CRUD API via the MCP (Model Context Protocol). Four tools — TaskCreate, TaskGet, TaskList, TaskUpdate — manage tasks stored in `.claude/tasks.json`. Used for cross-agent coordination between Claude and Codex working on the same project. task_manager.py provides a Python-native TaskManager class with the same storage format.
+Provides a task CRUD API via the MCP (Model Context Protocol). Four tools — TaskCreate, TaskGet, TaskList, TaskUpdate — manage tasks stored in `.claude/tasks.json`. MCP server now uses FileLock (`_mutate_tasks()`) for concurrent access safety. Used for cross-agent coordination between Claude and Codex working on the same project. task_manager.py provides a Python-native TaskManager class with the same storage format.
 
 ## Key Functions
 

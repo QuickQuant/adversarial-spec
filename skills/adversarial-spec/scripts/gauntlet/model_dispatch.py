@@ -62,7 +62,7 @@ def call_model(
     model: str,
     system_prompt: str,
     user_message: str,
-    timeout: int = 300,
+    timeout: int = 1800,
     codex_reasoning: str = DEFAULT_CODEX_REASONING,
     json_mode: bool = False,
 ) -> tuple[str, int, int]:
@@ -110,7 +110,6 @@ def call_model(
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},
         ],
-        "max_tokens": 4000,
         "temperature": 0.7,
         "timeout": timeout,
     }

@@ -110,7 +110,7 @@ Before writing the final spec, promote the test pseudocode to formalized accepta
    - If gauntlet was run, also set `gauntlet_concerns_path` to the saved concerns JSON (if not already set during gauntlet → finalize transition)
    - If a spec manifest was created (`specs/<slug>/manifest.json`), set `manifest_path` to its path
    - If `tests-spec.md` was generated, set `tests_spec_path` to its path
-   - Append journey: `{"time": "ISO8601", "event": "Spec finalized: <path>", "type": "artifact"}`
+   - Append to journey log (`sessions/<id>.journey.log`, JSONL): `{"time": "ISO8601", "event": "Spec finalized: <path>", "type": "artifact"}`
    - Update both files with `current_phase: "finalize"`, `current_step: "Document finalized, awaiting user review"`
    - Use atomic writes for both files
 6. **Fizzy sync** (if `fizzy_card_id` exists in session detail file):
@@ -138,7 +138,7 @@ Before writing the final spec, promote the test pseudocode to formalized accepta
 - Proceed to Step 8 (Additional Review Cycles)
 
 **If user accepts:**
-- Finalization complete. Ask if they want to proceed to execution planning (Phase 5).
+- Finalization complete. If `middleware-candidates.json` exists and contains materializable candidates, ask whether to run the optional middleware-creator pass before normal implementation pickup. Otherwise ask if they want to proceed to execution planning (Phase 7).
 
 ### Step 8: Additional Review Cycles (Optional)
 
@@ -174,4 +174,3 @@ After the user review period, or if explicitly requested:
 - First cycle with faster models (gemini-cli/gemini-3-flash-preview), second cycle with stronger models (codex/gpt-5.4, gemini-cli/gemini-3.1-pro-preview)
 - First cycle for structure and completeness, second cycle for security or performance focus
 - Fresh perspective after user-requested changes
-

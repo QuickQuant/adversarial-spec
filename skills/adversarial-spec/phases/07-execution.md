@@ -1,4 +1,5 @@
-> **FIRST ACTION upon entering this phase:** Create this TodoWrite immediately.
+> **FIRST ACTION upon entering this phase:** Alert the user that this is a context heavy process and that a fresh context window is strongly recommended. Execution card generation is a critical process that must be supervised by the user. Do not attempt this in an overnight session unless EXPLICITLY told to by the user. 
+> After this, the next step is to create this TodoWrite immediately.
 > Do NOT read further until the TodoWrite is active.
 > Every `[GATE]` item must be marked completed before proceeding past it.
 
@@ -144,10 +145,10 @@ Phase 4 records a `phase_artifacts` block in the session detail file with `spec_
 3. **If fingerprints match:** target architecture is fresh — proceed with consumption
 4. **If fingerprints do NOT match:** target architecture is stale
    - Block with a clear message: "Spec has changed since Phase 4 published target architecture (old fingerprint `<hash>`, current `<hash>`). Rerun Phase 4 to refresh target-architecture.md, middleware-candidates.json, and invariant set, or explicitly acknowledge the drift to continue."
-   - If the user explicitly acknowledges the drift (interactive confirmation or equivalent session-level override), log the acknowledgement to the session journey and proceed with a warning banner in the execution plan noting the known drift. No CLI flag for this is defined in v17 — the acknowledgement path is ad-hoc until a formal override is specified.
+   - If the user explicitly acknowledges the drift (interactive confirmation or equivalent session-level override), log the acknowledgement to the session journey log and proceed with a warning banner in the execution plan noting the known drift. No CLI flag for this is defined in v17 — the acknowledgement path is ad-hoc until a formal override is specified.
 5. Normative source for the fingerprint contract: [`04-target-architecture.md` §7 (Required Headers)](./04-target-architecture.md) and [`04-target-architecture.md` §15 (Session Mutation Contract)](./04-target-architecture.md). Phase 7 MUST NOT mutate `architecture_fingerprint` or `spec_fingerprint` — those are set by Phase 4 and read-only here.
 
-**Consume middleware candidates (when present — advisory only in v17):**
+**Coordinate middleware candidates with middleware-creator (when present):**
 
 If Phase 4 identified shared middleware (cross-cutting code surfaces that multiple tasks would otherwise duplicate), it publishes `middleware-candidates.json` alongside the target architecture:
 
@@ -155,10 +156,13 @@ If Phase 4 identified shared middleware (cross-cutting code surfaces that multip
 ls .adversarial-spec/specs/*/middleware-candidates.json 2>/dev/null | head -1
 ```
 
-**Important:** [`04-target-architecture.md` §0](./04-target-architecture.md) declares that until the `middleware-creator` phase is registered in SKILL.md's router and authored, `middleware-candidates.json` is a **passive artifact with no active consumer**. The normative consumer is the middleware-creator phase, not Phase 7. In v17, Phase 7's role is strictly advisory:
+The normative fanout consumer is the middleware-creator phase, not Phase 7. Phase 7's responsibility is to create a clean execution substrate for that phase:
 
-- **Every tier (simple, medium, complex):** Surface the candidates in the plan's "Uncovered Concerns / Advisory" section so the user can see what Phase 4 identified. Do NOT auto-create Wave 0 tasks from `middleware-candidates.json` — that materialization is reserved for the middleware-creator phase once it is registered and authored.
-- If the user explicitly asks Phase 7 to promote a candidate into a Wave 0 task, record it as a user-initiated decision in the session journey. The default remains "surface only".
+- Surface every candidate in the plan so the user can see what Phase 4 identified.
+- Ensure each materializable candidate maps to exactly one typed Fizzy task card after `pipeline_load`.
+- Include the candidate ID in the task title, description, or metadata so middleware-creator can map source cards deterministically.
+- Ensure the plan names or creates an existing `test_suite_path` for each candidate; `pipeline_create_middleware_fanout` will reject missing paths.
+- Do not call middleware fanout tools from Phase 7 unless the active phase is explicitly `middleware-creator`.
 
 If `middleware-candidates.json` is missing entirely (Phase 4 found no shared surfaces), skip this step — not every project needs middleware.
 
@@ -666,7 +670,7 @@ Acknowledge exemptions? [Y/n/modify]
   3. Regenerate `verification-coverage.json` (Gate V3)
   4. Re-present only the changed tasks for confirmation
 
-**Nature of this gate:** This is the human correction point for any classification the LLM got wrong at Gate V1 or V2. The gate is LLM-enforced only in the sense that the LLM must ask; the *answer* is a human decision. Record the user's acknowledgement in the session journey.
+**Nature of this gate:** This is the human correction point for any classification the LLM got wrong at Gate V1 or V2. The gate is LLM-enforced only in the sense that the LLM must ask; the *answer* is a human decision. Record the user's acknowledgement in the session journey log.
 
 **[GATE] TodoWrite: Mark "Review every exemption with the user" completed before proceeding to Step 8.**
 

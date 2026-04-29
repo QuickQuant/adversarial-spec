@@ -21,7 +21,7 @@
                                    │              │                                       │
                                    │              │  Phase 1: Attack Generation ──────|>   │
                                    │              │  Phase 2: Big Picture Synthesis        │
-                                   │              │  Phase 3: Filtering & Clustering       │
+                                   │              │  Phase 3: Filtering (clustering removed)│
                                    │              │  Phase 4: Frontier Evaluation          │
                                    │              │  Phase 5: Adversary Rebuttals          │
                                    │              │  Phase 6: Adjudication & Medals        │
@@ -67,7 +67,7 @@
                           │                                              │
                           │  MCP Tasks        Adversary Stats/Medals      │
                           │  .claude/tasks    ~/.adversarial-spec/        │
-                          │  (no lock)        (no lock)                   │
+                          │  (FileLock)       (no lock)                   │
                           └──────────────────────────────────────────────┘
 
 Legend:

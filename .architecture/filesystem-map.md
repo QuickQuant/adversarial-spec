@@ -1,7 +1,7 @@
 # Filesystem Map: adversarial-spec
 
-> Generated: 2026-03-22 | Git: c3b5f8c
-> Skill version: 3.0 | Model: claude-opus-4-6
+> Generated: 2026-04-16 | Git: 9ca3ccd
+> Skill version: 3.6 | Model: claude-opus-4-6
 
 ## Root Structure
 
@@ -27,39 +27,41 @@ The main source code directory. All Python scripts live here.
 
 | Path | Purpose |
 |------|---------|
-| `debate.py` | Master CLI entrypoint (1500+ lines, 18 actions) |
-| `models.py` | LLM call abstraction, cost tracking, parallel dispatch |
+| `debate.py` | Master CLI entrypoint (1562 lines, 18+ actions) |
+| `models.py` | LLM call abstraction, cost tracking, parallel dispatch (1000 lines) |
 | `providers.py` | Model config, cost rates, Bedrock, CLI detection |
 | `adversaries.py` | Named attacker persona definitions (frozen dataclasses) |
 | `prompts.py` | System prompts, focus areas, personas templates |
 | `session.py` | Session state persistence for debate rounds |
-| `scope.py` | Scope discovery (606 lines, DEAD CODE — not imported) |
+| `scope.py` | Scope discovery definitions (606 lines, no importers — status unclear) |
 | `telegram_bot.py` | Telegram notification bot (send, poll, notify) |
 | `task_manager.py` | Task state management + demo harness |
 | `gauntlet_monolith.py` | 12-line shim → delegates to gauntlet/cli.py |
 
 ### skills/adversarial-spec/scripts/gauntlet/
 
-The 16-module gauntlet package (extracted from 4087-line monolith).
+The 18-module gauntlet package (extracted from original monolith).
 
 | Path | Purpose |
 |------|---------|
 | `__init__.py` | Public API exports (run_gauntlet, format_gauntlet_report, etc.) |
 | `__main__.py` | Enables `python -m gauntlet` invocation |
 | `cli.py` | Standalone gauntlet CLI (separate flag names from debate.py) |
-| `orchestrator.py` | 7-phase pipeline sequencing, state management, resume |
-| `core_types.py` | Data models: Concern, Evaluation, Rebuttal, GauntletConfig, etc. |
+| `orchestrator.py` | 7-phase pipeline sequencing, state management, resume (865 lines) |
+| `core_types.py` | Data models: Concern, Evaluation, Rebuttal, GauntletConfig, Medal, etc. |
 | `model_dispatch.py` | Model selection, rate limiting, name validation |
 | `persistence.py` | FileLock-guarded checkpoint save/load, atomic writes |
+| `prompts.py` | Centralized phase system prompts (NEW — extracted from inline) |
 | `phase_1_attacks.py` | Attack generation (parallel adversary dispatch) |
 | `phase_2_synthesis.py` | Big-picture synthesis across all concerns |
-| `phase_3_filtering.py` | Concern filtering, clustering, explanation matching |
-| `phase_4_evaluation.py` | Frontier model evaluation (verdict assignment) |
+| `phase_3_filtering.py` | Concern filtering, explanation matching (clustering removed) |
+| `phase_4_evaluation.py` | Frontier model evaluation (verdict assignment, multi-model consensus) |
 | `phase_5_rebuttals.py` | Adversary rebuttal for dismissed concerns |
 | `phase_6_adjudication.py` | Final adjudication and verdict aggregation |
 | `phase_7_final_boss.py` | Final boss review (pass/refine/reconsider) |
 | `medals.py` | Adversary accuracy scoring and medal awards |
 | `reporting.py` | Markdown report generation, leaderboard formatting |
+| `synthesis_extract.py` | Standalone concern parsing/clustering utility |
 
 ### skills/adversarial-spec/scripts/pre_gauntlet/
 
@@ -86,29 +88,38 @@ Pre-gauntlet context collection pipeline.
 |------|---------|
 | `git_cli.py` | Git subprocess wrapper (GitCli, GitCliError) |
 | `process_runner.py` | Generic subprocess runner with timeout |
-| `knowledge_service.py` | Knowledge base caching (IMPLEMENTED BUT UNWIRED) |
+| `knowledge_service.py` | Knowledge base caching |
 
 ### skills/adversarial-spec/scripts/tests/
 
+20 test files covering all components.
+
 | Path | Purpose |
 |------|---------|
-| `test_models.py` | Tests for model calling, cost tracking |
-| `test_providers.py` | Tests for provider config, Bedrock |
-| `test_session.py` | Tests for session persistence |
-| `test_gauntlet/` | Gauntlet-specific tests (377+ passing) |
+| `test_models.py`, `test_model_calls.py` | Model calling, cost tracking, parallel dispatch |
+| `test_providers.py` | Provider config, Bedrock, CLI detection |
+| `test_session.py` | Session persistence, path traversal protection |
+| `test_adversaries.py` | Adversary registry, scope guidelines, content hash |
+| `test_prompts.py` | Prompt templates and persona validation |
+| `test_cli.py` | debate.py CLI argument parsing |
+| `test_gauntlet_*.py` (12 files) | Gauntlet phases, orchestrator, persistence, types, dispatch, medals |
+| `test_telegram_bot.py` | Telegram bot command tests |
 
 ### skills/adversarial-spec/phases/
 
-Skill phase documentation (markdown instructions for Claude Code).
+Skill phase documentation (9 phases, markdown instructions for Claude Code).
 
 | Path | Purpose |
 |------|---------|
-| `01-philosophy.md` | Philosophical framing phase |
-| `02-user-stories.md` | User story anchoring |
+| `01-init-and-requirements.md` | Initialization and requirements gathering |
+| `02-roadmap.md` | Roadmap and milestone planning |
 | `03-debate.md` | Multi-model debate execution |
-| `04-gauntlet.md` | Gauntlet stress-test instructions |
-| `05-gauntlet.md` | Gauntlet synthesis (cardinal rules) |
-| `06-execution.md` | Execution plan generation |
+| `04-target-architecture.md` | Target architecture definition (rewritten Apr 2026) |
+| `05-gauntlet.md` | Gauntlet stress-test (cardinal rules for synthesis) |
+| `06-finalize.md` | Spec finalization |
+| `07-execution.md` | Execution plan generation (with verification gates) |
+| `08-implementation.md` | Implementation phase |
+| `09-verification.md` | Test mapping and verification |
 
 ## Entry Points
 

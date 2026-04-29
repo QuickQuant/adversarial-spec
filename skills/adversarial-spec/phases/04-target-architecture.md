@@ -77,7 +77,7 @@ These enums are normative. All artifacts, schemas, and references must use these
 - Phase 4 does NOT produce implementation code — only architectural constraints, decisions, and pseudo-tests.
 - Phase 4 does NOT replace the Gauntlet (Phase 5) — it establishes the rules the Gauntlet will stress-test.
 - Phase 4 does NOT infer missing product goals or user stories — those must exist from the Roadmap (Phase 2).
-- Phase 4 does NOT register or implement the middleware-creator phase — it only identifies middleware candidates. The middleware-creator is a proposed downstream consumer that must be registered in SKILL.md's phase router before it can run. Until then, `middleware-candidates.json` is a passive artifact with no active consumer.
+- Phase 4 does NOT implement middleware — it only identifies middleware candidates. The middleware-creator phase is the downstream consumer that can materialize candidates after finalization and execution-card loading.
 
 ---
 
@@ -1091,7 +1091,7 @@ Phase 4 may only mutate these session detail file keys:
 | `phase4_bootstrap.gate_approvals` | Update individual gate status on user confirmation |
 | `architecture_taxonomy` | Replace atomically |
 | `decision_journal[]` | Append only; suppress duplicate `idempotency_key` |
-| `journey[]` | Append only; suppress duplicate `idempotency_key` |
+| `sessions/<id>.journey.log` (JSONL) | Append only; suppress duplicate `idempotency_key` (scan log before append) |
 | `phase_artifacts.target_architecture_path` | Set once at draft completion |
 | `phase_artifacts.spec_fingerprint` | Set to `input_fingerprint` at Phase 4 completion. Phase 7 must verify this matches the current spec before consuming architecture artifacts — if the spec changed after Phase 4, architecture may be stale |
 | `current_phase` | Set on phase transition (via SKILL.md protocol) |
@@ -1371,11 +1371,11 @@ Phase 4 deploys as a markdown phase document plus supporting schema definitions.
 5. **Backup:** Copy current deployed files to `~/.claude/skills/adversarial-spec/.backup/<release_id>/`
 6. **Deploy:** Write candidate files to temp paths in deploy target, then atomically rename into place
 7. **Verify:** Checksum deployed files against source — must match
-8. **Record:** Log deployment event with `release_id` to journey
+8. **Record:** Log deployment event with `release_id` to `.adversarial-spec/release-log.jsonl` (release events are skill-global, not session-scoped)
 
 ### Rollback
 - Restore from the backup for a specific `release_id`: copy from `.backup/<release_id>/` → deploy target, atomically rename, verify checksums
-- Record rollback event with `release_id` to journey
+- Record rollback event with `release_id` to `.adversarial-spec/release-log.jsonl`
 - Git history is evidence and provenance, not the rollback mechanism
 
 ---
@@ -1396,9 +1396,9 @@ Phase 4 deploys as a markdown phase document plus supporting schema definitions.
 
 ### Cross-Reference Updates
 - Phase 5 (`05-gauntlet.md`): Update adversary briefing inputs to reference concern x surface matrix and triggered concerns
-- Phase 7 (`07-execution.md`): Update task generation to reference invariant IDs and surface scope; update to consume `middleware-candidates.json` when present
+- Phase 7 (`07-execution.md`): Task generation references invariant IDs and surface scope; when `middleware-candidates.json` exists, Phase 7 creates deterministic source task card mappings and test-suite paths for middleware-creator
 - Phase 2 (`02-roadmap.md`): Update tests-pseudo integration to reference invariant-derived tests section
-- SKILL.md: Register `middleware-creator` as an optional phase between `finalize` and `execution` in the phase router (prerequisite for middleware-creator to consume `middleware-candidates.json`)
+- SKILL.md: Routes `middleware-creator` as an optional phase between `finalize` and `execution`
 
 ---
 
@@ -1416,7 +1416,9 @@ Phase 4 is an AI-agent-driven process, not a running service. Observability mean
 ### Required Journey Events
 - `phase4_started`, `scale_check_complete`, `context_detected`, `bootstrap_complete`, `draft_written`, `debate_round_complete` (per round), `dry_run_complete`, `phase4_blocked`, `phase4_completed`
 
-**Release events** (`deployment_complete`, `rollback_complete`) are global to the skill, not session-scoped. Write these to `.adversarial-spec/release-log.jsonl` instead of session `journey[]`. Phase 4 session runs must not log deployment events.
+**Journey log target:** Append Phase 4 events as JSONL lines to `sessions/<id>.journey.log` (see SKILL.md "Journey Log"). The extended schema below (with `idempotency_key`/`event_id`) serializes as one JSON object per line; dedup by scanning the log for matching `idempotency_key` before appending.
+
+**Release events** (`deployment_complete`, `rollback_complete`) are global to the skill, not session-scoped. Write these to `.adversarial-spec/release-log.jsonl` instead of the session journey log. Phase 4 session runs must not log deployment events.
 
 ### Journey Event Schema
 
@@ -1433,7 +1435,7 @@ Phase 4 is an AI-agent-driven process, not a running service. Observability mean
 }
 ```
 
-Dedup rule: If an event with the same `idempotency_key` already exists in `journey[]`, skip the write. `event_id` is unique per write attempt and used for ordering, not dedup.
+Dedup rule: If an event with the same `idempotency_key` already exists in the journey log, skip the write. `event_id` is unique per write attempt and used for ordering, not dedup.
 
 ### Debugging a Failed Run
 1. Read `phase4_bootstrap.status` and `current_gate` — shows how far the run progressed
@@ -1452,7 +1454,7 @@ Dedup rule: If an event with the same `idempotency_key` already exists in `journ
 
 **Phase 7 (Execution):** Tasks reference invariants. High-risk (3+ invariants) → test-first. Architecture Spine (Wave 0) derives from invariant enforcement tasks. Multi-surface tasks flagged for extra review. **Staleness check:** Phase 7 must verify `phase_artifacts.spec_fingerprint` matches the current spec's fingerprint before consuming architecture artifacts. If mismatched, warn the user that architecture may be stale and offer to re-run Phase 4.
 
-**Middleware-Creator (proposed, not yet registered):** Intended to consume `middleware-candidates.json` for competitive multi-model implementation. Each candidate would become a Fizzy card via `pipeline_create_middleware_fanout`: N implementation cards (one per model, pre-assigned via native Fizzy assignment) + 1 judge card (blocked until all impls complete). Dependency ordering from `depends_on` determines card sequencing — MW-001 must pass before MW-002 can start if MW-002 depends on it. **Prerequisite:** SKILL.md's phase router currently recognizes `requirements | roadmap | debate | target-architecture | gauntlet | finalize | execution | implementation`. Before middleware-creator can run, it must be registered as a phase between `finalize` and `execution`, and Phase 7 (`07-execution.md`) must be updated to consume `middleware-candidates.json` in addition to `target-architecture.md`. Until this registration happens, `middleware-candidates.json` is a passive artifact — Phase 4 produces it, but no phase consumes it.
+**Middleware-Creator:** Consumes `middleware-candidates.json` for competitive multi-model implementation after finalization. Each candidate becomes a Fizzy middleware fanout via `pipeline_create_middleware_fanout`: N implementation cards (one per model, pre-assigned via native Fizzy assignment) + 1 judge card (blocked until all impls complete). Dependency ordering from `depends_on` determines fanout sequencing — MW-001 must pass before MW-002 can start if MW-002 depends on it. Because the fanout API requires typed source task cards and existing test-suite paths, middleware-creator coordinates with Phase 7: Phase 7 creates and loads the execution plan substrate, then middleware-creator launches fanouts before general implementation pickup.
 
 **Downstream:** `/mapcodebase` and `/diagnosecodebase` consume `architecture-invariants.json` (active only + surface scope). Future work.
 

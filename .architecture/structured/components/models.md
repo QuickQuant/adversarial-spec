@@ -5,8 +5,8 @@
 | Property | Value |
 |----------|-------|
 | Purpose | LLM call abstraction via LiteLLM + CLI subprocess routing |
-| Entry | `call_models_parallel()` at models.py:901 |
-| Key files | models.py |
+| Entry | `call_models_parallel()` at models.py:914 |
+| Key files | models.py (1000 lines) |
 | Depends on | Providers, Prompts |
 | Used by | Debate Engine, Gauntlet Pipeline (all phases) |
 | Runtime status | implemented |

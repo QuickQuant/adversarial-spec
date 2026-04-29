@@ -429,7 +429,7 @@ class GauntletConfig:
 
     QUOTA BURN FIX 1: This is the primary fix for ignored CLI flags.
     """
-    timeout: int = 300
+    timeout: int = 1800
     attack_codex_reasoning: str = "low"
     eval_codex_reasoning: str = "xhigh"
     auto_checkpoint: bool = False

@@ -443,7 +443,13 @@ pipeline_register_debate_agent_return(
 **4d. The conductor can skip models or stop early.**
 If a model is hanging or you have enough critiques, register remaining models as `status="skipped"` and proceed.
 
-**Fallback:** If pipeline tools are unavailable, standalone `debate.py critique --cwd /tmp` still works but won't track state on the Fizzy card.
+**No fallback.** If `pipeline_begin_debate_round` rejects the round (sequence mismatch, checklist missing, active round conflict), STOP. Do not dispatch standalone `debate.py critique` — there is no "pipeline unavailable" condition in a Fizzy-enabled project; either the card is in a debate-eligible lane or it isn't, and standalone bypass is exactly how tests-pseudo.md drifted across v2→v7 without a single staleness warning. Options when the pipeline rejects:
+
+1. **Sequence mismatch on a mid-session card** — prior rounds ran before pipeline adoption. Treat the current spec version as pipeline-R1 (fresh pipeline-tracked start on the consolidated spec); prior rounds live on disk as historical artifacts. Dispatch from R1 forward via pipeline tools only.
+2. **Active round conflict** — a prior round on this card never advanced. Register the missing model returns with `status="skipped"` and advance, then begin the next round.
+3. **Checklist missing** — the `pipeline_begin_debate_round` call failed partway. Retry with `active_round_policy="reuse"` or `"replace"`.
+
+If none of those resolve it, write a process-failure note (≥200 bytes, describe what broke, which gate was circumvented, what permanent fix is planned) and use `pipeline_patch_state` with `process_failure_path` to move forward. Do not fall back to `debate.py` with a Fizzy card present — the script now enforces `--pipeline-card` and will exit 2.
 
 ### Step 5: Review, Critique, and Iterate
 
@@ -601,17 +607,16 @@ After Round 1 validates requirements and before Round 2 debates architecture, au
 
    ```json
    {
-     "schema_version": "1.0",
+     "schema_version": "1.1",
      "audit_timestamp": "ISO-8601",
      "git_hash": "short hash",
      "blast_zone": ["file1.py", "file2.py"],
      "sources": {
        "source_id": {
-         "status": "available|partial|not_available|not_applicable",
+         "status": "available|partial",
          "path": "string or null",
          "summary": "one-line description",
          "est_tokens": 1200,
-         "actionable": false,
          "task_id": null
        }
      },
@@ -619,6 +624,10 @@ After Round 1 validates requirements and before Round 2 debates architecture, au
      "gaps_noted": ["description of design gaps for later rounds"]
    }
    ```
+
+   **Persistence rule (v1.1):** Only persist sources where `status ∈ {available, partial}` AND they carry actionable path/task data. Drop `not_available`, `not_applicable`, and `actionable:false` entries — they're audit-only noise that bloats every resume. Summarize them in `gaps_noted` if they need to survive.
+
+   **Debate-exit prune:** On phase transition `debate → {gauntlet, finalize}`, delete `extended_state.context_inventory` from the session detail file. It's a debate-round working artifact — adversaries in gauntlet re-derive from the spec. Keep `gaps_noted` if it was promoted into the spec, else discard.
 
    This inventory is reused by:
    - **Context-addition-protocol** — debate round appendices draw from it instead of re-extracting
@@ -777,26 +786,28 @@ After writing the revised spec to disk (Step 5 item 7) and BEFORE running checkp
 
 After incorporating critiques into a new spec version (Step 5 item 8), run checkpoint guardrails before the next debate round. These catch editorial regressions early — contradictions, scope drift, and orphaned requirements compound across rounds.
 
-**Three guardrail adversaries** (defined in `adversaries.py` → `GUARDRAILS` dict):
+**Four guardrail adversaries** (defined in `adversaries.py` → `GUARDRAILS` dict):
 
 | Guardrail | Prefix | What it checks |
 |-----------|--------|----------------|
 | `consistency_auditor` | CONS | Cross-section contradictions, duplicate numbering, arithmetic consistency |
 | `scope_creep_detector` | SCOPE | New scope additions not in original requirements |
 | `requirements_tracer` | TRACE | User stories/acceptance criteria that lost coverage |
+| `canonical_type_auditor` | CANON | Spec inlines a domain enum as a literal union (`"kalshi"\|"polymarket"`, `"yes"\|"no"`, etc.) when a canonical named type already exists in the codebase — OR repeats the same literal union across multiple spec sections without hoisting. Catches spec/code type drift. |
 
-**First-draft exemption:** CONS cannot run on the first draft (it compares sections against each other — only meaningful after revision introduces cross-section drift). **SCOPE and TRACE CAN run on the first draft** because they compare the spec against external inputs (requirements and roadmap), which exist before the first draft.
+**First-draft exemption:** CONS cannot run on the first draft (it compares sections against each other — only meaningful after revision introduces cross-section drift). **SCOPE, TRACE, and CANON CAN run on the first draft** because they compare the spec against external inputs (requirements, roadmap, codebase), which exist before the first draft.
 
 **Invocation contract — how Claude assembles guardrail inputs:**
 
-1. Read the guardrail prompt from `guardrail-prompts.md` (CONS, SCOPE, or TRACE)
+1. Read the guardrail prompt from `adversaries.py` (CONS, SCOPE, TRACE, CANON)
 2. Assemble the input payload:
    - **CONS:** prompt + current spec text
    - **SCOPE:** prompt + original requirements (from session file `requirements_summary`) + current spec text
    - **TRACE:** prompt + roadmap manifest (user stories + acceptance criteria) + current spec text
+   - **CANON:** prompt + current spec text + **codebase type index** (a short catalog of named domain enums already defined in the project — generate by grepping `src/shared/` + `src/convex/schema.ts` + the architecture primer for `type X = "a"|"b"` / Zod enum schemas / `v.union(v.literal(...))` patterns, or by reading `.architecture/manifest.json` if it enumerates canonical types)
 3. Send the assembled input to a model via `debate.py critique --model <model> --system-prompt <guardrail-prompt>` or evaluate inline if the spec fits in Claude's own context
 
-**Session file dependency:** SCOPE and TRACE require data from the session file. If `requirements_summary` (SCOPE) or the roadmap manifest (TRACE) is missing, warn the user and skip that guardrail rather than running it without the external input.
+**Session file dependency:** SCOPE, TRACE, and CANON all require external input beyond the spec. If `requirements_summary` (SCOPE), the roadmap manifest (TRACE), or the codebase type index (CANON) is missing or empty, warn the user and skip that guardrail rather than running it without the external input. CANON with an empty codebase index degrades to "repeated-inline-union" detection only (still useful — catches drift WITHIN the spec even if no code type exists yet).
 
 **Depth limit (FM-2):** If CONS finds issues, fix them and re-run CONS. If the re-run finds NEW contradictions introduced by the fix, defer to the user after 2 attempts — do not loop indefinitely.
 
@@ -815,15 +826,21 @@ SCOPE (scope_creep_detector): 1 finding
 
 TRACE (requirements_tracer): 0 findings
 
-[Fix CONS findings] [Approve/remove SCOPE additions] [Proceed to next round]
+CANON (canonical_type_auditor): 1 finding
+  1. §5.1 inlines `exchange: "kalshi"|"polymarket"` — canonical
+     type `ExchangeCode` exists in src/shared/balances-contract.ts.
+     Replace with `ExchangeCode` reference.
+
+[Fix CONS findings] [Approve/remove SCOPE additions] [Replace inline unions with canonical types] [Proceed to next round]
 ```
 
 1. Fix CONS findings before proceeding
 2. Present SCOPE additions for user approval or removal
 3. Restore TRACE-flagged coverage or explicitly descope with user approval
-4. Only after guardrails pass (or user explicitly overrides): proceed to the next round
+4. Apply CANON fixes (replace inline unions with named types; define a spec-level "Canonical Types" section if no code type exists yet and the union is repeated)
+5. Only after guardrails pass (or user explicitly overrides): proceed to the next round
 
-**[GATE] TodoWrite: Mark "Round N: Run CONS + SCOPE + TRACE guardrails" (or "SCOPE + TRACE" for Round 1) completed before proceeding to the next round.**
+**[GATE] TodoWrite: Mark "Round N: Run CONS + SCOPE + TRACE + CANON guardrails" (or "SCOPE + TRACE + CANON" for Round 1) completed before proceeding to the next round.**
 
 ### Fizzy Sync (after each round — REQUIRED)
 
@@ -869,7 +886,7 @@ sleep 120
 
 When consensus is reached and user opts for gauntlet, sync both session files per the Phase Transition Protocol (SKILL.md):
 
-1. **Detail file** (`sessions/<id>.json`): set `current_phase: "gauntlet"`, `current_step: "Consensus reached, running gauntlet"`, append journey entry
+1. **Detail file** (`sessions/<id>.json`): set `current_phase: "gauntlet"`, `current_step: "Consensus reached, running gauntlet"`, append entry to journey log (`sessions/<id>.journey.log`), and **delete `extended_state.context_inventory`** (debate-round working artifact; gauntlet re-derives from spec)
 2. **Pointer file** (`session-state.json`): set `current_phase: "gauntlet"`, `current_step`, `next_action`, `updated_at`
 
 If user declines gauntlet and proceeds directly to finalize, set `current_phase: "finalize"` instead.

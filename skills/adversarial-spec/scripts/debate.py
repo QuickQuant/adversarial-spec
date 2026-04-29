@@ -549,6 +549,35 @@ def add_execution_plan_arguments(parser: argparse.ArgumentParser) -> None:
         "--plan-output",
         help="Output path for execution plan (default: stdout)",
     )
+    parser.add_argument(
+        "--pipeline-card",
+        default=None,
+        help=(
+            "REQUIRED for critique/gauntlet when a session has a fizzy_card_id. "
+            "Pass the Fizzy card ID (numeric or 03fz...), or the literal "
+            "'IntentionalOverride' with --override-reason. Without this, the "
+            "pipeline won't sync and tests-pseudo.md drifts silently. "
+            "See SKILL.md 'Process Discipline'."
+        ),
+    )
+    parser.add_argument(
+        "--override-reason",
+        default=None,
+        help=(
+            "Required when --pipeline-card IntentionalOverride is used. "
+            "Minimum 50 chars; logged to sessions/<id>.decisions.log."
+        ),
+    )
+    parser.add_argument(
+        "--accept-tests-stale",
+        action="store_true",
+        default=False,
+        help=(
+            "Bypass the tests-pseudo.md staleness gate. Only use when the "
+            "current round is deliberately spec-only and tests are being "
+            "updated in a follow-up. Logged to decisions.log."
+        ),
+    )
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -1002,7 +1031,6 @@ def handle_export_tasks(args: argparse.Namespace, models: list[str]) -> None:
         completion_kwargs = {
             "model": models[0],
             "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 8000,
         }
 
         # O-series models don't support custom temperature
@@ -1517,10 +1545,160 @@ def validate_models_before_run(models: list[str], bedrock_mode: bool) -> None:
         sys.exit(2)
 
 
+def enforce_pipeline_card_gate(args: argparse.Namespace) -> None:
+    """Fail fast when a pipeline-tracked session dispatches debate.py directly.
+
+    Applies to critique + gauntlet. Non-round subcommands (providers, diff,
+    export-tasks, etc.) bypass the gate.
+
+    Behavior:
+    - Missing --pipeline-card → exit 2 with instructions.
+    - --pipeline-card IntentionalOverride WITHOUT --override-reason ≥50 chars → exit 2.
+    - --pipeline-card <id> AND session has a fizzy_card_id that does NOT match → exit 2.
+    - Spec is newer than tests-pseudo.md (staleness signal) AND not --accept-tests-stale → exit 2.
+
+    Writes an entry to sessions/<id>.decisions.log for overrides and stale accepts.
+    """
+    import json
+    import os
+    import re
+    from pathlib import Path
+
+    round_actions = {"critique", "gauntlet"}
+    if args.action not in round_actions:
+        return
+
+    pipeline_card = getattr(args, "pipeline_card", None)
+    override_reason = getattr(args, "override_reason", None)
+    accept_stale = getattr(args, "accept_tests_stale", False)
+
+    # 1) Required arg check
+    if not pipeline_card:
+        print(
+            "ERROR: --pipeline-card is required for critique/gauntlet.\n"
+            "Pass the Fizzy card ID (e.g. 1423 or 03fz...), or\n"
+            "  --pipeline-card IntentionalOverride --override-reason '<≥50 chars>'\n"
+            "Reason: without this, the pipeline does not record the round and\n"
+            "tests-pseudo.md silently drifts from the spec.",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    # 2) IntentionalOverride requires reason
+    if pipeline_card == "IntentionalOverride":
+        if not override_reason or len(override_reason.strip()) < 50:
+            print(
+                "ERROR: --pipeline-card IntentionalOverride requires "
+                "--override-reason with ≥50 characters explaining why the "
+                "pipeline is being bypassed.",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+    else:
+        # 3) Card ID shape check (loose: digits or Fizzy 25-char base32-ish)
+        if not re.match(r"^(\d+|[0-9a-z]{20,32})$", pipeline_card):
+            print(
+                f"ERROR: --pipeline-card value '{pipeline_card}' does not "
+                "look like a card ID or 'IntentionalOverride'.",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+
+    # 4) Locate session-state.json (best-effort; skip check if not found)
+    #    Walk up from cwd to find .adversarial-spec/session-state.json
+    cwd = Path.cwd().resolve()
+    state_path = None
+    for ancestor in [cwd, *cwd.parents]:
+        candidate = ancestor / ".adversarial-spec" / "session-state.json"
+        if candidate.is_file():
+            state_path = candidate
+            break
+
+    session_file_id = None
+    session_fizzy_card = None
+    spec_path_hint = None
+    tests_pseudo_hint = None
+    if state_path:
+        try:
+            pointer = json.loads(state_path.read_text())
+            session_file_id = pointer.get("active_session_id")
+            spec_path_hint = pointer.get("spec_path")
+            # Resolve session detail file for fizzy_card_id + tests_pseudo_path
+            detail_relpath = pointer.get("active_session_file")
+            if detail_relpath:
+                detail_abspath = (state_path.parent.parent / detail_relpath).resolve()
+                if detail_abspath.is_file():
+                    detail = json.loads(detail_abspath.read_text())
+                    session_fizzy_card = detail.get("fizzy_card_id")
+                    tests_pseudo_hint = detail.get("tests_pseudo_path") or tests_pseudo_hint
+                    spec_path_hint = detail.get("spec_path") or spec_path_hint
+        except (OSError, json.JSONDecodeError):
+            pass
+
+    # 5) Card-ID match against session (if both known)
+    if (
+        pipeline_card != "IntentionalOverride"
+        and session_fizzy_card
+        and str(session_fizzy_card) != str(pipeline_card)
+    ):
+        print(
+            f"ERROR: --pipeline-card '{pipeline_card}' does not match the "
+            f"session's fizzy_card_id '{session_fizzy_card}'. If this is "
+            "deliberate (e.g. experimenting on a different card), use "
+            "--pipeline-card IntentionalOverride with --override-reason.",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    # 6) Tests-pseudo staleness gate
+    if spec_path_hint and tests_pseudo_hint and state_path:
+        root = state_path.parent  # .adversarial-spec/
+        spec_abs = (root / spec_path_hint).resolve() if not os.path.isabs(spec_path_hint) else Path(spec_path_hint)
+        tests_abs = (root / tests_pseudo_hint).resolve() if not os.path.isabs(tests_pseudo_hint) else Path(tests_pseudo_hint)
+        if spec_abs.is_file() and tests_abs.is_file():
+            spec_mtime = spec_abs.stat().st_mtime
+            tests_mtime = tests_abs.stat().st_mtime
+            if spec_mtime > tests_mtime and not accept_stale:
+                print(
+                    f"ERROR: tests-pseudo.md is older than the spec.\n"
+                    f"  spec:  {spec_abs} (mtime {spec_mtime})\n"
+                    f"  tests: {tests_abs} (mtime {tests_mtime})\n"
+                    "Update tests-pseudo.md to match the current spec (per\n"
+                    "03-debate.md Test-Spec Sync gate), or pass\n"
+                    "--accept-tests-stale if this round is deliberately\n"
+                    "spec-only.",
+                    file=sys.stderr,
+                )
+                sys.exit(2)
+
+    # 7) Log overrides + stale accepts to decisions.log
+    if state_path and session_file_id and (
+        pipeline_card == "IntentionalOverride" or accept_stale
+    ):
+        try:
+            from datetime import datetime, timezone
+
+            decisions_log = state_path.parent / "sessions" / f"{session_file_id}.decisions.log"
+            decisions_log.parent.mkdir(parents=True, exist_ok=True)
+            ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            bits = []
+            if pipeline_card == "IntentionalOverride":
+                bits.append(f"IntentionalOverride; reason: {override_reason!r}")
+            if accept_stale:
+                bits.append("--accept-tests-stale")
+            entry = f"{ts} [debate-gate] standalone debate.py {args.action} — {'; '.join(bits)}\n"
+            with decisions_log.open("a") as fh:
+                fh.write(entry)
+        except OSError:
+            pass
+
+
 def main() -> None:
     """Entry point for the debate CLI."""
     parser = create_parser()
     args = parser.parse_args()
+
+    enforce_pipeline_card_gate(args)
 
     if handle_info_command(args):
         return

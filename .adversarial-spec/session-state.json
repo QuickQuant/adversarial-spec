@@ -3,13 +3,13 @@
   "active_session_id": "adv-spec-202604111912-test-mapping-verification-gates",
   "context_name": "Test Mapping & Verification Gates",
   "current_phase": "execution",
-  "current_step": "All 6 TMV cards reviewed, tested, and swept to Completed-Unmapped. 6 phase4 orphan cards also restored and swept. Board clean: 14 Completed-Unmapped, 0 in active lanes.",
-  "next_action": "Decide: (a) commit the models.py import fix, (b) run /mapcodebase to refresh stale architecture docs (24 days), (c) start new spec session, or (d) mark TMV session complete in session-state.json",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202604160139-tmv-review-complete-board-clean.md",
+  "current_step": "Completed mapcodebase 3.6 incremental update from c3b5f8c to 9ca3ccd",
+  "next_action": "Review new concerns in concerns.md and decide which to address next",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202604161758-mapcodebase-3-6-incremental-update-complete.md",
   "execution_plan_path": ".adversarial-spec/specs/test-mapping-verification-gates/execution-plan.md",
   "spec_path": ".adversarial-spec/specs/test-mapping-verification-gates/spec-output.md",
   "do_not_ask": [],
-  "updated_at": "2026-04-16T01:39:46Z",
+  "updated_at": "2026-04-16T17:58:43Z",
   "active_session": "adv-spec-202604111912-test-mapping-verification-gates",
   "active_session_file": ".adversarial-spec/sessions/adv-spec-202604111912-test-mapping-verification-gates.json",
   "session_stack": [
@@ -22,5 +22,5 @@
     "adv-spec-202603201800-gauntlet-refactor-quota-burn",
     "adv-spec-202603051555-philosophy-phase-and-arch-persona"
   ],
-  "completed_work": "Committed skill source changes (d2feafa) and session artifacts (5c7aed4). Reviewed TMV3/4/5/6 and tested all 6 TMV cards. Caught and fixed models.py relative import bug (from .session \u2192 from session). Identified Codex revert-then-restore of runtime edits. Moved 6 phase4 orphan cards from New Todo back to Completed-Unmapped. Pipeline sweep complete for both sessions."
+  "completed_work": "Full incremental architecture mapping: 5 discovery explorers, high-level docs updated, structured docs updated, reality check clean, hazard detection (HAZ-003 mitigated), pattern analysis (3 resolved), diagnosis subagent (14 findings, 6 concerns), action plan, manifest, visuals updated, 15 Fizzy cards advanced. Resolved: CON-001-old (tasks.json locking), call-model unification, PROGRAMMING_BUGS pattern. New concerns: triple litellm pathway, cost_tracker coupling, orchestrator complexity, dead code, inline prompts, sys.path hacks."
 }

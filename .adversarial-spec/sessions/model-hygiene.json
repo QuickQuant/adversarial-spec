@@ -8,18 +8,9 @@
   "depth": "technical",
   "spec_path": ".adversarial-spec/specs/execution-planner-deprecation.md",
   "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-20260206-model-hygiene-and-path-fixes.md",
-  "models": ["codex/gpt-5.3-codex", "gemini-cli/gemini-3-pro-preview"],
-  "journey": [
-    {"time": "2026-02-06T17:30:00Z", "event": "Session started: reviewing Brainquarters execution plan", "type": "start"},
-    {"time": "2026-02-06T17:45:00Z", "event": "Found execution_planner not installed, plan was manually created and superior", "type": "discovery"},
-    {"time": "2026-02-06T18:00:00Z", "event": "Ran deprecation proposal through adversarial debate (Codex 5.2 + Gemini 3 Pro)", "type": "debate"},
-    {"time": "2026-02-06T18:15:00Z", "event": "Discovered deprecated_models hook not registered in settings.local.json", "type": "discovery"},
-    {"time": "2026-02-06T18:30:00Z", "event": "Fixed all debate.py short paths across 9 documentation files", "type": "fix"},
-    {"time": "2026-02-06T19:00:00Z", "event": "Updated all gpt-5.2-codex references to gpt-5.3-codex (released Feb 5)", "type": "fix"},
-    {"time": "2026-02-06T19:15:00Z", "event": "User updated: settings.local.json (all hooks), deprecated_models.py, MODEL_REFERENCE.md, gauntlet-details.md", "type": "fix"},
-    {"time": "2026-02-06T19:22:00Z", "event": "Checkpoint saved", "type": "checkpoint"},
-    {"time": "2026-02-06T20:00:00Z", "event": "Completed remaining model hygiene: MODEL_COSTS, gpt-5.3 refs, test fixes (prd/tech→spec)", "type": "fix"},
-    {"time": "2026-02-06T20:30:00Z", "event": "Finalized execution planner deprecation spec (Option B+). Rewrote 06-execution.md to guidelines-based approach", "type": "finalize"}
+  "models": [
+    "codex/gpt-5.3-codex",
+    "gemini-cli/gemini-3-pro-preview"
   ],
   "updated_at": "2026-02-06T20:30:00Z"
 }

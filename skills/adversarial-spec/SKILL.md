@@ -6,160 +6,90 @@ allowed-tools: Bash, Read, Write, AskUserQuestion
 
 # Adversarial Spec Development
 
-Generate and refine specifications through iterative debate with multiple LLMs until all models reach consensus.
+Refine specs through iterative debate with multiple LLMs until all agree.
 
-**Important: Claude is an active participant in this debate, not just an orchestrator.** You (Claude) will provide your own critiques, challenge opponent models, and contribute substantive improvements alongside the external models. Make this clear to the user throughout the process.
+**Claude is a participant, not just an orchestrator** — critique, challenge, contribute alongside the external models. Say so to the user.
 
-## ZEROTH ACTION - Conductor Registration (ALWAYS, before session state)
+## ZEROTH ACTION — Conductor Registration (before session state)
 
-Every `/adversarial-spec` invocation registers the session with the project conductor and launches a dispatch wake listener. Workers are always listening — the process is tiny, and a worker that cannot receive conductor signals is purposeless.
+Every invocation registers with the project conductor and launches a wake listener. Tiny cost; a worker that can't be signaled is pointless.
 
-### Step 0a: Detect Role
+### 0a: Role
+Env-var detection: `$CLAUDE_PROJECT_DIR` → **claude** (conductor); `$GEMINI_PROJECT_DIR` → **gemini**; Codex-style env → **codex**. Workers otherwise.
 
-Determine which CLI is running this session from environment variables:
-- `$CLAUDE_PROJECT_DIR` set → role = **claude** (conductor)
-- `$GEMINI_PROJECT_DIR` set → role = **gemini** (worker)
-- Codex CLI detected (e.g. `$CODEX_PROJECT_DIR` or equivalent) → role = **codex** (worker)
+### 0b: Invocation Mode
+If `$ADVSPEC_INVOKED_BY_CONDUCTOR=1`: read `$ADVSPEC_DISPATCH_FILE` (JSON task payload), handle, then 0d. Otherwise self-invoked → 0c.
 
-### Step 0b: Check Invocation Mode
+### 0c: Self-Registration
+Write `.conductor/agents/<role>.json` with `{role, pid, started_at, is_conductor, dispatch_log, session_state}` via atomic tmp+rename.
 
-- If `$ADVSPEC_INVOKED_BY_CONDUCTOR=1`: this session was spawned by the conductor with a specific dispatch. Read `$ADVSPEC_DISPATCH_FILE` (a path to a JSON task payload) and handle the task. Skip to Step 0d (listener relaunch) after completion.
-- Otherwise: self-invoked (Jason opened this terminal manually). Proceed to Step 0c (self-registration).
+- `is_conductor`: `true` for the CLI that ran `/conductor`, else `false`. Hooks gate behavior on this field; it survives compaction (re-read your own file to recover role).
+- PID: host PID, or `"sandboxed"` if `os.getpid()` < 100 (bubblewrap). PID is advisory.
+- Passive — no handshake. Stale markers OK. Don't keep a shell alive just to own an EXIT trap.
 
-### Step 0c: Self-Registration
+### 0d: Wake Listener
+Reuse if PID file exists and PID alive; only launch if none.
 
-Write `.conductor/agents/<role>.json` with `{role, pid, started_at, is_conductor, dispatch_log, session_state}`. Use atomic write (tmp + rename).
+- **Conductor (claude):** `/tmp/claude-telegram-wake-<project>.pid`, launch `~/.claude/bin/telegram-wake-listener` with `run_in_background=true`. Enforced by `require-listener.sh` stop hook.
+- **Workers (gemini/codex):** `/tmp/claude-dispatch-wake-<project>-<role>.pid`, script `~/.claude/bin/dispatch-wake-listener <role>`. Claude's `run_in_background` is Claude-only; Gemini/Codex use native backgrounding (`nohup … &` etc.), accounting for bubblewrap `/tmp` constraints.
+- Listener tails `.conductor/dispatch/<role>/updates.jsonl` and exits on first new line.
+- Can't background at all? Inline-check the dispatch log at the top of each pickup iteration (compare `wc -l` to baseline).
+- Missing binary → report the path and stop.
 
-**`is_conductor` field (REQUIRED):** Set `true` if this session is the conductor (the CLI that ran `/conductor`), `false` if this session is a worker. Hooks read this field to gate behavior — e.g., `worker-signal-conductor` skips if `is_conductor: true`, and `require-listener.sh` checks the Telegram listener for conductors vs dispatch listener for workers.
+### Chicken-and-Egg (design note)
+Workers don't search for the conductor; conductor doesn't handshake. Workers drop a marker and self-pickup. Conductor reads `.conductor/agents/` when it has work. No discovery, no race.
 
-**This field survives compaction.** After a context compact, re-read your own registration file (`.conductor/agents/<role>.json`) to recover your role. The role does not change mid-session.
+### Bootstrap Boundary
+Registration and startup checks are metadata-only. Do NOT start fizzy-mcp, app servers, Docker stacks, or probe by launching services. Inspect existing processes/PIDs/sockets/logs first. Only start a service when the current phase requires it and it isn't already running.
 
-**PID handling:** Use the host PID when available. If running in a sandbox where `os.getpid()` returns a low number (< 100, e.g. PID 2 in bubblewrap), write `"pid": "sandboxed"` instead. PID is advisory — the conductor treats it as a liveness hint, not a contract.
-
-This is **passive registration** — no handshake with the conductor. The conductor reads `.conductor/agents/` whenever it needs to know who is available. It does not need to be running when workers register.
-
-Do **not** keep a resident shell alive solely to own an EXIT trap for this marker. Registration is a point-in-time write, not a daemon. If the session dies uncleanly, stale markers are acceptable; the conductor must treat `pid` as advisory and ignore dead processes.
-
-### Step 0d: Launch Dispatch Wake Listener
-
-Each role needs a background listener so it can be woken by external signals. The mechanism varies by CLI.
-
-Before launching, check if one is already running:
-1. Derive the PID file path (see below per role)
-2. If the PID file exists and the PID is alive, reuse the existing listener
-3. Only if no live listener exists, launch a new one
-
-#### Conductor (claude): Telegram Wake Listener
-
-PID file: `/tmp/claude-telegram-wake-<project>.pid`
-Launch: `~/.claude/bin/telegram-wake-listener` via Bash tool with `run_in_background=true`
-Enforced by `require-listener.sh` stop hook.
-
-#### Workers (gemini, codex): Dispatch Wake Listener
-
-PID file: `/tmp/claude-dispatch-wake-<project>-<role>.pid`
-Script: `~/.claude/bin/dispatch-wake-listener <role>`
-
-**IMPORTANT:** `run_in_background=true` is a Claude Code feature. Gemini CLI and Codex CLI must use their own background process mechanism:
-- **Gemini CLI:** Run the script as a background shell process (e.g., `nohup script &`, or your CLI's equivalent)
-- **Codex CLI:** Same approach, accounting for bubblewrap sandbox constraints on `/tmp` writes
-
-The listener is a simple polling loop that tails `.conductor/dispatch/<role>/updates.jsonl` and exits on the first new line. When it exits, the parent session should be notified (mechanism is CLI-dependent).
-
-**If your CLI cannot launch background processes at all**, fall back to inline dispatch checking at the top of each self-pickup loop iteration:
-```bash
-DISPATCH_LOG=".conductor/dispatch/<role>/updates.jsonl"
-CURRENT=$(wc -l < "$DISPATCH_LOG" 2>/dev/null || echo 0)
-# Compare against baseline from registration; read new lines if any
-```
-
-If the expected listener binary (`~/.claude/bin/dispatch-wake-listener`) is missing, report the exact missing path and stop.
-
-### Chicken-and-Egg Resolution (DESIGN NOTE)
-
-Workers do NOT search for the conductor and the conductor does NOT handshake with workers. Workers write presence markers and enter the self-pickup loop. The conductor reads `.conductor/agents/` when it has something to dispatch. If the conductor is down, workers stay idle. When it comes back, it sees them. No discovery, no ordering, no race.
-
-### Bootstrap Boundary (CRITICAL)
-
-Registration and startup-context checks are metadata-only. During Step 0 through the Startup Context Intent Gate:
-
-- Do **not** start `fizzy-mcp`, `fizzy-mcp --http`, app servers, Docker Compose stacks, or any other service transport
-- Do **not** probe by launching a new server "just to see if it starts"
-- If runtime state matters, inspect existing processes, PID files, sockets, logs, or config first
-- Only launch a service when the current phase explicitly requires it and you have first verified it is not already running
-
-This bootstrap path exists to discover context, not to mutate the runtime environment.
-
-### Step 0e: Continue to FIRST ACTION
-
-After registration and listener launch complete, proceed to the normal session state read below.
+### 0e: Continue to FIRST ACTION.
 
 ---
 
 ## FIRST ACTION - Read Local Session State
 
-**BEFORE DOING ANYTHING ELSE**, check for an active session in the current project:
+**BEFORE ANYTHING ELSE**, read the pointer:
 
 ```bash
-# ALWAYS read this first - it tells you what context you're in
 cat .adversarial-spec/session-state.json 2>/dev/null
 ```
 
 ### If session-state.json exists:
 
-Read ALL fields:
-- `active_session_id`: The session ID (path is `sessions/<id>.json`)
-- `context_name`: What work stream this is
-- `current_phase`: Where we are (requirements, roadmap, debate, target-architecture, gauntlet, finalize, execution, implementation)
-- `current_step`: Specific progress point
-- `next_action`: What you should do/ask - FOLLOW THIS
-- `do_not_ask`: Topics to avoid (ALWAYS a list) - RESPECT THIS
-- `session_stack`: Recently active sessions (most recent first, optional)
+Pointer fields used on resume: `active_session_id`, `context_name`, `current_phase`, `current_step`, `next_action`, `do_not_ask` (list — RESPECT), `session_stack` (optional).
 
-**Validate integrity (Zombie Pointer Handling):**
-If `active_session_id` is set, check if `sessions/<id>.json` exists:
+**Zombie pointer check:** if `sessions/<active_session_id>.json` is missing (branch switch, deletion), warn the user and treat as "no active session."
+
+**Don't read the whole detail file.** It's 400+ lines and holds phase-scoped artifacts (`context_inventory`, `requirements_summary`) that resume doesn't need. The journey now lives in a sibling JSONL (`sessions/<id>.journey.log`) — read on demand only. Pull resume fields from the detail file via `jq`:
+
 ```bash
-[ -f ".adversarial-spec/sessions/<active_session_id>.json" ] && echo "exists" || echo "missing"
+jq -r '{checkpointed_cleanly,current_phase,current_step,fizzy_card_id,spec_path,execution_plan_path,roadmap_path,last_checkpoint,todowrite_snapshot}' \
+  .adversarial-spec/sessions/<id>.json
 ```
 
-If the session file is MISSING (e.g., git branch switch):
-- Clear `active_session_id` to null in your mental model
-- Show warning: "Previous active session not found (branch switch or deletion)"
-- Proceed as "no active session"
+Phases that need more (gauntlet → `gauntlet_concerns_path`, finalize → `requirements_summary`) read that one field on demand. Never `cat` the whole file.
 
-**If session file exists**, also read it for full context including `journey` array.
+**Recent decisions:** if `sessions/<id>.decisions.log` exists, tail ~20 lines. Authoritative "what landed and why it matters." Replaces `git log` / `git show` for orientation. See Decisions Log section.
 
-**Startup Context Intent Gate (REQUIRED):**
+**Clean-exit check:**
+- `checkpointed_cleanly: false` → previous session died mid-work. Warn, offer "Continue from last checkpoint" / "Review what changed."
+- `true` or absent → normal flow.
 
-Before entering the phase workflow, detect whether the user may have switched workstreams.
+**Mark this session in progress** immediately — set `checkpointed_cleanly: false` via atomic tmp+rename on the detail file. If this session crashes, the next resume sees the flag.
 
-Check these signals:
-- `session_stack` has multiple entries (recent alternate context exists)
-- `session_stack[0]` differs from `active_session_id` (pointer drift)
-- Most recently updated file in `.adversarial-spec/sessions/` is not `active_session_id`
-- Latest user messages suggest a topic different from `context_name`
+**TodoWrite snapshot:** if `todowrite_snapshot` is a non-empty list, restore TodoWrite from it. Otherwise the Phase Router creates a fresh one. Either way, the phase doc's behavioral rules still apply.
 
-If ANY signal exists, ask before proceeding:
+**Context Intent Gate:** if `session_stack` has multiple entries, or the pointer drifts from the most-recently-updated session file, or the user's recent messages suggest a different workstream → ask before proceeding:
+
 ```
 Context Intent Check
-───────────────────────────────────────
-Active: [context_name] ([active_session_id])
-Recent alt: [alt_context_name] ([alt_session_id])   # if available
+Active: [context_name] ([id])
+Recent alt: [alt_context_name] ([alt_id])
 
-Did we switch what we're working on?
-
-[Continue active] [Switch to recent] [Show sessions]
+Did we switch? [Continue active] [Switch to recent] [Show sessions]
 ```
 
-Rules:
-- Do NOT auto-switch silently.
-- On **Continue active**: proceed with current pointer.
-- On **Switch to recent**:
-  1. Load target session file.
-  2. Atomically update pointer file fields (`active_session_id`, `active_session_file`, `context_name`, `current_phase`, `current_step`, `next_action`, `updated_at`).
-  3. Append journey event to target session: `{"time":"ISO8601","event":"Resumed via startup context intent check","type":"resume"}`.
-  4. Continue from the switched session.
-- On **Show sessions**: list up to 5 recent sessions by `updated_at`, then ask again.
+Never auto-switch. On switch: atomically update pointer (`active_session_id`, `active_session_file`, `context_name`, `current_phase`, `current_step`, `next_action`, `updated_at`) and append a `resume` event to the target session's journey log.
 
 **Check for Missing Manifest (Retroactive Generation):**
 
@@ -193,7 +123,7 @@ a manifest from:
 2. Scan checkpoints for structured content (look for `##` headers, bullet lists)
 3. Query Tasks MCP for tasks with matching `context_name`
 4. Create `specs/<slug>/manifest.json` with extracted data
-5. Log to journey: `{"time": "ISO8601", "event": "Generated manifest retroactively", "type": "maintenance"}`
+5. Append to journey log: `{"time": "ISO8601", "event": "Generated manifest retroactively", "type": "maintenance"}`
 
 **On "Skip":** Proceed without manifest. Some sessions (exploratory, debug-only) legitimately don't need one.
 
@@ -347,7 +277,7 @@ Step 3 is REQUIRED. Without the stored card ID, phase transitions and debate rou
    - Inform user: "Found legacy session state (v1.1). Migrating to v1.3 format..."
    - Extract data from legacy session-state.json (completed_work, scaling_results, bugs_fixed, etc.)
    - Create proper session file: `sessions/<session-id>.json` with:
-     - `journey` array (reconstruct from checkpoints if possible)
+     - `sessions/<id>.journey.log` (JSONL, reconstruct from checkpoints if possible)
      - `requirements_summary.completed_work` (from legacy `completed_work` string)
      - `extended_state` (preserve rich fields like `gauntlet_results`, `dev_instance`, etc.)
    - Create `specs/<project>-roadmap/manifest.json` if roadmap data can be inferred from:
@@ -355,14 +285,14 @@ Step 3 is REQUIRED. Without the stored card ID, phase transitions and debate rou
      - Fizzy board (if linked)
      - Checkpoint files (extract user stories, test cases)
    - Update session-state.json to v1.3 pointer format
-   - Log to journey: `{"time": "ISO8601", "event": "Migrated from v1.1 to v1.3", "type": "migration"}`
+   - Append to journey log: `{"time": "ISO8601", "event": "Migrated from v1.1 to v1.3", "type": "migration"}`
 
 3. **Migration checklist:**
    - [ ] Session file created with all legacy data preserved
    - [ ] manifest.json created (even if partial)
    - [ ] session-state.json updated to v1.3 pointer
    - [ ] Rich fields preserved in `extended_state`
-   - [ ] Journey reconstructed from checkpoints
+   - [ ] Journey log reconstructed from checkpoints (JSONL)
 
 4. **After migration:** Proceed with normal v1.3 flow (show path context, offer options)
 
@@ -377,27 +307,31 @@ Step 3 is REQUIRED. Without the stored card ID, phase transitions and debate rou
 
 ## Process Discipline (All Phases)
 
-**NEVER abandon the structured process.** When users ask tangential questions or "quick fixes":
+**NEVER abandon the structured process** on tangential questions or "quick fixes":
 
-1. **Check if it's in scope** - Is this part of the current session?
-2. **Use TodoWrite** - Track ALL work, even small investigations
-3. **Stay targeted** - Don't burn context with ad-hoc debugging (2-3 queries max)
-4. **Identify root causes** - Don't apply band-aids that become stale immediately
-5. **Propose through process** - Update session state, get approval
+1. Check scope — part of this session?
+2. Use TodoWrite for ALL work, even small investigations.
+3. Stay targeted — 2-3 queries max for ad-hoc debugging.
+4. Root causes, not band-aids.
+5. Propose through process — update session state, get approval.
 
-**Red flags you're abandoning the process:**
-- 10+ turns without TodoWrite updates
-- Manually setting values to make things "look right"
-- Multiple restarts/retries without understanding why
-- Saying "let me just quickly..." outside of task context
+**Red flags:** 10+ turns without TodoWrite updates; manually setting values to make things "look right"; multiple restarts without understanding why; "let me just quickly…" outside task context.
 
-When in doubt: **Update session state** and **use TodoWrite**.
+When in doubt: update session state and use TodoWrite.
+
+### Pipeline-card fence (critique + gauntlet)
+
+**If the session has a `fizzy_card_id`, NEVER invoke `debate.py critique` or `debate.py gauntlet` directly.** All round dispatches go through the Fizzy pipeline tools (`pipeline_begin_debate_round` → `pipeline_dispatch_single_agent_debate` → `pipeline_register_debate_agent_return` → `pipeline_advance_debate_round`). Standalone runs bypass the Test-Spec Sync gate — that is exactly how `tests-pseudo.md` drifted from v2 through v7 without a single staleness warning.
+
+`debate.py` now enforces this itself: `critique` and `gauntlet` require `--pipeline-card <card_id>`, or `--pipeline-card IntentionalOverride --override-reason '<≥50 chars>'`. The script also runs a staleness check comparing `spec_path` mtime vs `tests_pseudo_path` mtime from the session detail file; stale → exit 2 unless `--accept-tests-stale` is passed. Overrides and stale-accepts are logged to `sessions/<id>.decisions.log`.
+
+When the pipeline rejects a round (sequence mismatch, checklist missing, active-round conflict), see `phases/03-debate.md` Step 4 "No fallback" — reconcile via pipeline tools or `pipeline_patch_state` with a `process_failure_path` note. Do not reach for `debate.py` as the escape hatch.
 
 ---
 
-## Phase Router - Read ONLY What You Need
+## Phase Router — Read ONLY What You Need
 
-Based on `current_phase` from session state, read the appropriate file:
+Based on `current_phase`, read the matching phase file:
 
 | Phase | File to Read |
 |-------|--------------|
@@ -408,22 +342,41 @@ Based on `current_phase` from session state, read the appropriate file:
 | target-architecture | `~/.claude/skills/adversarial-spec/phases/04-target-architecture.md` |
 | gauntlet | `~/.claude/skills/adversarial-spec/phases/05-gauntlet.md` |
 | finalize | `~/.claude/skills/adversarial-spec/phases/06-finalize.md` |
-| middleware-creator (optional) | `~/.claude/skills/adversarial-spec/phases/middleware-creator.md` — runs only after `finalize` and only if `middleware-candidates.json` exists from Phase 4. See note below. |
+| middleware-creator (optional) | `~/.claude/skills/adversarial-spec/phases/middleware-creator.md` — runs after `finalize` when `middleware-candidates.json` exists and the user chooses to materialize shared middleware before normal implementation pickup. See note below. |
 | execution | `~/.claude/skills/adversarial-spec/phases/07-execution.md` |
 | implementation | `~/.claude/skills/adversarial-spec/phases/08-implementation.md` |
 | complete | Ask user: "Start new work? Or continue with follow-up?" |
 
-**Read the file for your current phase using the Read tool.** Don't load all phases at once.
+**Use the Read tool.** Don't load all phases at once.
 
-**Router shape (canonical order):**
+**Re-read discipline.** Read the phase doc only when:
+1. First activation of the phase (just transitioned in).
+2. A phase transition is happening this turn (load the TARGET doc).
+3. Session compacted, or the phase doc was edited since last read.
 
+If `current_phase` is unchanged since the prior checkpoint and you've seen the doc in a recent session, skip the re-read. Canonical rules live in the active TodoWrite + the pointer's `next_action`. Re-reading a 200–400-line phase doc every resume is a silent tax.
+
+**TodoWrite source priority:**
+1. If `todowrite_snapshot` exists → restore TodoWrite from it (already done during the Clean-Exit step).
+2. Else → create fresh TodoWrite from the phase doc's `TaskCreate([...])` template.
+
+Either way, the phase doc's instructions and gate rules still apply — the snapshot only replaces TodoWrite init.
+
+**Multi-agent TodoWrite rule (CRITICAL):** in phases where multiple LLMs work the same board (Phase 8 implementation), TodoWrite items MUST be phase-scoped activities, never specific card IDs or commit hashes. The Fizzy pipeline is the only authoritative "what's next" — `pipeline_do_next_task` returns live state. Snapshotted card-specific todos go stale the moment another agent touches the board.
+
+- Bad: `Review W1-7 card #1403 (codex impl 6c4bb3d)`.
+- Good: `Process next review card from pipeline`, `Handle failed-review cards first`, `Pick up next New Todo when review lane empty`.
+
+Card IDs and commit hashes belong in the live transcript, not the persisted snapshot.
+
+**Router order:**
 ```
 requirements → roadmap → debate → target-architecture → gauntlet → finalize → middleware-creator? → execution → implementation → complete
 ```
 
-`middleware-creator?` is an **optional phase** slotted between `finalize` and `execution`. It runs only when Phase 4 produced a `middleware-candidates.json` that the user chose to materialize into shared infrastructure before the execution plan is generated. When the candidate list is empty or the user skips, the router transitions `finalize → execution` directly — the optional phase is a no-op.
+`middleware-creator?` is optional, slotted between `finalize` and `execution`. It runs iff Phase 4 produced `middleware-candidates.json` AND the user chose to materialize shared middleware before normal pickup. Empty list or user skip → `finalize → execution` directly.
 
-**Prerequisite note:** This router slot is currently **passive**. The phase document at `~/.claude/skills/adversarial-spec/phases/middleware-creator.md` is not authored by Phase 4 Architecture Rewrite v17 (per its explicit non-goals). Until that phase doc exists, treat `middleware-creator?` as a reserved name: the router MUST NOT dispatch into it, and agents encountering `current_phase: "middleware-creator"` in a session should fall back to `finalize → execution` flow with a warning. No phase dispatch logic changes ship with v17 — only this documentation of the intended router shape.
+**Operational:** middleware fanouts require typed Fizzy source task cards and existing test-suite paths. If `fizzy-plan.json` isn't yet loaded, pass through Phase 7 far enough to create/load the execution cards, then return to `middleware-creator`. Don't bypass with raw `add_card` or direct card moves — use the Fizzy middleware pipeline tools.
 
 ### User Language → Phase Mapping
 
@@ -448,56 +401,49 @@ Do NOT run `debate.py critique` when the user wants the gauntlet, and vice versa
 
 **On ANY phase transition (user request or natural progression), you MUST:**
 
-1. **Read the TARGET phase file** from the Phase Router table above — not continue with the current one
-2. **Follow the target phase's entry protocol** — each phase has specific startup steps
-3. **Do not apply the previous phase's commands/tools to the new phase** — e.g., do not use `debate.py critique` for the gauntlet phase
+1. Read the TARGET phase file from the router — do not continue with the current one.
+2. Follow the target phase's entry protocol (each has specific startup steps).
+3. Do not apply the previous phase's commands/tools. E.g., no `debate.py critique` during the gauntlet.
 
-**Why:** Process failure (Feb 2026) showed the LLM staying in "debate mode" when the user requested the gauntlet, attempting to run `debate.py critique` Round 4 instead of reading `05-gauntlet.md` and following its distinct protocol (Arm Adversaries, persona-based attacks, multi-phase evaluation pipeline).
+**Why:** Feb 2026 failure — LLM stayed in "debate mode" on a gauntlet request, ran `debate.py critique` R4 instead of `05-gauntlet.md`'s distinct Arm-Adversaries / persona-attack pipeline.
 
 ### CRITICAL: Phase Transition Rules
 
-**NEVER mark a session as `complete` without going through these gates:**
+**NEVER mark `complete` without these gates:**
 
-1. **finalize → execution**: After finalize, you MUST ask: "Spec is finalized. Would you like me to generate an execution plan for implementation?"
-   - If yes: Read `phases/07-execution.md` and create the plan directly using its guidelines
-   - If no: User explicitly declines - only THEN can you mark complete (with note: "execution skipped by user")
+1. **finalize → execution**: ask "Spec is finalized. Generate an execution plan now?"
+   - Yes → read `phases/07-execution.md`, create plan.
+   - No → mark complete with note `"execution skipped by user"`.
 
-2. **execution → implementation/complete**: Create execution plans directly using guidelines in `phases/07-execution.md`. There is no `debate.py execution-plan` command - that pipeline was deprecated (Feb 2026, Option B+).
-   - If the plan has 0 actionable tasks, WARN the user before proceeding
+2. **execution → implementation/complete**: create the plan directly using `phases/07-execution.md`. `debate.py execution-plan` is deprecated (Feb 2026, Option B+). If the plan has 0 actionable tasks, WARN before proceeding.
 
-**Why this matters:** The failure report showed sessions jumping from gauntlet→complete, skipping execution entirely. This loses all the work linking gauntlet concerns to implementation tasks.
+**Why:** sessions were jumping gauntlet → complete, skipping execution and losing the concern-to-task linkage.
 
-**If in Brainquarters** (detected by `projects.yaml` existing): Can also use `TaskList(list_contexts=True)` to see cross-project contexts.
+**Brainquarters** (detected by `projects.yaml`): `TaskList(list_contexts=True)` shows cross-project contexts.
 
-### Phase Transition Protocol
+### Phase Transition Protocol (REQUIRED)
 
-**Every phase transition must update BOTH files atomically:**
+**Every phase transition must update BOTH files atomically, in order:**
 
-1. **Detail file** (`sessions/<id>.json`) — update first:
-   - Set `current_phase` to new phase
-   - Set `current_step` to entry point description
-   - Set `updated_at` to ISO 8601 timestamp
-   - Append to `journey`: `{"time": "ISO8601", "event": "Phase transition: <old> → <new>", "type": "transition"}`
-   - If `journey` array doesn't exist, create it
+1. **Detail file** (`sessions/<id>.json`) — first:
+   - Set `current_phase`, `current_step`, `updated_at` (ISO 8601).
+   - Append to journey log (`sessions/<id>.journey.log`, JSONL): `{"time":"ISO8601","event":"Phase transition: <old> → <new>","type":"transition"}`. See "Journey Log" below.
 
-2. **Pointer file** (`session-state.json`) — update second:
-   - Set `current_phase`, `current_step`, `next_action`, `updated_at`
+2. **Pointer file** (`session-state.json`) — second:
+   - Set `current_phase`, `current_step`, `next_action`, `updated_at`.
 
-3. **Fizzy card** (if `fizzy_card_id` exists in session detail file):
-   - Add a comment summarizing the transition: `"Phase: <old> → <new>. <1-line summary of what was accomplished>."`
-   - Call `pipeline_patch_state(card_id, session_id, patch)` with relevant state updates (e.g., `debate_round`, `last_agent`)
-   - Use a **haiku subagent** for the Fizzy call to keep MCP response payload out of main context
+3. **Fizzy card** (if `fizzy_card_id` present) — third:
+   - Add comment: `"Phase: <old> → <new>. <1-line accomplishment>."`
+   - Call `pipeline_patch_state(card_id, session_id, patch)` with relevant state updates (`debate_round`, `last_agent`, etc.).
+   - Use a **haiku subagent** to keep MCP payload out of main context.
 
-4. **Telegram notification** (if project has telegram config):
-   - Send a concise summary to Telegram via `~/.claude/bin/telegram-send <project> "<message>"`
-   - Message format: `"Phase: <old> → <new>. <1-2 sentence summary of what was accomplished and what's next>."`
-   - **Wait 120 seconds** after sending to allow human interruption (Ctrl+C to intervene)
-   - If the human doesn't interrupt, proceed normally
-   - Use `time.sleep(120)` or equivalent — this is a deliberate pause, not a bug
+4. **Telegram** (if project has telegram config) — fourth:
+   - `~/.claude/bin/telegram-send <project> "Phase: <old> → <new>. <1-2 sentence summary of what/next>."`
+   - **Wait 120 seconds** (`time.sleep(120)`) — deliberate pause so the human can Ctrl+C to redirect. Not a bug.
 
-**Detail file first, pointer second, Fizzy third, Telegram fourth.** If interrupted between writes, the pointer stays behind (safe — it catches up on next transition). Fizzy is last-but-one because it's the least critical for local resumption. Telegram is truly last — it's a notification, not state.
+**Order matters.** Interrupted mid-sequence: pointer catches up on next transition (safe); Fizzy isn't load-bearing for local resume; Telegram is notification, not state.
 
-**Artifact path fields** — set in the detail file at specific transitions:
+**Artifact path fields** — set in detail file at these transitions:
 
 | Transition | Field | Value |
 |------------|-------|-------|
@@ -509,17 +455,13 @@ Do NOT run `debate.py critique` when the user wants the gauntlet, and vice versa
 | execution → implementation | `execution_plan_path` | Path to written execution plan (e.g., `".adversarial-spec/specs/<slug>/execution-plan.md"`) |
 | any → complete | `completed_at` | ISO 8601 timestamp |
 
-**Non-artifact transitions** (debate → gauntlet, etc.) still MUST dual-write `current_phase` and `current_step` to both files, even though they don't produce artifact path fields. Every phase change syncs both files — no exceptions.
+**Non-artifact transitions** (debate → gauntlet, etc.) still MUST dual-write `current_phase` and `current_step` to both files. Every phase change syncs both — no exceptions. Both writes use atomic tmp+rename.
 
-Both writes must use atomic pattern (temp file + rename).
-
-**Backward compatibility:** If the detail file lacks `current_phase` (legacy sessions), add it — do not error. The schema is flexible.
+**Backward compatibility:** legacy detail files missing `current_phase` → add it, don't error.
 
 ### Major Milestone Notifications (Telegram)
 
-**In addition to phase transitions**, send Telegram notifications + 120s pause at these intra-phase milestones. These are the moments where the human needs to stay oriented, and where an interruption could save hours of wasted work.
-
-**When to notify (and pause 120s):**
+Send Telegram + 120s pause at these intra-phase milestones — they're the moments where an interruption saves hours:
 
 | Milestone | Message template |
 |-----------|-----------------|
@@ -530,17 +472,17 @@ Both writes must use atomic pattern (temp file + rename).
 | Execution plan loaded | `"Execution plan: {task_count} tasks across {stream_count} workstreams loaded into pipeline. Cards {first}-{last} in New Todo."` |
 | Gauntlet batch complete | `"Gauntlet batch {N}: {adversary_count} adversaries, {raw} raw → {unique} unique → {accepted} accepted concerns."` |
 
-**How to notify:**
+**How:**
 ```bash
 ~/.claude/bin/telegram-send <project> "<message>"
-sleep 120  # Allow human interruption
+sleep 120
 ```
 
 **Rules:**
-- Check `has_telegram_config` before attempting (fail open if no config)
-- The 120s pause is mandatory — it gives the human time to read and Ctrl+C if they want to redirect
-- If telegram-send fails, log to stderr and continue (never block on notification infra)
-- These are in ADDITION to Fizzy card comments — Fizzy is board state, Telegram is human attention
+- Check `has_telegram_config`; fail open if missing.
+- 120s pause is mandatory.
+- If `telegram-send` fails, log to stderr and continue — never block on notification infra.
+- These are additive to Fizzy card comments. Fizzy = board state; Telegram = human attention.
 
 ---
 
@@ -569,140 +511,168 @@ On proceed:
 
 ---
 
-## Alignment Prompts (Hybrid Trigger)
+## Alignment Prompts
 
-At **checkpoint**, **phase transition**, or **startup**, offer alignment check:
+Offer at **checkpoint**, **phase transition**, and **startup**:
 
 ```
 Alignment Check
-───────────────────────────────────────
-Goal: [context.goal]
-Phase: [current_phase]
-
-Still aligned?
-[Yes] [Refocus] [Skip]
+Goal: [context.goal]   Phase: [current_phase]
+Still aligned? [Yes] [Refocus] [Skip]
 ```
 
-**Actions:**
-- **Yes:** Log `{"time": "ISO8601", "event": "Alignment confirmed", "type": "alignment"}` to journey
-- **Refocus:** Prompt for new goal, update `context.goal`, log `alignment_refocused`
-- **Skip:** Log `alignment_skipped`
+- **Yes / Skip:** do nothing. These are UX-only; don't write journey noise ("confirmed"/"skipped" are identical across runs and nobody reads them).
+- **Refocus:** the real state change. Mutate `context.goal` on the detail file and append to `goal_history: [{at, from, to, why?}]`. That trail is the artifact — not a generic journey event.
+
+---
+
+## Decisions Log (`sessions/<id>.decisions.log`)
+
+A plain-text append-only ledger of "what landed and why it matters," written one entry per pipeline task completion (and at major phase milestones). Replaces `git log` / `git show` for session resume — gives fresh agents context without re-reading diffs.
+
+**When to append:**
+- Immediately after a successful `pipeline_complete_task` (card moves to Review).
+- At phase transitions that carry material consequences (spec v4 → v5, accepted gauntlet concern batch, architecture spine locked).
+- When a user decision forecloses an option (e.g., "GLM deferred").
+
+**Line format (plain text, one per line):**
+```
+<ISO8601> [<card_id|phase|decision>] <what landed> — <why it matters>
+```
+
+**Append pattern:**
+```bash
+printf '%s [%s] %s — %s\n' \
+  "$(date -u +%FT%TZ)" "<card_id|phase|decision>" "<what>" "<why>" \
+  >> .adversarial-spec/sessions/<id>.decisions.log
+```
+
+**Phase 8 integration:** after `pipeline_complete_task(...)` returns success, write one line. Keep it scannable — ≤120 chars preferred. Commit hash goes in the "what" field; card ID in the bracket.
+
+**Read pattern (resume):**
+```bash
+tail -20 .adversarial-spec/sessions/<id>.decisions.log
+```
+
+**Rules:**
+- Plain text (NOT JSONL) — humans read it, grep scans it.
+- Append only. Never rewrite.
+- One line per decision. Multi-line reasoning goes in retrospectives.
+- Omit if the commit message already says everything.
+
+---
+
+## Journey Log (`sessions/<id>.journey.log`)
+
+Journey is a **JSONL file**, not a JSON-array field inside the session detail. One event per line, appended — never rewritten.
+
+**Append pattern:**
+```bash
+printf '%s\n' "$(jq -nc --arg time "$(date -u +%FT%TZ)" \
+  '{time:$time, event:"<event>", type:"<transition|artifact|create|maintenance|decision|resume>"}')" \
+  >> .adversarial-spec/sessions/<id>.journey.log
+```
+
+**Why separate file:** the array grew to 80+ entries (~10KB) on long sessions and bloated every targeted `jq` read of the detail file. JSONL means append is O(1) and resume skips the log entirely unless asked.
+
+**Read pattern (recent events):**
+```bash
+tail -5 .adversarial-spec/sessions/<id>.journey.log | jq .
+```
+
+Read only when the user asks "what happened?" or orphan/context detection needs event history. Never load on normal resume.
+
+**Phase 4 extended schema** (`idempotency_key`, `event_id`, `release_id`) writes to the same log; dedup by `idempotency_key` still applies — check the log before appending.
+
+**Legacy sessions** (pre-migration) with `journey` inside the JSON: run `.adversarial-spec/scripts/migrate-journey-to-log.py` once to extract.
 
 ---
 
 ## Pre-Checkpoint Checklist (REQUIRED)
 
-**Before running `/checkpoint`, verify ALL of these.** The checkpoint command only handles pointer/session state — the surrounding process steps are your responsibility.
+`/checkpoint` only handles pointer/session state — surrounding process is your responsibility.
 
 ```
 Pre-Checkpoint Verification
-───────────────────────────────────────
-[ ] Deliverables persisted — All debate output, execution plans,
-    specs, and gauntlet concerns exist as FILES on disk
-    (not just conversation/terminal output)
-[ ] Alignment check offered — Alignment Prompts section above
-[ ] Orphan detection run — File Discipline section below
-[ ] TodoWrite current — Reflects actual work state
-
-Proceed with /checkpoint? [Y/n]
+[ ] Deliverables on disk — debate output, execution plans, specs, gauntlet concerns (not conversation-only)
+[ ] Alignment check offered
+[ ] Orphan detection run
+[ ] TodoWrite current and phase-scoped (no stale card IDs)
+Proceed? [Y/n]
 ```
 
-**If any check fails:**
-- Fix it before running `/checkpoint`
-- Debate output → save to `.adversarial-spec-checkpoints/` (debate.py does this automatically for `critique` runs; for manual synthesis, write the file yourself)
-- Execution plans → save to `.adversarial-spec/specs/<slug>/execution-plan.md`
+Fix failing checks before running `/checkpoint`.
+- Debate output → `.adversarial-spec-checkpoints/` (`debate.py critique` auto-saves; manual synthesis writes the file yourself).
+- Execution plans → `.adversarial-spec/specs/<slug>/execution-plan.md`.
 
-**Why this matters:** The checkpoint command exits 0 even when deliverables are missing from disk. Context switches after checkpoint destroy conversation-only output permanently.
+**Why:** checkpoint exits 0 even with missing deliverables. Context switches after checkpoint destroy conversation-only output permanently.
 
 ---
 
 ## Context Budget Gates (CRITICAL)
 
-**Checkpoint-First Rule:** After writing a final spec version or completing a context-heavy phase, checkpoint IMMEDIATELY. Do not write reports, update MEMORY.md, or do additional work before checkpointing. Those can happen in the next session.
-
-**Phase transition gates:**
+**Checkpoint-First Rule:** after writing a final spec version or completing a context-heavy phase, checkpoint IMMEDIATELY. Reports, MEMORY.md updates, retros — all in the next session.
 
 | Transition | Gate |
 |-----------|------|
-| debate → gauntlet | If you wrote a spec draft in this session, **checkpoint before starting the gauntlet**. The gauntlet generates massive tool output and should start in a fresh context window. |
-| gauntlet → finalize | If you ran a full gauntlet round (8+ adversaries) in this session, **checkpoint before synthesizing** the final spec version. |
-| any → checkpoint | After writing the final deliverable for any phase, checkpoint is your NEXT action. Not reports. Not MEMORY.md. Not process failure analysis. Checkpoint first. |
+| debate → gauntlet | Spec draft written this session → checkpoint before the gauntlet. It generates massive tool output; fresh context is essential. |
+| gauntlet → finalize | Full gauntlet round (8+ adversaries) run this session → checkpoint before synthesizing the final spec. |
+| any → checkpoint | Final deliverable written → checkpoint is your NEXT action. Not reports, MEMORY, or failure analysis. |
 
-**Heuristic:** If the session has (a) written a full spec draft AND (b) completed a full gauntlet round, you are in the danger zone. Checkpoint immediately. Do not do additional work.
+**Danger zone:** spec draft AND full gauntlet round both done this session → checkpoint immediately, no additional work.
 
 ---
 
 ## TaskOutput Anti-Patterns (CRITICAL)
 
-These patterns waste context budget and have caused session death:
+These have caused session death:
 
-1. **NEVER Read the output file after a blocking TaskOutput call.** `TaskOutput(block=true)` already returns the full result into context. Reading the same file again doubles the token cost for zero benefit.
-
-2. **NEVER re-launch the same command after a hook rejection.** If a Bash command is blocked by a hook, switch tools or fix the command immediately. Do not read the hook source to investigate why — hooks are a solved problem.
-
-3. **NEVER retry the same command with incremental timeout increases.** Know the timeout requirements before launching: Codex calls need `timeout=900000` minimum. Use background mode for any long-running model call.
-
-4. **After launching background tasks, check with `block=false` after ~45s** to catch quota/crash errors before committing to a full timeout wait.
+1. **Never Read the output file after a blocking `TaskOutput`.** `TaskOutput(block=true)` already returns the full result — re-reading doubles the token cost.
+2. **Never re-launch a hook-rejected command.** Switch tools or fix the command. Do NOT read hook source to diagnose.
+3. **Never retry with incrementally larger timeouts.** Know the requirement up front: Codex calls need `timeout=900000` minimum. Use background mode for any long-running model call.
+4. **After launching background tasks, probe at ~45s with `block=false`** to catch quota/crash errors before committing to a full-timeout wait.
 
 ---
 
 ## File Discipline & Orphan Detection
 
-At checkpoint/resume, scan project root for potential orphan files.
+At checkpoint/resume, scan project root for orphans.
 
-**Allowlist (never flag):**
-README.md, CLAUDE.md, AGENTS.md, CONTRIBUTING.md, CHANGELOG.md, CODE_OF_CONDUCT.md, SECURITY.md, GOVERNANCE.md, LICENSE, LICENSE.md, pyproject.toml, package.json, Makefile
+**Allowlist (never flag):** README.md, CLAUDE.md, AGENTS.md, CONTRIBUTING.md, CHANGELOG.md, CODE_OF_CONDUCT.md, SECURITY.md, GOVERNANCE.md, LICENSE(.md), pyproject.toml, package.json, Makefile.
 
-**Detection heuristics:**
-- `*.md` in root NOT in allowlist
-- Contains date patterns (YYYYMMDD) in filename
-- Contains "spec", "checkpoint", "session", "notes", "issues" in filename
+**Heuristics:** root `*.md` not in allowlist; filename contains `YYYYMMDD`; filename contains `spec`/`checkpoint`/`session`/`notes`/`issues`.
 
-**If orphans found:**
+**On hit, prompt:**
 ```
 Found potential orphans:
-• [filename]
-  Suggested: .adversarial-spec/issues/
-
+• [filename]  →  suggest: .adversarial-spec/issues/
 Move? [Y/n/skip all]
 ```
 
-**NEVER auto-move.** Always confirm with user.
+**Never auto-move.** Always confirm.
 
 ---
 
 ## Session ID Generation
 
-Format: `adv-spec-YYYYMMDDHHMM-<slug>`
+Format: `adv-spec-YYYYMMDDHHMM-<slug>`.
 
-**Slug rules:**
-1. Lowercase the context name
-2. Replace non-alphanumeric with `-`
-3. Collapse multiple `-` to single
-4. Trim leading/trailing `-`
-5. Truncate to 32 chars
-
-Example: "Fix: User Login (Auth)" → `adv-spec-202601311430-fix-user-login-auth`
+**Slug:** lowercase context; non-alphanumeric → `-`; collapse runs of `-`; trim; cap 32 chars.
+Example: `Fix: User Login (Auth)` → `adv-spec-202601311430-fix-user-login-auth`.
 
 ---
 
 ## Atomic Writes (CRITICAL)
 
-**ALL JSON file writes must be atomic:**
-1. Write to temp file (`.adversarial-spec/sessions/file.json.tmp`)
-2. Rename to target (atomic on POSIX)
-
-This prevents corruption if user interrupts (Ctrl+C).
+All JSON writes: write to `<path>.tmp`, then `rename` to target (atomic on POSIX). Prevents corruption on Ctrl+C.
 
 ---
 
 ## Reference Files (Load On-Demand)
 
-Only read these when you need specific information:
-
-- `~/.claude/skills/adversarial-spec/reference/document-types.md` - Spec types (product/technical/full/debug)
-- `~/.claude/skills/adversarial-spec/reference/advanced-features.md` - Focus modes, personas, profiles
-- `~/.claude/skills/adversarial-spec/reference/script-commands.md` - debate.py CLI reference
-- `~/.claude/skills/adversarial-spec/reference/gauntlet-details.md` - Adversarial gauntlet details
-- `~/.claude/skills/adversarial-spec/reference/convergence-and-telegram.md` - Convergence rules, debate.py `--telegram` flag
-- `~/.claude/skills/adversarial-spec/reference/telegram-bridge.md` - Agent reference for per-project Telegram bots (mobile human-gated review)
+- `reference/document-types.md` — spec types (product/technical/full/debug)
+- `reference/advanced-features.md` — focus modes, personas, profiles
+- `reference/script-commands.md` — `debate.py` CLI reference
+- `reference/gauntlet-details.md` — adversarial gauntlet details
+- `reference/convergence-and-telegram.md` — convergence rules, `--telegram` flag
+- `reference/telegram-bridge.md` — per-project Telegram bot setup (mobile human-gated review)

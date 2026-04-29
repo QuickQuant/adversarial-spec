@@ -1,10 +1,10 @@
 {
   "status": "complete",
-  "started_at": "2026-03-22T19:00:00Z",
-  "git_hash": "c3b5f8c",
+  "started_at": "2026-04-16T12:00:00Z",
+  "git_hash": "9ca3ccd",
   "mode": "update",
   "target_dir": "/home/jason/PycharmProjects/adversarial-spec",
-  "skill_version": "3.1",
+  "skill_version": "3.6",
   "phases": {
     "phase_1_discovery":    { "status": "complete" },
     "phase_2_high_level":   { "status": "complete" },
@@ -14,6 +14,15 @@
     "phase_6_findings":     { "status": "complete" },
     "phase_7_manifest":     { "status": "complete" },
     "phase_8_visuals":      { "status": "complete" }
+  },
+  "phase_artifacts": {
+    "phase_1_discovery": [
+      ".architecture/.work/discovery/entry-points.md",
+      ".architecture/.work/discovery/data-flow.md",
+      ".architecture/.work/discovery/control-flow.md",
+      ".architecture/.work/discovery/dependencies.md",
+      ".architecture/.work/discovery/contracts.md"
+    ]
   },
   "artifacts_written": [
     "primer.md",
@@ -37,6 +46,7 @@
     "patterns.md",
     "findings.md",
     "concerns.md",
+    "action-plan.md",
     "HUMAN_READ_ONLY_visuals/system-overview.md",
     "manifest.json"
   ]

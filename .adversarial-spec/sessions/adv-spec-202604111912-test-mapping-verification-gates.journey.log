@@ -1,0 +1,16 @@
+{"time":"2026-04-11T19:32:21Z","event":"Session created from ETB test-mapping proposal","type":"creation"}
+{"time":"2026-04-11T19:51:25Z","event":"Debate R1: Codex critiqued (10 findings), Gemini Flash agreed","type":"debate"}
+{"time":"2026-04-11T19:51:25Z","event":"Debate R2: Codex agreed, Gemini 3.1 Pro critiqued (2 findings). Convergence.","type":"debate"}
+{"time":"2026-04-11T20:47:22Z","event":"Gauntlet: 4 adversaries x 2 models, 168 raw -> 125 accepted. 10 fixes applied.","type":"gauntlet"}
+{"time":"2026-04-11T20:47:22Z","event":"Phase transition: gauntlet -> finalize","type":"transition"}
+{"time":"2026-04-11T21:16:28Z","event":"Context about to compact","type":"milestone"}
+{"time":"2026-04-11T21:16:28Z","event":"Checkpoint saved: pre-compaction-auto-checkpoint.","type":"checkpoint"}
+{"time":"2026-04-11T22:45:00Z","event":"Phase transition: finalize -> execution. Execution plan written (6 tasks, 1 workstream).","type":"transition"}
+{"time":"2026-04-11T23:15:00Z","event":"TMV1-TMV4 source edits to 07-execution.md complete (schema section, gates V1-V4, TodoWrite template, Step 9 v2 example). TMV5 implicitly satisfied by symlink.","type":"implementation"}
+{"time":"2026-04-11T23:15:00Z","event":"TMV6 dogfood: fizzy-plan.json + verification-coverage.json written. Both verify_commands pass. Custom Gate V2 validator passes all 6 tasks.","type":"implementation"}
+{"time":"2026-04-11T23:15:00Z","event":"Reconciled session card 572 through Pre-Roadmap \u2192 Debate \u2192 Pre-Gauntlet \u2192 Gauntlet \u2192 Reconciliation \u2192 Finalization (gates G1/G2/G3 patched manually since lane workflow was bypassed during earlier phases). Plan loaded: 6 task cards 891-897 (skipping 894) created in New Todo with TMV1-TMV6 task_ids (renamed from T1-T6 to dodge board-wide dedup collision with phase4-architecture-rewrite).","type":"milestone"}
+{"time":"2026-04-11T23:15:00Z","event":"Concern context comments added to all 6 task cards.","type":"milestone"}
+{"time":"2026-04-16T01:39:46Z","event":"All 6 TMV cards reviewed, tested, and swept to Completed-Unmapped. 6 phase4 orphan cards also restored and swept. Board clean: 14 Completed-Unmapped, 0 in active lanes.","type":"milestone"}
+{"time":"2026-04-16T01:39:46Z","event":"Checkpoint saved: tmv-review-complete-board-clean.","type":"checkpoint"}
+{"time":"2026-04-16T17:58:43Z","event":"Completed mapcodebase 3.6 incremental update from c3b5f8c to 9ca3ccd","type":"milestone"}
+{"time":"2026-04-16T17:58:43Z","event":"Checkpoint saved: mapcodebase-3-6-incremental-update-complete.","type":"checkpoint"}

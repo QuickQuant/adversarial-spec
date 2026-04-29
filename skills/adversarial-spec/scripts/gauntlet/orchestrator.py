@@ -201,7 +201,7 @@ def run_gauntlet(
     use_multi_model: bool = True,
     skip_filtering: bool = False,
     run_final_boss: bool = False,
-    timeout: int = 300,
+    timeout: int = 1800,
     attack_codex_reasoning: str = "low",
     eval_codex_reasoning: str = "xhigh",
     resume: bool = False,

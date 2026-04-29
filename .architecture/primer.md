@@ -1,24 +1,25 @@
 # Architecture Primer: adversarial-spec
 
-> Generated: 2026-03-22 | Git: c3b5f8c
+> Generated: 2026-04-16 | Git: 9ca3ccd
 > Freshness: fresh | Trust: Current HEAD with no relevant drift
 
 ## System Summary
 
-adversarial-spec is a Claude Code skill that iteratively refines product specifications through multi-model adversarial debate. It dispatches specs to multiple LLMs (Claude, GPT, Gemini, Grok, Mistral, etc.) via LiteLLM and CLI subprocess calls, collects critiques, and drives consensus through debate rounds. For stress-testing, a 7-phase gauntlet pipeline sends specs through named adversary personas, evaluates concerns with frontier models, and produces a pass/refine/reconsider verdict. The system is CLI-driven (no daemon), checkpoint-resumable, and uses ThreadPoolExecutor for parallel model calls.
+adversarial-spec is a Claude Code skill that iteratively refines product specifications through multi-model adversarial debate. It dispatches specs to multiple LLMs (Claude, GPT, Gemini, Grok, Mistral, etc.) via LiteLLM and CLI subprocess calls, collects critiques, and drives consensus through debate rounds. For stress-testing, a 7-phase gauntlet pipeline sends specs through named adversary personas, evaluates concerns with frontier models, and produces a pass/refine/reconsider verdict. The system is CLI-driven (no daemon), checkpoint-resumable, and uses ThreadPoolExecutor for parallel model calls. The skill workflow has 9 phases (init-and-requirements through verification), managed via a Fizzy pipeline board.
 
 ## Most Important Components
 
 | Component | Role | Runtime | Architecture |
 |-----------|------|---------|--------------|
-| Debate Engine | CLI entrypoint + multi-round debate orchestration (debate.py) | implemented | active_primary |
-| Gauntlet Pipeline | 7-phase adversarial stress-test (16-module package) | implemented | active_primary |
-| Models | LLM call abstraction via LiteLLM + CLI subprocess routing | implemented | active_primary |
+| Debate Engine | CLI entrypoint + multi-round debate orchestration (debate.py, 1562 lines) | implemented | active_primary |
+| Gauntlet Pipeline | 7-phase adversarial stress-test (18-module package) | implemented | active_primary |
+| Models | LLM call abstraction via LiteLLM + CLI subprocess routing (1000 lines) | implemented | active_primary |
 | Adversaries | Named attacker persona definitions with version tracking | implemented | active_primary |
 | Providers | Model config, cost rates, Bedrock support, CLI availability | implemented | active_primary |
+| Gauntlet Prompts | Centralized phase system prompts (NEW — extracted from inline) | implemented | active_primary |
 | Gauntlet Persistence | FileLock-guarded checkpoint/resume for gauntlet phases | implemented | active_primary |
 | Pre-Gauntlet | Git/system context collection before gauntlet runs | implemented | active_primary |
-| MCP Tasks | Cross-agent task coordination via MCP protocol | implemented | active_primary |
+| MCP Tasks | Cross-agent task coordination via MCP protocol (FileLock-guarded) | implemented | active_primary |
 
 ## Shared Contracts and Boundaries
 
@@ -32,19 +33,20 @@ adversarial-spec is a Claude Code skill that iteratively refines product specifi
 
 - **Two gauntlet CLIs with divergent flags**: `debate.py` uses `--codex-reasoning`/`--gauntlet-resume`, while `gauntlet/cli.py` uses `--attack-codex-reasoning`/`--resume`. Not aliased.
 - **CLI models are zero-cost**: Codex, Gemini CLI, and Claude CLI route through subprocess, not LiteLLM. They report 0 tokens and $0 cost. This is intentional (subscription-based).
-- **scope.py is NOT dead code**: 606 lines, has active tests in `test_adversaries.py` (scope_guidelines validation). CON-002 was invalidated.
+- **scope.py (606 lines) is not imported by any module**: The `scope_guidelines` field on `Adversary` (in adversaries.py) is tested and used, but scope.py itself has no importers. Status unclear — may be dead code or awaiting wiring.
 - **Unattended mode monkey-patches builtins.input**: `run_gauntlet()` replaces `input()` globally when `--unattended` is set. Restored in `finally` block.
 - **Pydantic used but not in pyproject.toml**: `pre_gauntlet/models.py` uses Pydantic BaseModel as an implicit dependency.
 - **No explicit "Spec" type**: Specs flow as plain `str` throughout the system. No dataclass wraps them.
-- **gauntlet_monolith.py is a 12-line shim**: Delegates to `gauntlet/cli.py:main()`. Legacy compatibility only.
+- **gauntlet/prompts.py centralizes phase prompts**: Extracted from inline hardcoded prompts across phase modules (addresses old pattern concern CON-007).
+- **PROGRAMMING_BUGS tuple**: `core_types.py` defines `(TypeError, NameError, AttributeError)` excluded from broad `except Exception` — these propagate for visibility.
 
 ## Top Actionable Concerns
 
-See [concerns.md](concerns.md) for the full rollup. Start here:
+See [concerns.md](concerns.md) for the full rollup. Previous CON-001 (tasks.json write hazard) resolved — both MCP server and TaskManager now use FileLock.
 
-1. **CON-001: tasks.json concurrent write hazard** (now) — MCP server and TaskManager both write `.claude/tasks.json` without locking. Real data loss risk in multi-agent workflows. Fix: add FileLock wrapper.
-2. ~~**CON-002: Dead code cleanup**~~ — INVALIDATED. All three files are actively used (see concerns.md for details).
-3. **CON-003: Unify model dispatch** (next) — Three competing dispatch paths prevent uniform improvements.
+1. **CON-001: Triple litellm completion() pathway** (next) — 3 files call litellm.completion() with silently different defaults (temperature, max_tokens). Fix: single low-level wrapper.
+2. **CON-002: cost_tracker coupling** (next) — Every phase imports global cost_tracker from models.py (layer violation, 30+ test monkeypatches). Fix: move into model_dispatch.call_model().
+3. **CON-003: orchestrator complexity** (next) — run_gauntlet() is ~695 lines. Fix: extract phase-table pattern.
 
 ## Escalation Guidance
 

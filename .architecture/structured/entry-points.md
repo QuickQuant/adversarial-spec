@@ -1,7 +1,7 @@
 # Entry Points
 
 > All system entrances: where execution begins or external input arrives.
-> Generated: 2026-03-22 | Git: c3b5f8c
+> Generated: 2026-04-16 | Git: 9ca3ccd
 
 ## Summary
 
@@ -12,17 +12,18 @@
 ```
 ENTRY_POINT                      FILE:LINE                            TYPE      TRIGGER                           CALLS
 ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-main()                           debate.py:1493                       cli       adversarial-spec <action>          create_parser, handle_*, run_critique
+main()                           debate.py:1520                       cli       adversarial-spec <action>          create_parser, handle_*, run_critique
 main()                           gauntlet/cli.py:13                   cli       python -m gauntlet                 run_gauntlet, format_gauntlet_report
 main()                           telegram_bot.py:404                  cli       direct script execution            cmd_setup, cmd_send, cmd_poll, cmd_notify
-mcp.run()                        mcp_tasks/server.py:365              main      MCP protocol registration          FastMCP server loop
-TaskCreate()                     mcp_tasks/server.py:98               export    MCP tool invocation                load_tasks, save_tasks
-TaskGet()                        mcp_tasks/server.py:140              export    MCP tool invocation                load_tasks
-TaskList()                       mcp_tasks/server.py:160              export    MCP tool invocation                load_tasks
-TaskUpdate()                     mcp_tasks/server.py:261              export    MCP tool invocation                load_tasks, save_tasks
-run_gauntlet()                   gauntlet/orchestrator.py:196         export    Called from debate.py or cli.py     all 7 phase functions
-run_pre_gauntlet()               pre_gauntlet/orchestrator.py:207     export    Called from gauntlet cli            PreGauntletOrchestrator.run
-call_models_parallel()           models.py:901                        export    Called from critique/gauntlet       call_single_model via ThreadPool
+main()                           gauntlet/synthesis_extract.py:119    cli       python -m gauntlet.synthesis_ext   extract_and_cluster_concerns
+mcp.run()                        mcp_tasks/server.py:404              main      MCP protocol registration          FastMCP server loop
+TaskCreate()                     mcp_tasks/server.py:137              export    MCP tool invocation                _mutate_tasks (FileLock-guarded)
+TaskGet()                        mcp_tasks/server.py:140              export    MCP tool invocation                _load_tasks_unlocked
+TaskList()                       mcp_tasks/server.py:160              export    MCP tool invocation                _load_tasks_unlocked
+TaskUpdate()                     mcp_tasks/server.py:261              export    MCP tool invocation                _mutate_tasks (FileLock-guarded)
+run_gauntlet()                   gauntlet/orchestrator.py:194         export    Called from debate.py or cli.py     all 7 phase functions
+run_pre_gauntlet()               pre_gauntlet/orchestrator.py:51      export    Called from gauntlet cli            PreGauntletOrchestrator.run
+call_models_parallel()           models.py:914                        export    Called from critique/gauntlet       call_single_model via ThreadPool
 ```
 
 Types: `main` | `http` | `websocket` | `event` | `scheduled` | `cli` | `export`

@@ -1,7 +1,7 @@
 # Structured Flows
 
 > Every significant flow in structured notation. Optimized for LLM consumption.
-> Generated: 2026-03-22 | Git: c3b5f8c
+> Generated: 2026-04-16 | Git: 9ca3ccd
 
 ## Notation
 
@@ -166,17 +166,17 @@ STEPS:
   2. Phase 2: generate_big_picture_synthesis(concerns, spec)
      -> save_checkpoint("synthesis", synthesis)
   3. Phase 3: filter_concerns_with_explanations(concerns, resolved_db)
-  4. Phase 3.5: cluster_concerns_with_provenance(concerns, spec, config)
-     -> AUTO-CHECKPOINT (quota burn safeguard)
-     -> save_checkpoint("clustered-concerns", clustered)
-  5. Phase 4: evaluate_concerns[_multi_model](clustered, spec, eval_models, config)
+     -> save_checkpoint("clustered-concerns", filtered)
+     NOTE: Phase 3.5 clustering was removed (lost 48% of concerns). Pass-through now.
+  4. Phase 4: evaluate_concerns[_multi_model](filtered, spec, eval_models, config)
      -> save_checkpoint("evaluations", evaluations)
-  6. Phase 5: run_rebuttals(dismissed_evals, spec, adversaries)
-  7. Phase 6: final_adjudication(evaluations, rebuttals)
+  5. Phase 5: run_rebuttals(dismissed_evals, spec, adversaries)
+  6. Phase 6: final_adjudication(evaluations, rebuttals)
      -> calculate_medals() -> save medal reports
-  8. Phase 7: [optional] run_final_boss_review(result, spec, config)
+  7. Phase 7: [optional] run_final_boss_review(result, spec, config)
      -> save_checkpoint("final-boss", final_result)
-  9. save_run_manifest() -> return GauntletResult
+  8. auto-save dismissed concerns to resolved database
+  9. update adversary statistics -> save_run_manifest() -> return GauntletResult
 
 DATA_IN:
   - spec: str

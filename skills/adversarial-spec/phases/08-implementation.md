@@ -1,110 +1,74 @@
 ## Implementation (Phase 8)
 
-> **FIRST ACTION upon entering this phase:** Create this TodoWrite immediately.
-> Do NOT read further until the TodoWrite is active.
+> **FIRST ACTION on entering this phase:** create this TodoWrite. Do NOT read further until it's active.
 
 ```
 TaskCreate([
-  {subject: "Identify agent name, session ID, and board ID", status: "pending", activeForm: "Identifying agent and session"},
-  {subject: "Load Fizzy cards (pipeline_load or verify existing)", status: "pending", activeForm: "Loading Fizzy cards"},
-  {subject: "Read CLAUDE.md / AGENTS.md for project conventions", status: "pending", activeForm: "Reading project conventions"},
-  {subject: "Read .architecture/INDEX.md + primer.md", status: "pending", activeForm: "Reading architecture docs"},
-  {subject: "Read matched component docs from .architecture/structured/components/", status: "pending", activeForm: "Reading component architecture"},
-  {subject: "Read the converged spec", status: "pending", activeForm: "Reading spec"},
-  {subject: "Read the execution plan", status: "pending", activeForm: "Reading execution plan"},
-  {subject: "Enter self-pickup loop", status: "pending", activeForm: "Running self-pickup loop"},
+  {subject: "Identify agent name, session ID, board ID", status:"pending", activeForm:"Identifying agent and session"},
+  {subject: "Load Fizzy cards (pipeline_load or verify existing)", status:"pending", activeForm:"Loading Fizzy cards"},
+  {subject: "Read CLAUDE.md / AGENTS.md", status:"pending", activeForm:"Reading project conventions"},
+  {subject: "Read .architecture/INDEX.md + primer.md", status:"pending", activeForm:"Reading architecture docs"},
+  {subject: "Read matched component docs", status:"pending", activeForm:"Reading component architecture"},
+  {subject: "Read the converged spec", status:"pending", activeForm:"Reading spec"},
+  {subject: "Read the execution plan", status:"pending", activeForm:"Reading execution plan"},
+  {subject: "Enter self-pickup loop", status:"pending", activeForm:"Running self-pickup loop"},
 ])
 ```
 
-**[GATE] All context-loading tasks (items 3-7) must be marked `completed` before starting the self-pickup loop (item 8). Skipping architecture docs causes implementation decisions that contradict existing patterns — this is a confirmed failure mode.**
+**[GATE]** Items 3-7 must be `completed` before item 8 starts. Skipping arch docs → decisions that contradict existing patterns. Confirmed failure mode.
 
-After the execution plan is generated, offer to proceed with implementation:
+Multi-agent reminder: once in the loop, keep TodoWrite items phase-scoped (e.g., "Process next review card"). Never hardcode card IDs or commit hashes — the pipeline is authoritative.
 
-> "Execution plan generated with N tasks. Would you like to proceed with implementation?"
+After execution plan is generated, ask: *"Execution plan generated with N tasks. Proceed with implementation?"*
 
 ---
 
 ### Agent Identity (REQUIRED)
 
-You must identify yourself with a stable agent name for cross-agent review enforcement.
-The pipeline skips Review cards where `last_agent == requesting agent` — without a
-stable name, cross-agent review breaks.
+Cross-agent review enforcement depends on a stable agent name. Pipeline skips Review cards where `last_agent == requester`.
 
 | Agent | Name to pass |
-|-------|-------------|
+|-------|--------------|
 | Claude Code | `claude` |
 | Codex | `codex` |
 | Gemini CLI | `gemini` |
 
-Pass your agent name in every `pipeline_*` call.
+Pass your name on every `pipeline_*` call.
 
 ---
 
-### Setup Checklist (REQUIRED before the self-pickup loop)
-
-**Do NOT enter the self-pickup loop until ALL of these are done:**
+### Setup Checklist (before the self-pickup loop)
 
 ```
-Implementation Setup
-───────────────────────────────────────
 [ ] Session ID and Board ID identified
-[ ] Fizzy cards loaded (pipeline_load or manual creation)
-    — verify with pipeline_lane_state(pipeline="task")
-[ ] Context loaded (see Context Loading below)
+[ ] Fizzy cards loaded — verify with pipeline_lane_state(pipeline="task")
+[ ] Context loaded (see below)
 ```
 
-**Session ID discovery:**
-1. If provided at invocation, use it
-2. Otherwise: read `.adversarial-spec/session-state.json` → `active_session_id`
-3. If no active session: stop and report — cannot self-pick without a session
+**Session ID:** if provided at invocation, use it. Else read `.adversarial-spec/session-state.json` → `active_session_id`. No session → stop and report.
 
-**Board ID discovery:**
-Board is **not** pinned implicitly at server startup for implementation work. Identify the target board from the session, card state, or project config, then pass `board_id` explicitly on every board-scoped `pipeline_*` call.
+**Board ID:** not pinned implicitly. Identify from session / card state / project config, and pass `board_id` explicitly on every board-scoped call. Never rely on `FIZZY_BOARD_ID` as a hidden default.
 
-If you do not know the board ID yet, stop and discover it before entering the self-pickup loop. Do **not** rely on `FIZZY_BOARD_ID` as a hidden default.
-
-**If cards are not yet loaded:** The execution plan must be converted to Fizzy cards first.
-Use `pipeline_load(plan_path, session_id)` with the `fizzy-plan.json` from the execution phase.
+**Cards not loaded:** convert the execution plan to Fizzy cards via `pipeline_load(plan_path, session_id)` using the `fizzy-plan.json` from Phase 7.
 
 ---
 
-### Context Loading (REQUIRED before implementing any card)
+### Context Loading (before implementing any card)
 
-Before entering the loop, load these in order. Without this context, you will make
-implementation decisions that contradict the spec or the codebase's existing patterns.
+Load in order. Skipping this → decisions that contradict the spec or codebase patterns.
 
-#### 1. Project conventions
-- Read `CLAUDE.md` (or `AGENTS.md` for Codex) — project rules, test/lint commands, key paths
+1. **Project conventions:** `CLAUDE.md` (or `AGENTS.md` for Codex).
+2. **Architecture docs:**
+   - `.architecture/INDEX.md` — navigation only (your reference, don't pass to opponent models).
+   - `.architecture/primer.md` — system summary, contracts, gotchas.
+   - `.architecture/concerns.md` if the session touches known debt.
+   - 2-4 component docs from `.architecture/structured/components/`, matched by parsing the execution plan's file list against the INDEX "Key Files" column.
+3. **Spec:** path from session detail `spec_path`, else `.adversarial-spec/specs/<slug>/spec-output.md`. Pay attention to Goals/Non-Goals, acceptance criteria, accepted gauntlet concerns.
+4. **Execution plan:** path from session detail `execution_plan_path`, else `.adversarial-spec/specs/<slug>/execution-plan.md`. Defines task breakdown, wave ordering, Architecture Spine, validation strategies, dependency graph.
 
-#### 2. Architecture docs
-- Read `.architecture/INDEX.md` for navigation (your reference, not context to carry)
-- Read `.architecture/primer.md` — system summary, components, contracts, gotchas
-- If the session touches known debt areas: read `.architecture/concerns.md`
-- Read 2-4 matched component docs from `.architecture/structured/components/` based on
-  which modules the execution plan modifies
+**Context budget:** for large specs/plans, read only the section relevant to your current wave. The card description has the concrete requirements; the spec/plan supply the "why."
 
-**How to match components:**
-- Read the execution plan's file list (or the session file's `requirements_summary`)
-- Compare file paths against the INDEX component table's "Key Files" column
-- Read the matching component docs
-
-#### 3. The spec
-- Read the spec output: path is in the session file's `spec_path` field,
-  or at `.adversarial-spec/specs/<slug>/spec-output.md`
-- This is the debated and gauntleted specification. Implementation must conform to it.
-- Pay attention to: Goals/Non-Goals, acceptance criteria, gauntlet concerns that were accepted
-
-#### 4. The execution plan
-- Read the execution plan: path is in the session file's `execution_plan_path` field,
-  or at `.adversarial-spec/specs/<slug>/execution-plan.md`
-- This defines: task breakdown, wave ordering, file structure (Architecture Spine),
-  validation strategies, dependency graph, and parallelization guidance
-
-**Context budget note:** For large specs/plans, read the sections relevant to your
-current wave rather than loading the entire document. The card description has the
-specific task requirements; the spec and plan provide the "why" and "how it fits."
-
-**[GATE] TaskCreate: Mark "Read .architecture/INDEX.md + primer.md" and "Read matched component docs" completed before entering the self-pickup loop. This gate exists because a confirmed failure (2026-04-10) shipped 3 tasks without reading architecture docs, missing pattern conformance checks during both implementation and review.**
+**[GATE]** Mark "Read .architecture/INDEX.md + primer.md" and "Read matched component docs" completed before starting the loop. Confirmed failure (2026-04-10): 3 tasks shipped without arch docs, missed pattern conformance during both impl and review.
 
 ---
 
@@ -163,8 +127,15 @@ Returns: `{card_id, task_id, action_string, lane, effort, strategy}` or idle.
 5. Run project tests and lint (commands from CLAUDE.md / AGENTS.md)
 6. Commit with card reference: `[TASK_ID] Short description`
 7. Complete: `pipeline_complete_task(session_id, card_id, agent, commit_hash, board_id)`
-8. If conductor enabled: release claims
-9. **Return to Step 1**
+8. **Append to decisions log** (see SKILL.md "Decisions Log"):
+   ```bash
+   printf '%s [%s] %s — %s\n' "$(date -u +%FT%TZ)" "<card_id>" \
+     "<what landed, incl. commit hash>" "<why it matters>" \
+     >> .adversarial-spec/sessions/<session_id>.decisions.log
+   ```
+   One line. Skip if the commit message already says everything material.
+9. If conductor enabled: release claims
+10. **Return to Step 1**
 
 **action = "fix" (from Failed Review)**
 
@@ -177,18 +148,31 @@ Same as "implement" but:
 
 1. Read the card description and state block
 2. Identify the `commit_hash` from the state block
-3. Review the change set:
-   - `git diff` / `git log` to inspect changes
-   - Does it satisfy the card's acceptance criteria?
-   - Does it follow project conventions?
-   - Do tests pass?
-4. Submit verdict:
+3. **Measure the diff first:** `git show --stat <commit_hash>` — total lines changed across all files.
+4. **Pick review tier by size** (below); don't default to the deepest tier on every card — reading an entire 30-line rename burns context for no gain.
+5. Run the tier's checks.
+6. Submit verdict:
    ```
    pipeline_review(session_id, card_id, agent, verdict, board_id, notes)
    ```
    - `verdict`: `"approved"` or `"changes_requested"`
    - `notes`: **REQUIRED** for `"changes_requested"` — explain what needs fixing
-5. **Return to Step 1**
+7. **Return to Step 1**
+
+#### Size-Tiered Review Recipe
+
+| Diff size (lines changed) | Tier | Review recipe |
+|---------------------------|------|---------------|
+| ≤ 30 | **Spot** | `git show` once, confirm acceptance criteria satisfied, run tests listed on the card. No architecture doc re-read needed. |
+| 31–200 | **Small** | Read full diff, verify against card acceptance criteria, run tests, spot-check edge cases (null/empty/failure paths). Confirm no new files outside Architecture Spine. |
+| 201–800 | **Medium** | Read full diff, check against spec section (`spec_path`) relevant to this card, verify test coverage of failure modes, confirm no structural drift (file structure matches plan). Run tests + any adjacent integration suites. |
+| > 800 | **Large / push back** | Default to `changes_requested` with note: "Diff exceeds 800 lines — decompose into smaller cards before re-review." Only approve if the card explicitly authorizes a large diff (e.g., codegen, vendored dependency) AND a structured walkthrough comment justifies each file. |
+
+**Anti-patterns:**
+- Approving "looks fine" without running tests on Small+ cards.
+- Reading only the first hunk and generalizing ("rest looks similar").
+- Re-reading the full architecture primer for a Spot-tier rename.
+- Requesting changes on Spot-tier cards for style nits — leave a comment, approve the functional change.
 
 **action = "test" (from Untested)**
 

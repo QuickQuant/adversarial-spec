@@ -65,8 +65,8 @@ def main():
     parser.add_argument(
         "--timeout",
         type=int,
-        default=300,
-        help="Timeout per model call in seconds (default: 300)",
+        default=1800,
+        help="Timeout per model call in seconds (default: 1800)",
     )
     parser.add_argument(
         "--json",

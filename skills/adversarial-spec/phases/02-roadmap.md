@@ -266,7 +266,7 @@ echo "If artifacts are missing, create them NOW before proceeding to debate."
 
 After verification passes, sync both session files per the Phase Transition Protocol:
 - Detail file (`sessions/<id>.json`): set `roadmap_path` to `"roadmap/manifest.json"` (medium/complex) or `"inline"` (simple tier)
-- Append journey: `{"time": "ISO8601", "event": "Roadmap artifacts persisted", "type": "artifact"}`
+- Append to journey log (`sessions/<id>.journey.log`, JSONL): `{"time": "ISO8601", "event": "Roadmap artifacts persisted", "type": "artifact"}`
 - Update both files with `current_phase: "roadmap"`, `current_step: "Roadmap persisted and verified"`
 - Use atomic writes for both files
 

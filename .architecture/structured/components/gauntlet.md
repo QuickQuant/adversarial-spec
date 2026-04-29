@@ -5,8 +5,8 @@
 | Property | Value |
 |----------|-------|
 | Purpose | 7-phase adversarial stress-test pipeline |
-| Entry | `run_gauntlet()` at gauntlet/orchestrator.py:196 |
-| Key files | gauntlet/orchestrator.py, gauntlet/core_types.py, gauntlet/persistence.py, gauntlet/model_dispatch.py, gauntlet/phase_1_attacks.py through phase_7_final_boss.py, gauntlet/medals.py, gauntlet/reporting.py |
+| Entry | `run_gauntlet()` at gauntlet/orchestrator.py:194 |
+| Key files | gauntlet/orchestrator.py, gauntlet/core_types.py, gauntlet/persistence.py, gauntlet/model_dispatch.py, gauntlet/prompts.py, gauntlet/phase_1_attacks.py through phase_7_final_boss.py, gauntlet/medals.py, gauntlet/reporting.py, gauntlet/synthesis_extract.py |
 | Depends on | Models, Adversaries, Providers |
 | Used by | Debate Engine (debate.py), standalone CLI (gauntlet/cli.py) |
 | Runtime status | implemented |
@@ -14,7 +14,7 @@
 
 ## What This Component Does
 
-The gauntlet is a 16-module package (extracted from a 4087-line monolith) that stress-tests specifications through 7 sequential phases. Named adversary personas generate concerns, a frontier model evaluates them, dismissed adversaries get rebuttal chances, and a final boss issues a pass/refine/reconsider verdict. Each phase checkpoints to disk via FileLock-guarded atomic writes, enabling resume after crashes or quota exhaustion.
+The gauntlet is an 18-module package that stress-tests specifications through 7 sequential phases. Named adversary personas generate concerns, a frontier model evaluates them, dismissed adversaries get rebuttal chances, and a final boss issues a pass/refine/reconsider verdict. Each phase checkpoints to disk via FileLock-guarded atomic writes, enabling resume after crashes or quota exhaustion. Phase prompts are centralized in `gauntlet/prompts.py` (extracted from inline). Phase 3.5 clustering was removed after analysis showed it lost 48% of concerns.
 
 ## Data Flow
 
@@ -25,7 +25,7 @@ IN:  Spec text + GauntletConfig + adversary list
 PROCESS:
      ├─> Phase 1: generate_attacks() -> Concern objects
      ├─> Phase 2: generate_big_picture_synthesis() -> BigPictureSynthesis
-     ├─> Phase 3/3.5: filter + cluster concerns -> clustered concerns
+     ├─> Phase 3: filter concerns (clustering removed) -> filtered concerns
      ├─> Phase 4: evaluate_concerns() -> Evaluation objects (verdicts)
      ├─> Phase 5: run_rebuttals() -> Rebuttal objects
      ├─> Phase 6: final_adjudication() -> medals + report

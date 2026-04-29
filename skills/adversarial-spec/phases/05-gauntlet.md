@@ -29,6 +29,36 @@ After consensus is reached but before finalization, offer the adversarial gauntl
 
 **If user accepts gauntlet:**
 
+**Step 0: Size the gauntlet (HUMAN DECIDES, LLM ASKS).**
+
+Before selecting adversaries or models, decide how *big* the gauntlet should be. This is a human call, not an LLM call — Claude does not have enough context about the operator's threat model, deploy surface, or "what's at stake if this ships buggy" to make this decision autonomously. Past sessions have defaulted to the full 9-adversary slate on features that did not warrant it, burning hours of synthesis time on concerns the spec will never need to absorb. **Ask, present options with rough guidance, let the human pick.**
+
+**Variables that shape the right size (surface these to the user):**
+
+- **Blast radius if a bug ships.** Single-operator local tool vs. shared infrastructure vs. real money flow.
+- **External-library / SDK surface.** Any `node_modules/<lib>` the spec builds on top of is an adversary-proof channel for hallucinated field names and misread semantics — the gauntlet's AUDT persona flags *that a claim is unverified* but cannot actually verify it. See the mandatory SDK pass below.
+- **Network exposure and trust boundary.** 127.0.0.1-only tool that only the operator's own browser hits → PARA is usually noise. Public HTTP endpoint or untrusted input → PARA becomes mandatory.
+- **Concurrency surface.** Flighting, coalescing, retry, burst, or cross-tab state → BURN/FLOW/TRAF start earning their keep.
+- **How well the existing architecture is documented.** Stale or missing `.architecture/` docs inflate the value of ARCH + FLOW + AUDT; good docs shrink it.
+- **Reversibility.** Feature you can hotfix in an hour vs. a schema migration in prod.
+
+**Canned starting points (examples, NOT a hard rule — every app is different):**
+
+| Shape | Typical adversary set | Rough rationale |
+|-------|-----------------------|-----------------|
+| Solo local feature, no money, SDKs touched | `assumption_auditor,architect` + SDK pass | AUDT + ARCH catch code drift and structural issues; PARA/BURN are usually noise at this scale. Mandatory SDK pass covers the external-library blind spot. |
+| Touches shared infrastructure or long-lived contracts | `assumption_auditor,architect,paranoid_security,burned_oncall` | Add PARA once trust boundaries appear; add BURN once ops visibility and failure-mode cost rises. |
+| Real money flow, concurrency, or hot path | Full slate (all 9) | Every persona earns its keep on money-flow code. |
+| Already-in-production incident follow-up | Full slate + FINAL-BOSS | Everything plus holistic UX review; stakes are already proven. |
+
+**The LLM's job in this step:** present the variables above, suggest a starting point based on what the spec declares about scope (blast radius, file scope, SDK imports, deploy target), and **ask the human to confirm, expand, or shrink**. Do NOT auto-select. Do NOT default to "all" just because picking is hard. If the user wants to think about it, wait — the cost of spending 5 extra minutes on adversary selection is far smaller than the cost of a 6-hour synthesis on concerns that don't belong in the spec.
+
+**Mandatory regardless of size — post-gauntlet SDK verification pass.** For every external library, SDK, or `.d.ts` the spec references, a human-initiated read of the actual type definitions / documentation MUST happen before the gauntlet's synthesized concerns are promoted into spec text. The gauntlet can only flag SDK assumptions as "unverified"; it cannot check them. Past sessions have accepted adversary-hallucinated field names (`/user/me`, `reserved_amount`, wrong Σ formulas) into a spec because the gauntlet flagged them as risky but no one actually read the SDK. This step is ~10 minutes of manual reading per library and catches the class of bug the gauntlet structurally cannot.
+Use Docmaster if the SDK is covered in docmaster. Ask the user to add in any docs that are not covered if there is a gap. This is a one-time addition that is blocking.
+After sizing is agreed, proceed to step 1 below.
+
+---
+
 1. Review adversary versions and performance before selecting:
    ```bash
    # Show version history of adversary personas
@@ -503,5 +533,5 @@ After gauntlet concerns are integrated into the spec, sync both session files pe
 1. **Detail file** (`sessions/<id>.json`):
    - Set `current_phase: "finalize"`, `current_step: "Gauntlet complete, spec updated with accepted concerns"`
    - Set `gauntlet_concerns_path` to the saved concerns JSON (e.g., `".adversarial-spec/gauntlet-concerns-2026-02-10.json"`)
-   - Append journey: `{"time": "ISO8601", "event": "Gauntlet complete, N concerns accepted", "type": "transition"}`
+   - Append to journey log (`sessions/<id>.journey.log`, JSONL): `{"time": "ISO8601", "event": "Gauntlet complete, N concerns accepted", "type": "transition"}`
 2. **Pointer file** (`session-state.json`): set `current_phase: "finalize"`, `current_step`, `next_action`, `updated_at`

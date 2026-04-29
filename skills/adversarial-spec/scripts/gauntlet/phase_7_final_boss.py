@@ -39,11 +39,11 @@ def run_final_boss_review(
     - REFINE: Address listed concerns, then proceed
     - RECONSIDER: Fundamental issues exist, models should debate re-architecture
 
-    Timeout: max(config.timeout, 600) — Opus 4.6 with large context needs a floor.
+    Timeout: max(config.timeout, 1800) — Opus 4.6 with large context needs a floor.
     """
     import os
 
-    timeout = max(config.timeout, 600)
+    timeout = max(config.timeout, 1800)
 
     # Final boss uses Opus 4.6 - expensive but thorough
     if os.environ.get("ANTHROPIC_API_KEY"):

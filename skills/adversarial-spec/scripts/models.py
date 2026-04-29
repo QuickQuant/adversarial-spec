@@ -360,7 +360,7 @@ def call_codex_model(
     user_message: str,
     model: str,
     reasoning_effort: str = DEFAULT_CODEX_REASONING,
-    timeout: int = 600,
+    timeout: int = 1800,
     search: bool = False,
     cwd: str | None = None,
 ) -> tuple[str, int, int]:
@@ -466,7 +466,7 @@ def call_gemini_cli_model(
     system_prompt: str,
     user_message: str,
     model: str,
-    timeout: int = 600,
+    timeout: int = 1800,
     cwd: str | None = None,
 ) -> tuple[str, int, int]:
     """
@@ -552,7 +552,7 @@ def call_claude_cli_model(
     system_prompt: str,
     user_message: str,
     model: str,
-    timeout: int = 600,
+    timeout: int = 1800,
     cwd: str | None = None,
 ) -> tuple[str, int, int]:
     """
@@ -644,7 +644,7 @@ def call_single_model(
     preserve_intent: bool = False,
     codex_reasoning: str = DEFAULT_CODEX_REASONING,
     codex_search: bool = False,
-    timeout: int = 600,
+    timeout: int = 1800,
     bedrock_mode: bool = False,
     bedrock_region: Optional[str] = None,
     depth: Optional[str] = None,
@@ -850,7 +850,6 @@ def call_single_model(
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message},
                 ],
-                "max_tokens": 8000,
                 "timeout": timeout,
             }
 
@@ -923,7 +922,7 @@ def call_models_parallel(
     preserve_intent: bool = False,
     codex_reasoning: str = DEFAULT_CODEX_REASONING,
     codex_search: bool = False,
-    timeout: int = 600,
+    timeout: int = 1800,
     bedrock_mode: bool = False,
     bedrock_region: Optional[str] = None,
     depth: Optional[str] = None,

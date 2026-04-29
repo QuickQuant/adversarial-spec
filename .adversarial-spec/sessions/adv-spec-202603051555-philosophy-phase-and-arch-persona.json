@@ -5,53 +5,6 @@
   "current_step": "All 7 spec v3 changes implemented and 337/337 tests passing",
   "created_at": "2026-03-05T15:55:08Z",
   "updated_at": "2026-03-05T16:46:17Z",
-  "journey": [
-    {
-      "time": "2026-03-05T15:55:08Z",
-      "event": "Session started: debate the Target Architecture phase + ARCH persona + Decision Journal proposal from BracketBattleAI process failure",
-      "type": "start"
-    },
-    {
-      "time": "2026-03-05T16:00:00Z",
-      "event": "Round 1 debate: Gemini (4 gaps: bootstrap, user journey, scale adaptation, mid-flight updates) + Codex (9 issues: bootstrap, contracts, schemas, security, SLAs). Both critiqued, neither agreed.",
-      "type": "debate"
-    },
-    {
-      "time": "2026-03-05T16:10:00Z",
-      "event": "User clarification: Target Architecture must come AFTER spec debate convergence but BEFORE gauntlet. All adversaries get architecture during arming, not just ARCH. Renamed from Philosophy to Target Architecture.",
-      "type": "decision"
-    },
-    {
-      "time": "2026-03-05T16:20:00Z",
-      "event": "User clarification: Multiple entry points (greenfield, brownfield, health check, refactor). Integration with mapcodebase + gemini-bundle described. Spec v2.1 written.",
-      "type": "decision"
-    },
-    {
-      "time": "2026-03-05T16:30:00Z",
-      "event": "Round 2 debate: Both models pushed operational concerns (SLAs, error codes, observability). Accepted: entry IDs for decision journal, flexible taxonomy schema, context truncation. Rejected: formal API contracts, error codes, feature flags (over-engineering for skill tooling).",
-      "type": "debate"
-    },
-    {
-      "time": "2026-03-05T16:45:00Z",
-      "event": "Spec v3 written (433 lines). Design converged. User approved moving to implementation after checkpoint.",
-      "type": "milestone"
-    },
-    {
-      "time": "2026-03-05T16:23:48Z",
-      "event": "Phase transition: debate \u2192 implementation (gauntlet/finalize/execution skipped \u2014 this is skill self-improvement, not a product spec)",
-      "type": "transition"
-    },
-    {
-      "time": "2026-03-05T16:46:17Z",
-      "event": "All 7 spec v3 changes implemented and 337/337 tests passing",
-      "type": "milestone"
-    },
-    {
-      "time": "2026-03-05T16:46:17Z",
-      "event": "Checkpoint saved: target-architecture-implementation-complete.",
-      "type": "checkpoint"
-    }
-  ],
   "requirements_summary": {
     "source": "/home/jason/PycharmProjects/BracketBattleAI/.adversarial-spec/issues/process-failure-missing-target-architecture.md",
     "key_changes": [

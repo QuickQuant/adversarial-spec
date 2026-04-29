@@ -1,7 +1,7 @@
 # Cross References
 
 > Call graphs, data paths, and dependency lookups.
-> Generated: 2026-03-22 | Git: c3b5f8c
+> Generated: 2026-04-16 | Git: 9ca3ccd
 
 ## Function Call Graph
 
@@ -83,7 +83,7 @@ spec_critique                      stdin -> debate.py        call_models_paralle
 gauntlet_attack                    spec -> phase_1           generate_attacks -> parse concerns      concerns checkpoint JSON
 concern_evaluation                 concerns -> phase_4       evaluate_concerns -> parse verdict      evaluations checkpoint JSON
 big_picture_synthesis              concerns -> phase_2       generate_big_picture_synthesis          synthesis object
-concern_clustering                 concerns -> phase_3.5     cluster_with_provenance                clustered checkpoint JSON
+concern_filtering                  concerns -> phase_3       filter + dedup (clustering removed)    filtered checkpoint JSON
 final_boss_review                  evaluations -> phase_7    run_final_boss_review                  final-boss checkpoint JSON
 cost_accumulation                  each model call           cost_tracker.add() (Lock)              cost report on stdout
 session_state                      SessionState              save() -> JSON                         ~/.config/.../sessions/
@@ -122,7 +122,7 @@ sessions/{id}.json               file-store    session.py               debate.p
 .adversarial-spec-gauntlet/      file-store    persistence.py           orchestrator, resume           FileLock guarded
 ~/.adversarial-spec/stats        file-store    medals.py                reporting, leaderboard         no lock
 ~/.adversarial-spec/resolved     file-store    phase_3_filtering.py     explanation matching           no lock
-.claude/tasks.json               file-store    mcp_tasks/server.py      TaskManager, MCP tools         no lock (concurrent access risk)
+.claude/tasks.json               file-store    mcp_tasks/server.py      TaskManager, MCP tools         FileLock in MCP server; check TaskManager
 ~/.claude/.../config.json        file-store    providers.py             models.py, debate.py           read-only at runtime
 ```
 
@@ -133,13 +133,14 @@ Files imported by many others (high-impact change targets):
 ```
 FILE                              IMPORTED_BY_COUNT   EXPORTS
 ──────────────────────────────────────────────────────────────────────────────────────────────────────
-gauntlet/core_types.py            12                  Concern, Evaluation, Rebuttal, GauntletConfig, GauntletResult, Medal, ...
-models.py                         10                  call_models_parallel, call_single_model, cost_tracker, ModelResponse
-adversaries.py                    9                   ADVERSARIES dict, Adversary, AdversaryTemplate, generate_concern_id
-gauntlet/model_dispatch.py        7                   call_model, get_rate_limit_config, _validate_model_name
-gauntlet/persistence.py           3                   save_checkpoint, load_partial_run, _write_json_atomic, _load_json_safe
-providers.py                      3                   MODEL_COSTS, load_global_config, CODEX_AVAILABLE, GEMINI_CLI_AVAILABLE
-prompts.py                        3                   get_system_prompt, FOCUS_AREAS, PERSONAS, PRESERVE_INTENT_PROMPT
+gauntlet/core_types.py            18                  Concern, Evaluation, Rebuttal, GauntletConfig, GauntletResult, Medal, ...
+models.py                         13                  call_models_parallel, call_single_model, cost_tracker, ModelResponse
+adversaries.py                    11                  ADVERSARIES dict, Adversary, AdversaryTemplate, generate_concern_id
+gauntlet/model_dispatch.py        8                   call_model, get_rate_limit_config, _validate_model_name
+gauntlet/prompts.py               6                   SYNTHESIS_SYSTEM_PROMPT, EVALUATION_SYSTEM_PROMPT, ADJUDICATION_*, BIG_PICTURE_*
+gauntlet/persistence.py           5                   save_checkpoint, load_partial_run, _write_json_atomic, _load_json_safe
+providers.py                      4                   MODEL_COSTS, load_global_config, CODEX_AVAILABLE, GEMINI_CLI_AVAILABLE
+prompts.py                        4                   get_system_prompt, FOCUS_AREAS, PERSONAS, PRESERVE_INTENT_PROMPT
 ```
 
 ## Shared Utilities

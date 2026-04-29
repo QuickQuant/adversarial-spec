@@ -33,6 +33,8 @@ MODEL_COSTS = {
     "deepseek/deepseek-chat": {"input": 0.14, "output": 0.28},
     "zhipu/glm-4": {"input": 1.40, "output": 1.40},
     "zhipu/glm-4-plus": {"input": 7.00, "output": 7.00},
+    # NVIDIA NIM (build.nvidia.com) — unlimited access via subscription
+    "nvidia_nim/minimaxai/minimax-m2.7": {"input": 0.0, "output": 0.0},
     # Codex CLI models (uses ChatGPT subscription, no per-token cost)
     "codex/gpt-5.4": {"input": 0.0, "output": 0.0},
     "codex/gpt-5.1-codex-mini": {"input": 0.0, "output": 0.0},
@@ -296,6 +298,7 @@ def list_providers():
         ),
         ("Deepseek", "DEEPSEEK_API_KEY", "deepseek/deepseek-chat"),
         ("Zhipu", "ZHIPUAI_API_KEY", "zhipu/glm-4, zhipu/glm-4-plus"),
+        ("NVIDIA NIM", "NVIDIA_NIM_API_KEY", "nvidia_nim/minimaxai/minimax-m2.7"),
     ]
 
     if bedrock_config.get("enabled"):
@@ -385,6 +388,7 @@ def get_available_providers() -> list[tuple[str, Optional[str], str]]:
         ("Groq", "GROQ_API_KEY", "groq/llama-3.3-70b-versatile"),
         ("Deepseek", "DEEPSEEK_API_KEY", "deepseek/deepseek-chat"),
         ("Zhipu", "ZHIPUAI_API_KEY", "zhipu/glm-4"),
+        ("NVIDIA NIM", "NVIDIA_NIM_API_KEY", "nvidia_nim/minimaxai/minimax-m2.7"),
     ]
 
     available: list[tuple[str, Optional[str], str]] = []
@@ -460,6 +464,7 @@ def validate_model_credentials(models: list[str]) -> tuple[list[str], list[str]]
         "groq/": "GROQ_API_KEY",
         "deepseek/": "DEEPSEEK_API_KEY",
         "zhipu/": "ZHIPUAI_API_KEY",
+        "nvidia_nim/": "NVIDIA_NIM_API_KEY",
         "codex/": None,  # Uses ChatGPT subscription, not API key
         "gemini-cli/": None,  # Uses Google account, not API key
         "claude-cli/": None,  # Uses Anthropic subscription via claude command
