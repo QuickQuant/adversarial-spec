@@ -13,7 +13,7 @@ from typing import Optional
 from adversaries import ADVERSARIES
 from gauntlet.core_types import PROGRAMMING_BUGS, Evaluation, GauntletConfig, Rebuttal
 from gauntlet.model_dispatch import call_model, get_rate_limit_config
-from gauntlet.prompts import REBUTTAL_PROMPT
+from gauntlet.prompts import REBUTTAL_SYSTEM_TEMPLATE, REBUTTAL_USER_TEMPLATE
 from models import cost_tracker
 
 
@@ -43,23 +43,11 @@ def run_rebuttals(
         adversary = ADVERSARIES.get(adversary_key)
         persona = adversary.persona if adversary else ""
 
-        system_prompt = f"""You are an adversarial reviewer with this persona:
-
-{persona}
-
-You raised a concern that was dismissed. Evaluate the dismissal LOGICALLY.
-
-{REBUTTAL_PROMPT}"""
-
-        user_message = f"""Your original concern:
-{evaluation.concern.text}
-
-The dismissal reasoning:
-{evaluation.reasoning}
-
-Evaluate this dismissal. Output either:
-ACCEPTED: [brief acknowledgment] if the reasoning is valid
-CHALLENGED: [counter-evidence or logical flaw] if the reasoning is flawed"""
+        system_prompt = REBUTTAL_SYSTEM_TEMPLATE.format(persona=persona)
+        user_message = REBUTTAL_USER_TEMPLATE.format(
+            concern_text=evaluation.concern.text,
+            dismissal_reasoning=evaluation.reasoning,
+        )
 
         try:
             response, in_tokens, out_tokens = call_model(

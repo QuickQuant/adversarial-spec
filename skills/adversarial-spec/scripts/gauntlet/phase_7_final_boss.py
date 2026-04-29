@@ -19,6 +19,11 @@ from gauntlet.core_types import (
     GauntletConfig,
 )
 from gauntlet.model_dispatch import call_model, select_eval_model
+from gauntlet.prompts import (
+    FINAL_BOSS_ALTERNATE_SECTION_TEMPLATE,
+    FINAL_BOSS_DISMISSED_SECTION_TEMPLATE,
+    FINAL_BOSS_USER_TEMPLATE,
+)
 from models import cost_tracker
 
 
@@ -94,15 +99,9 @@ def run_final_boss_review(
 
     alternate_section = ""
     if alternate_approaches:
-        alternate_section = f"""
-## ALTERNATE APPROACHES SUGGESTED (ACCEPTED)
-
-The following concerns suggested alternate implementations:
-
-{chr(10).join(alternate_approaches[:5])}
-
-Consider whether these alternates would sidestep many of the other concerns.
-"""
+        alternate_section = FINAL_BOSS_ALTERNATE_SECTION_TEMPLATE.format(
+            approaches="\n".join(alternate_approaches[:5]),
+        )
 
     dismissed_section = ""
     num_dismissed_reviewed = len(dismissed_simplifications[:5])
@@ -110,89 +109,19 @@ Consider whether these alternates would sidestep many of the other concerns.
         dismissed_items = []
         for i, d in enumerate(dismissed_simplifications[:5], 1):
             dismissed_items.append(f"D{i}. CONCERN: {d['concern']}\n    DISMISSED WITH: {d['dismissal']}\n")
-        dismissed_section = f"""
-## DISMISSED SIMPLIFICATION CONCERNS (REVIEW THESE!)
+        dismissed_section = FINAL_BOSS_DISMISSED_SECTION_TEMPLATE.format(
+            num_reviewed=num_dismissed_reviewed,
+            items="\n".join(dismissed_items),
+        )
 
-The following {num_dismissed_reviewed} concerns suggested simpler approaches but were DISMISSED.
-**Critically evaluate whether these dismissals properly addressed the alternative:**
-
-{chr(10).join(dismissed_items)}
-
-A dismissal is INVALID if it just says "we need X" without proving the simpler approach can't do X.
-
-**If any dismissals are invalid, list them in your output as:**
-INVALID DISMISSALS: D1, D3 (etc.)
-"""
-
-    user_prompt = f"""## SPECIFICATION TO REVIEW
-
-{spec}
-
-## GAUNTLET RESULTS
-
-This spec has passed through the adversarial gauntlet:
-
-{gauntlet_summary}
-
-## CONCERN DISTRIBUTION BY ADVERSARY
-
-{concern_analysis}
-
-Total accepted concerns: {len(accepted_concerns)}
-{alternate_section}{dismissed_section}
-## YOUR TASK
-
-Step back from the technical details. Consider:
-
-1. **USER STORY**: Is this user actually better off?
-2. **CONCERN VOLUME**: With {len(accepted_concerns)} accepted concerns, is this spec trying to do too much?
-3. **FUNDAMENTAL CHALLENGES**: Did multiple adversaries challenge the same core assumption?
-4. **ALTERNATE APPROACHES**: Should any suggested alternates have been explored first?
-5. **DISMISSED SIMPLIFICATIONS**: Were any "use simpler X" concerns dismissed without proving X doesn't work?
-
-## REQUIRED OUTPUT FORMAT
-
-You MUST issue one of three verdicts:
-
-```
-VERDICT: PASS
-RATIONALE: [Why the user story is sound and concerns are normal refinements]
-```
-
-OR
-
-```
-VERDICT: REFINE
-CONCERNS TO ADDRESS:
-1. [Concern]
-2. [Concern]
-```
-
-OR
-
-```
-VERDICT: RECONSIDER
-FUNDAMENTAL ISSUE: [What's wrong with the current approach]
-ALTERNATE APPROACHES TO EVALUATE:
-1. [Approach]
-2. [Approach]
-```
-
-## REQUIRED META-REPORTS (after your verdict)
-
-After your verdict, provide two concise meta-reports for process improvement:
-
-```
-PROCESS META-REPORT:
-[2-3 sentences reflecting on the entire gauntlet process. Was the adversary coverage appropriate?
-Did any adversary add disproportionate value or noise? Any gaps in coverage?]
-
-SELF META-REPORT:
-[2-3 sentences reflecting on YOUR process. Was reviewing dismissed concerns worthwhile?
-Did the alternate approaches analysis surface anything useful? What would improve your review?]
-```
-
-Issue your verdict and meta-reports now."""
+    user_prompt = FINAL_BOSS_USER_TEMPLATE.format(
+        spec=spec,
+        gauntlet_summary=gauntlet_summary,
+        concern_analysis=concern_analysis,
+        num_accepted=len(accepted_concerns),
+        alternate_section=alternate_section,
+        dismissed_section=dismissed_section,
+    )
 
     try:
         response, in_tokens, out_tokens = call_model(

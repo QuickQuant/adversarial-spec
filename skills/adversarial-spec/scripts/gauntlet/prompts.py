@@ -152,11 +152,13 @@ Output your evaluation as JSON with this structure:
 # Phase 5: Rebuttals
 # =============================================================================
 
-REBUTTAL_PROMPT = """The frontier model dismissed your concern with this reasoning:
+REBUTTAL_SYSTEM_TEMPLATE = """You are an adversarial reviewer with this persona:
 
-{dismissal_reasoning}
+{persona}
 
-Evaluate this dismissal. You have two options:
+You raised a concern that was dismissed. Evaluate the dismissal LOGICALLY.
+
+You have two options:
 
 OPTION A - ACCEPT DISMISSAL:
 If the dismissal is logically sound, respond with:
@@ -173,6 +175,16 @@ RULES:
 4. If their reasoning is actually valid, accept it gracefully
 5. If you have new evidence, present it clearly
 """
+
+REBUTTAL_USER_TEMPLATE = """Your original concern:
+{concern_text}
+
+The dismissal reasoning:
+{dismissal_reasoning}
+
+Evaluate this dismissal. Output either:
+ACCEPTED: [brief acknowledgment] if the reasoning is valid
+CHALLENGED: [counter-evidence or logical flaw] if the reasoning is flawed"""
 
 # =============================================================================
 # Phase 6: Adjudication
@@ -193,3 +205,101 @@ Output as JSON:
     ...
   ]
 }"""
+
+# =============================================================================
+# Phase 7: Final Boss
+# =============================================================================
+
+FINAL_BOSS_ALTERNATE_SECTION_TEMPLATE = """
+## ALTERNATE APPROACHES SUGGESTED (ACCEPTED)
+
+The following concerns suggested alternate implementations:
+
+{approaches}
+
+Consider whether these alternates would sidestep many of the other concerns.
+"""
+
+FINAL_BOSS_DISMISSED_SECTION_TEMPLATE = """
+## DISMISSED SIMPLIFICATION CONCERNS (REVIEW THESE!)
+
+The following {num_reviewed} concerns suggested simpler approaches but were DISMISSED.
+**Critically evaluate whether these dismissals properly addressed the alternative:**
+
+{items}
+
+A dismissal is INVALID if it just says "we need X" without proving the simpler approach can't do X.
+
+**If any dismissals are invalid, list them in your output as:**
+INVALID DISMISSALS: D1, D3 (etc.)
+"""
+
+FINAL_BOSS_USER_TEMPLATE = """## SPECIFICATION TO REVIEW
+
+{spec}
+
+## GAUNTLET RESULTS
+
+This spec has passed through the adversarial gauntlet:
+
+{gauntlet_summary}
+
+## CONCERN DISTRIBUTION BY ADVERSARY
+
+{concern_analysis}
+
+Total accepted concerns: {num_accepted}
+{alternate_section}{dismissed_section}
+## YOUR TASK
+
+Step back from the technical details. Consider:
+
+1. **USER STORY**: Is this user actually better off?
+2. **CONCERN VOLUME**: With {num_accepted} accepted concerns, is this spec trying to do too much?
+3. **FUNDAMENTAL CHALLENGES**: Did multiple adversaries challenge the same core assumption?
+4. **ALTERNATE APPROACHES**: Should any suggested alternates have been explored first?
+5. **DISMISSED SIMPLIFICATIONS**: Were any "use simpler X" concerns dismissed without proving X doesn't work?
+
+## REQUIRED OUTPUT FORMAT
+
+You MUST issue one of three verdicts:
+
+```
+VERDICT: PASS
+RATIONALE: [Why the user story is sound and concerns are normal refinements]
+```
+
+OR
+
+```
+VERDICT: REFINE
+CONCERNS TO ADDRESS:
+1. [Concern]
+2. [Concern]
+```
+
+OR
+
+```
+VERDICT: RECONSIDER
+FUNDAMENTAL ISSUE: [What's wrong with the current approach]
+ALTERNATE APPROACHES TO EVALUATE:
+1. [Approach]
+2. [Approach]
+```
+
+## REQUIRED META-REPORTS (after your verdict)
+
+After your verdict, provide two concise meta-reports for process improvement:
+
+```
+PROCESS META-REPORT:
+[2-3 sentences reflecting on the entire gauntlet process. Was the adversary coverage appropriate?
+Did any adversary add disproportionate value or noise? Any gaps in coverage?]
+
+SELF META-REPORT:
+[2-3 sentences reflecting on YOUR process. Was reviewing dismissed concerns worthwhile?
+Did the alternate approaches analysis surface anything useful? What would improve your review?]
+```
+
+Issue your verdict and meta-reports now."""
