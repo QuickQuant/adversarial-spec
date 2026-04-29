@@ -1,10 +1,7 @@
-"""Phase 3: Filtering, Clustering, and Provenance Expansion.
+"""Phase 3: Filtering and Provenance Expansion.
 
-Extracted from gauntlet_monolith.py — explanation matching, concern
-clustering with provenance tracking, and dedup stats.
-
-QUOTA BURN FIX 2: Silent catch-all in clustering replaced with
-retry-once + GauntletClusteringError.
+Explanation matching pre-filter and dedup stats. Clustering was bypassed
+in orchestrator.py (CR-8) and removed in CON-004.
 """
 
 from __future__ import annotations
@@ -13,7 +10,6 @@ import concurrent.futures
 import json
 import re
 import sys
-import time
 from typing import Optional
 
 from gauntlet.core_types import (
@@ -21,7 +17,6 @@ from gauntlet.core_types import (
     Concern,
     Evaluation,
     ExplanationMatch,
-    GauntletClusteringError,
     GauntletConfig,
 )
 from gauntlet.model_dispatch import call_model
@@ -33,7 +28,6 @@ from gauntlet.persistence import (
     record_explanation_match,
 )
 from gauntlet.prompts import EXPLANATION_MATCHING_PROMPT
-from models import cost_tracker
 
 # =============================================================================
 # EXPLANATION MATCHING (Phase 3.5 pre-filter)
@@ -175,179 +169,6 @@ def filter_concerns_with_explanations(
                 filtered.append(concern)
 
     return filtered, dropped, noted
-
-
-# =============================================================================
-# CLUSTERING
-# =============================================================================
-
-
-def choose_clustering_model(attack_models: list[str], fallback: str) -> str:
-    """Choose a cheap model for dedup clustering."""
-    if not attack_models:
-        return fallback
-
-    cheap_markers = ("flash", "mini", "haiku", "small", "low")
-    for model in attack_models:
-        model_lc = model.lower()
-        if any(marker in model_lc for marker in cheap_markers):
-            return model
-    return attack_models[0]
-
-
-def _normalize_concern_text(text: str) -> str:
-    """Normalize concern text for cheap exact-match dedup."""
-    normalized = text.lower().strip()
-    normalized = re.sub(r"\s+", " ", normalized)
-    normalized = re.sub(r"[`*_]+", "", normalized)
-    return normalized
-
-
-def cluster_concerns_with_provenance(
-    concerns: list[Concern],
-    model: str,
-    config: GauntletConfig,
-) -> tuple[list[Concern], dict[str, list[Concern]]]:
-    """Cluster near-duplicate concerns using a cheap model.
-
-    QUOTA BURN FIX 2: Silent catch-all replaced with retry-once +
-    GauntletClusteringError. No more silent fallback to singleton clusters.
-
-    Returns:
-        (representatives, cluster_members)
-    """
-    if not concerns:
-        return [], {}
-
-    # Step 1: exact dedup by normalized text (free + deterministic).
-    exact_groups: dict[str, list[Concern]] = {}
-    for concern in concerns:
-        norm = _normalize_concern_text(concern.text)
-        exact_groups.setdefault(norm, []).append(concern)
-
-    candidate_groups = list(exact_groups.values())
-    candidate_reps = [group[0] for group in candidate_groups]
-
-    if len(candidate_reps) <= 1:
-        rep = candidate_reps[0]
-        return [rep], {rep.id: candidate_groups[0]}
-
-    # Step 2: semantic clustering over representative candidates.
-    concerns_text = "\n".join(
-        f"[{idx}] adversary={c.adversary}; model={c.source_model or 'unknown'}\n{c.text}"
-        for idx, c in enumerate(candidate_reps, 1)
-    )
-
-    # NOTE: Clustering is bypassed in orchestrator.py (CR-8). This function
-    # is dead code kept for reference. Prompt was in gauntlet/prompts.py.
-    system_prompt = "You cluster near-duplicate engineering concerns."
-
-    user_prompt = f"""Cluster these concerns by semantic equivalence.
-Remember: only merge when root cause AND fix are the same. When in doubt, keep separate.
-
-{concerns_text}
-
-Return JSON only."""
-
-    semantic_clusters: list[list[int]] = [[i] for i in range(len(candidate_reps))]
-
-    def _parse_clustering_response(response: str) -> list[list[int]]:
-        """Parse clustering JSON response into validated cluster indices."""
-        json_start = response.find("{")
-        json_end = response.rfind("}") + 1
-        if json_start < 0 or json_end <= json_start:
-            return []
-
-        payload = json.loads(response[json_start:json_end])
-        raw_clusters = payload.get("clusters", [])
-        parsed_clusters: list[list[int]] = []
-
-        for raw_cluster in raw_clusters:
-            if isinstance(raw_cluster, dict):
-                members = raw_cluster.get("member_indexes") or raw_cluster.get("members") or []
-            else:
-                members = raw_cluster
-
-            if not isinstance(members, list):
-                continue
-
-            converted: list[int] = []
-            for idx in members:
-                if not isinstance(idx, int):
-                    continue
-                zero_idx = idx - 1
-                if 0 <= zero_idx < len(candidate_reps) and zero_idx not in converted:
-                    converted.append(zero_idx)
-            if converted:
-                parsed_clusters.append(converted)
-
-        if not parsed_clusters:
-            return []
-
-        assigned: set[int] = set()
-        normalized_clusters: list[list[int]] = []
-        for cluster in parsed_clusters:
-            fresh = [idx for idx in cluster if idx not in assigned]
-            if fresh:
-                normalized_clusters.append(fresh)
-                assigned.update(fresh)
-        for idx in range(len(candidate_reps)):
-            if idx not in assigned:
-                normalized_clusters.append([idx])
-
-        return normalized_clusters
-
-    try:
-        response, in_tokens, out_tokens = call_model(
-            model=model,
-            system_prompt=system_prompt,
-            user_message=user_prompt,
-            timeout=config.timeout,
-        )
-        cost_tracker.add(model, in_tokens, out_tokens)
-
-        result = _parse_clustering_response(response)
-        if result:
-            semantic_clusters = result
-
-    except Exception as e:
-        # QUOTA BURN FIX 2: Retry once with backoff for transient API failures
-        print(f"  Clustering failed ({e}), retrying in 2s...", file=sys.stderr)
-        time.sleep(2)
-        try:
-            response, in_tokens, out_tokens = call_model(
-                model=model,
-                system_prompt=system_prompt,
-                user_message=user_prompt,
-                timeout=config.timeout,
-            )
-            cost_tracker.add(model, in_tokens, out_tokens)
-
-            result = _parse_clustering_response(response)
-            if result:
-                semantic_clusters = result
-        except Exception as e2:
-            raise GauntletClusteringError(
-                f"Clustering failed after retry: {e2}. "
-                f"Original error: {e}. "
-                f"{len(concerns)} concerns would have hit expensive eval unfiltered."
-            )
-
-    # Step 3: expand clusters back to full member concerns and choose representatives.
-    representatives: list[Concern] = []
-    cluster_members: dict[str, list[Concern]] = {}
-
-    for cluster in semantic_clusters:
-        members: list[Concern] = []
-        for candidate_idx in cluster:
-            members.extend(candidate_groups[candidate_idx])
-        if not members:
-            continue
-        representative = members[0]
-        representatives.append(representative)
-        cluster_members[representative.id] = members
-
-    return representatives, cluster_members
 
 
 def expand_clustered_evaluations(

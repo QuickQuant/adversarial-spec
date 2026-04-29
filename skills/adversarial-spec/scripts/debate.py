@@ -16,7 +16,6 @@ Usage:
     echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --session my-debate
     python3 debate.py critique --resume my-debate
     echo "spec" | python3 debate.py diff --previous prev.md --current current.md
-    echo "spec" | python3 debate.py export-tasks --doc-type spec --depth product
     python3 debate.py providers
     python3 debate.py profiles
     python3 debate.py sessions
@@ -63,7 +62,7 @@ warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
 os.environ["LITELLM_LOG"] = "ERROR"
 
 try:
-    from litellm import completion
+    import litellm  # noqa: F401
 except ImportError:
     print(
         "Error: litellm package not installed. Run: pip install litellm",
@@ -86,13 +85,11 @@ from models import (  # noqa: E402
     ModelResponse,
     call_models_parallel,
     cost_tracker,
-    extract_tasks,
     generate_diff,
     get_critique_summary,
-    is_o_series_model,
     load_context_files,
 )
-from prompts import EXPORT_TASKS_PROMPT, get_doc_type_name  # noqa: E402
+from prompts import get_doc_type_name  # noqa: E402
 from providers import (  # noqa: E402
     DEFAULT_CODEX_REASONING,
     get_bedrock_config,
@@ -529,26 +526,8 @@ def add_gauntlet_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def add_execution_plan_arguments(parser: argparse.ArgumentParser) -> None:
-    """Add execution plan generation arguments to parser."""
-    parser.add_argument(
-        "--spec-file",
-        help="Path to spec file (alternative to stdin)",
-    )
-    parser.add_argument(
-        "--concerns-file",
-        help="Path to gauntlet concerns JSON (auto-detected if not specified)",
-    )
-    parser.add_argument(
-        "--plan-format",
-        choices=["json", "markdown", "summary"],
-        default="json",
-        help="Output format for execution plan (default: json)",
-    )
-    parser.add_argument(
-        "--plan-output",
-        help="Output path for execution plan (default: stdout)",
-    )
+def add_pipeline_gate_arguments(parser: argparse.ArgumentParser) -> None:
+    """Add pipeline-card gate arguments to parser."""
     parser.add_argument(
         "--pipeline-card",
         default=None,
@@ -597,7 +576,6 @@ Examples:
   echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --context ./api.md
   echo "spec" | python3 debate.py critique --profile my-security-profile
   python3 debate.py diff --previous old.md --current new.md
-  echo "spec" | python3 debate.py export-tasks --doc-type spec --depth product
   python3 debate.py providers
   python3 debate.py focus-areas
   python3 debate.py personas
@@ -616,9 +594,6 @@ Bedrock commands:
   python3 debate.py bedrock add-model claude-3-sonnet        # Add model to available list
   python3 debate.py bedrock remove-model claude-3-haiku      # Remove model from list
   python3 debate.py bedrock alias mymodel anthropic.claude-3-sonnet-20240229-v1:0  # Add custom alias
-
-Execution plan commands (DEPRECATED - Claude creates plans directly via phases/06-execution.md):
-  python3 debate.py execution-plan  # Prints deprecation notice
 
 Document types:
   spec  - Specification (use --depth product, technical, or full)
@@ -639,8 +614,6 @@ Document types:
             "providers",
             "send-final",
             "diff",
-            "export-tasks",
-            "execution-plan",
             "focus-areas",
             "personas",
             "profiles",
@@ -667,7 +640,7 @@ Document types:
     add_codex_arguments(parser)
     add_bedrock_arguments(parser)
     add_gauntlet_arguments(parser)
-    add_execution_plan_arguments(parser)
+    add_pipeline_gate_arguments(parser)
     add_misc_arguments(parser)
 
     return parser
@@ -792,48 +765,6 @@ def handle_utility_command(args: argparse.Namespace) -> bool:
         return True
 
     return False
-
-
-def handle_execution_plan(args: argparse.Namespace) -> bool:
-    """Handle execution-plan command (DEPRECATED).
-
-    The automated execution planning pipeline has been deprecated (Feb 2026,
-    Option B+ decision). Claude now creates execution plans directly using
-    guidelines in phases/06-execution.md.
-
-    This command now prints a deprecation notice and exits.
-
-    Args:
-        args: Parsed command-line arguments.
-
-    Returns:
-        True if command was handled, False otherwise.
-    """
-    if args.action != "execution-plan":
-        return False
-
-    print(
-        "DEPRECATED: The execution-plan command has been deprecated.",
-        file=sys.stderr,
-    )
-    print(
-        "Claude now creates execution plans directly using guidelines in",
-        file=sys.stderr,
-    )
-    print(
-        "~/.claude/skills/adversarial-spec/phases/06-execution.md",
-        file=sys.stderr,
-    )
-    print(file=sys.stderr)
-    print(
-        "To generate an execution plan, run /adversarial-spec and proceed",
-        file=sys.stderr,
-    )
-    print(
-        "through the phases to Phase 6 (Execution Planning).",
-        file=sys.stderr,
-    )
-    return True
 
 
 def apply_profile(args: argparse.Namespace) -> None:
@@ -998,66 +929,6 @@ def handle_send_final(args: argparse.Namespace, models: list[str]) -> None:
         print("Final document sent to Telegram.")
     else:
         print("Failed to send final document to Telegram.", file=sys.stderr)
-        sys.exit(1)
-
-
-def handle_export_tasks(args: argparse.Namespace, models: list[str]) -> None:
-    """Handle export-tasks action.
-
-    DEPRECATED: Execution plans are now created directly by Claude using embedded
-    guidelines in Phase 7 (07-execution.md). This command is retained for backward
-    compatibility but should not be used in new workflows.
-
-    Args:
-        args: Parsed command-line arguments.
-        models: List of model identifiers.
-    """
-    print(
-        "WARNING: export-tasks is deprecated. Execution plans are now created directly\n"
-        "by Claude using guidelines in phases/07-execution.md.\n"
-        "See: ~/.claude/skills/adversarial-spec/phases/07-execution.md\n",
-        file=sys.stderr,
-    )
-    spec = sys.stdin.read().strip()
-    if not spec:
-        print("Error: No spec provided via stdin", file=sys.stderr)
-        sys.exit(1)
-
-    doc_type_name = get_doc_type_name(args.doc_type, getattr(args, "depth", None))
-    prompt = EXPORT_TASKS_PROMPT.format(doc_type_name=doc_type_name, spec=spec)
-
-    try:
-        # Build completion kwargs
-        completion_kwargs = {
-            "model": models[0],
-            "messages": [{"role": "user", "content": prompt}],
-        }
-
-        # O-series models don't support custom temperature
-        if not is_o_series_model(models[0]):
-            completion_kwargs["temperature"] = 0.3
-
-        response = completion(**completion_kwargs)
-        content = response.choices[0].message.content
-        tasks = extract_tasks(content)
-
-        if args.json:
-            print(json.dumps({"tasks": tasks}, indent=2))
-        else:
-            print(f"\n=== Extracted {len(tasks)} Tasks ===\n")
-            for i, task in enumerate(tasks, 1):
-                print(
-                    f"{i}. [{task.get('type', 'task')}] [{task.get('priority', 'medium')}] {task.get('title', 'Untitled')}"
-                )
-                if task.get("description"):
-                    print(f"   {task['description'][:100]}...")
-                if task.get("acceptance_criteria"):
-                    print(
-                        f"   Acceptance criteria: {len(task['acceptance_criteria'])} items"
-                    )
-                print()
-    except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
 
@@ -1549,7 +1420,7 @@ def enforce_pipeline_card_gate(args: argparse.Namespace) -> None:
     """Fail fast when a pipeline-tracked session dispatches debate.py directly.
 
     Applies to critique + gauntlet. Non-round subcommands (providers, diff,
-    export-tasks, etc.) bypass the gate.
+    etc.) bypass the gate.
 
     Behavior:
     - Missing --pipeline-card → exit 2 with instructions.
@@ -1706,9 +1577,6 @@ def main() -> None:
     if handle_utility_command(args):
         return
 
-    if handle_execution_plan(args):
-        return
-
     # Gauntlet action has its own model selection, handle before parse_models
     if args.action == "gauntlet":
         handle_gauntlet(args)
@@ -1724,10 +1592,6 @@ def main() -> None:
 
     if args.action == "send-final":
         handle_send_final(args, models)
-        return
-
-    if args.action == "export-tasks":
-        handle_export_tasks(args, models)
         return
 
     spec, session_state, models = load_or_resume_session(args, models)

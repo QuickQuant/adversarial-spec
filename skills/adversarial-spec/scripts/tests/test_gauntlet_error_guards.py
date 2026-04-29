@@ -72,7 +72,6 @@ class TestPhase3ErrorGuard:
             raise AttributeError("'NoneType' object has no attribute 'strip'")
 
         monkeypatch.setattr("gauntlet.phase_3_filtering.call_model", raise_attr_error)
-        monkeypatch.setattr("gauntlet.phase_3_filtering.cost_tracker.add", lambda *a: None)
         # Provide a fake resolved concerns DB so it reaches the call_model path
         monkeypatch.setattr(
             "gauntlet.phase_3_filtering.load_resolved_concerns",
@@ -90,7 +89,6 @@ class TestPhase3ErrorGuard:
             raise ValueError("malformed response")
 
         monkeypatch.setattr("gauntlet.phase_3_filtering.call_model", raise_value_error)
-        monkeypatch.setattr("gauntlet.phase_3_filtering.cost_tracker.add", lambda *a: None)
         monkeypatch.setattr(
             "gauntlet.phase_3_filtering.load_resolved_concerns",
             lambda: {"concerns": [{"adversary": "test", "pattern": "test", "explanation": "x", "spec_hash": "abc"}]},
