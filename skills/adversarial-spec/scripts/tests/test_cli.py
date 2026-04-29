@@ -120,7 +120,7 @@ class TestCLISaveProfile:
 class TestCLICritique:
     @patch("debate.validate_models_before_run")
     @patch("debate.call_models_parallel")
-    def test_critique_with_json_output(self, mock_call, mock_validate):
+    def test_critique_with_json_output(self, mock_call, mock_validate, tracked_session):
         """Test critique command with JSON output."""
         import debate
         from models import ModelResponse
@@ -142,7 +142,9 @@ class TestCLICritique:
 
         with patch("sys.stdin", StringIO("# Test Spec\n\nContent here.")):
             with patch(
-                "sys.argv", ["debate.py", "critique", "--models", "gpt-4o", "--json"]
+                "sys.argv",
+                ["debate.py", "critique", "--models", "gpt-4o", "--json",
+                 "--pipeline-card", tracked_session],
             ):
                 with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
                     with patch("sys.stderr", new_callable=StringIO):
@@ -157,7 +159,7 @@ class TestCLICritique:
 
     @patch("debate.validate_models_before_run")
     @patch("debate.call_models_parallel")
-    def test_critique_with_all_agree(self, mock_call, mock_validate):
+    def test_critique_with_all_agree(self, mock_call, mock_validate, tracked_session):
         """Test critique when all models agree."""
         import debate
         from models import ModelResponse
@@ -195,6 +197,8 @@ class TestCLICritique:
                     "--models",
                     "gpt-4o,gemini/gemini-2.0-flash",
                     "--json",
+                    "--pipeline-card",
+                    tracked_session,
                 ],
             ):
                 with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
@@ -207,7 +211,7 @@ class TestCLICritique:
 
     @patch("debate.validate_models_before_run")
     @patch("debate.call_models_parallel")
-    def test_critique_passes_options(self, mock_call, mock_validate):
+    def test_critique_passes_options(self, mock_call, mock_validate, tracked_session):
         """Test that CLI options are passed to model calls."""
         import debate
         from models import ModelResponse
@@ -238,6 +242,8 @@ class TestCLICritique:
                     "security-engineer",
                     "--preserve-intent",
                     "--json",
+                    "--pipeline-card",
+                    tracked_session,
                 ],
             ):
                 with patch("sys.stdout", new_callable=StringIO):
@@ -294,7 +300,7 @@ class TestCLIBedrock:
 
 
 class TestCLIGauntlet:
-    def test_show_manifest_prints_formatted_manifest_and_exits(self):
+    def test_show_manifest_prints_formatted_manifest_and_exits(self, tracked_session):
         """The primary gauntlet entry point must expose manifest viewing."""
         import debate
         import pytest
@@ -306,7 +312,8 @@ class TestCLIGauntlet:
             ):
                 with patch(
                     "sys.argv",
-                    ["debate.py", "gauntlet", "--show-manifest", "abc123"],
+                    ["debate.py", "gauntlet", "--show-manifest", "abc123",
+                     "--pipeline-card", tracked_session],
                 ):
                     with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
                         with pytest.raises(SystemExit) as exc_info:
@@ -315,7 +322,7 @@ class TestCLIGauntlet:
         assert exc_info.value.code == 0
         assert mock_stdout.getvalue().strip() == "formatted manifest"
 
-    def test_show_manifest_without_hash_loads_most_recent_manifest(self):
+    def test_show_manifest_without_hash_loads_most_recent_manifest(self, tracked_session):
         """Omitting HASH should ask persistence for the most recent manifest."""
         import debate
         import pytest
@@ -328,7 +335,11 @@ class TestCLIGauntlet:
                 "gauntlet.reporting.format_run_manifest",
                 return_value="formatted manifest",
             ):
-                with patch("sys.argv", ["debate.py", "gauntlet", "--show-manifest"]):
+                with patch(
+                    "sys.argv",
+                    ["debate.py", "gauntlet", "--show-manifest",
+                     "--pipeline-card", tracked_session],
+                ):
                     with patch("sys.stdout", new_callable=StringIO):
                         with pytest.raises(SystemExit) as exc_info:
                             debate.main()
@@ -336,7 +347,7 @@ class TestCLIGauntlet:
         assert exc_info.value.code == 0
         assert mock_load_manifest.call_args.args == (None,)
 
-    def test_gauntlet_reuses_global_codex_reasoning_for_attacks(self):
+    def test_gauntlet_reuses_global_codex_reasoning_for_attacks(self, tracked_session):
         """The gauntlet subcommand must use the existing global Codex reasoning flag."""
         import debate
 
@@ -352,6 +363,8 @@ class TestCLIGauntlet:
                             "high",
                             "--eval-codex-reasoning",
                             "medium",
+                            "--pipeline-card",
+                            tracked_session,
                         ],
                     ):
                         with patch("sys.stdout", new_callable=StringIO):
