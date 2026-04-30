@@ -13,6 +13,7 @@ import time
 from pathlib import Path
 from typing import Any, Optional
 
+import token_tracking
 from adversaries import ADVERSARIES, resolve_adversary_name
 from gauntlet.core_types import (
     Concern,
@@ -56,7 +57,6 @@ from gauntlet.phase_4_evaluation import (
 from gauntlet.phase_5_rebuttals import run_rebuttals
 from gauntlet.phase_6_adjudication import final_adjudication
 from gauntlet.phase_7_final_boss import run_final_boss_review
-from models import cost_tracker
 
 PHASE_INDEXES = {
     "phase_1": 1,
@@ -74,8 +74,8 @@ def _start_phase_capture() -> tuple[float, int, int]:
     """Capture timing and token counters at phase start."""
     return (
         time.time(),
-        cost_tracker.total_input_tokens,
-        cost_tracker.total_output_tokens,
+        token_tracking.tracker.total_input_tokens,
+        token_tracking.tracker.total_output_tokens,
     )
 
 
@@ -98,8 +98,8 @@ def _build_phase_metrics(
         phase_index=PHASE_INDEXES[phase],
         status=status,
         duration_seconds=max(0.0, time.time() - started_at),
-        input_tokens=max(0, cost_tracker.total_input_tokens - input_before),
-        output_tokens=max(0, cost_tracker.total_output_tokens - output_before),
+        input_tokens=max(0, token_tracking.tracker.total_input_tokens - input_before),
+        output_tokens=max(0, token_tracking.tracker.total_output_tokens - output_before),
         models_used=list(models_used),
         config_snapshot=dict(config.__dict__),
         error=error,
@@ -691,7 +691,7 @@ def run_gauntlet(
                     do_final_boss = False
 
             if do_final_boss:
-                print("Phase 7: Final Boss UX Review (Opus 4.6)...", file=sys.stderr)
+                print("Phase 7: Final Boss UX Review (Opus 4.7)...", file=sys.stderr)
 
                 gauntlet_summary = f"""Technical review results:
 - {len(raw_concerns)} concerns raised by adversaries
@@ -778,7 +778,7 @@ Technical concerns requiring revision: {len(technical_concerns)}
         final_concerns = technical_concerns + ux_concerns
 
         total_time = time.time() - start_time
-        total_cost = cost_tracker.total_cost
+        total_cost = token_tracking.tracker.total_cost
 
         print(file=sys.stderr)
         print("=== Gauntlet Complete ===", file=sys.stderr)

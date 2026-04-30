@@ -11,7 +11,7 @@ The gauntlet is a multi-phase stress test that puts your spec through adversaria
 5. **Phase 4: Multi-model Evaluation** — Multiple eval models evaluate concerns in batches of 15 (wave-based)
 6. **Phase 5: Adversary Rebuttals** — Dismissed adversaries challenge the evaluation verdicts
 7. **Phase 6: Final Adjudication** — Synthesize evaluations + rebuttals into final verdicts
-8. **Phase 7: Final Boss** (optional) — Opus 4.6 UX Architect reviews the spec holistically
+8. **Phase 7: Final Boss** (optional) — Opus 4.7 UX Architect reviews the spec holistically
 
 ### Adversary Personas
 
@@ -40,7 +40,7 @@ cat spec.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntl
 # Run with specific adversaries and multiple attack models
 cat spec.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet \
   --gauntlet-adversaries paranoid_security,burned_oncall \
-  --gauntlet-attack-models "codex/gpt-5.4,gemini-cli/gemini-3.1-pro-preview"
+  --gauntlet-attack-models "codex/gpt-5.5,gemini-cli/gemini-3.1-pro-preview"
 
 # Resume from checkpoint (reuse Phase 1-3 concerns)
 cat spec.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet \
@@ -48,7 +48,7 @@ cat spec.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntl
 
 # Combine with regular critique (gauntlet runs first)
 cat spec.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
-  --models codex/gpt-5.4 --gauntlet --gauntlet-adversaries all
+  --models codex/gpt-5.5 --gauntlet --gauntlet-adversaries all
 
 # List available adversaries
 python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet-adversaries
@@ -91,7 +91,7 @@ python3 ~/.claude/skills/adversarial-spec/scripts/gauntlet/cli.py --show-run FIL
 
 After Phase 6 (adjudication) completes, the Final Boss review can run as Phase 7:
 
-The Final Boss is an Opus 4.6 UX Architect who reviews the spec holistically for:
+The Final Boss is an Opus 4.7 UX Architect who reviews the spec holistically for:
 - User journey completeness
 - Error state handling
 - Accessibility concerns

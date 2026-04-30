@@ -3,11 +3,11 @@
 from unittest.mock import MagicMock, patch
 
 from models import (
-    CostTracker,
     ModelResponse,
     call_models_parallel,
     call_single_model,
 )
+from token_tracking import TokenTracker
 
 
 class MockUsage:
@@ -30,7 +30,7 @@ class MockResponse:
 
 class TestCallSingleModel:
     @patch("models.completion")
-    @patch("models.cost_tracker", CostTracker())
+    @patch("token_tracking.tracker", TokenTracker())
     def test_returns_model_response_on_success(self, mock_completion):
         mock_completion.return_value = MockResponse(
             "Here is my critique.\n\n[SPEC]\n# Revised Spec\n[/SPEC]"
@@ -52,7 +52,7 @@ class TestCallSingleModel:
         assert result.output_tokens == 50
 
     @patch("models.completion")
-    @patch("models.cost_tracker", CostTracker())
+    @patch("token_tracking.tracker", TokenTracker())
     def test_detects_agreement(self, mock_completion):
         mock_completion.return_value = MockResponse(
             "This spec looks complete. [AGREE]\n\n[SPEC]\n# Final Spec\n[/SPEC]"
@@ -69,7 +69,7 @@ class TestCallSingleModel:
         assert result.spec == "# Final Spec"
 
     @patch("models.completion")
-    @patch("models.cost_tracker", CostTracker())
+    @patch("token_tracking.tracker", TokenTracker())
     def test_handles_api_error_with_retry(self, mock_completion):
         mock_completion.side_effect = Exception("API timeout")
 
@@ -87,7 +87,7 @@ class TestCallSingleModel:
         assert mock_completion.call_count == 3
 
     @patch("models.completion")
-    @patch("models.cost_tracker", CostTracker())
+    @patch("token_tracking.tracker", TokenTracker())
     def test_recovers_on_second_retry(self, mock_completion):
         # First call fails, second succeeds
         mock_completion.side_effect = [
@@ -107,7 +107,7 @@ class TestCallSingleModel:
         assert mock_completion.call_count == 2
 
     @patch("models.completion")
-    @patch("models.cost_tracker", CostTracker())
+    @patch("token_tracking.tracker", TokenTracker())
     def test_includes_focus_in_prompt(self, mock_completion):
         mock_completion.return_value = MockResponse("[AGREE]\n[SPEC]\n# Spec\n[/SPEC]")
 
@@ -126,7 +126,7 @@ class TestCallSingleModel:
         assert "SECURITY" in user_message
 
     @patch("models.completion")
-    @patch("models.cost_tracker", CostTracker())
+    @patch("token_tracking.tracker", TokenTracker())
     def test_includes_preserve_intent_prompt(self, mock_completion):
         mock_completion.return_value = MockResponse("[AGREE]\n[SPEC]\n# Spec\n[/SPEC]")
 
@@ -144,7 +144,7 @@ class TestCallSingleModel:
         assert "PRESERVE ORIGINAL INTENT" in user_message
 
     @patch("models.completion")
-    @patch("models.cost_tracker", CostTracker())
+    @patch("token_tracking.tracker", TokenTracker())
     def test_uses_press_prompt_when_press_true(self, mock_completion):
         mock_completion.return_value = MockResponse("[AGREE]\n[SPEC]\n# Spec\n[/SPEC]")
 
@@ -162,7 +162,7 @@ class TestCallSingleModel:
         assert "confirm your agreement" in user_message
 
     @patch("models.completion")
-    @patch("models.cost_tracker", CostTracker())
+    @patch("token_tracking.tracker", TokenTracker())
     def test_bedrock_mode_adds_prefix(self, mock_completion):
         mock_completion.return_value = MockResponse("[AGREE]\n[SPEC]\n# Spec\n[/SPEC]")
 
@@ -182,7 +182,7 @@ class TestCallSingleModel:
 
 class TestCallModelsParallel:
     @patch("models.completion")
-    @patch("models.cost_tracker", CostTracker())
+    @patch("token_tracking.tracker", TokenTracker())
     def test_calls_multiple_models(self, mock_completion):
         mock_completion.return_value = MockResponse(
             "Critique here.\n[SPEC]\n# Revised\n[/SPEC]"
@@ -200,7 +200,7 @@ class TestCallModelsParallel:
         assert mock_completion.call_count == 2
 
     @patch("models.completion")
-    @patch("models.cost_tracker", CostTracker())
+    @patch("token_tracking.tracker", TokenTracker())
     def test_handles_mixed_results(self, mock_completion):
         # First model agrees, second critiques
         def side_effect(*args, **kwargs):
@@ -223,7 +223,7 @@ class TestCallModelsParallel:
         assert agreed_count == 1
 
     @patch("models.completion")
-    @patch("models.cost_tracker", CostTracker())
+    @patch("token_tracking.tracker", TokenTracker())
     def test_one_model_error_others_succeed(self, mock_completion):
         # Use model name to determine behavior (deterministic in parallel)
         def side_effect(*args, **kwargs):
@@ -249,12 +249,12 @@ class TestCallModelsParallel:
         assert successes[0].model == "model-succeed"
 
 
-class TestCostTrackerIntegration:
+class TestTokenTrackerIntegration:
     @patch("models.completion")
     def test_cost_accumulates_across_calls(self, mock_completion):
-        tracker = CostTracker()
+        tracker = TokenTracker()
 
-        with patch("models.cost_tracker", tracker):
+        with patch("token_tracking.tracker", tracker):
             mock_completion.return_value = MockResponse(
                 "[AGREE]\n[SPEC]\n# Spec\n[/SPEC]",
                 prompt_tokens=1000,
@@ -283,10 +283,10 @@ class TestCostTrackerIntegration:
 
 class TestCodexModelPath:
     @patch("models.CODEX_AVAILABLE", False)
-    @patch("models.cost_tracker", CostTracker())
+    @patch("token_tracking.tracker", TokenTracker())
     def test_codex_unavailable_returns_error(self):
         result = call_single_model(
-            model="codex/gpt-5.4",
+            model="codex/gpt-5.5",
             spec="# Spec",
             round_num=1,
             doc_type="tech",

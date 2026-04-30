@@ -10,6 +10,7 @@ import re
 import sys
 from typing import Optional
 
+import token_tracking
 from models import (
     call_claude_cli_model,
     call_codex_model,
@@ -79,29 +80,35 @@ def call_model(
     _validate_model_name(model)
 
     if model.startswith("codex/"):
-        return call_codex_model(
+        content, input_tokens, output_tokens = call_codex_model(
             system_prompt=system_prompt,
             user_message=user_message,
             model=model,
             reasoning_effort=codex_reasoning,
             timeout=timeout,
         )
+        token_tracking.tracker.record_call(model, input_tokens, output_tokens)
+        return content, input_tokens, output_tokens
 
     if model.startswith("gemini-cli/"):
-        return call_gemini_cli_model(
+        content, input_tokens, output_tokens = call_gemini_cli_model(
             system_prompt=system_prompt,
             user_message=user_message,
             model=model,
             timeout=timeout,
         )
+        token_tracking.tracker.record_call(model, input_tokens, output_tokens)
+        return content, input_tokens, output_tokens
 
     if model.startswith("claude-cli/"):
-        return call_claude_cli_model(
+        content, input_tokens, output_tokens = call_claude_cli_model(
             system_prompt=system_prompt,
             user_message=user_message,
             model=model,
             timeout=timeout,
         )
+        token_tracking.tracker.record_call(model, input_tokens, output_tokens)
+        return content, input_tokens, output_tokens
 
     # Standard litellm path
     kwargs: dict = {
@@ -120,6 +127,7 @@ def call_model(
     content = response.choices[0].message.content
     input_tokens = response.usage.prompt_tokens if response.usage else 0
     output_tokens = response.usage.completion_tokens if response.usage else 0
+    token_tracking.tracker.record_call(model, input_tokens, output_tokens)
 
     return content, input_tokens, output_tokens
 
@@ -128,7 +136,7 @@ def call_model(
 # MODEL SELECTION (FREE-FIRST)
 # =============================================================================
 
-_PREFERRED_CODEX_EVAL_MODEL = "codex/gpt-5.4"
+_PREFERRED_CODEX_EVAL_MODEL = "codex/gpt-5.5"
 _FALLBACK_CODEX_EVAL_MODEL = "codex/gpt-5.3-codex"
 
 
@@ -210,7 +218,7 @@ def select_eval_model() -> str:
     import os
 
     if os.environ.get("ANTHROPIC_API_KEY"):
-        return "claude-sonnet-4-5-20250929"
+        return "claude-opus-4-7"
     if os.environ.get("GEMINI_API_KEY"):
         return "gemini/gemini-3-pro"
 
@@ -251,7 +259,7 @@ def get_available_eval_models() -> list[str]:
 
     if len(models) < 2:
         if os.environ.get("ANTHROPIC_API_KEY"):
-            models.append("claude-sonnet-4-5-20250929")
+            models.append("claude-opus-4-7")
         if len(models) < 2 and os.environ.get("GEMINI_API_KEY"):
             models.append("gemini/gemini-3-pro")
 

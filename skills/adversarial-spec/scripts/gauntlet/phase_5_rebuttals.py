@@ -14,7 +14,6 @@ from adversaries import ADVERSARIES
 from gauntlet.core_types import PROGRAMMING_BUGS, Evaluation, GauntletConfig, Rebuttal
 from gauntlet.model_dispatch import call_model, get_rate_limit_config
 from gauntlet.prompts import REBUTTAL_SYSTEM_TEMPLATE, REBUTTAL_USER_TEMPLATE
-from models import cost_tracker
 
 
 def run_rebuttals(
@@ -57,8 +56,6 @@ def run_rebuttals(
                 timeout=config.timeout,
                 codex_reasoning=config.attack_codex_reasoning,
             )
-            cost_tracker.add(model, in_tokens, out_tokens)
-
             response_upper = response.upper()
             sustained = "CHALLENGED:" in response_upper
 

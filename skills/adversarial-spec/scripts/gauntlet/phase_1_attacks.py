@@ -24,7 +24,6 @@ from gauntlet.prompts import (
     ATTACK_USER_PROMPT,
     ATTACK_USER_PROMPT_JSON,
 )
-from models import cost_tracker
 
 
 def _parse_json_concerns(
@@ -196,8 +195,6 @@ def generate_attacks(
                 codex_reasoning=config.attack_codex_reasoning,
                 json_mode=not is_cli_model,
             )
-            cost_tracker.add(model, in_tokens, out_tokens)
-
             # Try JSON parsing first, fall back to numbered-list regex
             local_concerns = _parse_json_concerns(response, adversary_key, model)
             if local_concerns is not None:

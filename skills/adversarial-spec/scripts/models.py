@@ -1,4 +1,4 @@
-"""Model calling, cost tracking, and response handling."""
+"""Model calling and response handling."""
 
 from __future__ import annotations
 
@@ -8,9 +8,8 @@ import json
 import os
 import subprocess
 import sys
-import threading
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -28,6 +27,7 @@ except ImportError:
     )
     sys.exit(1)
 
+import token_tracking
 from prompts import (
     FOCUS_AREAS,
     PRESERVE_INTENT_PROMPT,
@@ -40,9 +40,7 @@ from providers import (
     CLAUDE_CLI_AVAILABLE,
     CODEX_AVAILABLE,
     DEFAULT_CODEX_REASONING,
-    DEFAULT_COST,
     GEMINI_CLI_AVAILABLE,
-    MODEL_COSTS,
 )
 
 MAX_RETRIES = 3
@@ -150,65 +148,6 @@ class ModelResponse:
     input_tokens: int = 0
     output_tokens: int = 0
     cost: float = 0.0
-
-
-@dataclass
-class CostTracker:
-    """Track token usage and costs across model calls."""
-
-    total_input_tokens: int = 0
-    total_output_tokens: int = 0
-    total_cost: float = 0.0
-    by_model: dict = field(default_factory=dict)
-    _lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False)
-
-    def add(self, model: str, input_tokens: int, output_tokens: int) -> float:
-        """Add usage for a model call and return the cost."""
-        # CLI-routed models are free — don't fall through to DEFAULT_COST
-        cli_prefixes = ("codex/", "gemini-cli/", "claude-cli/")
-        free_cost = {"input": 0.0, "output": 0.0}
-        default = free_cost if model.startswith(cli_prefixes) else DEFAULT_COST
-        costs = MODEL_COSTS.get(model, default)
-        cost = (input_tokens / 1_000_000 * costs["input"]) + (
-            output_tokens / 1_000_000 * costs["output"]
-        )
-
-        with self._lock:
-            self.total_input_tokens += input_tokens
-            self.total_output_tokens += output_tokens
-            self.total_cost += cost
-
-            if model not in self.by_model:
-                self.by_model[model] = {
-                    "input_tokens": 0,
-                    "output_tokens": 0,
-                    "cost": 0.0,
-                }
-            self.by_model[model]["input_tokens"] += input_tokens
-            self.by_model[model]["output_tokens"] += output_tokens
-            self.by_model[model]["cost"] += cost
-
-        return cost
-
-    def summary(self) -> str:
-        """Generate cost summary string."""
-        lines = ["", "=== Cost Summary ==="]
-        lines.append(
-            f"Total tokens: {self.total_input_tokens:,} in / {self.total_output_tokens:,} out"
-        )
-        lines.append(f"Total cost: ${self.total_cost:.4f}")
-        if len(self.by_model) > 1:
-            lines.append("")
-            lines.append("By model:")
-            for model, data in self.by_model.items():
-                lines.append(
-                    f"  {model}: ${data['cost']:.4f} ({data['input_tokens']:,} in / {data['output_tokens']:,} out)"
-                )
-        return "\n".join(lines)
-
-
-# Global cost tracker instance
-cost_tracker = CostTracker()
 
 
 def load_context_files(context_paths: list[str]) -> str:
@@ -370,7 +309,7 @@ def call_codex_model(
     Args:
         system_prompt: System instructions for the model
         user_message: User prompt to send
-        model: Model name (e.g., "codex/gpt-5.4" -> uses "gpt-5.4")
+        model: Model name (e.g., "codex/gpt-5.5" -> uses "gpt-5.5")
         reasoning_effort: Thinking level (minimal, low, medium, high, xhigh). Default: xhigh
         timeout: Timeout in seconds (default 10 minutes)
         search: Enable web search capability for Codex
@@ -705,7 +644,9 @@ def call_single_model(
                         file=sys.stderr,
                     )
 
-                cost = cost_tracker.add(model, input_tokens, output_tokens)
+                cost = token_tracking.tracker.record_call(
+                    model, input_tokens, output_tokens
+                )
 
                 return ModelResponse(
                     model=model,
@@ -756,7 +697,9 @@ def call_single_model(
                         file=sys.stderr,
                     )
 
-                cost = cost_tracker.add(model, input_tokens, output_tokens)
+                cost = token_tracking.tracker.record_call(
+                    model, input_tokens, output_tokens
+                )
 
                 return ModelResponse(
                     model=model,
@@ -807,7 +750,9 @@ def call_single_model(
                         file=sys.stderr,
                     )
 
-                cost = cost_tracker.add(model, input_tokens, output_tokens)
+                cost = token_tracking.tracker.record_call(
+                    model, input_tokens, output_tokens
+                )
 
                 return ModelResponse(
                     model=model,
@@ -871,7 +816,9 @@ def call_single_model(
             input_tokens = response.usage.prompt_tokens if response.usage else 0
             output_tokens = response.usage.completion_tokens if response.usage else 0
 
-            cost = cost_tracker.add(display_model, input_tokens, output_tokens)
+            cost = token_tracking.tracker.record_call(
+                display_model, input_tokens, output_tokens
+            )
 
             return ModelResponse(
                 model=display_model,

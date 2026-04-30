@@ -12,7 +12,6 @@ import sys
 from gauntlet.core_types import PROGRAMMING_BUGS, Concern, GauntletConfig, Rebuttal
 from gauntlet.model_dispatch import call_model
 from gauntlet.prompts import ADJUDICATION_SYSTEM_PROMPT
-from models import cost_tracker
 
 
 def final_adjudication(
@@ -62,8 +61,6 @@ Make your final decisions. Output valid JSON."""
             timeout=config.timeout,
             codex_reasoning=config.eval_codex_reasoning,
         )
-        cost_tracker.add(model, in_tokens, out_tokens)
-
         json_start = response.find("{")
         json_end = response.rfind("}") + 1
         if json_start >= 0 and json_end > json_start:

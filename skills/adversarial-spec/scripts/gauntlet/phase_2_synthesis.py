@@ -16,7 +16,6 @@ from gauntlet.core_types import (
 )
 from gauntlet.model_dispatch import call_model
 from gauntlet.prompts import BIG_PICTURE_PROMPT, SYNTHESIS_SYSTEM_PROMPT
-from models import cost_tracker
 
 
 def generate_big_picture_synthesis(
@@ -54,8 +53,6 @@ def generate_big_picture_synthesis(
             timeout=config.timeout,
             codex_reasoning=config.attack_codex_reasoning,
         )
-        cost_tracker.add(model, in_tokens, out_tokens)
-
         def extract_list(marker: str) -> list[str]:
             items = []
             if marker in response:

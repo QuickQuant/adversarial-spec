@@ -84,7 +84,7 @@ Agents work **in parallel on the same branch**. Coordination via **pipeline boar
 - **Scope discipline**: Fix adjacent issues only within your card's declared file scope. Flag out-of-scope issues as comments on the dependent card.
 - **Full protocol**: Read `.coordination/PROTOCOL.md`
 
-Board: Fizzy `03fvw8ld1ibx7m42gi14p4pkl` (ASPEC Pipeline) | Trello `69be407deef7267a2cea1feb` (legacy, migration in progress)
+Board: Fizzy `03fw5alxw15iqwh6hq15vfdsb` (adversarial-spec) | Trello `69be407deef7267a2cea1feb` (legacy, read-only)
 
 ## Debugging Rules
 - If you suspect failure, write a failing test saved to disk. Judge your solution by running the test. The test stays to prove no future changes resurface the bug.

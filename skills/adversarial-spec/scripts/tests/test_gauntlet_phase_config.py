@@ -24,11 +24,10 @@ def test_phase_2_uses_attack_codex_reasoning(monkeypatch):
         "gauntlet.phase_2_synthesis.call_model",
         lambda **kwargs: (captured.update(kwargs) or ("REAL_ISSUES:\n- x\nHIDDEN_CONNECTIONS:\nWHATS_MISSING:\nMETA_CONCERN: y\nHIGH_SIGNAL:\n- z", 0, 0)),
     )
-    monkeypatch.setattr("gauntlet.phase_2_synthesis.cost_tracker.add", lambda *args, **kwargs: None)
 
     generate_big_picture_synthesis(
         [_concern()],
-        "codex/gpt-5.4",
+        "codex/gpt-5.5",
         GauntletConfig(timeout=123, attack_codex_reasoning="minimal"),
     )
 
@@ -43,12 +42,11 @@ def test_phase_4_uses_eval_codex_reasoning(monkeypatch):
         "gauntlet.phase_4_evaluation.call_model",
         lambda **kwargs: (captured.update(kwargs) or ('{"evaluations": []}', 0, 0)),
     )
-    monkeypatch.setattr("gauntlet.phase_4_evaluation.cost_tracker.add", lambda *args, **kwargs: None)
 
     evaluate_concerns(
         "spec",
         [_concern()],
-        "codex/gpt-5.4",
+        "codex/gpt-5.5",
         GauntletConfig(timeout=321, eval_codex_reasoning="medium"),
     )
 
@@ -66,11 +64,10 @@ def test_phase_5_uses_attack_codex_reasoning(monkeypatch):
         "gauntlet.phase_5_rebuttals.call_model",
         lambda **kwargs: (captured.update(kwargs) or ("ACCEPTED: valid", 0, 0)),
     )
-    monkeypatch.setattr("gauntlet.phase_5_rebuttals.cost_tracker.add", lambda *args, **kwargs: None)
 
     run_rebuttals(
         [evaluation],
-        "codex/gpt-5.4",
+        "codex/gpt-5.5",
         GauntletConfig(timeout=222, attack_codex_reasoning="low"),
     )
 
@@ -89,12 +86,11 @@ def test_phase_6_uses_eval_codex_reasoning(monkeypatch):
         "gauntlet.phase_6_adjudication.call_model",
         lambda **kwargs: (captured.update(kwargs) or ('{"decisions": []}', 0, 0)),
     )
-    monkeypatch.setattr("gauntlet.phase_6_adjudication.cost_tracker.add", lambda *args, **kwargs: None)
 
     final_adjudication(
         "spec",
         [rebuttal],
-        "codex/gpt-5.4",
+        "codex/gpt-5.5",
         GauntletConfig(timeout=444, eval_codex_reasoning="high"),
     )
 

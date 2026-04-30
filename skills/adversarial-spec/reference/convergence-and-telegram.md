@@ -36,7 +36,7 @@ Enable real-time notifications and human-in-the-loop feedback. Only active with 
 ### Usage
 
 ```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --model codex/gpt-5.4 --doc-type tech --telegram <<'SPEC_EOF'
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --model codex/gpt-5.5 --doc-type tech --telegram <<'SPEC_EOF'
 <document here>
 SPEC_EOF
 ```

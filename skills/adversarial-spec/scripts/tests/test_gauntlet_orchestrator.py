@@ -11,18 +11,18 @@ from gauntlet.orchestrator import (
     _load_approved_prompts,
     _resolve_and_filter_adversaries,
 )
-from models import CostTracker
+from token_tracking import TokenTracker
 
 
-def test_cost_tracker_thread_safety():
-    """Concurrent CostTracker.add() calls must not lose data."""
-    tracker = CostTracker()
+def test_token_tracker_thread_safety():
+    """Concurrent TokenTracker.record_call() calls must not lose data."""
+    tracker = TokenTracker()
     n_threads = 100
     barrier = threading.Barrier(n_threads)
 
     def add_once():
         barrier.wait()
-        tracker.add("test-model", 10, 5)
+        tracker.record_call("test-model", 10, 5)
 
     threads = [threading.Thread(target=add_once) for _ in range(n_threads)]
     for t in threads:
@@ -92,7 +92,7 @@ def test_run_gauntlet_records_phase_metrics_in_manifest(monkeypatch, tmp_path):
     manifest_updates: list[dict[str, object]] = []
 
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr("gauntlet.orchestrator.cost_tracker", tracker)
+    monkeypatch.setattr("gauntlet.orchestrator.token_tracking.tracker", tracker)
     monkeypatch.setattr("gauntlet.orchestrator.get_spec_hash", lambda spec: "a" * 64)
     monkeypatch.setattr("gauntlet.orchestrator.get_config_hash", lambda *args, **kwargs: "cfg")
     monkeypatch.setattr("gauntlet.orchestrator.save_checkpoint", lambda *args, **kwargs: None)
@@ -154,8 +154,8 @@ def test_run_gauntlet_records_phase_metrics_in_manifest(monkeypatch, tmp_path):
     result = run_gauntlet(
         spec="# Test Spec",
         adversaries=["paranoid_security"],
-        attack_models=["codex/gpt-5.4"],
-        eval_models=["claude-opus-4-6"],
+        attack_models=["codex/gpt-5.5"],
+        eval_models=["claude-opus-4-7"],
         allow_rebuttals=False,
         use_multi_model=False,
         run_final_boss=False,
@@ -365,7 +365,7 @@ class TestPhase1QualityGate:
         )
 
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr("gauntlet.orchestrator.cost_tracker", tracker)
+        monkeypatch.setattr("gauntlet.orchestrator.token_tracking.tracker", tracker)
         monkeypatch.setattr("gauntlet.orchestrator.get_spec_hash", lambda spec: "a" * 64)
         monkeypatch.setattr("gauntlet.orchestrator.get_config_hash", lambda *a, **kw: "cfg")
         monkeypatch.setattr("gauntlet.orchestrator.save_checkpoint", lambda *a, **kw: None)
@@ -376,11 +376,11 @@ class TestPhase1QualityGate:
 
         def fake_generate_attacks(spec, adversaries, models, config, prompts=None):
             # paranoid_security produces concerns, burned_oncall does not (parse failure)
-            concerns = [Concern(adversary="paranoid_security", text="c1", source_model="codex/gpt-5.4")]
+            concerns = [Concern(adversary="paranoid_security", text="c1", source_model="codex/gpt-5.5")]
             timing = {"paranoid_security": 1.0, "burned_oncall": 1.5}
             raw_responses = {
-                "paranoid_security@codex/gpt-5.4": "1. c1",
-                "burned_oncall@codex/gpt-5.4": "This spec has issues with error handling and retry logic...",
+                "paranoid_security@codex/gpt-5.5": "1. c1",
+                "burned_oncall@codex/gpt-5.5": "This spec has issues with error handling and retry logic...",
             }
             return concerns, timing, raw_responses
 
@@ -390,8 +390,8 @@ class TestPhase1QualityGate:
             run_gauntlet(
                 spec="# Test Spec",
                 adversaries=["paranoid_security", "burned_oncall"],
-                attack_models=["codex/gpt-5.4"],
-                eval_models=["claude-opus-4-6"],
+                attack_models=["codex/gpt-5.5"],
+                eval_models=["claude-opus-4-7"],
                 allow_rebuttals=False,
                 use_multi_model=False,
                 run_final_boss=False,
@@ -411,7 +411,7 @@ class TestPhase1QualityGate:
         )
 
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setattr("gauntlet.orchestrator.cost_tracker", tracker)
+        monkeypatch.setattr("gauntlet.orchestrator.token_tracking.tracker", tracker)
         monkeypatch.setattr("gauntlet.orchestrator.get_spec_hash", lambda spec: "a" * 64)
         monkeypatch.setattr("gauntlet.orchestrator.get_config_hash", lambda *a, **kw: "cfg")
         monkeypatch.setattr("gauntlet.orchestrator.save_checkpoint", lambda *a, **kw: None)
@@ -426,10 +426,10 @@ class TestPhase1QualityGate:
 
         def fake_generate_attacks(spec, adversaries, models, config, prompts=None):
             concerns = [
-                Concern(adversary="paranoid_security", text="c1", source_model="codex/gpt-5.4"),
+                Concern(adversary="paranoid_security", text="c1", source_model="codex/gpt-5.5"),
             ]
             timing = {"paranoid_security": 1.0}
-            raw_responses = {"paranoid_security@codex/gpt-5.4": "1. c1"}
+            raw_responses = {"paranoid_security@codex/gpt-5.5": "1. c1"}
             return concerns, timing, raw_responses
 
         monkeypatch.setattr("gauntlet.orchestrator.generate_attacks", fake_generate_attacks)
@@ -444,8 +444,8 @@ class TestPhase1QualityGate:
         result = run_gauntlet(
             spec="# Test Spec",
             adversaries=["paranoid_security"],
-            attack_models=["codex/gpt-5.4"],
-            eval_models=["claude-opus-4-6"],
+            attack_models=["codex/gpt-5.5"],
+            eval_models=["claude-opus-4-7"],
             allow_rebuttals=False,
             use_multi_model=False,
             run_final_boss=False,

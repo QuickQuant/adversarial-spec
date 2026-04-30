@@ -155,9 +155,9 @@ def test_config_hash_deterministic():
     config_b = GauntletConfig(timeout=300)
     config_c = GauntletConfig(timeout=120)
 
-    hash_a = get_config_hash(config_a, ["codex/gpt-5.4"], ["claude-opus-4-6"], ["paranoid_security"])
-    hash_b = get_config_hash(config_b, ["codex/gpt-5.4"], ["claude-opus-4-6"], ["paranoid_security"])
-    hash_c = get_config_hash(config_c, ["codex/gpt-5.4"], ["claude-opus-4-6"], ["paranoid_security"])
+    hash_a = get_config_hash(config_a, ["codex/gpt-5.5"], ["claude-opus-4-7"], ["paranoid_security"])
+    hash_b = get_config_hash(config_b, ["codex/gpt-5.5"], ["claude-opus-4-7"], ["paranoid_security"])
+    hash_c = get_config_hash(config_c, ["codex/gpt-5.5"], ["claude-opus-4-7"], ["paranoid_security"])
 
     assert hash_a == hash_b
     assert hash_a != hash_c
@@ -186,7 +186,7 @@ def test_manifest_round_trip_and_formatting(checkpoint_dir):
             duration_seconds=12.5,
             input_tokens=123,
             output_tokens=456,
-            models_used=["codex/gpt-5.4"],
+            models_used=["codex/gpt-5.5"],
             config_snapshot={"timeout": 300},
             spec_hash=spec_hash,
         ),
@@ -202,5 +202,5 @@ def test_manifest_round_trip_and_formatting(checkpoint_dir):
     formatted = format_run_manifest(manifest)
     assert "Gauntlet Run Manifest" in formatted
     assert "phase_1_attacks" in formatted
-    assert "codex/gpt-5.4" in formatted
+    assert "codex/gpt-5.5" in formatted
     assert "completed" in formatted

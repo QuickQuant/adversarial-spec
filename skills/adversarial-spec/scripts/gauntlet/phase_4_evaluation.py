@@ -18,7 +18,6 @@ from gauntlet.model_dispatch import (
     get_rate_limit_config,
 )
 from gauntlet.prompts import EVALUATION_SYSTEM_PROMPT
-from models import cost_tracker
 
 
 def evaluate_concerns(
@@ -78,8 +77,6 @@ Evaluate each concern according to the response protocols. Output valid JSON."""
             timeout=config.timeout,
             codex_reasoning=config.eval_codex_reasoning,
         )
-        cost_tracker.add(model, in_tokens, out_tokens)
-
         json_start = response.find("{")
         json_end = response.rfind("}") + 1
         if json_start >= 0 and json_end > json_start:

@@ -23,13 +23,13 @@ class TestModelCosts:
     def test_model_costs_has_expected_models(self):
         expected = [
             "gpt-4o",
-            "gpt-5.4",
+            "gpt-5.5",
             "gemini/gemini-3-flash",
             "xai/grok-3",
             "mistral/mistral-large",
             "deepseek/deepseek-chat",
             "zhipu/glm-4",
-            "codex/gpt-5.4",
+            "codex/gpt-5.5",
         ]
         for model in expected:
             assert model in MODEL_COSTS
@@ -729,7 +729,7 @@ class TestGetAvailableProviders:
             available = get_available_providers()
             for name, key, model in available:
                 if name == "Anthropic":
-                    assert model == "claude-sonnet-4-5-20250929"
+                    assert model == "claude-opus-4-7"
 
     def test_includes_codex_cli_when_available(self):
         from providers import get_available_providers
@@ -827,14 +827,14 @@ class TestValidateModelCredentials:
         from providers import validate_model_credentials
 
         with patch("providers.CODEX_AVAILABLE", True):
-            valid, invalid = validate_model_credentials(["codex/gpt-5.4"])
-            assert valid == ["codex/gpt-5.4"]
+            valid, invalid = validate_model_credentials(["codex/gpt-5.5"])
+            assert valid == ["codex/gpt-5.5"]
             assert invalid == []
 
         with patch("providers.CODEX_AVAILABLE", False):
-            valid, invalid = validate_model_credentials(["codex/gpt-5.4"])
+            valid, invalid = validate_model_credentials(["codex/gpt-5.5"])
             assert valid == []
-            assert invalid == ["codex/gpt-5.4"]
+            assert invalid == ["codex/gpt-5.5"]
 
     def test_validates_gemini_cli_availability(self):
         from providers import validate_model_credentials

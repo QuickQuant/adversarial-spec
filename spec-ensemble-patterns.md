@@ -1180,7 +1180,7 @@ The current "adversarial" debate is actually **collaborative refinement** - mode
 │     └── Surviving concerns → spec revision required          │
 │     └── Output: final verdict with reasoning                 │
 │                                                              │
-│  Phase 5: FINAL BOSS UX REVIEW (Opus 4.5, --final-boss)      │
+│  Phase 5: FINAL BOSS UX REVIEW (Opus 4.7, --final-boss)      │
 │     └── Runs AFTER all technical concerns addressed          │
 │     └── Uses most expensive model - optional but recommended │
 │     └── High-level user story sanity check:                  │
@@ -1231,7 +1231,7 @@ Usage:
 # Run full gauntlet with final boss (recommended for important specs)
 cat spec.md | python3 debate.py gauntlet --final-boss
 
-# Final boss is expensive (Opus 4.5) so it's opt-in
+# Final boss is expensive (Opus 4.7) so it's opt-in
 ```
 
 ### Confidence Decay Model

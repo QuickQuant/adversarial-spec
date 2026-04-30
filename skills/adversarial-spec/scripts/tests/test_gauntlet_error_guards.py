@@ -23,7 +23,6 @@ class TestPhase1ErrorGuard:
             raise TypeError("unexpected keyword argument 'foo'")
 
         monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", raise_type_error)
-        monkeypatch.setattr("gauntlet.phase_1_attacks.cost_tracker.add", lambda *a: None)
 
         from gauntlet.phase_1_attacks import generate_attacks
 
@@ -41,7 +40,6 @@ class TestPhase1ErrorGuard:
             raise RuntimeError("API rate limit exceeded")
 
         monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", raise_runtime)
-        monkeypatch.setattr("gauntlet.phase_1_attacks.cost_tracker.add", lambda *a: None)
 
         from gauntlet.phase_1_attacks import generate_attacks
 
@@ -112,7 +110,6 @@ class TestPhase4ErrorGuard:
             raise NameError("name 'undefined_var' is not defined")
 
         monkeypatch.setattr("gauntlet.phase_4_evaluation.call_model", raise_name_error)
-        monkeypatch.setattr("gauntlet.phase_4_evaluation.cost_tracker.add", lambda *a: None)
 
         from gauntlet.phase_4_evaluation import evaluate_concerns
 
@@ -126,7 +123,6 @@ class TestPhase4ErrorGuard:
             raise ConnectionError("Connection refused")
 
         monkeypatch.setattr("gauntlet.phase_4_evaluation.call_model", raise_connection)
-        monkeypatch.setattr("gauntlet.phase_4_evaluation.cost_tracker.add", lambda *a: None)
 
         from gauntlet.phase_4_evaluation import evaluate_concerns
 
@@ -151,7 +147,6 @@ class TestPhase5ErrorGuard:
             raise ImportError("No module named 'missing_dep'")
 
         monkeypatch.setattr("gauntlet.phase_5_rebuttals.call_model", raise_import)
-        monkeypatch.setattr("gauntlet.phase_5_rebuttals.cost_tracker.add", lambda *a: None)
 
         from gauntlet.core_types import Evaluation
         from gauntlet.phase_5_rebuttals import run_rebuttals
@@ -168,7 +163,6 @@ class TestPhase5ErrorGuard:
             raise RuntimeError("Timeout")
 
         monkeypatch.setattr("gauntlet.phase_5_rebuttals.call_model", raise_runtime)
-        monkeypatch.setattr("gauntlet.phase_5_rebuttals.cost_tracker.add", lambda *a: None)
 
         from gauntlet.core_types import Evaluation
         from gauntlet.phase_5_rebuttals import run_rebuttals
@@ -195,7 +189,6 @@ class TestPhase6ErrorGuard:
             raise SyntaxError("invalid syntax")
 
         monkeypatch.setattr("gauntlet.phase_6_adjudication.call_model", raise_syntax)
-        monkeypatch.setattr("gauntlet.phase_6_adjudication.cost_tracker.add", lambda *a: None)
 
         from gauntlet.core_types import Evaluation, Rebuttal
         from gauntlet.phase_6_adjudication import final_adjudication
@@ -213,7 +206,6 @@ class TestPhase6ErrorGuard:
             raise OSError("disk full")
 
         monkeypatch.setattr("gauntlet.phase_6_adjudication.call_model", raise_os)
-        monkeypatch.setattr("gauntlet.phase_6_adjudication.cost_tracker.add", lambda *a: None)
 
         from gauntlet.core_types import Evaluation, Rebuttal
         from gauntlet.phase_6_adjudication import final_adjudication

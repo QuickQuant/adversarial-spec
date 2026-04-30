@@ -28,7 +28,6 @@ def test_generate_attacks_uses_prompt_override(monkeypatch):
         return "1. Override concern", 10, 5
 
     monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
-    monkeypatch.setattr("gauntlet.phase_1_attacks.cost_tracker.add", lambda *args: None)
 
     concerns, timing, raw = generate_attacks(
         spec="spec",
@@ -53,7 +52,6 @@ def test_generate_attacks_resolves_alias_before_static_fallback(monkeypatch):
         return "1. Alias concern", 10, 5
 
     monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
-    monkeypatch.setattr("gauntlet.phase_1_attacks.cost_tracker.add", lambda *args: None)
 
     concerns, _, _ = generate_attacks(
         spec="spec",
@@ -81,7 +79,6 @@ def test_parse_detects_numbered_list(monkeypatch):
         return response, 100, 50
 
     monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
-    monkeypatch.setattr("gauntlet.phase_1_attacks.cost_tracker.add", lambda *a: None)
 
     concerns, _, _ = generate_attacks(
         spec="spec", adversaries=["paranoid_security"],
@@ -102,7 +99,6 @@ User inputs are not sanitized before processing."""
         return response, 100, 50
 
     monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
-    monkeypatch.setattr("gauntlet.phase_1_attacks.cost_tracker.add", lambda *a: None)
 
     concerns, _, _ = generate_attacks(
         spec="spec", adversaries=["paranoid_security"],
@@ -122,7 +118,6 @@ handling strategy is missing entirely from the document."""
         return response, 100, 50
 
     monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
-    monkeypatch.setattr("gauntlet.phase_1_attacks.cost_tracker.add", lambda *a: None)
 
     concerns, timing, raw = generate_attacks(
         spec="spec", adversaries=["paranoid_security"],
@@ -279,7 +274,6 @@ class TestJsonFallbackChain:
             return json_response, 100, 50
 
         monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
-        monkeypatch.setattr("gauntlet.phase_1_attacks.cost_tracker.add", lambda *a: None)
 
         concerns, _, raw = generate_attacks(
             spec="spec", adversaries=["paranoid_security"],
@@ -296,7 +290,6 @@ class TestJsonFallbackChain:
             return response, 100, 50
 
         monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
-        monkeypatch.setattr("gauntlet.phase_1_attacks.cost_tracker.add", lambda *a: None)
 
         concerns, _, _ = generate_attacks(
             spec="spec", adversaries=["paranoid_security"],
@@ -314,7 +307,6 @@ class TestJsonFallbackChain:
             return json.dumps({"concerns": [{"text": "c1", "severity": "low"}]}), 10, 5
 
         monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
-        monkeypatch.setattr("gauntlet.phase_1_attacks.cost_tracker.add", lambda *a: None)
 
         generate_attacks(
             spec="spec", adversaries=["paranoid_security"],
@@ -331,11 +323,10 @@ class TestJsonFallbackChain:
             return json.dumps({"concerns": [{"text": "c1", "severity": "low"}]}), 10, 5
 
         monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
-        monkeypatch.setattr("gauntlet.phase_1_attacks.cost_tracker.add", lambda *a: None)
 
         generate_attacks(
             spec="spec", adversaries=["paranoid_security"],
-            models=["codex/gpt-5.4"], config=GauntletConfig(),
+            models=["codex/gpt-5.5"], config=GauntletConfig(),
         )
         assert captured["json_mode"] is False
 
@@ -348,9 +339,8 @@ class TestJsonFallbackChain:
             return "1. Missing error handling\n2. No timeout", 10, 5
 
         monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
-        monkeypatch.setattr("gauntlet.phase_1_attacks.cost_tracker.add", lambda *a: None)
 
-        for cli_model in ["codex/gpt-5.4", "gemini-cli/gemini-3.1-pro-preview", "claude-cli/opus"]:
+        for cli_model in ["codex/gpt-5.5", "gemini-cli/gemini-3.1-pro-preview", "claude-cli/opus"]:
             generate_attacks(
                 spec="spec", adversaries=["paranoid_security"],
                 models=[cli_model], config=GauntletConfig(),
@@ -367,10 +357,9 @@ class TestJsonFallbackChain:
             return json.dumps({"concerns": [{"text": "c1", "severity": "low"}]}), 10, 5
 
         monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
-        monkeypatch.setattr("gauntlet.phase_1_attacks.cost_tracker.add", lambda *a: None)
 
         generate_attacks(
             spec="spec", adversaries=["paranoid_security"],
-            models=["claude-opus-4-6"], config=GauntletConfig(),
+            models=["claude-opus-4-7"], config=GauntletConfig(),
         )
         assert captured["json_mode"] is True

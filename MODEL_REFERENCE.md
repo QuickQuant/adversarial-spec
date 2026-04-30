@@ -65,8 +65,8 @@ Why pay for `deepseek/r1-distill` at $0.03/1M when `codex/gpt-5.3-codex` is **$0
 
 | Model | Notes |
 |-------|-------|
-| `claude-opus-4-6` | **Use this (Feb 2026)**. Latest Opus, most capable. |
-| `claude-sonnet-4-5-20250929` | Good, but Opus is often same total cost due to efficiency |
+| `claude-opus-4-7` | **Use this (Apr 2026)**. Latest Opus, most capable. |
+| `claude-sonnet-4-6` | Good, but Opus is often same total cost due to efficiency |
 | `claude-haiku-4-5-20251001` | NOT for debate. Only for quick internal tasks. |
 
 **Economics**: Opus uses fewer tokens for the same prompt, so total cost is often on par with Sonnet. When in doubt, use Opus.
@@ -88,13 +88,13 @@ Only use these when CLI tools are unavailable.
 
 ---
 
-## API Model Mappings (January 2026)
+## API Model Mappings (April 2026)
 
 ### OpenAI (API: `OPENAI_API_KEY`)
 
 | Tier | Old Reference | Current Model | Notes |
 |------|---------------|---------------|-------|
-| Frontier | `o1`, `gpt-4-turbo` | `gpt-5.2` | Best reasoning, $1.25/$10 per 1M tokens |
+| Frontier | `o1`, `gpt-4-turbo` | `gpt-5.5` | Best reasoning, $5/$30 per 1M tokens |
 | Balanced | `gpt-4o` | `o3-mini` | Good reasoning at lower cost |
 | Fast | `gpt-4o-mini` | `gpt-5.2-mini` | Fast, cheaper |
 | Budget | - | `o4-mini` | Batch processing available |
@@ -103,16 +103,16 @@ Only use these when CLI tools are unavailable.
 
 | Tier | Old Reference | Current Model | Notes |
 |------|---------------|---------------|-------|
-| Frontier | `codex/gpt-5.2-codex` | `codex/gpt-5.3-codex` | 25% faster, 400k ctx, 128k output |
-| Balanced | `codex/o1-codex` | `codex/gpt-5.2-codex` | Still excellent |
+| Frontier | `codex/gpt-5.2-codex` | `codex/gpt-5.5` | Current flagship, 1M ctx, 128k output |
+| Balanced | `codex/o1-codex` | `codex/gpt-5.5` | Current recommended Codex model |
 | Extended | - | `codex/gpt-5.1-codex-max` | 24+ hour tasks |
 
 ### Anthropic (API: `ANTHROPIC_API_KEY`)
 
 | Tier | Old Reference | Current Model | Notes |
 |------|---------------|---------------|-------|
-| Frontier | `claude-opus-4-5-20251124` | `claude-opus-4-6` | Latest Opus, best for complex reasoning |
-| Balanced | `claude-3.5-sonnet`, `claude-sonnet-4` | `claude-sonnet-4-5-20250929` | Best value, $3/$15 per 1M |
+| Frontier | `claude-opus-4-5-20251124` | `claude-opus-4-7` | Latest Opus, best for complex reasoning |
+| Balanced | `claude-3.5-sonnet`, `claude-sonnet-4` | `claude-sonnet-4-6` | Best value, $3/$15 per 1M |
 | Fast | `claude-3-sonnet` | `claude-haiku-4-5` | Near-frontier quality, fast |
 | Budget | `claude-3-haiku` | `claude-haiku-4-5` | Same as fast tier now |
 
@@ -174,7 +174,7 @@ Routes to other providers. Update prefixes to match current models:
 | Old Reference | Current Model |
 |---------------|---------------|
 | `openrouter/openai/gpt-4o` | `openrouter/openai/gpt-5.2` |
-| `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/anthropic/claude-sonnet-4.5` |
+| `openrouter/anthropic/claude-3.5-sonnet` | `openrouter/anthropic/claude-sonnet-4-6` |
 
 ---
 
@@ -236,7 +236,7 @@ When updating documentation, **use CLI tools** (free + frontier):
 ## Sources
 
 - [OpenAI Pricing](https://openai.com/api/pricing/) - GPT-5.2, o3 series
-- [Anthropic Claude](https://www.anthropic.com/claude/opus) - Opus 4.5, Sonnet 4.5, Haiku 4.5
+- [Anthropic Claude](https://www.anthropic.com/claude/opus) - Opus 4.7, Sonnet 4.5, Haiku 4.5
 - [Google Gemini](https://blog.google/products/gemini/gemini-3/) - Gemini 3 Pro/Flash
 - [xAI Grok](https://x.ai/news) - Grok 4 series
 - [Mistral AI](https://mistral.ai/pricing) - Large 3, Medium 3

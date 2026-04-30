@@ -2,9 +2,18 @@
 
 import json
 import time
-from pathlib import Path
 
 import pytest
+
+
+@pytest.fixture
+def fresh_tracker(monkeypatch):
+    """Provide isolated token accounting state for tests."""
+    import token_tracking
+
+    fresh = token_tracking.TokenTracker()
+    monkeypatch.setattr(token_tracking, "tracker", fresh)
+    yield fresh
 
 
 @pytest.fixture

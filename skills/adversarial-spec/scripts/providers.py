@@ -14,15 +14,15 @@ from prompts import FOCUS_AREAS, PERSONAS
 PROFILES_DIR = Path.home() / ".config" / "adversarial-spec" / "profiles"
 GLOBAL_CONFIG_PATH = Path.home() / ".claude" / "adversarial-spec" / "config.json"
 
-# Cost per 1M tokens (approximate, as of Feb 2026)
+# Cost per 1M tokens (approximate, as of Apr 2026)
 MODEL_COSTS = {
     # OpenAI API models
     "gpt-4o": {"input": 2.50, "output": 10.00},
-    "gpt-5.4": {"input": 5.00, "output": 15.00},
+    "gpt-5.5": {"input": 5.00, "output": 30.00},
     "o1": {"input": 15.00, "output": 60.00},
     # Anthropic models
-    "claude-sonnet-4-5-20250929": {"input": 3.00, "output": 15.00},
-    "claude-opus-4-6": {"input": 15.00, "output": 75.00},
+    "claude-sonnet-4-6": {"input": 3.00, "output": 15.00},
+    "claude-opus-4-7": {"input": 5.00, "output": 25.00},
     # Google models
     "gemini/gemini-3-pro": {"input": 1.25, "output": 5.00},
     "gemini/gemini-3-flash": {"input": 0.075, "output": 0.30},
@@ -36,14 +36,14 @@ MODEL_COSTS = {
     # NVIDIA NIM (build.nvidia.com) — unlimited access via subscription
     "nvidia_nim/minimaxai/minimax-m2.7": {"input": 0.0, "output": 0.0},
     # Codex CLI models (uses ChatGPT subscription, no per-token cost)
-    "codex/gpt-5.4": {"input": 0.0, "output": 0.0},
+    "codex/gpt-5.5": {"input": 0.0, "output": 0.0},
     "codex/gpt-5.1-codex-mini": {"input": 0.0, "output": 0.0},
     # Gemini CLI models (uses Google account, no per-token cost)
     "gemini-cli/gemini-3.1-pro-preview": {"input": 0.0, "output": 0.0},
     "gemini-cli/gemini-3-flash-preview": {"input": 0.0, "output": 0.0},
     # Claude CLI models (uses Anthropic subscription via claude command, no per-token cost)
     "claude-cli/claude-sonnet-4-6": {"input": 0.0, "output": 0.0},
-    "claude-cli/claude-opus-4-6": {"input": 0.0, "output": 0.0},
+    "claude-cli/claude-opus-4-7": {"input": 0.0, "output": 0.0},
 }
 
 DEFAULT_COST = {"input": 5.00, "output": 15.00}
@@ -281,11 +281,11 @@ def list_providers():
         print("-" * 60 + "\n")
 
     providers = [
-        ("OpenAI", "OPENAI_API_KEY", "gpt-5.4"),
+        ("OpenAI", "OPENAI_API_KEY", "gpt-5.5"),
         (
             "Anthropic",
             "ANTHROPIC_API_KEY",
-            "claude-sonnet-4-5-20250929, claude-opus-4-6",
+            "claude-opus-4-7, claude-sonnet-4-6",
         ),
         ("Google", "GEMINI_API_KEY", "gemini/gemini-3-pro, gemini/gemini-3-flash"),
         ("xAI", "XAI_API_KEY", "xai/grok-3, xai/grok-beta"),
@@ -294,7 +294,7 @@ def list_providers():
         (
             "OpenRouter",
             "OPENROUTER_API_KEY",
-            "openrouter/openai/gpt-5.4, openrouter/anthropic/claude-sonnet-4-5",
+            "openrouter/openai/gpt-5.5, openrouter/anthropic/claude-sonnet-4-6",
         ),
         ("Deepseek", "DEEPSEEK_API_KEY", "deepseek/deepseek-chat"),
         ("Zhipu", "ZHIPUAI_API_KEY", "zhipu/glm-4, zhipu/glm-4-plus"),
@@ -315,7 +315,7 @@ def list_providers():
     # Codex CLI (uses ChatGPT subscription, not API key)
     codex_status = "[installed]" if CODEX_AVAILABLE else "[not installed]"
     print(f"  {'Codex CLI':12} {'(ChatGPT subscription)':24} {codex_status}")
-    print("             Example models: codex/gpt-5.4, codex/gpt-5.4")
+    print("             Example models: codex/gpt-5.5")
     print(
         "             Reasoning: --codex-reasoning (minimal, low, medium, high, xhigh)"
     )
@@ -335,7 +335,7 @@ def list_providers():
     claude_cli_status = "[installed]" if CLAUDE_CLI_AVAILABLE else "[not installed]"
     print(f"  {'Claude CLI':12} {'(Anthropic subscription)':24} {claude_cli_status}")
     print(
-        "             Example models: claude-cli/claude-sonnet-4-6, claude-cli/claude-opus-4-6"
+        "             Example models: claude-cli/claude-opus-4-7, claude-cli/claude-sonnet-4-6"
     )
     print("             Install: npm install -g @anthropic-ai/claude-code && claude setup-token")
     print()
@@ -381,7 +381,7 @@ def get_available_providers() -> list[tuple[str, Optional[str], str]]:
     """
     providers = [
         # Note: OpenAI direct API deprecated in favor of Codex CLI (free with ChatGPT subscription)
-        ("Anthropic", "ANTHROPIC_API_KEY", "claude-sonnet-4-5-20250929"),
+        ("Anthropic", "ANTHROPIC_API_KEY", "claude-opus-4-7"),
         ("Google", "GEMINI_API_KEY", "gemini/gemini-3-flash"),
         ("xAI", "XAI_API_KEY", "xai/grok-3"),
         ("Mistral", "MISTRAL_API_KEY", "mistral/mistral-large"),
@@ -398,7 +398,7 @@ def get_available_providers() -> list[tuple[str, Optional[str], str]]:
 
     # Add Codex CLI if available
     if CODEX_AVAILABLE:
-        available.append(("Codex CLI", None, "codex/gpt-5.4"))
+        available.append(("Codex CLI", None, "codex/gpt-5.5"))
 
     # Add Gemini CLI if available
     if GEMINI_CLI_AVAILABLE:
@@ -406,7 +406,7 @@ def get_available_providers() -> list[tuple[str, Optional[str], str]]:
 
     # Add Claude CLI if available
     if CLAUDE_CLI_AVAILABLE:
-        available.append(("Claude CLI", None, "claude-cli/claude-sonnet-4-6"))
+        available.append(("Claude CLI", None, "claude-cli/claude-opus-4-7"))
 
     return available
 

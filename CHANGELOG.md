@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file.
   - Multi-model consensus evaluation (2-3 models vote, majority wins, ties favor acceptance)
   - Self-filtering against resolved concerns database (prevents repeated concerns)
   - Rebuttal phase where adversaries can challenge dismissals
-  - Final Boss UX Architect review (Phase 5) - uses Opus 4.5 for user story validation
+  - Final Boss UX Architect review (Phase 5) - uses Opus 4.7 for user story validation
   - Confidence decay model for cached explanations (age decay, spec change penalty, usage boost)
   - Per-adversary performance tracking (signal score, acceptance rate, dismissal effort)
   - CLI commands: `gauntlet`, `gauntlet-adversaries`, `adversary-stats`

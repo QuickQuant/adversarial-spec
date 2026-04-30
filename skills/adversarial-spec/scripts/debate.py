@@ -4,31 +4,31 @@ Adversarial spec debate script.
 Sends specs to multiple LLMs for critique using LiteLLM.
 
 Usage:
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.4
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --doc-type spec --depth product
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --doc-type spec --depth technical
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --doc-type debug
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --focus security
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --persona "security engineer"
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --context ./api.md --context ./schema.sql
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --profile strict-security
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --preserve-intent
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --session my-debate
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.5
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --doc-type spec --depth product
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --doc-type spec --depth technical
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --doc-type debug
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --focus security
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --persona "security engineer"
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --context ./api.md --context ./schema.sql
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --profile strict-security
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --preserve-intent
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --session my-debate
     python3 debate.py critique --resume my-debate
     echo "spec" | python3 debate.py diff --previous prev.md --current current.md
     python3 debate.py providers
     python3 debate.py profiles
     python3 debate.py sessions
 Unsupported providers (use CLI instead):
-    OpenAI:     OPENAI_API_KEY       models: gpt-5.4
-    Anthropic:  ANTHROPIC_API_KEY    models: claude-opus-4-6, claude-sonnet-4-5-20250929
+    OpenAI:     OPENAI_API_KEY       models: gpt-5.5
+    Anthropic:  ANTHROPIC_API_KEY    models: claude-opus-4-7, claude-sonnet-4-6
     Google:     GEMINI_API_KEY       models: gemini/gemini-3-pro, gemini/gemini-3-flash
 Supported providers (set corresponding API key):
-    OpenRouter: OPENROUTER_API_KEY   models: openrouter/openai/gpt-5.4, openrouter/anthropic/claude-sonnet-4-5
-    Codex CLI:  (ChatGPT subscription) models: codex/gpt-5.4, codex/gpt-5.4
+    OpenRouter: OPENROUTER_API_KEY   models: openrouter/openai/gpt-5.5, openrouter/anthropic/claude-sonnet-4-6
+    Codex CLI:  (ChatGPT subscription) models: codex/gpt-5.5
                 Install: npm install -g @openai/codex && codex login
                 Reasoning: --codex-reasoning xhigh (minimal, low, medium, high, xhigh)
-    Claude CLI: (Anthropic subscription) models: claude-cli/claude-sonnet-4-6, claude-cli/claude-opus-4-6
+    Claude CLI: (Anthropic subscription) models: claude-cli/claude-opus-4-7, claude-cli/claude-sonnet-4-6
                 Install: npm install -g @anthropic-ai/claude-code && claude setup-token
     Gemini CLI:  (Google account) models: gemini-cli/gemini-3.1-pro-preview, gemini-cli/gemini-3-flash-preview
 
@@ -70,6 +70,7 @@ except ImportError:
     )
     sys.exit(1)
 
+import token_tracking  # noqa: E402
 from adversaries import (  # noqa: E402
     FINAL_BOSS,
     PRE_GAUNTLET,
@@ -84,7 +85,6 @@ from gauntlet import (  # noqa: E402
 from models import (  # noqa: E402
     ModelResponse,
     call_models_parallel,
-    cost_tracker,
     generate_diff,
     get_critique_summary,
     load_context_files,
@@ -228,7 +228,7 @@ def send_telegram_notification(
 
 Status: {status}
 Models: {len(results)}
-Cost: ${cost_tracker.total_cost:.4f}
+Cost: ${token_tracking.tracker.total_cost:.4f}
 
 """
         notification += "\n\n".join(summaries)
@@ -293,7 +293,7 @@ def send_final_spec_to_telegram(
 Document: {doc_type_name}
 Rounds: {rounds}
 Models: Claude vs {models_str}
-Total cost: ${cost_tracker.total_cost:.4f}
+Total cost: ${token_tracking.tracker.total_cost:.4f}
 
 Final document:
 ---"""
@@ -314,7 +314,7 @@ def add_core_arguments(parser: argparse.ArgumentParser) -> None:
         "--models",
         "-m",
         default=None,
-        help="Comma-separated list of models (e.g., codex/gpt-5.4,gemini-cli/gemini-3.1-pro-preview)",
+        help="Comma-separated list of models (e.g., codex/gpt-5.5,gemini-cli/gemini-3.1-pro-preview)",
     )
     parser.add_argument(
         "--doc-type",
@@ -499,7 +499,7 @@ def add_gauntlet_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--final-boss",
         action="store_true",
-        help="Run Phase 5 Final Boss UX review (uses Opus 4.6, expensive but thorough)",
+        help="Run Phase 5 Final Boss UX review (uses Opus 4.7, expensive but thorough)",
     )
     parser.add_argument(
         "--eval-codex-reasoning",
@@ -570,17 +570,17 @@ def create_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  echo "spec" | python3 debate.py critique --models codex/gpt-5.4
-  echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --focus security
-  echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --persona "security engineer"
-  echo "spec" | python3 debate.py critique --models codex/gpt-5.4 --context ./api.md
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.5
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --focus security
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --persona "security engineer"
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --context ./api.md
   echo "spec" | python3 debate.py critique --profile my-security-profile
   python3 debate.py diff --previous old.md --current new.md
   python3 debate.py providers
   python3 debate.py focus-areas
   python3 debate.py personas
   python3 debate.py profiles
-  python3 debate.py save-profile myprofile --models codex/gpt-5.4,gemini-cli/gemini-3.1-pro-preview --focus security
+  python3 debate.py save-profile myprofile --models codex/gpt-5.5,gemini-cli/gemini-3.1-pro-preview --focus security
 
 Gauntlet commands (adversarial attack on specs):
   echo "spec" | python3 debate.py gauntlet                   # Run gauntlet with all adversaries
@@ -810,16 +810,16 @@ def parse_models(args: argparse.Namespace) -> list[str]:
             )
             print("\nAvailable providers:", file=sys.stderr)
             print(
-                "  Codex CLI: Install codex CLI for codex/gpt-5.4 (FREE with ChatGPT subscription)", file=sys.stderr
+                "  Codex CLI: Install codex CLI for codex/gpt-5.5 (FREE with ChatGPT subscription)", file=sys.stderr
             )
             print(
                 "  Gemini CLI: Install gemini CLI for gemini-cli/gemini-3.1-pro-preview (FREE)", file=sys.stderr
             )
             print(
-                "  OpenAI:    Set OPENAI_API_KEY for gpt-5.4", file=sys.stderr
+                "  OpenAI:    Set OPENAI_API_KEY for gpt-5.5", file=sys.stderr
             )
             print(
-                "  Anthropic: Set ANTHROPIC_API_KEY for claude-opus-4-6, claude-sonnet-4-5",
+                "  Anthropic: Set ANTHROPIC_API_KEY for claude-opus-4-7, claude-sonnet-4-6",
                 file=sys.stderr,
             )
             print(
@@ -843,7 +843,7 @@ def parse_models(args: argparse.Namespace) -> list[str]:
                 "  Zhipu:     Set ZHIPUAI_API_KEY for zhipu/glm-4-plus",
                 file=sys.stderr,
             )
-            print("\nOr specify models explicitly: --models codex/gpt-5.4", file=sys.stderr)
+            print("\nOr specify models explicitly: --models codex/gpt-5.5", file=sys.stderr)
             print(
                 "\nRun 'python3 debate.py providers' to see which keys are set.",
                 file=sys.stderr,
@@ -1319,10 +1319,10 @@ def output_results(
                 for r in results
             ],
             "cost": {
-                "total": cost_tracker.total_cost,
-                "input_tokens": cost_tracker.total_input_tokens,
-                "output_tokens": cost_tracker.total_output_tokens,
-                "by_model": cost_tracker.by_model,
+                "total": token_tracking.tracker.total_cost,
+                "input_tokens": token_tracking.tracker.total_input_tokens,
+                "output_tokens": token_tracking.tracker.total_output_tokens,
+                "by_model": token_tracking.tracker.by_model,
             },
         }
         if user_feedback:
@@ -1359,7 +1359,7 @@ def output_results(
             print(user_feedback)
 
         if args.show_cost:
-            print(cost_tracker.summary())
+            print(token_tracking.tracker.summary())
 
 
 def validate_models_before_run(models: list[str], bedrock_mode: bool) -> None:

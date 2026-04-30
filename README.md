@@ -321,7 +321,7 @@ uv run python skills/adversarial-spec/scripts/debate.py gauntlet < spec.md
 uv run python skills/adversarial-spec/scripts/debate.py gauntlet --gauntlet-adversaries paranoid_security,burned_oncall < spec.md
 
 # Include the gauntlet in a full debate
-uv run python skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.4 --gauntlet < spec.md
+uv run python skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.5 --gauntlet < spec.md
 ```
 
 ### The Adversaries
@@ -353,7 +353,7 @@ uv run python skills/adversarial-spec/scripts/debate.py critique --models codex/
 
 ### The Final Boss
 
-After all technical concerns are addressed and models agree, the **UX Architect** (running on Opus 4.5) asks: *"Did we lose the forest for the trees?"*
+After all technical concerns are addressed and models agree, the **UX Architect** (running on Opus 4.7) asks: *"Did we lose the forest for the trees?"*
 
 ```bash
 # Enable the final boss review
@@ -443,21 +443,21 @@ Execution plans include:
 
 | Tool       | Requirement            | Models                                       |
 |------------|------------------------|----------------------------------------------|
-| Codex CLI  | ChatGPT Plus/Pro       | `codex/gpt-5.2-codex`, `codex/gpt-5.1-codex-max` |
+| Codex CLI  | ChatGPT Plus/Pro       | `codex/gpt-5.5`, `codex/gpt-5.1-codex-mini` |
 | Gemini CLI | Google account         | `gemini-cli/gemini-3.1-pro-preview`, `gemini-cli/gemini-3-flash-preview` |
 
 **API providers** (pay-per-token fallback):
 
 | Provider   | Env Var                | Example Models                               |
 |------------|------------------------|----------------------------------------------|
-| OpenAI     | `OPENAI_API_KEY`       | `gpt-5.2`, `o3-mini`, `gpt-5.2-mini`         |
-| Anthropic  | `ANTHROPIC_API_KEY`    | `claude-opus-4-5-20251124`, `claude-sonnet-4-5-20250929` |
+| OpenAI     | `OPENAI_API_KEY`       | `gpt-5.5`                                   |
+| Anthropic  | `ANTHROPIC_API_KEY`    | `claude-opus-4-7`, `claude-sonnet-4-6`       |
 | Google     | `GEMINI_API_KEY`       | `gemini/gemini-3-pro`, `gemini/gemini-3-flash` |
 | xAI        | `XAI_API_KEY`          | `xai/grok-4`, `xai/grok-4.1-fast`            |
 | Mistral    | `MISTRAL_API_KEY`      | `mistral/mistral-large-3`, `mistral/mistral-medium-3` |
 | Groq       | `GROQ_API_KEY`         | `groq/llama-4-maverick`, `groq/llama-3.3-70b-versatile` |
 | DeepSeek   | `DEEPSEEK_API_KEY`     | `deepseek/deepseek-r1`, `deepseek/deepseek-v3.2-exp` |
-| OpenRouter | `OPENROUTER_API_KEY`   | `openrouter/openai/gpt-5.2`, `openrouter/anthropic/claude-sonnet-4.5` |
+| OpenRouter | `OPENROUTER_API_KEY`   | `openrouter/openai/gpt-5.5`, `openrouter/anthropic/claude-sonnet-4-6` |
 | Zhipu      | `ZHIPUAI_API_KEY`      | `zhipu/glm-4`, `zhipu/glm-4-plus`            |
 
 Check which keys are configured:
@@ -504,12 +504,12 @@ Configuration is stored at `~/.claude/adversarial-spec/config.json`.
 export OPENROUTER_API_KEY="sk-or-..."
 
 # Use OpenRouter models (prefix with openrouter/)
-python3 debate.py critique --models openrouter/openai/gpt-5.2,openrouter/anthropic/claude-sonnet-4.5 < spec.md
+python3 debate.py critique --models openrouter/openai/gpt-5.5,openrouter/anthropic/claude-sonnet-4-6 < spec.md
 ```
 
 **Popular OpenRouter models:**
-- `openrouter/openai/gpt-5.2` - GPT-5.2 via OpenRouter
-- `openrouter/anthropic/claude-sonnet-4.5` - Claude Sonnet 4.5
+- `openrouter/openai/gpt-5.5` - GPT-5.5 via OpenRouter
+- `openrouter/anthropic/claude-sonnet-4-6` - Claude Sonnet 4.6
 - `openrouter/google/gemini-3-pro` - Gemini 3 Pro
 - `openrouter/meta-llama/llama-4-maverick` - Llama 4 Maverick
 - `openrouter/deepseek/deepseek-r1` - DeepSeek R1

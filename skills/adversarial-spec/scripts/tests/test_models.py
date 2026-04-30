@@ -8,7 +8,6 @@ from unittest.mock import Mock, patch
 from models import (
     MAX_RETRIES,
     RETRY_BASE_DELAY,
-    CostTracker,
     ModelResponse,
     _save_partial_result,
     call_claude_cli_model,
@@ -24,6 +23,7 @@ from models import (
     is_o_series_model,
     load_context_files,
 )
+from token_tracking import TokenTracker
 
 
 class TestModelResponse:
@@ -76,7 +76,7 @@ class TestModelResponse:
         assert response.cost == 0.05
 
 
-class TestCostTracker:
+class TestTokenTracker:
     def test_add_uses_lock(self):
         class RecordingLock:
             def __init__(self):
@@ -89,16 +89,16 @@ class TestCostTracker:
             def __exit__(self, exc_type, exc, tb):
                 return False
 
-        tracker = CostTracker()
+        tracker = TokenTracker()
         tracker._lock = RecordingLock()
 
-        tracker.add("gpt-4o", 1000, 500)
+        tracker.record_call("gpt-4o", 1000, 500)
 
         assert tracker._lock.enter_count == 1
 
     def test_add_costs(self):
-        tracker = CostTracker()
-        tracker.add("gpt-4o", 1000, 500)
+        tracker = TokenTracker()
+        tracker.record_call("gpt-4o", 1000, 500)
 
         assert tracker.total_input_tokens == 1000
         assert tracker.total_output_tokens == 500
@@ -106,43 +106,43 @@ class TestCostTracker:
 
     def test_cost_calculation_uses_division(self):
         # Mutation: / to * would make cost astronomically large
-        tracker = CostTracker()
+        tracker = TokenTracker()
         # Use a model with known costs
-        cost = tracker.add("gpt-4o", 1_000_000, 1_000_000)
+        cost = tracker.record_call("gpt-4o", 1_000_000, 1_000_000)
         # With division by 1M, cost should be in dollars (single/double digits)
         # With multiplication by 1M, cost would be trillions
         assert cost < 1000  # Reasonable upper bound for 1M tokens
 
     def test_default_values(self):
         # Mutation: changing default 0.0 to 1.0 would fail
-        tracker = CostTracker()
+        tracker = TokenTracker()
         assert tracker.total_input_tokens == 0
         assert tracker.total_output_tokens == 0
         assert tracker.total_cost == 0.0  # Must be exactly 0.0
         assert tracker.by_model == {}
 
     def test_tracks_by_model(self):
-        tracker = CostTracker()
-        tracker.add("gpt-4o", 1000, 500)
-        tracker.add("gemini/gemini-2.0-flash", 2000, 1000)
+        tracker = TokenTracker()
+        tracker.record_call("gpt-4o", 1000, 500)
+        tracker.record_call("gemini/gemini-2.0-flash", 2000, 1000)
 
         assert "gpt-4o" in tracker.by_model
         assert "gemini/gemini-2.0-flash" in tracker.by_model
         assert tracker.by_model["gpt-4o"]["input_tokens"] == 1000
 
     def test_accumulates_for_same_model(self):
-        tracker = CostTracker()
-        tracker.add("gpt-4o", 1000, 500)
-        tracker.add("gpt-4o", 1000, 500)
+        tracker = TokenTracker()
+        tracker.record_call("gpt-4o", 1000, 500)
+        tracker.record_call("gpt-4o", 1000, 500)
 
         assert tracker.by_model["gpt-4o"]["input_tokens"] == 2000
         assert tracker.by_model["gpt-4o"]["output_tokens"] == 1000
 
     def test_cost_accumulates_not_replaces(self):
         # Mutation: += to = would fail this test
-        tracker = CostTracker()
-        cost1 = tracker.add("gpt-4o", 1000, 500)
-        cost2 = tracker.add("gpt-4o", 1000, 500)
+        tracker = TokenTracker()
+        cost1 = tracker.record_call("gpt-4o", 1000, 500)
+        cost2 = tracker.record_call("gpt-4o", 1000, 500)
 
         # Total cost should be sum of both calls
         expected_total = cost1 + cost2
@@ -150,8 +150,8 @@ class TestCostTracker:
         assert tracker.total_cost == expected_total
 
     def test_summary_format(self):
-        tracker = CostTracker()
-        tracker.add("gpt-4o", 1000, 500)
+        tracker = TokenTracker()
+        tracker.record_call("gpt-4o", 1000, 500)
 
         summary = tracker.summary()
         assert "Cost Summary" in summary
@@ -160,17 +160,17 @@ class TestCostTracker:
 
     def test_summary_starts_with_empty_line(self):
         # Mutation: "" -> "XXXX" would change first line
-        tracker = CostTracker()
-        tracker.add("gpt-4o", 1000, 500)
+        tracker = TokenTracker()
+        tracker.record_call("gpt-4o", 1000, 500)
         summary = tracker.summary()
         # Summary should start with empty line (newline)
         assert summary.startswith("\n")
         assert "XXXX" not in summary
 
     def test_summary_shows_by_model_when_multiple(self):
-        tracker = CostTracker()
-        tracker.add("gpt-4o", 1000, 500)
-        tracker.add("gemini-pro", 2000, 1000)
+        tracker = TokenTracker()
+        tracker.record_call("gpt-4o", 1000, 500)
+        tracker.record_call("gemini-pro", 2000, 1000)
         summary = tracker.summary()
         assert "By model:" in summary
         assert "gpt-4o" in summary
@@ -553,11 +553,11 @@ class TestCallCodexModel:
             stdout='{"type":"item.completed","item":{"type":"agent_message","text":"Response"}}\n{"type":"turn.completed","usage":{"input_tokens":100,"output_tokens":50}}',
             stderr="",
         )
-        response, inp, out = call_codex_model("sys", "user", "codex/gpt-5.4")
+        response, inp, out = call_codex_model("sys", "user", "codex/gpt-5.5")
         # Verify model name was extracted and passed to command
         cmd = mock_run.call_args[0][0]
-        assert "gpt-5.4" in cmd
-        assert "codex/gpt-5.4" not in cmd
+        assert "gpt-5.5" in cmd
+        assert "codex/gpt-5.5" not in cmd
 
     @patch("models.CODEX_AVAILABLE", True)
     @patch("models.subprocess.run")
@@ -1235,7 +1235,7 @@ class TestCallModelsParallel:
 class TestSavePartialResult:
     def test_writes_partial_result_to_checkpoint_dir(self):
         result = ModelResponse(
-            model="codex/gpt-5.4",
+            model="codex/gpt-5.5",
             response="[AGREE]\n[SPEC]spec[/SPEC]",
             agreed=True,
             spec="spec",
@@ -1247,11 +1247,11 @@ class TestSavePartialResult:
             with patch("session.CHECKPOINTS_DIR", checkpoint_dir):
                 _save_partial_result(result, 2, session_id="active-session")
 
-            output_path = checkpoint_dir / "active-session-round-2-codex_gpt-5.4.json"
+            output_path = checkpoint_dir / "active-session-round-2-codex_gpt-5.5.json"
             assert output_path.exists()
 
             saved = json.loads(output_path.read_text())
-            assert saved["model"] == "codex/gpt-5.4"
+            assert saved["model"] == "codex/gpt-5.5"
             assert saved["agreed"] is True
             assert saved["spec"] == "spec"
             assert saved["error"] is None

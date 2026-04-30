@@ -1,6 +1,6 @@
 """Phase 7: Final Boss UX/User Story Review.
 
-Extracted from gauntlet_monolith.py — Opus 4.6 high-level sanity check
+Extracted from gauntlet_monolith.py — Opus 4.7 high-level sanity check
 on whether the spec actually serves users.
 """
 
@@ -24,7 +24,6 @@ from gauntlet.prompts import (
     FINAL_BOSS_DISMISSED_SECTION_TEMPLATE,
     FINAL_BOSS_USER_TEMPLATE,
 )
-from models import cost_tracker
 
 
 def run_final_boss_review(
@@ -36,7 +35,7 @@ def run_final_boss_review(
 ) -> FinalBossResult:
     """Phase 7: Final Boss UX/User Story Review with Verdict.
 
-    Runs AFTER all other adversaries have been satisfied. Uses Opus 4.6 to do
+    Runs AFTER all other adversaries have been satisfied. Uses Opus 4.7 to do
     a high-level sanity check on whether the spec actually serves users.
 
     The Final Boss can issue three verdicts:
@@ -44,17 +43,17 @@ def run_final_boss_review(
     - REFINE: Address listed concerns, then proceed
     - RECONSIDER: Fundamental issues exist, models should debate re-architecture
 
-    Timeout: max(config.timeout, 1800) — Opus 4.6 with large context needs a floor.
+    Timeout: max(config.timeout, 1800) — Opus 4.7 with large context needs a floor.
     """
     import os
 
     timeout = max(config.timeout, 1800)
 
-    # Final boss uses Opus 4.6 - expensive but thorough
+    # Final boss uses Opus 4.7 - expensive but thorough
     if os.environ.get("ANTHROPIC_API_KEY"):
-        model = "claude-opus-4-6"
+        model = "claude-opus-4-7"
     else:
-        print("  Warning: Opus 4.6 not available, using best alternative", file=sys.stderr)
+        print("  Warning: Opus 4.7 not available, using best alternative", file=sys.stderr)
         model = select_eval_model()
 
     system_prompt = FINAL_BOSS["ux_architect"].persona
@@ -130,8 +129,6 @@ def run_final_boss_review(
             user_message=user_prompt,
             timeout=timeout,
         )
-        cost_tracker.add(model, in_tokens, out_tokens)
-
         response_upper = response.upper()
 
         if "VERDICT: RECONSIDER" in response_upper:
