@@ -852,6 +852,8 @@ INV-005: [category:config] All configuration externalized — no secrets in sour
 
 **Marker integrity check:** Before upserting, validate that exactly one START and one END marker exist (or neither). If markers are malformed, duplicated, or only one exists, halt with `P4_MARKER_INTEGRITY_FAILED` rather than silently corrupting the file. This prevents LLM-generated content containing marker strings from breaking the upsert logic.
 
+**Semantic oracle rule:** Invariant-derived tests must be falsifying tests, not field-presence checks. For every invariant that protects a user-visible contract, formula, payload meaning, UI/display claim, parameter-causality claim, or active-vs-legacy classification, add at least one positive and one negative/counterfactual assertion where feasible. If a test would still pass when the wrong parameter causes the outcome or the UI displays the wrong meaning, it is smoke coverage only and must be supplemented before TCOV can pass.
+
 ```markdown
 <!-- P4_INVARIANT_TESTS_START -->
 ## Invariant Tests (Phase 4)
@@ -1292,7 +1294,7 @@ cat .adversarial-spec/specs/<slug>/target-architecture.md | \
 
 **Input:**
 - **stdin:** Full text of `target-architecture.md` (the document being critiqued)
-- **`--models`:** Comma-separated model identifiers (e.g., `codex/gpt-5.4,gemini-cli/gemini-3.1-pro-preview`)
+- **`--models`:** Comma-separated model identifiers (e.g., `codex/gpt-5.5,gemini-cli/gemini-3.1-pro-preview`)
 - **`--doc-type`:** Always `architecture` for Phase 4
 - **`--round`:** Integer round number (1-indexed)
 - **`--context`:** Path to the converged spec for background context

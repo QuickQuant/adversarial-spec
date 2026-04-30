@@ -409,3 +409,35 @@ If the spec defines branching logic with multiple conditions (e.g., scoring gate
 
 Every row must have a test. Missing rows = missing coverage.
 
+##### 9e. Semantic Contract and Causality Testing (REQUIRED for user-visible behavior)
+
+Every user-facing parameter, output field, chart/table label, tooltip, and derived metric must have a canonical contract classification before tests are considered adequate:
+
+| Classification | Meaning | Minimum Test Shape |
+|----------------|---------|--------------------|
+| `active_formula` | Changing this input changes the emitted metric/formula value | Perturb input A while holding others fixed; assert metric changes by expected formula |
+| `active_gate` | Changing this input changes pass/fail or routing, but not the emitted metric value | Perturb gate; assert pass/fail/routing changes and score/value remains stable if applicable |
+| `threshold` | Compared against a computed value | At-boundary and just-outside BVA; assert inclusive/exclusive behavior |
+| `telemetry_only` | Emitted for explanation, never changes decisions | Perturb field; assert telemetry changes and decisions/score do not |
+| `legacy_display` | Retained for comparison/display but not active behavior | Assert UI labels it legacy/display-only and active metrics remain unchanged |
+| `display_contract` | User-visible text explains behavior | Static/frontend test checks label/tooltip/legend matches canonical classification |
+
+Tests must prove both sides of the causal contract:
+- **Positive causality:** active inputs change the behavior they claim to control.
+- **Negative causality:** telemetry-only and legacy-display inputs do NOT change active decisions or active scores.
+
+Field-presence, non-null, status-code, and range tests are not sufficient for semantic contracts. They may remain as smoke tests, but they do not satisfy this methodology unless paired with a falsifying causality, formula, or display-contract assertion.
+
+Example:
+```markdown
+### TC-X.Y: ADX center is display-only for active score
+**Strategy: SYNTHETIC** — Need fixed indicators to isolate parameter causality.
+given: identical bars/indicators and two param sets differing only in scoring_adx_center
+when: entry scoring runs
+then: adx_moderate changes, but entry_score.score and pass/fail are unchanged
+assert: detail_a.adx_moderate != detail_b.adx_moderate
+assert: detail_a.score == detail_b.score
+assert: passed_a == passed_b
+```
+
+Bias toward adding contract, causality, invariant, and user-surface tests when in doubt. Avoid padding with duplicate smoke tests that do not increase falsification power.

@@ -1,6 +1,8 @@
-# Guardrail Adversary Prompts (Static)
+# Guardrail Adversary Prompts (Reference)
 
-These are production prompts for the three checkpoint guardrail adversaries. Unlike gauntlet adversaries (which use dynamic meta-prompts), these are fixed — they don't change per-spec.
+Canonical prompt text lives in `skills/adversarial-spec/scripts/adversaries.py`. This file is a human-readable reference for the five checkpoint guardrail adversaries. Unlike gauntlet adversaries (which use dynamic meta-prompts), these are fixed — they don't change per-spec.
+
+If this file and `adversaries.py` disagree, `adversaries.py` is authoritative.
 
 ---
 
@@ -131,3 +133,61 @@ Do NOT report:
 
 If all requirements have coverage, say "All requirements traced successfully" and list them briefly with their covering sections.
 ```
+
+---
+
+## `canonical_type_auditor` (CANON)
+
+Canonical source: `CANONICAL_TYPE_AUDITOR` in `adversaries.py`.
+
+CANON audits canonical contract drift. It is no longer limited to repeated inline union types. It receives:
+
+1. CURRENT SPEC
+2. CANONICAL CONTRACT INDEX
+3. CODEBASE / ARCHITECTURE EXCERPTS
+
+It checks named type/enum reuse, repeated formulas, parameter causality, payload meanings, UI/display claims, and active-vs-legacy classifications. It should flag cases where the spec says a parameter affects a score/gate/formula but owner code classifies that parameter as telemetry-only or legacy display, or where a UI tooltip claims a value is active when the canonical formula excludes it.
+
+Output format:
+
+```text
+CANON DRIFT: [brief title]
+Category: type_drift | formula_drift | parameter_causality_drift | payload_meaning_drift | display_contract_drift | active_legacy_drift
+Location: [spec section / code path / UI component / test case]
+Canonical contract: [name + owner path + exact relevant claim]
+Observed claim: [conflicting inline type, formula, label, tooltip, payload meaning, or test assumption]
+Delta: [missing/extra/renamed/case/causal mismatch/formula mismatch/legacy-active confusion]
+Impact: [what drifts or breaks]
+Fix: [replace with named type; hoist contract; relabel UI; classify field; add/update tests]
+```
+
+If no drift exists, say `No canonical contract drift found`.
+
+---
+
+## `test_coverage_auditor` (TCOV)
+
+Canonical source: `TEST_COVERAGE_AUDITOR` in `adversaries.py`.
+
+TCOV audits whether tests would actually fail for the semantic bugs the spec is trying to prevent. It receives:
+
+1. CURRENT SPEC
+2. REQUIREMENTS / ROADMAP
+3. TESTS (`tests-pseudo.md` or `tests-spec.md`)
+4. CANONICAL CONTRACT INDEX
+
+It rejects false confidence from field-presence, HTTP 200, non-null, range-only, and snapshot-only checks. It looks for missing contract tests, weak oracles, missing parameter-causality tests, formula tests, negative/counterfactual tests, UI/display contract tests, surface coverage, stale assumptions, data-strategy mismatches, BVA/state/decision-row gaps, and low-value duplication.
+
+Output format:
+
+```text
+TEST GAP: [brief title]
+Category: missing_contract_test | weak_oracle | missing_parameter_causality | missing_formula_test | missing_negative_test | missing_ui_contract_test | missing_surface_coverage | stale_test_assumption | data_strategy_mismatch | missing_bva_state_decision | low_value_duplication
+Requirement / Contract: [user story, acceptance criterion, invariant, or canonical contract]
+Existing test coverage: [test IDs or "none"]
+Why insufficient: [what bug would still pass]
+Required test: [specific test shape and assertion oracle]
+Severity: blocking | warning
+```
+
+If tests are adequate, say `No test coverage gaps found`.

@@ -119,9 +119,31 @@ def test_scope_guidelines_accepts_valid_keys():
 
 def test_guardrails_registered_separately_from_adversaries():
     """Guardrails must be in GUARDRAILS, NOT in ADVERSARIES or ADVERSARY_TEMPLATES."""
-    guardrail_names = {"consistency_auditor", "scope_creep_detector", "requirements_tracer"}
+    guardrail_names = {
+        "consistency_auditor",
+        "scope_creep_detector",
+        "requirements_tracer",
+        "canonical_type_auditor",
+        "test_coverage_auditor",
+    }
 
     for name in guardrail_names:
         assert name in GUARDRAILS, f"{name} missing from GUARDRAILS"
         assert name not in ADVERSARIES, f"{name} should not be in ADVERSARIES"
         assert name not in ADVERSARY_TEMPLATES, f"{name} should not be in ADVERSARY_TEMPLATES"
+
+
+def test_contract_and_test_guardrails_audit_semantic_causality():
+    """CANON and TCOV should catch causality/display drift, not just type hygiene."""
+    canon = GUARDRAILS["canonical_type_auditor"].persona.lower()
+    tcov = GUARDRAILS["test_coverage_auditor"].persona.lower()
+
+    assert "parameter causality" in canon
+    assert "display contract" in canon
+    assert "active_formula" in canon
+    assert "legacy_display" in canon
+
+    assert "falsifying test" in tcov
+    assert "field presence" in tcov
+    assert "parameter-causality" in tcov
+    assert "ui / display contract" in tcov

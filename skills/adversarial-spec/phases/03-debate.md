@@ -11,11 +11,11 @@ TodoWrite([
   {content: "Assemble context files (technical/full)", status: "pending", activeForm: "Assembling context files"},
   {content: "Round 1: Run debate + synthesize", status: "pending", activeForm: "Running Round 1 debate"},
   {content: "Round 1: Update tests-pseudo.md to match spec [GATE]", status: "pending", activeForm: "Updating tests-pseudo.md"},
-  {content: "Round 1: Run SCOPE + TRACE guardrails [GATE]", status: "pending", activeForm: "Running Round 1 guardrails"},
+  {content: "Round 1: Run SCOPE + TRACE + CANON + TCOV guardrails [GATE]", status: "pending", activeForm: "Running Round 1 guardrails"},
   {content: "Context Readiness Audit (technical/full) [GATE]", status: "pending", activeForm: "Running context readiness audit"},
   {content: "Round 2: Run debate + synthesize", status: "pending", activeForm: "Running Round 2 debate"},
   {content: "Round 2: Update tests-pseudo.md to match spec [GATE]", status: "pending", activeForm: "Updating tests-pseudo.md"},
-  {content: "Round 2: Run CONS + SCOPE + TRACE guardrails [GATE]", status: "pending", activeForm: "Running Round 2 guardrails"},
+  {content: "Round 2: Run CONS + SCOPE + TRACE + CANON + TCOV guardrails [GATE]", status: "pending", activeForm: "Running Round 2 guardrails"},
 ])
 ```
 
@@ -24,7 +24,7 @@ Mark each step `completed` as you finish it. Mark the current step `in_progress`
 **Dynamic rounds:** For each round beyond Round 2, add three TodoWrite items before starting the round:
 - `{content: "Round N: Run debate + synthesize", status: "pending", activeForm: "Running Round N debate"}`
 - `{content: "Round N: Update tests-pseudo.md to match spec [GATE]", status: "pending", activeForm: "Updating tests-pseudo.md"}`
-- `{content: "Round N: Run CONS + SCOPE + TRACE guardrails [GATE]", status: "pending", activeForm: "Running Round N guardrails"}`
+- `{content: "Round N: Run CONS + SCOPE + TRACE + CANON + TCOV guardrails [GATE]", status: "pending", activeForm: "Running Round N guardrails"}`
 
 ---
 
@@ -263,11 +263,11 @@ python3 ~/.claude/skills/adversarial-spec/scripts/debate.py providers
 Then present available models to the user using AskUserQuestion with multiSelect. Build the options list based on which API keys are set:
 
 **If OPENAI_API_KEY is set, include:**
-- `gpt-5.4` - Frontier reasoning
+- `gpt-5.5` - Frontier reasoning
 
 **If ANTHROPIC_API_KEY is set, include:**
-- `claude-sonnet-4-5-20250929` - Claude Sonnet 4.5, excellent reasoning
-- `claude-opus-4-6` - Claude Opus 4.6, highest capability
+- `claude-sonnet-4-6` - Claude Sonnet 4.6, excellent reasoning
+- `claude-opus-4-7` - Claude Opus 4.7, highest capability
 
 **If GEMINI_API_KEY is set, include:**
 - `gemini/gemini-3-pro` - Top LMArena score (1501 Elo)
@@ -290,7 +290,7 @@ Then present available models to the user using AskUserQuestion with multiSelect
 - `zhipu/glm-4-plus` - Enhanced GLM model
 
 **If Codex CLI is installed, include:**
-- `codex/gpt-5.4` - OpenAI Codex with extended reasoning
+- `codex/gpt-5.5` - OpenAI Codex with extended reasoning
 
 **If Gemini CLI is installed, include:**
 - `gemini-cli/gemini-3.1-pro-preview` - Google Gemini 3 Pro
@@ -368,14 +368,17 @@ if [ -n "$TESTS_PSEUDO_PATH" ] && [ -f ".adversarial-spec/$TESTS_PSEUDO_PATH" ];
   CONTEXT_FLAGS="$CONTEXT_FLAGS --context .adversarial-spec/$TESTS_PSEUDO_PATH"
 fi
 ```
-When tests-pseudo.md is included as context, opponents will naturally critique misaligned assertions.
-If an opponent flags a test/spec mismatch, that is a valid critique — address it in the Test-Spec Sync gate.
+When tests-pseudo.md is included as context, opponents must critique both misaligned assertions and inadequate test oracles. If an opponent flags a test/spec mismatch, field-presence-only test, missing parameter-causality test, missing UI/display contract test, or stale test assumption, that is a valid critique — address it in the Test-Spec Sync gate.
 
 **MOCK falsification directive (REQUIRED in every debate round's prompt preamble).** When `tests-pseudo.md` is in context, append this sentence to the debate prompt so both debaters (and Claude) attack weak mock justifications:
 
 > *"For any test with `Strategy: MOCK*`, challenge the `why_impossible_to_reproduce_live` claim. If you can name one plausible live reproduction path against dev infrastructure or small real money (e.g., fund a dev account, rapid-fire real orders, submit malformed inputs, cancel a nonexistent order), report it as a correction — the test should be promoted to REAL-DATA."*
 
-This adds zero new adversary launches. Both debaters already see `tests-pseudo.md`; this directive just tells them what to attack in it.
+**Test adequacy directive (REQUIRED in every debate round's prompt preamble when tests are in context):**
+
+> *"Attack the tests as well as the spec. Field existence, HTTP 200, non-null, and range checks are not adequate for semantic contracts. For every user-facing parameter, emitted metric, UI label/tooltip, state transition, and formula, ask whether the tests would fail if the implementation had the wrong causality or displayed the wrong meaning."*
+
+These directives add zero new adversary launches. Debaters already see `tests-pseudo.md`; the directives tell them what to attack in it.
 
 **Store assembled context list in session state** (`extended_state.context_files`) for reuse across rounds.
 
@@ -401,7 +404,7 @@ pipeline_begin_debate_round(
     session_id=SESSION_ID,
     card_id=FIZZY_CARD_ID,
     round_number=N,
-    models=["codex/gpt-5.4", "gemini-cli/gemini-3.1-pro-preview"],
+    models=["codex/gpt-5.5", "gemini-cli/gemini-3.1-pro-preview"],
     board_id=BOARD_ID,
     domain_context="Optional project-specific context"
 )
@@ -416,12 +419,33 @@ result = pipeline_dispatch_single_agent_debate(
     card_id=FIZZY_CARD_ID,
     round_number=N,
     round_instance_id=begin_result["round_instance_id"],
-    model="codex/gpt-5.4",
+    model="codex/gpt-5.5",
     spec_content=spec_text,  # full spec read from disk
     board_id=BOARD_ID
 )
 ```
 The tool launches the critic subprocess with full isolation (MCP disabled, workspace-only instruction file) and returns when the critic finishes.
+
+**Codex MCP timeout workaround (fire-and-poll):**
+
+Codex may time out the MCP tool wrapper after ~120 seconds even when `timeout_seconds` is longer and the underlying critic process continues running. Treat `timed out awaiting tools/call after 120s` as an ambiguous launch state, not as critic failure.
+
+When this happens:
+
+1. Do **not** retry the same dispatch immediately. A retry can duplicate the critic run.
+2. Poll the expected result directory every **90 seconds**. Do not exponential-backoff.
+3. Expected path:
+   ```bash
+   .adversarial-spec/debate-workspaces/<session_id>/round-<round_instance_id>/results/<model-with-slashes-replaced-by-dashes>/
+   ```
+   Example:
+   ```bash
+   .adversarial-spec/debate-workspaces/adv-spec-202604291604-dispatch-cost-tracker-unify/round-1475ef58aad24263/results/claude-cli-claude-opus-4-7/
+   ```
+4. On each poll, check for `parsed.json`, `raw.txt`, and `stderr.txt`.
+5. If `parsed.json` appears with `"status": "completed"`, use its `agreed` and `findings_count`, and use `raw.txt` as the review artifact.
+6. Register the return if a `dispatch_id` was returned or can be recovered from pipeline state. If no `dispatch_id` exists because the MCP response was lost, add a Fizzy comment and process note with the artifact path, then use the documented process-failure path rather than re-running the model.
+7. Only treat the model as failed after the critic-specific timeout window has elapsed and the result directory has no terminal artifact.
 
 **4c. Register each model's return:**
 After each dispatch returns:
@@ -431,7 +455,7 @@ pipeline_register_debate_agent_return(
     card_id=FIZZY_CARD_ID,
     round_instance_id=begin_result["round_instance_id"],
     dispatch_id=result["dispatch_id"],
-    model="codex/gpt-5.4",
+    model="codex/gpt-5.5",
     status=result["status"],
     findings_count=result["findings_count"],
     agreed=result["agreed"],
@@ -767,12 +791,15 @@ After writing the revised spec to disk (Step 5 item 7) and BEFORE running checkp
 - **BVA** — scan spec changes for new/modified numeric boundaries. Add at-boundary and just-outside tests marked `[BVA]`.
 - **State transitions** — if this round changed state machine behavior (new states, new transitions), update the state transition table and add tests for new transitions.
 - **Decision tables** — if this round changed combinatorial logic, update the decision table and add tests for new rows.
+- **Semantic contracts and causality** — for every user-facing parameter, output field, chart/table label, tooltip, and derived metric touched by the change, classify it as `active_formula`, `active_gate`, `threshold`, `telemetry_only`, `legacy_display`, or `display_contract`. Add perturbation tests proving what changes and what must NOT change.
 
 **5. Verify completeness:**
 - Every user story still has ≥1 test in tests-pseudo.md
 - Every numeric boundary has BVA tests
 - Every state transition has a test (cross-reference table)
 - Every decision table row has a test
+- Every canonical formula, parameter-causality claim, payload meaning, and user-visible display claim has at least one falsifying test or an explicit deferral with rationale
+- Field-presence, HTTP 200, non-null, and range tests are counted as smoke tests only; they do not satisfy semantic contract coverage by themselves
 - Tests that verify behaviors NOT in any user story = scope drift (flag via SCOPE guardrail)
 - No test asserts behavior that contradicts the current spec draft
 
@@ -786,28 +813,30 @@ After writing the revised spec to disk (Step 5 item 7) and BEFORE running checkp
 
 After incorporating critiques into a new spec version (Step 5 item 8), run checkpoint guardrails before the next debate round. These catch editorial regressions early — contradictions, scope drift, and orphaned requirements compound across rounds.
 
-**Four guardrail adversaries** (defined in `adversaries.py` → `GUARDRAILS` dict):
+**Five guardrail adversaries** (defined in `adversaries.py` → `GUARDRAILS` dict):
 
 | Guardrail | Prefix | What it checks |
 |-----------|--------|----------------|
 | `consistency_auditor` | CONS | Cross-section contradictions, duplicate numbering, arithmetic consistency |
 | `scope_creep_detector` | SCOPE | New scope additions not in original requirements |
 | `requirements_tracer` | TRACE | User stories/acceptance criteria that lost coverage |
-| `canonical_type_auditor` | CANON | Spec inlines a domain enum as a literal union (`"kalshi"\|"polymarket"`, `"yes"\|"no"`, etc.) when a canonical named type already exists in the codebase — OR repeats the same literal union across multiple spec sections without hoisting. Catches spec/code type drift. |
+| `canonical_type_auditor` | CANON | Canonical contract drift: named types/enums, formulas, parameter causality, payload meanings, UI/display claims, and active-vs-legacy classifications. |
+| `test_coverage_auditor` | TCOV | Test adequacy: tests-pseudo/tests-spec would actually fail for contract, causality, UI, formula, state, BVA, and negative-path violations; rejects field-presence-only false confidence. |
 
-**First-draft exemption:** CONS cannot run on the first draft (it compares sections against each other — only meaningful after revision introduces cross-section drift). **SCOPE, TRACE, and CANON CAN run on the first draft** because they compare the spec against external inputs (requirements, roadmap, codebase), which exist before the first draft.
+**First-draft exemption:** CONS cannot run on the first draft (it compares sections against each other — only meaningful after revision introduces cross-section drift). **SCOPE, TRACE, CANON, and TCOV CAN run on the first draft** because they compare the spec/tests against external inputs (requirements, roadmap, codebase/contracts), which exist before the first draft. TCOV requires tests-pseudo.md or tests-spec.md; if no test artifact exists yet, emit a blocking setup warning rather than silently passing.
 
 **Invocation contract — how Claude assembles guardrail inputs:**
 
-1. Read the guardrail prompt from `adversaries.py` (CONS, SCOPE, TRACE, CANON)
+1. Read the guardrail prompt from `adversaries.py` (CONS, SCOPE, TRACE, CANON, TCOV)
 2. Assemble the input payload:
    - **CONS:** prompt + current spec text
    - **SCOPE:** prompt + original requirements (from session file `requirements_summary`) + current spec text
    - **TRACE:** prompt + roadmap manifest (user stories + acceptance criteria) + current spec text
-   - **CANON:** prompt + current spec text + **codebase type index** (a short catalog of named domain enums already defined in the project — generate by grepping `src/shared/` + `src/convex/schema.ts` + the architecture primer for `type X = "a"|"b"` / Zod enum schemas / `v.union(v.literal(...))` patterns, or by reading `.architecture/manifest.json` if it enumerates canonical types)
+   - **CANON:** prompt + current spec text + **canonical contract index** + relevant architecture/code/UI excerpts. The index should include named domain enums, formulas, derived metrics, config fields classified as active_formula / active_gate / threshold / telemetry_only / legacy_display, payload field meanings, and UI labels/tooltips that claim behavior. Use `.architecture/manifest.json`, `.architecture/primer.md`, `.architecture/structured/components/*`, `.architecture/structured/cross-references.md`, `.architecture/structured/flows.md`, `.architecture/.work/discovery/contracts.md`, and targeted owner-code excerpts where available.
+   - **TCOV:** prompt + current spec text + roadmap manifest/user stories/acceptance criteria + tests-pseudo.md/tests-spec.md + canonical contract index. Include the same relevant architecture/code/UI excerpts used by CANON when the tests must cover brownfield behavior.
 3. Send the assembled input to a model via `debate.py critique --model <model> --system-prompt <guardrail-prompt>` or evaluate inline if the spec fits in Claude's own context
 
-**Session file dependency:** SCOPE, TRACE, and CANON all require external input beyond the spec. If `requirements_summary` (SCOPE), the roadmap manifest (TRACE), or the codebase type index (CANON) is missing or empty, warn the user and skip that guardrail rather than running it without the external input. CANON with an empty codebase index degrades to "repeated-inline-union" detection only (still useful — catches drift WITHIN the spec even if no code type exists yet).
+**Session file dependency:** SCOPE, TRACE, CANON, and TCOV all require external input beyond the spec. If `requirements_summary` (SCOPE), the roadmap manifest (TRACE/TCOV), the canonical contract index (CANON/TCOV), or tests-pseudo/tests-spec (TCOV) is missing or empty, warn the user and skip only the affected guardrail rather than running it without the external input. CANON with an empty contract index degrades to repeated-inline-union and repeated-formula detection only; it cannot audit parameter causality or display-contract drift without owner excerpts.
 
 **Depth limit (FM-2):** If CONS finds issues, fix them and re-run CONS. If the re-run finds NEW contradictions introduced by the fix, defer to the user after 2 attempts — do not loop indefinitely.
 
@@ -827,20 +856,27 @@ SCOPE (scope_creep_detector): 1 finding
 TRACE (requirements_tracer): 0 findings
 
 CANON (canonical_type_auditor): 1 finding
-  1. §5.1 inlines `exchange: "kalshi"|"polymarket"` — canonical
-     type `ExchangeCode` exists in src/shared/balances-contract.ts.
-     Replace with `ExchangeCode` reference.
+  1. §5.1 says `adx_center` controls the active score, but owner code
+     classifies it as legacy display-only telemetry.
+     → CANON DRIFT: parameter_causality_drift
 
-[Fix CONS findings] [Approve/remove SCOPE additions] [Replace inline unions with canonical types] [Proceed to next round]
+TCOV (test_coverage_auditor): 1 finding
+  1. TC-4 only asserts `entry_score` is present and between 0..1.
+     It would still pass if `adx_center` had no effect while the UI
+     tooltip claimed it affected score.
+     → TEST GAP: weak_oracle
+
+[Fix CONS] [Approve/remove SCOPE] [Restore TRACE] [Apply CANON] [Add/fix TCOV tests] [Proceed]
 ```
 
 1. Fix CONS findings before proceeding
 2. Present SCOPE additions for user approval or removal
 3. Restore TRACE-flagged coverage or explicitly descope with user approval
-4. Apply CANON fixes (replace inline unions with named types; define a spec-level "Canonical Types" section if no code type exists yet and the union is repeated)
-5. Only after guardrails pass (or user explicitly overrides): proceed to the next round
+4. Apply CANON fixes (replace inline unions with named types; align formulas, parameter causality, payload meanings, UI/display claims, and active-vs-legacy classifications with canonical contracts)
+5. Apply TCOV fixes before the next round: add or strengthen tests-pseudo/tests-spec so each accepted semantic claim has a falsifying oracle; classify field-presence, HTTP 200, non-null, and range-only tests as smoke coverage only
+6. Only after guardrails pass (or user explicitly overrides): proceed to the next round
 
-**[GATE] TodoWrite: Mark "Round N: Run CONS + SCOPE + TRACE + CANON guardrails" (or "SCOPE + TRACE + CANON" for Round 1) completed before proceeding to the next round.**
+**[GATE] TodoWrite: Mark "Round N: Run CONS + SCOPE + TRACE + CANON + TCOV guardrails" (or "SCOPE + TRACE + CANON + TCOV" for Round 1) completed before proceeding to the next round.**
 
 ### Fizzy Sync (after each round — REQUIRED)
 
@@ -850,7 +886,7 @@ CANON (canonical_type_auditor): 1 finding
 
 **If `fizzy_card_id` exists:**
 1. Use a **haiku subagent** (to keep MCP payload out of main context) to:
-   - `pipeline_patch_state(card_id, session_id, {"debate_round": N, "last_agent": "claude-opus-4-6"})` where N is the round just completed
+   - `pipeline_patch_state(card_id, session_id, {"debate_round": N, "last_agent": "claude-opus-4-7"})` where N is the round just completed
    - `add_comment(card_id, "Round N complete: <1-2 sentence synthesis summary>. Spec version: vN.")`
 2. Board is pinned at Fizzy server startup. The `board_id` parameter is optional and validated.
 
@@ -864,7 +900,7 @@ After Fizzy sync, send a Telegram summary and pause for human interruption. See 
 
 **After debate round synthesis + guardrails:**
 ```bash
-~/.claude/bin/telegram-send <project> "R<N> complete: <count> findings (<critical> critical, <major> major, <minor> minor) applied. Guardrails: SCOPE <pass/fail>, TRACE <pass/fail>, CONS <pass/fail>."
+~/.claude/bin/telegram-send <project> "R<N> complete: <count> findings (<critical> critical, <major> major, <minor> minor) applied. Guardrails: SCOPE <pass/fail>, TRACE <pass/fail>, CANON <pass/fail>, TCOV <pass/fail>, CONS <pass/fail>."
 sleep 120  # 2 min pause for human interruption
 ```
 

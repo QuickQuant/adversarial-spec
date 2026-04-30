@@ -12,6 +12,7 @@ TodoWrite([
   {content: "Synthesize findings — one Opus pass, 8-category taxonomy", status: "pending", activeForm: "Synthesizing gauntlet findings"},
   {content: "Revise spec with accepted concerns", status: "pending", activeForm: "Revising spec with accepted concerns"},
   {content: "Run CONS guardrail on revised spec [GATE]", status: "pending", activeForm: "Running CONS guardrail on revised spec"},
+  {content: "Run conditional CANON/TCOV guardrails on revised spec/tests [GATE]", status: "pending", activeForm: "Running conditional contract and test guardrails"},
   {content: "Display adversary leaderboard + medal standings", status: "pending", activeForm: "Displaying adversary performance results"},
   {content: "Update session state with gauntlet_concerns_path", status: "pending", activeForm: "Updating session state"},
 ])
@@ -108,7 +109,7 @@ After sizing is agreed, proceed to step 1 below.
    ```
 
    **Recommended lineup (if available):**
-   - `codex/gpt-5.4` — GPT-5.4 via Codex CLI (free, token-efficient)
+   - `codex/gpt-5.5` — GPT-5.5 via Codex CLI (free, token-efficient)
    - `gemini-cli/gemini-3.1-pro-preview` — Gemini 3 Pro (free via CLI)
    - `claude-cli/claude-sonnet-4-6` — Claude Sonnet 4.6 (free via CLI)
 
@@ -278,11 +279,12 @@ After sizing is agreed, proceed to step 1 below.
    - Add mitigations for accepted concerns
    - Update relevant sections (don't summarize or reduce existing content)
    - Save the full concern report as `gauntlet-concerns-YYYY-MM-DD.json`
-   - **Run checkpoint guardrails (CONS) after incorporating the batch of fixes** — gauntlet fix incorporation can introduce cross-section contradictions. Run CONS to catch them. SCOPE and TRACE are not needed here (gauntlet fixes are evaluated by Claude, not automated scope additions).
+   - **Run checkpoint guardrails after incorporating the batch of fixes.** CONS is always required because gauntlet fix incorporation can introduce cross-section contradictions. Run CANON if any accepted concern changes named types/enums, formulas, parameter causality, payload meanings, UI/display claims, or active-vs-legacy classifications. Run TCOV if any accepted concern adds, removes, weakens, or relies on tests-pseudo/tests-spec. SCOPE and TRACE are not normally needed here because gauntlet fixes are evaluated by Claude, not automated scope additions; run them only if a fix expands user-visible scope or changes requirement coverage.
    - If CONS finds issues, fix and re-run (max 2 attempts, then defer to user)
+   - If TCOV finds weak or missing oracles, strengthen tests before finalize or explicitly defer the uncovered semantic claim with user approval
    - If significant changes were made, consider running another debate round
 
-**[GATE] TodoWrite: Mark "Run CONS guardrail on revised spec" completed before proceeding to Step 8 or phase transition.**
+**[GATE] TodoWrite: Mark "Run CONS guardrail on revised spec" and "Run conditional CANON/TCOV guardrails on revised spec/tests" completed before proceeding to Step 8 or phase transition. If CANON/TCOV are not applicable, mark the conditional item completed with a note explaining why.**
 
 8. **Display adversary leaderboard and medal standings** (REQUIRED after every gauntlet run).
 

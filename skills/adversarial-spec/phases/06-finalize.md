@@ -7,6 +7,8 @@ TodoWrite([
   {content: "Run final CONS guardrail [GATE]", status: "in_progress", activeForm: "Running final CONS guardrail"},
   {content: "Run final SCOPE guardrail [GATE]", status: "pending", activeForm: "Running final SCOPE guardrail"},
   {content: "Run final TRACE guardrail [GATE]", status: "pending", activeForm: "Running final TRACE guardrail"},
+  {content: "Run final CANON guardrail [GATE]", status: "pending", activeForm: "Running final CANON guardrail"},
+  {content: "Run final TCOV guardrail [GATE]", status: "pending", activeForm: "Running final TCOV guardrail"},
   {content: "Quality verification (completeness, consistency, clarity, actionability)", status: "pending", activeForm: "Verifying spec quality"},
   {content: "Write final spec to disk", status: "pending", activeForm: "Writing final spec to disk"},
   {content: "Present to user for review [GATE]", status: "pending", activeForm: "Presenting spec for user review"},
@@ -24,21 +26,25 @@ When ALL opponent models AND you have said `[AGREE]` (and gauntlet is complete o
 
 **Before outputting, perform a final quality check:**
 
-**Final Guardrail Pass (REQUIRED):** Run all three guardrails one last time:
+**Final Guardrail Pass (REQUIRED):** Run all five checkpoint guardrails one last time:
 - **CONS:** Cross-reference consistency — every numeric claim is arithmetically consistent, every "deferred" item does not also appear as in-scope, section numbering has no duplicates
 - **SCOPE:** Scope integrity — verify the final spec hasn't drifted beyond the approved requirements, especially after gauntlet fix incorporation which can introduce scope additions disguised as bug fixes
 - **TRACE:** Requirements coverage — verify no user story was orphaned during revisions; this is the last chance to catch dropped requirements before execution planning
+- **CANON:** Canonical contract integrity — named types/enums, formulas, parameter causality, payload meanings, UI/display claims, and active-vs-legacy classifications match the architecture/code contract index
+- **TCOV:** Test adequacy — tests-pseudo/tests-spec would actually fail for contract, causality, formula, UI/display, state, BVA, and negative-path violations; smoke-only checks do not count as semantic coverage
 
-Fix any CONS findings. Present SCOPE additions for user approval. Restore TRACE-flagged coverage or explicitly descope with user approval. Only proceed after guardrails pass or user overrides.
+Fix any CONS findings. Present SCOPE additions for user approval. Restore TRACE-flagged coverage or explicitly descope with user approval. Apply CANON contract fixes or explicitly document a migration from the old contract. Apply TCOV fixes by strengthening tests or explicitly deferring uncovered semantic claims with user approval. Only proceed after guardrails pass or user overrides.
 
-**TEST guardrail (when `tests_pseudo_path` exists):** Verify test cases don't exceed requirement boundaries. Tests for behaviors not in any user story or requirement are scope drift — flag via SCOPE.
+**TEST guardrails (when `tests_pseudo_path` or `tests_spec_path` exists):** Verify test cases don't exceed requirement boundaries. Tests for behaviors not in any user story or requirement are scope drift — flag via SCOPE. Then run TCOV against the tests: every user-facing parameter, emitted metric, UI label/tooltip, state transition, and formula needs at least one falsifying oracle or an explicit deferral. Field existence, HTTP 200, non-null, and range checks are smoke tests only.
 
-**[GATE] TodoWrite: Mark all three guardrail items (CONS, SCOPE, TRACE) completed before proceeding to quality verification.**
+**[GATE] TodoWrite: Mark all final guardrail items (CONS, SCOPE, TRACE, CANON, TCOV) completed before proceeding to quality verification.**
 
 | Guardrail | Failure Mode | Action |
 |-----------|-------------|--------|
 | CONS model call fails | Hard stop — consistency check is mandatory, retry or switch models |
 | SCOPE or TRACE model call fails | Soft stop — warn and require explicit user approval to proceed without |
+| CANON model call fails | Soft stop on first draft, hard stop before execution when architecture/code/UI excerpts exist — retry, switch models, or require explicit user override |
+| TCOV model call fails | Hard stop when tests-pseudo/tests-spec exists — retry or switch models; no silent pass for test adequacy |
 
 Then verify:
 
@@ -62,6 +68,7 @@ Then verify:
 - Performance targets include specific latency, throughput, and availability numbers
 - **Getting Started** section exists with clear bootstrap workflow
 - Test cases exist for all user stories with clear success conditions (if `tests-pseudo.md` was generated)
+- Semantic contracts have falsifying tests: parameter causality, formulas, payload meanings, UI/display labels, active-vs-legacy classifications, and negative/counterfactual paths are covered or explicitly deferred
 
 **For Debug Investigations, verify:**
 - Evidence gathered before hypotheses formed (no guessing without data)
@@ -79,8 +86,9 @@ Before writing the final spec, promote the test pseudocode to formalized accepta
 2. Validate schema refs against actual codebase schemas (read schema files, check field names exist)
 3. Write `tests-spec.md` to the same spec directory — concrete field names, validated schema refs, complete error cases
 4. Coverage completeness check: every user story in the spec maps to ≥1 test in `tests-spec.md`, every test maps to a user story. Flag orphan tests (tests without stories) and uncovered stories (stories without tests).
-5. `tests-pseudo.md` stays as-is (audit trail — do NOT delete)
-6. Set `tests_spec_path` in session detail file
+5. Semantic oracle check: every canonical formula, parameter-causality claim, payload meaning, UI/display claim, state transition, and negative/counterfactual path has a test that would fail if the implementation used the wrong causality or displayed the wrong meaning. Mark field-presence/HTTP 200/non-null/range-only tests as supplemental smoke tests, not semantic coverage.
+6. `tests-pseudo.md` stays as-is (audit trail — do NOT delete)
+7. Set `tests_spec_path` in session detail file
 
 **Output the final document:**
 
@@ -171,6 +179,6 @@ After the user review period, or if explicitly requested:
    ```
 
 **Use cases for additional cycles:**
-- First cycle with faster models (gemini-cli/gemini-3-flash-preview), second cycle with stronger models (codex/gpt-5.4, gemini-cli/gemini-3.1-pro-preview)
+- First cycle with faster models (gemini-cli/gemini-3-flash-preview), second cycle with stronger models (codex/gpt-5.5, gemini-cli/gemini-3.1-pro-preview)
 - First cycle for structure and completeness, second cycle for security or performance focus
 - Fresh perspective after user-requested changes

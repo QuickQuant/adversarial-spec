@@ -327,6 +327,8 @@ When in doubt: update session state and use TodoWrite.
 
 When the pipeline rejects a round (sequence mismatch, checklist missing, active-round conflict), see `phases/03-debate.md` Step 4 "No fallback" — reconcile via pipeline tools or `pipeline_patch_state` with a `process_failure_path` note. Do not reach for `debate.py` as the escape hatch.
 
+**Codex long-dispatch rule:** For `pipeline_dispatch_single_agent_debate`, Codex can time out the MCP wrapper around 120s while the underlying Claude/Gemini/Codex critic keeps running. If that happens, do not retry immediately and do not back off. Poll the round workspace result directory every 90 seconds for `parsed.json` / `raw.txt`, then register the return if a dispatch ID is available. If the MCP timeout lost the dispatch ID, comment the artifact path on the Fizzy card and record a process-failure note; do not duplicate the model run.
+
 ---
 
 ## Phase Router — Read ONLY What You Need
@@ -466,7 +468,7 @@ Send Telegram + 120s pause at these intra-phase milestones — they're the momen
 | Milestone | Message template |
 |-----------|-----------------|
 | Debate round complete | `"R{N} complete: {count} findings ({critical} critical, {major} major, {minor} minor) applied to spec. Guardrails next."` |
-| Guardrail results | `"R{N} guardrails: SCOPE {pass/fail}, TRACE {pass/fail}, CONS {pass/fail}. {fix_count} fixes applied."` |
+| Guardrail results | `"R{N} guardrails: SCOPE {pass/fail}, TRACE {pass/fail}, CANON {pass/fail}, TCOV {pass/fail}, CONS {pass/fail}. {fix_count} fixes applied."` |
 | Convergence declared | `"Convergence after {N} rounds. Severity trend: {R1 summary} → {RN summary}. Proceeding to finalize."` |
 | Spec finalized | `"Spec finalized: {filename} ({lines} lines, {tc_count} TCs, {us_count} US). Proceeding to execution planning."` |
 | Execution plan loaded | `"Execution plan: {task_count} tasks across {stream_count} workstreams loaded into pipeline. Cards {first}-{last} in New Todo."` |
