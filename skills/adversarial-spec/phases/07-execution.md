@@ -11,6 +11,7 @@ TodoWrite([
   {content: "Load target architecture and build Architecture Spine (if exists)", status: "pending", activeForm: "Building architecture spine"},
   {content: "Decompose into tasks with gauntlet concern linkage", status: "pending", activeForm: "Decomposing spec into tasks"},
   {content: "Assign architecture_refs per task [GATE] — grounded in actual doc content, no filename guessing", status: "pending", activeForm: "Assigning architecture_refs per task"},
+  {content: "Ground implementation_status per task [GATE] — greenfield/partial/already-built with file:line evidence; already-built ⇒ verify/port not build", status: "pending", activeForm: "Grounding implementation status per task"},
   {content: "Classify behavior_change and verification_mode for every task [GATE]", status: "pending", activeForm: "Classifying verification modes"},
   {content: "Assign test strategies (test-first/test-after)", status: "pending", activeForm: "Assigning test strategies"},
   {content: "Attach test_refs, test_files, or exemption_reason for every task [GATE]", status: "pending", activeForm: "Completing verification mapping"},
@@ -130,6 +131,29 @@ If `.architecture/` does NOT exist:
 - Warn the user: "No architecture docs found. Consider running `/mapcodebase` first."
 - If proceeding without: use targeted file reads (not broad Explore agents) to understand the blast zone. `architecture_refs` may be empty on tasks in this case, recorded in the validation trail as an acknowledged exemption.
 
+**After reading — per-task implementation-status grounding (REQUIRED):**
+
+For every task you will decompose in Step 3, classify `implementation_status` against the *existing* codebase and the finalized spec **before** writing it as a build task. This is the gate that stops phantom-hole work: a "hole" that is already implemented or already specified must become a verify/port task, not a from-scratch build. (pipeline-seams #6: two false holes in a prior session were already built/specified and would have collapsed here if grounded.)
+
+For each task, determine one of:
+- `greenfield` — not yet built; no existing code or spec covers it.
+- `partial` — partially implemented or stubbed; needs completion.
+- `already-built` — complete and working; the task is verification/port only.
+
+Ground each classification in **file:line (or commit) evidence**, gathered the same way as `architecture_refs` — by reading the code, not guessing:
+- `git log --oneline -- <file>` and `git show <hash>:<file>` for history
+- `grep -rn "<symbol>" <scope>` and direct reads for current state
+- For `partial`, quote the stub / `TODO` / `NotImplementedError` you found
+- For `already-built`, cite the working implementation (`path:line` range)
+- For `greenfield`, the evidence is the *absence* — note "no implementer found in `<scope>`"
+
+Rules (same rigor as `architecture_refs`):
+- **No guessing.** A status must be backed by evidence you actually looked at.
+- **One sentence of rationale** per task, plus the `file:line`/commit it rests on.
+- **`already-built` ⇒ verify/port, not build.** Frame the task as verification against the spec's acceptance criteria using an EXISTING `verification_mode` (e.g. an `automated-*` verify or `static-check`). Do NOT invent a new `verification_mode` value or card type — that drifts fizzy's plan contract. The field is additive: the skill requires and consumes it; fizzy may ignore it.
+
+Recorded per task as `implementation_status` + `implementation_evidence` (see Verification Schema below) and checked at Gate V2.
+
 **Then load target architecture (from Phase 4, if it exists):**
 ```bash
 # Check for target architecture from Phase 4
@@ -224,6 +248,8 @@ W0-4  Create component boundary template  S   Blocks: Tasks 3, 4, 5
 | `verification_mode` | string enum | always | How this task will be verified. Determines which other fields are required. |
 | `verification_scope` | string enum | always | Whether verification targets this task specifically or runs the full suite. |
 | `architecture_refs` | string[] | always | Repo-relative paths to `.architecture/` docs whose content overlaps this task's scope. Populated from Step 2.5's per-task assignment. Must be non-empty when `.architecture/` exists; empty only when acknowledged as exempt (no architecture docs in repo). |
+| `implementation_status` | string enum | always | One of `greenfield` / `partial` / `already-built`, from the Step 2.5 implementation-status grounding. `already-built` ⇒ the task is verify/port, framed with an existing `verification_mode` (no new mode). Additive field: skill-required and skill-consumed; fizzy may ignore it. |
+| `implementation_evidence` | string | always | The `file:line` (or commit hash) plus a short quoted excerpt justifying `implementation_status`. For `greenfield`, the absence note (e.g. "no implementer in `src/api/`"). Same evidence rigor as `architecture_refs`. |
 | `test_refs` | string[] | conditional | Test case IDs from `tests-spec.md` or roadmap. Required when `verification_mode` starts with `automated-`. |
 | `test_files` | string[] | conditional | Repo-relative test file paths expected to cover this task. Required for `automated-*` and `test-producer`. |
 | `verify_commands` | string[] | conditional | Shell command strings the tester runs. Required for `automated-*` and `test-producer`. |
@@ -447,6 +473,7 @@ Add error response codes     | test-after  | 1 low concern
 - `verify_commands` must be literal shell strings (no template interpolation).
 - No required field may be empty or whitespace-only. Array entries such as `test_refs: ["  "]` still fail this gate.
 - **`architecture_refs` must be non-empty** if `.architecture/` exists in the repo. Every entry must be a repo-relative path rooted at `.architecture/` (e.g., `.architecture/structured/components/gateway.md`). Filename-based guesses where the referenced doc's content does not overlap the task's scope fail this gate in spirit; if you cannot articulate in one sentence why each ref belongs, remove it.
+- **`implementation_status` must be set** (`greenfield` / `partial` / `already-built`) with non-empty `implementation_evidence` (a `file:line`/commit + excerpt). An `already-built` task must use a verify-oriented existing `verification_mode` — not a build framing. A task whose evidence shows it is already built or already specified but is still written as a from-scratch build fails this gate (phantom-hole, pipeline-seams #6).
 
 **Typed validation errors** (surface these by `task_id` when they fire):
 
@@ -746,6 +773,8 @@ The JSON must follow the v2 pipeline schema. The root includes `plan_schema_vers
         ".architecture/structured/components/telemetry-api.md",
         ".architecture/structured/flows.md"
       ],
+      "implementation_status": "greenfield",
+      "implementation_evidence": "no implementer in src/api/telemetry/ (grep 'trade_telemetry' -> 0 hits)",
       "test_refs": ["TC-5.2", "TC-5.4"],
       "test_files": ["tests/test_t5_api_contracts.py"],
       "verify_commands": ["uv run pytest tests/test_t5_api_contracts.py -q"],
@@ -768,6 +797,8 @@ The JSON must follow the v2 pipeline schema. The root includes `plan_schema_vers
       "verification_mode": "artifact-sync",
       "verification_scope": "static",
       "architecture_refs": [".architecture/INDEX.md"],
+      "implementation_status": "greenfield",
+      "implementation_evidence": "roadmap.json lacks Wave 1 task IDs (roadmap.json:12 lists Wave 0 only)",
       "test_refs": [],
       "test_files": [],
       "verify_commands": [],
@@ -794,6 +825,7 @@ Core fields (unchanged from v1):
 Verification block fields (v2, see Verification Schema reference above for full semantics):
 - `behavior_change`, `verification_mode`, `verification_scope`: always required
 - `architecture_refs`: always required when `.architecture/` exists (populated from Step 2.5's per-task assignment)
+- `implementation_status`, `implementation_evidence`: always required (from Step 2.5's implementation-status grounding); `already-built` ⇒ verify/port framing
 - `test_refs`, `test_files`, `verify_commands`: required per mode
 - `exemption_reason`: required for exempt modes (`artifact-sync`, `static-check`, `manual-ux`)
 - `verification_notes`: optional free-text
