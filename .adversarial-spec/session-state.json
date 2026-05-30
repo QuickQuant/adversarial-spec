@@ -1,19 +1,33 @@
 {
   "schema_version": "1.3",
-  "active_session_id": "adv-spec-202604111912-test-mapping-verification-gates",
-  "context_name": "Test Mapping & Verification Gates",
-  "current_phase": "execution",
-  "current_step": "Completed mapcodebase 3.6 incremental update from c3b5f8c to 9ca3ccd",
-  "next_action": "Review new concerns in concerns.md and decide which to address next",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202604161758-mapcodebase-3-6-incremental-update-complete.md",
-  "execution_plan_path": ".adversarial-spec/specs/test-mapping-verification-gates/execution-plan.md",
-  "spec_path": ".adversarial-spec/specs/test-mapping-verification-gates/spec-output.md",
+  "active_session_id": null,
+  "context_name": null,
+  "current_phase": null,
+  "current_step": null,
+  "next_action": "No active session. Fizzy board is empty. Start new work with /adversarial-spec, resume a parked session below, or begin pipeline-seams remediation (skill owns holes #5, #6, #3-debate, #9, #11).",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202604291904-handed-off-to-codex-spec-draft-v1.md",
+  "execution_plan_path": null,
+  "spec_path": null,
   "do_not_ask": [],
-  "updated_at": "2026-04-16T17:58:43Z",
-  "active_session": "adv-spec-202604111912-test-mapping-verification-gates",
-  "active_session_file": ".adversarial-spec/sessions/adv-spec-202604111912-test-mapping-verification-gates.json",
-  "session_stack": [
-    "adv-spec-202604111912-test-mapping-verification-gates"
+  "updated_at": "2026-05-30T19:08:15Z",
+  "active_session": null,
+  "active_session_file": null,
+  "session_stack": [],
+  "parked_sessions": [
+    {
+      "session_id": "adv-spec-202604291604-dispatch-cost-tracker-unify",
+      "context_name": "Dispatch & Cost-Tracker Unification (CON-001 + CON-002)",
+      "phase": "target-architecture",
+      "note": "Debate converged R3 (2026-04-30); parked at Phase 4 final_approval gate. Referenced Fizzy card 1851, which no longer exists (board empty). Artifacts committed da95f56.",
+      "session_file": ".adversarial-spec/sessions/adv-spec-202604291604-dispatch-cost-tracker-unify.json"
+    },
+    {
+      "session_id": "adv-spec-202604111912-test-mapping-verification-gates",
+      "context_name": "Test Mapping & Verification Gates",
+      "phase": "execution",
+      "note": "Prior stacked session; mapcodebase 3.6 incremental update complete.",
+      "session_file": ".adversarial-spec/sessions/adv-spec-202604111912-test-mapping-verification-gates.json"
+    }
   ],
   "completed_sessions": [
     "adv-spec-202604021743-phase4-architecture-rewrite",
@@ -22,5 +36,7 @@
     "adv-spec-202603201800-gauntlet-refactor-quota-burn",
     "adv-spec-202603051555-philosophy-phase-and-arch-persona"
   ],
-  "completed_work": "Full incremental architecture mapping: 5 discovery explorers, high-level docs updated, structured docs updated, reality check clean, hazard detection (HAZ-003 mitigated), pattern analysis (3 resolved), diagnosis subagent (14 findings, 6 concerns), action plan, manifest, visuals updated, 15 Fizzy cards advanced. Resolved: CON-001-old (tasks.json locking), call-model unification, PROGRAMMING_BUGS pattern. New concerns: triple litellm pathway, cost_tracker coupling, orchestrator complexity, dead code, inline prompts, sys.path hacks."
+  "completed_work": null,
+  "reset_at": "2026-05-30T19:08:15Z",
+  "reset_reason": "Zombie pointer cleanup: prior active_session pointed at dispatch-cost-tracker (card 1851) which no longer exists on the now-empty Fizzy board. Parked sessions preserved above; their on-disk artifacts are committed."
 }
