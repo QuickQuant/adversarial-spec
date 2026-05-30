@@ -15,6 +15,7 @@ dependencies = [
     { name = "litellm" },
     { name = "mcp" },
     { name = "pydantic" },
+    { name = "python-dotenv" },
 ]
 
 [package.optional-dependencies]
@@ -37,6 +38,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = "==8.4.2" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = "==7.0.0" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.14.11" },
     { name = "types-requests", marker = "extra == 'dev'", specifier = "==2.32.4.20260107" },
 ]
