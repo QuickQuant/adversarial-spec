@@ -441,13 +441,22 @@ USER REQUEST:
 {user_message}"""
 
     try:
-        # Use gemini CLI with the prompt passed via stdin and -p flag
+        # Use gemini CLI with the prompt passed via stdin and -p flag.
+        # --allowed-mcp-server-names with a non-matching placeholder disables
+        # all configured MCP servers (e.g. fizzy, trello in ~/.gemini/settings.json)
+        # for this invocation. Without it, gemini-cli attempts to connect to
+        # every configured MCP server on every call — a dead/slow server (Trello
+        # is dead in many setups) makes the CLI CPU-spin locally without ever
+        # submitting to the API. Confirmed root cause of the 2026-05-04
+        # Phase 4 timeout-on-every-batch failure.
         cmd = [
             "gemini",
             "-m",
             actual_model,
             "-y",
-        ]  # -y for auto-approve (no tool calls expected)
+            "--allowed-mcp-server-names",
+            "none-no-such-server",
+        ]  # -y for auto-approve; --allowed-mcp-server-names disables MCP load
 
         result = subprocess.run(
             cmd, input=full_prompt, capture_output=True, text=True, timeout=timeout, cwd=cwd

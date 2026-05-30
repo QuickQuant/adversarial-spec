@@ -284,7 +284,7 @@ def get_rate_limit_config(model_name: str) -> tuple[int, int]:
     model_lower = model_name.lower()
     if "gemini" in model_lower:
         paid = os.environ.get("GEMINI_PAID_TIER", "").lower() == "true"
-        return (10, 2) if paid else (3, 15)
+        return (10, 2) if paid else (1, 15)
     elif "claude" in model_lower or "anthropic" in model_lower:
         paid = os.environ.get("CLAUDE_PAID_TIER", "").lower() == "true"
         return (20, 1) if paid else (5, 5)
