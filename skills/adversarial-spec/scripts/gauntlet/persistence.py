@@ -595,13 +595,25 @@ def save_partial_clustering(spec_hash: str, concerns: Any, config_hash: str) -> 
     )
 
 
-def save_run_manifest(manifest: dict[str, Any], spec_hash: str) -> str:
-    """Create a new run manifest file and return its path."""
+def save_run_manifest(
+    manifest: dict[str, Any],
+    spec_hash: str,
+    spec_as_gauntleted_path: Optional[str] = None,
+) -> str:
+    """Create a new run manifest file and return its path.
+
+    ``spec_hash`` is the FULL sha256 hexdigest (not truncated), so a downstream
+    gate can recompute ``sha256(spec_as_gauntleted_path)`` and match at whatever
+    truncation it uses. ``spec_as_gauntleted_path`` points at the exact bytes
+    that produced ``spec_hash`` (see ``save_spec_as_gauntleted``).
+    """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"run-manifest-{spec_hash[:8]}-{timestamp}.json"
     path = format_path_safe(GAUNTLET_DIR, filename)
     manifest_data = {
         "spec_hash": spec_hash,
+        "spec_as_gauntleted_path": spec_as_gauntleted_path
+        or manifest.get("spec_as_gauntleted_path"),
         "status": manifest.get("status", "running"),
         "created_at": manifest.get("created_at", _utc_now_iso()),
         "updated_at": _utc_now_iso(),
@@ -780,6 +792,34 @@ def load_partial_run(
 def get_spec_hash(spec: str) -> str:
     """Get the full spec hash used for checkpointing and manifests."""
     return hashlib.sha256(spec.encode()).hexdigest()
+
+
+def save_spec_as_gauntleted(spec: str, spec_hash: str, gauntlet_dir: Path) -> Optional[str]:
+    """Persist the EXACT spec bytes that were hashed for this run.
+
+    The gauntlet hashes whatever ``spec`` string it receives — which, for runs
+    invoked with ``--context``, is spec+context concatenated. Without saving
+    those exact bytes, fizzy's ``mark_gauntlet_complete`` gate (which requires
+    ``run_manifest.spec_hash == sha256(spec_path)``) can never bind a spec_path
+    to the run, because the gauntleted bytes no longer exist anywhere on disk.
+
+    Writes ``spec-as-gauntleted-<spec_hash[:8]>.md`` next to the run artifacts
+    and returns its path. Best-effort: on OSError (read-only disk, etc.) it logs
+    a prominent WARNING and returns None — but it never *silently* skips, since a
+    silent skip is exactly the failure this guards against.
+    """
+    filename = f"spec-as-gauntleted-{spec_hash[:8]}.md"
+    path = gauntlet_dir / filename
+    try:
+        path.write_text(spec, encoding="utf-8")
+    except OSError as e:
+        print(
+            f"WARNING: could not persist spec-as-gauntleted ({e}). "
+            f"mark_gauntlet_complete will not be bindable for run {spec_hash[:8]}.",
+            file=sys.stderr,
+        )
+        return None
+    return str(path)
 
 
 # =============================================================================

@@ -15,6 +15,16 @@ from typing import Any, Optional
 
 import token_tracking
 from adversaries import ADVERSARIES, resolve_adversary_name
+from gauntlet.batch_tiering import (
+    pick_eval_batch_arg,
+    summarize_tiers,
+)
+from gauntlet.clustering import (
+    DEFAULT_JACCARD_THRESHOLD,
+    cluster_concerns,
+    render_cluster_report,
+    should_auto_cluster,
+)
 from gauntlet.core_types import (
     Concern,
     ExplanationMatch,
@@ -40,19 +50,9 @@ from gauntlet.persistence import (
     load_partial_run,
     save_checkpoint,
     save_gauntlet_run,
+    save_spec_as_gauntleted,
     update_adversary_stats,
     update_run_manifest,
-)
-from gauntlet.batch_tiering import (
-    BatchTier,
-    pick_eval_batch_arg,
-    summarize_tiers,
-)
-from gauntlet.clustering import (
-    DEFAULT_JACCARD_THRESHOLD,
-    cluster_concerns,
-    render_cluster_report,
-    should_auto_cluster,
 )
 from gauntlet.phase_1_attacks import check_phase1_quality, generate_attacks
 from gauntlet.phase_2_synthesis import generate_big_picture_synthesis
@@ -315,6 +315,15 @@ def run_gauntlet(
     else:
         print("Dynamic prompts: none (using static personas)", file=sys.stderr)
     manifest_path: Optional[str] = None
+    # Persist the EXACT bytes that produced spec_hash, then stamp the manifest
+    # with its path, so fizzy's mark_gauntlet_complete can bind a spec_path to
+    # this run even if recorded late (pipeline-seams #9). Unconditional — runs
+    # before any phase so it survives resume and early errors.
+    spec_as_gauntleted_path = save_spec_as_gauntleted(spec, spec_hash, gauntlet_dir)
+    manifest_path = update_run_manifest(
+        manifest_path,
+        {"spec_hash": spec_hash, "spec_as_gauntleted_path": spec_as_gauntleted_path},
+    )
     config_hash = get_config_hash(
         config,
         attack_models=attack_models,

@@ -10,11 +10,13 @@ from gauntlet.persistence import (
     _write_json_atomic,
     format_path_safe,
     get_config_hash,
+    get_spec_hash,
     load_partial_run,
     load_run_manifest,
     save_checkpoint,
     save_partial_clustering,
     save_run_manifest,
+    save_spec_as_gauntleted,
     update_run_manifest,
 )
 from gauntlet.reporting import format_run_manifest
@@ -204,3 +206,71 @@ def test_manifest_round_trip_and_formatting(checkpoint_dir):
     assert "phase_1_attacks" in formatted
     assert "codex/gpt-5.5" in formatted
     assert "completed" in formatted
+
+
+def test_spec_as_gauntleted_persisted_and_bindable(checkpoint_dir):
+    """The exact hashed bytes are saved and the manifest records their path.
+
+    Regression for pipeline-seams #9: without this, fizzy's mark_gauntlet_complete
+    gate (spec_hash == sha256(spec_path)) can never bind a spec_path to the run,
+    because the gauntleted bytes (spec + --context) no longer exist on disk.
+    """
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    # Simulate a --context run: the gauntleted input is spec+context concatenated.
+    gauntleted_input = "# Spec\nbody\n\n## Context: target-architecture.md\narch bytes"
+    spec_hash = get_spec_hash(gauntleted_input)
+
+    spec_path = save_spec_as_gauntleted(gauntleted_input, spec_hash, checkpoint_dir)
+    assert spec_path is not None
+
+    manifest_path = save_run_manifest({}, spec_hash, spec_as_gauntleted_path=spec_path)
+    assert manifest_path  # created
+
+    manifest = load_run_manifest(spec_hash[:8])
+    assert manifest is not None
+    assert manifest["spec_as_gauntleted_path"] == spec_path
+    assert manifest["spec_hash"] == spec_hash  # FULL hash, not truncated
+
+    # The persisted bytes must hash back to the recorded spec_hash → bindable.
+    persisted = (checkpoint_dir / f"spec-as-gauntleted-{spec_hash[:8]}.md").read_text(
+        encoding="utf-8"
+    )
+    assert persisted == gauntleted_input
+    assert get_spec_hash(persisted) == spec_hash
+
+
+def test_update_run_manifest_preserves_spec_path_across_phases(checkpoint_dir):
+    """The orchestrator's stamping mechanism records the path and never drops it.
+
+    Mirrors orchestrator.run_gauntlet: lazily create + stamp via update_run_manifest
+    dict-passthrough, then advance phases. The spec path must survive later updates.
+    """
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    spec = "# Spec\nbody"
+    spec_hash = get_spec_hash(spec)
+    spec_path = save_spec_as_gauntleted(spec, spec_hash, checkpoint_dir)
+
+    manifest_path = update_run_manifest(
+        None, {"spec_hash": spec_hash, "spec_as_gauntleted_path": spec_path}
+    )
+    # A later phase metric + a terminal status update must not drop the path.
+    update_run_manifest(
+        manifest_path,
+        PhaseMetrics(
+            phase="phase_1_attacks",
+            phase_index=1,
+            status="completed",
+            duration_seconds=1.0,
+            input_tokens=1,
+            output_tokens=1,
+            models_used=["codex/gpt-5.5"],
+            config_snapshot={},
+            spec_hash=spec_hash,
+        ),
+    )
+    update_run_manifest(manifest_path, {"status": "completed"})
+
+    manifest = load_run_manifest(spec_hash[:8])
+    assert manifest["spec_as_gauntleted_path"] == spec_path
+    assert manifest["status"] == "completed"
+    assert len(manifest["phases"]) == 1
