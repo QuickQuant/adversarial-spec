@@ -7,7 +7,7 @@ Projects can use a Telegram bot as a mobile-accessible interface for human-gated
 Each project that uses the bridge defines its own:
 
 - **Bot handle** (e.g., `@masterfizzybot`)
-- **Token env var** (e.g., `FIZZYBOT_TELEGRAM_KEY`) — stored in `/etc/environment`, available to systemd services; source it in shell scripts
+- **Token env var** (e.g., `FIZZYBOT_TELEGRAM_KEY`) — expected to be present in the agent's shell environment already (inherited by the session). Reference it directly as `${<BOT_TOKEN_ENV>}`; **do NOT read it from `/etc/environment` or any other file**, do not echo/print it, and never run bare `export`/`env`/`declare -x` (an empty `export $VAR` dumps the whole environment). If the var is unset, ask the operator rather than recovering it from disk.
 - **Chat ID** — Jason's Telegram chat ID (same across projects, but projects should reference the value explicitly)
 - **Project emoji framing** — e.g., `🍾🟦` for fizzy-pipeline-mcp. Every message starts and ends with the project emoji so Jason can visually distinguish which project is talking.
 
@@ -26,7 +26,7 @@ Throughout this reference, placeholders like `<BOT_TOKEN_ENV>`, `<CHAT_ID>`, and
 ## Sending a Message
 
 ```bash
-source <(grep <BOT_TOKEN_ENV> /etc/environment) && \
+# Token is read directly from the inherited env var — never sourced from a file.
 curl -s -X POST "https://api.telegram.org/bot${<BOT_TOKEN_ENV>}/sendMessage" \
   -H "Content-Type: application/json" \
   -d '{
@@ -44,7 +44,7 @@ For replies to a specific prior message (to maintain thread correlation):
 ## Listening for a Reply (Background Pattern)
 
 ```bash
-source <(grep <BOT_TOKEN_ENV> /etc/environment) && \
+# Token is read directly from the inherited env var — never sourced from a file.
 LAST_UPDATE=$(curl -s "https://api.telegram.org/bot${<BOT_TOKEN_ENV>}/getUpdates?offset=-1" | \
   python3 -c "import sys,json; d=json.load(sys.stdin); u=d.get('result',[]); print(u[-1]['update_id'] if u else 0)") && \
 OFFSET=$((LAST_UPDATE + 1)) && \
