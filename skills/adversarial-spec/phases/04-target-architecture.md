@@ -34,6 +34,25 @@ Phase 4 is a file-based, AI-agent-driven state machine that runs after spec deba
 
 It is mode-aware across `phase_mode` (`skip | lightweight | full`) and `context_mode` (`greenfield | brownfield_feature | brownfield_debug`).
 
+### Phase 4 is MANDATORY (skip mode is a deliberate decision, not absence)
+
+**Phase 4 must be entered between Phase 3 (Debate) and Phase 5 (Gauntlet) on every session.** The session FSM may transition through Phase 4 quickly (≤5 min in `skip` mode) but it cannot be silently bypassed.
+
+- The "deliberate no-op" path IS `phase_mode=skip`, which produces a stub `target-architecture.md` recording the scale-check rationale and an empty `architecture-invariants.json`. The stub is the attribution artifact — it proves Phase 4 was considered.
+- "Did Phase 4 produce an artifact?" is the load-bearing check for downstream phases. An empty stub satisfies it; a missing file does not.
+- Skipping Phase 4 without producing the stub is a process failure. See `.adversarial-spec/specs/treatment-etb/process-failures/phase-4-target-architecture-skipped-silently.md` for the canonical incident.
+
+**Input from Phase 2 (Roadmap):** If `roadmap/manifest.json` contains an `architecture_impact` block (added 2026-05-17), the scale check reads its `verdict` as the recommended `phase_mode`:
+
+| Roadmap verdict | Recommended Phase 4 `phase_mode` |
+|-----------------|----------------------------------|
+| `no_change` | `skip` (stub only) |
+| `extends_existing` | `lightweight` |
+| `new_components` | `full` |
+| `new_middleware` | `full` (and middleware-creator may activate post-execution) |
+
+The recommendation can be overridden at the scale-check gate, but the verdict-to-mode mapping is the default. If no `architecture_impact` block exists (legacy roadmaps, pre-2026-05-17), the scale check falls back to the heuristics in Section 2.
+
 ### Canonical Enums
 
 These enums are normative. All artifacts, schemas, and references must use these exact values.
@@ -347,6 +366,10 @@ On confirmation, the agent: removes the lock file, logs `WARN_STALE_LOCK_BROKEN`
 
 ## Section 2: Scale Check (Gate)
 
+**Primary input: roadmap's `architecture_impact.verdict` (when present).** Read `roadmap/manifest.json` first. If the block exists, map verdict → mode per the table in "Phase 4 is MANDATORY" above. The block's `rationale`, `new_components`, `new_middleware`, and `new_vars_into_existing_middleware` fields populate the scale-check rationale presented at the gate.
+
+**Fallback heuristics (no `architecture_impact` block):**
+
 | Mode | Criteria |
 |------|----------|
 | `skip` | <3 user stories AND single-file scope AND no cross-cutting concern touched |
@@ -357,9 +380,9 @@ On confirmation, the agent: removes the lock file, logs `WARN_STALE_LOCK_BROKEN`
 
 **Brownfield exception:** Even a small brownfield_debug may require `full` if the bug crosses multiple surfaces, touches 2+ concerns, or indicates a systemic invariant failure.
 
-If `skip`: stub artifacts, Decision Journal entry with `decision: "skip"`, transition to gauntlet.
+If `skip`: stub artifacts (still required — they are the attribution that Phase 4 was considered), Decision Journal entry with `decision: "skip"` AND `rationale` lifted from `architecture_impact.rationale` when present, transition to gauntlet.
 
-**[GATE]** — Present result to user for confirmation before proceeding.
+**[GATE]** — Present result to user for confirmation before proceeding. Surface the roadmap verdict and rationale verbatim when present, so the operator can confirm the upstream decision still holds.
 
 ---
 

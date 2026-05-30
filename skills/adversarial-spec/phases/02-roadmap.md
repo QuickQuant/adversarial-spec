@@ -6,6 +6,7 @@
 TodoWrite([
   {content: "Build RequirementsSummary and assess complexity", status: "in_progress", activeForm: "Building requirements summary"},
   {content: "Draft roadmap with user stories and milestones", status: "pending", activeForm: "Drafting roadmap"},
+  {content: "Architecture-impact assessment (component map, middleware, new vars) [GATE]", status: "pending", activeForm: "Assessing architecture impact"},
   {content: "Goal alignment check (human guardrail) [GATE]", status: "pending", activeForm: "Checking goal alignment"},
   {content: "Roadmap debate round (medium/complex only)", status: "pending", activeForm: "Running roadmap debate round"},
   {content: "User confirms roadmap [GATE]", status: "pending", activeForm: "Awaiting user roadmap confirmation"},
@@ -155,6 +156,95 @@ Generate roadmap with user stories and milestones. **The roadmap MUST include th
 - [ ] Clear error messages if prerequisites missing
 - [ ] Can verify setup worked before proceeding
 ```
+
+#### 3.4. Architecture-Impact Assessment (REQUIRED)
+
+**This is a GATE — do not proceed until the architecture-impact block is written into the roadmap.**
+
+**Update Tasks:** Mark "Architecture-impact assessment" as `in_progress`.
+
+**Why this lives here, not in Phase 4:** Architecture decisions should inform the spec, not be bolted on after debate convergence. If the answer is "no architectural change," recording it explicitly here means Phase 4 can use `phase_mode=skip` with a defensible rationale instead of being silently bypassed by an FSM that lacks a target-architecture lane. If the answer is "yes, new middleware / new component class," the debate phase inherits architecture-aware context.
+
+**Procedure:**
+
+1. Read `.architecture/primer.md` and the component table from `.architecture/INDEX.md` (if present). For greenfield sessions with no `.architecture/` corpus, treat the planned component map as the reference.
+2. For each milestone in the draft roadmap, ask:
+   - Does any user story introduce a **new component class** (new layer, new service, new background worker class)?
+   - Does any user story require **new shared middleware** (cross-cutting concern that multiple endpoints/jobs will consume)?
+   - Does any user story add **new variables, schemas, or contracts** that will flow through existing middleware?
+3. Produce the `architecture_impact` block (see schema below). Even "no change" must be explicit — a one-line verdict with rationale.
+
+**`architecture_impact` block schema** (added to `roadmap/manifest.json`):
+
+```json
+{
+  "architecture_impact": {
+    "verdict": "no_change | extends_existing | new_components | new_middleware",
+    "rationale": "1-3 sentences explaining the verdict",
+    "new_components": [
+      {"name": "string", "kind": "route | model | worker | cli | migration | ...", "extends": "<existing component class or 'new layer'>"}
+    ],
+    "new_middleware": [
+      {"name": "string", "purpose": "string", "consumed_by": ["<surface or endpoint>", ...]}
+    ],
+    "new_vars_into_existing_middleware": [
+      {"variable": "string", "target_middleware": "string", "purpose": "string"}
+    ],
+    "assessed_at": "ISO8601",
+    "assessed_against": "<git_hash of .architecture/ at time of assessment, or 'greenfield'>"
+  }
+}
+```
+
+**Verdict criteria:**
+- `no_change`: roadmap touches only existing components, no new shared middleware, no new contracts flowing through middleware. Phase 4 will run in `skip` mode.
+- `extends_existing`: roadmap adds new modules WITHIN existing component classes (e.g., a new route in an existing routes layer, a new model in an existing model layer). No new layers, no new middleware. Phase 4 will run in `lightweight` mode.
+- `new_components`: roadmap introduces a new component class or layer. Phase 4 will run in `full` mode.
+- `new_middleware`: roadmap requires shared middleware (auth, logging, validation, retry, etc.) that crosses surfaces. Phase 4 will run in `full` mode AND middleware-creator may activate post-execution.
+
+**Example — "no change" verdict:**
+
+```json
+{
+  "architecture_impact": {
+    "verdict": "no_change",
+    "rationale": "Adds two GET endpoints to existing api/routes layer. Returns data already produced by existing analyzer module. No new components or shared concerns.",
+    "new_components": [],
+    "new_middleware": [],
+    "new_vars_into_existing_middleware": [],
+    "assessed_at": "2026-05-17T18:30:00Z",
+    "assessed_against": "9b0d437"
+  }
+}
+```
+
+**Example — "extends_existing" verdict with var-into-middleware mapping:**
+
+```json
+{
+  "architecture_impact": {
+    "verdict": "extends_existing",
+    "rationale": "Adds an annotation BFF route and Annotation discriminated-union model. Pushes two new fields through existing event-stream and singleflight middleware.",
+    "new_components": [
+      {"name": "me_annotations route", "kind": "route", "extends": "app/routes/"},
+      {"name": "Annotation model", "kind": "model", "extends": "app/models/"}
+    ],
+    "new_middleware": [],
+    "new_vars_into_existing_middleware": [
+      {"variable": "MAX_RECORD_SIZE = 64KB", "target_middleware": "jsonl_event_stream.py", "purpose": "Cap record size to prevent OOM"},
+      {"variable": "schema_version in cache key", "target_middleware": "evaluation_context_store.py", "purpose": "Bust cache on schema migrations"}
+    ],
+    "assessed_at": "2026-05-17T18:30:00Z",
+    "assessed_against": "9b0d437"
+  }
+}
+```
+
+**Treatment-session shortcut:** If `pre_plan_path` is set and the pre-plan contains an `## Architecture Impact` section, extract the block from that source rather than re-deriving it. The treatcodebase output is authoritative for treatment sessions.
+
+**[GATE] TodoWrite: Mark "Architecture-impact assessment" completed only after the block is written into the draft roadmap manifest (or session detail for simple tier).**
+
+---
 
 #### 3.5. Goal Alignment Check (Human Guardrail)
 

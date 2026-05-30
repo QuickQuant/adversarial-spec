@@ -343,6 +343,18 @@ for f in .adversarial-spec/issues/*.md; do
   [ -f "$f" ] && CONTEXT_FLAGS="$CONTEXT_FLAGS --context $f"
 done
 
+# 2b. Visualizer feedback (auto-emitted by spec-visualizer; status-gated)
+# Each file has a `**Status:**` field. Attach only `unprocessed` files. After the
+# round completes, the round-completion handler MUST rewrite that line to
+# `**Status:** processed-in-round-<round-number>` so the same feedback is not
+# re-attached on the next round. Files older than the active spec version may be
+# swept to `.adversarial-spec/visualizer-feedback/archive/` by spec-visualizer.
+for f in .adversarial-spec/visualizer-feedback/*.md; do
+  [ -f "$f" ] || continue
+  grep -q "^\*\*Status:\*\* unprocessed" "$f" && \
+    CONTEXT_FLAGS="$CONTEXT_FLAGS --context $f"
+done
+
 # 3. Key type definitions (limit to 3-5 most relevant files)
 # e.g., --context src/types.ts --context src/api_models.py
 ```
@@ -896,23 +908,29 @@ TCOV (test_coverage_auditor): 1 finding
 
 ### Telegram Notification (after each round — REQUIRED)
 
-After Fizzy sync, send a Telegram summary and pause for human interruption. See SKILL.md "Major Milestone Notifications" for full protocol.
+After Fizzy sync, send a Telegram summary, **launch the 120s pause as a background Bash task, and end the turn**. See SKILL.md "Major Milestone Notifications" for the full mechanism + rationale. Summary:
+
+1. `~/.claude/bin/telegram-send <project> "<message>"` (foreground — confirm the send).
+2. `Bash(command="sleep 120; echo done", run_in_background=true)`.
+3. End the turn. Do NOT chain follow-up tool calls behind the sleep.
+
+If the human replies within 120s, their message arrives first and you respond to them. If no reply lands by the time `sleep` completes, the `task-notification` wakes the next turn and you continue with the protocol's next step (begin R2, etc.). A foreground sleep is process theater — it freezes the turn without giving the human a real interrupt window. The whole point of the pause is "background sleep + turn ends" so the human actually has 120s of decision space.
 
 **After debate round synthesis + guardrails:**
 ```bash
 ~/.claude/bin/telegram-send <project> "R<N> complete: <count> findings (<critical> critical, <major> major, <minor> minor) applied. Guardrails: SCOPE <pass/fail>, TRACE <pass/fail>, CANON <pass/fail>, TCOV <pass/fail>, CONS <pass/fail>."
-sleep 120  # 2 min pause for human interruption
+# then: Bash(command="sleep 120; echo done", run_in_background=true) — and END THE TURN
 ```
 
 **After convergence declared:**
 ```bash
 ~/.claude/bin/telegram-send <project> "Convergence after <N> rounds. <severity trend summary>. Proceeding to finalize."
-sleep 120
+# then: Bash(command="sleep 120; echo done", run_in_background=true) — and END THE TURN
 ```
 
 **Rules:**
 - Check telegram config first (`has_telegram_config` or `telegram-registry-lookup`). Skip if no config.
-- The 120s pause is mandatory — gives human time to read and Ctrl+C to redirect.
+- The 120s pause is mandatory **AND must be backgrounded + turn-ending** — gives the human time to read and Ctrl+C / reply to redirect. A foreground sleep does not provide that affordance.
 - If `telegram-send` fails, log to stderr and continue.
 - This is the human's primary mobile channel for staying oriented during long autonomous runs.
 

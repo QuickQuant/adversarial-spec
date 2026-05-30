@@ -28,10 +28,11 @@ Write `.conductor/agents/<role>.json` with `{role, pid, started_at, is_conductor
 - Passive — no handshake. Stale markers OK. Don't keep a shell alive just to own an EXIT trap.
 
 ### 0d: Wake Listener
-Reuse if PID file exists and PID alive; only launch if none.
+**Always relaunch on session start. Never reuse an existing listener PID.**
 
-- **Conductor (claude):** `/tmp/claude-telegram-wake-<project>.pid`, launch `~/.claude/bin/telegram-wake-listener` with `run_in_background=true`. Enforced by `require-listener.sh` stop hook.
-- **Workers (gemini/codex):** `/tmp/claude-dispatch-wake-<project>-<role>.pid`, script `~/.claude/bin/dispatch-wake-listener <role>`. Claude's `run_in_background` is Claude-only; Gemini/Codex use native backgrounding (`nohup … &` etc.), accounting for bubblewrap `/tmp` constraints.
+- **Why:** `task-notification` is session-scoped — it only fires to the Claude session that launched the `run_in_background` task. A listener "alive" but launched by a previous (dead/compacted/different) session is a zombie wake-target: the notification fires into a void. The stop hook's binding check passes (banner exists in `/tmp/claude-*/.../tasks/*.output`) but it's the *old* session's banner. Result: messages accumulate in `updates.jsonl`, no wake fires, session goes silent for hours. This pattern has surfaced and been "fixed" 5+ times by tightening stop-hook gates (PID alive → PID bound to a task → ...). Each gate was symptom-patching a shared resource model that's structurally incompatible with session-scoped wake semantics. Drop the reuse optimization. Listener launch is ~50ms.
+- **Conductor (claude):** if `/tmp/claude-telegram-wake-<project>.pid` exists, kill the recorded PID (best-effort) and remove the file. THEN launch `~/.claude/bin/telegram-wake-listener` via `Bash(run_in_background=true)`. Enforced by `require-listener.sh` stop hook.
+- **Workers (gemini/codex):** same pattern for `/tmp/claude-dispatch-wake-<project>-<role>.pid`. Script `~/.claude/bin/dispatch-wake-listener <role>`. Claude's `run_in_background` is Claude-only; Gemini/Codex use native backgrounding (`nohup … &` etc.), accounting for bubblewrap `/tmp` constraints.
 - Listener tails `.conductor/dispatch/<role>/updates.jsonl` and exits on first new line.
 - Can't background at all? Inline-check the dispatch log at the top of each pickup iteration (compare `wc -l` to baseline).
 - Missing binary → report the path and stop.
@@ -70,6 +71,57 @@ jq -r '{checkpointed_cleanly,current_phase,current_step,fizzy_card_id,spec_path,
 Phases that need more (gauntlet → `gauntlet_concerns_path`, finalize → `requirements_summary`) read that one field on demand. Never `cat` the whole file.
 
 **Recent decisions:** if `sessions/<id>.decisions.log` exists, tail ~20 lines. Authoritative "what landed and why it matters." Replaces `git log` / `git show` for orientation. See Decisions Log section.
+
+**Canonical-Phase-Order Check (REQUIRED on every resume):**
+
+Compare the actual transition sequence in the journey log against the canonical phase order. A silently-skipped phase (the kind detected post-hoc in Phase 7 scope assessment 2026-05-17) is exactly what this catches.
+
+```bash
+# Extract the transition sequence from the journey log
+jq -r 'select(.type == "transition") | .event' \
+  .adversarial-spec/sessions/<id>.journey.log 2>/dev/null \
+  | sed -nE 's/^Phase transition: ([a-z_-]+) → ([a-z_-]+).*$/\1 \2/p' \
+  > /tmp/journey-transitions-<id>.txt
+```
+
+Canonical order: `requirements → roadmap → debate → target-architecture → gauntlet → finalize → execution → implementation → complete`.
+
+**Verification:** the second column of consecutive rows must be a sub-sequence of the canonical order. Specifically, between any two transitions `A → B` and `C → D`, the canonical order must contain `B` either equal to or strictly before `C`. If `B` is canonically before `C` with a gap, those canonical phases were skipped.
+
+**Required exclusion:** `pre-gauntlet`, `reconciliation`, and other Fizzy-FSM-internal lanes that are not in the skill's canonical order should be treated as part of the `gauntlet` macro-phase, not as separate phases. Map them to their canonical equivalent before comparing.
+
+**On detected skip:**
+```
+Canonical-Order Anomaly Detected
+───────────────────────────────────────
+Journey shows: <phase A> → <phase B>
+Canonical order requires: <phase A> → <missing phase> → <phase B>
+
+Missing phase: <missing phase>
+Expected artifact: <path to phase's required artifact>
+Artifact exists:  [yes | no]
+
+If artifact exists but transition was not recorded → cosmetic; backfill the transition event.
+If artifact does NOT exist → process failure. Stop and surface to operator before continuing.
+```
+
+Do NOT auto-recover. The skill's canonical order is load-bearing; a silently-skipped phase loses attribution that downstream phases consume. Surface the anomaly and let the operator decide: backtrack, run the missing phase, or document the skip with explicit rationale (`do_not_ask` entry + process-failure note).
+
+**Required artifacts per canonical phase** (used by the artifact-existence check above):
+
+| Phase | Required artifact |
+|-------|-------------------|
+| requirements | session detail `requirements_summary` field non-empty |
+| roadmap | `roadmap_path` set AND `roadmap/manifest.json` exists (or session inline for simple tier) |
+| debate | `spec_path` set AND file exists |
+| target-architecture | `.adversarial-spec/specs/<slug>/target-architecture.md` exists (even if stub from `phase_mode=skip`) |
+| gauntlet | `gauntlet_concerns_path` set AND file exists |
+| finalize | `spec_path` updated to finalized version AND file exists |
+| execution | `execution_plan_path` set AND file exists |
+| implementation | at least one pipeline_complete_task recorded in journey log |
+
+If a canonical phase appears in the journey-log transitions but its artifact is missing, that is a stronger anomaly than a missing transition — the phase claims to have run but produced nothing.
+
 
 **Clean-exit check:**
 - `checkpointed_cleanly: false` → previous session died mid-work. Warn, offer "Continue from last checkpoint" / "Review what changed."
@@ -341,11 +393,11 @@ Based on `current_phase`, read the matching phase file:
 | requirements | `~/.claude/skills/adversarial-spec/phases/01-init-and-requirements.md` |
 | roadmap | `~/.claude/skills/adversarial-spec/phases/02-roadmap.md` |
 | debate | `~/.claude/skills/adversarial-spec/phases/03-debate.md` |
-| target-architecture | `~/.claude/skills/adversarial-spec/phases/04-target-architecture.md` |
+| target-architecture (MANDATORY — skip mode allowed, but must produce stub artifact) | `~/.claude/skills/adversarial-spec/phases/04-target-architecture.md` |
 | gauntlet | `~/.claude/skills/adversarial-spec/phases/05-gauntlet.md` |
 | finalize | `~/.claude/skills/adversarial-spec/phases/06-finalize.md` |
-| middleware-creator (optional) | `~/.claude/skills/adversarial-spec/phases/middleware-creator.md` — runs after `finalize` when `middleware-candidates.json` exists and the user chooses to materialize shared middleware before normal implementation pickup. See note below. |
 | execution | `~/.claude/skills/adversarial-spec/phases/07-execution.md` |
+| middleware-creator (optional) | `~/.claude/skills/adversarial-spec/phases/middleware-creator.md` — runs after `execution` and before `implementation` when `middleware-candidates.json` exists and the user chooses to materialize shared middleware before normal pickup. Source task cards required by the fanout API are already loaded by Phase 7, so no detour is needed. |
 | implementation | `~/.claude/skills/adversarial-spec/phases/08-implementation.md` |
 | complete | Ask user: "Start new work? Or continue with follow-up?" |
 
@@ -373,12 +425,14 @@ Card IDs and commit hashes belong in the live transcript, not the persisted snap
 
 **Router order:**
 ```
-requirements → roadmap → debate → target-architecture → gauntlet → finalize → middleware-creator? → execution → implementation → complete
+requirements → roadmap → debate → target-architecture → gauntlet → finalize → execution → middleware-creator? → implementation → complete
 ```
 
-`middleware-creator?` is optional, slotted between `finalize` and `execution`. It runs iff Phase 4 produced `middleware-candidates.json` AND the user chose to materialize shared middleware before normal pickup. Empty list or user skip → `finalize → execution` directly.
+`middleware-creator?` is optional, slotted between `execution` and `implementation`. It runs iff Phase 4 produced `middleware-candidates.json` AND the user chose to materialize shared middleware before normal pickup. Empty list or user skip → `execution → implementation` directly.
 
-**Operational:** middleware fanouts require typed Fizzy source task cards and existing test-suite paths. If `fizzy-plan.json` isn't yet loaded, pass through Phase 7 far enough to create/load the execution cards, then return to `middleware-creator`. Don't bypass with raw `add_card` or direct card moves — use the Fizzy middleware pipeline tools.
+**Why this order:** middleware-creator's source task cards are real execution-plan tasks (e.g., MW-A's source tasks are RC-2 and RC-4 user stories). They only exist after Phase 7 generates `execution-plan.md`, produces `fizzy-plan.json`, and `pipeline_load`s the typed task cards. Running middleware-creator before Phase 7 forces a "do half of the next phase, then come back" detour every time. Running it after Phase 7 makes the dependency honest.
+
+**Operational:** middleware fanouts require typed Fizzy source task cards and existing test-suite paths. Phase 7 produces both before middleware-creator activates. Don't bypass with raw `add_card` or direct card moves — use the Fizzy middleware pipeline tools.
 
 ### User Language → Phase Mapping
 
@@ -413,13 +467,15 @@ Do NOT run `debate.py critique` when the user wants the gauntlet, and vice versa
 
 **NEVER mark `complete` without these gates:**
 
-1. **finalize → execution**: ask "Spec is finalized. Generate an execution plan now?"
+1. **debate → target-architecture (MANDATORY) → gauntlet**: Phase 4 must be entered between debate and gauntlet, every session. `phase_mode=skip` is permitted, but only with a stub artifact recording the rationale — see Phase 4 doc's "Phase 4 is MANDATORY" section. Skipping Phase 4 silently (debate → gauntlet with no `target-architecture.md` on disk) is a process failure. If the Fizzy session FSM for this board lacks a Target-Architecture lane (some boards do), transition through Phase 4 locally — produce the stub artifact, append the journey transition, then call `pipeline_advance` to whatever lane the FSM has next. Do NOT skip artifact generation just because the lane is missing.
+
+2. **finalize → execution**: ask "Spec is finalized. Generate an execution plan now?"
    - Yes → read `phases/07-execution.md`, create plan.
    - No → mark complete with note `"execution skipped by user"`.
 
-2. **execution → implementation/complete**: create the plan directly using `phases/07-execution.md`. `debate.py execution-plan` is deprecated (Feb 2026, Option B+). If the plan has 0 actionable tasks, WARN before proceeding.
+3. **execution → middleware-creator? → implementation/complete**: create the plan directly using `phases/07-execution.md`. `debate.py execution-plan` is deprecated (Feb 2026, Option B+). If the plan has 0 actionable tasks, WARN before proceeding. After execution-plan + source cards are loaded, if `middleware-candidates.json` exists with materializable candidates, ask whether to run the optional middleware-creator pass before opening normal pickup. Skip → `execution → implementation` directly.
 
-**Why:** sessions were jumping gauntlet → complete, skipping execution and losing the concern-to-task linkage.
+**Why:** sessions were jumping gauntlet → complete, skipping execution and losing the concern-to-task linkage. The Phase 4 mandate (rule 1) was added 2026-05-17 after the ETB treatment session silently skipped target-architecture; see `.adversarial-spec/specs/treatment-etb/process-failures/phase-4-target-architecture-skipped-silently.md` for the incident.
 
 **Brainquarters** (detected by `projects.yaml`): `TaskList(list_contexts=True)` shows cross-project contexts.
 
@@ -475,14 +531,19 @@ Send Telegram + 120s pause at these intra-phase milestones — they're the momen
 | Gauntlet batch complete | `"Gauntlet batch {N}: {adversary_count} adversaries, {raw} raw → {unique} unique → {accepted} accepted concerns."` |
 
 **How:**
-```bash
-~/.claude/bin/telegram-send <project> "<message>"
-sleep 120
-```
+1. `~/.claude/bin/telegram-send <project> "<message>"` (foreground; needs to actually send before the pause starts).
+2. Launch the 120s pause as a **background** Bash tool task: `Bash(command="sleep 120; echo done", run_in_background=true)`. Do NOT use foreground `sleep 120` — the long-leading-sleep rule blocks it, and even if it didn't, foreground would just freeze the turn.
+3. **End the turn** after kicking off the background sleep. Do not poll, do not chain follow-up tool calls behind it.
+
+**What "end the turn" means and why:** the pause exists to give the human time to read the Telegram and Ctrl+C / reply if they want to redirect. The background sleep fires `task-notification` after 120s. Two outcomes:
+- Human replies (or interrupts) within 120s → the new user message fires before the sleep notification; you respond to them, the sleep finishes irrelevant in the background.
+- No reply within 120s → the sleep's `task-notification` wakes the next turn; treat that as "human did not redirect, continue with the protocol's next step (e.g. begin R2, run guardrails, advance pipeline)."
+
+A backgrounded sleep that you don't end the turn on is just process theater — you'd march straight into the next round and the pause would gate nothing. Background + end turn is what actually delivers the safety property.
 
 **Rules:**
 - Check `has_telegram_config`; fail open if missing.
-- 120s pause is mandatory.
+- 120s pause is mandatory **and must be backgrounded + turn-ending** as described above.
 - If `telegram-send` fails, log to stderr and continue — never block on notification infra.
 - These are additive to Fizzy card comments. Fizzy = board state; Telegram = human attention.
 

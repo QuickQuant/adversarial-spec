@@ -146,7 +146,7 @@ Before writing the final spec, promote the test pseudocode to formalized accepta
 - Proceed to Step 8 (Additional Review Cycles)
 
 **If user accepts:**
-- Finalization complete. If `middleware-candidates.json` exists and contains materializable candidates, ask whether to run the optional middleware-creator pass before normal implementation pickup. Otherwise ask if they want to proceed to execution planning (Phase 7).
+- Finalization complete. Ask whether to proceed to execution planning (Phase 7). If `middleware-candidates.json` exists with materializable candidates, mention that the optional middleware-creator pass becomes available after Phase 7 loads the source task cards — it now runs between `execution` and `implementation`, not before `execution`.
 
 ### Step 8: Additional Review Cycles (Optional)
 
