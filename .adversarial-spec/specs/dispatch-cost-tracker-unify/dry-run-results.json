@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "spec_slug": "dispatch-cost-tracker-unify",
+  "phase_mode": "lightweight",
+  "context_mode": "brownfield_debug",
+  "architecture_fingerprint": "5baef097229663cc4ef0deade363a4b26f0b6aeaaf3fabac6300d9d9fe65023d",
+  "run_at": "2026-04-30T16:20:00Z",
+  "archetypes": [
+    {
+      "surface": "public_api",
+      "operation": "write",
+      "status": "pass",
+      "required_checks": [
+        "api_compatibility",
+        "sot_owner",
+        "validation",
+        "observability",
+        "invariant_coverage"
+      ],
+      "checks_run": [
+        "api_compatibility",
+        "sot_owner",
+        "validation",
+        "observability",
+        "invariant_coverage"
+      ],
+      "failed_checks": [],
+      "invariant_ids": ["INV-001", "INV-002", "INV-003"],
+      "evidence": "Failing path dry-run: gauntlet phase caller invokes gauntlet/model_dispatch.call_model(); the target architecture keeps the public return contract as (content, input_tokens, output_tokens), moves the accounting write into call_model after successful model dispatch, and requires token_tracking.tracker call-time resolution. This exercises source-of-truth ownership, API compatibility, tuple validation, and test patch-point invariants.",
+      "notes": "This is an architectural dry-run before implementation. Current source still contains CostTracker/cost_tracker references until the execution cards apply the spec."
+    },
+    {
+      "surface": "cli_command",
+      "operation": "read",
+      "status": "pass",
+      "required_checks": [
+        "cli_parsing",
+        "idempotency",
+        "observability",
+        "invariant_coverage"
+      ],
+      "checks_run": [
+        "cli_parsing",
+        "idempotency",
+        "observability",
+        "invariant_coverage"
+      ],
+      "failed_checks": [],
+      "invariant_ids": ["INV-001", "INV-002"],
+      "evidence": "Sibling path dry-run: CLI-visible cost summary reads remain stable because total_cost, total_input_tokens, total_output_tokens, by_model, and summary() stay on token_tracking.tracker. CLI parsing/model validation stays in existing debate and gauntlet dispatch code; no new CLI flags or command behavior are introduced.",
+      "notes": "Read-only sibling path selected to verify that moving the write owner does not change CLI output contracts."
+    }
+  ],
+  "summary": {
+    "total_archetypes": 2,
+    "passed": 2,
+    "failed": 0
+  }
+}

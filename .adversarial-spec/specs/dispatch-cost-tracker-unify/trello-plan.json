@@ -1,0 +1,106 @@
+{
+  "schema_version": "3.0",
+  "session_id": "adv-spec-202604291604-dispatch-cost-tracker-unify",
+  "title": "Dispatch & Cost-Tracker Unification",
+  "tasks": [
+    {
+      "task_id": "DCT-0",
+      "title": "Bootstrap tracker reference audit",
+      "wave": 0,
+      "effort": "small",
+      "depends_on": [],
+      "description": "Audit all cost_tracker, CostTracker, add(), token_tracking, TokenTracker, and record_call references before production edits.",
+      "acceptance_criteria": [
+        "Audit includes implementation, tests, and string monkeypatch references.",
+        "AGENTS.md board pointer matches verified Fizzy board 03fw5alxw15iqwh6hq15vfdsb."
+      ],
+      "test_cases": ["TC-0.1", "TC-0.2"],
+      "context_map": [
+        ".adversarial-spec/specs/dispatch-cost-tracker-unify/requirements-summary.md",
+        ".adversarial-spec/specs/dispatch-cost-tracker-unify/tests-pseudo.md"
+      ]
+    },
+    {
+      "task_id": "DCT-1",
+      "title": "Introduce fresh_tracker fixture and migrate tests",
+      "wave": 1,
+      "effort": "medium",
+      "depends_on": ["DCT-0"],
+      "description": "Add an opt-in fresh_tracker fixture and replace direct tracker method monkeypatches in affected tests.",
+      "acceptance_criteria": [
+        "fresh_tracker yields an isolated tracker.",
+        "Direct monkeypatches of cost_tracker.add are removed.",
+        "Tests pass before production rename."
+      ],
+      "test_cases": ["TC-1.1", "TC-1.1b", "TC-1.2"],
+      "context_map": [
+        "tests/conftest.py",
+        "tests/test_gauntlet_phase_1_attacks.py",
+        "tests/test_gauntlet_phase_config.py",
+        "tests/test_gauntlet_error_guards.py",
+        "tests/test_gauntlet_orchestrator.py",
+        "tests/test_model_calls.py"
+      ]
+    },
+    {
+      "task_id": "DCT-2",
+      "title": "Hard rename CostTracker to TokenTracker",
+      "wave": 2,
+      "effort": "medium",
+      "depends_on": ["DCT-1"],
+      "description": "Create token_tracking.py, move tracker implementation, rename add() to record_call(), and preserve read-side fields.",
+      "acceptance_criteria": [
+        "token_tracking.py owns TokenTracker and tracker.",
+        "record_call replaces add for token tracking.",
+        "total_cost, total_input_tokens, total_output_tokens, by_model, and summary() remain available."
+      ],
+      "test_cases": ["TC-2.1", "TC-2.2", "TC-2.3"],
+      "context_map": [
+        "skills/adversarial-spec/scripts/models.py",
+        "skills/adversarial-spec/scripts/token_tracking.py"
+      ]
+    },
+    {
+      "task_id": "DCT-3",
+      "title": "Move gauntlet tracking to model_dispatch.call_model",
+      "wave": 3,
+      "effort": "medium",
+      "depends_on": ["DCT-2"],
+      "description": "Remove tracker imports from gauntlet phase files and record successful gauntlet model usage in model_dispatch.call_model().",
+      "acceptance_criteria": [
+        "No gauntlet phase file imports a tracker singleton.",
+        "Successful call_model responses record usage once.",
+        "Deterministic mocked dispatch parity passes."
+      ],
+      "test_cases": ["TC-3.1", "TC-3.2", "TC-3.3", "TC-3.4"],
+      "context_map": [
+        "skills/adversarial-spec/scripts/gauntlet/model_dispatch.py",
+        "skills/adversarial-spec/scripts/gauntlet/phase_1_attacks.py",
+        "skills/adversarial-spec/scripts/gauntlet/phase_2_synthesis.py",
+        "skills/adversarial-spec/scripts/gauntlet/phase_4_evaluation.py",
+        "skills/adversarial-spec/scripts/gauntlet/phase_5_rebuttals.py",
+        "skills/adversarial-spec/scripts/gauntlet/phase_6_adjudication.py",
+        "skills/adversarial-spec/scripts/gauntlet/phase_7_final_boss.py"
+      ]
+    },
+    {
+      "task_id": "DCT-4",
+      "title": "Verify and capture concern status",
+      "wave": 4,
+      "effort": "small",
+      "depends_on": ["DCT-3"],
+      "description": "Verify tests and durable artifacts capture CON-002 remediation target and CON-001 out-of-scope drift.",
+      "acceptance_criteria": [
+        "Session/spec artifacts identify CON-002 as active remediation.",
+        "Session/spec artifacts identify CON-001 as out-of-scope drift.",
+        "Deployment to ~/.claude/skills/adversarial-spec/ is completed or explicitly deferred by the user.",
+        "Full test suite passes."
+      ],
+      "test_cases": ["TC-4.1", "TC-4.2", "TC-4.3"],
+      "context_map": [
+        ".adversarial-spec/sessions/adv-spec-202604291604-dispatch-cost-tracker-unify.json",
+        ".adversarial-spec/specs/dispatch-cost-tracker-unify/manifest.json"
+      ]
+    }
+  ]
+}

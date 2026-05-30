@@ -1,0 +1,157 @@
+{
+  "schema_version": "1.0",
+  "session_id": "adv-spec-202604291604-dispatch-cost-tracker-unify",
+  "context_name": "Dispatch & Cost-Tracker Unification (CON-001 + CON-002)",
+  "phase": "roadmap",
+  "doc_type": "spec",
+  "depth": "technical",
+  "requirements_summary_path": ".adversarial-spec/specs/dispatch-cost-tracker-unify/requirements-summary.md",
+  "tests_pseudo_path": ".adversarial-spec/specs/dispatch-cost-tracker-unify/tests-pseudo.md",
+  "trello_plan_path": ".adversarial-spec/specs/dispatch-cost-tracker-unify/trello-plan.json",
+  "complexity": {
+    "tier": "medium",
+    "score": 8,
+    "inputs": {
+      "user_types": 2,
+      "feature_groups": 4,
+      "external_integrations": 0,
+      "unknowns": 2
+    },
+    "reason": "Internal refactor with multiple touched modules and test migration, but no new external integrations."
+  },
+  "goals": [
+    "Remove gauntlet phase dependency on models.cost_tracker.",
+    "Rename cost tracking to token tracking with clear API names.",
+    "Keep model-call behavior unchanged except for the tracking boundary.",
+    "Reduce test monkeypatch surface to one fixture pattern.",
+    "Capture CON-002 remediation and CON-001 drift in durable session/spec artifacts."
+  ],
+  "non_goals": [
+    "CON-001 litellm pathway unification.",
+    "CON-003 orchestrator extraction.",
+    "Manual edits to generated .architecture docs solely for hygiene.",
+    "Real model-call parity smoke tests."
+  ],
+  "user_types": [
+    {
+      "id": "UT-1",
+      "name": "Maintainer",
+      "description": "Developer changing model dispatch, gauntlet phases, or cost/token tracking."
+    },
+    {
+      "id": "UT-2",
+      "name": "Future agent",
+      "description": "Claude/Codex/Gemini worker resuming the session or implementing the execution plan."
+    }
+  ],
+  "feature_groups": [
+    "Reference audit and bootstrap verification",
+    "Tracker fixture migration",
+    "TokenTracker hard rename",
+    "Gauntlet dispatch tracking boundary"
+  ],
+  "unknowns": [
+    "Exact count of test monkeypatch sites after final full-tree audit.",
+    "Whether debate will recommend a follow-up spec for retry/error semantics without expanding this scope."
+  ],
+  "milestones": [
+    {
+      "id": "M0",
+      "title": "Getting Started: Bootstrap and Audit",
+      "dependencies": [],
+      "user_stories": ["US-0"],
+      "success_criteria": [
+        "Full-tree tracker reference inventory exists.",
+        "Dynamic and string-based monkeypatch sites are included in the audit.",
+        "Generated architecture board pointer mismatch is corrected in AGENTS.md."
+      ]
+    },
+    {
+      "id": "M1",
+      "title": "Test Fixture Migration",
+      "dependencies": ["M0"],
+      "user_stories": ["US-1"],
+      "success_criteria": [
+        "tests/conftest.py exposes a fresh_tracker fixture.",
+        "Direct monkeypatches of cost_tracker.add are removed.",
+        "Tests remain green before production rename."
+      ]
+    },
+    {
+      "id": "M2",
+      "title": "TokenTracker Rename",
+      "dependencies": ["M1"],
+      "user_stories": ["US-2"],
+      "success_criteria": [
+        "token_tracking.py owns TokenTracker and tracker.",
+        "record_call replaces add across implementation and tests.",
+        "Read-side fields total_cost, total_input_tokens, total_output_tokens, by_model, and summary remain available."
+      ]
+    },
+    {
+      "id": "M3",
+      "title": "Gauntlet Dispatch Boundary",
+      "dependencies": ["M2"],
+      "user_stories": ["US-3"],
+      "success_criteria": [
+        "gauntlet/model_dispatch.call_model records gauntlet token usage after successful calls.",
+        "gauntlet/phase_*.py files import no tracker singleton.",
+        "Deterministic mocked dispatch parity proves token totals are preserved."
+      ]
+    },
+    {
+      "id": "M4",
+      "title": "Verification and Status Capture",
+      "dependencies": ["M3"],
+      "user_stories": ["US-4"],
+      "success_criteria": [
+        "CON-002 is recorded as the remediated target.",
+        "CON-001 is recorded as out-of-scope drift pending next mapcodebase refresh.",
+        "Repo skill changes are deployed to ~/.claude/skills/adversarial-spec/ or explicitly deferred by the user.",
+        "All existing tests pass at the final boundary."
+      ]
+    }
+  ],
+  "user_stories": [
+    {
+      "id": "US-0",
+      "milestone": "M0",
+      "persona": "Maintainer",
+      "want": "all tracker references audited before edits",
+      "benefit": "the hard rename does not miss hidden callers or stale monkeypatches"
+    },
+    {
+      "id": "US-1",
+      "milestone": "M1",
+      "persona": "Test author",
+      "want": "a fresh_tracker fixture",
+      "benefit": "tracking tests patch one stable boundary instead of phase-local globals"
+    },
+    {
+      "id": "US-2",
+      "milestone": "M2",
+      "persona": "Maintainer",
+      "want": "TokenTracker.record_call()",
+      "benefit": "token accounting names match actual behavior while existing read-side summaries stay stable"
+    },
+    {
+      "id": "US-3",
+      "milestone": "M3",
+      "persona": "Gauntlet maintainer",
+      "want": "model_dispatch.call_model() to own gauntlet tracking",
+      "benefit": "phase files remain focused on phase logic and stop reaching into models.py"
+    },
+    {
+      "id": "US-4",
+      "milestone": "M4",
+      "persona": "Future agent",
+      "want": "resolved and drifted concern status captured in durable artifacts",
+      "benefit": "the next session does not re-open CON-001 or lose the reason for CON-002"
+    }
+  ],
+  "confirmation": {
+    "requirements_confirmed_at": "2026-04-29T17:23:32Z",
+    "roadmap_confirmed_at": "2026-04-29T17:42:04Z",
+    "confirmed_by": "user"
+  }
+}

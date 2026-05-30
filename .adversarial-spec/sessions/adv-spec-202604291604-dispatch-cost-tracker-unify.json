@@ -1,0 +1,389 @@
+{
+  "session_id": "adv-spec-202604291604-dispatch-cost-tracker-unify",
+  "context_name": "Dispatch & Cost-Tracker Unification (CON-001 + CON-002)",
+  "doc_type": "spec",
+  "depth": "technical",
+  "current_phase": "target-architecture",
+  "current_step": "Phase 4 lightweight dry-run verification passed; final_approval gate pending.",
+  "todowrite_snapshot": [
+    {
+      "content": "Scale check — assess phase_mode [GATE]",
+      "status": "completed",
+      "activeForm": "Assessing architecture need"
+    },
+    {
+      "content": "Detect context mode and confirm with user [GATE]",
+      "status": "completed",
+      "activeForm": "Detecting context mode"
+    },
+    {
+      "content": "Bootstrap architecture context",
+      "status": "completed",
+      "activeForm": "Recording bootstrap context"
+    },
+    {
+      "content": "Declare framework profile and execution surface map",
+      "status": "completed",
+      "activeForm": "Declaring framework profile"
+    },
+    {
+      "content": "Categorize application and select dimensions",
+      "status": "completed",
+      "activeForm": "Categorizing application"
+    },
+    {
+      "content": "Assess base concerns + triggered concerns",
+      "status": "completed",
+      "activeForm": "Assessing concerns"
+    },
+    {
+      "content": "Emit concern x surface matrix",
+      "status": "completed",
+      "activeForm": "Building concern-surface matrix"
+    },
+    {
+      "content": "Research framework-native primitives",
+      "status": "completed",
+      "activeForm": "Researching best practices"
+    },
+    {
+      "content": "Draft target-architecture.md",
+      "status": "completed",
+      "activeForm": "Drafting target architecture"
+    },
+    {
+      "content": "Define architectural invariants (markdown + JSON)",
+      "status": "completed",
+      "activeForm": "Defining invariants"
+    },
+    {
+      "content": "Upsert invariant-derived tests to tests-pseudo.md",
+      "status": "completed",
+      "activeForm": "Upserting invariant tests"
+    },
+    {
+      "content": "Debate architecture (full mode only)",
+      "status": "completed",
+      "activeForm": "Debating architecture"
+    },
+    {
+      "content": "Draft review — present draft for user approval [GATE]",
+      "status": "completed",
+      "activeForm": "Awaiting draft review approval"
+    },
+    {
+      "content": "Dry-run per phase_mode scope",
+      "status": "completed",
+      "activeForm": "Running dry-run verification"
+    },
+    {
+      "content": "Final approval — present dry-run results for user approval [GATE]",
+      "status": "in_progress",
+      "activeForm": "Awaiting final approval"
+    },
+    {
+      "content": "Stage and publish artifacts atomically",
+      "status": "pending",
+      "activeForm": "Staging and publishing artifacts"
+    },
+    {
+      "content": "Record decisions and dry-run results in session",
+      "status": "pending",
+      "activeForm": "Recording decisions"
+    }
+  ],
+  "status": "active",
+  "created_at": "2026-04-29T16:04:00Z",
+  "updated_at": "2026-04-30T16:08:59Z",
+  "spec_path": ".adversarial-spec/specs/dispatch-cost-tracker-unify/spec-draft-v3.md",
+  "execution_plan_path": null,
+  "source_file": ".architecture/concerns.md",
+  "checkpointed_cleanly": true,
+  "fizzy_card_id": "1851",
+  "requirements_summary": {
+    "problem": "Gauntlet phase files import the global cost_tracker singleton from models.py, creating a layer violation and broad test monkeypatch surface. CON-001 litellm pathway concern is out of scope because source verification showed the generated concern drifted from current code.",
+    "proposal": "Create token_tracking.py with TokenTracker/tracker, hard-rename add() to record_call(), move gauntlet tracking to gauntlet/model_dispatch.call_model(), remove tracker imports from phase files, and migrate tests to a fresh_tracker fixture.",
+    "target": "skills/adversarial-spec/scripts/{token_tracking.py,models.py,gauntlet/model_dispatch.py,gauntlet/phase_*.py}; tests/conftest.py and affected tests",
+    "concerns": [
+      "CON-002"
+    ],
+    "out_of_scope": [
+      "CON-001",
+      "CON-003",
+      "gauntlet/cli.py"
+    ],
+    "concerns_source": ".architecture/concerns.md plus source verification",
+    "behavioral_constraints": [
+      "CON-001 remains out of scope; debate may not expand this session into litellm pathway unification without explicit user approval.",
+      "Hard rename is required: CostTracker -> TokenTracker, cost_tracker -> tracker, add() -> record_call(), with no deprecation shim.",
+      "Read-side fields remain stable: total_cost, total_input_tokens, total_output_tokens, by_model, summary().",
+      "Gauntlet phase files must not import the tracker singleton; gauntlet/model_dispatch.call_model() is the gauntlet tracking boundary.",
+      "Debate/CLI model handlers in models.py keep their inline record_call() sites for this spec.",
+      "Deterministic mocked dispatch parity is sufficient; no real model-call smoke test required.",
+      "Do not manually edit generated .architecture docs solely for hygiene; record status in session/spec artifacts and let next mapcodebase regenerate docs."
+    ],
+    "requirements_summary_path": ".adversarial-spec/specs/dispatch-cost-tracker-unify/requirements-summary.md"
+  },
+  "schema_version": "1.4",
+  "completed_work": "Phase 01 requirements complete: scope=CON-002 only; CON-001 marked drifted (concerns.md numbers don't match source — only 2 litellm sites, both temp=0.7, neither sets max_tokens). Decisions locked: new token_tracking.py with TokenTracker; .add() -> .record_call(); hard rename, no shim; phase files stop importing singleton; gauntlet/model_dispatch.call_model() owns .record_call(); debate-side asymmetric (per-handler .record_call() stays in models.py:708/759/810/874); fresh_tracker opt-in pytest fixture replaces ~30 monkeypatches; phased commits (tests first, production follows). RequirementsSummary written and user-edited (R5 reframed: don't manually edit .architecture/ docs; let next /mapcodebase regen). Codex advanced through Phase 02 (roadmap manifest, overview, tests-pseudo, fizzy-plan) into Phase 03 producing spec-draft-v1.md (366 lines). Spec adds: Phase 3 filtering side-effect (newly tracked after refactor), cost-formula port spec, deterministic mocked parity test, deployment-via-symlink note. Card 1851 G1 gate unblocked via pipeline_patch_state escape hatch; incident note filed at .adversarial-spec/issues/2026-04-29-human-gate-cross-project-leak.md (root cause: fizzy-pipeline-mcp config.py:137 hardcodes ENABLE_HUMAN_GATES=1, gate tuple in pipeline.py:100 applies to all boards, no relay wired for adversarial-spec, listener service is a stub).",
+  "next_action": "Approve Phase 4 final artifacts so they can be published and the session can advance toward gauntlet.",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202604291904-handed-off-to-codex-spec-draft-v1.md",
+  "do_not_ask": [],
+  "journey": [
+    {
+      "time": "2026-04-29T16:11:57Z",
+      "event": "Phase 01 entered. doc_type=spec, depth=technical confirmed; starting point=concerns.md CON-001+002 confirmed; awaiting interview-mode decision on resume.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-04-29T16:11:57Z",
+      "event": "Checkpoint saved: phase-01-entry-dispatch-cost-tracker-unify.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-04-29T19:04:44Z",
+      "event": "Phase 03 entry. Codex produced spec-draft-v1.md after Phase 01/02. Card 1851 G1 gate manually patched (cross-project leak workaround).",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-04-29T19:04:44Z",
+      "event": "Checkpoint saved: handed-off-to-codex-spec-draft-v1.",
+      "type": "checkpoint"
+    }
+  ],
+  "roadmap_path": ".adversarial-spec/specs/dispatch-cost-tracker-unify/manifest.json",
+  "tests_pseudo_path": ".adversarial-spec/specs/dispatch-cost-tracker-unify/tests-pseudo.md",
+  "debate_converged_at": "2026-04-30T01:48:43Z",
+  "debate_round": 3,
+  "spec_slug": "dispatch-cost-tracker-unify",
+  "phase4_bootstrap": {
+    "schema_version": "1.0",
+    "status": "dry_run",
+    "session_id": "adv-spec-202604291604-dispatch-cost-tracker-unify",
+    "spec_slug": "dispatch-cost-tracker-unify",
+    "input_fingerprint": "ff15c78157a50b8ee7bec7f35ddc205838d5f25b3dd53a7aa18b54d03bfa8fdb",
+    "architecture_fingerprint": "5baef097229663cc4ef0deade363a4b26f0b6aeaaf3fabac6300d9d9fe65023d",
+    "phase_mode": "lightweight",
+    "context_mode": "brownfield_debug",
+    "artifact_paths": {
+      "target_architecture": ".adversarial-spec/specs/dispatch-cost-tracker-unify/target-architecture.md",
+      "invariants": ".adversarial-spec/specs/dispatch-cost-tracker-unify/architecture-invariants.json",
+      "tests_pseudo": ".adversarial-spec/specs/dispatch-cost-tracker-unify/tests-pseudo.md",
+      "dry_run_results": ".adversarial-spec/specs/dispatch-cost-tracker-unify/dry-run-results.json"
+    },
+    "framework_profile": {
+      "profile_type": "single",
+      "category": "cli",
+      "framework": "Python CLI package",
+      "framework_version": "Python >=3.10; package adversarial-spec 1.0.0",
+      "runtime": "python",
+      "deployment_target": "serverful",
+      "enabled_features": [
+        "argparse",
+        "ThreadPoolExecutor",
+        "subprocess",
+        "FileLock"
+      ],
+      "subprofiles": {
+        "rendering_model": "N/A",
+        "data_access_model": "module-level services and file artifacts",
+        "mutation_model": "CLI commands and in-process function calls",
+        "cache_model": "N/A",
+        "error_model": "Python exceptions plus CLI exit codes"
+      },
+      "enforcement_model": "CLI model-name validation remains in gauntlet/model_dispatch.py; token accounting writes are enforced by resolving token_tracking.tracker at call time inside dispatch and model-handler boundaries."
+    },
+    "execution_surfaces": [
+      "cli_command",
+      "public_api"
+    ],
+    "roadmap_ref": {
+      "goals": [
+        "Remove gauntlet phase dependency on models.cost_tracker.",
+        "Rename cost tracking to token tracking with clear API names.",
+        "Keep model-call behavior unchanged except for the tracking boundary.",
+        "Reduce test monkeypatch surface to one fixture pattern.",
+        "Capture CON-002 remediation and CON-001 drift in durable session/spec artifacts."
+      ],
+      "non_goals": [
+        "CON-001 litellm pathway unification.",
+        "CON-003 orchestrator extraction.",
+        "Manual edits to generated .architecture docs solely for hygiene.",
+        "Real model-call parity smoke tests."
+      ],
+      "user_stories": [
+        {
+          "id": "US-0",
+          "milestone": "M0",
+          "persona": "Maintainer",
+          "want": "all tracker references audited before edits",
+          "benefit": "the hard rename does not miss hidden callers or stale monkeypatches"
+        },
+        {
+          "id": "US-1",
+          "milestone": "M1",
+          "persona": "Test author",
+          "want": "a fresh_tracker fixture",
+          "benefit": "tracking tests patch one stable boundary instead of phase-local globals"
+        },
+        {
+          "id": "US-2",
+          "milestone": "M2",
+          "persona": "Maintainer",
+          "want": "TokenTracker.record_call()",
+          "benefit": "token accounting names match actual behavior while existing read-side summaries stay stable"
+        },
+        {
+          "id": "US-3",
+          "milestone": "M3",
+          "persona": "Gauntlet maintainer",
+          "want": "model_dispatch.call_model() to own gauntlet tracking",
+          "benefit": "phase files remain focused on phase logic and stop reaching into models.py"
+        },
+        {
+          "id": "US-4",
+          "milestone": "M4",
+          "persona": "Future agent",
+          "want": "resolved and drifted concern status captured in durable artifacts",
+          "benefit": "the next session does not re-open CON-001 or lose the reason for CON-002"
+        }
+      ]
+    },
+    "current_gate": "final_approval",
+    "blocking_error": null,
+    "started_at": "2026-04-30T14:20:21Z",
+    "updated_at": "2026-04-30T16:08:59Z",
+    "completed_at": null,
+    "story_alignment": [
+      {
+        "story_id": "US-0",
+        "goal_ids": [
+          "G-1"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "Audit story maps to removing phase dependency on models.cost_tracker before edits."
+      },
+      {
+        "story_id": "US-1",
+        "goal_ids": [
+          "G-4"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "fresh_tracker fixture story maps to reducing monkeypatch surface."
+      },
+      {
+        "story_id": "US-2",
+        "goal_ids": [
+          "G-2"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "TokenTracker.record_call story maps to token tracking rename and API clarity."
+      },
+      {
+        "story_id": "US-3",
+        "goal_ids": [
+          "G-3"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "model_dispatch.call_model ownership maps to preserving model-call behavior while moving tracking boundary."
+      },
+      {
+        "story_id": "US-4",
+        "goal_ids": [
+          "G-5"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "Durable status capture maps to recording CON-002 remediation and CON-001 drift."
+      }
+    ],
+    "research_findings": [
+      {
+        "source": ".architecture/structured/components/models.md",
+        "finding": "models.py owns parallel model dispatch and current global CostTracker; CLI models are routed by prefix and report zero cost.",
+        "version": "generated 2026-04-16"
+      },
+      {
+        "source": ".architecture/structured/components/gauntlet.md",
+        "finding": "gauntlet phases consume model_dispatch.call_model and checkpoint phase outputs; current cost_tracker coupling is cross-cutting but guarded by CostTracker lock.",
+        "version": "generated 2026-04-16"
+      },
+      {
+        "source": "pyproject.toml",
+        "finding": "Project is a Python CLI package requiring Python >=3.10 with pytest and ruff verification paths.",
+        "version": "project 1.0.0"
+      }
+    ],
+    "artifact_publish_state": "none",
+    "gate_approvals": {
+      "scale_check": {
+        "status": "approved",
+        "recommended": "lightweight",
+        "final_value": "lightweight",
+        "decided_by": "human",
+        "decided_at": "2026-04-30T14:20:21Z"
+      },
+      "context_mode": {
+        "status": "approved",
+        "recommended": "brownfield_debug",
+        "final_value": "brownfield_debug",
+        "decided_by": "human",
+        "decided_at": "2026-04-30T16:06:29Z"
+      },
+      "draft_review": {
+        "status": "approved",
+        "decided_by": "human",
+        "decided_at": "2026-04-30T16:08:59Z"
+      },
+      "final_approval": {
+        "status": "pending",
+        "decided_by": null,
+        "decided_at": null
+      }
+    }
+  },
+  "architecture_taxonomy": {
+    "schema_version": "1.0",
+    "category": "cli",
+    "dimensions": [
+      {
+        "name": "runtime",
+        "value": "python-cli",
+        "rationale": "adversarial-spec is invoked through CLI entrypoints and local skill scripts.",
+        "source_refs": [
+          "pyproject.toml",
+          ".architecture/primer.md"
+        ]
+      },
+      {
+        "name": "context_mode",
+        "value": "brownfield_debug",
+        "rationale": "This session remediates an existing architecture concern, CON-002 cost_tracker coupling, without adding a new user-facing feature.",
+        "source_refs": [
+          "spec-draft-v3.md",
+          ".architecture/concerns.md"
+        ]
+      },
+      {
+        "name": "primary_surface",
+        "value": "public_api",
+        "rationale": "The risky contract is the internal gauntlet/model_dispatch.call_model API and token tracking owner module.",
+        "source_refs": [
+          "target-architecture.md",
+          ".architecture/structured/components/gauntlet.md"
+        ]
+      }
+    ]
+  },
+  "phase_artifacts": {
+    "target_architecture_path": ".adversarial-spec/specs/dispatch-cost-tracker-unify/target-architecture.md",
+    "architecture_invariants_path": ".adversarial-spec/specs/dispatch-cost-tracker-unify/architecture-invariants.json",
+    "spec_fingerprint": "ff15c78157a50b8ee7bec7f35ddc205838d5f25b3dd53a7aa18b54d03bfa8fdb",
+    "dry_run_results_path": ".adversarial-spec/specs/dispatch-cost-tracker-unify/dry-run-results.json",
+    "architecture_fingerprint": "5baef097229663cc4ef0deade363a4b26f0b6aeaaf3fabac6300d9d9fe65023d"
+  }
+}

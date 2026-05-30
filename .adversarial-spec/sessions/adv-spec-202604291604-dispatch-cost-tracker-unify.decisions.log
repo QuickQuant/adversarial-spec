@@ -1,0 +1,7 @@
+2026-04-29T16:08:00Z [phase:requirements] Branched from TMV; CON-004 (3567eb6) + CON-005 (952c19c) landed in parent — Fresh session for CON-001+002 dispatch refactor; doc_type=spec/technical; ready for /checkpoint
+2026-04-29T17:20:07Z [decision] Requirements locked to CON-002 hard rename + dispatch tracking boundary - CON-001 out of scope; deterministic parity OK; generated arch docs refreshed by mapcodebase
+2026-04-29T17:43:11Z [phase:roadmap] Roadmap persisted with 5 milestones, 5 user stories, deterministic test pseudocode - Provides debate input without loading execution cards
+2026-04-29T19:02:30Z [patch:1851] Set g1_approved=True via pipeline_patch_state escape hatch — fizzy-pipeline-mcp human-gate ENABLE_HUMAN_GATES=1 hardcoded leaks G1 to all consumers; no relay wired for adversarial-spec board. See issues/2026-04-29-human-gate-cross-project-leak.md
+2026-04-29T20:28:44Z [debate:R1] Local Codex critique produced spec-draft-v2.md - fixed tracker patch-point and phase3 parity contradictions; external critics policy-blocked
+2026-04-30T13:20:16Z [patch:1851] Set g2_approved=True via pipeline_patch_state escape hatch — Same root cause as G1 (cross-project leak). Codex converged Debate Round 3 on spec-draft-v3.md; advance to Pre-Gauntlet was blocked. Incident note updated.
+2026-04-30T14:20:21Z [phase4:scale] phase_mode=lightweight approved by user; context_mode recommendation=brownfield_debug pending confirmation

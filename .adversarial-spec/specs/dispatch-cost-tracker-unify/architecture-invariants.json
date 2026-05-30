@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "spec_slug": "dispatch-cost-tracker-unify",
+  "phase_mode": "lightweight",
+  "architecture_fingerprint": null,
+  "generated_at": "2026-04-30T14:20:00Z",
+  "invariants": [
+    {
+      "id": "INV-001",
+      "status": "active",
+      "category": "sot",
+      "scope": "Gauntlet and debate token accounting write boundaries",
+      "surfaces": ["cli_command", "public_api"],
+      "rule": "Token accounting writes happen exactly once at the active model dispatch boundary for each successful model call.",
+      "enforcement": "Move gauntlet writes into gauntlet/model_dispatch.call_model(); keep debate-side writes inside models.py handlers; delete phase-level tracker writes.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "Deterministic mocked dispatch parity covers one representative call pattern per gauntlet phase and proves totals are single-counted.",
+      "linked_user_stories": ["US-0", "US-2", "US-3"],
+      "linked_goals": ["G-1", "G-2", "G-3"],
+      "linked_tests": ["TC-INV-001"],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-002",
+      "status": "active",
+      "category": "enforcement",
+      "scope": "Production tracker import and access pattern",
+      "surfaces": ["public_api"],
+      "rule": "Production modules do not import or bind the tracker singleton directly; they resolve token_tracking.tracker at call time.",
+      "enforcement": "Static audit rejects from token_tracking import tracker, module-level tracker rebinding, CostTracker, cost_tracker, and tracker.add/cost_tracker.add in production paths.",
+      "exceptions": [],
+      "verification_kind": "static",
+      "verification": "Post-rename rg checks in spec Section 13 return zero production matches, with any historical test strings enumerated in implementation evidence.",
+      "linked_user_stories": ["US-1", "US-2", "US-3"],
+      "linked_goals": ["G-1", "G-2", "G-4"],
+      "linked_tests": ["TC-INV-002"],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-003",
+      "status": "active",
+      "category": "validation",
+      "scope": "Tracker test isolation",
+      "surfaces": ["public_api"],
+      "rule": "Tests that need isolated accounting state use fresh_tracker against the public tracker owner module instead of phase-local tracker monkeypatches.",
+      "enforcement": "Two-phase fixture migration: patch models.cost_tracker before token_tracking.py exists, then patch token_tracking.tracker after the boundary move.",
+      "exceptions": [
+        "Narrow failure-injection tests may monkeypatch record_call directly when they name the consumer under test and assert call semantics."
+      ],
+      "verification_kind": "static",
+      "verification": "Targeted tests and post-rename audit show direct phase-local cost_tracker.add monkeypatches were removed or explicitly justified.",
+      "linked_user_stories": ["US-1", "US-2"],
+      "linked_goals": ["G-2", "G-4"],
+      "linked_tests": ["TC-INV-003"],
+      "supersedes": null,
+      "superseded_by": null
+    }
+  ]
+}
