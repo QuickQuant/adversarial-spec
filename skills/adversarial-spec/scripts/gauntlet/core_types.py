@@ -435,6 +435,22 @@ class GauntletConfig:
     auto_checkpoint: bool = False
     resume: bool = False
     unattended: bool = False
+    # Phase 4 batching strategy.
+    #   "power_law_length" (DEFAULT) = tier_concerns_by_length() splits the
+    #     post-filter concerns into easy/med/hard tiers (cuts at p60/p90, batch
+    #     sizes 75/30/12). The gnarliest concerns get isolated attention while
+    #     easy ones amortize the spec re-send. For runs with N < eval_tier_min_concerns,
+    #     this auto-falls-back to flat batching with eval_flat_batch_size.
+    #   "flat" = historical fixed-size batches. Use when tiering grades poorly
+    #     on a specific run, or for A/B comparison runs.
+    eval_tier_strategy: str = "power_law_length"
+    eval_flat_batch_size: int = 15
+    # Below this concern count, power_law_length silently falls back to flat
+    # because tiering 12 concerns into 75/30/12-sized batches is identical to
+    # batching them all in one call. The threshold is generous on purpose:
+    # tiering's quality benefit only kicks in when there's enough material in
+    # the easy tier to amortize the spec re-send cost.
+    eval_tier_min_concerns: int = 30
 
 
 class GauntletClusteringError(Exception):

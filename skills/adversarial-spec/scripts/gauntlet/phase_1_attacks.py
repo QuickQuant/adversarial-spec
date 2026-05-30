@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import json
+import re
 import sys
 import time
 from collections import defaultdict
@@ -71,6 +72,134 @@ def _parse_json_concerns(
     return parsed if parsed else None
 
 
+# Severity markers an adversary may emit inline with the concern text.
+# Order matters: more specific patterns first, so the bracketed/bold form is
+# stripped before the bare-label form catches its prefix.
+_SEVERITY_LABEL_TO_CANONICAL = {
+    "critical": "high",  # Concern dataclass only allows low/medium/high.
+    "high": "high",
+    "medium": "medium",
+    "low": "low",
+}
+
+_SEVERITY_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
+    # **CRITICAL** / **CRITICAL:** / **CRITICAL**: — markdown bold at start, with
+    # optional colon either inside the closing `**` (real-world common: `**CRITICAL:**`)
+    # or after it.
+    (re.compile(r"^\*\*\s*(critical|high|medium|low)\s*:?\s*\*\*\s*:?\s*", re.IGNORECASE), "bold"),
+    # [HIGH] / [Low] — bracketed at start.
+    (re.compile(r"^\[\s*(critical|high|medium|low)\s*\]\s*:?\s*", re.IGNORECASE), "bracket"),
+    # (severity: high) — parenthesized hint at start.
+    (re.compile(r"^\(\s*severity\s*:\s*(critical|high|medium|low)\s*\)\s*", re.IGNORECASE), "paren_lead"),
+    # CRITICAL: / HIGH: — bare label at start, requires colon to avoid false matches.
+    (re.compile(r"^(critical|high|medium|low)\s*:\s+", re.IGNORECASE), "bare_label"),
+)
+
+# (severity: high) appearing anywhere in the first ~120 chars — used after the
+# leading-position scan failed. We don't strip these from text since they may
+# be part of a sentence like "this is high (severity: high) priority".
+_SEVERITY_INLINE_PATTERN = re.compile(
+    r"\(\s*severity\s*:\s*(critical|high|medium|low)\s*\)", re.IGNORECASE
+)
+
+
+def _extract_severity_from_text(text: str) -> tuple[str, str]:
+    """Pull a severity marker off the front (or from inline) of a concern.
+
+    Returns (severity, cleaned_text) where severity is one of
+    "high"/"medium"/"low", and cleaned_text has any *leading* severity marker
+    stripped. Inline (mid-sentence) `(severity: X)` hints set the severity but
+    do not modify the text — those phrases are part of the model's prose.
+
+    On no match, returns ("medium", text) — same default as Concern dataclass.
+    """
+    if not text:
+        return "medium", text
+
+    stripped = text.lstrip()
+
+    for pattern, _kind in _SEVERITY_PATTERNS:
+        m = pattern.match(stripped)
+        if m:
+            label = m.group(1).lower()
+            severity = _SEVERITY_LABEL_TO_CANONICAL[label]
+            cleaned = stripped[m.end():].lstrip()
+            return severity, cleaned or text  # Don't return empty if marker was the whole line.
+
+    # Fallback: scan early text for an inline (severity: X) hint without
+    # stripping (it's part of the sentence).
+    early = stripped[:120]
+    inline = _SEVERITY_INLINE_PATTERN.search(early)
+    if inline:
+        label = inline.group(1).lower()
+        return _SEVERITY_LABEL_TO_CANONICAL[label], text
+
+    return "medium", text
+
+
+def parse_numbered_list(
+    response: str,
+    adversary_key: str,
+    model: str,
+) -> list[Concern]:
+    """Parse concerns from a numbered-list response (regex fallback).
+
+    Module-level companion to _parse_json_concerns. Used by generate_attacks
+    AND by post-hoc re-extraction tools (e.g. when fixing a parser bug and
+    re-running against an existing raw-responses-*.json without re-firing
+    Phase 1 LLM calls).
+    """
+    local_concerns: list[Concern] = []
+    current_concern_lines: list[str] = []
+    seen_texts: set[str] = set()
+
+    def flush_concern() -> None:
+        if current_concern_lines:
+            full_text = " ".join(current_concern_lines)
+            severity, cleaned_text = _extract_severity_from_text(full_text)
+            if cleaned_text and cleaned_text not in seen_texts:
+                seen_texts.add(cleaned_text)
+                local_concerns.append(
+                    Concern(
+                        adversary=adversary_key,
+                        text=cleaned_text,
+                        severity=severity,
+                        source_model=model,
+                    )
+                )
+            current_concern_lines.clear()
+
+    for line in response.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+
+        is_numbered = False
+        if line[0].isdigit() and (". " in line[:8] or ")" in line[:8]):
+            is_numbered = True
+        elif line.startswith("#"):
+            stripped_hashes = line.lstrip("# ")
+            if stripped_hashes and stripped_hashes[0].isdigit() and (
+                ". " in stripped_hashes[:8] or ")" in stripped_hashes[:8]
+            ):
+                is_numbered = True
+
+        if is_numbered:
+            flush_concern()
+            text = line.lstrip("#").lstrip(" ").lstrip("0123456789.-) ").strip()
+            if text:
+                current_concern_lines.append(text)
+        elif line.startswith(("-", "•", "*")):
+            text = line.lstrip("-•* ").strip()
+            if text and current_concern_lines:
+                current_concern_lines.append(text)
+        elif current_concern_lines:
+            current_concern_lines.append(line)
+
+    flush_concern()
+    return local_concerns
+
+
 def generate_attacks(
     spec: str,
     adversaries: list[str],
@@ -103,57 +232,9 @@ def generate_attacks(
     timing: dict[str, float] = {}
     raw_responses: dict[str, str] = {}
 
-    def _parse_numbered_list(
-        response: str, adversary_key: str, model: str,
-    ) -> list[Concern]:
-        """Parse concerns from a numbered-list response (regex fallback)."""
-        local_concerns: list[Concern] = []
-        current_concern_lines: list[str] = []
-        seen_texts: set[str] = set()
-
-        def flush_concern() -> None:
-            if current_concern_lines:
-                full_text = " ".join(current_concern_lines)
-                if full_text and full_text not in seen_texts:
-                    seen_texts.add(full_text)
-                    local_concerns.append(
-                        Concern(
-                            adversary=adversary_key,
-                            text=full_text,
-                            source_model=model,
-                        )
-                    )
-                current_concern_lines.clear()
-
-        for line in response.split("\n"):
-            line = line.strip()
-            if not line:
-                continue
-
-            is_numbered = False
-            if line[0].isdigit() and (". " in line[:4] or ")" in line[:4]):
-                is_numbered = True
-            elif line.startswith("#"):
-                stripped_hashes = line.lstrip("# ")
-                if stripped_hashes and stripped_hashes[0].isdigit() and (
-                    ". " in stripped_hashes[:4] or ")" in stripped_hashes[:4]
-                ):
-                    is_numbered = True
-
-            if is_numbered:
-                flush_concern()
-                text = line.lstrip("#").lstrip(" ").lstrip("0123456789.-) ").strip()
-                if text:
-                    current_concern_lines.append(text)
-            elif line.startswith(("-", "•", "*")):
-                text = line.lstrip("-•* ").strip()
-                if text and current_concern_lines:
-                    current_concern_lines.append(text)
-            elif current_concern_lines:
-                current_concern_lines.append(line)
-
-        flush_concern()
-        return local_concerns
+    # Delegate to the module-level parser; keep the local name so prompts/
+    # closures don't have to change.
+    _parse_numbered_list = parse_numbered_list
 
     def run_adversary_with_model(adversary_key: str, model: str) -> tuple[list[Concern], float, str]:
         """Run one adversary with one model and return concerns with timing.

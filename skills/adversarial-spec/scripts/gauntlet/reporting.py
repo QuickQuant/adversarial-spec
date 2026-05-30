@@ -6,9 +6,11 @@ analysis, and the final gauntlet report. No phase logic lives here.
 
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import Any
 
 from gauntlet.core_types import (
+    Concern,
     FinalBossVerdict,
     GauntletResult,
 )
@@ -410,5 +412,106 @@ def format_gauntlet_report(result: GauntletResult) -> str:
     # Medal awards (if any were given during this run)
     if hasattr(result, 'medals') and result.medals:
         lines.append(format_medals_for_display(result.medals))
+
+    return "\n".join(lines)
+
+
+# =============================================================================
+# Grouped Markdown Export (Layer A.3 + A.4)
+#
+# A compact human-readable view of all concerns, grouped by
+# (adversary, source_model). Used as input to the synthesis pass and to the
+# (Layer C) synthesis-debate dispatch — both consume markdown.
+#
+# Constant-column collapse: if every concern shares the same severity, the
+# per-row severity marker is dropped and a one-line header note records the
+# constant value. This is the typical post-Layer-A baseline before the
+# adversaries actually emit varied severities.
+# =============================================================================
+
+
+_SEVERITY_TAG = {"high": "[H]", "medium": "[M]", "low": "[L]"}
+
+
+def render_grouped_markdown_export(
+    concerns: list[Concern],
+    *,
+    spec_hash: str | None = None,
+    generated_at: str | None = None,
+    title: str = "Gauntlet Concerns (grouped)",
+) -> str:
+    """Render concerns grouped by (adversary, source_model) as markdown.
+
+    Output shape::
+
+        # Gauntlet Concerns (grouped)
+
+        > Generated: 2026-05-04T17:50:00Z
+        > Spec: 9ee43569
+        > Total: 1092 concerns across 7 adversaries × 2 models
+        > NOTE: All concerns share severity=medium; column suppressed.
+
+        ## architect / codex/gpt-5.5  (200 concerns)
+
+        1. [H] Auth bypass possible.
+        2. [M] Missing telemetry on retry path.
+        ...
+
+        ## architect / gemini-cli/gemini-3-flash-preview  (45 concerns)
+        ...
+
+    Args:
+        concerns: All parsed concerns from Phase 1.
+        spec_hash: Optional spec hash for the header (typically `spec_hash[:8]`).
+        generated_at: Optional ISO-8601 timestamp; if None, no timestamp line.
+        title: H1 title; defaults to "Gauntlet Concerns (grouped)".
+
+    Returns:
+        A single string suitable for writing to disk.
+    """
+    if not concerns:
+        return f"# {title}\n\n> (no concerns)\n"
+
+    # Group by (adversary, source_model). Stable ordering by group key.
+    groups: dict[tuple[str, str], list[Concern]] = defaultdict(list)
+    for c in concerns:
+        groups[(c.adversary, c.source_model or "unknown-model")].append(c)
+
+    sorted_groups = sorted(groups.items(), key=lambda kv: kv[0])
+    n_adversaries = len({k[0] for k in groups})
+    n_models = len({k[1] for k in groups})
+
+    # Constant-column collapse: only drop the column when every concern shares
+    # one severity. Pre-Layer-A.2 every value was "medium"; post-fix the
+    # adversaries actually vary severity, so this branch typically goes away.
+    severities = {c.severity for c in concerns}
+    constant_severity = severities.pop() if len(severities) == 1 else None
+    if len(severities) > 0:
+        severities.add(constant_severity)  # Restore for any later use; harmless if None.
+
+    lines: list[str] = [f"# {title}", ""]
+    if generated_at:
+        lines.append(f"> Generated: {generated_at}")
+    if spec_hash:
+        lines.append(f"> Spec: {spec_hash}")
+    lines.append(
+        f"> Total: {len(concerns)} concerns across {n_adversaries} adversaries × {n_models} models"
+    )
+    if constant_severity is not None:
+        lines.append(
+            f"> NOTE: All concerns share severity={constant_severity}; column suppressed."
+        )
+    lines.append("")
+
+    for (adversary, model), members in sorted_groups:
+        lines.append(f"## {adversary} / {model}  ({len(members)} concerns)")
+        lines.append("")
+        for i, c in enumerate(members, 1):
+            if constant_severity is not None:
+                lines.append(f"{i}. {c.text}")
+            else:
+                tag = _SEVERITY_TAG.get(c.severity, f"[{c.severity}]")
+                lines.append(f"{i}. {tag} {c.text}")
+        lines.append("")
 
     return "\n".join(lines)

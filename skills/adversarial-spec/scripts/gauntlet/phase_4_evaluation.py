@@ -12,6 +12,7 @@ import sys
 import time
 
 from adversaries import ADVERSARIES
+from gauntlet.batch_tiering import BatchTier
 from gauntlet.core_types import PROGRAMMING_BUGS, Concern, Evaluation, GauntletConfig
 from gauntlet.model_dispatch import (
     call_model,
@@ -119,7 +120,7 @@ def evaluate_concerns_multi_model(
     concerns: list[Concern],
     models: list[str],
     config: GauntletConfig,
-    batch_size: int = 15,
+    batch_size: int | list[BatchTier] = 15,
 ) -> list[Evaluation]:
     """Phase 4: Evaluate concerns using MULTIPLE models in parallel.
 
@@ -131,11 +132,47 @@ def evaluate_concerns_multi_model(
         concerns: List of concerns to evaluate
         models: List of models to use (will use up to 3)
         config: Gauntlet configuration (timeout)
-        batch_size: Number of concerns per batch
+        batch_size: Either an int (flat batch size, default 15) OR a
+            list[BatchTier] from gauntlet.batch_tiering. When a tier list is
+            given, each tier's concerns are evaluated with that tier's
+            per-tier batch size, and the resulting evaluations are concatenated.
+            The ``concerns`` argument is ignored in that case (the tiers
+            already carry their own concern subsets).
 
     Returns:
         List of Evaluation objects with consensus verdicts
     """
+    # Tier dispatch: run each tier independently and concat evaluations.
+    # We deliberately call the same function recursively with int batch_size
+    # rather than weaving tiers through the per-model logic — keeps the
+    # consensus / rate-limit code paths unchanged and trivially revertable.
+    if isinstance(batch_size, list):
+        if not batch_size:
+            return []
+        tier_count = len(batch_size)
+        all_evals: list[Evaluation] = []
+        for tier_idx, tier in enumerate(batch_size, 1):
+            if not tier.concerns:
+                print(
+                    f"  Tier {tier_idx}/{tier_count} '{tier.name}': empty, skipping",
+                    file=sys.stderr,
+                )
+                continue
+            print(
+                f"  Tier {tier_idx}/{tier_count} '{tier.name}': "
+                f"{len(tier.concerns)} concerns @ batch={tier.batch_size}",
+                file=sys.stderr,
+            )
+            tier_evals = evaluate_concerns_multi_model(
+                spec=spec,
+                concerns=tier.concerns,
+                models=models,
+                config=config,
+                batch_size=tier.batch_size,
+            )
+            all_evals.extend(tier_evals)
+        return all_evals
+
     if not concerns:
         return []
 

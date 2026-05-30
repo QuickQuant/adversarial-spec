@@ -14,6 +14,7 @@ _validate_model_name = MODULE._validate_model_name
 select_eval_model = MODULE.select_eval_model
 get_available_eval_models = MODULE.get_available_eval_models
 call_model = MODULE.call_model
+get_rate_limit_config = MODULE.get_rate_limit_config
 
 
 def test_validate_model_name_accepts_expected_values():
@@ -71,6 +72,12 @@ def test_get_available_eval_models_prefers_codex_gpt_5_5(monkeypatch):
         "codex/gpt-5.5",
         "gemini-cli/gemini-3.1-pro-preview",
     ]
+
+
+def test_gemini_free_tier_rate_limit_staggers_single_launches(monkeypatch):
+    monkeypatch.delenv("GEMINI_PAID_TIER", raising=False)
+
+    assert get_rate_limit_config("gemini-cli/gemini-3-flash-preview") == (1, 15)
 
 
 @pytest.mark.parametrize(

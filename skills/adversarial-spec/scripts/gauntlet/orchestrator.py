@@ -43,6 +43,17 @@ from gauntlet.persistence import (
     update_adversary_stats,
     update_run_manifest,
 )
+from gauntlet.batch_tiering import (
+    BatchTier,
+    pick_eval_batch_arg,
+    summarize_tiers,
+)
+from gauntlet.clustering import (
+    DEFAULT_JACCARD_THRESHOLD,
+    cluster_concerns,
+    render_cluster_report,
+    should_auto_cluster,
+)
 from gauntlet.phase_1_attacks import check_phase1_quality, generate_attacks
 from gauntlet.phase_2_synthesis import generate_big_picture_synthesis
 from gauntlet.phase_3_filtering import (
@@ -206,6 +217,9 @@ def run_gauntlet(
     eval_codex_reasoning: str = "xhigh",
     resume: bool = False,
     unattended: bool = False,
+    eval_tier_strategy: str = "power_law_length",
+    eval_flat_batch_size: int = 15,
+    eval_tier_min_concerns: int = 30,
 ) -> GauntletResult:
     """Run the full adversarial gauntlet on a specification.
 
@@ -224,6 +238,11 @@ def run_gauntlet(
         eval_codex_reasoning: Reasoning effort for Codex in eval/adjudication
         resume: Resume from checkpoint files if available
         unattended: Forbid input() + enable auto-checkpoint
+        eval_tier_strategy: "flat" (historical fixed batch_size) or
+            "power_law_length" (3 length-based tiers with per-tier batch sizes).
+            Default "flat" preserves prior behavior.
+        eval_flat_batch_size: Batch size used when ``eval_tier_strategy`` is
+            "flat". Has no effect under "power_law_length".
 
     Returns:
         GauntletResult with all phases' outputs
@@ -239,6 +258,9 @@ def run_gauntlet(
         auto_checkpoint=unattended,
         resume=resume,
         unattended=unattended,
+        eval_tier_strategy=eval_tier_strategy,
+        eval_flat_batch_size=eval_flat_batch_size,
+        eval_tier_min_concerns=eval_tier_min_concerns,
     )
 
     # ── Step 2: Resolve models ──
@@ -479,23 +501,72 @@ def run_gauntlet(
         # Preserve post-filter concerns for adversary-level stats before clustering.
         post_filter_concerns = concerns
 
-        # ── Phase 3.5: Skip clustering (pass-through) ──
-        # Clustering was removed: intermediate LLM dedup lost content (same failure
-        # class as v1 synthesis — haiku subagents missed 48% of concerns). Adversary
-        # scope design handles overlap upstream instead. See CR-8.
-        clustered_concerns = concerns
-        cluster_members: dict[str, list] = {}
-        print(f"Phase 3.5: Skipped clustering ({len(concerns)} concerns passed through)", file=sys.stderr)
+        # ── Phase 3.5: Deterministic Jaccard clustering (Layer B) ──
+        # Auto-trigger only when post-filter > CLUSTERING_AUTO_THRESHOLD (200 by
+        # default). Below that, the original "adversary scope handles overlap"
+        # premise still holds. The replaced LLM-driven dedup (CR-8) lost ~48%
+        # of concerns; this pure-code clustering cannot drop content.
+        if should_auto_cluster(len(concerns)):
+            print(
+                f"Phase 3.5: Clustering {len(concerns)} concerns "
+                f"(threshold={DEFAULT_JACCARD_THRESHOLD}, per-adversary)",
+                file=sys.stderr,
+            )
+            clustered_concerns, cluster_members = cluster_concerns(
+                concerns, threshold=DEFAULT_JACCARD_THRESHOLD,
+            )
+            print(
+                f"  → {len(clustered_concerns)} cluster representatives "
+                f"(reduction: {len(concerns) - len(clustered_concerns)})",
+                file=sys.stderr,
+            )
+
+            # Emit a sidecar cluster report for human inspection. The report
+            # path lives next to the run's other artifacts so the operator can
+            # audit clustering before promotion to Phase 4.
+            try:
+                from pathlib import Path as _Path
+
+                cluster_report = render_cluster_report(
+                    concerns,
+                    clustered_concerns,
+                    cluster_members,
+                    threshold=DEFAULT_JACCARD_THRESHOLD,
+                    spec_hash_short=spec_hash[:8] if spec_hash else None,
+                )
+                report_path = _Path(
+                    f".adversarial-spec-gauntlet/cluster-report-{spec_hash[:8]}.md"
+                ) if spec_hash else None
+                if report_path is not None:
+                    report_path.parent.mkdir(parents=True, exist_ok=True)
+                    report_path.write_text(cluster_report)
+                    print(f"  Cluster report: {report_path}", file=sys.stderr)
+            except OSError as e:
+                # Sidecar is informational; don't break the pipeline if disk
+                # is read-only or the path is unwritable.
+                print(f"  (cluster report write skipped: {e})", file=sys.stderr)
+        else:
+            print(
+                f"Phase 3.5: Skipped clustering "
+                f"({len(concerns)} ≤ auto-trigger threshold)",
+                file=sys.stderr,
+            )
+            clustered_concerns = concerns
+            cluster_members = {}
 
         _track_dedup_stats(
             spec_hash=spec_hash,
             raw_count=len(raw_concerns),
             post_filter_count=len(post_filter_concerns),
-            post_cluster_count=len(concerns),
-            cluster_deduped=0,
-            reduction_pct=0.0,
+            post_cluster_count=len(clustered_concerns),
+            cluster_deduped=len(post_filter_concerns) - len(clustered_concerns),
+            reduction_pct=(
+                (len(post_filter_concerns) - len(clustered_concerns))
+                / len(post_filter_concerns) * 100.0
+                if post_filter_concerns else 0.0
+            ),
             attack_models=attack_models,
-            clustering_model="none",
+            clustering_model="jaccard-deterministic",
         )
 
         # ── Phase 4: Multi-Model Evaluation ──
@@ -503,6 +574,34 @@ def run_gauntlet(
         phase_4_status = "completed"
         print("Phase 4: Evaluating concerns...", file=sys.stderr)
         evaluation_concerns = clustered_concerns
+
+        # Pick the batch_size argument (int or list[BatchTier]) once, log
+        # what was decided, and pass through to evaluate_concerns_multi_model.
+        # The decision policy lives in batch_tiering.pick_eval_batch_arg so it
+        # is directly unit-testable without the orchestrator's plumbing.
+        def _batch_arg_for_eval():
+            arg = pick_eval_batch_arg(
+                strategy=config.eval_tier_strategy,
+                concerns=evaluation_concerns,
+                flat_batch_size=config.eval_flat_batch_size,
+                tier_min_concerns=config.eval_tier_min_concerns,
+            )
+            if isinstance(arg, list):
+                print("Phase 4: Tiering concerns by length (power-law batching):", file=sys.stderr)
+                print(summarize_tiers(arg), file=sys.stderr)
+            elif config.eval_tier_strategy == "power_law_length":
+                print(
+                    f"Phase 4: power_law_length requested but N={len(evaluation_concerns)} "
+                    f"< eval_tier_min_concerns={config.eval_tier_min_concerns}; "
+                    f"falling back to flat batch_size={arg}",
+                    file=sys.stderr,
+                )
+            else:
+                print(
+                    f"Phase 4: flat batching with batch_size={arg}",
+                    file=sys.stderr,
+                )
+            return arg
 
         if "phase_4" in partial:
             # Validate concern set alignment before reusing
@@ -517,6 +616,7 @@ def run_gauntlet(
                 if use_multi_model and len(eval_models) >= 2:
                     clustered_evaluations = evaluate_concerns_multi_model(
                         spec, evaluation_concerns, eval_models, config,
+                        batch_size=_batch_arg_for_eval(),
                     )
                 else:
                     clustered_evaluations = evaluate_concerns(
@@ -526,6 +626,7 @@ def run_gauntlet(
             if use_multi_model and len(eval_models) >= 2:
                 clustered_evaluations = evaluate_concerns_multi_model(
                     spec, evaluation_concerns, eval_models, config,
+                    batch_size=_batch_arg_for_eval(),
                 )
             else:
                 clustered_evaluations = evaluate_concerns(

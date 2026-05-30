@@ -107,6 +107,158 @@ User inputs are not sanitized before processing."""
     assert len(concerns) >= 2
 
 
+def test_parse_handles_numbered_items_at_or_above_100(monkeypatch):
+    """Regression: parser window was [:4] which truncated three-digit numbers
+    like '100. ' (the dot-space straddles index 3-4). Items >=100 were silently
+    treated as continuation text, capping every adversary at 99 concerns.
+
+    Empirically verified against raw-responses-9ee43569.json: PEDA emitted 200,
+    BURN emitted 250, FLOW emitted 426 — all parsed as 99.
+
+    Fix: window expanded to [:8], covering numbered items up to 99,999.
+    """
+    # Build a numbered list with 105 items so we cross the 100-mark.
+    response = "\n".join(f"{i}. Concern number {i} with some descriptive text."
+                         for i in range(1, 106))
+
+    def fake_call_model(model, system_prompt, user_message, timeout, codex_reasoning, json_mode=False):
+        return response, 100, 50
+
+    monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
+
+    concerns, _, _ = generate_attacks(
+        spec="spec", adversaries=["paranoid_security"],
+        models=["test-model"], config=GauntletConfig(),
+    )
+    # Pre-fix this returned 99 (or fewer, with later items folded into #99's text).
+    assert len(concerns) == 105, (
+        f"Expected 105 concerns, got {len(concerns)}. "
+        "Parser likely failed to detect items >=100 (regression of [:4]→[:8] fix)."
+    )
+    # Verify three-digit items kept their identity and weren't merged into #99.
+    texts = [c.text for c in concerns]
+    assert any("Concern number 100" in t for t in texts), "Item 100 should be its own concern."
+    assert any("Concern number 105" in t for t in texts), "Item 105 should be its own concern."
+
+
+def test_parse_handles_three_digit_with_paren_format(monkeypatch):
+    """Same off-by-one risk for the '100)' branch — covered by [:8] too."""
+    response = "\n".join(f"{i}) Concern {i}." for i in range(98, 103))
+
+    def fake_call_model(model, system_prompt, user_message, timeout, codex_reasoning, json_mode=False):
+        return response, 100, 50
+
+    monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
+
+    concerns, _, _ = generate_attacks(
+        spec="spec", adversaries=["paranoid_security"],
+        models=["test-model"], config=GauntletConfig(),
+    )
+    assert len(concerns) == 5, f"Expected 5 concerns (98..102), got {len(concerns)}"
+
+
+# =============================================================================
+# Severity extraction (Layer A.2): severity was previously dropped on the
+# floor — every parsed concern landed with `severity="medium"`. The parser
+# now pulls the marker from the leading text and strips it.
+# =============================================================================
+
+
+class TestSeverityExtraction:
+    """Direct unit tests for _extract_severity_from_text."""
+
+    def test_no_marker_defaults_medium(self):
+        from gauntlet.phase_1_attacks import _extract_severity_from_text
+        sev, txt = _extract_severity_from_text("Plain concern without any marker.")
+        assert sev == "medium"
+        assert txt == "Plain concern without any marker."
+
+    def test_bold_critical_maps_to_high(self):
+        from gauntlet.phase_1_attacks import _extract_severity_from_text
+        sev, txt = _extract_severity_from_text("**CRITICAL:** Auth bypass possible.")
+        assert sev == "high"
+        assert txt == "Auth bypass possible."
+
+    def test_bold_high_no_colon(self):
+        from gauntlet.phase_1_attacks import _extract_severity_from_text
+        sev, txt = _extract_severity_from_text("**HIGH** Missing rate limit.")
+        assert sev == "high"
+        assert txt == "Missing rate limit."
+
+    def test_bold_medium_lowercase(self):
+        from gauntlet.phase_1_attacks import _extract_severity_from_text
+        sev, txt = _extract_severity_from_text("**medium** Add backoff.")
+        assert sev == "medium"
+        assert txt == "Add backoff."
+
+    def test_bracketed_severity(self):
+        from gauntlet.phase_1_attacks import _extract_severity_from_text
+        sev, txt = _extract_severity_from_text("[high] Stale config can race.")
+        assert sev == "high"
+        assert txt == "Stale config can race."
+
+    def test_paren_severity_at_start(self):
+        from gauntlet.phase_1_attacks import _extract_severity_from_text
+        sev, txt = _extract_severity_from_text("(severity: low) cosmetic typo.")
+        assert sev == "low"
+        assert txt == "cosmetic typo."
+
+    def test_paren_severity_inline_does_not_strip(self):
+        from gauntlet.phase_1_attacks import _extract_severity_from_text
+        sev, txt = _extract_severity_from_text(
+            "Auth flow has a problem (severity: high) when token expires."
+        )
+        assert sev == "high"
+        # Mid-sentence hints are not removed — they're part of the prose.
+        assert txt == "Auth flow has a problem (severity: high) when token expires."
+
+    def test_bare_label_with_colon(self):
+        from gauntlet.phase_1_attacks import _extract_severity_from_text
+        sev, txt = _extract_severity_from_text("CRITICAL: Path traversal in upload.")
+        assert sev == "high"
+        assert txt == "Path traversal in upload."
+
+    def test_bare_word_without_colon_is_kept(self):
+        # We require the colon to avoid stripping benign sentence starters
+        # like "Low memory pressure can cause...".
+        from gauntlet.phase_1_attacks import _extract_severity_from_text
+        sev, txt = _extract_severity_from_text("Low memory pressure can cause OOMs.")
+        assert sev == "medium"
+        assert txt == "Low memory pressure can cause OOMs."
+
+    def test_empty_string_safe(self):
+        from gauntlet.phase_1_attacks import _extract_severity_from_text
+        sev, txt = _extract_severity_from_text("")
+        assert sev == "medium"
+        assert txt == ""
+
+
+def test_parser_attaches_extracted_severity_to_concerns(monkeypatch):
+    """End-to-end: severity markers in numbered-list output land on Concern.severity."""
+    response = """1. **CRITICAL:** Auth bypass via cookie tampering.
+2. **MEDIUM** Missing telemetry on retry path.
+3. [low] Cosmetic UI label inconsistency.
+4. (severity: high) Stale config visible across tabs.
+5. Plain concern with no marker."""
+
+    def fake_call_model(model, system_prompt, user_message, timeout, codex_reasoning, json_mode=False):
+        return response, 100, 50
+
+    monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
+
+    concerns, _, _ = generate_attacks(
+        spec="spec", adversaries=["paranoid_security"],
+        models=["test-model"], config=GauntletConfig(),
+    )
+    assert len(concerns) == 5
+    severities = [c.severity for c in concerns]
+    assert severities == ["high", "medium", "low", "high", "medium"], severities
+    # Markers stripped from text:
+    assert concerns[0].text.startswith("Auth bypass"), concerns[0].text
+    assert concerns[2].text.startswith("Cosmetic UI label"), concerns[2].text
+    assert concerns[3].text.startswith("Stale config"), concerns[3].text
+
+
 def test_parse_failure_detection_nonempty_response_zero_concerns(monkeypatch):
     """Non-empty response + 0 parsed concerns → parse_failures populated."""
     # Prose-only response that doesn't match any numbered pattern

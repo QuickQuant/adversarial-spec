@@ -123,24 +123,55 @@ After sizing is agreed, proceed to step 1 below.
    Phase 1 (attacks):     N adversaries × M attack models = N×M calls
    Phase 2 (synthesis):   1 call (first eval model)
    Phase 3 (filtering):   1 call (cheap model)
-   Phase 3.5 (clustering): 1 call (cheap model)
-   Phase 4 (evaluation):  ceil(remaining_concerns / 15) batches × E eval models
-                           EACH batch re-sends the full spec
+   Phase 3.5 (clustering): 1 call (cheap model, deterministic Jaccard)
+   Phase 4 (evaluation):  depends on --eval-tier-strategy (see below)
+                           EACH batch re-sends the full spec — that re-send
+                           is ~85% of input cost, NOT the per-concern text
    ```
 
    **Example (real numbers from a username spec gauntlet):**
    8 adversaries × 2 attack models = 16 Phase 1 calls → 331 raw concerns.
    After filtering/dedup: ~300 concerns remain.
-   Phase 4: ceil(300/15) = 20 batches × 2 eval models = **40 eval calls**.
-   Total: 16 + 2 + 2 + 40 = **60 calls**, each with ~11K token spec as input.
+   Phase 4 (default tiering): roughly 9 + 11 + 9 = ~29 batches × 2 eval models = **~58 eval calls**.
+   Total: 16 + 2 + 1 + 58 = **~77 calls**, each with ~11K token spec as input.
+   (For comparison: the historical flat-15 strategy would have produced
+   `ceil(300/15) = 20 batches × 2 eval models = 40 calls`. Tiering trades a
+   few extra calls for substantially better attention quality on the gnarly
+   ~10% of concerns — the trade is worth it; see below.)
 
    **Phase 1 is where external models add value** (diverse perspectives finding different issues).
-   **Phase 4 is where cost explodes** — and it's advisory, because YOU (Claude) are the final
+   **Phase 4 is where cost dominates** — and it's advisory, because YOU (Claude) are the final
    evaluator when synthesizing results into spec changes.
 
    **Reasoning levels are now split** — attacks and evaluations have independent controls:
    - `--codex-reasoning low` (default) — controls attack reasoning effort
    - `--eval-codex-reasoning xhigh` (default) — controls evaluation/adjudication reasoning effort
+
+   **Phase 4 batching strategy (`--eval-tier-strategy`):**
+
+   | Strategy | When to use | Behavior |
+   |----------|-------------|----------|
+   | `power_law_length` (DEFAULT) | Always — this is the right answer for ≥30 concerns | Tiers concerns into easy/med/hard by text length (cuts at p60/p90, batch sizes 75/30/12). Long structural concerns (typically ARCH/FLOW prose with multi-section refs) get isolated 12-at-a-time attention; easy concerns batch 75-at-a-time to amortize the spec re-send. Auto-falls-back to flat when N < `--eval-tier-min-concerns` (default 30) since tiering 12 concerns into 75/30/12-sized batches is identical to one flat batch. |
+   | `flat` | A/B comparison runs; known-good fallback when tiering grades poorly on a specific run | Single fixed batch size (`--eval-flat-batch-size`, default 15). Historical behavior; use only when you specifically want it. |
+
+   **Why power-law is the default:** the spec re-send is a fixed cost per call.
+   At batch=15 you re-send the spec 20× for 300 concerns; at batch=75 you re-send
+   it 4×. But cranking the flat size to 75 makes the gnarly ~10% of concerns
+   (long FLOW/ARCH prose) get diluted in a 75-mixed batch and grade sloppily.
+   Tiering breaks the trade-off: easy concerns ride the big batch, hard ones get
+   a 12-batch with full attention. Lower call count *and* better verdicts on
+   the highest-stakes items.
+
+   **When to override to `flat`:**
+   - Side-by-side comparison of strategies for a post-mortem.
+   - Specific run where tiering grades poorly (rare; if it happens, capture
+     the run and tune the percentile cuts or tier batch sizes).
+   - Spec shape that doesn't match the tier defaults (e.g. ≤30 concerns —
+     though the auto-fallback handles this for you).
+
+   **Tunables (rarely needed):**
+   - `--eval-flat-batch-size N` — flat batch size (default 15).
+   - `--eval-tier-min-concerns N` — fallback threshold (default 30).
 
    **Additional flags:**
    - `--gauntlet-resume` — resume from checkpoint (reuse Phase 1 concerns, skip re-eval)

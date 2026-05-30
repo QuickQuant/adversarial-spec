@@ -127,6 +127,38 @@ def main():
         action="store_true",
         help="Resume from checkpoint files if available (no-op if no valid checkpoint)",
     )
+    parser.add_argument(
+        "--eval-tier-strategy",
+        default="power_law_length",
+        choices=["flat", "power_law_length"],
+        help=(
+            "Phase 4 batching strategy. Default 'power_law_length' tiers concerns "
+            "into easy/med/hard by text length (cuts p60/p90, batch sizes 75/30/12) "
+            "so the gnarliest concerns get isolated attention while easy ones "
+            "amortize the spec re-send. Auto-falls-back to flat when N is small "
+            "(see --eval-tier-min-concerns). Override to 'flat' for A/B comparison "
+            "or as a known-good fallback if tiering grades poorly."
+        ),
+    )
+    parser.add_argument(
+        "--eval-tier-min-concerns",
+        type=int,
+        default=30,
+        help=(
+            "Minimum post-filter concern count before --eval-tier-strategy=power_law_length "
+            "actually tiers. Below this threshold, power-law silently falls back to flat "
+            "batching with --eval-flat-batch-size. Default: 30."
+        ),
+    )
+    parser.add_argument(
+        "--eval-flat-batch-size",
+        type=int,
+        default=15,
+        help=(
+            "Batch size for Phase 4 evaluation under --eval-tier-strategy=flat "
+            "(default: 15). Ignored under power_law_length."
+        ),
+    )
 
     args = parser.parse_args()
 
@@ -258,6 +290,9 @@ def main():
         eval_codex_reasoning=args.eval_codex_reasoning,
         resume=args.resume,
         unattended=args.unattended,
+        eval_tier_strategy=args.eval_tier_strategy,
+        eval_flat_batch_size=args.eval_flat_batch_size,
+        eval_tier_min_concerns=args.eval_tier_min_concerns,
     )
 
     # Output
