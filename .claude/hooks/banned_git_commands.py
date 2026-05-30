@@ -12,9 +12,9 @@ Hook Type: PreToolUse
 Matcher: Bash
 """
 
+import sys
 import json
 import re
-import sys
 from pathlib import Path
 
 # =============================================================================
@@ -22,10 +22,17 @@ from pathlib import Path
 # =============================================================================
 
 def load_config():
-    config_path = Path(__file__).parent / "hook_config.json"
-    if config_path.exists():
-        with open(config_path) as f:
-            return json.load(f)
+    hooks_dir = str(Path(__file__).parent)
+    if hooks_dir not in sys.path:
+        sys.path.insert(0, hooks_dir)
+    try:
+        from _resolve_config import resolve_config
+        return resolve_config(__file__)
+    except ImportError:
+        config_path = Path(__file__).parent / "hook_config.json"
+        if config_path.exists():
+            with open(config_path) as f:
+                return json.load(f)
     return {"mode": "flexible"}
 
 CONFIG = load_config()
@@ -128,7 +135,7 @@ def main():
 
     if violations:
         # ALWAYS block - this is a hard constraint
-        print("🛑 BANNED GIT COMMAND - BLOCKED", file=sys.stderr)
+        print(f"🛑 BANNED GIT COMMAND - BLOCKED", file=sys.stderr)
         print("", file=sys.stderr)
         print("These commands can cause irreversible data loss.", file=sys.stderr)
         print("", file=sys.stderr)

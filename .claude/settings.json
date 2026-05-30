@@ -45,6 +45,16 @@
             "timeout": 30
           }
         ]
+      },
+      {
+        "matcher": "mcp__fizzy__pipeline_do_next_task|mcp__fizzy__pipeline_complete_task|mcp__fizzy__pipeline_review|mcp__fizzy__pipeline_test|mcp__trello__pipeline_do_next_task|mcp__trello__pipeline_complete_task|mcp__trello__pipeline_review|mcp__trello__pipeline_test",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/pipeline_notifications.py",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "PreToolUse": [

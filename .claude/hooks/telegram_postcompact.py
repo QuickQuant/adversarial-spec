@@ -18,7 +18,6 @@ import os
 import sys
 from pathlib import Path
 
-
 # Resolve project name from git root or cwd
 def get_project_name() -> str:
     project_dir = os.environ.get("CLAUDE_PROJECT_DIR", "")

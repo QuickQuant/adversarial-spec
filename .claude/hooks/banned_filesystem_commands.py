@@ -14,9 +14,9 @@ Hook Type: PreToolUse
 Matcher: Bash
 """
 
+import sys
 import json
 import re
-import sys
 from pathlib import Path
 
 # =============================================================================
@@ -24,10 +24,17 @@ from pathlib import Path
 # =============================================================================
 
 def load_config():
-    config_path = Path(__file__).parent / "hook_config.json"
-    if config_path.exists():
-        with open(config_path) as f:
-            return json.load(f)
+    hooks_dir = str(Path(__file__).parent)
+    if hooks_dir not in sys.path:
+        sys.path.insert(0, hooks_dir)
+    try:
+        from _resolve_config import resolve_config
+        return resolve_config(__file__)
+    except ImportError:
+        config_path = Path(__file__).parent / "hook_config.json"
+        if config_path.exists():
+            with open(config_path) as f:
+                return json.load(f)
     return {"mode": "flexible"}
 
 CONFIG = load_config()
@@ -150,7 +157,7 @@ def main():
 
     if has_always_block:
         # Always block recursive/wildcard/bulk operations
-        print("🛑 DANGEROUS FILESYSTEM COMMAND - BLOCKED", file=sys.stderr)
+        print(f"🛑 DANGEROUS FILESYSTEM COMMAND - BLOCKED", file=sys.stderr)
         print("", file=sys.stderr)
 
         for cmd, message, severity in violations:
@@ -165,7 +172,7 @@ def main():
     elif has_mode_dependent:
         if MODE == "strict":
             # Block in strict mode
-            print("🛑 FILE DELETION - BLOCKED [STRICT MODE]", file=sys.stderr)
+            print(f"🛑 FILE DELETION - BLOCKED [STRICT MODE]", file=sys.stderr)
             print("", file=sys.stderr)
 
             for cmd, message, severity in violations:
@@ -177,7 +184,7 @@ def main():
             sys.exit(2)
         else:
             # Warn in flexible mode
-            print("⚠️ FILE DELETION - WARNING [FLEXIBLE MODE]", file=sys.stderr)
+            print(f"⚠️ FILE DELETION - WARNING [FLEXIBLE MODE]", file=sys.stderr)
             print("", file=sys.stderr)
 
             for cmd, message, severity in violations:
