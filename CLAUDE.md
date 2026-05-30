@@ -1,5 +1,5 @@
 # CLAUDE.md
-<!-- Base: Brainquarters v2.0 | Project: v1.7 | Last synced: 2026-04-09 -->
+<!-- Base: Brainquarters v2.1 | Project: v1.7 | Last synced: 2026-05-01 -->
 <!-- Last reviewed: 2026-04-04 | Next review: 2026-04-25 -->
 <!-- Target: 60-100 lines | If >100 lines, prune or move to .active_context.md -->
 
@@ -71,6 +71,7 @@ Don't pre-load domain context. Load when needed:
 - Background tasks → check `block=false` at ~45s before committing to a blocking wait.
 - Failure patterns (rate limits, wrong defaults) → record in MEMORY.md same session.
 - Background notification for already-consumed task → reply "Already processed." (one line).
+- Delegate or restart when debugging loops, repeated large reads, or metadata chatter are inflating primary context. The conductor still owns final validation of diffs, tests, and evidence.
 
 ## Multi-Agent Coordination (Claude + Codex)
 
