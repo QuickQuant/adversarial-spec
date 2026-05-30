@@ -37,17 +37,21 @@ MODE = CONFIG.get("deprecated_models_mode", CONFIG.get("mode", "flexible"))
 DEPRECATED_MODELS = {
     # OpenAI legacy models - replaced by gpt-5.x series
     "gpt-4o": "Use codex/gpt-5.2-codex-medium (free with ChatGPT subscription) or claude-sonnet-4-5",
-    "gpt-4o-mini": "Use codex/gpt-5.2-codex-medium (free) or gemini-cli/gemini-3-flash-preview (free)",
+    "gpt-4o-mini": "Use codex/gpt-5.2-codex-medium (free) or gemini-cli/gemini-3.5-flash-preview (free)",
     "gpt-4-turbo": "Use codex/gpt-5.2-codex (free with ChatGPT subscription)",
     "gpt-4": "Use codex/gpt-5.2-codex (free with ChatGPT subscription)",
-    "gpt-3.5-turbo": "Use gemini-cli/gemini-3-flash-preview (free) or groq/llama-3.3-70b-versatile",
+    "gpt-3.5-turbo": "Use gemini-cli/gemini-3.5-flash-preview (free) or groq/llama-3.3-70b-versatile",
     "o3-mini": "Use codex/gpt-5.2-codex-medium (free with ChatGPT subscription)",
     "o3": "Use codex/gpt-5.4 (current default for Codex CLI)",
 
-    # Old Gemini models
-    "gemini-pro": "Use gemini/gemini-3-pro or gemini-cli/gemini-3-pro-preview (free)",
-    "gemini-1.5-pro": "Use gemini/gemini-3-pro or gemini-cli/gemini-3-pro-preview (free)",
-    "gemini-1.5-flash": "Use gemini/gemini-3-flash or gemini-cli/gemini-3-flash-preview (free)",
+    # Old Gemini models — current: gemini-cli/gemini-3.1-pro-preview (heavy/reasoning),
+    # gemini-cli/gemini-3.5-flash-preview (lightweight). 2.5 Pro shares quota with
+    # 3.1 Pro (never use it); 3 Pro superseded by 3.1, 3 Flash by 3.5.
+    "gemini-pro": "Use gemini-cli/gemini-3.1-pro-preview (free) or gemini-cli/gemini-3.5-flash-preview (free)",
+    "gemini-1.5-pro": "Use gemini-cli/gemini-3.1-pro-preview (free)",
+    "gemini-1.5-flash": "Use gemini-cli/gemini-3.5-flash-preview (free)",
+    "gemini-2.5-pro": "Use gemini-cli/gemini-3.1-pro-preview (free). WARNING: 2.5 Pro shares quota with 3.1 Pro",
+    "gemini-3-pro-preview": "Use gemini-cli/gemini-3.1-pro-preview (free). 3 Pro superseded by 3.1 Pro",
 
     # Old Claude models
     "claude-3-opus": "Use claude-opus-4-5-20250514",
@@ -131,7 +135,7 @@ def main():
         print("", file=sys.stderr)
         print("Free options with no API cost:", file=sys.stderr)
         print("  • codex/gpt-5.2-codex (requires ChatGPT subscription + npm install -g @openai/codex)", file=sys.stderr)
-        print("  • gemini-cli/gemini-3-pro-preview (requires Google account + install gemini CLI)", file=sys.stderr)
+        print("  • gemini-cli/gemini-3.1-pro-preview (requires Google account + install gemini CLI)", file=sys.stderr)
 
         sys.exit(2)  # Block the command
 
