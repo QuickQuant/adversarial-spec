@@ -19,6 +19,7 @@ Run:
     uv run pytest skills/adversarial-spec/scripts/tests/test_mini_spec_emission.py -q
 """
 
+import hashlib
 import re
 
 from mini_spec_emission import (
@@ -138,6 +139,29 @@ def test_tc4_dotted_line_plan_artifacts_emitted():
             assert binding.get("kind") == "verification"
             # plan_hash is a 12-char sha256 prefix (same primitive the gate uses).
             assert re.fullmatch(r"[0-9a-f]{12}", binding["plan_hash"]), binding["plan_hash"]
+
+
+def test_tc4_hashes_match_written_artifacts(tmp_path):
+    plan = emit_fizzy_plan(
+        representative_tree(),
+        session_id="sess-s7",
+        with_artifact_manifest=True,
+        artifact_root=tmp_path,
+    )
+
+    for task in plan["tasks"]:
+        definition_path = tmp_path / task["spec_refs"]["definition_artifact"]
+        assert definition_path.is_file()
+        assert task["spec_refs"]["definition_hash"] == hashlib.sha256(
+            definition_path.read_bytes()
+        ).hexdigest()[:12]
+
+        for binding in task["verification_binding"].values():
+            plan_path = tmp_path / binding["plan_artifact"]
+            assert plan_path.is_file()
+            assert binding["plan_hash"] == hashlib.sha256(
+                plan_path.read_bytes()
+            ).hexdigest()[:12]
 
 
 def test_obligation_keys_exactly_match_altitude():

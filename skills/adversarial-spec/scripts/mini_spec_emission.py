@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+from pathlib import Path
 from typing import Any
 
 # ── Plan schema version (must match fizzy-pipeline-mcp V4_PLAN_SCHEMA_VERSION) ──
@@ -108,9 +109,19 @@ def altitude_spec_shape(altitude: str) -> dict[str, Any]:
     }
 
 
-def _plan_hash(text: str) -> str:
+def _sha256_prefix_bytes(data: bytes) -> str:
     """12-char sha256 prefix — the SAME primitive fizzy-pipeline-mcp's gate uses."""
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:12]
+    return hashlib.sha256(data).hexdigest()[:12]
+
+
+def _write_artifact(artifact_root: Path | None, relpath: str, content: str) -> str:
+    data = content.encode("utf-8")
+    if artifact_root is not None:
+        target = artifact_root / relpath
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+        data = target.read_bytes()
+    return _sha256_prefix_bytes(data)
 
 
 # ── Appx C good-requirement lint ───────────────────────────────────
@@ -212,22 +223,38 @@ _PLAN_DOC = {
 }
 
 
-def _binding(slug: str, tid: str, kind: str) -> dict[str, Any]:
+def _binding(slug: str, tid: str, kind: str, artifact_root: Path | None) -> dict[str, Any]:
     plan_artifact = f".adversarial-spec/specs/{slug}/{tid}/{_PLAN_DOC[kind]}"
+    plan_content = (
+        f"# {tid} {kind.replace('_', ' ').title()}\n\n"
+        f"Dotted-line verification plan/procedure for `{tid}`.\n"
+        f"Verification kind: `{kind}`.\n"
+    )
     return {
         "plan_artifact": plan_artifact,
-        "plan_hash": _plan_hash(plan_artifact),
+        "plan_hash": _write_artifact(artifact_root, plan_artifact, plan_content),
         "artifact": f"tests/test_{tid.lower()}.py",
         "kind": VV_KIND,
         "verify_commands": [f"uv run pytest tests/test_{tid.lower()}.py -q"],
     }
 
 
-def _spec_refs(slug: str, tid: str, altitude: str) -> dict[str, Any]:
+def _spec_refs(
+    slug: str,
+    tid: str,
+    altitude: str,
+    node: dict[str, Any],
+    artifact_root: Path | None,
+) -> dict[str, Any]:
     definition_artifact = f".adversarial-spec/specs/{slug}/{tid}/{_SPEC_DOC[altitude]}"
+    definition_content = (
+        f"# {tid} {altitude.title()} Mini-Spec\n\n"
+        f"Title: {node['title']}\n\n"
+        f"{node['description']}\n"
+    )
     return {
         "definition_artifact": definition_artifact,
-        "definition_hash": _plan_hash(definition_artifact),
+        "definition_hash": _write_artifact(artifact_root, definition_artifact, definition_content),
     }
 
 
@@ -239,13 +266,14 @@ def _emit_node(
     *,
     out: list[dict[str, Any]],
     artifacts: list[str],
+    artifact_root: Path | None,
 ) -> None:
     tid = node["task_id"]
     children = node.get("children", [])
     obligations = sorted(ALTITUDE_OBLIGATIONS[altitude])
 
-    binding = {kind: _binding(slug, tid, kind) for kind in obligations}
-    spec_refs = _spec_refs(slug, tid, altitude)
+    binding = {kind: _binding(slug, tid, kind, artifact_root) for kind in obligations}
+    spec_refs = _spec_refs(slug, tid, altitude, node, artifact_root)
 
     task: dict[str, Any] = {
         "task_id": tid,
@@ -298,7 +326,10 @@ def _emit_node(
 
     child_altitude = _child_altitude(altitude)
     for child in children:
-        _emit_node(child, child_altitude, tid, slug, out=out, artifacts=artifacts)
+        _emit_node(
+            child, child_altitude, tid, slug,
+            out=out, artifacts=artifacts, artifact_root=artifact_root,
+        )
 
 
 def _node_requirement_id(tid: str) -> str:
@@ -321,6 +352,7 @@ def emit_fizzy_plan(
     session_id: str,
     slug: str = "altitude-demo",
     with_artifact_manifest: bool = False,
+    artifact_root: str | Path | None = None,
 ) -> dict[str, Any]:
     """Emit a v3 (altitude) ``fizzy-plan.json`` dict from a tree.
 
@@ -329,6 +361,10 @@ def emit_fizzy_plan(
     with a re-derivable ``definition_hash``, and a ``verification_binding`` with
     EXACTLY the obligation keys for its altitude (each with a dotted-line
     ``plan_artifact`` + ``plan_hash``). No ``validation-ledger.json`` is emitted.
+
+    When *artifact_root* is supplied, the helper writes the emitted spec and
+    dotted-line artifacts to disk before hashing them. When omitted, it hashes
+    the same deterministic bytes it would write.
 
     When *with_artifact_manifest* is True, the returned dict carries an extra
     ``_artifact_manifest`` listing every per-altitude spec doc + dotted-line
@@ -339,7 +375,11 @@ def emit_fizzy_plan(
     root = tree["system"]
     tasks: list[dict[str, Any]] = []
     artifacts: list[str] = []
-    _emit_node(root, "system", None, slug, out=tasks, artifacts=artifacts)
+    artifact_root_path = Path(artifact_root) if artifact_root is not None else None
+    _emit_node(
+        root, "system", None, slug, out=tasks, artifacts=artifacts,
+        artifact_root=artifact_root_path,
+    )
 
     plan: dict[str, Any] = {
         "plan_schema_version": PLAN_SCHEMA_VERSION,
@@ -350,6 +390,11 @@ def emit_fizzy_plan(
         # Appx S ConOps annotated outline — emitted as a FUTURE-validation input,
         # never a v4 requirement and never a validation ledger.
         conops = f".adversarial-spec/specs/{slug}/conops-outline.md"
+        _write_artifact(
+            artifact_root_path,
+            conops,
+            "# Concept of Operations Outline\n\nFuture system-validation input.\n",
+        )
         plan["_artifact_manifest"] = [*artifacts, conops]
     return plan
 
