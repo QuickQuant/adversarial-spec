@@ -100,6 +100,40 @@ These enums are normative. All artifacts, schemas, and references must use these
 
 ---
 
+## Altitude tree (V-model decomposition input)
+
+Phase 1 set the spec's **root altitude** from blast radius. Phase 4 sketches the
+**altitude tree** Phase 7 will materialize: a tree of nodes, each with an
+`altitude ∈ {component, subsystem, system}` and exactly one `parent` of strictly
+higher altitude (except the single root).
+
+Two distinct, never-conflated edges:
+
+- `decomposes_into` — WHAT contains WHAT (composition; the V-model tree). Drives
+  the bottom-up V&V closure and altitude-inversion detection.
+- `depends_on` — WHAT finishes before WHAT (execution order; scheduling only, no
+  V&V state). A sibling component may depend on another sibling without being its
+  child.
+
+For each tree node, Phase 4 identifies its **left-arm definition artifact** (the
+per-altitude mini-spec doc) and its **right-arm verification obligations** — a
+pure function of altitude:
+
+| altitude | verification obligations (right arm) |
+|---|---|
+| `component` | `component_verification` |
+| `subsystem` | `component_verification` + `subsystem_verification` |
+| `system` | `component_verification` + `subsystem_verification` + `system_verification` |
+
+Each obligation is paired left↔right at the SAME altitude (NASA's V): a node's
+definition artifact at a level is verified by a verification artifact at that
+level. System validation is deliberately NOT a v4 obligation — it is a future
+migration. Record the altitude assignment per component in
+`target-architecture.md` so Phase 7's `fizzy-plan.json` emission can attach the
+correct obligation set and mini-spec shape to each card.
+
+---
+
 ## Section 0: Getting Started and Bootstrap
 
 ### Prerequisites

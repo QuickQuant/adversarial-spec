@@ -856,6 +856,133 @@ Confirm cards appear in New Todo with correct count.
 
 ---
 
+### Step 9b: V4 altitude emission (`plan_schema_version: 3`)
+
+> **When to use:** the session is a v4 (altitude-aware) session
+> (`pipeline_version >= 4` on the session card) AND the change was triaged with a
+> blast-radius altitude in Phase 1. v3/v2 sessions keep the `plan_schema_version: 2`
+> emission above unchanged — they are grandfathered forever. v4 plans are
+> `plan_schema_version: 3` (the altitude schema; the card pipeline version is 4,
+> the plan schema number is 3 — the two knobs are deliberately decoupled).
+>
+> **v4 is VERIFICATION-ONLY.** Do NOT emit `validation-ledger.json`, do NOT emit a
+> `system_validation` binding, and do NOT add a force/override/bypass field.
+> System validation is a future, separately-approved migration.
+
+A v4 plan is a **tree**, not a flat task list. Each node carries an `altitude`,
+a `parent` (null for the single root), `decomposes_into` (direct children), and a
+`verification_binding` whose KEYS exactly equal the obligation set for its
+altitude. The emitter helper `mini_spec_emission.py`
+(`skills/adversarial-spec/scripts/`) builds this shape and self-checks it.
+
+#### Per-altitude mini-spec shapes (strict superset chain `component ⊂ subsystem ⊂ system`)
+
+| field | component | subsystem | system |
+|---|---|---|---|
+| `task_id`, `title`, `description`, `effort`, `strategy` | ✓ | ✓ | ✓ |
+| `acceptance_criteria` (own level, ≥1) | ✓ | ✓ | ✓ |
+| `behavior_change` / `verification_mode` / `verification_scope` | ✓ | ✓ | ✓ |
+| `architecture_refs` | ✓ | ✓ | ✓ |
+| `spec_refs.definition_artifact` + `definition_hash` | ✓ | ✓ | ✓ |
+| `verification_binding.component_verification` | **req** | req | req |
+| `verification_binding.subsystem_verification` | forbidden | **req** | req |
+| `verification_binding.system_verification` | forbidden | forbidden | **req** |
+| `subsystem_spec_path` | forbidden | **req** | (system_spec_path) |
+| `system_spec_path` / `conops_refs` / `user_story_refs` | forbidden | forbidden | **req** |
+| `realizes_refs` (subset of ancestor stories) | req (non-root) | req (non-root) | n/a (root owns) |
+| `decomposes_into` | forbidden (leaf) | ≥2 children | ≥1 child |
+| `parent` | non-null | non-null | null (root) |
+
+Lower altitude = strictly fewer mandatory left-arm fields, but each retains its
+C1 floor obligation (never zero — NASA tailoring S3.11). Emit one per-altitude
+spec doc per node: `normative.md` (component), `subsystem-spec.md` (subsystem),
+`system-spec.md` (system).
+
+#### Per-node v3 shape (worked example)
+
+```jsonc
+{
+  "plan_schema_version": 3,
+  "session_id": "<active_session_id>",
+  "tasks": [
+    {
+      "task_id": "SYS", "altitude": "system", "parent": null,
+      "decomposes_into": ["SS-1"],
+      "conops_refs": ["US-1", "US-2"], "user_story_refs": ["US-1", "US-2"],
+      "system_spec_path": ".adversarial-spec/specs/<slug>/SYS/system-spec.md",
+      "spec_refs": { "definition_artifact": ".../SYS/system-spec.md", "definition_hash": "a1b2c3d4e5f6" },
+      "verification_binding": {
+        "component_verification": { "plan_artifact": ".../component-verification-procedure.md", "plan_hash": "...", "artifact": "tests/test_sys.py", "kind": "verification", "verify_commands": ["..."] },
+        "subsystem_verification": { "plan_artifact": ".../subsystem-verification-plan.md", "plan_hash": "...", "kind": "verification", ... },
+        "system_verification":    { "plan_artifact": ".../system-verification-plan.md",    "plan_hash": "...", "kind": "verification", ... }
+      },
+      "requirement_metadata": { "requirement_id": "SYS-1", "rationale": "...", "traced_from": null, "owner": "...", "verification_method": "test", "verification_level": "system" }
+    },
+    {
+      "task_id": "C-1", "altitude": "component", "parent": "SS-1",
+      "decomposes_into": [], "realizes_refs": ["US-1"],
+      "spec_refs": { "definition_artifact": ".../C-1/normative.md", "definition_hash": "..." },
+      "verification_binding": { "component_verification": { "plan_artifact": ".../component-verification-procedure.md", "plan_hash": "...", "kind": "verification", ... } },
+      "requirement_metadata": { "requirement_id": "C-1", ... }
+    }
+  ]
+}
+```
+
+#### Dotted-line verification plan/procedure artifacts (NASA dotted lines)
+
+Every required `verification_binding[kind]` carries a readable `plan_artifact`
+(Component Verification Procedure / Subsystem Verification Plan / System
+Verification Plan) plus a `plan_hash` — the 12-char sha256 prefix of the file,
+the SAME primitive the fizzy-pipeline-mcp gate uses. Write these artifacts to
+disk before emission; `load_plan` re-derives `definition_hash` and each
+`plan_hash` from the real files, so emit-time and load-time agree before any
+edits. A missing/unreadable plan artifact is rejected
+(`MISSING_VV_PLAN_ARTIFACT` / `BINDING_ARTIFACT_NOT_FOUND`).
+
+#### Requirement metadata (NASA Table 4.2-2) and the requirement-id convention
+
+Each node carries a `requirement_metadata` record:
+`requirement_id` (matching `^[A-Z]+-R?\d+`), `rationale`, `traced_from`
+(parent id), `owner`, `verification_method ∈ {analysis, demonstration,
+inspection, test}`, `verification_level` (= the node's altitude). Run the Appx C
+good-requirement lint (`mini_spec_emission.lint_requirement_text`) on each
+`shall`-level statement before emission — only `shall`-form, WHAT-not-HOW,
+verifiable statements become ledger requirements.
+
+#### Appx S ConOps outline (future-validation input, NOT a v4 requirement)
+
+Optionally emit `conops-outline.md` shaped to the NASA Appx S annotated outline
+as a clean source of truth for a future validation migration. v4 does NOT
+require it, does NOT bind a `conops_hash`, and does NOT emit
+`validation-ledger.json`.
+
+#### Producer self-check loop (the dry-run/load symmetry)
+
+Before `pipeline_load`, the producer MUST loop on the dry-run until clean — the
+same symmetry v2 already has (`validate_plan` ↔ `load_plan` both call
+`_validate_plan`):
+
+```
+loop:
+  result = pipeline_validate_plan(plan_path=".../fizzy-plan.json",
+                                  session_id=<active>, board_id=BOARD_ID)
+  if result.valid: break
+  fix the structured issues (MISSING_LEVEL_VV / VV_ABOVE_ALTITUDE /
+    ORPHAN_REALIZATION / UNDECOMPOSED_REQUIREMENT / MISSING_VV_PLAN_ARTIFACT /
+    ALTITUDE_INVERSION / ROOT_NOT_SYSTEM …) and re-emit
+```
+
+If the running MCP does NOT yet enforce schema 3 (Stage 1 not installed),
+`pipeline_validate_plan` will reject a schema-3 plan as
+`unsupported_schema_version`. In that window, run the emitter's local
+`self_check_plan()` (which mirrors the same altitude reject codes) as the stand-in
+gate, record the live-MCP dry-run as a blocker, and re-run the dry-run once
+Stage 1 ships. **Do not `pipeline_load` a schema-3 plan against an MCP that
+rejects it.**
+
+---
+
 ### Step 10: Add Concern Context Comments to Cards
 
 **This step makes each card self-contained for human readers.** Without it, a person opening a single Fizzy card sees acceptance criteria but has no idea WHY the task exists, what production problem it prevents, or which gauntlet findings shaped the approach. They'd have to read the full spec to orient — defeating the purpose of card-level task breakdown.

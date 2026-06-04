@@ -267,6 +267,40 @@ adversarial-spec critique --doc-type spec --depth full
 
 **Full depth**: All sections from both product and technical.
 
+#### Altitude Classification (V-model depth triage)
+
+A change has a **blast-radius altitude** — how deep the change cuts through the
+system. Altitude is a *tree*, set from blast radius at evaluate-plan time, and it
+drives the Phase 7 decomposition (see Phase 4 §"Altitude tree" and Phase 7
+§"V4 altitude emission"). Classify the spec's root altitude here so Phase 4 and
+Phase 7 inherit it:
+
+| blast radius | legal root altitude | minimum tree shape |
+|---|---|---|
+| system (full V) | `system` | system → ≥1 subsystem → ≥1 component each |
+| subsystem | `subsystem` | subsystem → ≥2 components |
+| component | `component` | a single leaf component node (no children) |
+
+Rigor scales DOWN with altitude but NEVER to zero: a component-altitude change
+pays no system tax (no ConOps refs, no system verification, no subsystem
+decomposition), but still owes its component-verification floor. Capture the
+intended root altitude in the spec's scope section so the gauntlet and the
+producer agree on depth before decomposition.
+
+#### Requirement-id convention (machine-extractable)
+
+Every requirement / user story / invariant the spec defines MUST carry a
+machine-extractable id matching `^[A-Z]+-R?\d+` — e.g. `US-1`, `INV-3`,
+`SR-R12`. This is the anchor Phase 7 uses for `realizes_refs` traceability and
+the verification ledger's per-requirement rows. Ids that don't match the
+convention can't be traced and will be rejected downstream.
+
+**Good-requirement lint (NASA Appx C.1/C.4):** each `shall`-level requirement is
+a WHAT, not a HOW. Use `shall` for binding requirements, `will` for facts /
+declarations, `should` for goals. Active voice; state an observable, verifiable
+condition; never name an implementation file or mechanism in the requirement
+text. Only `shall`-form statements become verification-ledger requirements.
+
 #### Critique Criteria by Depth
 
 **Product depth:**
