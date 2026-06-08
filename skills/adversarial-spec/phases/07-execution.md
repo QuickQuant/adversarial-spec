@@ -417,7 +417,7 @@ Assign these **during decomposition**, not as a deferred second pass. If you can
 
 ### Step 4: Test Scheduling Assignment
 
-> **Note:** This step assigns *when* tests are written relative to implementation (test-first vs test-after vs skip). It is distinct from the Phase 2 `Strategy:` label on individual test cases (REAL-DATA / SYNTHETIC / MOCK / FRONTEND / STATIC), which classifies *what data* a test uses. Don't conflate them — the two concepts collide only in name.
+> **Note:** This step assigns *when* tests are written relative to implementation (test-first vs test-after vs `spike` = no automated-test commitment). It is distinct from the Phase 2 `Strategy:` label on individual test cases (REAL-DATA / SYNTHETIC / MOCK / FRONTEND / STATIC), which classifies *what data* a test uses. Don't conflate them — the two concepts collide only in name.
 
 Assign test-first or test-after to each task based on risk:
 
@@ -436,10 +436,16 @@ Assign test-first or test-after to each task based on risk:
 - Task is primarily CRUD or boilerplate
 - Task is infrastructure/setup
 
-**Skip tests (no strategy) when:**
+**Use `spike` (no automated-test commitment) when:**
 - Task is pure documentation (README, docs, comments)
 - Task is configuration-only (env vars, deploy config, CI setup)
 - Task is a rename/move with no logic changes
+
+`spike` is fizzy's valid value for "ship without committing automated tests" — do
+NOT emit `strategy:"skip"` (not in fizzy's `VALID_STRATEGIES`; rejected at
+`pipeline_load`). These tasks still pass verification independently via an EXEMPT
+`verification_mode` (`static-check` / `manual-ux` / `artifact-sync`) plus
+`exemption_reason`; `strategy` is decoupled from the verification gate.
 
 Present as a table:
 ```
@@ -817,7 +823,7 @@ Core fields (unchanged from v1):
 - `description`: Full description including acceptance criteria
 - `wave`: Wave number from the plan
 - `effort`: S / M / L
-- `strategy`: test-first / test-after / skip
+- `strategy`: test-first / test-after / spike. These are the only values fizzy accepts (`VALID_STRATEGIES = {test-first, test-after, spike, refactor}`, `pipeline.py:134`). Use `spike` for deferred / doc-only / config-only / manual-only tasks that commit to **no automated tests** — never emit `"skip"` (not in the enum; fizzy rejects it at load: `PLAN_INVALID "invalid strategy"`). `strategy` is decoupled from the v2 verification gate (`_validate_v2_task` never reads it), so these tasks still verify independently via an EXEMPT `verification_mode` + `exemption_reason`.
 - `depends_on`: List of task_ids this task depends on (from dependency graph)
 - `concern_refs`: List of gauntlet concern IDs linked to this task
 - `invariant_refs`, `surface_scope`: Populated when Phase 4 ran (see Step 3)
@@ -833,6 +839,32 @@ Verification block fields (v2, see Verification Schema reference above for full 
 **Plan-level version marker:** include `plan_schema_version: 2` at the root. fizzy-pipeline-mcp uses this to select the strict validation path at `pipeline_load`. Plans missing this marker (or with version `1`) load with warnings during the migration window.
 
 **Emit verification-coverage.json:** If Gate V3 did not already write it, write the coverage report to `.adversarial-spec/specs/<slug>/verification-coverage.json` now using the `report_schema_version: 1` shape documented in Gate V3. Keep it alongside `fizzy-plan.json` so reviewers can inspect both artifacts from the same session directory.
+
+**Validate before loading (authoritative pre-load gate):** Run the **real** fizzy
+validator and loop until clean — do NOT call `pipeline_load` on an unvalidated
+plan. `validate_plan` and `load_plan` both call fizzy's `_validate_plan`, so the
+dry-run rejects exactly what the load would reject, but at zero cost and with
+structured issues you can fix. This is the #11/#12 lesson: **call the
+authoritative gate, never reimplement it locally** — a local revalidation once
+"passed" while the real validator rejected the plan.
+
+```
+loop:
+  result = pipeline_validate_plan(
+    plan_path  = ".adversarial-spec/specs/<slug>/fizzy-plan.json",
+    session_id = "<active_session_id>",
+    board_id   = BOARD_ID
+  )
+  if result.valid: break
+  fix the structured issues and re-emit fizzy-plan.json, e.g.:
+    PLAN_INVALID "invalid strategy"            → map deferred / manual-only tasks
+                                                  to `spike`, never `"skip"` (#12)
+    "at least 1 acceptance criterion required" → emit acceptance_criteria (#11)
+```
+
+`_validate_plan` raises on the **first** failing task, so one fix can unmask the
+next (#11 masked #12 this way). Loop until `valid:true` — a single clean pass, not
+a single fix.
 
 **Load into pipeline:**
 ```

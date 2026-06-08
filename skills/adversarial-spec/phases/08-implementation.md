@@ -295,6 +295,6 @@ For single-card operations (get_card_description, pipeline_do_next_task, pipelin
 - Write tests after
 - Still address all acceptance criteria
 
-**Skip tasks** (`strategy: "skip"`):
-- No tests needed (documentation, config-only changes)
-- Still verify the change works
+**Spike tasks** (`strategy: "spike"`):
+- No automated tests committed (documentation, config-only, deferred/manual-only changes)
+- Still verify the change works (often via an EXEMPT `verification_mode` + `exemption_reason`)
