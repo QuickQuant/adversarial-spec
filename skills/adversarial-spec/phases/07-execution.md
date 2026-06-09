@@ -763,7 +763,11 @@ The JSON must follow the v2 pipeline schema. The root includes `plan_schema_vers
     {
       "task_id": "T1",
       "title": "Implement trade telemetry API",
-      "description": "Full task description with acceptance criteria",
+      "description": "Full task description (why the task exists, approach constraints)",
+      "acceptance_criteria": [
+        "GET /telemetry/trades returns 200 with schema-valid payload for an active session",
+        "Older payloads without trade_telemetry keys still parse (keys optional)"
+      ],
       "wave": 0,
       "effort": "M",
       "strategy": "test-first",
@@ -791,6 +795,9 @@ The JSON must follow the v2 pipeline schema. The root includes `plan_schema_vers
       "task_id": "T2",
       "title": "Update roadmap manifest",
       "description": "Sync roadmap.json with Wave 1 task IDs",
+      "acceptance_criteria": [
+        "roadmap.json lists every Wave 1 task_id emitted in this plan"
+      ],
       "wave": 1,
       "effort": "S",
       "strategy": "test-after",
@@ -820,7 +827,8 @@ The JSON must follow the v2 pipeline schema. The root includes `plan_schema_vers
 Core fields (unchanged from v1):
 - `task_id`: Task numbering from the plan (T1, T2, ... or W0-1, W1-1, etc.)
 - `title`: Task title
-- `description`: Full description including acceptance criteria
+- `description`: Full description (why + approach). Do NOT fold acceptance criteria in here — they go in the dedicated array below
+- `acceptance_criteria`: array of testable criteria, **≥1 per task** — copied from the task's "Acceptance criteria" section in the execution plan. fizzy hard-requires this (`_validate_plan`, `pipeline.py:5403-5407`) and builds each card's acceptance checklist from it; criteria folded into `description` prose do NOT satisfy the validator (#11)
 - `wave`: Wave number from the plan
 - `effort`: S / M / L
 - `strategy` (the **Test Strategy** field on the wire — the JSON key stays `strategy` per ADR `0001`): the generator emits test-first / test-after / spike. fizzy's full enum is `VALID_STRATEGIES = {test-first, test-after, spike, refactor}` (`pipeline.py:164`) — `refactor` is valid to fizzy but Step 4 never assigns it. Use `spike` for deferred / doc-only / config-only / manual-only tasks that commit to **no automated tests** — never emit `"skip"` (not in the enum; fizzy rejects it at load: `PLAN_INVALID "invalid strategy"`). `strategy` is decoupled from the v2 verification gate (`_validate_v2_task` never reads it), so these tasks still verify independently via an EXEMPT `verification_mode` + `exemption_reason`.
