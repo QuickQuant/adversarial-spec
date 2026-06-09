@@ -117,6 +117,28 @@ skill's mini-spec emission. Stage 6 (system validation) was deliberately deferre
 de-numbered; the numbering intentionally skips 6 — do not reuse it.
 _Avoid_: bare "Stage N" (collides with Phase/Step numbering and with maturity stages).
 
+### Cards & tasks
+
+**Task**:
+A unit of planned work in an execution plan (`task_id: W0-1`), materialized 1:1 into a
+Task Card at `pipeline_load`. Qualify as "plan task" only where the pre/post-load
+distinction matters. fizzy's `*_task` tool names (`pipeline_do_next_task`,
+`pipeline_complete_task`, …) are contract terms meaning Task Cards — never to be
+"fixed."
+_Avoid_: "task" for a TodoWrite item.
+
+**Card**:
+A Fizzy board object. Four contract kinds (`card_type`): **Session Card** (tracks one
+Session through the lanes), **Task Card** (one plan task), and the middleware pair
+(`middleware_impl`, `middleware_judge`). Bare "card" only where the kind is
+unambiguous from context.
+
+**TodoWrite item**:
+The in-conversation checklist unit the skill uses for phase gates and progress
+tracking.
+_Avoid_: "task" or "todo task" for these — the skill's existing usage ("TodoWrite
+item") is already uniform; keep it that way.
+
 ### Work identity
 
 **Session**:
