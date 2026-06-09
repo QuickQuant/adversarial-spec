@@ -9,7 +9,7 @@ TodoWrite([
   {content: "Arm Adversaries — scope classification + briefings [GATE]", status: "pending", activeForm: "Arming adversaries with scope briefings"},
   {content: "Run gauntlet (respect Gemini rate limits)", status: "pending", activeForm: "Running gauntlet attacks"},
   {content: "Extract concerns with code (jq/Python, NOT LLM)", status: "pending", activeForm: "Extracting concerns with code"},
-  {content: "Synthesize findings — one Opus pass, 8-category taxonomy", status: "pending", activeForm: "Synthesizing gauntlet findings"},
+  {content: "Synthesize concerns — one Opus pass, 8-category taxonomy", status: "pending", activeForm: "Synthesizing gauntlet concerns"},
   {content: "Revise spec with accepted concerns", status: "pending", activeForm: "Revising spec with accepted concerns"},
   {content: "Run CONS guardrail on revised spec [GATE]", status: "pending", activeForm: "Running CONS guardrail on revised spec"},
   {content: "Run conditional CANON/TCOV guardrails on revised spec/tests [GATE]", status: "pending", activeForm: "Running conditional contract and test guardrails"},
@@ -279,11 +279,11 @@ After sizing is agreed, proceed to step 1 below.
      - **Dismiss** — not valid. One sentence why.
    - Deduplicate by theme within categories, not by source adversary.
 
-   **Step 6c: Present Findings**
+   **Step 6c: Present Concerns**
 
    Present a consolidated concern report using the standard taxonomy:
    ```
-   Gauntlet Findings
+   Gauntlet Concerns
    ═══════════════════════════════════════
    Total concerns evaluated: N (all verdicts, not just accepted)
    After dedup: X unique concerns

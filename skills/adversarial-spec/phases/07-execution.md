@@ -1017,25 +1017,25 @@ rejects it.**
 
 ### Step 10: Add Concern Context Comments to Cards
 
-**This step makes each card self-contained for human readers.** Without it, a person opening a single Fizzy card sees acceptance criteria but has no idea WHY the task exists, what production problem it prevents, or which gauntlet findings shaped the approach. They'd have to read the full spec to orient — defeating the purpose of card-level task breakdown.
+**This step makes each card self-contained for human readers.** Without it, a person opening a single Fizzy card sees acceptance criteria but has no idea WHY the task exists, what production problem it prevents, or which gauntlet concerns shaped the approach. They'd have to read the full spec to orient — defeating the purpose of card-level task breakdown.
 
 **For each card created in Step 9, add a comment that includes:**
 
 1. **Which concern(s) it addresses** — e.g., "CON-001: Gateway token refresh has no mutex"
 2. **The problem in plain language** — what's broken, what happened (production incidents, data corruption, etc.)
-3. **Why the fix takes this shape** — key gauntlet findings that constrained the approach (e.g., "gauntlet FM-2: can't cross-package import because gateway tsconfig restricts rootDir")
+3. **Why the fix takes this shape** — key gauntlet concerns that constrained the approach (e.g., "gauntlet FM-2: can't cross-package import because gateway tsconfig restricts rootDir")
 4. **How it connects to other cards** — dependencies, fallback relationships (e.g., "if this task's transition fails, T8's stuck detector catches it as the safe fallback")
 
 **Format:**
 ```
 **Context: CON-XXX — [short problem description]**
 
-[1-3 paragraphs: what's broken, what the fix does, which gauntlet findings matter]
+[1-3 paragraphs: what's broken, what the fix does, which gauntlet concerns matter]
 ```
 
 **Guidelines:**
 - Write for a human who will read ONE card, not the full spec
-- Include gauntlet concern IDs (e.g., RC-1, FM-2) so they can trace back to the gauntlet findings doc
+- Include gauntlet concern IDs (e.g., RC-1, FM-2) so they can trace back to the gauntlet concerns doc
 - For prerequisite/audit tasks (no concern), explain what downstream tasks need from this one
 - Keep each comment under 200 words — enough to orient, not a spec restatement
 
