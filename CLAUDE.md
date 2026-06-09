@@ -18,7 +18,7 @@ Runtime: Python 3.14+ | Deps: uv, pyproject.toml | Tests: pytest | Lint: ruff
 
 ### Session Start
 ```
-/tasks              # Check for existing work
+/conductor          # Briefing: git, session, pipeline state
 /adversarial-spec   # Start or resume spec workflow
 ```
 
@@ -34,10 +34,8 @@ uvx ruff check --fix --unsafe-fixes      # Lint
 ```
 
 ### Deployment
-Changes to `skills/adversarial-spec/` need manual copy to `~/.claude/skills/`:
-```bash
-cp -r skills/adversarial-spec/* ~/.claude/skills/adversarial-spec/
-```
+`~/.claude/skills/adversarial-spec` is a symlink to `skills/adversarial-spec/` —
+source edits are live immediately; there is no copy step.
 
 ### Documentation Lookup (docmaster)
 There are no external APIs this project interfaces against. If this ever changes, use docmaster. You may request a new API for coverage (and update this line in CLAUDE.md).
@@ -50,9 +48,10 @@ Don't pre-load domain context. Load when needed:
 
 ### Resuming Work
 ```
-/tasks                    # See work streams and pending tasks
-/tasks <context>          # See tasks for specific work stream
+/conductor                # Briefing incl. parked sessions and lane state
+/context-switch           # Switch between contexts within the project
 ```
+(Tasks MCP retired June 2026 — `/tasks` is gone; Fizzy pipeline is the task system.)
 
 ## Guardrails
 

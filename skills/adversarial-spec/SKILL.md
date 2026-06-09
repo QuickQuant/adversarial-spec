@@ -131,7 +131,7 @@ If a canonical phase appears in the journey-log transitions but its artifact is 
 
 **TodoWrite snapshot:** if `todowrite_snapshot` is a non-empty list, restore TodoWrite from it. Otherwise the Phase Router creates a fresh one. Either way, the phase doc's behavioral rules still apply.
 
-**Context Intent Gate:** if `session_stack` has multiple entries, or the pointer drifts from the most-recently-updated session file, or the user's recent messages suggest a different workstream → ask before proceeding:
+**Context Intent Gate:** if `session_stack` has multiple entries, or the pointer drifts from the most-recently-updated session file, or the user's recent messages suggest a different context → ask before proceeding:
 
 ```
 Context Intent Check
@@ -165,7 +165,6 @@ This session predates roadmap artifacts. I can generate
 a manifest from:
 • Session file data (if milestones/stories exist)
 • Checkpoint files (extract structured content)
-• Tasks MCP (if tasks are linked)
 
 [Generate manifest] [Skip - not needed] [Skip - will do manually]
 ```
@@ -173,9 +172,8 @@ a manifest from:
 **On "Generate manifest":**
 1. Scan session file for `milestones`, `user_stories`, `test_cases`
 2. Scan checkpoints for structured content (look for `##` headers, bullet lists)
-3. Query Tasks MCP for tasks with matching `context_name`
-4. Create `specs/<slug>/manifest.json` with extracted data
-5. Append to journey log: `{"time": "ISO8601", "event": "Generated manifest retroactively", "type": "maintenance"}`
+3. Create `specs/<slug>/manifest.json` with extracted data
+4. Append to journey log: `{"time": "ISO8601", "event": "Generated manifest retroactively", "type": "maintenance"}`
 
 **On "Skip":** Proceed without manifest. Some sessions (exploratory, debug-only) legitimately don't need one.
 

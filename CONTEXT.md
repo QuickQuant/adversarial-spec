@@ -72,3 +72,22 @@ The lifecycle of a test case through the workflow: `nl` (natural language, roadm
 creation) → `acceptance` (post-debate) → `concrete` (implementation). Scoped to the
 `(stage: …)` parenthetical on TC lines.
 _Avoid_: numbering these as bare "Stage 1/2/3" in prose — say "maturity stage `nl`" etc.
+
+**Session**:
+One adversarial-spec workflow instance: `adv-spec-<timestamp>-<slug>`, owning a phase,
+step, spec, and pipeline card; stacked, parked, or completed in `session-state.json`.
+When meaning a terminal conversation instead, always qualify: "Claude Code session".
+_Avoid_: bare "session" for a terminal conversation.
+
+**Context**:
+The named work identity a Session belongs to — the `context_name` field (e.g.
+"Dispatch & Cost-Tracker Unification"). What `/context-switch` switches between.
+_Avoid_: "work stream" (deprecated alias from the retired Tasks MCP); "context" for the
+token/context-window sense (general programming vocabulary, qualify as "context window").
+
+**Workstream**:
+A parallel task grouping *inside one execution plan*: independent streams of tasks
+(e.g. "Stream A (Backend)") with merge points, sized at decomposition. Exists only
+within Phase 7/8.
+_Avoid_: "workstream" for a Context — a workstream is intra-plan, a Context is the
+work identity itself.
