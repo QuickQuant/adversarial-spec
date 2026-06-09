@@ -823,7 +823,7 @@ Core fields (unchanged from v1):
 - `description`: Full description including acceptance criteria
 - `wave`: Wave number from the plan
 - `effort`: S / M / L
-- `strategy` (the **Test Strategy** field on the wire — the JSON key stays `strategy` per ADR `0001`): test-first / test-after / spike. These are the only values fizzy accepts (`VALID_STRATEGIES = {test-first, test-after, spike, refactor}`, `pipeline.py:164`). Use `spike` for deferred / doc-only / config-only / manual-only tasks that commit to **no automated tests** — never emit `"skip"` (not in the enum; fizzy rejects it at load: `PLAN_INVALID "invalid strategy"`). `strategy` is decoupled from the v2 verification gate (`_validate_v2_task` never reads it), so these tasks still verify independently via an EXEMPT `verification_mode` + `exemption_reason`.
+- `strategy` (the **Test Strategy** field on the wire — the JSON key stays `strategy` per ADR `0001`): the generator emits test-first / test-after / spike. fizzy's full enum is `VALID_STRATEGIES = {test-first, test-after, spike, refactor}` (`pipeline.py:164`) — `refactor` is valid to fizzy but Step 4 never assigns it. Use `spike` for deferred / doc-only / config-only / manual-only tasks that commit to **no automated tests** — never emit `"skip"` (not in the enum; fizzy rejects it at load: `PLAN_INVALID "invalid strategy"`). `strategy` is decoupled from the v2 verification gate (`_validate_v2_task` never reads it), so these tasks still verify independently via an EXEMPT `verification_mode` + `exemption_reason`.
 - `depends_on`: List of task_ids this task depends on (from dependency graph)
 - `concern_refs`: List of gauntlet concern IDs linked to this task
 - `invariant_refs`, `surface_scope`: Populated when Phase 4 ran (see Step 3)

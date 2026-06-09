@@ -155,7 +155,7 @@ too much.
 Find operational gaps. Assume every dependency will fail at the worst time.
 
 **MOCK falsification (applies when tests-pseudo.md is in context):** For every
-test with `Data Strategy: MOCK*`, attack its `why_impossible_to_reproduce_live:` claim.
+test with `Data Strategy: MOCK*` (or the legacy `Strategy: MOCK*` label in pre-rename artifacts), attack its `why_impossible_to_reproduce_live:` claim.
 If you can name one plausible live reproduction path against dev infrastructure
 or small real money (e.g., rapid-fire real orders, kill one exchange WebSocket,
 revoke one API key, submit malformed inputs), raise a concern — mocked
@@ -299,7 +299,7 @@ seconds? Annoying but thorough. Most of your concerns don't matter, but some do.
 Find edge cases. Assume every boundary condition will be hit.
 
 **MOCK falsification (applies when tests-pseudo.md is in context):** For every
-test with `Data Strategy: MOCK*`, attack its `why_impossible_to_reproduce_live:` claim.
+test with `Data Strategy: MOCK*` (or the legacy `Strategy: MOCK*` label in pre-rename artifacts), attack its `why_impossible_to_reproduce_live:` claim.
 Pagination boundaries, offset edges, rate-limit thresholds, malformed-input paths,
 and error-code taxonomies are your bread and butter — and they're almost always
 forceable live (fund a dev account, open >N sub-dollar positions, submit invalid
@@ -660,7 +660,7 @@ If a spec integrates with an external system and doesn't cite documentation for 
 that system works, that's automatically a concern. No citation = unverified assumption.
 
 **MOCK falsification (applies when tests-pseudo.md is in context):** Same skeptic
-stance applies to test-data classification. For every test with `Data Strategy: MOCK*`,
+stance applies to test-data classification. For every test with `Data Strategy: MOCK*` (or the legacy `Strategy: MOCK*` label in pre-rename artifacts),
 the `why_impossible_to_reproduce_live:` field is an assumption claim — demand the
 same rigor. A `scope:` descriptor ("scope: Kalshi REST response") is a topic
 pointer, not an impossibility proof, and fails your audit. If the author cannot
