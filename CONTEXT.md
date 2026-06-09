@@ -7,6 +7,8 @@ execution → implementation).
 
 ## Language
 
+### Testing
+
 **Test Strategy** (`test_strategy`):
 A Phase 7 per-task choice of testing approach: `test-first`, `test-after`, `spike`
 (ship with no automated-test commitment), or `refactor` (restructure existing code,
@@ -20,6 +22,14 @@ A Phase 2 per-test-case classification of *what data* a test exercises: `REAL-DA
 `REAL-DATA + PROPERTY`, `SYNTHETIC`, `MOCK`, `MOCK-EXTERNAL`, `FRONTEND`, `STATIC`.
 The gauntlet flags violations as the concern category `data_strategy_mismatch`.
 _Avoid_: bare "strategy" (collides with Test Strategy).
+
+**Test-Case Maturity Stage** (`stage:` field on a test case):
+The lifecycle of a test case through the workflow: `nl` (natural language, roadmap
+creation) → `acceptance` (post-debate) → `concrete` (implementation). Scoped to the
+`(stage: …)` parenthetical on TC lines.
+_Avoid_: numbering these as bare "Stage 1/2/3" in prose — say "maturity stage `nl`" etc.
+
+### Problems & feedback
 
 **Concern** (`concern`):
 A problem the **gauntlet** surfaces via adversary attack. Carries an ID (`CB-1`, `RC-2`,
@@ -48,10 +58,50 @@ A problem a **debater** raises against a claim or test classification during deb
 (e.g., "promote this test to REAL-DATA"). Distinct from a *human correction point*
 (Gate V4), where the user overrides an LLM classification.
 
+### Debate & Gauntlet
+
+**Debate**:
+Phase 3 — the collaborative consensus loop: Opponents critique the spec in numbered
+Rounds (R1, R2, …) until all models agree.
+_Avoid_: "gauntlet" for this (the Gauntlet is hostile and is Phase 5).
+
+**Critique**:
+One Opponent's structured response within a debate Round; also the `debate.py` action
+that runs a Round.
+_Avoid_: "critique" for gauntlet output (that is a Concern); "attack" for debate
+feedback.
+
+**Opponent**:
+A model participating in a Debate — a collaborative critic driving toward convergence.
+_Avoid_: "adversary" for debate participants.
+
+**Gauntlet**:
+Phase 5 — the adversarial stress-test: Adversaries attack the spec and the surviving
+output is Concerns. Implemented in the `gauntlet/` package; its seven *internal*
+processing steps are historically named `phase_1_attacks` … `phase_7_final_boss` in
+code — in prose, qualify as "gauntlet-internal phase N", never bare "Phase N" (which
+is reserved for the pipeline).
+
+**Adversary**:
+A named hostile persona (e.g. PEDA, ASSH) that attacks the spec in the Gauntlet.
+_Avoid_: "opponent" for gauntlet personas.
+
+**Attack**:
+A single Adversary run against the spec within the Gauntlet.
+_Avoid_: "attack" for debate-round feedback (that is a Critique).
+
+**debate.py**:
+The multi-model dispatch CLI. Runs both the `critique` action (a debate Round) and the
+`gauntlet` action; the name is historical — gauntlet logic lives in the `gauntlet/`
+package, while the critique engine lives in the file itself.
+
+### Pipeline structure
+
 **Phase**:
 One of the 8 pipeline phases: requirements → roadmap → debate → target-architecture →
 gauntlet → finalize → execution → implementation. Reserved exclusively for the pipeline.
-_Avoid_: "stage" or "step" for a pipeline phase.
+_Avoid_: "stage" or "step" for a pipeline phase; bare "phase" for the gauntlet's
+internal processing steps (qualify: "gauntlet-internal phase N").
 
 **Step**:
 A numbered sub-unit *within* a Phase (e.g., Step 2.5, Step 9b; Gates V1–V4 are named
@@ -67,11 +117,7 @@ skill's mini-spec emission. Stage 6 (system validation) was deliberately deferre
 de-numbered; the numbering intentionally skips 6 — do not reuse it.
 _Avoid_: bare "Stage N" (collides with Phase/Step numbering and with maturity stages).
 
-**Test-Case Maturity Stage** (`stage:` field on a test case):
-The lifecycle of a test case through the workflow: `nl` (natural language, roadmap
-creation) → `acceptance` (post-debate) → `concrete` (implementation). Scoped to the
-`(stage: …)` parenthetical on TC lines.
-_Avoid_: numbering these as bare "Stage 1/2/3" in prose — say "maturity stage `nl`" etc.
+### Work identity
 
 **Session**:
 One adversarial-spec workflow instance: `adv-spec-<timestamp>-<slug>`, owning a phase,
