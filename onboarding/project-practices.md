@@ -142,3 +142,20 @@ CLI tool with user-facing output. No structured logging library.
   }
 }
 ```
+
+## 5. Naming Conventions
+
+**No bare single-word identifiers.** Skill-owned fields, labels, and prose terms must
+carry a qualifier so they cannot collide as the vocabulary grows. The motivating case:
+the bare word "Strategy" meant two unrelated things (test-data classification vs
+test-approach), now split into **`data_strategy`** and **`test_strategy`** (see
+`CONTEXT.md` and ADR `0001`).
+
+- **Skill-owned names** (markdown labels, prose terms, internal fields): always qualify
+  (`data_strategy`, not `strategy`).
+- **The ban stops at external contract boundaries.** A wire key fizzy validates (e.g. the
+  `strategy` JSON key in `fizzy-plan.json`) is *fizzy's* schema, not this repo's variable.
+  Do not unilaterally rename it — that reintroduces generator/contract drift (pipeline-seams
+  #11/#12). Rename it only via a coordinated, fizzy-led migration.
+- New terms go in `CONTEXT.md` (glossary) as they are coined; bare collisions get the
+  loser flagged `_Avoid_`.

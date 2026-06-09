@@ -417,7 +417,7 @@ Assign these **during decomposition**, not as a deferred second pass. If you can
 
 ### Step 4: Test Scheduling Assignment
 
-> **Note:** This step assigns *when* tests are written relative to implementation (test-first vs test-after vs `spike` = no automated-test commitment). It is distinct from the Phase 2 `Strategy:` label on individual test cases (REAL-DATA / SYNTHETIC / MOCK / FRONTEND / STATIC), which classifies *what data* a test uses. Don't conflate them — the two concepts collide only in name.
+> **Note:** This assigns the task's **Test Strategy** (`test_strategy`) — *when/whether* tests are written relative to implementation (test-first vs test-after vs `spike` = no automated-test commitment). It is distinct from the Phase 2 **Data Strategy** (`data_strategy`) label on individual test cases (REAL-DATA / SYNTHETIC / MOCK / FRONTEND / STATIC), which classifies *what data* a test uses. Both were once bare "Strategy"; now disambiguated (see `CONTEXT.md` / ADR `0001`).
 
 Assign test-first or test-after to each task based on risk:
 
@@ -564,7 +564,7 @@ Output the execution plan in this format:
 
 #### Task 1: [Title]
 - **Effort:** M
-- **Strategy:** test-first
+- **Test Strategy:** test-first
 - **Spec refs:** Section 3.1, 3.2
 - **Concerns:** PARA-abc (critical), BURN-def (high)
 - **Acceptance criteria:**
@@ -823,7 +823,7 @@ Core fields (unchanged from v1):
 - `description`: Full description including acceptance criteria
 - `wave`: Wave number from the plan
 - `effort`: S / M / L
-- `strategy`: test-first / test-after / spike. These are the only values fizzy accepts (`VALID_STRATEGIES = {test-first, test-after, spike, refactor}`, `pipeline.py:134`). Use `spike` for deferred / doc-only / config-only / manual-only tasks that commit to **no automated tests** — never emit `"skip"` (not in the enum; fizzy rejects it at load: `PLAN_INVALID "invalid strategy"`). `strategy` is decoupled from the v2 verification gate (`_validate_v2_task` never reads it), so these tasks still verify independently via an EXEMPT `verification_mode` + `exemption_reason`.
+- `strategy` (the **Test Strategy** field on the wire — the JSON key stays `strategy` per ADR `0001`): test-first / test-after / spike. These are the only values fizzy accepts (`VALID_STRATEGIES = {test-first, test-after, spike, refactor}`, `pipeline.py:164`). Use `spike` for deferred / doc-only / config-only / manual-only tasks that commit to **no automated tests** — never emit `"skip"` (not in the enum; fizzy rejects it at load: `PLAN_INVALID "invalid strategy"`). `strategy` is decoupled from the v2 verification gate (`_validate_v2_task` never reads it), so these tasks still verify independently via an EXEMPT `verification_mode` + `exemption_reason`.
 - `depends_on`: List of task_ids this task depends on (from dependency graph)
 - `concern_refs`: List of gauntlet concern IDs linked to this task
 - `invariant_refs`, `surface_scope`: Populated when Phase 4 ran (see Step 3)

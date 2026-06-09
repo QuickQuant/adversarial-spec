@@ -419,13 +419,13 @@ Every test case MUST be annotated with its data strategy. This eliminates "I'll 
 
 **Lazy classification is a process failure.** If you stamp SYNTHETIC on "2 positions open, reversal signal fires" — that happens in any volatile trading day. Use REAL-DATA. Reserve SYNTHETIC for conditions that genuinely require manufacturing: fill ordering instrumentation, exact equity math, zero-variance indicators.
 
-Include the annotation as a **Strategy:** line immediately after the test case title, with a brief justification:
+Include the annotation as a **Data Strategy:** line immediately after the test case title, with a brief justification:
 ```markdown
 ### TC-1.5: Histogram auto-cap zero median — guaranteed floor
-**Strategy: SYNTHETIC** — Zero histogram median cannot occur in real market data (MARA is volatile).
+**Data Strategy: SYNTHETIC** — Zero histogram median cannot occur in real market data (MARA is volatile).
 ```
 
-**MOCK falsification requirement (REQUIRED for every `Strategy: MOCK*` test).** Any test labeled `MOCK`, `MOCK-EXTERNAL`, or any other `MOCK*` variant MUST carry an additional `why_impossible_to_reproduce_live:` field whose value is a specific technical condition that cannot be forced with dev infrastructure + small real money. A `scope:` descriptor (e.g., *"scope: Kalshi REST response"*) is a topic pointer, not an impossibility claim — it does not satisfy this requirement.
+**MOCK falsification requirement (REQUIRED for every `Data Strategy: MOCK*` test).** Any test labeled `MOCK`, `MOCK-EXTERNAL`, or any other `MOCK*` variant MUST carry an additional `why_impossible_to_reproduce_live:` field whose value is a specific technical condition that cannot be forced with dev infrastructure + small real money. A `scope:` descriptor (e.g., *"scope: Kalshi REST response"*) is a topic pointer, not an impossibility claim — it does not satisfy this requirement.
 
 Valid examples:
 - *"Kalshi maintenance-mode 503 (controlled outage only; dev account has no mechanism to induce)"*
@@ -441,7 +441,7 @@ If the `why_impossible_to_reproduce_live:` value is empty, hand-wavy, or names a
 
 ```markdown
 ### TC-M2.8: Kalshi maintenance-mode 503 retry backoff
-**Strategy: MOCK-EXTERNAL** — scope: Kalshi REST response
+**Data Strategy: MOCK-EXTERNAL** — scope: Kalshi REST response
 **why_impossible_to_reproduce_live:** Kalshi maintenance 503 is a controlled exchange-side outage; no dev-account mechanism induces it.
 ```
 
@@ -461,7 +461,7 @@ For each boundary, add tests marked `[BVA]`:
 Example:
 ```markdown
 ### TC-X.Y: Score exactly at threshold [BVA]
-**Strategy: SYNTHETIC** — Need precise control to land composite exactly on threshold.
+**Data Strategy: SYNTHETIC** — Need precise control to land composite exactly on threshold.
 ```
 
 ##### 9c. State Transition Testing (REQUIRED for stateful components)
@@ -521,7 +521,7 @@ Field-presence, non-null, status-code, and range tests are not sufficient for se
 Example:
 ```markdown
 ### TC-X.Y: ADX center is display-only for active score
-**Strategy: SYNTHETIC** — Need fixed indicators to isolate parameter causality.
+**Data Strategy: SYNTHETIC** — Need fixed indicators to isolate parameter causality.
 given: identical bars/indicators and two param sets differing only in scoring_adx_center
 when: entry scoring runs
 then: adx_moderate changes, but entry_score.score and pass/fail are unchanged

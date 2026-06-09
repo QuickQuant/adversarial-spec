@@ -384,7 +384,7 @@ When tests-pseudo.md is included as context, opponents must critique both misali
 
 **MOCK falsification directive (REQUIRED in every debate round's prompt preamble).** When `tests-pseudo.md` is in context, append this sentence to the debate prompt so both debaters (and Claude) attack weak mock justifications:
 
-> *"For any test with `Strategy: MOCK*`, challenge the `why_impossible_to_reproduce_live` claim. If you can name one plausible live reproduction path against dev infrastructure or small real money (e.g., fund a dev account, rapid-fire real orders, submit malformed inputs, cancel a nonexistent order), report it as a correction — the test should be promoted to REAL-DATA."*
+> *"For any test with `Data Strategy: MOCK*`, challenge the `why_impossible_to_reproduce_live` claim. If you can name one plausible live reproduction path against dev infrastructure or small real money (e.g., fund a dev account, rapid-fire real orders, submit malformed inputs, cancel a nonexistent order), report it as a correction — the test should be promoted to REAL-DATA."*
 
 **Test adequacy directive (REQUIRED in every debate round's prompt preamble when tests are in context):**
 
@@ -799,7 +799,7 @@ After writing the revised spec to disk (Step 5 item 7) and BEFORE running checkp
 - If a critique says "division by zero when X" and the spec now handles it, there must be a test: "given X, when computed, then no error and result is Y"
 
 **4. Apply the Test Design Methodology (02-roadmap.md §9) to all new/changed tests:**
-- **Data strategy annotation** — every test must have a `Strategy:` line (REAL-DATA, SYNTHETIC, MOCK, etc.). Default to REAL-DATA. Only use SYNTHETIC when the condition genuinely cannot occur in real data.
+- **Data Strategy annotation** — every test must have a `Data Strategy:` line (REAL-DATA, SYNTHETIC, MOCK, etc.). Default to REAL-DATA. Only use SYNTHETIC when the condition genuinely cannot occur in real data.
 - **BVA** — scan spec changes for new/modified numeric boundaries. Add at-boundary and just-outside tests marked `[BVA]`.
 - **State transitions** — if this round changed state machine behavior (new states, new transitions), update the state transition table and add tests for new transitions.
 - **Decision tables** — if this round changed combinatorial logic, update the decision table and add tests for new rows.
