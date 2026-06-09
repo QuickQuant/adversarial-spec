@@ -1,17 +1,22 @@
-"""Stage 7 — v4 altitude mini-spec emission + producer self-check.
+"""depth-triage Stage 7 — v4 altitude mini-spec emission + producer self-check.
+
+(Stage numbers here are depth-triage-overhaul roadmap milestones, NOT pipeline
+Phases — this module implements roadmap Stage 7 but runs inside pipeline Phase 7.)
 
 adversarial-spec is the EMITTER of the cross-repo ``fizzy-plan.json`` v3
 (altitude) contract; fizzy-pipeline-mcp ENFORCES it; the fizzy backend LINKS it
-(see ``.adversarial-spec/designs/depth-triage-overhaul/60-cross-repo-contract.md``).
+(see the fizzy-pipeline-mcp repo:
+``.adversarial-spec/designs/depth-triage-overhaul/60-cross-repo-contract.md``).
 
 The Phase 7 emission is doc-driven (``phases/07-execution.md``), but the
 machine-checkable SHAPE lives here so the producer can self-check WITHOUT the
 live MCP. The :func:`self_check_plan` function mirrors the fizzy-pipeline-mcp
-v4 ``_validate_plan`` altitude branch (Stage 1): obligation keys must equal
-:data:`ALTITUDE_OBLIGATIONS`, every required binding carries a dotted-line
-``plan_artifact`` + ``plan_hash``, and the two ``realizes_refs`` invariants
-hold. A plan that passes the self-check is shaped to pass the live validator
-once Stage 1 ships — the dry-run/load symmetry that already exists for v2.
+v4 ``_validate_plan`` altitude branch (depth-triage Stage 1): obligation keys
+must equal :data:`ALTITUDE_OBLIGATIONS`, every required binding carries a
+dotted-line ``plan_artifact`` + ``plan_hash``, and the two ``realizes_refs``
+invariants hold. A plan that passes the self-check is shaped to pass the live
+validator once depth-triage Stage 1 ships — the dry-run/load symmetry that
+already exists for v2.
 
 v4 is VERIFICATION-ONLY: this emitter never writes a ``validation-ledger.json``,
 never emits a ``system_validation`` binding, and adds no force/override/bypass
@@ -405,9 +410,9 @@ def emit_fizzy_plan(
 def self_check_plan(plan: dict[str, Any]) -> dict[str, Any]:
     """Validate a v3 plan's altitude shape WITHOUT the live MCP.
 
-    Mirrors the fizzy-pipeline-mcp Stage 1 ``_validate_plan`` altitude branch so
+    Mirrors the fizzy-pipeline-mcp depth-triage Stage 1 ``_validate_plan`` altitude branch so
     a plan that self-checks clean is shaped to pass ``pipeline_validate_plan``
-    once Stage 1 ships. Returns ``{valid, issues}``; ``issues`` entries carry the
+    once depth-triage Stage 1 ships. Returns ``{valid, issues}``; ``issues`` entries carry the
     SAME reject codes the live validator emits.
     """
     issues: list[dict[str, Any]] = []

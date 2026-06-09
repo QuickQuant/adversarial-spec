@@ -47,3 +47,28 @@ Concern that must become a verify/port task, not a from-scratch build (Phase 7
 A problem a **debater** raises against a claim or test classification during debate
 (e.g., "promote this test to REAL-DATA"). Distinct from a *human correction point*
 (Gate V4), where the user overrides an LLM classification.
+
+**Phase**:
+One of the 8 pipeline phases: requirements → roadmap → debate → target-architecture →
+gauntlet → finalize → execution → implementation. Reserved exclusively for the pipeline.
+_Avoid_: "stage" or "step" for a pipeline phase.
+
+**Step**:
+A numbered sub-unit *within* a Phase (e.g., Step 2.5, Step 9b; Gates V1–V4 are named
+steps). Note: fizzy card *steps* (`get_card_steps`, `pipeline_attest_steps`) are a
+separate, scoped checklist concept — always say "card steps" for those.
+_Avoid_: "stage" for a sub-unit of a phase.
+
+**Stage** (qualified only — e.g., `depth-triage Stage 1`):
+A milestone of a named implementation roadmap, not part of the pipeline. The active
+numbering is the **depth-triage-overhaul** roadmap (defined in
+fizzy-pipeline-mcp's design corpus): Stages 1–5 are fizzy-side, Stage 7 is this
+skill's mini-spec emission. Stage 6 (system validation) was deliberately deferred and
+de-numbered; the numbering intentionally skips 6 — do not reuse it.
+_Avoid_: bare "Stage N" (collides with Phase/Step numbering and with maturity stages).
+
+**Test-Case Maturity Stage** (`stage:` field on a test case):
+The lifecycle of a test case through the workflow: `nl` (natural language, roadmap
+creation) → `acceptance` (post-debate) → `concrete` (implementation). Scoped to the
+`(stage: …)` parenthetical on TC lines.
+_Avoid_: numbering these as bare "Stage 1/2/3" in prose — say "maturity stage `nl`" etc.

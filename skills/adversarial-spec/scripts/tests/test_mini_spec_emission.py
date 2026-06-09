@@ -1,19 +1,19 @@
-"""Tests for the Stage 7 v4 altitude mini-spec emitter + producer self-check.
+"""Tests for the depth-triage Stage 7 v4 altitude mini-spec emitter + producer self-check.
 
-Stage 7 (depth-triage-overhaul) makes adversarial-spec the EMITTER of the
+depth-triage Stage 7 (a roadmap milestone, not pipeline Phase 7) makes adversarial-spec the EMITTER of the
 cross-repo ``fizzy-plan.json`` v3 (altitude) contract. The emission itself is
 doc-driven (Phase 7 prose the operator/LLM follows), but the machine-checkable
 SHAPE — the per-altitude mini-spec field tiers, the requirement-id convention,
 the v3 plan structure, and the producer self-check — lives in
 ``mini_spec_emission`` so it can be tested without the live MCP.
 
-These tests assert the *static* emitter shape (the AC-5 fallback path): Stage 1
+These tests assert the *static* emitter shape (the AC-5 fallback path): depth-triage Stage 1
 is committed on its own branch but is NOT installed on the running MCP, so the
 dynamic ``pipeline_validate_plan`` dry-run is recorded as a blocker and the
 emitter's own self-check stands in for it. The self-check mirrors the v4
 ``_validate_plan`` altitude branch (obligation keys == ALTITUDE_OBLIGATIONS,
 dotted-line plan_artifact present, realizes_refs invariants), so a plan that
-passes the self-check is shaped to pass the live validator once Stage 1 ships.
+passes the self-check is shaped to pass the live validator once depth-triage Stage 1 ships.
 
 Run:
     uv run pytest skills/adversarial-spec/scripts/tests/test_mini_spec_emission.py -q

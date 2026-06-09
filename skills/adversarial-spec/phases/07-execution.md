@@ -1005,12 +1005,12 @@ loop:
     ALTITUDE_INVERSION / ROOT_NOT_SYSTEM …) and re-emit
 ```
 
-If the running MCP does NOT yet enforce schema 3 (Stage 1 not installed),
+If the running MCP does NOT yet enforce schema 3 (depth-triage Stage 1 — a fizzy roadmap milestone, not pipeline Phase 1 — not installed),
 `pipeline_validate_plan` will reject a schema-3 plan as
 `unsupported_schema_version`. In that window, run the emitter's local
 `self_check_plan()` (which mirrors the same altitude reject codes) as the stand-in
 gate, record the live-MCP dry-run as a blocker, and re-run the dry-run once
-Stage 1 ships. **Do not `pipeline_load` a schema-3 plan against an MCP that
+depth-triage Stage 1 ships. **Do not `pipeline_load` a schema-3 plan against an MCP that
 rejects it.**
 
 ---
