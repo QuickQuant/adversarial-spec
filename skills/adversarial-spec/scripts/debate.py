@@ -130,59 +130,6 @@ def log_input_stats(text: str, source: str = "stdin") -> None:
     )
 
 
-# Optional task tracking - only import if needed
-_task_manager = None
-
-
-def get_task_manager():
-    """Lazy-load task manager to avoid import overhead when not used."""
-    global _task_manager
-    if _task_manager is None:
-        try:
-            from task_manager import TaskManager
-            _task_manager = TaskManager()
-        except ImportError:
-            return None
-    return _task_manager
-
-
-def _create_round_task(
-    tm, round_num: int, models: list[str], doc_type: str, session_id: Optional[str]
-) -> Optional[str]:
-    """Create a task for a debate round."""
-    try:
-        task = tm.create_task(
-            subject=f"Debate round {round_num}",
-            description=f"Send spec to {', '.join(models)}, receive critiques, synthesize",
-            active_form=f"Running debate round {round_num}",
-            owner="adv-spec:debate",
-            metadata={
-                "phase": "debate",
-                "round": round_num,
-                "models": models,
-                "doc_type": doc_type,
-                "session_id": session_id or "standalone",
-            },
-        )
-        tm.start_task(task.id, owner="adv-spec:debate")
-        return task.id
-    except Exception as e:
-        print(f"Warning: Failed to create round task: {e}", file=sys.stderr)
-        return None
-
-
-def _complete_round_task(tm, task_id: str, all_agreed: bool) -> None:
-    """Mark a round task as completed."""
-    try:
-        tm.update_task(
-            task_id,
-            status="completed",
-            metadata={"outcome": "consensus" if all_agreed else "continuing"},
-        )
-    except Exception as e:
-        print(f"Warning: Failed to complete round task: {e}", file=sys.stderr)
-
-
 def send_telegram_notification(
     models: list[str], round_num: int, results: list[ModelResponse], poll_timeout: int
 ) -> Optional[str]:
@@ -454,11 +401,6 @@ def add_misc_arguments(parser: argparse.ArgumentParser) -> None:
         type=int,
         default=900,
         help="Timeout in seconds for model API/CLI calls (default: 900 = 15 minutes)",
-    )
-    parser.add_argument(
-        "--track-tasks",
-        action="store_true",
-        help="Enable MCP Tasks integration: create/update tasks in .claude/tasks.json",
     )
 
 
@@ -1140,16 +1082,6 @@ def run_critique(
         bedrock_mode: Whether Bedrock mode is enabled.
         bedrock_region: AWS region for Bedrock.
     """
-    # Task tracking: create/update round task
-    round_task_id = None
-    if getattr(args, 'track_tasks', False):
-        tm = get_task_manager()
-        if tm:
-            session_id = session_state.session_id if session_state else args.session
-            round_task_id = _create_round_task(
-                tm, args.round, models, args.doc_type, session_id
-            )
-
     # Warn when running technical/full spec critique with no context files
     depth = getattr(args, "depth", None)
     if (
@@ -1267,12 +1199,6 @@ def run_critique(
         )
         if user_feedback:
             print(f"Received feedback: {user_feedback}", file=sys.stderr)
-
-    # Task tracking: mark round complete
-    if round_task_id and getattr(args, 'track_tasks', False):
-        tm = get_task_manager()
-        if tm:
-            _complete_round_task(tm, round_task_id, all_agreed)
 
     output_results(args, results, models, all_agreed, user_feedback, session_state)
 
