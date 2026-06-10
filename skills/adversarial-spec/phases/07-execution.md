@@ -1013,13 +1013,14 @@ loop:
     ALTITUDE_INVERSION / ROOT_NOT_SYSTEM …) and re-emit
 ```
 
-If the running MCP does NOT yet enforce schema 3 (depth-triage Stage 1 — a fizzy roadmap milestone, not pipeline Phase 1 — not installed),
-`pipeline_validate_plan` will reject a schema-3 plan as
-`unsupported_schema_version`. In that window, run the emitter's local
-`self_check_plan()` (which mirrors the same altitude reject codes) as the stand-in
-gate, record the live-MCP dry-run as a blocker, and re-run the dry-run once
-depth-triage Stage 1 ships. **Do not `pipeline_load` a schema-3 plan against an MCP that
-rejects it.**
+Depth-triage Stage 1 SHIPPED (fizzy serves schema-3 at `CURRENT_PIPELINE_VERSION = 5`;
+verified against served code 2026-06-10): `pipeline_validate_plan` enforces the
+altitude branch live, so the dry-run loop above IS the gate. The emitter's local
+`self_check_plan()` (same altitude reject codes) remains useful as a fast offline
+pre-flight before the live dry-run. If a deployment ever rejects a schema-3 plan as
+`unsupported_schema_version` (older MCP), fall back to `self_check_plan()` as the
+stand-in gate and record the live dry-run as a blocker. **Do not `pipeline_load` a
+schema-3 plan against an MCP that rejects it.**
 
 ---
 

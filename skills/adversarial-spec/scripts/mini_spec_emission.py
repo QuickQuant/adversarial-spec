@@ -11,12 +11,13 @@ adversarial-spec is the EMITTER of the cross-repo ``fizzy-plan.json`` v3
 The Phase 7 emission is doc-driven (``phases/07-execution.md``), but the
 machine-checkable SHAPE lives here so the producer can self-check WITHOUT the
 live MCP. The :func:`self_check_plan` function mirrors the fizzy-pipeline-mcp
-v4 ``_validate_plan`` altitude branch (depth-triage Stage 1): obligation keys
-must equal :data:`ALTITUDE_OBLIGATIONS`, every required binding carries a
-dotted-line ``plan_artifact`` + ``plan_hash``, and the two ``realizes_refs``
-invariants hold. A plan that passes the self-check is shaped to pass the live
-validator once depth-triage Stage 1 ships — the dry-run/load symmetry that
-already exists for v2.
+v4 ``_validate_plan`` altitude branch (depth-triage Stage 1, SHIPPED — live at
+pipeline v5): obligation keys must equal :data:`ALTITUDE_OBLIGATIONS`, every
+required binding carries a dotted-line ``plan_artifact`` + ``plan_hash``, and
+the two ``realizes_refs`` invariants hold. A plan that passes the self-check is
+shaped to pass the live validator — the dry-run/load symmetry that already
+exists for v2. The self-check is now a fast offline pre-flight, not a stand-in
+for the live dry-run.
 
 v4 is VERIFICATION-ONLY: this emitter never writes a ``validation-ledger.json``,
 never emits a ``system_validation`` binding, and adds no force/override/bypass
@@ -410,10 +411,11 @@ def emit_fizzy_plan(
 def self_check_plan(plan: dict[str, Any]) -> dict[str, Any]:
     """Validate a v3 plan's altitude shape WITHOUT the live MCP.
 
-    Mirrors the fizzy-pipeline-mcp depth-triage Stage 1 ``_validate_plan`` altitude branch so
-    a plan that self-checks clean is shaped to pass ``pipeline_validate_plan``
-    once depth-triage Stage 1 ships. Returns ``{valid, issues}``; ``issues`` entries carry the
-    SAME reject codes the live validator emits.
+    Mirrors the fizzy-pipeline-mcp depth-triage Stage 1 ``_validate_plan``
+    altitude branch (shipped — live at pipeline v5) so a plan that self-checks
+    clean is shaped to pass ``pipeline_validate_plan``. Returns
+    ``{valid, issues}``; ``issues`` entries carry the SAME reject codes the
+    live validator emits.
     """
     issues: list[dict[str, Any]] = []
     tasks = plan.get("tasks", [])
