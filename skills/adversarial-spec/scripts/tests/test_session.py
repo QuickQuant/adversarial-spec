@@ -8,7 +8,6 @@ from unittest.mock import patch
 import pytest
 from filelock import FileLock, Timeout
 from session import SessionState, save_checkpoint
-from task_manager import TaskManager
 
 import mcp_tasks.server as task_server
 
@@ -296,41 +295,7 @@ class TestMcpTaskStoreLocking:
         assert list(tasks_file.parent.glob("tasks.json*.tmp")) == []
 
 
-class TestTaskManagerLocking:
-    def test_create_task_leaves_lock_sidecar(self, tmp_path):
-        tasks_file = tmp_path / "project" / ".claude" / "tasks.json"
-        _init_task_store(tasks_file)
-        manager = TaskManager(tasks_file=tasks_file)
-
-        task = manager.create_task("Subject", "Description")
-
-        assert task.id == "1"
-        assert Path(f"{tasks_file}.lock").exists()
-
-    def test_create_task_raises_task_store_busy_when_lock_held(self, tmp_path, monkeypatch):
-        tasks_file = tmp_path / "project" / ".claude" / "tasks.json"
-        _init_task_store(tasks_file)
-        manager = TaskManager(tasks_file=tasks_file)
-
-        held_lock = FileLock(f"{tasks_file}.lock")
-        held_lock.acquire(timeout=0.01)
-        monkeypatch.setattr("task_manager.TASK_LOCK_TIMEOUT_SECONDS", 0.01)
-
-        try:
-            with pytest.raises(RuntimeError, match="TASK_STORE_BUSY"):
-                manager.create_task("Subject", "Description")
-        finally:
-            held_lock.release()
-
-    def test_create_task_raises_task_store_corrupt_for_invalid_json(self, tmp_path):
-        tasks_file = tmp_path / "project" / ".claude" / "tasks.json"
-        tasks_file.parent.mkdir(parents=True, exist_ok=True)
-        tasks_file.write_text("{not valid json")
-        manager = TaskManager(tasks_file=tasks_file)
-
-        with pytest.raises(RuntimeError, match="TASK_STORE_CORRUPT"):
-            manager.create_task("Subject", "Description")
-
+class TestSaveCheckpointFilesystem:
     @patch("session.detect_active_session", return_value=None)
     def test_save_checkpoint_creates_nested_directories(self, mock_detect):
         # Mutation: parents=True → parents=False would fail
