@@ -1,5 +1,9 @@
 # adversarial-spec
 
+> Shared ecosystem terms (Phase, Card, Session, Context, …) are canonical in
+> `~/PycharmProjects/Brainquarters/shared-context/GLOSSARY.md` (auto-loaded into every
+> session). This file is the richer, project-flavored source the shared entries derive from.
+
 The domain language of the adversarial-spec skill — a Claude Code skill that refines
 specs through multi-model adversarial debate and drives them through a phased pipeline
 (requirements → roadmap → debate → target-architecture → gauntlet → finalize →

@@ -1,5 +1,5 @@
 # CLAUDE.md
-<!-- Base: Brainquarters v2.1 | Project: v1.7 | Last synced: 2026-05-01 -->
+<!-- Base: Brainquarters v2.2 | Project: v1.7 | Last synced: 2026-06-09 -->
 <!-- Last reviewed: 2026-04-04 | Next review: 2026-04-25 -->
 <!-- Target: 60-100 lines | If >100 lines, prune or move to .active_context.md -->
 
@@ -18,7 +18,6 @@ Runtime: Python 3.14+ | Deps: uv, pyproject.toml | Tests: pytest | Lint: ruff
 
 ### Session Start
 ```
-/tasks              # Check for existing work
 /adversarial-spec   # Start or resume spec workflow
 ```
 
@@ -50,9 +49,9 @@ Don't pre-load domain context. Load when needed:
 
 ### Resuming Work
 ```
-/tasks                    # See work streams and pending tasks
-/tasks <context>          # See tasks for specific work stream
+/adversarial-spec         # Resume the active session (detects parked work streams)
 ```
+(Tasks MCP retired June 2026 — `/tasks` is gone; the Fizzy pipeline board is the task system.)
 
 ## Guardrails
 
