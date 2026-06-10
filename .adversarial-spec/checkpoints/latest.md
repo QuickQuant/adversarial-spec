@@ -1,1 +1,1 @@
-checkpoint-202604291904-handed-off-to-codex-spec-draft-v1.md
+checkpoint-202606100353-glossary-seams-closed-model-switch-handoff.md
