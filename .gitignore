@@ -24,6 +24,7 @@ html/
 # adversarial-spec runtime artifacts (gauntlet/debate run outputs, locks, agent dirs)
 .adversarial-spec-gauntlet/
 .adversarial-spec-checkpoints/
+.adversarial-spec/debate-workspaces/
 **/.adversarial-spec-gauntlet/
 **/.adversarial-spec-checkpoints/
 *.json.lock

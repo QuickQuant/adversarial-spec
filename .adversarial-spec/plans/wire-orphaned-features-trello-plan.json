@@ -1,0 +1,112 @@
+{
+  "session_id": "adv-spec-pipeline-wire-orphaned-features",
+  "tasks": [
+    {
+      "task_id": "T5",
+      "title": "Fix gpt-5 temperature guard",
+      "description": "Extend is_o_series_model() to cover gpt-5 models or drop custom temperature entirely. Caused Round 6 API failure. Files: debate.py (line 994), models.py.",
+      "wave": 1,
+      "effort": "S",
+      "strategy": "test-after",
+      "depends_on": [],
+      "concern_refs": [],
+      "test_refs": [],
+      "acceptance_criteria": [
+        "gpt-5.5 API calls no longer fail with temperature error",
+        "Existing o-series temperature guard still works"
+      ]
+    },
+    {
+      "task_id": "T1",
+      "title": "Wire --preserve-intent into debate rounds 2+",
+      "description": "Add --preserve-intent to debate.py critique invocations from Round 2 onward in phases/03-debate.md. Prevents models from silently removing spec content.",
+      "wave": 1,
+      "effort": "S",
+      "strategy": "test-after",
+      "depends_on": [],
+      "concern_refs": [],
+      "test_refs": [],
+      "acceptance_criteria": [
+        "Phase 03 Step 4 critique invocations include --preserve-intent for round >= 2",
+        "Round 1 does NOT use --preserve-intent (requirements validation, not content preservation)"
+      ]
+    },
+    {
+      "task_id": "T6",
+      "title": "Update parse_models error message",
+      "description": "Reorder no-models-configured error message to list CLI models first, API models second. Match docstring change. Files: debate.py (lines 846-880).",
+      "wave": 1,
+      "effort": "S",
+      "strategy": "test-after",
+      "depends_on": [],
+      "concern_refs": [],
+      "test_refs": [],
+      "acceptance_criteria": [
+        "Error message lists Codex CLI, Gemini CLI, Claude CLI before API key providers"
+      ]
+    },
+    {
+      "task_id": "T7",
+      "title": "Add diff action to inter-round workflow",
+      "description": "After incorporating critiques into spec-draft-v(N+1), run debate.py diff --previous vN.md --current v(N+1).md and include diff in round summary. Files: phases/03-debate.md.",
+      "wave": 2,
+      "effort": "S",
+      "strategy": "test-after",
+      "depends_on": ["T1"],
+      "concern_refs": [],
+      "test_refs": [],
+      "acceptance_criteria": [
+        "Phase 03 includes diff step between round incorporation and guardrail check",
+        "Diff output shown to user as part of round summary"
+      ]
+    },
+    {
+      "task_id": "T3",
+      "title": "Wire --focus into round progression",
+      "description": "Pass --focus flags matching round focus: R2=architecture, R3=performance/security. Makes round focus concrete for opponent models. Files: phases/03-debate.md.",
+      "wave": 2,
+      "effort": "S",
+      "strategy": "test-after",
+      "depends_on": ["T1"],
+      "concern_refs": [],
+      "test_refs": [],
+      "acceptance_criteria": [
+        "Round 2 critique invocation includes --focus architecture",
+        "Round 3 critique invocation includes --focus performance or --focus security",
+        "Round 1 and 4+ do not pass --focus"
+      ]
+    },
+    {
+      "task_id": "T2",
+      "title": "Wire --telegram into critique invocations",
+      "description": "Add --telegram --poll-timeout 120 to critique calls. Remove manual urllib notification blocks from phase instructions. Biggest manual-step reduction but needs config verification. Files: phases/03-debate.md, phases/05-gauntlet.md. Dependency: verify telegram_bot.py config matches per-project bot setup.",
+      "wave": 3,
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": ["T5"],
+      "concern_refs": [],
+      "test_refs": [],
+      "acceptance_criteria": [
+        "telegram_bot.py reads per-project Telegram config (not hardcoded)",
+        "Phase 03 critique calls include --telegram --poll-timeout 120",
+        "Manual urllib notification blocks removed from phase 03 and 05",
+        "Telegram notification includes round results and polls for feedback"
+      ]
+    },
+    {
+      "task_id": "T4",
+      "title": "Wire --persona into targeted rounds",
+      "description": "Document when to use --persona for targeted critique after Round 3 (security engineer, oncall-engineer based on concerns raised). Files: phases/03-debate.md, phases/05-gauntlet.md.",
+      "wave": 3,
+      "effort": "S",
+      "strategy": "test-after",
+      "depends_on": ["T3"],
+      "concern_refs": [],
+      "test_refs": [],
+      "acceptance_criteria": [
+        "Phase 03 documents optional --persona usage for Round 4+",
+        "Persona selection is based on concerns raised in Round 3, not hardcoded"
+      ]
+    }
+  ]
+}
