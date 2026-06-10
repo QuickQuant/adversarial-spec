@@ -1,7 +1,11 @@
 # CLAUDE.md
-<!-- Base: Brainquarters v2.2 | Project: v1.7 | Last synced: 2026-06-09 -->
-<!-- Last reviewed: 2026-04-04 | Next review: 2026-04-25 -->
+<!-- Base: Brainquarters v2.2 | Project: v1.8 | Last synced: 2026-06-09 -->
+<!-- Last reviewed: 2026-06-09 | Next review: 2026-06-30 -->
 <!-- Target: 60-100 lines | If >100 lines, prune or move to .active_context.md -->
+
+## Domain Vocabulary
+Project glossary (auto-loaded): @CONTEXT.md
+Shared ecosystem terms load globally from Brainquarters/shared-context/GLOSSARY.md.
 
 ## WHAT: Project & Stack
 
