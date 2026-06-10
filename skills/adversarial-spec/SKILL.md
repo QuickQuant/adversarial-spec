@@ -387,7 +387,8 @@ Based on `current_phase`, read the matching phase file:
 
 | Phase | File to Read |
 |-------|--------------|
-| No session / New work | `~/.claude/skills/adversarial-spec/phases/01-init-and-requirements.md` |
+| No session / New work | `~/.claude/skills/adversarial-spec/phases/00-triage.md` (front door — zero machinery; on GO it creates the session with the triaged altitude, then hands to Phase 1) |
+| triage | `~/.claude/skills/adversarial-spec/phases/00-triage.md` |
 | requirements | `~/.claude/skills/adversarial-spec/phases/01-init-and-requirements.md` |
 | roadmap | `~/.claude/skills/adversarial-spec/phases/02-roadmap.md` |
 | debate | `~/.claude/skills/adversarial-spec/phases/03-debate.md` |
@@ -423,8 +424,15 @@ Card IDs and commit hashes belong in the live transcript, not the persisted snap
 
 **Router order:**
 ```
-requirements → roadmap → debate → target-architecture → gauntlet → finalize → execution → middleware-creator? → implementation → complete
+triage → requirements → roadmap → debate → target-architecture → gauntlet → finalize → execution → middleware-creator? → implementation → complete
 ```
+
+**Triage (Phase 0) is the additive front door.** New work enters triage first; it
+runs with zero session machinery and, on GO, creates the session with the chosen
+`session_altitude` before any conductor/Fizzy/listener bootstrap. It is
+non-destructive to in-flight work: a session that already has a `current_phase`
+routes by its existing row and never re-enters triage. See `phases/00-triage.md`
+(the gate) and `reference/altitude.md` (the model + the doc↔code enforcement map).
 
 `middleware-creator?` is optional, slotted between `execution` and `implementation`. It runs iff Phase 4 produced `middleware-candidates.json` AND the user chose to materialize shared middleware before normal pickup. Empty list or user skip → `execution → implementation` directly.
 
