@@ -4,12 +4,12 @@
   "context_name": null,
   "current_phase": null,
   "current_step": null,
-  "next_action": "No active session. Fizzy board is empty. Start new work with /adversarial-spec, resume a parked session below, or begin pipeline-seams remediation (skill owns holes #5, #6, #3-debate, #9, #11).",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202604291904-handed-off-to-codex-spec-draft-v1.md",
+  "next_action": "Model-switch handoff 2026-06-10: read checkpoints/latest.md (TodoWrite snapshot + open questions inside). All skill-owned pipeline-seams holes closed (#6 #9 #11 #12); glossary in CONTEXT.md + ADR 0001. Highest-value next: land prior-session depth-triage Phase 0 front-door work (uncommitted in working tree) \u2014 it assigns session_altitude, without which fizzy's verified altitude enforcement (pipeline v5, schema-3) never engages. No active session; do not fabricate one.",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606100353-glossary-seams-closed-model-switch-handoff.md",
   "execution_plan_path": null,
   "spec_path": null,
   "do_not_ask": [],
-  "updated_at": "2026-05-30T19:08:15Z",
+  "updated_at": "2026-06-10T03:53:57Z",
   "active_session": null,
   "active_session_file": null,
   "session_stack": [],
@@ -36,7 +36,7 @@
     "adv-spec-202603201800-gauntlet-refactor-quota-burn",
     "adv-spec-202603051555-philosophy-phase-and-arch-persona"
   ],
-  "completed_work": null,
+  "completed_work": "2026-06-09/10 Claude Code session: 14 commits pushed; see checkpoint for detail.",
   "reset_at": "2026-05-30T19:08:15Z",
   "reset_reason": "Zombie pointer cleanup: prior active_session pointed at dispatch-cost-tracker (card 1851) which no longer exists on the now-empty Fizzy board. Parked sessions preserved above; their on-disk artifacts are committed."
 }

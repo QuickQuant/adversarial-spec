@@ -1,1 +1,1 @@
-checkpoint-202604161758-mapcodebase-3-6-incremental-update-complete.md
+checkpoint-202604291904-handed-off-to-codex-spec-draft-v1.md
