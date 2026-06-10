@@ -984,9 +984,6 @@ adversarial-spec/
 │   ├── task_planner.py           # Generate phased task plans
 │   ├── gauntlet_concerns.py      # Link concerns to plan tasks
 │   └── ...
-├── mcp_tasks/                    # MCP Task Management Server
-│   ├── server.py                 # TaskCreate/List/Get/Update tools
-│   └── __init__.py
 └── skills/
     └── adversarial-spec/
         ├── SKILL.md              # Skill definition and process

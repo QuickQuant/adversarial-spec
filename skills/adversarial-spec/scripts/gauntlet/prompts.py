@@ -6,7 +6,6 @@ these constants instead of defining prompts inline.
 Convention:
 - Plain strings for prompts with no interpolation
 - str.format() templates for prompts with runtime variables (marked with {var})
-- Keep this file in sync with mcp_tasks/server.py:_mutate_tasks cross-ref style
 """
 
 # =============================================================================

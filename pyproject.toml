@@ -43,7 +43,6 @@ dev = [
 
 [project.scripts]
 adversarial-spec = "adversarial_spec.debate:main"
-mcp-tasks = "mcp_tasks.server:mcp.run"
 
 [project.urls]
 Homepage = "https://github.com/zscole/adversarial-spec"
@@ -52,7 +51,7 @@ Issues = "https://github.com/zscole/adversarial-spec/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["adversarial_spec*", "execution_planner*", "mcp_tasks*"]
+include = ["adversarial_spec*", "execution_planner*"]
 
 [tool.setuptools.package-data]
 "*" = ["py.typed"]
