@@ -254,6 +254,23 @@ interface SomeApiResponse { ... }
 
 ### Step 3: Select Opponent Models
 
+**Size the dispatch from `session_altitude` FIRST (reference/altitude.md §6).**
+Read `session_altitude` off the session card's `pipeline_metadata` (e.g. via
+`pipeline_lane_state` or `get_card_metadata`). The pipeline freezes
+`ALTITUDE_DEBATE_QUORUM[alt]` into each round at `begin_debate_round` and
+REJECTS convergence/finalize below it — an under-sized dispatch wastes a full
+round (models already paid for, gate fails closed):
+
+| session_altitude | min counting critics | min distinct families | min rounds |
+|---|---|---|---|
+| component | 1 | 1 | 1 |
+| subsystem | 2 | 2 | 1 |
+| system | 2 | 2 | **2** (even if round 1 converges) |
+
+`None` (grandfathered session) ⇒ legacy 2-critic/2-family default. Pick critics
+across DISTINCT model families (claude / codex / gemini / glm) — same-family
+critics count once toward family quorum.
+
 First, check which API keys are configured:
 
 ```bash

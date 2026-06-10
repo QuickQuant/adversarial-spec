@@ -340,6 +340,26 @@ After sizing is agreed, proceed to step 1 below.
 
 Adversaries produce higher-quality findings when they have codebase context AND scope-aware prompts, not just the spec text. This step has two parts: (A) classify scope and generate dynamic prompts, and (B) assemble per-adversary briefing documents.
 
+**Part A0: Size the roster from `session_altitude` (reference/altitude.md §6/§6.1)**
+
+Read `session_altitude` off the session card BEFORE arming. The pipeline enforces
+`ALTITUDE_GAUNTLET_INTENSITY[alt]` at `pipeline_mark_gauntlet_complete` from the
+run manifest — an under-sized run is rejected AFTER the adversaries have already
+run (fail-closed, full cost wasted):
+
+| session_altitude | min adversaries | min distinct families | min foci | tier (advisory) |
+|---|---|---|---|---|
+| component | 1 | 1 | 1 | fast |
+| subsystem | 2 | 2 | 2 | frontier |
+| system | 2 | 2 | 3 | frontier |
+
+Adversary = distinct attacker model; family diversity is registry-checked
+(claimed families must match `agents.validate_debate_model(model).family` — the
+manifest cannot forge diversity). `tier` guides model choice only: `fast` legal
+for component (`gemini-3-flash`); `frontier` advised above (`gemini-3.1-pro-preview`,
+`codex/gpt-5.4 xhigh`). `None` altitude (grandfathered) ⇒ legacy behavior, no
+intensity gate.
+
 **Part A: Scope Classification + Dynamic Prompt Generation**
 
 Before assembling briefings, classify the spec's scope and generate scope-aware prompts:
@@ -541,6 +561,30 @@ cat briefing-PARA.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.
 In practice, Claude assembles the briefings in memory and passes them to the gauntlet. The `generate_attacks()` function accepts an optional `briefings: dict[str, str]` parameter — if provided, each adversary gets its specific briefing instead of raw spec. If not provided, falls back to spec-only (backward compatible).
 
 **UX_ARCHITECT (Final Boss) is NOT armed here.** The final boss runs AFTER the gauntlet phases and receives the full concern summary. Its context is the gauntlet output itself.
+
+#### 7.5 Write the run-manifest intensity fields (REQUIRED for v4+ altitude sessions)
+
+`pipeline_mark_gauntlet_complete` reads these off the run manifest (additive to
+`spec_hash`) and rejects the gauntlet without them — see reference/altitude.md §6.1:
+
+```jsonc
+{
+  "spec_hash": "<sha256-12>",
+  "session_altitude": "system",                       // echo of the card value
+  "adversaries": [                                     // one entry per attacker MODEL
+    {"model": "gemini-3.1-pro", "family": "gemini"},  // family must match the registry
+    {"model": "gpt-5.5xhigh",  "family": "codex"}
+  ],
+  "foci": ["auth", "storage", "rollout"]              // distinct attack foci covered
+}
+```
+
+- `foci` unit today = distinct system-spec sections attacked. On a re-gauntlet
+  after `load_plan` with `concern_refs_schema_version: 2`, every tree node ≤
+  session altitude must appear (manifest focus or concern `node_id`).
+- Reject codes: `GAUNTLET_INTENSITY_UNMET` (short dimension named),
+  `GAUNTLET_ADVERSARY_FAMILY_MISMATCH` / `MODEL_REGISTRY_UNKNOWN` (anti-lying),
+  `GAUNTLET_ARTIFACTS_INCOMPLETE` (fields missing on a v4+ altitude session).
 
 #### Token Budget Guidelines
 
