@@ -1,0 +1,1152 @@
+{
+  "kind": "gauntlet-concern-report",
+  "session": "adv-spec-202606110339-validation-leg-process",
+  "card": "5604",
+  "spec": "spec-draft-v4.md",
+  "gauntlet_input_hash": "61c6030de399",
+  "run": {
+    "adversaries": [
+      "paranoid_security",
+      "burned_oncall",
+      "pedantic_nitpicker",
+      "asshole_loner",
+      "assumption_auditor",
+      "information_flow_auditor",
+      "architect"
+    ],
+    "attack_models": [
+      "codex/gpt-5.5",
+      "gemini-cli/gemini-3.1-pro-preview"
+    ],
+    "raw_concerns": 669,
+    "pipeline_verdicts": {
+      "accepted": 551,
+      "dismissed": 66,
+      "acknowledged": 26,
+      "deferred": 26
+    },
+    "notes": "pedantic_nitpicker@codex timed out at 900s (0 concerns; PEDA covered by gemini). FLOW@gemini 9 concerns recovered manually from raw responses (parser missed bolded list numbers) and patched into checkpoint before resume. Claude one-pass synthesis below is the authoritative verdict set; pipeline verdicts were advisory."
+  },
+  "synthesis": {
+    "evaluator": "claude (one Opus-class pass, all 669 concerns read, all verdict classes included)",
+    "unique_themes": 62,
+    "summary": {
+      "accept": 48,
+      "acknowledge": 8,
+      "dismiss": 6
+    }
+  },
+  "concerns": {
+    "correctness_bugs": [
+      {
+        "id": "CB-1",
+        "title": "S7/INV-13 supersession contradiction",
+        "verdict": "accept",
+        "detail": "State table restricts S7 supersession to pre-judgment states; INV-13 says judged-pass rows exit ONLY via S7. Direct contradiction. Fix: S7 allowed from any state including judged-pass, always human-approved; judged-fail correction = reset (S6) vs redesign (S7) decision rule added.",
+        "sources": [
+          "ASSH-d2c03ebc",
+          "ASSH-62e7b14c",
+          "FLOW-2caf7335",
+          "AUDT-f2cfd7dc",
+          "ARCH-492bbc06",
+          "ASSH-5c0d077a",
+          "ASSH-f6116e19"
+        ]
+      },
+      {
+        "id": "CB-2",
+        "title": "Sample row shows result:null with populated judgment",
+        "verdict": "accept",
+        "detail": "Violates INV-1. Fix example; add bidirectional rule: result == null iff judgment == null.",
+        "sources": [
+          "ASSH-a8df6d9c",
+          "FLOW-2827a7aa",
+          "BURN-2925e115",
+          "AUDT-70c10713",
+          "PARA-c0801b5e",
+          "ARCH-3fbf4e64"
+        ]
+      },
+      {
+        "id": "CB-3",
+        "title": "digest_batches schema missing lifecycle fields",
+        "verdict": "accept",
+        "detail": "Prose requires open/closed/cancelled status, row-hash snapshots, cancellation audit, stale-reply checks; sample JSON has only digest_id/parts/sent_at/row_ids. Add: status, opened_at/closed_at/cancelled_at, cancel_reason, row_hash_snapshot{}, conops_hash_snapshot, part file paths+hashes, per-part send results+message ids.",
+        "sources": [
+          "ASSH-b4b29a0c",
+          "ASSH-50e69a4f",
+          "FLOW-5c1fd23d",
+          "BURN-7e7a90c4",
+          "PARA-3508e509",
+          "PARA-f591",
+          "ARCH-b33d74fd",
+          "AUDT-f8662a31",
+          "ARCH-fd2c0444"
+        ]
+      },
+      {
+        "id": "CB-4",
+        "title": "State machine missing cancel-batch and ConOps-edit transitions",
+        "verdict": "accept",
+        "detail": "Add S8: digested -> evidence-attached on batch cancel (audit fields); add hash-invalidation transition for ConOps edits per refresh rules; distinguish 'drafted' vs 'needs-reexecution' after S6 reset.",
+        "sources": [
+          "ASSH-a4638761",
+          "FLOW-bd98cdf7",
+          "BURN-f58cc95e",
+          "ASSH-4fcf9f82",
+          "BURN-3b88007a",
+          "ASSH-9fb51097",
+          "FLOW-a8fc06c4"
+        ]
+      },
+      {
+        "id": "CB-5",
+        "title": "Idempotent re-entry skip-to-MCP bypasses INV-5",
+        "verdict": "accept",
+        "detail": "Re-entry with existing clean system_validation.json must STILL re-run self-check immediately before the MCP call (INV-5 wins). Also fail-rows-present re-entry must route to remediation, not NOTHING_TO_DIGEST->emission loop.",
+        "sources": [
+          "ASSH-57c79d6c",
+          "BURN-fb8a97d2",
+          "ASSH-5787c2e3"
+        ]
+      },
+      {
+        "id": "CB-6",
+        "title": "Ledger mutator list inconsistent; supersession and drafting have no owning command",
+        "verdict": "accept",
+        "detail": "6.2 names 2 mutators, 7 names 3, S7 supersession and Phase 7 row drafting have none (drafting is raw hand-editing that bypasses lock discipline). Add supersede-row and normalize-rows (hash-stamping/draft) subcommands; mutator list becomes parse-reply, assemble-digest, cancel-batch, reset-failed, supersede-row, normalize-rows.",
+        "sources": [
+          "FLOW-38865758",
+          "FLOW-5e254587",
+          "ARCH-ad25b880",
+          "PEDA-9133075c",
+          "ASSH-339a508d",
+          "ASSH-91dff269"
+        ]
+      },
+      {
+        "id": "CB-7",
+        "title": "row_hash has no producer (LLM cannot compute sha256)",
+        "verdict": "accept",
+        "detail": "check-rows demands canonical hashes but no command computes them; conductor would hallucinate hex. normalize-rows (or check-rows --fix) computes/stamps row_hash.",
+        "sources": [
+          "FLOW-032e0628",
+          "BURN-b32ca16f"
+        ]
+      },
+      {
+        "id": "CB-8",
+        "title": "Unclosed-batch deadlock on partial-fail remediation re-entry",
+        "verdict": "accept",
+        "detail": "parse-reply closes batch when all snapshot rows judged; partially-judged batch + remediation requires explicit cancel-batch before re-assembly \u2014 add to Phase 8 fail path. Define multi-reply continuation flow for open batches.",
+        "sources": [
+          "FLOW-7342eabe",
+          "ARCH-c381cbf7",
+          "BURN-cea12808",
+          "FLOW-f4ec7a93",
+          "ASSH-5d272f24",
+          "FLOW-37a5ce07",
+          "AUDT-27395622",
+          "FLOW-c7d1c7fe"
+        ]
+      },
+      {
+        "id": "CB-9",
+        "title": "Reply grammar ambiguities",
+        "verdict": "accept",
+        "detail": "Reject fail rest/na rest explicitly; explicit verdicts always apply before pass all/rest regardless of textual order; pass-with-text stored as justification; ALL duplicate row verdicts in one reply rejected (drop 'unless identical'); continuation lines must not begin with a verdict token (else parse error, not justification); case-insensitive verdict keywords, exact-case row ids; whitespace normalization defined.",
+        "sources": [
+          "ARCH-195426d3",
+          "PEDA-dd010d89",
+          "FLOW-f634609e",
+          "FLOW-d6dbeafa",
+          "FLOW-1ecbf55d",
+          "ASSH-fa0cc29b",
+          "ASSH-81123014",
+          "AUDT-1f8740f6",
+          "AUDT-bc3b2812",
+          "BURN-e0b4f7c3",
+          "PARA-586",
+          "BURN-2d93b3ed",
+          "PARA-744f6ec6",
+          "ASSH-782701a0"
+        ]
+      },
+      {
+        "id": "CB-10",
+        "title": "Coverage matching: exact-token rule needed locally",
+        "verdict": "accept",
+        "detail": "Gate substring-matches conops_ref (US-1 satisfied by US-11; packed refs). Local rule: conops_ref must regex-match ^US-\\d+$ exactly one id; local coverage uses exact-token equality \u2014 stated as strictly-stricter than gate.",
+        "sources": [
+          "FLOW-510d2586",
+          "FLOW-83ce4ff4",
+          "PARA-2b035a96",
+          "PARA-729a829b",
+          "ASSH-17477d3d",
+          "ARCH-d628c8a4",
+          "AUDT-444",
+          "PARA-f8231282"
+        ]
+      },
+      {
+        "id": "CB-11",
+        "title": "ConOps regex leak: stray US-n in narrative creates phantom gate obligations",
+        "verdict": "accept",
+        "detail": "derive-conops lints: every \\bUS-\\d+\\b token in output must correspond to a manifest story heading; reject otherwise. self-check already mirrors whole-file regex (kept).",
+        "sources": [
+          "FLOW-c45b55a6",
+          "PARA-45759729",
+          "PARA-d1d34151",
+          "PEDA-49949ab2",
+          "ASSH-faf124ae",
+          "AUDT-5a3d3982",
+          "ASSH-a1a22194",
+          "ASSH-5d65147b"
+        ]
+      },
+      {
+        "id": "CB-12",
+        "title": "Ledger result enum and na conversion undefined",
+        "verdict": "accept",
+        "detail": "Define ledger enum pass|fail|not-applicable; parse-reply maps reply token na -> not-applicable; projection passes through.",
+        "sources": [
+          "FLOW-610f7860",
+          "BURN-16ec7089",
+          "ASSH-b834dbb9"
+        ]
+      }
+    ],
+    "race_conditions": [
+      {
+        "id": "RC-1",
+        "title": "TOCTOU between self-check and MCP call",
+        "verdict": "accept",
+        "detail": "self-check outputs content sha256; close step re-verifies hash immediately before mark_system_validation_complete; reject symlinked artifact paths.",
+        "sources": [
+          "PARA-2912c1b1",
+          "PARA-ed8f97f1",
+          "PARA-e3e7ea9e"
+        ]
+      },
+      {
+        "id": "RC-2",
+        "title": "Batch 'open' before delivery confirmed; pass all can approve unseen rows",
+        "verdict": "accept",
+        "detail": "Biggest flow hole (convergent across 5 adversaries). Fix: batch states assembled -> sent -> (closed|cancelled); per-part send results + message ids recorded via new record-send subcommand (or args to assemble flow); parse-reply rejects bulk verdicts (pass all/rest) unless batch status == sent (all parts).",
+        "sources": [
+          "ARCH-bd60c354",
+          "FLOW-71c186f9",
+          "PARA-81d96982",
+          "PARA-a0864f70",
+          "BURN-04e68457",
+          "ARCH-9c0960dc",
+          "ARCH-14069653",
+          "ASSH-1ec61c21",
+          "BURN-a61c7728",
+          "PARA-19d7bcb4",
+          "FLOW-75c0d81a",
+          "FLOW-8c1b43e8"
+        ]
+      },
+      {
+        "id": "RC-3",
+        "title": "Batch does not snapshot conops_hash",
+        "verdict": "accept",
+        "detail": "Snapshot conops_hash at batch open; reply rejected if ConOps changed since open.",
+        "sources": [
+          "BURN-6d88c6ec",
+          "BURN-b4b49637"
+        ]
+      },
+      {
+        "id": "RC-4",
+        "title": "Duplicate/edited inbound delivery not idempotent",
+        "verdict": "accept",
+        "detail": "parse-reply rejects already-processed reply_ref (idempotency by reply_ref recorded in batch); edited Telegram messages ignored (first capture wins); one message per parse-reply invocation.",
+        "sources": [
+          "FLOW-80aa6581",
+          "BURN-0901adc5",
+          "BURN-45a14b3f",
+          "PARA-940bd832",
+          "PARA-1d186c68"
+        ]
+      },
+      {
+        "id": "RC-5",
+        "title": "Phase 7->8 gap drift unguarded (OQ-3)",
+        "verdict": "accept",
+        "detail": "RESOLVE OQ-3: Phase 8 close entry always re-derives ConOps and compares hash; mismatch -> refresh protocol before any evidence work. Phase 7 ledger baseline hash recorded at commit (drafted_baseline_hash) and compared at Phase 8 entry.",
+        "sources": [
+          "FLOW-179c4fe7",
+          "PARA-d13f74a9",
+          "PARA-2f09dc8b",
+          "BURN-08201226",
+          "ASSH-6c636120",
+          "AUDT-a92d16f1",
+          "FLOW-478"
+        ]
+      }
+    ],
+    "failure_modes": [
+      {
+        "id": "FM-1",
+        "title": "Remediation card creation/resolution has no producer and is unverifiable pure-local",
+        "verdict": "accept",
+        "detail": "Reframe honestly: CONDUCTOR creates cards via existing fizzy MCP (add_card/pipeline tools) with required payload {row_id, conops_ref, scenario, oracle, evidence_ref, fail justification, digest_id}; CONDUCTOR verifies resolution via MCP before invoking reset-failed; module records remediation_ref as assertion (documented as conductor-verified, not module-verified). TC-3.8 reworded accordingly.",
+        "sources": [
+          "ASSH-7b5c8408",
+          "ASSH-32023dbd",
+          "FLOW-1ee45d00",
+          "BURN-2b001b55",
+          "BURN-237",
+          "BURN-0ac94073",
+          "AUDT-4d7485be",
+          "AUDT-d7702f27",
+          "PEDA-6e62cb9c",
+          "ARCH-8b751b24",
+          "BURN-d2acd3aa",
+          "PARA-5061feb7",
+          "PARA-41385c8f",
+          "BURN-202f6787",
+          "AUDT-6f72ae24",
+          "AUDT-4521"
+        ]
+      },
+      {
+        "id": "FM-2",
+        "title": "Evidence hash headers in free markdown are brittle; no evidence producer command",
+        "verdict": "accept",
+        "detail": "Canonical YAML front-matter block (exact keys: row_hash, conops_hash, evidence_type, produced_at, commit) \u2014 duplicates rejected; new record-evidence subcommand scaffolds the file with stamped hashes so LLM never formats hashes by hand; distinct error codes for missing vs malformed vs mismatched headers.",
+        "sources": [
+          "ARCH-9062594b",
+          "ARCH-f95b8a59",
+          "ARCH-056795f8",
+          "ARCH-34325441",
+          "PARA-aea667a8",
+          "PARA-e6a670ed",
+          "FLOW-3862f25d"
+        ]
+      },
+      {
+        "id": "FM-3",
+        "title": "ConOps hash blast radius: one story edit orphans ALL evidence",
+        "verdict": "accept",
+        "detail": "Add per-story section hash (sha256 of the US-n heading+body): evidence binds to story_hash + row_hash; global conops_hash retained for the gate artifact only. Story edit invalidates only affected rows' evidence.",
+        "sources": [
+          "FLOW-d86b0040",
+          "ASSH-73863215",
+          "ARCH-68f1f164",
+          "PEDA-5d43e0a3",
+          "BURN-753891fc",
+          "ARCH-643"
+        ]
+      },
+      {
+        "id": "FM-4",
+        "title": "Remediation does not force fresh evidence; stale evidence revalidates",
+        "verdict": "accept",
+        "detail": "S6 reset moves evidence to evidence.md.invalidated-<ts> (cannot be re-accepted); evidence front-matter embeds implementation commit hash; assemble-digest rejects evidence whose produced_at predates the reset.",
+        "sources": [
+          "ARCH-c5eb42c6",
+          "ARCH-1efe4520",
+          "ARCH-c5d127ab",
+          "FLOW-a8fc06c4",
+          "PARA-55989335",
+          "BURN-d18cd419"
+        ]
+      },
+      {
+        "id": "FM-5",
+        "title": "No status command; no local error playbook; stdout envelope undefined",
+        "verdict": "accept",
+        "detail": "Add read-only status subcommand (active batch, sent parts, unjudged rows, blockers, next action); 10 gains a local-codes table (LEDGER_BUSY, LEDGER_CORRUPT, NOTHING_TO_DIGEST, SENDER_NOT_ALLOWLISTED, EVIDENCE_*, STALE_DIGEST, REPROMPT_REQUIRED, REFRESH_DISALLOWED); exact stdout JSON envelope defined for success/issues/reprompt (row_id nullable for global issues).",
+        "sources": [
+          "BURN-09e3cdf9",
+          "BURN-99b07a14",
+          "ASSH-9026d02d",
+          "BURN-92abf563",
+          "BURN-538",
+          "ASSH-02aafd2e",
+          "ASSH-c331baac",
+          "ASSH-b0bd9753",
+          "ASSH-89ced872",
+          "FLOW-81606704",
+          "FLOW-151",
+          "FLOW-152",
+          "FLOW-a532544b",
+          "ASSH-9026d02d",
+          "AUDT-dd6299cf",
+          "PEDA-5a3fef6d",
+          "BURN-494"
+        ]
+      },
+      {
+        "id": "FM-6",
+        "title": "Telegram send/listen failure semantics absent",
+        "verdict": "accept",
+        "detail": "Per-part send: bounded retry (3x backoff) then fail with parts-sent state recorded; mixed-delivery rule (cancel + terminal fallback covers WHOLE batch, never split channels); inbound: no listener liveness guarantee \u2014 document stale-open-batch age warning in status output.",
+        "sources": [
+          "BURN-592d0d5e",
+          "FLOW-fe9d297d",
+          "BURN-0828418c",
+          "AUDT-84af08c1",
+          "AUDT-3f04db43",
+          "BURN-2c70deab"
+        ]
+      },
+      {
+        "id": "FM-7",
+        "title": "Recovery: restore-from-git loses uncommitted judgments",
+        "verdict": "accept",
+        "detail": "Commit cadence: commit ledger after every batch close and before MCP call; LEDGER_CORRUPT response = quarantine corrupt bytes aside (ledger.corrupt-<ts>) THEN restore; replay from quarantine + Telegram transcript if needed.",
+        "sources": [
+          "BURN-e5af5181",
+          "PARA-c4445581",
+          "PARA-410f7aae",
+          "AUDT-03155015",
+          "BURN-62d9ee45"
+        ]
+      },
+      {
+        "id": "FM-8",
+        "title": "MCP close wiring not concrete",
+        "verdict": "accept",
+        "detail": "Close preflight (before Jason is paged): board_id from projects.yaml, card_id+session_id from session detail file, get_card_metadata altitude/session match, conops/artifact paths exist+readable. Post-call: read metadata back to confirm system_validation_complete. Transient MCP error: bounded retry then metadata check (handles lost-response). get_card_metadata availability verified during implementation (it exists in fizzy toolset).",
+        "sources": [
+          "BURN-94dd24b8",
+          "BURN-da458e20",
+          "BURN-cff813b3",
+          "BURN-7416c02d",
+          "BURN-798d1ff3",
+          "FLOW-3d335272",
+          "FLOW-0256f0b8",
+          "FLOW-96b5e1b0",
+          "AUDT-6a5de5ca",
+          "AUDT-1d04dd4c",
+          "AUDT-4cefd4ce",
+          "PARA-322f1c0c",
+          "PARA-794",
+          "ASSH-c70a0934",
+          "BURN-8635642c",
+          "FLOW-483"
+        ]
+      },
+      {
+        "id": "FM-9",
+        "title": "Oversized scenario/oracle breaks 3500-char part budget",
+        "verdict": "accept",
+        "detail": "check-rows lints scenario+oracle+header <= 3000 chars per row (room for furniture); over-budget row is a draft error, never a runtime delivery failure.",
+        "sources": [
+          "FLOW-8d435051",
+          "PARA-796ca577",
+          "PARA-5a998ccc",
+          "PEDA-5d77e234",
+          "BURN-ee4e8a36"
+        ]
+      },
+      {
+        "id": "FM-10",
+        "title": "fail justification not required (only na)",
+        "verdict": "accept",
+        "detail": "fail requires non-empty justification (remediation cards depend on it); bare fail -> re-prompt.",
+        "sources": [
+          "FLOW-445b61e8",
+          "BURN-555eaaa5",
+          "BURN-6e6",
+          "PARA-d32fed43",
+          "AUDT-16335e31"
+        ]
+      },
+      {
+        "id": "FM-11",
+        "title": "Sole-row N/A discovered only at close",
+        "verdict": "accept",
+        "detail": "parse-reply warns immediately when an na verdict leaves a story with zero pass rows (early surface; close rule unchanged).",
+        "sources": [
+          "ASSH-b684e872",
+          "BURN-dddfa433"
+        ]
+      },
+      {
+        "id": "FM-12",
+        "title": "Stale reply to cancelled batch: human-facing consequence undefined",
+        "verdict": "accept",
+        "detail": "On cancel of an already-sent batch: conductor sends cancellation notice through same channel; stale replies get a rejection notice referencing the new digest.",
+        "sources": [
+          "BURN-1f44cc07",
+          "BURN-f702791c"
+        ]
+      }
+    ],
+    "security": [
+      {
+        "id": "SEC-1",
+        "title": "Sender identity is a conductor-typed CLI flag \u2014 the trust boundary is a sieve",
+        "verdict": "accept",
+        "detail": "Jason ruling 2026-06-11: right-sized. Threat is NOT account takeover \u2014 it is the conductor LLM typing --sender-id itself, making the check decorative against agent confusion (wrong message applied as judgment). Fix kept: parse-reply reads the raw wake-listener update file (--update-file) and extracts sender/message id itself. The 'fail-closed until verified' framing is DROPPED \u2014 verifying the listener payload schema is an ordinary first implementation task (~10 min reading listener source), not a blocking gate.",
+        "sources": [
+          "ARCH-d76d0f55",
+          "ARCH-e67a9671",
+          "BURN-a4937b5e",
+          "PARA-ed991815",
+          "PARA-d357c228",
+          "ARCH-d7619812",
+          "AUDT-d160bffc",
+          "AUDT-00d660ed",
+          "FLOW-92c5aee6",
+          "FLOW-3fe19386",
+          "BURN-adb4f459",
+          "ASSH-623d9f86",
+          "PARA-05ce44c0",
+          "PARA-190a5a6e"
+        ]
+      },
+      {
+        "id": "SEC-2",
+        "title": "Chat id conflated with sender id; allowlist schema/fail-closed undefined",
+        "verdict": "accept",
+        "detail": "Registry config defines BOTH chat_id (channel scope) and allowed_sender_ids (human allowlist); exact file path + field names specified; missing/malformed config -> Telegram replies rejected (fail-closed) with structured code.",
+        "sources": [
+          "ASSH-64018988",
+          "FLOW-64021059",
+          "PARA-de191202",
+          "PARA-fde78a95",
+          "PARA-32699258",
+          "AUDT-09055343",
+          "BURN-61bfef5b",
+          "FLOW-32e2286b",
+          "BURN-8568f7f3"
+        ]
+      },
+      {
+        "id": "SEC-3",
+        "title": "Terminal fallback is assertion, not authentication",
+        "verdict": "accept-partial",
+        "detail": "Keep single-user assumption (documented) but require reply_ref = AskUserQuestion transcript reference and add negative test for terminal-source abuse; spec stops implying parity with Telegram allowlist.",
+        "sources": [
+          "AUDT-622ef92d",
+          "BURN-0d399c37",
+          "PARA-20c86b7e",
+          "FLOW-8be23d28",
+          "ARCH-1ef0",
+          "PARA-40374374",
+          "FLOW-477"
+        ]
+      },
+      {
+        "id": "SEC-4",
+        "title": "Digest content hygiene: secrets, escaping, reply-quoting injection",
+        "verdict": "accept",
+        "detail": "assemble-digest runs deny-pattern secret lint (key/token/bearer/env shapes) over digest text \u2014 match blocks assembly; row prose escaped so it cannot spoof digest furniture or reply instructions; re-prompt quotes offending text truncated to 200 chars with untrusted-content framing; evidence paths emitted repo-relative.",
+        "sources": [
+          "PARA-a140bbac",
+          "PARA-3dc695f0",
+          "PARA-26a1d271",
+          "PARA-2193258d",
+          "PARA-88c86378",
+          "PARA-585",
+          "BURN-2fd5d7e9",
+          "BURN-28323841",
+          "ARCH-3f892a18",
+          "FLOW-5cc1523d",
+          "PARA-383b32ca",
+          "PARA-c5b5415a"
+        ]
+      },
+      {
+        "id": "SEC-5",
+        "title": "What Jason judged is not hash-bound: digest parts and evidence content",
+        "verdict": "accept",
+        "detail": "Batch records sha256 of each part file; evidence content hash recorded in ledger at digest assembly; closed batch records applied reply text hash. Cheap, makes 'what did Jason see' answerable.",
+        "sources": [
+          "PARA-a35927b2",
+          "PARA-07dd236a",
+          "PARA-bf8dfc35",
+          "PARA-5e05ac2a",
+          "FLOW-ea6ec54f",
+          "FLOW-abb7ea52",
+          "BURN-cdb45765",
+          "BURN-8f707a7c",
+          "BURN-d940bcd8",
+          "PARA-1240"
+        ]
+      },
+      {
+        "id": "SEC-6",
+        "title": "pass all is a low-friction bulk approval",
+        "verdict": "reject-as-proposed",
+        "detail": "Jason ruling 2026-06-11: NO reply-side friction \u2014 he will not 'speak in passwords'. Protection moves entirely to delivery side (RC-2 per-part send tracking; bulk verdicts apply only when batch status==sent). ADDITION: parser grammar gains a fixed deterministic alias list for bulk pass ('those all look good', 'all good', 'all look good', 'lgtm') mapping to pass-all \u2014 matched by the script, never LLM-interpreted.",
+        "sources": [
+          "PARA-6a085a0e",
+          "PARA-1f77b9b8",
+          "PARA-67a06797",
+          "PARA-251",
+          "ARCH-aefab7fd",
+          "PARA-f0bc5a67",
+          "AUDT-65d10a67",
+          "ASSH-14b7b071",
+          "PARA-2845b5e9",
+          "ASSH-43634269"
+        ]
+      },
+      {
+        "id": "SEC-7",
+        "title": "Anti-relabeling bypassable by omission and by superset",
+        "verdict": "accept",
+        "detail": "INV-11 extended: reject non-empty INTERSECTION with verification targets unless rationale provided (covers superset trick); --verification-ledger REQUIRED when verification artifacts exist (fail-closed, else self-check reports weaker-parity warning); projection MUST preserve test_targets when present; rows citing test files in prose must declare targets.",
+        "sources": [
+          "PEDA-d513f1af",
+          "ASSH-58a65493",
+          "ASSH-8ffe68f8",
+          "ASSH-83d553f8",
+          "FLOW-c86ad015",
+          "FLOW-363a894c",
+          "PARA-82fc885b",
+          "PARA-e664b2f0",
+          "PARA-7625109d",
+          "PARA-e3798893",
+          "ARCH-694013db",
+          "AUDT-0fff6b8d",
+          "AUDT-37b1839f",
+          "PARA-0fabfd87",
+          "FLOW-5ca462f5",
+          "BURN-bcccf033",
+          "PARA-feea1080"
+        ]
+      },
+      {
+        "id": "SEC-8",
+        "title": "12-hex prefixes stored as canonical",
+        "verdict": "accept",
+        "detail": "Store FULL sha256 in ledger/evidence; emit 12-hex prefix only where the gate artifact needs it; self-check rejects shorter-than-12 prefixes.",
+        "sources": [
+          "FLOW-c9e7157e",
+          "PARA-596fd6d4",
+          "AUDT-946d569d",
+          "ASSH-a9ef508b",
+          "PARA-04b70e7e",
+          "PARA-306"
+        ]
+      },
+      {
+        "id": "SEC-9",
+        "title": "Path containment, symlinks, row-id uniqueness",
+        "verdict": "accept",
+        "detail": "All artifact paths resolved under .adversarial-spec/specs/<slug>/ (realpath containment, symlinks rejected); row_id globally unique across active+superseded (check-rows); row_id prefix must match conops_ref story number; duplicate manifest story ids rejected by derive-conops.",
+        "sources": [
+          "PARA-c8ae6bd0",
+          "PARA-1083cab9",
+          "PARA-3ce99d62",
+          "PARA-d175bc5e",
+          "BURN-d952456f",
+          "PEDA-0a97c07a",
+          "PARA-2dce6fd7",
+          "PARA-22cb7204",
+          "ASSH-ad8a3baa"
+        ]
+      },
+      {
+        "id": "SEC-10",
+        "title": "Input bounds",
+        "verdict": "accept-lite",
+        "detail": "Caps: reply 16KB, justification 2KB, ledger 5MB, ConOps 1MB; deterministic exit-2 codes on breach.",
+        "sources": [
+          "PARA-3064cf00",
+          "PARA-81dee1fa",
+          "PARA-911baf78"
+        ]
+      }
+    ],
+    "operability": [
+      {
+        "id": "OP-1",
+        "title": "Security/ops events have no durable sink",
+        "verdict": "accept",
+        "detail": "Non-allowlisted discard, cancellations, corrupt-ledger, stale-reply rejections -> structured stderr code + append to a security_events[] section in the ledger (sender ids hashed); parse-reply exits 2 with SENDER_NOT_ALLOWLISTED (distinguishable from success).",
+        "sources": [
+          "ASSH-5c4f4cff",
+          "FLOW-d3c3b7eb",
+          "FLOW-c6e16b73",
+          "PARA-8ee4e664",
+          "PARA-837df586",
+          "PARA-49c20a12",
+          "BURN-4176a991",
+          "BURN-fb2aa722",
+          "AUDT-d0b4d6f8",
+          "ARCH-63825a99",
+          "BURN-5ee7b672",
+          "PARA-67e49214"
+        ]
+      },
+      {
+        "id": "OP-2",
+        "title": "Digest must be mobile-sufficient; summaries need an owner; no post-parse confirmation",
+        "verdict": "accept",
+        "detail": "New evidence_summary field on rows: conductor-authored at evidence time, validated non-empty + length-bounded by module (resolves 'module never generates prose' vs digest needing summaries); summaries must be self-contained for mobile judgment (TC-4.1); delta digests show prior-fail context line; after parse, conductor sends applied-judgments confirmation through same channel.",
+        "sources": [
+          "ASSH-055e42e7",
+          "ASSH-8227f0c0",
+          "ASSH-4ad2c84f",
+          "ASSH-4e4acda8",
+          "FLOW-ae48e0a1",
+          "FLOW-79948cf9",
+          "BURN-4122601e",
+          "PARA-9ade9edb",
+          "PARA-505b2b63",
+          "ARCH-59fbe479",
+          "PARA-5e08ebf5",
+          "FLOW-486"
+        ]
+      },
+      {
+        "id": "OP-3",
+        "title": "Timestamps: require UTC RFC3339 Z",
+        "verdict": "accept",
+        "sources": [
+          "ASSH-ae5ac34e",
+          "BURN-899aa31e",
+          "PARA-a56e95a7"
+        ]
+      },
+      {
+        "id": "OP-4",
+        "title": "schema_version on ledger and audit artifacts",
+        "verdict": "accept",
+        "sources": [
+          "ASSH-355aa90a",
+          "FLOW-f740e18c",
+          "BURN-00a3ab79"
+        ]
+      },
+      {
+        "id": "OP-5",
+        "title": "Path conventions inconsistent across spec",
+        "verdict": "accept",
+        "detail": "Normalize ALL artifact paths to .adversarial-spec/specs/<slug>/... in every section; digest part files move to validation-digests/ (not evidence dir).",
+        "sources": [
+          "ASSH-06775a59",
+          "FLOW-75deebaa",
+          "FLOW-bfbf325a",
+          "FLOW-610ebeee",
+          "BURN-513a2139"
+        ]
+      },
+      {
+        "id": "OP-6",
+        "title": "parse-reply positional reply-text is brittle",
+        "verdict": "accept",
+        "detail": "--reply-file / stdin primary; positional retained for tests only. (Subsumed by SEC-1 --update-file for telegram.)",
+        "sources": [
+          "ASSH-4291031e",
+          "AUDT-f64397d2",
+          "BURN-e26da40e",
+          "PARA-d1c160af"
+        ]
+      },
+      {
+        "id": "OP-7",
+        "title": "Stale open batch has no policy",
+        "verdict": "accept-lite",
+        "detail": "status shows batch age; >48h open batch flagged with cancel/reissue guidance; late replies still honored if hashes fresh.",
+        "sources": [
+          "BURN-96a1a35c",
+          "BURN-aea18c3f",
+          "ARCH-c381cbf7"
+        ]
+      },
+      {
+        "id": "OP-8",
+        "title": "Retention",
+        "verdict": "accept-lite",
+        "detail": "All validation artifacts committed before close (commit cadence FM-7); superseded/cancelled artifacts retained (audit) \u2014 no cleanup during session; post-close cleanup out of scope.",
+        "sources": [
+          "FLOW-ecbf120d",
+          "BURN-280669e3",
+          "PARA-f46fcfae",
+          "PARA-9b68172d",
+          "PARA-7398b727"
+        ]
+      },
+      {
+        "id": "OP-9",
+        "title": "Digest emoji / char-vs-byte budget",
+        "verdict": "accept-partial",
+        "detail": "KEEP project emoji framing (Jason's ecosystem convention, projects.yaml telegram.emoji). Budget restated in UTF-8 BYTES (3500 bytes) to absorb encoding concerns.",
+        "sources": [
+          "ASSH-a4a7e316",
+          "PARA-e03b6809",
+          "AUDT-d8b4b90a",
+          "PARA-d572512d"
+        ]
+      },
+      {
+        "id": "OP-10",
+        "title": "Test stratification: CI vs human-gated; 30-min claim",
+        "verdict": "accept",
+        "detail": "pytest markers: deterministic vs dogfood (requires Jason/Telegram/MCP); TC-0.1 30-min budget moves from pytest assertion to dogfood acceptance metric; dogfood metrics also record local retries/re-prompts (TC-4.1 first-call metric kept but supplemented).",
+        "sources": [
+          "BURN-13218ee6",
+          "BURN-bef647c7",
+          "AUDT-c89b7d18",
+          "ASSH-e3f1f185",
+          "ASSH-075b0c61",
+          "BURN-30cb1079",
+          "PARA-88d42d4f",
+          "AUDT-428"
+        ]
+      },
+      {
+        "id": "OP-11",
+        "title": "MUST-labeling: enforcement legend",
+        "verdict": "accept",
+        "detail": "Each normative MUST tagged [module] / [self-check] / [conductor-procedure] / [human-gate]; 'read-only' redefined as 'ledger-bytes-unchanged'.",
+        "sources": [
+          "ASSH-966b6baf",
+          "FLOW-32567453",
+          "ASSH-91dff269",
+          "ASSH-bb590bdb",
+          "AUDT-3b8258c4"
+        ]
+      }
+    ],
+    "design_debt": [
+      {
+        "id": "DD-1",
+        "title": "assemble-digest SRP violation: reset-failed embedded in digest assembly",
+        "verdict": "accept",
+        "detail": "reset-failed becomes its own mutating subcommand (paired --remediation-ref kept); assemble-digest is pure assembly.",
+        "sources": [
+          "ARCH-06fbceb2",
+          "ARCH-e47fe278",
+          "ARCH-2ab4d7d9",
+          "FLOW-cbce67ab",
+          "ARCH-5ef41940"
+        ]
+      },
+      {
+        "id": "DD-2",
+        "title": "Close path is scattered prose, not one algorithm",
+        "verdict": "accept",
+        "detail": "Single numbered deterministic close algorithm in 8 (normal entry + every re-entry case incl. metadata-check-first, fail-row routing, NOTHING_TO_DIGEST, self-check-always-before-MCP).",
+        "sources": [
+          "ASSH-5787c2e3",
+          "ARCH-8772f8c9",
+          "ARCH-7c398ae7",
+          "FLOW-1edb2e5f",
+          "ARCH-03775468",
+          "FLOW-114"
+        ]
+      },
+      {
+        "id": "DD-3",
+        "title": "ASSUMPTION-1 dual-file fork should die",
+        "verdict": "accept",
+        "detail": "Served-code extract reads dict keys and lists no unknown-field rejection -> OQ-1 provisionally resolved as TOLERATED; single rich artifact is the primary design; dual-file protocol moved to a contingency appendix, exercised only if first parity test falsifies. Verification stays first implementation task.",
+        "sources": [
+          "PARA-3927ba80",
+          "ASSH-794c58cb",
+          "ASSH-3cc82062",
+          "ASSH-cc762afc",
+          "BURN-798a4f01",
+          "AUDT-c8e02772",
+          "FLOW-06408a98",
+          "FLOW-8b4f9db4",
+          "ARCH-3bb65e63",
+          "FLOW-1d79b8cc",
+          "BURN-d85b04c4",
+          "AUDT-3996b615",
+          "PARA-44cf6ab8",
+          "PARA-b4d4cc41",
+          "FLOW-5ead7b1f",
+          "ASSH-a94fc29b"
+        ]
+      },
+      {
+        "id": "DD-4",
+        "title": "Superseded rows keep audit stub only; 'active row' never defined",
+        "verdict": "accept",
+        "detail": "superseded[] entries retain the FULL row snapshot + audit fields; formal predicate: active = in rows[] and row_id not in superseded[].row_id; canonical ordering = ledger order, stated.",
+        "sources": [
+          "ASSH-73344396",
+          "BURN-342a945c",
+          "PARA-442f5eed",
+          "PARA-8f11746c",
+          "BURN-a746631f",
+          "PARA-193d13f2"
+        ]
+      },
+      {
+        "id": "DD-5",
+        "title": "judgment_history entries lack hash context",
+        "verdict": "accept",
+        "detail": "History entries record row_hash + conops_hash (+story_hash) at judgment time.",
+        "sources": [
+          "ASSH-6e4c5f26",
+          "FLOW-f218e727"
+        ]
+      },
+      {
+        "id": "DD-6",
+        "title": "No module/contract version provenance",
+        "verdict": "accept",
+        "detail": "Artifacts record validation_emission version (module __version__ + git hash); gate-contract extract pinned by fizzy commit + date in spec; parity drift = documented risk with re-extract protocol.",
+        "sources": [
+          "PARA-ce14dc0c",
+          "FLOW-31776387",
+          "PARA-2de92275",
+          "BURN-523",
+          "AUDT-1b9cd13a",
+          "PARA-bcaf5467",
+          "ARCH-1ccfd188",
+          "AUDT-b57bc770"
+        ]
+      },
+      {
+        "id": "DD-7",
+        "title": "derive-conops underdefined: inputs, determinism, overwrite safety, story removal",
+        "verdict": "accept",
+        "detail": "Exact manifest fields consumed listed (story id/title/text + milestone title/context); deterministic given same manifest (LLM not in derive loop \u2014 narrative comes from manifest text verbatim-with-template, never free generation); overwrite reports prior+new hash and refuses without --force if rows reference old hash; story removal REQUIRES manifest edit first (ConOps never diverges from manifest); duplicate story ids rejected.",
+        "sources": [
+          "ARCH-f7496b41",
+          "AUDT-092b5c05",
+          "ASSH-8d3292a9",
+          "ASSH-3e14f3c7",
+          "ASSH-291c3035",
+          "FLOW-81793aa9",
+          "FLOW-dc44b131",
+          "FLOW-479",
+          "BURN-2c1cc22b",
+          "PARA-440cf696",
+          "PARA-f9d88a55",
+          "AUDT-0117b121",
+          "ARCH-a7f85152",
+          "FLOW-610278b0",
+          "PARA-56147a09"
+        ]
+      },
+      {
+        "id": "DD-8",
+        "title": "INV-7 'at all times' conflicts with incremental drafting and refresh",
+        "verdict": "accept",
+        "detail": "check-rows gains --draft mode (structure only, coverage advisory); INV-7 binds at draft-complete and at emission; refresh defined as transactional (supersede+replace in one supersede-row invocation).",
+        "sources": [
+          "ASSH-ea950f16",
+          "FLOW-7fa03b70",
+          "AUDT-ef9eff71",
+          "BURN-2d44354f",
+          "ARCH-a17be611"
+        ]
+      },
+      {
+        "id": "DD-9",
+        "title": "Validation not bound to implementation state",
+        "verdict": "accept",
+        "detail": "Evidence front-matter records implementation commit + clean-worktree flag; close preflight requires clean worktree; remediation completion requires conductor note of impact on previously-passed rows (re-execute affected pass rows' scenarios as advisory \u2014 supersession if behavior changed).",
+        "sources": [
+          "PARA-28cfc372",
+          "PARA-0807201f",
+          "PARA-9893fbe2",
+          "PARA-dafab24e",
+          "BURN-9e7b5058",
+          "BURN-7cc67d33",
+          "BURN-3fa9b8a5",
+          "PARA-0ec28570",
+          "BURN-21790709"
+        ]
+      },
+      {
+        "id": "DD-10",
+        "title": "Jason's pre-judgment veto has no data path",
+        "verdict": "accept-lite",
+        "detail": "Pre-commit veto = ordinary draft edit (no audit needed); post-commit adjustments go through supersede-row with approval_ref. approval_ref format: telegram:<chat>:<msg_id> | transcript:<session>:<turn> | decision:<ISO-ts> (durable anchors, not line numbers).",
+        "sources": [
+          "FLOW-4c87ce7b",
+          "BURN-736d9fbc",
+          "PARA-6779e307",
+          "ASSH-2a246846",
+          "PARA-a78a4db4",
+          "PARA-6b0498fe"
+        ]
+      }
+    ],
+    "underspecification": [
+      {
+        "id": "US-1",
+        "title": "Wake-listener payload schema unverified (load-bearing for INV-15)",
+        "verdict": "accept",
+        "detail": "ASSUMPTION-2 added with resolution protocol: read listener source + capture real payload during implementation; Telegram judgments fail-closed until verified. (Pairs with SEC-1.)",
+        "sources": [
+          "FLOW-3fe19386",
+          "BURN-adb4f459",
+          "AUDT-00d660ed",
+          "AUDT-06d00903",
+          "ARCH-69e4d663",
+          "PARA-a3c812d6"
+        ]
+      },
+      {
+        "id": "US-2",
+        "title": "session_altitude / pipeline-version source not wired",
+        "verdict": "accept",
+        "detail": "Phase 8 close preflight reads altitude + obligation state from get_card_metadata (not just local session file); v5+ gate obligation confirmed before running the leg.",
+        "sources": [
+          "FLOW-dfb3b112",
+          "FLOW-70b82566"
+        ]
+      },
+      {
+        "id": "US-3",
+        "title": "Digest id generation rule",
+        "verdict": "accept",
+        "detail": "d-<n> strictly monotonic per ledger (max existing + 1, including cancelled); allocation under lock.",
+        "sources": [
+          "PARA-c9231eb0",
+          "BURN-d575bad6"
+        ]
+      },
+      {
+        "id": "US-4",
+        "title": "Correction of mistaken judgments / post-close errors",
+        "verdict": "accept-lite",
+        "detail": "Mistaken pass -> supersede-row with approval (CB-1 makes this legal); mistaken fail -> reset path; post-MCP-close error -> process-failure note + fizzy handoff item (write-once artifact, OQ-4c).",
+        "sources": [
+          "BURN-2b4d08a9",
+          "BURN-7e363914",
+          "ASSH-ea06c4bb",
+          "PARA-18470efb"
+        ]
+      },
+      {
+        "id": "US-5",
+        "title": "Multi-part reply correlation",
+        "verdict": "accept",
+        "detail": "Batch records per-part message ids; reply to ANY part binds to the batch; one inbound message per parse-reply call; conductor aggregation forbidden.",
+        "sources": [
+          "FLOW-8b310166",
+          "AUDT-95f7d99f",
+          "PARA-2845b5e9"
+        ]
+      },
+      {
+        "id": "US-6",
+        "title": "Terminal AskUserQuestion fallback mechanics",
+        "verdict": "accept",
+        "detail": "Fallback = conductor-level AskUserQuestion (Claude tool), NOT module input(); conductor pipes the typed reply into parse-reply --source terminal with transcript reply_ref; bridge-down detection = telegram-send nonzero exit/timeout.",
+        "sources": [
+          "AUDT-77638165",
+          "AUDT-3f04db43"
+        ]
+      },
+      {
+        "id": "US-7",
+        "title": "Producer/consumer matrix + diagram mechanism labels",
+        "verdict": "accept-lite",
+        "detail": "5 diagram arrows labeled with mechanism (CLI/file/Telegram/MCP/human); compact producer-consumer table added; conductor-drafting step shown explicitly.",
+        "sources": [
+          "FLOW-5baf8b46",
+          "FLOW-598f54dc",
+          "FLOW-8916b6a4",
+          "FLOW-121",
+          "ARCH-d628"
+        ]
+      },
+      {
+        "id": "US-8",
+        "title": "filelock release semantics citation",
+        "verdict": "accept-lite",
+        "detail": "Cite filelock 3.16.1 behavior (existing persistence.py stale-lock handling pattern reused); stale lock file handling stated.",
+        "sources": [
+          "AUDT-ea6a1263",
+          "AUDT-f190d706",
+          "AUDT-eff46135",
+          "AUDT-447",
+          "FLOW-ac777c07"
+        ]
+      }
+    ],
+    "acknowledged": [
+      {
+        "id": "ACK-1",
+        "title": "Jason is a single point of failure/compromise",
+        "note": "G3 explicit design decision; no quorum."
+      },
+      {
+        "id": "ACK-2",
+        "title": "Evidence execution authenticity unprovable by module",
+        "note": "Documented residual (R2 honesty fix); conductor discipline + dogfood spot-review."
+      },
+      {
+        "id": "ACK-3",
+        "title": "Conductor LLM has broad discretion",
+        "note": "Inherent to skill-side scope; module narrows machine-checkable risk only."
+      },
+      {
+        "id": "ACK-4",
+        "title": "Dogfood validation is circular",
+        "note": "Bootstrap circularity labeled as residual risk in 12 (one-line spec edit)."
+      },
+      {
+        "id": "ACK-5",
+        "title": "validation_emission.py is broad for one module",
+        "note": "NG4 forbids middleware; single-module choice is deliberate (Target Architecture)."
+      },
+      {
+        "id": "ACK-6",
+        "title": "Malicious-local-agent threat model out of scope",
+        "note": "Spec gains an explicit one-paragraph threat model: defends against honest mistakes + Telegram sender confusion, NOT a malicious local agent with workspace write access. Multi-agent same-branch reality noted (single-writer rule: only the conductor session touches validation artifacts)."
+      },
+      {
+        "id": "ACK-7",
+        "title": "Anti-hindsight exposes rows to implementation agents",
+        "note": "Deliberate tradeoff; stability over secrecy."
+      },
+      {
+        "id": "ACK-8",
+        "title": "N/A rows pollute the gate artifact",
+        "note": "Gate enum accepts them; coverage rule already compensates."
+      }
+    ],
+    "dismissed": [
+      {
+        "id": "DIS-1",
+        "title": "10s lock timeout arbitrary",
+        "why": "Established TASK_LOCK pattern; mutations are small JSON writes; LEDGER_BUSY playbook added instead (FM-5)."
+      },
+      {
+        "id": "DIS-2",
+        "title": "Oracle lint is 'unserious' / vague-terminal pairing subjective",
+        "why": "Scope honesty already in spec: lint is structural fallback; semantics human-owned (NG3). Lint rule made deterministic where cheap (banned-synonym class list extended)."
+      },
+      {
+        "id": "DIS-3",
+        "title": "48-bit birthday-collision attack on hashes",
+        "why": "Math wrong for targeted swap (needs second preimage); accidental-freshness purpose stated; SEC-8 stores full hashes anyway."
+      },
+      {
+        "id": "DIS-4",
+        "title": "Predictable row/digest ids enable spoofing",
+        "why": "Ids are not authentication material; sender allowlist + batch binding are."
+      },
+      {
+        "id": "DIS-5",
+        "title": "No encryption/signing/tamper-proof logs/dependency supply-chain",
+        "why": "Local single-operator CLI; no new infra (NG4); covered by ACK-6 threat model."
+      },
+      {
+        "id": "DIS-6",
+        "title": "Rate limiting / anomaly detection for attack replies",
+        "why": "Single-operator local tool, no monitoring infra; security events durable-logged instead (OP-1)."
+      }
+    ]
+  },
+  "open_question_resolutions": {
+    "OQ-1": "Provisionally resolved: gate tolerates unknown fields (extract evidence); single rich artifact primary; dual-file demoted to contingency appendix; parity test remains first implementation task (DD-3).",
+    "OQ-3": "Resolved: always re-derive + hash-compare at Phase 8 close entry (RC-5).",
+    "OQ-4": "Unchanged fizzy handoff; add (c) post-close correction policy for write-once artifacts (US-4)."
+  },
+  "items_for_jason": [
+    "RESOLVED 2026-06-11 (Jason): SEC-6 rejected as proposed \u2014 natural-language bulk-pass aliases instead; delivery-side protection only",
+    "RESOLVED 2026-06-11 (Jason): SEC-1 right-sized \u2014 module reads listener payload directly; no fail-closed ceremony",
+    "RESOLVED 2026-06-11 (Jason 'continue' after plain-language explanation): FM-3 per-story evidence hashes; DD-3 single-artifact primary + first-test confirmation; CB-1 any-state supersession with human approval; ACK-6 threat-model paragraph"
+  ]
+}

@@ -1,18 +1,23 @@
 {
   "schema_version": "1.3",
-  "active_session_id": null,
-  "context_name": null,
-  "current_phase": null,
-  "current_step": null,
-  "next_action": "Model-switch handoff 2026-06-10: read checkpoints/latest.md (TodoWrite snapshot + open questions inside). All skill-owned pipeline-seams holes closed (#6 #9 #11 #12); glossary in CONTEXT.md + ADR 0001. Highest-value next: land prior-session depth-triage Phase 0 front-door work (uncommitted in working tree) \u2014 it assigns session_altitude, without which fizzy's verified altitude enforcement (pipeline v5, schema-3) never engages. No active session; do not fabricate one.",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606100353-glossary-seams-closed-model-switch-handoff.md",
+  "active_session_id": "adv-spec-202606110339-validation-leg-process",
+  "context_name": "Validation-Leg Production Process",
+  "current_phase": "finalize",
+  "current_step": "Spec ACCEPTED by Jason; execution-plan question pending",
+  "next_action": "On Jason yes: Phase 7 (07-execution.md) incl. validation-leg dogfood (derive-conops + draft rows)",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606111728-gauntlet-closed-finalize-next.md",
   "execution_plan_path": null,
-  "spec_path": null,
-  "do_not_ask": [],
-  "updated_at": "2026-06-10T03:53:57Z",
-  "active_session": null,
-  "active_session_file": null,
-  "session_stack": [],
+  "spec_path": ".adversarial-spec/specs/validation-leg-process/spec-output.md",
+  "do_not_ask": [
+    "Continue debate rounds until convergence without asking Jason unless absolutely necessary (directive 2026-06-11)",
+    "Continue debate rounds until convergence without asking Jason unless absolutely necessary (directive 2026-06-11; debate now converged but spirit applies to gauntlet too)"
+  ],
+  "updated_at": "2026-06-11T17:50:11Z",
+  "active_session": "adv-spec-202606110339-validation-leg-process",
+  "active_session_file": ".adversarial-spec/sessions/adv-spec-202606110339-validation-leg-process.json",
+  "session_stack": [
+    "adv-spec-202606110339-validation-leg-process"
+  ],
   "parked_sessions": [
     {
       "session_id": "adv-spec-202604291604-dispatch-cost-tracker-unify",
@@ -36,7 +41,7 @@
     "adv-spec-202603201800-gauntlet-refactor-quota-burn",
     "adv-spec-202603051555-philosophy-phase-and-arch-persona"
   ],
-  "completed_work": "2026-06-09/10 Claude Code session: 14 commits pushed; see checkpoint for detail.",
+  "completed_work": "Spec v5 written (all 48 accepted gauntlet themes incl. Jason rulings: natural bulk-pass aliases, payload-extracted sender id, per-story hashes, single artifact, any-state supersession, threat model). tests-pseudo +TC-G1..G13 + 2 P4 TC amendments. Guardrails CONS/CANON/TCOV pass (post-gauntlet-guardrails.md + cons-report-v5.md). Lookup Sweep added to 03-debate.md (Jason's lookup-log idea) + gauntlet briefing hook in 05-gauntlet.md. Incremental mapcodebase 9ca3ccd->f198887: 5 explorers, accessor+structured+component docs refreshed, mcp-tasks retired, new components token-tracking/emission-toolchain/harness-hooks, HAZ-005 + FIND-015..019 + CON-007..009, quality checks ALL PASS, freshness_status=current (fizzy vocabulary). Board: card 5604 Pre-Gauntlet->Gauntlet->Reconciliation->Finalization; gauntlet artifacts + reconciliation artifacts recorded. debate.py timeout 1200 default.",
   "reset_at": "2026-05-30T19:08:15Z",
   "reset_reason": "Zombie pointer cleanup: prior active_session pointed at dispatch-cost-tracker (card 1851) which no longer exists on the now-empty Fizzy board. Parked sessions preserved above; their on-disk artifacts are committed."
 }

@@ -1219,3 +1219,497 @@
 {"ts": "2026-04-28T20:04:05.161008+00:00", "session_id": "ebc9d82d-2abd-4033-a69b-87edd3dac3b1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
 {"ts": "2026-04-29T15:24:01.329843+00:00", "session_id": "ebc9d82d-2abd-4033-a69b-87edd3dac3b1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
 {"ts": "2026-04-29T15:27:34.663944+00:00", "session_id": "ebc9d82d-2abd-4033-a69b-87edd3dac3b1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T15:44:05.088217+00:00", "session_id": "ebc9d82d-2abd-4033-a69b-87edd3dac3b1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T15:45:34.130281+00:00", "session_id": "ebc9d82d-2abd-4033-a69b-87edd3dac3b1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T15:46:37.929138+00:00", "session_id": "ebc9d82d-2abd-4033-a69b-87edd3dac3b1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T15:47:09.471618+00:00", "session_id": "ebc9d82d-2abd-4033-a69b-87edd3dac3b1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T16:03:36.451537+00:00", "session_id": "ebc9d82d-2abd-4033-a69b-87edd3dac3b1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T16:08:04.039650+00:00", "session_id": "ebc9d82d-2abd-4033-a69b-87edd3dac3b1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T16:11:26.809209+00:00", "session_id": "ebc9d82d-2abd-4033-a69b-87edd3dac3b1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T16:12:27.791393+00:00", "session_id": "ebc9d82d-2abd-4033-a69b-87edd3dac3b1", "event": "SessionEnd", "project": "adversarial-spec", "reason": "prompt_input_exit"}
+{"ts": "2026-04-29T16:12:36.773624+00:00", "session_id": "80ed33e7-3ddb-4060-ad50-ee0ff56ecd45", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "claude-opus-4-7[1m]"}
+{"ts": "2026-04-29T16:12:41.651591+00:00", "session_id": "80ed33e7-3ddb-4060-ad50-ee0ff56ecd45", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T16:15:17.916594+00:00", "session_id": "80ed33e7-3ddb-4060-ad50-ee0ff56ecd45", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T16:43:31.090736+00:00", "session_id": "80ed33e7-3ddb-4060-ad50-ee0ff56ecd45", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T16:54:21.052773+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.5"}
+{"ts": "2026-04-29T16:54:21.119184+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T17:11:38.527695+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T17:18:57.676708+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T17:22:28.885223+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T17:28:57.272310+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T17:39:02.700328+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T17:43:11.361357+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T17:45:20.914078+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T17:57:22.751708+00:00", "session_id": "80ed33e7-3ddb-4060-ad50-ee0ff56ecd45", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T17:58:20.694510+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T18:02:00.950690+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T18:03:02.874588+00:00", "session_id": "80ed33e7-3ddb-4060-ad50-ee0ff56ecd45", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T18:05:43.478321+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T18:06:23.318374+00:00", "session_id": "80ed33e7-3ddb-4060-ad50-ee0ff56ecd45", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T18:21:22.009975+00:00", "session_id": "80ed33e7-3ddb-4060-ad50-ee0ff56ecd45", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T18:23:26.955330+00:00", "session_id": "80ed33e7-3ddb-4060-ad50-ee0ff56ecd45", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T18:26:45.597390+00:00", "session_id": "80ed33e7-3ddb-4060-ad50-ee0ff56ecd45", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T19:01:23.192611+00:00", "session_id": "80ed33e7-3ddb-4060-ad50-ee0ff56ecd45", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T19:03:07.334870+00:00", "session_id": "80ed33e7-3ddb-4060-ad50-ee0ff56ecd45", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T19:07:20.369377+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T20:20:57.584793+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T20:41:51.038797+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T20:42:20.051767+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T20:57:19.783436+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T20:58:11.380057+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T22:52:55.879408+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T23:04:19.139612+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T23:05:11.565840+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T23:05:56.115909+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T23:06:44.957117+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T23:08:11.184889+00:00", "session_id": "c4ab42e6-f6d5-4c78-a624-f82b41fd5ff6", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-29T23:08:13.959350+00:00", "session_id": "c4ab42e6-f6d5-4c78-a624-f82b41fd5ff6", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T23:10:32.409780+00:00", "session_id": "c4ab42e6-f6d5-4c78-a624-f82b41fd5ff6", "event": "SessionEnd", "project": "adversarial-spec", "reason": "other"}
+{"ts": "2026-04-29T23:10:51.412252+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T23:11:26.320027+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T23:12:02.725306+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T23:12:58.311523+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T23:18:49.825205+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-29T23:20:42.195017+00:00", "session_id": "1b841e5e-411c-4b8d-ad55-4b9fe3bfefe9", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-29T23:20:43.177258+00:00", "session_id": "1b841e5e-411c-4b8d-ad55-4b9fe3bfefe9", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-29T23:22:31.743977+00:00", "session_id": "1b841e5e-411c-4b8d-ad55-4b9fe3bfefe9", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-30T01:25:56.386435+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-30T01:27:53.516279+00:00", "session_id": "5feeb4ae-e02c-4fb7-a78d-835843e67173", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-30T01:28:01.696720+00:00", "session_id": "5feeb4ae-e02c-4fb7-a78d-835843e67173", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-30T01:28:14.320379+00:00", "session_id": "5feeb4ae-e02c-4fb7-a78d-835843e67173", "event": "SessionEnd", "project": "adversarial-spec", "reason": "other"}
+{"ts": "2026-04-30T01:30:14.345769+00:00", "session_id": "0a6e4dbd-9e5d-450e-bc8a-918ddc3f1233", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-30T01:30:16.187494+00:00", "session_id": "0a6e4dbd-9e5d-450e-bc8a-918ddc3f1233", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-30T01:30:36.345352+00:00", "session_id": "0a6e4dbd-9e5d-450e-bc8a-918ddc3f1233", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-30T01:40:56.427461+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-30T01:43:14.709915+00:00", "session_id": "30ea7396-791d-4547-9aab-340c679d3609", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-30T01:43:17.172570+00:00", "session_id": "30ea7396-791d-4547-9aab-340c679d3609", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-30T01:43:21.098528+00:00", "session_id": "30ea7396-791d-4547-9aab-340c679d3609", "event": "SessionEnd", "project": "adversarial-spec", "reason": "other"}
+{"ts": "2026-04-30T01:45:06.683069+00:00", "session_id": "7e61ee0f-00f4-4d06-abca-1347e71fe063", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-04-30T01:45:07.250205+00:00", "session_id": "7e61ee0f-00f4-4d06-abca-1347e71fe063", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-04-30T01:45:20.700119+00:00", "session_id": "7e61ee0f-00f4-4d06-abca-1347e71fe063", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-04-30T02:04:49.264647+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-30T02:39:09.364581+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-30T02:40:46.706321+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-30T13:19:17.182820+00:00", "session_id": "80ed33e7-3ddb-4060-ad50-ee0ff56ecd45", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-30T13:30:11.464748+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-30T14:18:40.156591+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-30T16:03:21.359875+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-30T16:07:29.420540+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-30T18:29:55.940435+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-30T18:30:45.601274+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-30T19:51:19.261281+00:00", "session_id": "019dda29-8a5e-7142-837a-e453bb63e1e1", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-04-30T22:03:21.240164+00:00", "session_id": "80ed33e7-3ddb-4060-ad50-ee0ff56ecd45", "event": "SessionEnd", "project": "adversarial-spec", "reason": "other"}
+{"ts": "2026-05-04T20:37:06.896822+00:00", "session_id": "59fe5327-ecbe-4976-9b87-bcb45bdf9622", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T20:37:28.979576+00:00", "session_id": "0658b3fc-42df-4220-8d16-b21df2c43c38", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T20:38:14.322141+00:00", "session_id": "85aba1fe-29a0-461e-aea2-192a6db21209", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T20:38:14.347953+00:00", "session_id": "994da876-28b8-48ce-ae22-e28ccca45dbe", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T20:38:24.161124+00:00", "session_id": "f3031e7a-ff1d-4571-b8cf-8b5f5a3ad14e", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T20:38:31.696263+00:00", "session_id": "97026c38-b9cd-481c-b6e0-b587b7498890", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T20:38:45.776640+00:00", "session_id": "e25bcefd-3b1d-4bb4-9893-d20d4ab74663", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T20:38:57.464953+00:00", "session_id": "dd0cbcad-afff-43f7-9973-1632a5a0a4c4", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T20:39:02.483709+00:00", "session_id": "c695fb06-8e92-40ca-b16e-f6e17bf21c44", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:09:08.975438+00:00", "session_id": "213f6676-52a8-408d-a26f-3703ba5b7870", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:09:16.080745+00:00", "session_id": "399efb17-fc87-4a33-92c6-9d0ab560d7d9", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:09:45.293146+00:00", "session_id": "9c73f92a-6adf-4b8d-be55-d372db379504", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:09:57.873399+00:00", "session_id": "029dbe6f-a23e-4bed-b816-d909866d21ac", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:10:01.501323+00:00", "session_id": "c228935b-03e1-4dd1-8f7c-4f50b4867d14", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:10:15.866845+00:00", "session_id": "3259976d-9a08-48fb-8205-6cc211323283", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:10:44.207462+00:00", "session_id": "bbee78bf-3671-49b2-8089-3cdb513c2c3f", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:10:56.948984+00:00", "session_id": "63cef46a-bd38-405f-becd-4b7d1927bb50", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:11:14.590529+00:00", "session_id": "aa192bbe-57be-4814-a869-462c092f3eb3", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:11:30.695353+00:00", "session_id": "e1df6239-a05c-4244-9a84-fb9838a5ac86", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:11:36.316238+00:00", "session_id": "16cc5e6b-8c1c-49b4-9aad-53ec298393b4", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:39:27.575969+00:00", "session_id": "9c73f92a-6adf-4b8d-be55-d372db379504", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T21:39:45.228946+00:00", "session_id": "029dbe6f-a23e-4bed-b816-d909866d21ac", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T21:39:50.102219+00:00", "session_id": "c228935b-03e1-4dd1-8f7c-4f50b4867d14", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T21:39:51.835537+00:00", "session_id": "213f6676-52a8-408d-a26f-3703ba5b7870", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T21:39:52.259685+00:00", "session_id": "399efb17-fc87-4a33-92c6-9d0ab560d7d9", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T21:39:52.976852+00:00", "session_id": "aa192bbe-57be-4814-a869-462c092f3eb3", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T21:39:53.504592+00:00", "session_id": "3259976d-9a08-48fb-8205-6cc211323283", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T21:39:54.385386+00:00", "session_id": "bbee78bf-3671-49b2-8089-3cdb513c2c3f", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T21:40:21.524295+00:00", "session_id": "16cc5e6b-8c1c-49b4-9aad-53ec298393b4", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T21:40:39.930239+00:00", "session_id": "63cef46a-bd38-405f-becd-4b7d1927bb50", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T21:40:42.165080+00:00", "session_id": "e1df6239-a05c-4244-9a84-fb9838a5ac86", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T21:42:13.178060+00:00", "session_id": "350386d3-d0c7-4640-ac30-84942e9d9214", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:42:17.543592+00:00", "session_id": "a2aba344-c85d-403d-8899-9970b05099af", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:42:17.698303+00:00", "session_id": "6e54b31c-d839-4c6b-82a3-60a448a6450f", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:42:17.731259+00:00", "session_id": "da79376f-d09d-47dc-8ccd-c53d1c8e42b4", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:42:43.578877+00:00", "session_id": "a2f98386-22d8-4558-8925-9aee5800a950", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:42:58.195717+00:00", "session_id": "f7d651ec-6846-4a29-86a1-da6de9f22c04", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:43:06.182328+00:00", "session_id": "fe8d4705-b6b8-4027-8566-04d9f8bae0f4", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:43:13.946745+00:00", "session_id": "403027f8-2e76-46b6-950a-6428569932c5", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:43:29.448286+00:00", "session_id": "391f328a-45b9-4f8d-b01c-8a05731a61cc", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T21:43:44.613820+00:00", "session_id": "4e6675d1-1027-4d73-8401-736e70efe2b8", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:08:35.325398+00:00", "session_id": "a2aba344-c85d-403d-8899-9970b05099af", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T22:08:49.812168+00:00", "session_id": "f7d651ec-6846-4a29-86a1-da6de9f22c04", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T22:08:51.334651+00:00", "session_id": "da79376f-d09d-47dc-8ccd-c53d1c8e42b4", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T22:08:51.851028+00:00", "session_id": "6e54b31c-d839-4c6b-82a3-60a448a6450f", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T22:08:54.407120+00:00", "session_id": "350386d3-d0c7-4640-ac30-84942e9d9214", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T22:08:57.624287+00:00", "session_id": "fe8d4705-b6b8-4027-8566-04d9f8bae0f4", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T22:08:57.706249+00:00", "session_id": "a2f98386-22d8-4558-8925-9aee5800a950", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T22:09:29.194569+00:00", "session_id": "4e6675d1-1027-4d73-8401-736e70efe2b8", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T22:09:33.197784+00:00", "session_id": "f7d651ec-6846-4a29-86a1-da6de9f22c04", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-04T22:09:33.298036+00:00", "session_id": "a2aba344-c85d-403d-8899-9970b05099af", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-04T22:09:37.746548+00:00", "session_id": "6e54b31c-d839-4c6b-82a3-60a448a6450f", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-04T22:09:40.297449+00:00", "session_id": "a2f98386-22d8-4558-8925-9aee5800a950", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-04T22:09:42.386789+00:00", "session_id": "403027f8-2e76-46b6-950a-6428569932c5", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T22:09:42.736070+00:00", "session_id": "391f328a-45b9-4f8d-b01c-8a05731a61cc", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T22:09:44.611645+00:00", "session_id": "4e6675d1-1027-4d73-8401-736e70efe2b8", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-04T22:10:11.925293+00:00", "session_id": "fe8d4705-b6b8-4027-8566-04d9f8bae0f4", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-04T22:10:29.450502+00:00", "session_id": "391f328a-45b9-4f8d-b01c-8a05731a61cc", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-04T22:10:29.644163+00:00", "session_id": "350386d3-d0c7-4640-ac30-84942e9d9214", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-04T22:10:38.723090+00:00", "session_id": "da79376f-d09d-47dc-8ccd-c53d1c8e42b4", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-04T22:15:53.058036+00:00", "session_id": "fbd73dd4-bb8a-4710-89cd-c376056db4fd", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:16:21.647616+00:00", "session_id": "5a7c0bc5-dcc8-49c2-8e0a-1c8fc9c2b017", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:16:40.289984+00:00", "session_id": "b7ec6176-7006-4643-a036-931f71bb6207", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:17:03.583491+00:00", "session_id": "dfbcd7e3-2191-49b0-9e17-abc0569ea04e", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:17:22.412641+00:00", "session_id": "fd05c472-a329-408b-9c1f-722d6f1bce8b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:17:37.686597+00:00", "session_id": "9fd6506f-10c2-4500-8d25-3bd3050d8f43", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:18:13.415513+00:00", "session_id": "af01bba0-dac9-4b6c-a8a9-c17b8d2ab910", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:18:30.716743+00:00", "session_id": "1c47ab27-b54c-4cdf-9843-c135cd1f31e6", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:18:32.073488+00:00", "session_id": "f5e9bb8a-d37f-4c71-ba01-34c1041ecbf9", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:19:13.936113+00:00", "session_id": "af01bba0-dac9-4b6c-a8a9-c17b8d2ab910", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-04T22:35:23.799478+00:00", "session_id": "fbd73dd4-bb8a-4710-89cd-c376056db4fd", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T22:35:55.389395+00:00", "session_id": "5a7c0bc5-dcc8-49c2-8e0a-1c8fc9c2b017", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T22:36:55.137793+00:00", "session_id": "fbd73dd4-bb8a-4710-89cd-c376056db4fd", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-04T22:37:39.336502+00:00", "session_id": "b7ec6176-7006-4643-a036-931f71bb6207", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T22:37:55.129852+00:00", "session_id": "dfbcd7e3-2191-49b0-9e17-abc0569ea04e", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T22:38:01.351041+00:00", "session_id": "9fd6506f-10c2-4500-8d25-3bd3050d8f43", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T22:38:04.164577+00:00", "session_id": "fd05c472-a329-408b-9c1f-722d6f1bce8b", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T22:38:43.504664+00:00", "session_id": "1c47ab27-b54c-4cdf-9843-c135cd1f31e6", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T22:38:43.651999+00:00", "session_id": "f5e9bb8a-d37f-4c71-ba01-34c1041ecbf9", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T22:38:52.095942+00:00", "session_id": "5a7c0bc5-dcc8-49c2-8e0a-1c8fc9c2b017", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-04T22:39:07.957103+00:00", "session_id": "dfbcd7e3-2191-49b0-9e17-abc0569ea04e", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-04T22:39:11.425489+00:00", "session_id": "9fd6506f-10c2-4500-8d25-3bd3050d8f43", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-04T22:39:14.310398+00:00", "session_id": "b7ec6176-7006-4643-a036-931f71bb6207", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-04T22:40:11.777741+00:00", "session_id": "1c47ab27-b54c-4cdf-9843-c135cd1f31e6", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-04T22:40:59.557888+00:00", "session_id": "fd05c472-a329-408b-9c1f-722d6f1bce8b", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-04T22:41:27.270585+00:00", "session_id": "f5e9bb8a-d37f-4c71-ba01-34c1041ecbf9", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-04T22:41:33.230092+00:00", "session_id": "7eac621b-13ad-4557-b861-165cb758e280", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:41:46.500338+00:00", "session_id": "73bca819-bc86-4316-b31f-84de5b77d991", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:42:00.687115+00:00", "session_id": "54ea722c-e282-4097-8497-6c69a6667eb1", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:42:16.163818+00:00", "session_id": "433bf810-c6e0-46dc-86c8-8ec47cd8c90f", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:42:31.001947+00:00", "session_id": "1f2eb30f-e649-416d-9f58-42ffe836945a", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:42:46.382509+00:00", "session_id": "82cbe786-fc90-4d62-a252-1e416702bc77", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:43:02.602822+00:00", "session_id": "e7118a48-f379-4136-83d5-c020ced04d8a", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:43:16.706827+00:00", "session_id": "4f2678f1-6d8e-471d-91db-82d963896418", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:43:32.360990+00:00", "session_id": "3349218d-f4a1-4c21-aaac-d40f64851500", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:44:03.475285+00:00", "session_id": "d02c79a3-4cdc-4898-aa97-bed92aa15b0c", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T22:44:32.085319+00:00", "session_id": "dbd1532e-0fe3-46e3-9ab8-1b39a8101505", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T23:12:14.929142+00:00", "session_id": "73bca819-bc86-4316-b31f-84de5b77d991", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:14:06.138066+00:00", "session_id": "a04d3118-c7cc-4a1d-a5ce-bceafb78a0c1", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T23:14:33.660545+00:00", "session_id": "333d2b68-54e4-4dd1-876a-10e6abeb1f86", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T23:14:44.077509+00:00", "session_id": "534a1779-6c5c-4518-a4b3-01eb828be626", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T23:14:50.058041+00:00", "session_id": "09f79fec-815e-4844-bfcc-47196574754b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T23:15:05.552402+00:00", "session_id": "54ea722c-e282-4097-8497-6c69a6667eb1", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:15:32.382438+00:00", "session_id": "1f2eb30f-e649-416d-9f58-42ffe836945a", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:15:37.959114+00:00", "session_id": "6affcd5f-b314-4e81-8526-42af3183c99e", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T23:15:39.812841+00:00", "session_id": "3f29fa95-86d3-4d99-b865-344eb052a646", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T23:15:40.024692+00:00", "session_id": "7eac621b-13ad-4557-b861-165cb758e280", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:15:56.528672+00:00", "session_id": "ace97c42-ecb5-4f4c-b463-c3e9d14619d6", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T23:15:58.788679+00:00", "session_id": "433bf810-c6e0-46dc-86c8-8ec47cd8c90f", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:16:03.896113+00:00", "session_id": "4403aee6-a430-409a-97fb-fcba60935acc", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T23:16:54.630816+00:00", "session_id": "20efe1d0-8e25-475e-9162-37ae27dc4bac", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T23:16:54.654294+00:00", "session_id": "9473f032-af1b-4d68-82b0-0f6dd7444df6", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-04T23:18:59.628936+00:00", "session_id": "82cbe786-fc90-4d62-a252-1e416702bc77", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:19:25.957240+00:00", "session_id": "e7118a48-f379-4136-83d5-c020ced04d8a", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:20:41.372233+00:00", "session_id": "d02c79a3-4cdc-4898-aa97-bed92aa15b0c", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:21:34.636483+00:00", "session_id": "dbd1532e-0fe3-46e3-9ab8-1b39a8101505", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:22:45.229756+00:00", "session_id": "3349218d-f4a1-4c21-aaac-d40f64851500", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:23:00.686379+00:00", "session_id": "4f2678f1-6d8e-471d-91db-82d963896418", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:49:32.198475+00:00", "session_id": "333d2b68-54e4-4dd1-876a-10e6abeb1f86", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:49:38.074712+00:00", "session_id": "09f79fec-815e-4844-bfcc-47196574754b", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:49:48.835556+00:00", "session_id": "a04d3118-c7cc-4a1d-a5ce-bceafb78a0c1", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:49:56.958994+00:00", "session_id": "6affcd5f-b314-4e81-8526-42af3183c99e", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:51:56.106155+00:00", "session_id": "20efe1d0-8e25-475e-9162-37ae27dc4bac", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:51:57.118581+00:00", "session_id": "4403aee6-a430-409a-97fb-fcba60935acc", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:51:57.319979+00:00", "session_id": "9473f032-af1b-4d68-82b0-0f6dd7444df6", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:52:00.430538+00:00", "session_id": "ace97c42-ecb5-4f4c-b463-c3e9d14619d6", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:52:00.658968+00:00", "session_id": "534a1779-6c5c-4518-a4b3-01eb828be626", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-04T23:52:03.194673+00:00", "session_id": "3f29fa95-86d3-4d99-b865-344eb052a646", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T00:01:11.680434+00:00", "session_id": "242528dd-cfe3-4d70-b1e2-239ac4cb1c6e", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:01:24.435318+00:00", "session_id": "75723b94-6daa-44f2-8f7f-d778530de3ed", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:01:39.534855+00:00", "session_id": "5a398a03-d19e-46f1-9f0d-baba7a6bb954", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:02:09.578866+00:00", "session_id": "bee9a288-176c-491f-982c-fa72c562550b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:02:24.661648+00:00", "session_id": "b1a9c5bd-97cd-4ed1-a670-2c3a64217234", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:02:39.928181+00:00", "session_id": "ccf19318-3f8c-49c0-81ad-cd28fe6fba9c", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:02:48.138208+00:00", "session_id": "20d241b1-ba11-4cfc-bccb-f6010e721357", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:02:55.582642+00:00", "session_id": "f2fcaa2d-0bcf-41f6-86b5-68b403445dc1", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:03:11.131646+00:00", "session_id": "2175f050-6473-4300-bfdd-9953eaea3708", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:03:25.606562+00:00", "session_id": "81d74ea1-9320-4f07-a147-4052f9150d19", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:03:41.989158+00:00", "session_id": "7985e379-12a8-4e5a-ad2c-494230df07fe", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:48:24.002714+00:00", "session_id": "fd697f8c-7112-4b4e-b6fb-0e08d9e146a9", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:48:38.691718+00:00", "session_id": "347b4d02-4266-43db-a7b0-14da6fcf72a8", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:48:53.354286+00:00", "session_id": "0b889156-e983-4864-ae64-75c696878844", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:49:06.547923+00:00", "session_id": "0d40598e-f60f-4edd-bd72-394a1a56d1c7", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:49:22.082606+00:00", "session_id": "2e3f7849-e5b5-495e-8b7b-c25e73d438a7", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:49:36.882102+00:00", "session_id": "869a2e24-464f-42e3-b8e3-341f6c9de102", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:49:51.588215+00:00", "session_id": "d0af2499-8d1c-451b-a9af-a2f171f7c07c", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:50:07.875854+00:00", "session_id": "aec54c7c-1780-4d68-9d45-f6284a510197", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:50:23.254115+00:00", "session_id": "48d8f086-c828-42a2-8a83-3d638e7d46e4", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:50:38.544736+00:00", "session_id": "19a42b78-8f04-4591-b83e-743ee9b26ae4", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T00:50:53.189748+00:00", "session_id": "ae42ab13-d883-4fad-86e7-da1aa67ffec3", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T01:16:26.810553+00:00", "session_id": "fd697f8c-7112-4b4e-b6fb-0e08d9e146a9", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:17:19.926262+00:00", "session_id": "fd697f8c-7112-4b4e-b6fb-0e08d9e146a9", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-05T01:17:27.881025+00:00", "session_id": "347b4d02-4266-43db-a7b0-14da6fcf72a8", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:18:32.206700+00:00", "session_id": "347b4d02-4266-43db-a7b0-14da6fcf72a8", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-05T01:18:45.032748+00:00", "session_id": "0b889156-e983-4864-ae64-75c696878844", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:20:06.869067+00:00", "session_id": "0d40598e-f60f-4edd-bd72-394a1a56d1c7", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:20:12.390080+00:00", "session_id": "2e3f7849-e5b5-495e-8b7b-c25e73d438a7", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:20:23.220640+00:00", "session_id": "869a2e24-464f-42e3-b8e3-341f6c9de102", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:20:55.919860+00:00", "session_id": "e174a2a5-a246-481f-951a-1c0a04c53b0d", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T01:21:02.160908+00:00", "session_id": "d0af2499-8d1c-451b-a9af-a2f171f7c07c", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:21:07.559711+00:00", "session_id": "edea4fc6-0200-4403-a27a-36740f52a389", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T01:21:10.209483+00:00", "session_id": "aec54c7c-1780-4d68-9d45-f6284a510197", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:21:10.608250+00:00", "session_id": "48d8f086-c828-42a2-8a83-3d638e7d46e4", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:21:23.843466+00:00", "session_id": "3c431a76-369a-4d84-b526-bab79adaaf83", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T01:21:26.145585+00:00", "session_id": "19a42b78-8f04-4591-b83e-743ee9b26ae4", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:21:28.056801+00:00", "session_id": "ae42ab13-d883-4fad-86e7-da1aa67ffec3", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:21:37.046355+00:00", "session_id": "a1bbbda7-a80b-40a2-bab2-05551e4860f6", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T01:21:54.242251+00:00", "session_id": "67099cd6-3a5f-4aec-8f09-586f16c0cb96", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T01:22:06.839481+00:00", "session_id": "cfe5e76a-b26a-4561-9771-ca09cd275fb0", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T01:22:22.574823+00:00", "session_id": "82201636-ad0c-442f-8db6-b9bede68e74c", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T01:22:37.557541+00:00", "session_id": "9ab80741-a982-407f-b82a-209ff7c5effe", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T01:22:53.062561+00:00", "session_id": "2cd876a5-c69e-4529-933e-f82df2ae65dc", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T01:23:15.858131+00:00", "session_id": "07e1298f-8763-43fc-8660-19f5a2c4883b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-05-05T01:44:41.888194+00:00", "session_id": "e174a2a5-a246-481f-951a-1c0a04c53b0d", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:44:47.635288+00:00", "session_id": "edea4fc6-0200-4403-a27a-36740f52a389", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:45:24.537846+00:00", "session_id": "e174a2a5-a246-481f-951a-1c0a04c53b0d", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-05T01:46:06.854799+00:00", "session_id": "3c431a76-369a-4d84-b526-bab79adaaf83", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:46:28.926819+00:00", "session_id": "a1bbbda7-a80b-40a2-bab2-05551e4860f6", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:46:52.285788+00:00", "session_id": "67099cd6-3a5f-4aec-8f09-586f16c0cb96", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:46:56.587077+00:00", "session_id": "cfe5e76a-b26a-4561-9771-ca09cd275fb0", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:47:00.847628+00:00", "session_id": "82201636-ad0c-442f-8db6-b9bede68e74c", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:47:03.970109+00:00", "session_id": "3c431a76-369a-4d84-b526-bab79adaaf83", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-05T01:47:05.612738+00:00", "session_id": "9ab80741-a982-407f-b82a-209ff7c5effe", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:47:27.844419+00:00", "session_id": "edea4fc6-0200-4403-a27a-36740f52a389", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-05T01:47:28.741098+00:00", "session_id": "07e1298f-8763-43fc-8660-19f5a2c4883b", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:47:35.852564+00:00", "session_id": "2cd876a5-c69e-4529-933e-f82df2ae65dc", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-05-05T01:47:37.298898+00:00", "session_id": "67099cd6-3a5f-4aec-8f09-586f16c0cb96", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-05T01:47:44.143672+00:00", "session_id": "07e1298f-8763-43fc-8660-19f5a2c4883b", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-05T01:47:50.375336+00:00", "session_id": "cfe5e76a-b26a-4561-9771-ca09cd275fb0", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-05T01:48:05.692200+00:00", "session_id": "82201636-ad0c-442f-8db6-b9bede68e74c", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-05T01:48:07.189508+00:00", "session_id": "9ab80741-a982-407f-b82a-209ff7c5effe", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-05T01:48:23.994688+00:00", "session_id": "2cd876a5-c69e-4529-933e-f82df2ae65dc", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-05T01:48:56.511637+00:00", "session_id": "a1bbbda7-a80b-40a2-bab2-05551e4860f6", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-05-30T18:37:46.663990+00:00", "session_id": "0c6d6252-bc68-48a0-9604-1bf147c71e82", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "claude-opus-4-8[1m]"}
+{"ts": "2026-05-30T18:38:04.100848+00:00", "session_id": "0c6d6252-bc68-48a0-9604-1bf147c71e82", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-05-30T18:41:51.052058+00:00", "session_id": "0c6d6252-bc68-48a0-9604-1bf147c71e82", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-05-30T18:48:27.769623+00:00", "session_id": "0c6d6252-bc68-48a0-9604-1bf147c71e82", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-05-30T19:10:15.539010+00:00", "session_id": "0c6d6252-bc68-48a0-9604-1bf147c71e82", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-05-30T19:55:23.156442+00:00", "session_id": "0c6d6252-bc68-48a0-9604-1bf147c71e82", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-05-30T19:57:03.508421+00:00", "session_id": "0c6d6252-bc68-48a0-9604-1bf147c71e82", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-05-30T19:59:08.544073+00:00", "session_id": "0c6d6252-bc68-48a0-9604-1bf147c71e82", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-05-30T19:59:08.743964+00:00", "session_id": "0c6d6252-bc68-48a0-9604-1bf147c71e82", "event": "SessionEnd", "project": "adversarial-spec", "reason": "other"}
+{"ts": "2026-06-08T19:45:25.917428+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "claude-opus-4-8[1m]"}
+{"ts": "2026-06-08T19:45:36.218655+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-08T19:58:46.777375+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-08T20:23:00.976413+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-08T20:27:23.346649+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-08T20:44:42.967008+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-08T21:05:38.361535+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-08T21:13:33.784591+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T14:39:42.073578+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T14:41:01.009879+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T16:39:36.065337+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T16:59:47.219255+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T17:06:32.590315+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T19:12:26.540535+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T19:12:26.994025+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "SessionEnd", "project": "adversarial-spec", "reason": "prompt_input_exit"}
+{"ts": "2026-06-09T19:12:41.900364+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "SessionStart", "project": "adversarial-spec", "source": "resume", "model": ""}
+{"ts": "2026-06-09T19:13:21.501816+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T19:15:53.848300+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T19:17:07.644490+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T20:17:11.642658+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T20:23:27.178903+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T20:26:58.625614+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T20:37:17.098407+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T20:38:41.632047+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T20:44:49.016194+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T20:49:40.791439+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T20:52:27.418781+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T20:56:10.659197+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T21:00:24.684751+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T21:18:52.725359+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T22:06:15.126078+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T22:28:05.908826+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-09T22:35:02.213895+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-10T03:50:55.309030+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-10T04:07:35.650840+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-10T04:07:37.547211+00:00", "session_id": "28cf18ce-f432-43ce-8dfa-21fbc61066d7", "event": "SessionEnd", "project": "adversarial-spec", "reason": "prompt_input_exit"}
+{"ts": "2026-06-10T04:07:51.827322+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "claude-fable-5[1m]"}
+{"ts": "2026-06-10T04:08:01.966225+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-10T04:19:30.870384+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-10T04:23:28.250405+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-10T04:27:08.080386+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T00:08:58.078670+00:00", "session_id": "873ca820-2cd5-402c-8e7b-3e14ac60d599", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "claude-fable-5[1m]"}
+{"ts": "2026-06-11T01:36:25.583361+00:00", "session_id": "873ca820-2cd5-402c-8e7b-3e14ac60d599", "event": "SessionEnd", "project": "adversarial-spec", "reason": "resume"}
+{"ts": "2026-06-11T01:36:25.590709+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "SessionStart", "project": "adversarial-spec", "source": "resume", "model": "claude-fable-5[1m]"}
+{"ts": "2026-06-11T01:42:44.870014+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T01:45:47.659045+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "SessionEnd", "project": "adversarial-spec", "reason": "logout"}
+{"ts": "2026-06-11T01:46:22.258648+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "SessionStart", "project": "adversarial-spec", "source": "resume", "model": ""}
+{"ts": "2026-06-11T01:46:26.460346+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T03:39:04.336363+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T03:43:24.085123+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T04:07:00.798613+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T04:10:08.427695+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T04:15:50.538433+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T04:17:04.070012+00:00", "session_id": "d980897a-cd4d-4f78-9197-17f0cf0fce23", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T04:17:05.081773+00:00", "session_id": "d980897a-cd4d-4f78-9197-17f0cf0fce23", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T04:17:05.585647+00:00", "session_id": "d980897a-cd4d-4f78-9197-17f0cf0fce23", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T04:17:12.980763+00:00", "session_id": "292a7f0b-aef0-4d1b-992f-311183012057", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T04:17:13.885269+00:00", "session_id": "292a7f0b-aef0-4d1b-992f-311183012057", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T04:17:14.299244+00:00", "session_id": "292a7f0b-aef0-4d1b-992f-311183012057", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T04:17:22.481376+00:00", "session_id": "20aab193-ac08-49af-ba00-98b87ecad5b3", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T04:17:23.274690+00:00", "session_id": "20aab193-ac08-49af-ba00-98b87ecad5b3", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T04:17:23.943509+00:00", "session_id": "20aab193-ac08-49af-ba00-98b87ecad5b3", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T04:18:58.952477+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T04:23:01.325639+00:00", "session_id": "fd1dd32b-7b29-4ad8-ab8f-30f2a58d1a45", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T04:23:22.560268+00:00", "session_id": "fd1dd32b-7b29-4ad8-ab8f-30f2a58d1a45", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T04:23:22.665384+00:00", "session_id": "fd1dd32b-7b29-4ad8-ab8f-30f2a58d1a45", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T04:23:22.800193+00:00", "session_id": "fd1dd32b-7b29-4ad8-ab8f-30f2a58d1a45", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T04:23:27.718564+00:00", "session_id": "0e8456ca-d718-4116-8d25-727ac055620a", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T04:24:39.574231+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T04:25:29.933363+00:00", "session_id": "29f71e92-e366-4614-9423-287b7d6e7bfe", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T04:25:30.764223+00:00", "session_id": "29f71e92-e366-4614-9423-287b7d6e7bfe", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T04:26:31.457079+00:00", "session_id": "29f71e92-e366-4614-9423-287b7d6e7bfe", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T04:26:32.300441+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T04:31:06.985166+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T04:40:01.169451+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T04:43:30.591065+00:00", "session_id": "435b51f8-b8bf-4016-940b-232d6ae11a80", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T04:43:31.357302+00:00", "session_id": "435b51f8-b8bf-4016-940b-232d6ae11a80", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T04:45:35.790850+00:00", "session_id": "435b51f8-b8bf-4016-940b-232d6ae11a80", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T04:54:22.345306+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T04:57:38.349831+00:00", "session_id": "e8e2b84f-bc38-4bb1-a5e6-138dad2344ab", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T04:57:39.027184+00:00", "session_id": "e8e2b84f-bc38-4bb1-a5e6-138dad2344ab", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T05:01:33.727673+00:00", "session_id": "e8e2b84f-bc38-4bb1-a5e6-138dad2344ab", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T05:09:01.429766+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T05:13:02.907015+00:00", "session_id": "8cdc503e-5d18-4888-8921-27906d0086b4", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T05:13:03.543051+00:00", "session_id": "8cdc503e-5d18-4888-8921-27906d0086b4", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T05:15:33.737977+00:00", "session_id": "8cdc503e-5d18-4888-8921-27906d0086b4", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T05:21:29.609747+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T05:22:52.697988+00:00", "session_id": "586b9390-c63a-4883-b724-eac9db3a24be", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T05:22:53.406270+00:00", "session_id": "586b9390-c63a-4883-b724-eac9db3a24be", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T05:23:37.327239+00:00", "session_id": "586b9390-c63a-4883-b724-eac9db3a24be", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T05:25:45.142340+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T05:27:40.468143+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T05:34:34.826460+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T05:34:36.770326+00:00", "session_id": "ee9d38e1-3d58-4b45-b572-6b62f8cc16ee", "event": "SessionEnd", "project": "adversarial-spec", "reason": "prompt_input_exit"}
+{"ts": "2026-06-11T05:34:39.836165+00:00", "session_id": "1ec27969-d5b3-48e3-be18-99ffed41814e", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "claude-fable-5"}
+{"ts": "2026-06-11T05:34:42.334135+00:00", "session_id": "1ec27969-d5b3-48e3-be18-99ffed41814e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T05:40:03.882048+00:00", "session_id": "1ec27969-d5b3-48e3-be18-99ffed41814e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T05:44:03.923949+00:00", "session_id": "1ec27969-d5b3-48e3-be18-99ffed41814e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T05:57:34.089294+00:00", "session_id": "1ec27969-d5b3-48e3-be18-99ffed41814e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T14:13:13.528855+00:00", "session_id": "1ec27969-d5b3-48e3-be18-99ffed41814e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T14:23:30.155652+00:00", "session_id": "1ec27969-d5b3-48e3-be18-99ffed41814e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T14:45:44.728638+00:00", "session_id": "1ec27969-d5b3-48e3-be18-99ffed41814e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T14:45:46.089875+00:00", "session_id": "1ec27969-d5b3-48e3-be18-99ffed41814e", "event": "SessionEnd", "project": "adversarial-spec", "reason": "prompt_input_exit"}
+{"ts": "2026-06-11T14:45:49.265073+00:00", "session_id": "4eff4b55-9902-49ee-ab9d-10f45d40dfdf", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "claude-fable-5"}
+{"ts": "2026-06-11T14:45:52.092028+00:00", "session_id": "4eff4b55-9902-49ee-ab9d-10f45d40dfdf", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T14:52:57.297376+00:00", "session_id": "c125c2ad-70a7-4569-bfe1-2af265edf64b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T14:52:57.925595+00:00", "session_id": "c125c2ad-70a7-4569-bfe1-2af265edf64b", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T14:53:08.256647+00:00", "session_id": "fd3078ff-d86a-4b86-ae5a-15a44ed6efc6", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T14:53:08.970775+00:00", "session_id": "fd3078ff-d86a-4b86-ae5a-15a44ed6efc6", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T14:53:23.055210+00:00", "session_id": "f3fb3c48-cd3a-4ccf-b283-508e0262c536", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T14:53:23.679436+00:00", "session_id": "f3fb3c48-cd3a-4ccf-b283-508e0262c536", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T14:53:37.963509+00:00", "session_id": "fa94d58f-5154-43e2-ab31-0d5a5d7e2457", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T14:53:38.578325+00:00", "session_id": "fa94d58f-5154-43e2-ab31-0d5a5d7e2457", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T14:53:42.525637+00:00", "session_id": "4eff4b55-9902-49ee-ab9d-10f45d40dfdf", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T14:53:53.007527+00:00", "session_id": "87c13751-0a0b-43ce-a50a-fc720b7c2b39", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T14:53:53.558506+00:00", "session_id": "87c13751-0a0b-43ce-a50a-fc720b7c2b39", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T14:53:57.616123+00:00", "session_id": "c125c2ad-70a7-4569-bfe1-2af265edf64b", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T14:54:08.295560+00:00", "session_id": "16a48b1e-e58d-482d-9f92-c9073aa0469d", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T14:54:08.932564+00:00", "session_id": "16a48b1e-e58d-482d-9f92-c9073aa0469d", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T14:54:18.414445+00:00", "session_id": "fd3078ff-d86a-4b86-ae5a-15a44ed6efc6", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T14:54:23.271141+00:00", "session_id": "89af3fad-a109-458f-b08f-6559d56992e5", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T14:54:23.775632+00:00", "session_id": "89af3fad-a109-458f-b08f-6559d56992e5", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T14:54:29.866293+00:00", "session_id": "fa94d58f-5154-43e2-ab31-0d5a5d7e2457", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T14:55:46.187572+00:00", "session_id": "87c13751-0a0b-43ce-a50a-fc720b7c2b39", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T14:56:31.060711+00:00", "session_id": "89af3fad-a109-458f-b08f-6559d56992e5", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T14:58:08.730516+00:00", "session_id": "f3fb3c48-cd3a-4ccf-b283-508e0262c536", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T14:59:15.139588+00:00", "session_id": "16a48b1e-e58d-482d-9f92-c9073aa0469d", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:07:49.808179+00:00", "session_id": "4eff4b55-9902-49ee-ab9d-10f45d40dfdf", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:10:57.039600+00:00", "session_id": "4eff4b55-9902-49ee-ab9d-10f45d40dfdf", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:42:10.763446+00:00", "session_id": "869dc3c6-8904-4e27-8835-de4f203f504a", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:42:11.509281+00:00", "session_id": "869dc3c6-8904-4e27-8835-de4f203f504a", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:42:21.912572+00:00", "session_id": "d2f09ef5-d4f5-4834-83e8-e1790454342b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:42:22.539543+00:00", "session_id": "d2f09ef5-d4f5-4834-83e8-e1790454342b", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:42:35.707571+00:00", "session_id": "8efcb741-8b1b-460c-bf13-10e075f70b0b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:42:36.283498+00:00", "session_id": "8efcb741-8b1b-460c-bf13-10e075f70b0b", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:42:49.968397+00:00", "session_id": "e84c8ac7-125a-4eb5-867a-6647d0873c45", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:42:50.606863+00:00", "session_id": "e84c8ac7-125a-4eb5-867a-6647d0873c45", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:43:06.296284+00:00", "session_id": "6fee06b4-01f2-449a-b43f-8b440eff7cf5", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:43:06.982154+00:00", "session_id": "6fee06b4-01f2-449a-b43f-8b440eff7cf5", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:43:08.343937+00:00", "session_id": "9a51f2ce-abab-4569-a7b0-b65ec87e2493", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:43:08.918160+00:00", "session_id": "9a51f2ce-abab-4569-a7b0-b65ec87e2493", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:43:09.442505+00:00", "session_id": "9a51f2ce-abab-4569-a7b0-b65ec87e2493", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:43:20.689187+00:00", "session_id": "ba6752e2-df7c-48cb-8c2d-cef07e74c078", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:43:21.323181+00:00", "session_id": "ba6752e2-df7c-48cb-8c2d-cef07e74c078", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:43:30.025398+00:00", "session_id": "04d4bc88-f210-4085-8076-136bd7f0dd2d", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:43:30.665506+00:00", "session_id": "04d4bc88-f210-4085-8076-136bd7f0dd2d", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:43:31.190248+00:00", "session_id": "04d4bc88-f210-4085-8076-136bd7f0dd2d", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:43:54.035361+00:00", "session_id": "343731c7-e35f-4d9a-a614-37a4b69823df", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:43:54.035779+00:00", "session_id": "9f52626a-273b-4517-b2ba-6ac8b1fa2c6e", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:43:54.118764+00:00", "session_id": "2cb1c248-dfa5-443e-bd58-f52e29082200", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:43:54.581015+00:00", "session_id": "343731c7-e35f-4d9a-a614-37a4b69823df", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:43:54.691858+00:00", "session_id": "2cb1c248-dfa5-443e-bd58-f52e29082200", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:43:54.706540+00:00", "session_id": "9f52626a-273b-4517-b2ba-6ac8b1fa2c6e", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:43:56.297224+00:00", "session_id": "2cb1c248-dfa5-443e-bd58-f52e29082200", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:43:57.626085+00:00", "session_id": "343731c7-e35f-4d9a-a614-37a4b69823df", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:43:58.030908+00:00", "session_id": "9f52626a-273b-4517-b2ba-6ac8b1fa2c6e", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:44:04.686175+00:00", "session_id": "869dc3c6-8904-4e27-8835-de4f203f504a", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:44:10.563589+00:00", "session_id": "4eff4b55-9902-49ee-ab9d-10f45d40dfdf", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:44:28.024711+00:00", "session_id": "d2f09ef5-d4f5-4834-83e8-e1790454342b", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:44:50.396078+00:00", "session_id": "ba6752e2-df7c-48cb-8c2d-cef07e74c078", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:44:57.405295+00:00", "session_id": "6fee06b4-01f2-449a-b43f-8b440eff7cf5", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:45:10.139586+00:00", "session_id": "e84c8ac7-125a-4eb5-867a-6647d0873c45", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:45:17.432222+00:00", "session_id": "8efcb741-8b1b-460c-bf13-10e075f70b0b", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:46:29.285833+00:00", "session_id": "dc0ef1e0-049b-48d4-b928-ca0176da9ea1", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:46:56.172303+00:00", "session_id": "e8f1f04d-74f4-40bb-adb2-4ed41ad11575", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:46:56.826596+00:00", "session_id": "e8f1f04d-74f4-40bb-adb2-4ed41ad11575", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:47:09.493851+00:00", "session_id": "af12fc99-6e77-41b9-b380-82641fdadd86", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:47:10.128345+00:00", "session_id": "af12fc99-6e77-41b9-b380-82641fdadd86", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:47:24.700004+00:00", "session_id": "c803c277-8302-4c08-a62b-db6ada02b29d", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:47:25.238670+00:00", "session_id": "c803c277-8302-4c08-a62b-db6ada02b29d", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:47:39.694141+00:00", "session_id": "f7d2d358-2438-4b23-a2d6-5e56574b2992", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:47:40.279783+00:00", "session_id": "f7d2d358-2438-4b23-a2d6-5e56574b2992", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:47:55.361413+00:00", "session_id": "cf573a81-e133-4c07-9dd2-ae2e407d45e1", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:47:56.009979+00:00", "session_id": "cf573a81-e133-4c07-9dd2-ae2e407d45e1", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:47:59.900085+00:00", "session_id": "e8f1f04d-74f4-40bb-adb2-4ed41ad11575", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:48:01.781690+00:00", "session_id": "8ab98cea-e0dc-496b-8706-cff7171422ef", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:48:02.729080+00:00", "session_id": "dc0ef1e0-049b-48d4-b928-ca0176da9ea1", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:48:42.356536+00:00", "session_id": "af12fc99-6e77-41b9-b380-82641fdadd86", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:49:02.124591+00:00", "session_id": "cf573a81-e133-4c07-9dd2-ae2e407d45e1", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:49:07.307000+00:00", "session_id": "f7d2d358-2438-4b23-a2d6-5e56574b2992", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:49:35.890458+00:00", "session_id": "4eff4b55-9902-49ee-ab9d-10f45d40dfdf", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:51:46.635173+00:00", "session_id": "609aa2f0-01b8-43e0-b176-4689ad5f840f", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:51:47.295112+00:00", "session_id": "609aa2f0-01b8-43e0-b176-4689ad5f840f", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:51:58.886660+00:00", "session_id": "7bb7d4dd-f459-4e66-8a33-91212df2bc82", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:51:59.481776+00:00", "session_id": "7bb7d4dd-f459-4e66-8a33-91212df2bc82", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:52:15.610081+00:00", "session_id": "5e866ff6-a873-4670-acea-5ca3607c4260", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:52:16.182109+00:00", "session_id": "5e866ff6-a873-4670-acea-5ca3607c4260", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:52:30.188018+00:00", "session_id": "7e668ce8-058a-4a06-b6f2-29c38ed33fc8", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:52:30.879152+00:00", "session_id": "7e668ce8-058a-4a06-b6f2-29c38ed33fc8", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:52:45.785084+00:00", "session_id": "0761915b-8e34-4907-a643-eddd072ffae8", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:52:46.360666+00:00", "session_id": "0761915b-8e34-4907-a643-eddd072ffae8", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:53:00.336660+00:00", "session_id": "6a49f272-f849-48cb-93bd-f3eebaf81bad", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": ""}
+{"ts": "2026-06-11T15:53:00.913954+00:00", "session_id": "6a49f272-f849-48cb-93bd-f3eebaf81bad", "event": "BeforeAgent", "project": "adversarial-spec"}
+{"ts": "2026-06-11T15:53:32.091206+00:00", "session_id": "5e866ff6-a873-4670-acea-5ca3607c4260", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:53:32.409175+00:00", "session_id": "609aa2f0-01b8-43e0-b176-4689ad5f840f", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:53:40.934777+00:00", "session_id": "7e668ce8-058a-4a06-b6f2-29c38ed33fc8", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:53:56.072216+00:00", "session_id": "7bb7d4dd-f459-4e66-8a33-91212df2bc82", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:54:23.212479+00:00", "session_id": "6a49f272-f849-48cb-93bd-f3eebaf81bad", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T15:54:33.449788+00:00", "session_id": "0761915b-8e34-4907-a643-eddd072ffae8", "event": "SessionEnd", "project": "adversarial-spec", "reason": "exit"}
+{"ts": "2026-06-11T16:00:36.540547+00:00", "session_id": "4eff4b55-9902-49ee-ab9d-10f45d40dfdf", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T16:12:41.744437+00:00", "session_id": "4eff4b55-9902-49ee-ab9d-10f45d40dfdf", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T16:48:55.348010+00:00", "session_id": "4eff4b55-9902-49ee-ab9d-10f45d40dfdf", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T16:52:51.848425+00:00", "session_id": "4eff4b55-9902-49ee-ab9d-10f45d40dfdf", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T17:13:31.610367+00:00", "session_id": "4eff4b55-9902-49ee-ab9d-10f45d40dfdf", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T17:29:58.677878+00:00", "session_id": "4eff4b55-9902-49ee-ab9d-10f45d40dfdf", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T17:30:51.055700+00:00", "session_id": "4eff4b55-9902-49ee-ab9d-10f45d40dfdf", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T17:32:07.293512+00:00", "session_id": "4eff4b55-9902-49ee-ab9d-10f45d40dfdf", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T17:32:08.727696+00:00", "session_id": "4eff4b55-9902-49ee-ab9d-10f45d40dfdf", "event": "SessionEnd", "project": "adversarial-spec", "reason": "prompt_input_exit"}
+{"ts": "2026-06-11T17:32:11.651692+00:00", "session_id": "25f08625-0f27-4ca1-98d7-b24f7ad2332e", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "claude-fable-5"}
+{"ts": "2026-06-11T17:32:21.691348+00:00", "session_id": "25f08625-0f27-4ca1-98d7-b24f7ad2332e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T17:40:42.555078+00:00", "session_id": "25f08625-0f27-4ca1-98d7-b24f7ad2332e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T17:46:45.572162+00:00", "session_id": "25f08625-0f27-4ca1-98d7-b24f7ad2332e", "event": "UserPromptSubmit", "project": "adversarial-spec"}

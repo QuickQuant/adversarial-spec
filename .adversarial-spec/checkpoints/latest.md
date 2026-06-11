@@ -1,1 +1,1 @@
-checkpoint-202606100353-glossary-seams-closed-model-switch-handoff.md
+checkpoint-202606111728-gauntlet-closed-finalize-next.md

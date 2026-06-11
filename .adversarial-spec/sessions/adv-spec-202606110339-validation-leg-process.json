@@ -1,0 +1,492 @@
+{
+  "schema_version": "1.4",
+  "session_id": "adv-spec-202606110339-validation-leg-process",
+  "context_name": "Validation-Leg Production Process",
+  "current_phase": "finalize",
+  "current_step": "Spec ACCEPTED by Jason; execution-plan question pending",
+  "created_at": "2026-06-11T03:39:50Z",
+  "updated_at": "2026-06-11T17:50:11Z",
+  "checkpointed_cleanly": false,
+  "session_altitude": "system",
+  "session_altitude_source": "declared",
+  "fizzy_card_id": "5604",
+  "plan_path": ".adversarial-spec/specs/validation-leg-process/plan.md",
+  "spec_path": ".adversarial-spec/specs/validation-leg-process/spec-output.md",
+  "roadmap_path": ".adversarial-spec/specs/validation-leg-process/roadmap/manifest.json",
+  "execution_plan_path": null,
+  "context": {
+    "goal": "Design the skill-side validation-leg production process: ConOps artifact, validation ledger, human validation gate, and the cross-repo evidence contract for mark_system_validation_complete, so v5 system-altitude sessions can V-close."
+  },
+  "triage": {
+    "complexity": "medium",
+    "root_altitude": "system",
+    "highest_blast_item": "cross-repo validation-evidence contract (crosses repo boundary; ADR-0001-class coordinated change to fix)",
+    "decision": "GO"
+  },
+  "todowrite_snapshot": [
+    {
+      "content": "Gauntlet + synthesis + spec v5 + guardrails + board gates (gauntlet/reconciliation) complete; card 5604 in Finalization",
+      "status": "completed"
+    },
+    {
+      "content": "Finalize: read phases/06-finalize.md, lock spec v5 -> final spec, update spec_path/manifest",
+      "status": "pending"
+    },
+    {
+      "content": "Ask Jason: generate execution plan now? Then Phase 7 (07-execution.md) incl. validation-leg dogfood (derive-conops + draft rows)",
+      "status": "pending"
+    },
+    {
+      "content": "Commit session artifacts (spec v5, concerns, tests-pseudo, architecture refresh, skill edits: lookup-sweep + timeout 1200)",
+      "status": "pending"
+    }
+  ],
+  "requirements_summary": {
+    "doc_type": "spec",
+    "depth": "technical",
+    "user_types": [
+      "Jason (sole validator: judges per-row result via batched Telegram digest; sole authority for not-applicable, justification required)",
+      "Claude conductor (derives ConOps, drafts rows at Phase 7, assembles evidence, calls mark_system_validation_complete)",
+      "Future system-altitude sessions (consumers of the process)"
+    ],
+    "features": [
+      "ConOps derivation: roadmap user stories (US-n) -> roadmap/conops.md; re-derived/refreshed at Phase 7 emission, hash-bound late (drift defense)",
+      "Validation-row drafting at Phase 7 (pre-implementation, anti-relabeling defense): scenario + oracle + per-row evidence_type from a taxonomy (live-walkthrough / artifact-demo / narrative), chosen per row with rationale",
+      "Phase 8 close: evidence assembly per row, batched Telegram digest, Jason judges results, write system_validation.json, call mark_system_validation_complete, then session Finalization->Completed",
+      "Fail policy: remediate-then-re-gate (remediation task cards, re-exercise, regenerate rows, re-run gate)",
+      "N/A policy: Jason-only with recorded justification in oracle field; Claude may propose, never set",
+      "Oracle quality bar + gauntlet attacks on row quality (validation-theater defense)"
+    ],
+    "integrations": [
+      "fizzy mark_system_validation_complete (contract PINNED, see fizzy-validation-contract.md)",
+      "Telegram bridge (digest + reply grammar)",
+      "Phase docs 02 (US-n ids), 07 (conops emission + row drafting), 08 (gate + close)"
+    ],
+    "unknowns": [
+      "Digest reply grammar (parse 'fail US-3: reason')",
+      "Evidence-type taxonomy boundaries and per-type minimum bar",
+      "Dogfood mechanics: how a docs/process session's own stories produce non-relabeled validation scenarios",
+      "Whether ConOps needs narrative beyond concatenated user stories to satisfy 50-byte/Appx-S intent"
+    ],
+    "success_criteria": "Dogfood: THIS session (card 5604, system altitude) V-closes through the new process end-to-end",
+    "primary_risks": [
+      "validation theater",
+      "ConOps drift between Phase 2 and Phase 8"
+    ]
+  },
+  "tests_pseudo_path": ".adversarial-spec/specs/validation-leg-process/tests-pseudo.md",
+  "do_not_ask": [
+    "Continue debate rounds until convergence without asking Jason unless absolutely necessary (directive 2026-06-11)",
+    "Continue debate rounds until convergence without asking Jason unless absolutely necessary (directive 2026-06-11; debate now converged but spirit applies to gauntlet too)"
+  ],
+  "extended_state": {
+    "context_inventory": {
+      "schema_version": "1.1",
+      "audit_timestamp": "2026-06-11T04:55:26Z",
+      "git_hash": "f198887",
+      "blast_zone": [
+        "skills/adversarial-spec/phases/07-execution.md",
+        "skills/adversarial-spec/phases/08-implementation.md",
+        "skills/adversarial-spec/scripts/validation_emission.py (new)",
+        "skills/adversarial-spec/scripts/tests/test_validation_emission.py (new)",
+        "~/.claude/bin/telegram-send"
+      ],
+      "sources": {
+        "gate_contract": {
+          "status": "available",
+          "path": ".adversarial-spec/specs/validation-leg-process/fizzy-validation-contract.md",
+          "summary": "Served-code extract of mark_system_validation_complete + coverage gate",
+          "est_tokens": 1400
+        },
+        "pattern_precedent": {
+          "status": "available",
+          "path": "skills/adversarial-spec/scripts/mini_spec_emission.py",
+          "summary": "dry-run/load symmetry module this spec mirrors (self_check_plan)",
+          "est_tokens": 3500
+        },
+        "tests_pseudo": {
+          "status": "available",
+          "path": ".adversarial-spec/specs/validation-leg-process/tests-pseudo.md",
+          "summary": "Canonical tests, R1-synced, 20 TCs",
+          "est_tokens": 2600
+        },
+        "architecture_docs": {
+          "status": "partial",
+          "path": ".architecture/primer.md",
+          "summary": "Apr 16 corpus @ 9ca3ccd, stale but layout-accurate for scripts layer",
+          "est_tokens": 1200
+        },
+        "telegram_bridge": {
+          "status": "available",
+          "path": "~/.claude/bin/telegram-send",
+          "summary": "OQ-2 ANSWERED: no size handling in wrapper; Telegram native 4096-char limit applies; assemble-digest owns splitting",
+          "est_tokens": 300
+        },
+        "adr": {
+          "status": "available",
+          "path": "docs/adr/0001-disambiguate-strategy-vocabulary.md",
+          "summary": "Vocabulary discipline precedent for cross-repo contracts",
+          "est_tokens": 600
+        }
+      },
+      "total_available_tokens": 9600,
+      "gaps_noted": [
+        "No coverage report configured (not blocking for doc/process spec)",
+        "OQ-1 gate unknown-field tolerance: deferred to implementation per spec resolution protocol"
+      ]
+    }
+  },
+  "completed_work": "Spec v5 written (all 48 accepted gauntlet themes incl. Jason rulings: natural bulk-pass aliases, payload-extracted sender id, per-story hashes, single artifact, any-state supersession, threat model). tests-pseudo +TC-G1..G13 + 2 P4 TC amendments. Guardrails CONS/CANON/TCOV pass (post-gauntlet-guardrails.md + cons-report-v5.md). Lookup Sweep added to 03-debate.md (Jason's lookup-log idea) + gauntlet briefing hook in 05-gauntlet.md. Incremental mapcodebase 9ca3ccd->f198887: 5 explorers, accessor+structured+component docs refreshed, mcp-tasks retired, new components token-tracking/emission-toolchain/harness-hooks, HAZ-005 + FIND-015..019 + CON-007..009, quality checks ALL PASS, freshness_status=current (fizzy vocabulary). Board: card 5604 Pre-Gauntlet->Gauntlet->Reconciliation->Finalization; gauntlet artifacts + reconciliation artifacts recorded. debate.py timeout 1200 default.",
+  "next_action": "Read phases/06-finalize.md; finalize spec from spec-draft-v5.md; then ask Jason about execution plan (Phase 7 includes validation-leg dogfood: derive-conops + draft rows). Also: commit the session's working tree (large; includes skill edits + architecture refresh).",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606111728-gauntlet-closed-finalize-next.md",
+  "status": "active",
+  "journey": [
+    {
+      "time": "2026-06-11T05:27:05Z",
+      "event": "Debate converged R4 (both critics + Claude AGREE on spec-draft-v4.md); convergence recorded on card 5604",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-11T05:27:05Z",
+      "event": "Checkpoint saved: validation-leg-debate-converged-v4.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-11T14:37:28Z",
+      "event": "Phase 4 published @ 48a3ed59fb64 (lightweight; 7 INV-A invariants; dry-run 8/8 pass; draft_review + final_approval human-approved); transitioned to gauntlet",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-11T14:37:28Z",
+      "event": "Checkpoint saved: p4-published-gauntlet-next.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-11T16:10:14Z",
+      "event": "Gauntlet run + one-pass synthesis complete on spec-draft-v4 (669 concerns -> 62 themes, 48 accept); concerns report + run-manifest intensity fields on disk",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-11T16:10:14Z",
+      "event": "Checkpoint saved: gauntlet-complete-synthesis-done.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-11T17:28:04Z",
+      "event": "Gauntlet phase fully closed: spec v5 reconciled (48 themes, Jason rulings), board gates passed (mark_gauntlet_complete intensity-verified + reconciliation CONS 2/2), card 5604 in Finalization; mapcodebase incremental @ f198887",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-11T17:28:04Z",
+      "event": "Checkpoint saved: gauntlet-closed-finalize-next.",
+      "type": "checkpoint"
+    }
+  ],
+  "phase4_bootstrap": {
+    "schema_version": "1.0",
+    "status": "completed",
+    "session_id": "adv-spec-202606110339-validation-leg-process",
+    "spec_slug": "validation-leg-process",
+    "input_fingerprint": "be87fc05f189353d799bc19361134e1ac117e62ef798bc9489022df21048f851",
+    "architecture_fingerprint": "48a3ed59fb6478c66ec760b924ab04fdde305de53ad3cd58d75c808536806857",
+    "phase_mode": "lightweight",
+    "context_mode": "brownfield_feature",
+    "artifact_paths": {
+      "target_architecture": ".adversarial-spec/specs/validation-leg-process/target-architecture.md",
+      "invariants": ".adversarial-spec/specs/validation-leg-process/architecture-invariants.json",
+      "tests_pseudo": ".adversarial-spec/specs/validation-leg-process/tests-pseudo.md",
+      "dry_run_results": ".adversarial-spec/specs/validation-leg-process/dry-run-results.json",
+      "middleware_candidates": ".adversarial-spec/specs/validation-leg-process/middleware-candidates.json"
+    },
+    "framework_profile": {
+      "profile_type": "single",
+      "category": "cli",
+      "framework": "Claude Code skill: Python scripts under skills/adversarial-spec/scripts/",
+      "framework_version": "Python 3.14+, uv, filelock 3.16.1",
+      "runtime": "python",
+      "deployment_target": "serverful",
+      "enabled_features": [
+        "filelock TASK_LOCK pattern",
+        "atomic tmp+rename",
+        "structured exit codes"
+      ],
+      "subprofiles": {
+        "rendering_model": "N/A",
+        "data_access_model": "direct file I/O (JSON ledger + markdown)",
+        "mutation_model": "lock-guarded read-mutate-rename, 3 owning subcommands",
+        "cache_model": "N/A (content hashes for freshness)",
+        "error_model": "exit 0/2/3 with structured issues"
+      },
+      "enforcement_model": "module-enforced shape validation mirroring fizzy gate; sender allowlist on inbound replies"
+    },
+    "execution_surfaces": [
+      "cli_command",
+      "outbound_integration"
+    ],
+    "roadmap_ref": {
+      "goals": [
+        "G1",
+        "G2",
+        "G3",
+        "G4",
+        "G5"
+      ],
+      "non_goals": [
+        "NG1",
+        "NG2",
+        "NG3",
+        "NG4",
+        "NG5"
+      ],
+      "user_stories": [
+        "US-0",
+        "US-1",
+        "US-2",
+        "US-3",
+        "US-4",
+        "US-5",
+        "US-6",
+        "US-7",
+        "US-8",
+        "US-9",
+        "US-10",
+        "US-11",
+        "US-12",
+        "US-13"
+      ]
+    },
+    "current_gate": null,
+    "blocking_error": null,
+    "started_at": "2026-06-11T05:41:35Z",
+    "updated_at": "2026-06-11T14:34:40Z",
+    "completed_at": "2026-06-11T14:34:40Z",
+    "story_alignment": [
+      {
+        "story_id": "US-0",
+        "goal_ids": [
+          "G1"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "single entry point serves repeatable-process goal"
+      },
+      {
+        "story_id": "US-1",
+        "goal_ids": [
+          "G4"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "late ConOps derivation is G4 verbatim"
+      },
+      {
+        "story_id": "US-2",
+        "goal_ids": [
+          "G2"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "intent-anchored ConOps serves intent-judgment goal"
+      },
+      {
+        "story_id": "US-3",
+        "goal_ids": [
+          "G2",
+          "G5"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "pre-implementation rows satisfy anti-hindsight + gate schema"
+      },
+      {
+        "story_id": "US-4",
+        "goal_ids": [
+          "G2"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "intent-based oracles; NG5 reinforced not violated"
+      },
+      {
+        "story_id": "US-5",
+        "goal_ids": [
+          "G3"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "async evidence taxonomy keeps Jason cost to one digest"
+      },
+      {
+        "story_id": "US-6",
+        "goal_ids": [
+          "G3"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "batched digest is G3 verbatim"
+      },
+      {
+        "story_id": "US-7",
+        "goal_ids": [
+          "G3"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "deterministic reply grammar supports sole-oracle judgment"
+      },
+      {
+        "story_id": "US-8",
+        "goal_ids": [
+          "G1"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "mechanical close path serves V-close goal; NG1 conformance"
+      },
+      {
+        "story_id": "US-9",
+        "goal_ids": [
+          "G1"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "remediation loop required for satisfiable close"
+      },
+      {
+        "story_id": "US-10",
+        "goal_ids": [
+          "G1"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "dogfood proof of G1"
+      },
+      {
+        "story_id": "US-11",
+        "goal_ids": [
+          "G1"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "local self-check explicitly permitted by NG4 carve-out"
+      },
+      {
+        "story_id": "US-12",
+        "goal_ids": [
+          "G5"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "auditable refresh rule is G5 verbatim"
+      },
+      {
+        "story_id": "US-13",
+        "goal_ids": [
+          "G2"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "executed evidence before digest keeps judgment grounded in intent"
+      }
+    ],
+    "research_findings": [
+      {
+        "source": "fizzy-validation-contract.md (served-code extract)",
+        "finding": "gate reject classes, _sha256_prefix bidirectional prefix-match, strict-subset anti-relabeling, result enum accepts not-applicable",
+        "version": "fizzy v5 served 2026-06-11"
+      },
+      {
+        "source": "skills/adversarial-spec/scripts/mini_spec_emission.py",
+        "finding": "established pattern: doc-driven process, code-checked shapes, structured exit codes",
+        "version": "HEAD f198887"
+      },
+      {
+        "source": "telegram bridge (Appendix D, OQ-2 audit)",
+        "finding": "wrapper does no message splitting; raw 4096-char Telegram limit; 3500-char budget chosen",
+        "version": "2026-06-11 context audit"
+      },
+      {
+        "source": "filelock",
+        "finding": "advisory locks released on process death; 10s timeout pattern pinned at 3.16.1 skill-wide",
+        "version": "3.16.1"
+      }
+    ],
+    "artifact_publish_state": "published",
+    "gate_approvals": {
+      "scale_check": {
+        "status": "approved",
+        "recommended": "lightweight",
+        "final_value": "lightweight",
+        "decided_by": "human",
+        "decided_at": "2026-06-11T05:44:31Z"
+      },
+      "context_mode": {
+        "status": "approved",
+        "recommended": "brownfield_feature",
+        "final_value": "brownfield_feature",
+        "decided_by": "auto",
+        "decided_at": "2026-06-11T05:44:31Z"
+      },
+      "draft_review": {
+        "status": "approved",
+        "decided_by": "human",
+        "decided_at": "2026-06-11T14:23:56Z"
+      },
+      "final_approval": {
+        "status": "approved",
+        "decided_by": "human",
+        "decided_at": "2026-06-11T14:34:40Z"
+      }
+    }
+  },
+  "architecture_taxonomy": {
+    "schema_version": "1.0",
+    "category": "cli",
+    "dimensions": [
+      {
+        "name": "execution model",
+        "value": "subcommand CLI, pure-local, no daemon",
+        "rationale": "mirrors mini_spec_emission.py pattern; NG4 forbids servers",
+        "source_refs": [
+          "spec §7",
+          "NG4"
+        ]
+      },
+      {
+        "name": "concurrency",
+        "value": "filelock + atomic rename, single mutating writer",
+        "rationale": "established TASK_LOCK pattern; crash-safe by construction",
+        "source_refs": [
+          "spec §7 lock semantics"
+        ]
+      },
+      {
+        "name": "error model",
+        "value": "exit 0/2/3 + structured {code,row_id,detail}",
+        "rationale": "LLM conductor needs machine-readable issues for the playbook",
+        "source_refs": [
+          "spec §7, §10"
+        ]
+      },
+      {
+        "name": "I/O",
+        "value": "JSON ledger + markdown artifacts + Telegram part files",
+        "rationale": "single stateful ledger, projections write-only",
+        "source_refs": [
+          "spec §6.2"
+        ]
+      },
+      {
+        "name": "testing architecture",
+        "value": "pytest over module; dogfood validation of process itself",
+        "rationale": "verification=pytest, validation=US-10 dogfood, disjoint by construction",
+        "source_refs": [
+          "spec §12"
+        ]
+      }
+    ]
+  },
+  "target_architecture_path": ".adversarial-spec/specs/validation-leg-process/target-architecture.md",
+  "gauntlet_concerns_path": ".adversarial-spec/specs/validation-leg-process/gauntlet-concerns-2026-06-11.json",
+  "tests_spec_path": ".adversarial-spec/specs/validation-leg-process/tests-spec.md"
+}

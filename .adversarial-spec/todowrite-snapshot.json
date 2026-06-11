@@ -1,0 +1,11 @@
+[
+  {"content": "Phase 03: Run Round 1 critique on spec-draft-v1.md", "status": "pending", "activeForm": "Running Round 1 critique"},
+  {"content": "Phase 03: Synthesize Round 1 findings into spec revisions", "status": "pending", "activeForm": "Synthesizing Round 1 findings"},
+  {"content": "Phase 03: Continue debate rounds until consensus", "status": "pending", "activeForm": "Driving debate to consensus"},
+  {"content": "Phase 03 [GATE]: Convergence declared on spec", "status": "pending", "activeForm": "Awaiting convergence"},
+  {"content": "Phase 04: Target architecture (if needed)", "status": "pending", "activeForm": "Defining target architecture"},
+  {"content": "Phase 05: Gauntlet adversarial stress test", "status": "pending", "activeForm": "Running gauntlet"},
+  {"content": "Phase 06: Finalize spec to spec-output.md", "status": "pending", "activeForm": "Finalizing spec"},
+  {"content": "Phase 07: Generate execution plan", "status": "pending", "activeForm": "Generating execution plan"},
+  {"content": "Phase 08: Implementation (Commit 1: tests-first; Commit 2: production rename + dispatcher fix)", "status": "pending", "activeForm": "Implementing"}
+]

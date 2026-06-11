@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.0",
+  "session_id": "adv-spec-202606110339-validation-leg-process",
+  "title": "Validation-Leg Production Process",
+  "doc_type": "spec",
+  "depth": "technical",
+  "complexity_tier": "complex",
+  "complexity_score": 15,
+  "session_altitude": "system",
+  "created_at": "2026-06-11T04:30:00Z",
+  "goals": [
+    "G1: A v5 system-altitude session can V-close — every precondition of mark_system_validation_complete and the Finalization→Completed coverage gate satisfiable by documented, repeatable skill process",
+    "G2: Validation judges INTENT (ConOps-anchored scenarios), not re-run tests — passes anti-relabeling by construction",
+    "G3: Jason is the sole validation oracle; cost kept to one batched Telegram digest per session",
+    "G4: ConOps stays fresh — derived late (Phase 7) from the post-debate roadmap, hash-bound at mark time",
+    "G5: Scenario refresh is possible only through an auditable anti-hindsight rule (R1 codex)"
+  ],
+  "non_goals": [
+    "NG1: No fizzy-side changes — the gate contract is fixed, we conform",
+    "NG2: No validation for subsystem/component altitudes; no v4 retrofit",
+    "NG3: No automated pass/fail judgment — result values are human judgments only",
+    "NG4: No new MCP server, board lane, or fizzy tool — skill docs + one local emission/self-check module",
+    "NG5: No validation row may use verification-test success ('tests pass', 'gate passed', 'code merged') as its oracle (R1 codex)"
+  ],
+  "milestones": [
+    {
+      "id": "M0",
+      "name": "Getting Started (Bootstrap)",
+      "depends_on": [],
+      "user_stories": ["US-0"],
+      "test_cases": ["TC-0.1", "TC-0.2"]
+    },
+    {
+      "id": "M1",
+      "name": "ConOps Derivation & Emission",
+      "depends_on": ["M0"],
+      "user_stories": ["US-1", "US-2"],
+      "test_cases": ["TC-1.1", "TC-1.2", "TC-1.3"]
+    },
+    {
+      "id": "M2",
+      "name": "Validation-Row Drafting (Phase 7)",
+      "depends_on": ["M1"],
+      "user_stories": ["US-3", "US-4", "US-5", "US-12"],
+      "test_cases": ["TC-2.1", "TC-2.2", "TC-2.3", "TC-2.4", "TC-2.5"]
+    },
+    {
+      "id": "M3",
+      "name": "Phase 8 Gate & Close",
+      "depends_on": ["M1", "M2"],
+      "user_stories": ["US-13", "US-6", "US-7", "US-8", "US-9", "US-11"],
+      "test_cases": ["TC-3.1", "TC-3.2", "TC-3.3", "TC-3.4", "TC-3.5", "TC-3.6", "TC-3.7"]
+    },
+    {
+      "id": "M4",
+      "name": "Dogfood Close-Out",
+      "depends_on": ["M0", "M1", "M2", "M3"],
+      "user_stories": ["US-10"],
+      "test_cases": ["TC-4.1"]
+    }
+  ],
+  "user_stories": [
+    {"id": "US-0", "story": "As a conductor agent entering Phase 7 of a system-altitude session, I want a single documented entry point so that I can run the validation leg end-to-end without reading fizzy source code."},
+    {"id": "US-1", "story": "As a conductor at Phase 7, I want to derive roadmap/conops.md from the roadmap manifest (user stories + operational narrative) so that validation binds to refreshed, post-debate intent."},
+    {"id": "US-2", "story": "As the validator, I want the ConOps to read as operational intent, not a test inventory, so that my pass/fail judgments anchor on what was wanted."},
+    {"id": "US-3", "story": "As a conductor at Phase 7 (pre-implementation), I want to draft >=1 validation row per user story (conops_ref, scenario, oracle, evidence_type) so that the gate's row schema is satisfiable and scenarios precede hindsight."},
+    {"id": "US-4", "story": "As the validator, I want every oracle to state how I judge pass/fail FROM INTENT (observable user-level outcome, never 'tests pass') so that rows cannot degrade into checkbox prose."},
+    {"id": "US-5", "story": "As a conductor, I want an evidence-type taxonomy (agent-walkthrough-transcript / artifact-demo / narrative) with per-type minimum bar and required per-row selection rationale, so that evidence matches what each scenario is of without requiring synchronous human participation (R1b gemini: renamed from live-walkthrough to make async explicit)."},
+    {"id": "US-6", "story": "As the validator, I want one batched Telegram digest (scenario + oracle + evidence summary per row) so that I can judge the whole session from mobile in one interaction."},
+    {"id": "US-7", "story": "As a conductor, I want a defined digest reply grammar (pass all | fail US-n: reason | na <row-id>: justification | mixed lines) parsed deterministically; N/A accepted only from Jason with justification, and ONLY at row level — an active ConOps story still requires >=1 passing row (coverage-gate constraint); removing a story is a ConOps edit + re-hash, never an N/A."},
+    {"id": "US-8", "story": "As a conductor, I want to write system_validation.json and call mark_system_validation_complete with every gate error code mapped to a documented response, so that close is mechanical once judgments exist."},
+    {"id": "US-9", "story": "As a conductor, I want fail results to spawn a remediation loop (cards -> fix -> re-exercise -> regenerate rows -> re-gate) so that failed validation blocks completion until resolved."},
+    {"id": "US-10", "story": "As the project owner, I want THIS session (card 5604) to V-close through the new process so that it is proven on itself before any other session depends on it."},
+    {"id": "US-11", "story": "As a conductor, I want a local self-check mirroring the gate's reject codes so that artifacts fail fast before any MCP call (dry-run/load symmetry)."},
+    {"id": "US-12", "story": "As a conductor, I want a controlled scenario-refresh rule — refresh only before Jason's final judgment or after a HUMAN-APPROVED remediation/scope decision (an agent may never approve its own scope reduction — R1b gemini); allowed reasons enumerated (approved story change, removed story, replaced workflow serving same intent, duplicate coverage); disallowed reasons enumerated (implementation failed, evidence missing, scenario inconvenient, prior negative judgment); superseded rows kept in an audit section with reason/approver/timestamp/replacement-id — so that legitimately obsolete Phase 7 rows can be replaced without hindsight rewriting (T1 resolution, R1 codex)."},
+    {"id": "US-13", "story": "As a conductor at Phase 8 (post-implementation), I want to EXECUTE each drafted scenario and compile the captured evidence into a per-row evidence artifact BEFORE digest assembly, so that the digest is backed by real execution data, never mock assumptions or narrative-only filler (R1b gemini — closes the M2->M3 gap)."}
+  ],
+  "dependencies": [
+    "Fixed fizzy system-validation contract (fizzy-validation-contract.md)",
+    "Complete roadmap manifest with stable US ids",
+    "Verification ledger targets available for anti-relabeling comparison",
+    "Jason availability for judgment; Telegram bridge with terminal fallback",
+    "Pipeline card / remediation workflow availability"
+  ],
+  "tests_pseudo_path": ".adversarial-spec/specs/validation-leg-process/tests-pseudo.md",
+  "fixed_contract_ref": ".adversarial-spec/specs/validation-leg-process/fizzy-validation-contract.md",
+  "architecture_impact": {
+    "verdict": "extends_existing",
+    "rationale": "Adds one emission/self-check module (validation_emission.py) within the existing scripts layer, following the mini_spec_emission.py pattern, plus phase-doc edits (02/07/08) and a reply-grammar parser. No new layer, no new shared middleware, no new fizzy tools.",
+    "new_components": [
+      {"name": "validation_emission script (conops derivation + row schema + self-check + digest assembly + reply parser)", "kind": "script", "extends": "skills/adversarial-spec/scripts/"}
+    ],
+    "new_middleware": [],
+    "new_vars_into_existing_middleware": [],
+    "assessed_at": "2026-06-11T04:30:00Z",
+    "assessed_against": "f198887"
+  }
+}

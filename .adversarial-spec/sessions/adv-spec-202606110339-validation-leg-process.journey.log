@@ -1,0 +1,24 @@
+{"time": "2026-06-11T03:39:50Z", "event": "Session created via Phase 0 triage front door (altitude=system, complexity=medium, card 5604)", "type": "create"}
+{"time": "2026-06-11T03:39:50Z", "event": "Phase transition: triage \u2192 requirements", "type": "transition"}
+{"time": "2026-06-11T04:05:00Z", "event": "Phase 1 interview complete (8 topics); fizzy contract extracted to fizzy-validation-contract.md; requirements_summary written", "type": "artifact"}
+{"time": "2026-06-11T04:07:43Z", "event": "Phase transition: requirements \u2192 roadmap (requirements confirmed by Jason)", "type": "transition"}
+{"time": "2026-06-11T04:13:33Z", "event": "Roadmap drafted (5 milestones, 12 stories US-0..US-11, 15 TCs), tests-pseudo.md + architecture_impact (extends_existing) written", "type": "artifact"}
+{"time":"2026-06-11T04:21:23Z","event":"Roadmap debate R1: codex/gpt-5.5 returned (2 CRITICAL accepted: N/A-coverage conflict, refresh rule US-12); gemini-3.5-flash failed 3/3 (404). Revisions applied; synthesis at roadmap/round-1-synthesis.md","type":"decision"}
+{"time":"2026-06-11T04:28:23Z","event":"Roadmap debate R1b (gemini-3.1-pro): US-13 execution step + US-12 human-approved + US-5 async rename accepted; empty-set-trap claim REJECTED (verified false vs pipeline.py served code)","type":"decision"}
+{"time": "2026-06-11T04:32:20Z", "event": "Roadmap confirmed by Jason (14 stories, 19 TCs, R1+R1b debated); artifacts verified; fizzy-plan.json draft written", "type": "artifact"}
+{"time": "2026-06-11T04:32:20Z", "event": "Phase transition: roadmap \u2192 debate", "type": "transition"}
+{"time": "2026-06-11T04:38:20Z", "event": "Spec draft v1 written (12 sections, INV-1..8, OQ-1..4). pipeline_advance blocked by LOCAL_SESSION_MISMATCH: global fizzy MCP serves from fizzy repo cwd; per-project .mcp.json created; fizzy repo pointer restored after sync clobber; issue note 2026-06-11-fizzy-mcp-served-cross-project-cwd.md", "type": "artifact"}
+{"time": "2026-06-11T04:40:12Z", "event": "Phase transition: debate -> pre-roadmap", "type": "transition", "source": "pipeline_advance"}
+{"time": "2026-06-11T04:40:31Z", "event": "Phase transition: pre-roadmap -> debate", "type": "transition", "source": "pipeline_advance"}
+{"time":"2026-06-11T05:25:16Z","event":"Debate CONVERGED after 4 rounds (43 findings applied; R4 both critics AGREE). Spec v4 is the converged draft.","type":"decision"}
+{"time":"2026-06-11T05:37:01Z","event":"Phase transition: debate → target-architecture","type":"transition"}
+{"time": "2026-06-11T05:37:35Z", "event": "Phase transition: target-architecture -> pre-gauntlet", "type": "transition", "source": "pipeline_advance"}
+{"time":"2026-06-11T05:48:14Z","event":"Phase 4 draft artifacts written: target-architecture.md (lightweight), architecture-invariants.json (7 active INV-A*), middleware-candidates.json (empty), tests-pseudo.md P4 block (TC-INV-A1..A7)","type":"artifact"}
+{"time":"2026-06-11T14:34:40Z","event":"Phase 4 published: target-architecture.md + 7 invariants + dry-run pass, fingerprint 48a3ed59fb64; draft_review + final_approval by human","type":"artifact"}
+{"time":"2026-06-11T14:35:13Z","event":"Phase transition: target-architecture → gauntlet","type":"transition"}
+{"time":"2026-06-11T16:09:08Z","event":"Gauntlet complete: 669 concerns evaluated, 62 unique themes synthesized (48 accept), run-manifest intensity fields written (system altitude, codex+gemini, 4 foci)","type":"artifact"}
+{"time": "2026-06-11T17:25:55Z", "event": "Phase transition: gauntlet -> gauntlet", "type": "transition", "source": "pipeline_advance"}
+{"time": "2026-06-11T17:26:30Z", "event": "Phase transition: gauntlet -> reconciliation", "type": "transition", "source": "pipeline_advance"}
+{"time": "2026-06-11T17:27:15Z", "event": "Phase transition: reconciliation -> finalize", "type": "transition", "source": "pipeline_advance"}
+{"time":"2026-06-11T17:38:21Z","event":"Spec finalized: .adversarial-spec/specs/validation-leg-process/spec-output.md (final guardrails pass; tests-spec.md promoted)","type":"artifact"}
+{"time":"2026-06-11T17:50:11Z","event":"Spec accepted by Jason","type":"decision"}

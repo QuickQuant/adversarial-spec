@@ -1,0 +1,188 @@
+{
+  "schema_version": "1.0",
+  "spec_slug": "validation-leg-process",
+  "phase_mode": "lightweight",
+  "architecture_fingerprint": "48a3ed59fb6478c66ec760b924ab04fdde305de53ad3cd58d75c808536806857",
+  "generated_at": "2026-06-11T05:47:21Z",
+  "invariants": [
+    {
+      "id": "INV-A1",
+      "status": "active",
+      "category": "sot",
+      "scope": "validation-rows.json ledger and all artifacts derived from it",
+      "surfaces": [
+        "cli_command"
+      ],
+      "rule": "validation-rows.json is the sole authoritative store of row state; system_validation.json is a write-only projection produced exclusively by emit-system-validation; judgments are never hand-transcribed",
+      "enforcement": "emit-system-validation is the only producer of the gate artifact; Phase 8 doc forbids hand-editing; self-check runs on exact emitted bytes",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: mutate ledger, emit, assert projection matches ledger judged rows exactly; assert hand-built artifact fails self-check provenance rules",
+      "linked_user_stories": [
+        "US-3",
+        "US-8"
+      ],
+      "linked_goals": [
+        "G1",
+        "G2"
+      ],
+      "linked_tests": [
+        "TC-INV-A1"
+      ]
+    },
+    {
+      "id": "INV-A2",
+      "status": "active",
+      "category": "enforcement",
+      "scope": "all validation_emission.py subcommands",
+      "surfaces": [
+        "cli_command"
+      ],
+      "rule": "Only parse-reply, assemble-digest, and cancel-batch mutate the ledger; each holds validation-rows.json.lock for the full read-modify-write and writes atomic tmp+rename; all other subcommands are read-only",
+      "enforcement": "module structure: single mutation helper requiring the lock; read-only subcommands have no write path",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: run every read-only subcommand against a ledger fixture, assert file bytes unchanged; assert mutating subcommands fail with exit 3 LEDGER_BUSY when lock is held",
+      "linked_user_stories": [
+        "US-7",
+        "US-8"
+      ],
+      "linked_goals": [
+        "G1"
+      ],
+      "linked_tests": [
+        "TC-INV-A2"
+      ]
+    },
+    {
+      "id": "INV-A3",
+      "status": "active",
+      "category": "error_handling",
+      "scope": "subcommand exit contract and reply atomicity",
+      "surfaces": [
+        "cli_command"
+      ],
+      "rule": "Every subcommand exits 0, 2 (structured {code,row_id,detail} issues on stdout), or 3; an invalid or partially valid reply produces zero ledger mutations and a re-prompt quoting the offending text",
+      "enforcement": "CLI boundary maps exceptions to exit codes; parse-reply validates the full reply before any mutation",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: feed reply with one valid and one invalid block, assert ledger bytes unchanged and re-prompt names offending text (TC-3.2); assert exit-code mapping for ok/validation/lock/corrupt paths",
+      "linked_user_stories": [
+        "US-7",
+        "US-0"
+      ],
+      "linked_goals": [
+        "G1",
+        "G3"
+      ],
+      "linked_tests": [
+        "TC-INV-A3"
+      ]
+    },
+    {
+      "id": "INV-A4",
+      "status": "active",
+      "category": "security",
+      "scope": "inbound judgment trust boundary (parse-reply) and allowlist sourcing",
+      "surfaces": [
+        "outbound_integration"
+      ],
+      "rule": "A telegram-sourced judgment is applied only when --sender-id matches the project's registry-configured allowlist (never hardcoded); non-allowlisted replies are discarded and logged, never parsed into the ledger",
+      "enforcement": "parse-reply requires --sender-id for --source telegram; allowlist loaded from telegram registry config",
+      "exceptions": [
+        "--source terminal asserts local operator is Jason (single-user machine, documented)"
+      ],
+      "verification_kind": "dynamic",
+      "verification": "pytest: non-allowlisted sender with valid reply text, assert ledger unchanged and discard logged; allowlisted sender, assert applied; assert no allowlist literal in module source (static grep)",
+      "linked_user_stories": [
+        "US-6",
+        "US-7"
+      ],
+      "linked_goals": [
+        "G3"
+      ],
+      "linked_tests": [
+        "TC-INV-A4"
+      ]
+    },
+    {
+      "id": "INV-A5",
+      "status": "active",
+      "category": "validation",
+      "scope": "self-check gate parity and oracle lint",
+      "surfaces": [
+        "cli_command"
+      ],
+      "rule": "self-check mirrors every gate reject class, is strictly stricter than the gate (identical-set anti-relabeling extension), and must pass on the exact bytes passed to mark_system_validation_complete immediately before every call",
+      "enforcement": "Phase 8 close sequence orders self-check directly before the MCP call; parity pinned by test against the served-code contract extract",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest parity suite: for each gate reject class in fizzy-validation-contract.md, construct a fixture that the gate would reject and assert self-check rejects with the mirrored code (TC-3.3); identical-set fixture rejected locally",
+      "linked_user_stories": [
+        "US-11",
+        "US-4"
+      ],
+      "linked_goals": [
+        "G1",
+        "G2"
+      ],
+      "linked_tests": [
+        "TC-INV-A5"
+      ]
+    },
+    {
+      "id": "INV-A6",
+      "status": "active",
+      "category": "integration",
+      "scope": "digest batch lifecycle and Phase 8 close idempotency",
+      "surfaces": [
+        "outbound_integration",
+        "cli_command"
+      ],
+      "rule": "At most one digest batch is open at any time; batches snapshot row hashes at open; replies referencing a non-active digest-id or changed row hash are rejected; close re-entry at any step skips completed work without re-judging",
+      "enforcement": "assemble-digest refuses while a batch is open; parse-reply validates digest-id and snapshot hashes; close sequence checks NOTHING_TO_DIGEST, existing clean emission, and card metadata before the MCP call",
+      "exceptions": [
+        "cancel-batch closes an open batch without judgments (audit-logged)"
+      ],
+      "verification_kind": "dynamic",
+      "verification": "pytest: second assemble-digest while open fails; stale digest-id reply rejected; row-hash-changed reply rejected; double close-step run produces identical end state (idempotency)",
+      "linked_user_stories": [
+        "US-6",
+        "US-8",
+        "US-9",
+        "US-13"
+      ],
+      "linked_goals": [
+        "G3",
+        "G1"
+      ],
+      "linked_tests": [
+        "TC-INV-A6"
+      ]
+    },
+    {
+      "id": "INV-A7",
+      "status": "active",
+      "category": "observability",
+      "scope": "judgment provenance and append-only audit history",
+      "surfaces": [
+        "cli_command"
+      ],
+      "rule": "Every non-null result carries a full provenance block (digest_id, source, reply_ref, judged_at); judgment_history is append-only; supersessions and batch cancellations carry audit fields including approval_ref; no history entry is ever rewritten",
+      "enforcement": "emit-system-validation refuses results without provenance; reset moves judgments into history rather than erasing",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: emit refuses provenance-less result; --reset-failed preserves original fail in history; supersession without approval_ref rejected by check-rows",
+      "linked_user_stories": [
+        "US-12",
+        "US-8"
+      ],
+      "linked_goals": [
+        "G5"
+      ],
+      "linked_tests": [
+        "TC-INV-A7"
+      ]
+    }
+  ]
+}

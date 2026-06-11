@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE GATEKEEPER — Validation Quest Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07090f; --panel:#0d1220; --panel2:#111831; --ink:#cfe3dd;
+  --amber:#ffb627; --cyan:#3fe3e3; --magenta:#ff5d8f; --green:#72f58a;
+  --red:#ff5252; --dim:#5b6b80; --gold:#ffd866;
+  --border:1px solid #233052;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:'IBM Plex Mono',monospace; font-size:14px; line-height:1.55;
+  overflow-x:hidden;
+}
+/* CRT atmosphere */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.13) 0 1px,transparent 1px 3px);}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9998;
+  background:radial-gradient(ellipse at 50% 40%,transparent 55%,rgba(0,0,0,.55) 100%);}
+.flicker{animation:flick 7s infinite}
+@keyframes flick{0%,93%,100%{opacity:1}94%{opacity:.86}95.5%{opacity:1}97%{opacity:.92}}
+h1,h2,h3,.px{font-family:'Silkscreen',monospace;letter-spacing:.5px}
+a{color:var(--cyan)}
+main{max-width:1060px;margin:0 auto;padding:0 20px 120px}
+
+/* header */
+header{padding:34px 0 10px;text-align:center;position:relative}
+.cab{border:3px solid var(--amber);border-radius:14px;box-shadow:0 0 0 3px #07090f,0 0 0 5px #3a2c10,0 0 42px rgba(255,182,39,.18) inset,0 0 26px rgba(255,182,39,.12);
+  padding:26px 18px 20px;background:linear-gradient(180deg,#0d1220,#0a0d18)}
+h1{font-size:clamp(22px,4.4vw,40px);color:var(--amber);text-shadow:0 0 14px rgba(255,182,39,.55),3px 3px 0 #4d2f00}
+.sub{color:var(--cyan);font-size:12px;margin-top:8px;text-shadow:0 0 8px rgba(63,227,227,.6)}
+.blink{animation:blink 1.15s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.coin{margin-top:12px;font-size:11px;color:var(--dim)}
+.marquee{overflow:hidden;border-top:var(--border);border-bottom:var(--border);margin-top:16px;background:#0a0e1a}
+.marquee span{display:inline-block;white-space:nowrap;padding:6px 0;font-size:11px;color:var(--magenta);
+  animation:scrolltxt 26s linear infinite}
+@keyframes scrolltxt{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
+
+/* HUD */
+#hud{position:sticky;top:0;z-index:100;background:rgba(7,9,15,.94);backdrop-filter:blur(3px);
+  border-bottom:2px solid var(--amber);padding:8px 14px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+#hud .px{font-size:11px;color:var(--amber)}
+.xpwrap{flex:1;min-width:180px;height:16px;border:2px solid var(--amber);background:#120e02;position:relative}
+#xpbar{height:100%;width:0%;background:repeating-linear-gradient(90deg,var(--amber) 0 8px,#e69500 8px 16px);
+  transition:width .5s cubic-bezier(.2,1.4,.4,1);box-shadow:0 0 12px rgba(255,182,39,.6)}
+#xptxt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;
+  font-family:'Silkscreen';text-shadow:1px 1px 0 #000}
+.lvl{color:var(--green)!important}
+
+/* sections */
+section{margin-top:54px;position:relative}
+.sec-head{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.sec-head h2{color:var(--cyan);font-size:18px;text-shadow:0 0 10px rgba(63,227,227,.45)}
+.sec-head .tag{font-size:10px;color:var(--dim);border:1px solid var(--dim);padding:2px 7px;border-radius:3px}
+.reviewed-btn{margin-left:auto;font-family:'Silkscreen';font-size:10px;cursor:pointer;
+  background:#0d1220;border:2px solid var(--dim);color:var(--dim);padding:6px 12px;border-radius:4px;transition:.2s}
+.reviewed-btn:hover{border-color:var(--green);color:var(--green)}
+.reviewed-btn.done{border-color:var(--green);color:#07150a;background:var(--green);box-shadow:0 0 14px rgba(114,245,138,.5)}
+.panel{background:var(--panel);border:var(--border);border-radius:8px;padding:18px}
+
+/* world map */
+#map .track{display:flex;flex-wrap:wrap;gap:0;align-items:center;justify-content:center;padding:14px 4px}
+.node{display:flex;flex-direction:column;align-items:center;gap:6px;width:104px}
+.node .dot{width:34px;height:34px;border-radius:6px;border:2px solid var(--dim);display:flex;align-items:center;justify-content:center;
+  font-size:15px;background:#0a0e1a;transition:.3s}
+.node .nm{font-size:9px;color:var(--dim);font-family:'Silkscreen';text-align:center}
+.node.done .dot{border-color:var(--green);color:var(--green);box-shadow:0 0 10px rgba(114,245,138,.35)}
+.node.done .nm{color:var(--green)}
+.node.here .dot{border-color:var(--amber);color:var(--amber);animation:pulse 1.4s infinite;font-size:18px}
+.node.here .nm{color:var(--amber)}
+@keyframes pulse{0%,100%{box-shadow:0 0 6px rgba(255,182,39,.4)}50%{box-shadow:0 0 22px rgba(255,182,39,.9)}}
+.edge{width:22px;height:2px;background:var(--dim);margin-bottom:22px}
+.edge.done{background:var(--green)}
+
+/* stat cards */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:14px}
+.stat{border:var(--border);border-radius:6px;padding:12px;text-align:center;background:var(--panel2)}
+.stat .n{font-family:'Silkscreen';font-size:24px;color:var(--gold)}
+.stat .l{font-size:10px;color:var(--dim);margin-top:4px}
+
+/* goals */
+.laws{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.laws{grid-template-columns:1fr}}
+.law-col h3{font-size:13px;margin-bottom:10px}
+.law{border-left:3px solid var(--green);background:var(--panel2);padding:9px 12px;margin-bottom:8px;font-size:12.5px;border-radius:0 6px 6px 0}
+.law.ng{border-left-color:var(--red)}
+.law b{color:var(--gold);font-family:'Silkscreen';font-size:10px;margin-right:6px}
+
+/* quest log */
+.mile{margin-bottom:14px;border:var(--border);border-radius:8px;overflow:hidden}
+.mile-h{padding:10px 14px;background:var(--panel2);cursor:pointer;display:flex;align-items:center;gap:10px;user-select:none}
+.mile-h:hover{background:#16203f}
+.mile-h .px{color:var(--magenta);font-size:12px}
+.mile-h .cnt{margin-left:auto;font-size:10px;color:var(--dim)}
+.mile-h .chev{transition:.25s;color:var(--dim)}
+.mile.open .chev{transform:rotate(90deg)}
+.mile-body{display:none;padding:10px 14px}
+.mile.open .mile-body{display:block}
+.quest{display:flex;gap:10px;align-items:flex-start;padding:9px 10px;border-bottom:1px dashed #233052}
+.quest:last-child{border-bottom:none}
+.quest input{accent-color:var(--green);margin-top:4px;cursor:pointer;width:15px;height:15px}
+.quest .qid{font-family:'Silkscreen';font-size:10px;color:var(--cyan);white-space:nowrap;margin-top:2px}
+.quest p{font-size:12.5px}
+.quest.qdone p{color:var(--dim);text-decoration:line-through 1px rgba(114,245,138,.6)}
+.quest.qdone .qid{color:var(--green)}
+
+/* flow diagram */
+.flow{font-size:12px;line-height:1.9;overflow-x:auto;white-space:pre;color:var(--cyan);
+  background:#070b14;border:var(--border);border-radius:8px;padding:16px;text-shadow:0 0 6px rgba(63,227,227,.35)}
+.flow .hot{color:var(--amber)}
+.flow .ok{color:var(--green)}
+
+/* ledger game */
+.digestbox{border:2px solid var(--magenta);border-radius:8px;padding:14px;background:#120a12;font-size:12px}
+.digestbox h4{color:var(--magenta);font-family:'Silkscreen';font-size:11px;margin-bottom:8px}
+.rowcard{border:var(--border);border-radius:6px;padding:10px 12px;margin:8px 0;background:var(--panel);transition:.3s;position:relative}
+.rowcard .rid{font-family:'Silkscreen';font-size:11px;color:var(--cyan)}
+.rowcard .meta{font-size:11px;color:var(--dim);margin-top:3px}
+.rowcard .state{position:absolute;top:8px;right:10px;font-family:'Silkscreen';font-size:10px;padding:3px 8px;border-radius:3px;border:1px solid var(--dim);color:var(--dim)}
+.rowcard.s-pass{border-color:var(--green);box-shadow:0 0 14px rgba(114,245,138,.25)}
+.rowcard.s-pass .state{border-color:var(--green);color:#07150a;background:var(--green)}
+.rowcard.s-fail{border-color:var(--red);box-shadow:0 0 14px rgba(255,82,82,.3);animation:shake .35s}
+.rowcard.s-fail .state{border-color:var(--red);color:#fff;background:var(--red)}
+.rowcard.s-na .state{border-color:var(--gold);color:#221a00;background:var(--gold)}
+.rowcard.s-na{border-color:var(--gold)}
+@keyframes shake{20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
+.console{margin-top:12px}
+.console textarea{width:100%;background:#05070d;color:var(--green);border:2px solid var(--cyan);border-radius:6px;
+  font-family:'IBM Plex Mono';font-size:13px;padding:10px;min-height:74px;outline:none}
+.console textarea:focus{box-shadow:0 0 14px rgba(63,227,227,.35)}
+.btn{font-family:'Silkscreen';font-size:11px;background:var(--cyan);color:#04282a;border:none;border-radius:5px;
+  padding:9px 16px;cursor:pointer;margin-top:8px;box-shadow:0 3px 0 #1d8a8a;transition:.12s}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 #1d8a8a}
+.btn.warn{background:var(--amber);color:#2a1c00;box-shadow:0 3px 0 #9a6a10}
+.btn.ghost{background:transparent;color:var(--dim);border:1px solid var(--dim);box-shadow:none}
+.parselog{margin-top:10px;font-size:12px;background:#05070d;border:1px dashed #233052;border-radius:6px;padding:10px;min-height:36px;white-space:pre-wrap}
+.parselog .err{color:var(--red)} .parselog .okk{color:var(--green)} .parselog .inf{color:var(--dim)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chip{font-size:10px;border:1px solid var(--dim);color:var(--dim);border-radius:10px;padding:2px 9px;cursor:pointer}
+.chip:hover{color:var(--cyan);border-color:var(--cyan)}
+
+/* oracle linter */
+.lintres{margin-top:10px;font-size:12px}
+.lintres .verdict{font-family:'Silkscreen';font-size:13px;padding:8px 12px;border-radius:6px;display:inline-block}
+.lintres .pass{background:rgba(114,245,138,.12);color:var(--green);border:1px solid var(--green)}
+.lintres .rej{background:rgba(255,82,82,.1);color:var(--red);border:1px solid var(--red)}
+.lintres ul{margin:8px 0 0 18px}
+.lintres li{margin:3px 0}
+
+/* state machine */
+.sm{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:10px 0}
+.smnode{border:2px solid var(--dim);border-radius:8px;padding:10px 13px;font-family:'Silkscreen';font-size:10px;color:var(--dim);transition:.25s;background:var(--panel2)}
+.smnode.active{border-color:var(--amber);color:var(--amber);box-shadow:0 0 18px rgba(255,182,39,.55);transform:scale(1.08)}
+.smnode.terminal{border-style:double}
+.smbtns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px}
+.smlog{text-align:center;font-size:12px;margin-top:10px;min-height:20px}
+.smlog .bad{color:var(--red)} .smlog .good{color:var(--green)}
+
+/* invariant vault */
+.vault{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+.inv{perspective:900px;height:230px;cursor:pointer}
+.inv .face{position:absolute;inset:0;backface-visibility:hidden;border-radius:8px;padding:14px;transition:transform .55s cubic-bezier(.3,1.2,.4,1)}
+.inv .front{background:linear-gradient(160deg,#131b36,#0d1220);border:2px solid var(--cyan)}
+.inv .back{background:linear-gradient(160deg,#241430,#140d1c);border:2px solid var(--magenta);transform:rotateY(180deg);overflow-y:auto}
+.inv.flip .front{transform:rotateY(180deg)}
+.inv.flip .back{transform:rotateY(360deg)}
+.inv .face h4{font-size:11px;margin-bottom:8px}
+.inv .front h4{color:var(--cyan)} .inv .back h4{color:var(--magenta)}
+.inv .cat{font-size:9px;font-family:'Silkscreen';color:var(--gold);border:1px solid var(--gold);display:inline-block;padding:1px 7px;border-radius:9px;margin-bottom:8px}
+.inv p{font-size:11.5px}
+.inv .hint{position:absolute;bottom:8px;right:12px;font-size:9px;color:var(--dim)}
+.minilist{columns:2;gap:18px;font-size:11px;margin-top:16px;color:var(--dim)}
+.minilist div{break-inside:avoid;margin-bottom:6px}
+.minilist b{color:var(--ink)}
+@media(max-width:700px){.minilist{columns:1}}
+
+/* bestiary */
+.beasts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.beast{border:2px solid var(--red);border-radius:8px;background:linear-gradient(170deg,#1d0d10,#120a0c);padding:13px;transition:.2s}
+.beast:hover{transform:translateY(-3px);box-shadow:0 8px 22px rgba(255,82,82,.18)}
+.beast h4{color:var(--red);font-size:10px;margin-bottom:7px;word-break:break-all}
+.beast .cm{font-size:11.5px}
+.beast .cm b{color:var(--green);font-family:'Silkscreen';font-size:9px;display:block;margin-bottom:4px}
+
+/* matrix + tree */
+table{border-collapse:collapse;width:100%;font-size:11.5px}
+th,td{border:1px solid #233052;padding:7px 9px;text-align:left;vertical-align:top}
+th{background:var(--panel2);color:var(--cyan);font-family:'Silkscreen';font-size:9px}
+td b{color:var(--gold)}
+.tree{font-size:12.5px;white-space:pre;overflow-x:auto;color:var(--ink);background:#070b14;border:var(--border);border-radius:8px;padding:16px;line-height:1.9}
+.tree .sys{color:var(--amber)} .tree .sub{color:var(--magenta)} .tree .cmp{color:var(--cyan)}
+.alt-badge{font-size:9px;font-family:'Silkscreen';padding:1px 6px;border-radius:3px;border:1px solid currentColor}
+
+/* OQ */
+.oq{border-left:3px solid var(--gold);background:var(--panel2);padding:10px 14px;margin-bottom:10px;font-size:12.5px;border-radius:0 6px 6px 0}
+.oq b{color:var(--gold)}
+.oq .res{color:var(--green);font-family:'Silkscreen';font-size:9px}
+
+/* verdict */
+#verdict .panel{border:3px solid var(--gold);box-shadow:0 0 30px rgba(255,216,102,.15)}
+#verdict h2{color:var(--gold)}
+.vbtns{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px}
+.vbtn{flex:1;min-width:200px;font-family:'Silkscreen';font-size:13px;padding:18px;border-radius:8px;cursor:pointer;border:3px solid;transition:.15s;background:transparent}
+.vbtn.approve{border-color:var(--green);color:var(--green)}
+.vbtn.approve:hover,.vbtn.approve.sel{background:var(--green);color:#07150a;box-shadow:0 0 26px rgba(114,245,138,.6)}
+.vbtn.changes{border-color:var(--red);color:var(--red)}
+.vbtn.changes:hover,.vbtn.changes.sel{background:var(--red);color:#fff;box-shadow:0 0 26px rgba(255,82,82,.5)}
+#vnotes{width:100%;margin-top:12px;background:#05070d;color:var(--ink);border:2px solid var(--dim);border-radius:6px;
+  font-family:'IBM Plex Mono';font-size:13px;padding:10px;min-height:64px}
+#replyout{margin-top:12px;background:#05070d;border:2px dashed var(--gold);border-radius:6px;padding:12px;font-size:13px;color:var(--gold);display:none;white-space:pre-wrap}
+.gatestamp{display:none;text-align:center;margin-top:18px;font-family:'Silkscreen';font-size:26px;color:var(--green);
+  text-shadow:0 0 22px rgba(114,245,138,.8);animation:stamp .5s cubic-bezier(.2,2.2,.4,1)}
+@keyframes stamp{from{transform:scale(3);opacity:0}to{transform:scale(1);opacity:1}}
+canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:10000}
+footer{margin-top:70px;text-align:center;font-size:10px;color:var(--dim)}
+.kbd{border:1px solid var(--dim);border-radius:3px;padding:0 5px;font-size:11px}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+
+<div id="hud">
+  <span class="px flicker">⚡ GATEKEEPER</span>
+  <div class="xpwrap"><div id="xpbar"></div><div id="xptxt">REVIEW XP 0%</div></div>
+  <span class="px lvl" id="lvltxt">LV.1 WANDERER</span>
+</div>
+
+<main>
+<header>
+  <div class="cab flicker">
+    <h1>THE GATEKEEPER</h1>
+    <div class="sub">VALIDATION-LEG PRODUCTION PROCESS · SPEC v4 + TARGET ARCHITECTURE · CARD 5604</div>
+    <div class="coin blink">▸ INSERT JUDGMENT TO CONTINUE ◂</div>
+    <div class="marquee"><span>DEBATE CONVERGED R4 — 43 FINDINGS APPLIED — BOTH CRITICS + CLAUDE AGREE ··· PHASE 4 LIGHTWEIGHT DRAFT AWAITING YOUR REVIEW ··· NEXT BOSS: THE GAUNTLET (SYSTEM-WEIGHT ROSTER) ··· ALL WIDGETS BELOW ARE FUNCTIONAL — THE PARSER, LINTER AND STATE MACHINE IMPLEMENT THE SPEC'S ACTUAL RULES ···</span></div>
+  </div>
+</header>
+
+<!-- WORLD MAP -->
+<section id="map" data-sec="map">
+  <div class="sec-head"><h2>▦ WORLD MAP</h2><span class="tag">pipeline</span>
+    <button class="reviewed-btn" onclick="markReviewed('map',this)">MARK REVIEWED</button></div>
+  <div class="panel">
+    <div class="track">
+      <div class="node done"><div class="dot">✓</div><div class="nm">TRIAGE</div></div><div class="edge done"></div>
+      <div class="node done"><div class="dot">✓</div><div class="nm">REQUIRE-MENTS</div></div><div class="edge done"></div>
+      <div class="node done"><div class="dot">✓</div><div class="nm">ROADMAP</div></div><div class="edge done"></div>
+      <div class="node done"><div class="dot">✓</div><div class="nm">DEBATE ×4</div></div><div class="edge done"></div>
+      <div class="node here"><div class="dot">★</div><div class="nm">TARGET ARCH</div></div><div class="edge"></div>
+      <div class="node"><div class="dot">☠</div><div class="nm">GAUNTLET</div></div><div class="edge"></div>
+      <div class="node"><div class="dot">⚑</div><div class="nm">FINALIZE</div></div><div class="edge"></div>
+      <div class="node"><div class="dot">⛏</div><div class="nm">EXECUTION</div></div><div class="edge"></div>
+      <div class="node"><div class="dot">⚙</div><div class="nm">IMPLEMENT</div></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n">14</div><div class="l">USER STORIES</div></div>
+      <div class="stat"><div class="n">43</div><div class="l">DEBATE FINDINGS APPLIED</div></div>
+      <div class="stat"><div class="n">15+7</div><div class="l">SPEC + ARCH INVARIANTS</div></div>
+      <div class="stat"><div class="n">7</div><div class="l">SUBCOMMANDS</div></div>
+      <div class="stat"><div class="n">2</div><div class="l">EXEC SURFACES</div></div>
+      <div class="stat"><div class="n">0</div><div class="l">NEW MIDDLEWARE</div></div>
+    </div>
+    <p style="margin-top:14px;font-size:12.5px;color:var(--dim)">The quest: fizzy v5 demands <b style="color:var(--amber)">system validation</b> — a human judging intent, not tests — before a system-altitude session may close. The spec builds the production line that feeds that gate: ConOps → validation rows → executed evidence → one Telegram digest → your judgment → gate artifact → close. One new script (<b style="color:var(--cyan)">validation_emission.py</b>), phase-doc wiring, zero fizzy changes.</p>
+  </div>
+</section>
+
+<!-- LAWS -->
+<section id="laws" data-sec="laws">
+  <div class="sec-head"><h2>⚖ LAWS OF THE REALM</h2><span class="tag">goals / non-goals</span>
+    <button class="reviewed-btn" onclick="markReviewed('laws',this)">MARK REVIEWED</button></div>
+  <div class="panel laws">
+    <div class="law-col"><h3 style="color:var(--green)">▲ THOU SHALT (GOALS)</h3>
+      <div class="law"><b>G1</b>A v5 system session can V-close via documented, repeatable process</div>
+      <div class="law"><b>G2</b>Validation judges INTENT (ConOps scenarios) — anti-relabeling by construction</div>
+      <div class="law"><b>G3</b>Jason is the sole oracle, at one batched Telegram digest per session</div>
+      <div class="law"><b>G4</b>ConOps derived late (Phase 7), hash-bound at mark time</div>
+      <div class="law"><b>G5</b>Scenario refresh only via auditable anti-hindsight rule</div>
+    </div>
+    <div class="law-col"><h3 style="color:var(--red)">▼ THOU SHALT NOT (NON-GOALS)</h3>
+      <div class="law ng"><b>NG1</b>No fizzy-side changes — the gate contract is fixed, we conform</div>
+      <div class="law ng"><b>NG2</b>No subsystem/component validation; no v4 retrofit</div>
+      <div class="law ng"><b>NG3</b>No automated pass/fail — results are human judgments only</div>
+      <div class="law ng"><b>NG4</b>No new MCP server, lane, or fizzy tool — docs + one local module</div>
+      <div class="law ng"><b>NG5</b>No "tests pass" oracles. Ever.</div>
+    </div>
+  </div>
+</section>
+
+<!-- QUEST LOG -->
+<section id="quests" data-sec="quests">
+  <div class="sec-head"><h2>📜 QUEST LOG</h2><span class="tag">14 user stories · check off as you read</span>
+    <button class="reviewed-btn" onclick="markReviewed('quests',this)">MARK REVIEWED</button></div>
+  <div id="questwrap"></div>
+</section>
+
+<!-- MACHINE -->
+<section id="machine" data-sec="machine">
+  <div class="sec-head"><h2>⚙ THE MACHINE</h2><span class="tag">system architecture</span>
+    <button class="reviewed-btn" onclick="markReviewed('machine',this)">MARK REVIEWED</button></div>
+<div class="flow">roadmap/manifest.json ──derive-conops──▶ <span class="hot">roadmap/conops.md</span> ──sha256──┐
+        │                                                              │
+        └──(Phase 7) draft rows──▶ <span class="hot">validation-rows.json</span> ◀── THE LEDGER  │
+                                        │      (single SoT, lock-guarded)
+ (Phase 8, post-implementation)         ▼                              │
+ execute scenarios ──▶ validation-evidence/&lt;row-id&gt;/ ──▶ digest ──▶ <span class="ok">JASON</span>
+                                        │            (Telegram, batched)
+                              reply grammar parse                      │
+                                        ▼                              │
+                          <span class="hot">system_validation.json</span> ◀── conops_hash ──────┘
+                                        │
+                       self-check (strictly-stricter gate mirror)
+                                        ▼
+                       mark_system_validation_complete  ──▶  <span class="ok">CLOSE ✓</span></div>
+  <div class="panel" style="margin-top:12px;font-size:12.5px">
+    <b style="color:var(--cyan)">Architecture verdict (Phase 4, lightweight):</b> extends existing scripts layer, <i>mini_spec_emission.py</i> pattern. The module owns every machine-checkable shape; the LLM writes prose only; you judge intent only. Mutation rights: exactly 3 subcommands (<b>parse-reply</b>, <b>assemble-digest</b>, <b>cancel-batch</b>) under filelock + atomic rename. Everything else read-only.
+  </div>
+</section>
+
+<!-- LEDGER GAME -->
+<section id="ledger" data-sec="ledger">
+  <div class="sec-head"><h2>🕹 MINI-GAME: JUDGE THE LEDGER</h2><span class="tag">functional — spec §6.5 grammar, real implementation</span>
+    <button class="reviewed-btn" onclick="markReviewed('ledger',this)">MARK REVIEWED</button></div>
+  <div class="panel">
+    <p style="font-size:12.5px;margin-bottom:10px">This is the actual reply grammar you'll use from your phone. A sample digest <b style="color:var(--magenta)">d-1</b> is open below. Type verdicts; the parser applies them <b>atomically or not at all</b> — exactly per spec. Try to break it.</p>
+    <div class="digestbox">
+      <h4>🥊📜 VALIDATION DIGEST validation-leg-process d-1 (3 rows)</h4>
+      <div id="rows"></div>
+    </div>
+    <div class="console">
+      <textarea id="reply" placeholder="pass all&#10;fail r-US3-1: digest was unreadable on mobile&#10;na r-US10-1: justification required here"></textarea>
+      <button class="btn" onclick="parseReply()">▶ SEND REPLY</button>
+      <button class="btn ghost" onclick="resetLedger()">RESET LEDGER</button>
+      <div class="chips">
+        <span class="chip" onclick="fill('pass all')">pass all</span>
+        <span class="chip" onclick="fill('fail r-US3-1: scenario too vague\npass rest')">fail one + pass rest</span>
+        <span class="chip" onclick="fill('na r-US10-1')">na without justification (invalid)</span>
+        <span class="chip" onclick="fill('pass r-US3-0')">superseded row (invalid)</span>
+        <span class="chip" onclick="fill('fail all')">fail all (invalid)</span>
+        <span class="chip" onclick="fill('pass US-3')">bare US-n (invalid)</span>
+        <span class="chip" onclick="fill('pass r-US3-1\nfail r-US3-1: contradiction')">duplicate verdict (invalid)</span>
+      </div>
+      <div class="parselog" id="plog"><span class="inf">› parser ready. batch d-1 open. superseded row r-US3-0 exists but is excluded (INV-10).</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ORACLE LINTER -->
+<section id="linter" data-sec="linter">
+  <div class="sec-head"><h2>🔮 MINI-GAME: THE ORACLE LINTER</h2><span class="tag">functional — check-rows Layer-2 lint</span>
+    <button class="reviewed-btn" onclick="markReviewed('linter',this)">MARK REVIEWED</button></div>
+  <div class="panel">
+    <p style="font-size:12.5px;margin-bottom:10px">Every row's oracle must pass this lint before the digest exists. Canonical form: <i style="color:var(--gold)">"Jason passes this row iff &lt;observable user outcome&gt; demonstrates &lt;named intent from US-n&gt;."</i> Banned: verification-success oracles (NG5). Write one, lint it.</p>
+    <textarea id="oracle" style="width:100%;background:#05070d;color:var(--gold);border:2px solid var(--gold);border-radius:6px;font-family:'IBM Plex Mono';font-size:13px;padding:10px;min-height:60px" placeholder="Jason passes this row iff the digest renders all 3 rows readably on mobile, demonstrating the one-interaction judgment intent of US-6."></textarea>
+    <button class="btn warn" onclick="lintOracle()">▶ LINT ORACLE</button>
+    <div class="chips">
+      <span class="chip" onclick="fillO('Jason passes this row iff all tests pass and CI is green for US-8.')">try a banned one</span>
+      <span class="chip" onclick="fillO('It works and looks good.')">try a vague one</span>
+      <span class="chip" onclick="fillO('Jason passes this row iff a fresh conductor reaches a self-check-clean draft in under 30 minutes without reading fizzy source, demonstrating the single-entry-point intent of US-0.')">try a good one</span>
+    </div>
+    <div class="lintres" id="lintres"></div>
+  </div>
+</section>
+
+<!-- STATE MACHINE -->
+<section id="statemachine" data-sec="statemachine">
+  <div class="sec-head"><h2>🎰 MINI-GAME: ROW LIFE & DEATH</h2><span class="tag">functional — S1–S7 state machine</span>
+    <button class="reviewed-btn" onclick="markReviewed('statemachine',this)">MARK REVIEWED</button></div>
+  <div class="panel">
+    <p style="font-size:12.5px;margin-bottom:6px">A validation row's normative life. Fire events; illegal transitions bounce (they don't exist — that's the point). Note <b style="color:var(--green)">judged-pass is terminal</b> except human-approved supersession, and a reset never erases history.</p>
+    <div class="sm" id="smnodes"></div>
+    <div class="smbtns" id="smbtns"></div>
+    <div class="smlog" id="smlog">state: <b style="color:var(--amber)">drafted</b></div>
+  </div>
+</section>
+
+<!-- INVARIANT VAULT -->
+<section id="vault" data-sec="vault">
+  <div class="sec-head"><h2>🛡 THE INVARIANT VAULT</h2><span class="tag">7 architecture wards · click to flip</span>
+    <button class="reviewed-btn" onclick="markReviewed('vault',this)">MARK REVIEWED</button></div>
+  <div class="vault" id="vaultwrap"></div>
+  <div class="panel" style="margin-top:14px">
+    <h3 style="font-size:12px;color:var(--dim);margin-bottom:4px">SPEC-LEVEL INVARIANTS (the 15 from debate — compact codex)</h3>
+    <div class="minilist" id="specinvs"></div>
+  </div>
+</section>
+
+<!-- BESTIARY -->
+<section id="bestiary" data-sec="bestiary">
+  <div class="sec-head"><h2>👹 GATE-REJECT BESTIARY</h2><span class="tag">error-code playbook §10</span>
+    <button class="reviewed-btn" onclick="markReviewed('bestiary',this)">MARK REVIEWED</button></div>
+  <div class="beasts" id="beasts"></div>
+</section>
+
+<!-- ALTITUDE + MATRIX -->
+<section id="arch" data-sec="arch">
+  <div class="sec-head"><h2>🗼 ALTITUDE TREE & COVERAGE MATRIX</h2><span class="tag">V-model input for Phase 7</span>
+    <button class="reviewed-btn" onclick="markReviewed('arch',this)">MARK REVIEWED</button></div>
+<div class="tree"><span class="sys">◆ validation-leg-process</span> <span class="alt-badge sys">SYSTEM</span> — V&V: component+subsystem+system verification + <b>system validation (this very process — US-10 dogfood)</b>
+ ├─ <span class="sub">◈ emission-toolchain</span> <span class="alt-badge sub">SUBSYSTEM</span>
+ │   ├─ <span class="cmp">○ validation_emission.py</span> <span class="alt-badge cmp">COMPONENT</span> — pytest TC-1.x / TC-2.x / TC-3.x
+ │   └─ <span class="cmp">○ test_validation_emission.py</span> <span class="alt-badge cmp">COMPONENT</span>
+ └─ <span class="cmp">○ phase-wiring (07/08 docs)</span> <span class="alt-badge cmp">COMPONENT</span> — depends_on the module (real flag names)</div>
+  <div class="panel" style="margin-top:12px;overflow-x:auto">
+    <table>
+      <tr><th>CONCERN</th><th>cli_command</th><th>outbound_integration</th></tr>
+      <tr><td><b>SoT / Concurrency</b></td><td>single ledger + filelock + atomic rename (INV-A1)</td><td>N/A — no remote state</td></tr>
+      <tr><td><b>Enforcement</b></td><td>3 mutating subcommands only; self-check before MCP (INV-A2/A5)</td><td>gate conformance only (NG1)</td></tr>
+      <tr><td><b>Errors</b></td><td>exit 0/2/3, structured issues; zero-mutation re-prompt (INV-A3)</td><td>send fail → log + terminal fallback</td></tr>
+      <tr><td><b>Security</b></td><td>terminal source = local operator</td><td>sender allowlist, discard intruders (INV-A4); no secrets in digests</td></tr>
+      <tr><td><b>Delivery</b></td><td>batch lifecycle lives in ledger</td><td>one open batch; stale-reply rejection; idempotent close (INV-A6)</td></tr>
+      <tr><td><b>Observability</b></td><td>provenance blocks; append-only history (INV-A7)</td><td>reply_ref ties judgment → message id</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- OPEN QUESTIONS -->
+<section id="oq" data-sec="oq">
+  <div class="sec-head"><h2>❓ OPEN QUESTIONS</h2><span class="tag">carried into gauntlet</span>
+    <button class="reviewed-btn" onclick="markReviewed('oq',this)">MARK REVIEWED</button></div>
+  <div class="panel">
+    <div class="oq"><b>OQ-1</b> — Does the gate tolerate unknown row fields? Verify against served code at implementation; two-file fallback protocol already specified (§6.4).</div>
+    <div class="oq"><b>OQ-2</b> <span class="res">RESOLVED</span> — bridge does no splitting; 4096 raw limit; module budgets 3500/part and owns splitting.</div>
+    <div class="oq"><b>OQ-3</b> — derive-conops re-run cadence: always re-derive at close (simple, noisy) vs only on detected roadmap edit. Default leans re-derive.</div>
+    <div class="oq"><b>OQ-4</b> — fizzy handoff: confirm empty-set anti-relabeling pass is intentional; report identical-set loophole (closed locally by INV-11).</div>
+  </div>
+</section>
+
+<!-- VERDICT -->
+<section id="verdict" data-sec="verdict">
+  <div class="sec-head"><h2>⚖ FINAL VERDICT — DRAFT REVIEW GATE</h2><span class="tag">quality gate · human only</span></div>
+  <div class="panel">
+    <p style="font-size:13px">You are the gate, Jason. This decides whether Phase 4 proceeds to dry-run → publish → <b style="color:var(--red)">THE GAUNTLET</b>. Review XP: <span id="vxp" style="color:var(--gold);font-family:'Silkscreen'">0%</span> <span id="vxpnote" style="color:var(--dim);font-size:11px">(you can stamp at any XP — but a Gatekeeper reads the scrolls)</span></p>
+    <div class="vbtns">
+      <button class="vbtn approve" onclick="setVerdict('approve',this)">✓ APPROVE — RELEASE THE GAUNTLET</button>
+      <button class="vbtn changes" onclick="setVerdict('changes',this)">✗ REQUEST CHANGES</button>
+    </div>
+    <textarea id="vnotes" placeholder="optional notes / change requests — these go straight back to the conductor"></textarea>
+    <button class="btn warn" onclick="genReply()">⚒ FORGE REPLY TEXT</button>
+    <div id="replyout"></div>
+    <div class="gatestamp" id="stamp">★ GATE APPROVED ★</div>
+  </div>
+</section>
+
+<footer>
+  GATEKEEPER CONSOLE v1 · adv-spec-202606110339-validation-leg-process · spec v4 (R4-converged) + target-architecture (lightweight) ·
+  progress autosaves to localStorage · <span class="kbd">parser</span> <span class="kbd">linter</span> <span class="kbd">state machine</span> implement the spec's normative rules
+</footer>
+</main>
+
+<script>
+"use strict";
+/* ---------- data ---------- */
+const QUESTS = {
+ "M0 · GETTING STARTED":[
+  ["US-0","Single documented entry point — run the validation leg end-to-end without reading fizzy source."]],
+ "M1 · CONOPS DERIVATION":[
+  ["US-1","Derive roadmap/conops.md from the manifest so validation binds to refreshed, post-debate intent."],
+  ["US-2","ConOps reads as operational intent, not a test inventory — judgments anchor on what was wanted."]],
+ "M2 · ROW DRAFTING (PHASE 7)":[
+  ["US-3","≥1 validation row per user story, drafted pre-implementation — scenarios precede hindsight."],
+  ["US-4","Every oracle states how Jason judges pass/fail FROM INTENT — never 'tests pass'."],
+  ["US-5","Evidence-type taxonomy (walkthrough-transcript / artifact-demo / narrative) with per-type minimum bar + rationale."],
+  ["US-12","Controlled scenario-refresh: only pre-judgment or after HUMAN-approved scope decision; full audit trail; agents never approve their own scope cuts."]],
+ "M3 · PHASE 8 GATE & CLOSE":[
+  ["US-13","EXECUTE every scenario and compile real evidence BEFORE digest assembly — no narrative filler."],
+  ["US-6","One batched Telegram digest — judge the whole session from mobile in one interaction."],
+  ["US-7","Deterministic reply grammar; N/A only from Jason, row-level only; story removal = ConOps edit, never an N/A."],
+  ["US-8","Emit system_validation.json + call the gate with every reject code mapped to a documented response."],
+  ["US-9","Fail results spawn a remediation loop — cards → fix → re-exercise → regenerate → re-gate."],
+  ["US-11","Local self-check mirrors the gate's rejects — artifacts fail fast before any MCP call."]],
+ "M4 · DOGFOOD CLOSE-OUT":[
+  ["US-10","THIS session (card 5604) V-closes through the new process — proven on itself first."]]
+};
+const INVA = [
+ ["INV-A1","sot","The ledger is the sole SoT","validation-rows.json owns all row state; system_validation.json is a write-only projection from emit-system-validation. Judgments are never hand-transcribed.","Enforcement: emit is the only producer; self-check runs on the exact emitted bytes. Test TC-INV-A1: hand-built artifact must fail; projection must equal ledger exactly; editing the projection changes nothing downstream."],
+ ["INV-A2","enforcement","Three keys, one lock","Only parse-reply, assemble-digest, cancel-batch mutate the ledger — full read-modify-write under validation-rows.json.lock, atomic tmp+rename. Everything else read-only.","Test TC-INV-A2: every read-only subcommand leaves the file byte-identical; mutators against a held lock exit 3 LEDGER_BUSY in ~10s, ledger untouched."],
+ ["INV-A3","error_handling","Atomic or nothing","Exit 0/2/3 everywhere; exit 2 carries structured {code,row_id,detail}. An invalid reply = ZERO mutations + re-prompt quoting the offending text.","Test TC-INV-A3: mixed valid+invalid reply leaves ledger bytes unchanged; cleaned reply applies both verdicts atomically; corrupt ledger → exit 3, never auto-repaired."],
+ ["INV-A4","security","The allowlist ward","Telegram judgments apply only when --sender-id matches the registry-configured allowlist (never hardcoded). Intruder replies: discarded + logged, never parsed.","Test TC-INV-A4: non-allowlisted 'pass all' → ledger unchanged; allowlisted applies; static grep proves no hardcoded chat id in module source."],
+ ["INV-A5","validation","Stricter than the gate","self-check mirrors every gate reject class and is STRICTLY stricter (identical-set anti-relabeling). It must pass on the exact bytes sent to the MCP call. local-clean ⇒ gate-clean.","Test TC-INV-A5: per reject class, a fixture the gate rejects must be rejected locally with the mirrored code; identical-set fixture passes the gate's rule but FAILS locally; clean artifact passes the real gate first call (dogfood)."],
+ ["INV-A6","integration","One batch to rule them","At most one open digest batch; batches snapshot row hashes; stale digest-id or changed-hash replies rejected; the whole close is idempotent — re-entry skips finished work, never re-judges.","Test TC-INV-A6: second assemble-digest refused; stale replies rejected; running the close twice yields identical end state; cancel-batch needs --reason and is audit-logged."],
+ ["INV-A7","observability","History is sacred","Every non-null result carries full provenance (digest_id, source, reply_ref, judged_at). judgment_history is append-only; resets move judgments into history; supersessions need approval_ref.","Test TC-INV-A7: emit refuses provenance-less results; --reset-failed preserves the original fail byte-for-byte and demands --remediation-ref; supersession without approval_ref rejected."]
+];
+const SPECINVS = [
+ ["INV-1","results originate only from parsed Jason replies — provenance block required"],
+ ["INV-2","N/A is row-level; story removal is a ConOps edit"],
+ ["INV-3","supersession needs human approval + approval_ref — machine-checkable"],
+ ["INV-4","no digest row without real executed evidence matching its type"],
+ ["INV-5","self-check passes immediately before every MCP call, on the exact file"],
+ ["INV-6","no oracle may reference test-suite success (NG5)"],
+ ["INV-7","every active US id has ≥1 active row at all times"],
+ ["INV-8","conops_hash computed AFTER the last ConOps edit"],
+ ["INV-9","evidence is row-bound + hash-bound; edits orphan it"],
+ ["INV-10","superseded rows excluded from digests and parsing"],
+ ["INV-11","anti-relabeling rejects subset AND identical target sets (stricter than gate)"],
+ ["INV-12","evidence embeds row_hash + conops_hash; chain verified end-to-end"],
+ ["INV-13","judged-pass rows immutable except human-approved supersession"],
+ ["INV-14","judgment_history append-only — resets never erase"],
+ ["INV-15","telegram judgments require allowlisted sender; others discarded"]
+];
+const BEASTS = [
+ ["SESSION_MISMATCH","Verify card/session ids; never re-point at another session's card."],
+ ["VV_NOT_OBLIGATED_AT_ALTITUDE","Card isn't system-altitude — investigate altitude drift; do not force."],
+ ["VALIDATION_KIND_MISMATCH","Artifact kind wrong — regenerate via module; hand-edit suspected."],
+ ["VALIDATION_ARTIFACTS_INCOMPLETE","Run self-check; fix named field; hash mismatch → re-derive ConOps (INV-8)."],
+ ["VV_LEDGER_HAS_FAILURES","Should be unreachable — close blocks on fails. If hit: process-failure note + remediate."],
+ ["VALIDATION_IS_RELABELED_VERIFICATION","Rows point at verification fixtures — redraft from intent; INV-11 should have caught it locally."],
+ ["SYSTEM_VALIDATION_MISSING","The mark call never happened — run the Phase 8 close section."],
+ ["UNVALIDATED_USER_STORY","A US id lacks a passing row — re-run close with coverage fix."]
+];
+
+/* ---------- XP ---------- */
+const SECS=["map","laws","quests","machine","ledger","linter","statemachine","vault","bestiary","arch","oq"];
+const LS="gatekeeper-vlp-v1";
+let state=JSON.parse(localStorage.getItem(LS)||"{}");
+state.reviewed=state.reviewed||{}; state.quests=state.quests||{};
+function save(){localStorage.setItem(LS,JSON.stringify(state))}
+const LEVELS=[[0,"LV.1 WANDERER"],[25,"LV.2 SQUIRE"],[50,"LV.3 WARDEN"],[75,"LV.4 ORACLE"],[100,"LV.5 GATEKEEPER"]];
+function xp(){
+  const r=SECS.filter(s=>state.reviewed[s]).length/SECS.length*80;
+  const q=Object.values(state.quests).filter(Boolean).length/14*20;
+  return Math.round(r+q);
+}
+function renderXP(){
+  const v=xp();
+  document.getElementById("xpbar").style.width=v+"%";
+  document.getElementById("xptxt").textContent="REVIEW XP "+v+"%";
+  document.getElementById("vxp").textContent=v+"%";
+  let lbl=LEVELS[0][1]; for(const [t,n] of LEVELS) if(v>=t) lbl=n;
+  document.getElementById("lvltxt").textContent=lbl;
+  if(v===100) document.getElementById("vxpnote").textContent="— full clear. The realm awaits your stamp.";
+}
+function markReviewed(id,btn){
+  state.reviewed[id]=!state.reviewed[id]; save();
+  btn.classList.toggle("done",state.reviewed[id]);
+  btn.textContent=state.reviewed[id]?"✓ REVIEWED":"MARK REVIEWED";
+  if(state.reviewed[id]) burst(btn);
+  renderXP();
+}
+
+/* ---------- quests ---------- */
+(function(){
+  const w=document.getElementById("questwrap");
+  let h="";
+  for(const [mile,qs] of Object.entries(QUESTS)){
+    h+=`<div class="mile open"><div class="mile-h" onclick="this.parentNode.classList.toggle('open')">
+      <span class="chev">▶</span><span class="px">${mile}</span><span class="cnt">${qs.length} quest${qs.length>1?"s":""}</span></div><div class="mile-body">`;
+    for(const [id,txt] of qs){
+      h+=`<div class="quest" id="q-${id}"><input type="checkbox" onchange="toggleQuest('${id}',this)">
+        <span class="qid">${id}</span><p>${txt}</p></div>`;
+    }
+    h+="</div></div>";
+  }
+  w.innerHTML=h;
+})();
+function toggleQuest(id,cb){
+  state.quests[id]=cb.checked; save();
+  document.getElementById("q-"+id).classList.toggle("qdone",cb.checked);
+  if(cb.checked) burst(cb);
+  renderXP();
+}
+
+/* ---------- ledger mini-game (spec §6.5 grammar) ---------- */
+const LROWS=()=>[
+ {row_id:"r-US3-1",us:"US-3",scenario:"Fresh conductor drafts rows from ConOps; check-rows comes back clean first try.",oracle:"Jason passes this row iff the drafted rows satisfy the row standard without reading fizzy source, demonstrating the pre-hindsight drafting intent of US-3.",evidence:"agent-walkthrough-transcript",result:null},
+ {row_id:"r-US6-1",us:"US-6",scenario:"Conductor assembles the digest; Jason judges the whole session from his phone in one interaction.",oracle:"Jason passes this row iff the single digest sufficed to judge every row from mobile, demonstrating the one-interaction intent of US-6.",evidence:"artifact-demo",result:null},
+ {row_id:"r-US10-1",us:"US-10",scenario:"Card 5604 itself V-closes through this very process — gate accepts on first call.",oracle:"Jason passes this row iff this session closes through the new process with first-call gate acceptance, demonstrating the dogfood intent of US-10.",evidence:"artifact-demo",result:null}
+];
+const SUPERSEDED=new Set(["r-US3-0"]);
+let ledger=LROWS();
+function renderRows(){
+  document.getElementById("rows").innerHTML=ledger.map((r,i)=>{
+    const st=r.result===null?["UNJUDGED",""]:r.result==="pass"?["PASS ✓","s-pass"]:r.result==="fail"?["FAIL ✗","s-fail"]:["N/A","s-na"];
+    return `<div class="rowcard ${st[1]}"><span class="state">${st[0]}</span>
+      <div class="rid">[${i+1}] ${r.row_id} <span style="color:var(--dim)">(${r.us})</span></div>
+      <div class="meta">scenario: ${r.scenario}</div>
+      <div class="meta" style="color:var(--gold)">oracle: ${r.oracle}</div>
+      <div class="meta">evidence: ${r.evidence}${r.result&&r.just?` · <i style="color:var(--ink)">"${r.just}"</i>`:""}</div></div>`;
+  }).join("");
+}
+function fill(t){document.getElementById("reply").value=t}
+function plog(html){document.getElementById("plog").innerHTML=html}
+function parseReply(){
+  const raw=document.getElementById("reply").value;
+  if(!raw.trim()){plog('<span class="err">› empty reply. nothing to parse.</span>');return}
+  // block-oriented parse: verdict lines + continuation lines
+  const lines=raw.split(/\r?\n/);
+  const blocks=[]; const vre=/^(pass|fail|na)\s+(\S+)(?:\s*:\s*(.*))?$/i;
+  for(const ln of lines){
+    if(!ln.trim()) continue;
+    const m=ln.trim().match(vre);
+    if(m) blocks.push({v:m[1].toLowerCase(),t:m[2],text:m[3]||"",src:ln.trim()});
+    else if(blocks.length) blocks[blocks.length-1].text+=(blocks[blocks.length-1].text?"\n":"")+ln.trim();
+    else return plog(`<span class="err">› RE-PROMPT (zero mutations): leading continuation line with no verdict —</span>\n  "${esc(ln.trim())}"`);
+  }
+  // validate ALL before mutating ANY (atomicity)
+  const ids=new Set(ledger.map(r=>r.row_id));
+  const explicit=new Map(); let passAll=false,passRest=false;
+  for(const b of blocks){
+    const T=b.t;
+    if(T==="all"||T==="rest"){
+      if(b.v!=="pass") return reprompt(b,`"${b.v} ${T}" is invalid — only pass may target ${T}`);
+      if(T==="all")passAll=true; else passRest=true; continue;
+    }
+    if(/^US-\d+$/i.test(T)) return reprompt(b,"bare US-n targets are invalid — the grammar operates on row ids only");
+    if(!/^r-US\d+-\d+$/.test(T)) return reprompt(b,"not a row id (r-US<n>-<k>)");
+    if(SUPERSEDED.has(T)) return reprompt(b,"superseded row — excluded from parsing (INV-10)");
+    if(!ids.has(T)) return reprompt(b,"unknown row id in digest d-1");
+    if(b.v==="na"&&!b.text.trim()) return reprompt(b,"na requires non-empty justification (TC-3.5)");
+    if(explicit.has(T)){
+      const prev=explicit.get(T);
+      if(prev.v!==b.v||prev.text!==b.text) return reprompt(b,"duplicate verdict for the same row with different content");
+    }
+    const row=ledger.find(r=>r.row_id===T);
+    if(row.result==="pass") return reprompt(b,"judged-pass rows are immutable (INV-13) — only supersession can touch them");
+    explicit.set(T,b);
+  }
+  if(passAll&&passRest) return plog('<span class="err">› RE-PROMPT (zero mutations): pass all and pass rest in one reply is ambiguous.</span>');
+  // apply atomically
+  let applied=[];
+  for(const [id,b] of explicit){const r=ledger.find(x=>x.row_id===id); r.result=b.v; r.just=b.text.trim(); applied.push(`${b.v} ${id}`)}
+  if(passAll||passRest){
+    for(const r of ledger) if(r.result===null){r.result="pass"; r.just=""; applied.push("pass "+r.row_id+(passRest?" (rest)":" (all)"))}
+  }
+  renderRows();
+  const un=ledger.filter(r=>r.result===null).length;
+  const fails=ledger.filter(r=>r.result==="fail").length;
+  let tail = un? `<span class="inf">› ${un} row(s) still unjudged — batch d-1 stays open.</span>`
+    : fails? `<span class="err">› batch judged, ${fails} FAIL → close BLOCKED. Remediation cards spawn; fails move to history on --reset-failed + --remediation-ref.</span>`
+    : `<span class="okk">› batch d-1 CLOSED, all rows pass/na → emit-system-validation → self-check → mark_system_validation_complete. The gate opens.</span>`;
+  plog(`<span class="okk">› reply VALID — applied atomically:</span>\n  ${applied.join("\n  ")}\n${tail}`);
+  burst(document.getElementById("plog"));
+}
+function reprompt(b,why){plog(`<span class="err">› RE-PROMPT (zero mutations — INV-A3): ${esc(why)}</span>\n  offending block: "${esc(b.src)}"`);return}
+function resetLedger(){ledger=LROWS();renderRows();plog('<span class="inf">› ledger reset. batch d-1 open. all rows unjudged.</span>')}
+function esc(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+renderRows();
+
+/* ---------- oracle linter (check-rows Layer 2) ---------- */
+const BANNED=["tests pass","test passes","code merged","gate passed","ci green","ci is green"];
+const VAGUE=["works","looks good","acceptable","done","successful"];
+function fillO(t){document.getElementById("oracle").value=t}
+function lintOracle(){
+  const o=document.getElementById("oracle").value.trim();
+  const res=document.getElementById("lintres");
+  if(!o){res.innerHTML='<span class="verdict rej">EMPTY</span>';return}
+  const lo=o.toLowerCase(); const issues=[];
+  for(const b of BANNED) if(lo.includes(b)) issues.push(`BANNED_PHRASE: "${b}" — verification-success oracle (NG5 / INV-6)`);
+  if(!/\biff\b/i.test(o)) issues.push("MISSING_IFF: canonical form requires the literal 'iff'");
+  if(!/\bUS-\d+\b/.test(o)) issues.push("MISSING_INTENT_REF: no named US-n intent reference");
+  if(!/^jason passes this row iff/i.test(o)) issues.push("NONCANONICAL_FORM: must open with 'Jason passes this row iff …'");
+  const vhits=VAGUE.filter(v=>new RegExp("\\b"+v+"\\b","i").test(lo));
+  const concrete=/\b(render|display|read|reach|complete|close|accept|reply|draft|judge|digest|transcript|file|message|minutes|mobile|terminal|first[- ]call)\w*\b/i.test(lo);
+  if(vhits.length&&!concrete) issues.push(`VAGUE_TERMINAL: "${vhits.join('", "')}" without a concrete observable outcome`);
+  res.innerHTML= issues.length
+    ? `<span class="verdict rej">✗ REJECTED — exit 2</span><ul>${issues.map(i=>`<li>{code: ${esc(i)}}</li>`).join("")}</ul>`
+    : `<span class="verdict pass">✓ ORACLE ACCEPTED — structurally clean (semantics stay yours to judge, NG3)</span>`;
+  if(!issues.length) burst(res);
+}
+
+/* ---------- state machine S1–S7 ---------- */
+const SM_STATES=["drafted","evidence-attached","digested","judged-pass","judged-fail","judged-na","superseded"];
+const SM_T={ // state -> event -> [next, note]
+ "drafted":{"execute scenario":["evidence-attached","S1: evidence embeds row_hash + conops_hash"],"supersede (human-approved)":["superseded","S7: audit entry; excluded from digests"]},
+ "evidence-attached":{"assemble-digest":["digested","S2: batch d-N recorded in ledger, hashes snapshotted"],"supersede (human-approved)":["superseded","S7"]},
+ "digested":{"reply: pass":["judged-pass","S3: TERMINAL unless superseded (INV-13)"],"reply: fail":["judged-fail","S4: remediation cards spawn naming the conops_ref"],"reply: na":["judged-na","S5: sole-row N/A blocks close (TC-3.6)"],"supersede (human-approved)":["superseded","S7"]},
+ "judged-fail":{"reset (--reset-failed + remediation-ref)":["drafted","S6: fail moves to judgment_history (append-only); evidence invalidated"]},
+ "judged-pass":{"supersede (human-approved)":["superseded","S7: the ONLY exit from judged-pass"]},
+ "judged-na":{"supersede (human-approved)":["superseded","S7"]},
+ "superseded":{}
+};
+const SM_EVENTS=["execute scenario","assemble-digest","reply: pass","reply: fail","reply: na","reset (--reset-failed + remediation-ref)","supersede (human-approved)"];
+let smState="drafted";
+(function(){
+  document.getElementById("smnodes").innerHTML=SM_STATES.map(s=>
+    `<div class="smnode ${s==='judged-pass'||s==='superseded'?'terminal':''}" id="sm-${s}">${s.toUpperCase()}</div>`).join("");
+  document.getElementById("smbtns").innerHTML=SM_EVENTS.map(e=>
+    `<button class="btn ghost" style="font-size:9px" onclick="smFire('${e.replace(/'/g,"\\'")}')">${e}</button>`).join("");
+  smRender();
+})();
+function smRender(){for(const s of SM_STATES) document.getElementById("sm-"+s).classList.toggle("active",s===smState)}
+function smFire(ev){
+  const log=document.getElementById("smlog");
+  const t=SM_T[smState][ev];
+  if(!t){log.innerHTML=`<span class="bad">✗ no such transition from <b>${smState}</b> — "${ev}" bounces off. (No other transitions exist — normative.)</span>`;
+    const n=document.getElementById("sm-"+smState);n.style.animation="shake .35s";setTimeout(()=>n.style.animation="",400);return}
+  smState=t[0]; smRender();
+  log.innerHTML=`<span class="good">✓ ${t[1]||""}</span> → state: <b style="color:var(--amber)">${smState}</b>${smState==='superseded'?' <span class="bad">(end of the line — replacement row takes over)</span>':''}`;
+}
+
+/* ---------- vault ---------- */
+(function(){
+  document.getElementById("vaultwrap").innerHTML=INVA.map(([id,cat,title,front,back])=>
+   `<div class="inv" onclick="this.classList.toggle('flip')">
+     <div class="face front"><span class="cat">${cat}</span><h4>${id} · ${title}</h4><p>${front}</p><span class="hint">click to flip ⟲</span></div>
+     <div class="face back"><h4>${id} · ENFORCEMENT & TEST</h4><p>${back}</p><span class="hint">click to flip ⟲</span></div>
+    </div>`).join("");
+  document.getElementById("specinvs").innerHTML=SPECINVS.map(([id,t])=>`<div><b>${id}</b> — ${t}</div>`).join("");
+  document.getElementById("beasts").innerHTML=BEASTS.map(([n,c])=>
+   `<div class="beast"><h4>☠ ${n}</h4><div class="cm"><b>COUNTER-MOVE</b>${c}</div></div>`).join("");
+})();
+
+/* ---------- verdict ---------- */
+let verdict=null;
+function setVerdict(v,btn){
+  verdict=v;
+  document.querySelectorAll(".vbtn").forEach(b=>b.classList.remove("sel"));
+  btn.classList.add("sel");
+}
+function genReply(){
+  const out=document.getElementById("replyout");
+  const notes=document.getElementById("vnotes").value.trim();
+  if(!verdict){out.style.display="block";out.textContent="› pick a verdict first, Gatekeeper.";return}
+  let txt = verdict==="approve" ? "approve" : "changes requested";
+  if(notes) txt += (verdict==="approve"?" — notes: ":": ")+notes;
+  out.style.display="block";
+  out.innerHTML=`REPLY TEXT (send this in Telegram / terminal):\n\n  <b style="color:#fff">${esc(txt)}</b>\n\n<button class="btn" onclick="navigator.clipboard.writeText(${JSON.stringify(JSON.stringify(txt)).replace(/"/g,"&quot;")}.slice(1,-1)).then(()=>this.textContent='✓ COPIED')">COPY</button>`;
+  if(verdict==="approve"){document.getElementById("stamp").style.display="block";fireworks()}
+  else document.getElementById("stamp").style.display="none";
+}
+
+/* ---------- pixel fx ---------- */
+const cv=document.getElementById("fx"),cx=cv.getContext("2d");let parts=[];
+function rs(){cv.width=innerWidth;cv.height=innerHeight}rs();addEventListener("resize",rs);
+function burst(el){
+  const r=el.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
+  const cols=["#ffb627","#3fe3e3","#72f58a","#ff5d8f","#ffd866"];
+  for(let i=0;i<26;i++)parts.push({x,y,vx:(Math.random()-.5)*7,vy:(Math.random()-.5)*7-2,l:32,c:cols[i%5],s:2+Math.random()*3});
+}
+function fireworks(){
+  const cols=["#ffb627","#3fe3e3","#72f58a","#ff5d8f","#ffd866","#fff"];
+  for(let k=0;k<5;k++){const x=innerWidth*(0.15+Math.random()*.7),y=innerHeight*(0.2+Math.random()*.4);
+    for(let i=0;i<60;i++){const a=Math.PI*2*i/60,v=2+Math.random()*4;
+      parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:55,c:cols[i%6],s:2+Math.random()*3})}}
+}
+(function loop(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  parts=parts.filter(p=>p.l>0);
+  for(const p of parts){p.x+=p.vx;p.y+=p.vy;p.vy+=.12;p.l--;
+    cx.globalAlpha=Math.min(1,p.l/20);cx.fillStyle=p.c;cx.fillRect(p.x,p.y,p.s,p.s)}
+  cx.globalAlpha=1;requestAnimationFrame(loop);
+})();
+
+/* ---------- restore ---------- */
+(function(){
+  for(const s of SECS) if(state.reviewed[s]){
+    const sec=document.querySelector(`[data-sec="${s}"] .reviewed-btn`);
+    if(sec){sec.classList.add("done");sec.textContent="✓ REVIEWED"}
+  }
+  for(const [id,v] of Object.entries(state.quests)) if(v){
+    const q=document.getElementById("q-"+id);
+    if(q){q.classList.add("qdone");q.querySelector("input").checked=true}
+  }
+  renderXP();
+})();
+</script>
+</body>
+</html>
