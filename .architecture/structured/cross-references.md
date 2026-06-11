@@ -1,7 +1,7 @@
 # Cross References
 
 > Call graphs, data paths, and dependency lookups.
-> Generated: 2026-04-16 | Git: 9ca3ccd
+> Generated: 2026-06-11 (incremental) | Git: f198887
 
 ## Function Call Graph
 
@@ -19,7 +19,7 @@ main() (debate.py:1493)
 
 run_critique() (debate.py:1206)
   ├── calls: call_models_parallel(), generate_diff(), save_checkpoint(),
-  │          get_task_manager(), extract_spec()
+  │          extract_spec()  (task_manager deleted June 2026)
   ├── called_by: main()
   └── async: no
 
@@ -83,7 +83,8 @@ spec_critique                      stdin -> debate.py        call_models_paralle
 gauntlet_attack                    spec -> phase_1           generate_attacks -> parse concerns      concerns checkpoint JSON
 concern_evaluation                 concerns -> phase_4       evaluate_concerns -> parse verdict      evaluations checkpoint JSON
 big_picture_synthesis              concerns -> phase_2       generate_big_picture_synthesis          synthesis object
-concern_filtering                  concerns -> phase_3       filter + dedup (clustering removed)    filtered checkpoint JSON
+concern_filtering                  concerns -> phase_3       filter vs resolved DB; then phase_3.5  filtered + clustered checkpoint JSON
+concern_clustering                 concerns -> clustering.py  Jaccard 0.65 dedup (deterministic)     clustered-concerns checkpoint
 final_boss_review                  evaluations -> phase_7    run_final_boss_review                  final-boss checkpoint JSON
 cost_accumulation                  each model call           cost_tracker.add() (Lock)              cost report on stdout
 session_state                      SessionState              save() -> JSON                         ~/.config/.../sessions/
@@ -122,7 +123,6 @@ sessions/{id}.json               file-store    session.py               debate.p
 .adversarial-spec-gauntlet/      file-store    persistence.py           orchestrator, resume           FileLock guarded
 ~/.adversarial-spec/stats        file-store    medals.py                reporting, leaderboard         no lock
 ~/.adversarial-spec/resolved     file-store    phase_3_filtering.py     explanation matching           no lock
-.claude/tasks.json               file-store    mcp_tasks/server.py      TaskManager, MCP tools         FileLock in MCP server; check TaskManager
 ~/.claude/.../config.json        file-store    providers.py             models.py, debate.py           read-only at runtime
 ```
 
@@ -165,7 +165,7 @@ PACKAGE                 USED_FOR                     KEY_USAGE_SITES
 ──────────────────────────────────────────────────────────────────────────────────────────────────────
 litellm                 LLM API abstraction          litellm.completion() (models.py, model_dispatch.py)
 filelock                Atomic checkpoint I/O        FileLock() (gauntlet/persistence.py)
-mcp                     MCP protocol server          FastMCP (mcp_tasks/server.py)
+mcp                     declared, unused in scope    (MCP Tasks server deleted June 2026)
 pydantic                Data models (implicit)       BaseModel (pre_gauntlet/models.py)
 ```
 
@@ -179,8 +179,13 @@ AWS_REGION                     env var (dynamic)    models.py:648 (set during Be
 AWS_ACCESS_KEY_ID              env var              providers.py:269 (checked for Bedrock)
 TELEGRAM_BOT_TOKEN             env var              telegram_bot.py:42
 TELEGRAM_CHAT_ID               env var              telegram_bot.py:43
-MCP_WORKING_DIR                env var              mcp_tasks/server.py:60
 Bedrock config                 ~/.claude/.../config.json  providers.py, models.py, debate.py
 Session state                  ~/.config/.../sessions/    session.py, debate.py
 Profiles                       ~/.config/.../profiles/    debate.py (apply_profile)
 ```
+
+## New hub: token_tracking.py (2026-06-11)
+token_tracking.tracker (singleton) <- models.py, gauntlet/orchestrator.py, debate.py, gauntlet/phase_4_evaluation.py
+generate_concern_id (adversaries.py) <- gauntlet/core_types.py, execution_planner/gauntlet_concerns.py
+mini_spec_emission.py: stdlib-only standalone; consumed by debate.py Phase-7 flows; PLAN_SCHEMA_VERSION=3 pinned to fizzy
+Hooks: isolated from skill code; shared helper _resolve_config.py only.

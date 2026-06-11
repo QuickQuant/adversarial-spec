@@ -201,3 +201,13 @@
 - **By severity:** info: 5 | warning: 9 | error: 0
 - **Top finding:** FIND-001 — Triple litellm completion() pathway with silently divergent defaults
 - **Confidence breakdown:** high: 11 | medium: 3 | low: 0
+
+
+---
+
+# Update 2026-06-11 (incremental f198887)
+
+Resolved by deletion: FIND-003 (scope.py), FIND-010 (gauntlet_monolith.py); FIND-009 retired (stale count nit).
+Updated: FIND-002 (clustering reinstated as gauntlet/clustering.py — re-verify the old remnant), FIND-006 (token_tracking extracted; phases still import singleton), FIND-012 (task_manager gone; persistence/session remain).
+New: FIND-015 hardcoded secrets path (providers.py:15) | FIND-016 prompts.py shadow collision (bit live session) | FIND-017 divergent CLI defaults (1200 vs 1800s) | FIND-018 dispatch baseline race (same-role workers) | FIND-019 unused pydantic import in persistence.py.
+Authoritative data: manifest.json findings[].

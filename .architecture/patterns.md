@@ -165,3 +165,12 @@
 - **Info:** 7 (was 4 — 3 warnings resolved) | **Warning:** 5 (was 8) | **Error:** 0
 - **Resolved since last scan:** call-model-abstraction-inconsistency, prompt-template-duplication (mostly), try-except-generic-fallback (now PROGRAMMING_BUGS pattern)
 - **Top pattern:** json-extraction-with-bounds-search — duplicated extraction logic across 4 phase files, extract to shared utility
+
+
+---
+
+# Update 2026-06-11 (incremental f198887)
+
+Updated: cost-tracking-global-state (extraction to token_tracking.py landed; injection still pending).
+New: divergent-cli-flag-surfaces (warning — two CLIs, two timeout defaults, drift demonstrated by the 900→1200 bump touching one surface) | hook-systemmessage-coordination (info — consistent Pre/PostToolUse systemMessage pattern across 3 pipeline hooks).
+Authoritative data: manifest.json patterns[].

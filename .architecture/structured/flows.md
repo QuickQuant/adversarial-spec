@@ -1,7 +1,7 @@
 # Structured Flows
 
 > Every significant flow in structured notation. Optimized for LLM consumption.
-> Generated: 2026-04-16 | Git: 9ca3ccd
+> Generated: 2026-06-11 (incremental) | Git: f198887
 
 ## Notation
 
@@ -167,7 +167,9 @@ STEPS:
      -> save_checkpoint("synthesis", synthesis)
   3. Phase 3: filter_concerns_with_explanations(concerns, resolved_db)
      -> save_checkpoint("clustered-concerns", filtered)
-     NOTE: Phase 3.5 clustering was removed (lost 48% of concerns). Pass-through now.
+     NOTE: Phase 3.5 clustering REINSTATED as deterministic code (clustering.py, Jaccard 0.65
+     single-link, deterministic representatives; auto-activates ≥200 concerns). The removed
+     version was an LLM-subagent pass that lost 48% of concerns; this one is pure code.
   4. Phase 4: evaluate_concerns[_multi_model](filtered, spec, eval_models, config)
      -> save_checkpoint("evaluations", evaluations)
   5. Phase 5: run_rebuttals(dismissed_evals, spec, adversaries)

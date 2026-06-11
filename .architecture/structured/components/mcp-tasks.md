@@ -1,3 +1,7 @@
+# RETIRED COMPONENT (deleted June 2026)
+
+> mcp_tasks/ was deleted at commits 55071ba/a3c0d1d/66b45f4. The Fizzy pipeline board + harness hooks (.claude/hooks/) are the coordination plane now. This doc is retained as historical reference only — nothing below reflects current code.
+
 # Component: MCP Tasks
 
 ## Quick Reference

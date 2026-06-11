@@ -50,3 +50,9 @@ Defines 9+ named adversary personas as frozen dataclasses. Each persona has a na
 - This is a hub file (imported by 9+ others). Changes here affect the entire gauntlet pipeline.
 - `content_hash()` enables detecting when a persona prompt changes, which should invalidate cached evaluations.
 - AdversaryTemplate validates `scope_guidelines` keys against `VALID_SCOPE_KEYS`. Invalid keys raise at construction time.
+
+
+## Update 2026-06-11 (incremental f198887)
+- scope.py DELETED — scope guidance lives solely in AdversaryTemplate.scope_guidelines (frozen mapping, keys "{category}:{value}" validated against VALID_SCOPE_KEYS). The old "scope.py has no importers" mystery is resolved by deletion.
+- AdversaryTemplate v2.0 (adversaries.py:73-105): tone, focus_areas, scope_guidelines; 9 templates populated (dynamic prompt generation available; static ADVERSARIES dict remains the fallback).
+- generate_concern_id(adversary, text) → "{PREFIX}-{hash8}": deterministic, used by core_types.Concern and execution_planner; safe for manual checkpoint patching.

@@ -1,6 +1,6 @@
 # Filesystem Map: adversarial-spec
 
-> Generated: 2026-04-16 | Git: 9ca3ccd
+> Generated: 2026-06-11 (incremental) | Git: f198887
 > Skill version: 3.6 | Model: claude-opus-4-6
 
 ## Root Structure
@@ -9,7 +9,7 @@
 |----------------|---------|
 | `skills/adversarial-spec/` | Skill definition (phases, scripts, reference docs) |
 | `execution_planner/` | Gauntlet concern parsing (mostly deprecated) |
-| `mcp_tasks/` | MCP task server for cross-agent coordination |
+| ~~`mcp_tasks/`~~ | DELETED June 2026 — MCP Tasks retired; Fizzy pipeline board + harness hooks are the coordination plane |
 | `onboarding/` | Core practices and project practices docs |
 | `.architecture/` | Architecture documentation (this directory) |
 | `.adversarial-spec/` | Spec artifacts, session manifests, resolved concerns |
@@ -33,10 +33,10 @@ The main source code directory. All Python scripts live here.
 | `adversaries.py` | Named attacker persona definitions (frozen dataclasses) |
 | `prompts.py` | System prompts, focus areas, personas templates |
 | `session.py` | Session state persistence for debate rounds |
-| `scope.py` | Scope discovery definitions (606 lines, no importers — status unclear) |
+| `mini_spec_emission.py` | Fizzy v3 plan emission + offline self-check (NEW; pattern for incoming validation_emission.py) |
+| `token_tracking.py` | Thread-safe token/cost accounting singleton (NEW, extracted from models.py) |
+| `migrate-journey-to-log.py` | One-shot journey→JSONL migration utility (NEW) |
 | `telegram_bot.py` | Telegram notification bot (send, poll, notify) |
-| `task_manager.py` | Task state management + demo harness |
-| `gauntlet_monolith.py` | 12-line shim → delegates to gauntlet/cli.py |
 
 ### skills/adversarial-spec/scripts/gauntlet/
 
@@ -54,7 +54,9 @@ The 18-module gauntlet package (extracted from original monolith).
 | `prompts.py` | Centralized phase system prompts (NEW — extracted from inline) |
 | `phase_1_attacks.py` | Attack generation (parallel adversary dispatch) |
 | `phase_2_synthesis.py` | Big-picture synthesis across all concerns |
-| `phase_3_filtering.py` | Concern filtering, explanation matching (clustering removed) |
+| `phase_3_filtering.py` | Concern filtering, explanation matching |
+| `clustering.py` | Phase 3.5 deterministic Jaccard clustering (NEW; auto at ≥200 concerns) |
+| `batch_tiering.py` | Phase 4 power-law batch tiering p60/p90 → 75/30/12 (NEW) |
 | `phase_4_evaluation.py` | Frontier model evaluation (verdict assignment, multi-model consensus) |
 | `phase_5_rebuttals.py` | Adversary rebuttal for dismissed concerns |
 | `phase_6_adjudication.py` | Final adjudication and verdict aggregation |
@@ -128,7 +130,6 @@ Skill phase documentation (9 phases, markdown instructions for Claude Code).
 | `scripts/debate.py` | `adversarial-spec <action>` (pyproject.toml) | Master CLI — routes 18 actions |
 | `scripts/gauntlet/cli.py` | `python -m gauntlet` or direct | Standalone gauntlet CLI |
 | `scripts/telegram_bot.py` | Direct script execution | Telegram notification bot |
-| `mcp_tasks/server.py` | MCP protocol (registered entry point) | Task CRUD for cross-agent coordination |
 
 ## Configuration Files
 

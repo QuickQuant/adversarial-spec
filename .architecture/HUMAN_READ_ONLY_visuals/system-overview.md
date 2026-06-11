@@ -95,3 +95,10 @@ Spec (stdin) ────> debate.py ────> call_models_parallel() ──
                                          FinalBossResult
                                          (PASS / REFINE / RECONSIDER)
 ```
+
+
+## Incremental note (2026-06-11, f198887)
+- [MCP Tasks] box DELETED — coordination now flows: conductor <-> .conductor/dispatch/<role>/updates.jsonl <-> hooks (dispatch_check / pipeline_continue / pipeline_idle_retry / pipeline_notifications) <-> workers on the Fizzy board.
+- gauntlet box gains: clustering.py (P3.5, Jaccard) -> batch_tiering.py (P4 tiers 75/30/12).
+- models box gains: preflight ping before dispatch; cost arrows now point at token_tracking.tracker.
+- new box: mini_spec_emission.py -> fizzy-plan.json (v3) -> pipeline_validate_plan.

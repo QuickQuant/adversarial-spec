@@ -114,3 +114,14 @@ Phase 1 groups adversary-model pairs by provider and batches requests with provi
 - Phase 3.5 has an auto-checkpoint (quota burn safeguard). This is the critical resume point.
 - Unattended mode monkey-patches `builtins.input`. Phase 7 has explicit fallback for no stdin.
 - gauntlet_monolith.py is a 12-line shim. All real code is in the gauntlet/ package.
+
+
+## Update 2026-06-11 (incremental f198887)
+- Phase 3.5 clustering REINSTATED as deterministic code: clustering.py (Jaccard 0.65 single-link, longest-text representatives, auto at ≥200 concerns). Replaces the removed LLM-subagent version (which lost 48% of concerns).
+- Phase 4 batch tiering NEW: batch_tiering.py — tier_concerns_by_length p60/p90 cuts, batch sizes 75/30/12, pick_eval_batch_arg strategy dispatch (power_law_length default, flat fallback <30 concerns). Pure/deterministic.
+- GauntletConfig (core_types.py:424) centralizes all run defaults (was 13 scattered constants); PhaseMetrics (core_types.py:482) feeds an incrementally-updated, crash-surviving run manifest.
+- Phase 1 quality gate: non-empty response with 0 parsed concerns → GauntletExecutionError (FATAL by design; raw responses saved for manual checkpoint patch + --resume). orchestrator.py:400-419.
+- Rate-limited dispatch: per-provider (batch_size, delay) from get_rate_limit_config (model_dispatch.py:274) — free Gemini (1,15s), paid (10,2s); sleep is pre-batch, synchronous.
+- Run manifest gains conductor-written intensity fields for v4+ altitude sessions: session_altitude, adversaries[{model,family}], foci[] — verified by fizzy pipeline_mark_gauntlet_complete.
+- gauntlet_monolith.py shim DELETED. Resume validates schema_version + spec_hash + config_hash + data_hash; P4 additionally re-checks concern-ID alignment.
+- Concurrency note: loading gauntlet/persistence.py standalone must use importlib spec_from_file_location (sys.path gauntlet/ shadows top-level prompts.py).

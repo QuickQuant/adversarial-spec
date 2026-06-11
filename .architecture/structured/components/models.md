@@ -100,3 +100,10 @@ MAX_RETRIES=3, RETRY_BASE_DELAY=1.0s. Backoff: 1s, 2s, 4s. On final failure, ret
 - CLI models report 0 tokens and $0 cost. This is intentional — they're subscription-based.
 - The three CLI subprocess functions are nearly identical (known duplication). A refactor to extract `_call_cli_model()` is pending.
 - `cost_tracker` is a global singleton. Thread-safe via Lock but not idiomatic. Works for the threading model used here.
+
+
+## Update 2026-06-11 (incremental f198887)
+- NEW preflight: PREFLIGHT_PROMPT "Reply with exactly: OK", PREFLIGHT_TIMEOUT=120; _preflight_single per model (no retries — preflight failures are permanent); preflight_models() parallel ThreadPool returns {model: error|None} (models.py:869-945).
+- Cost tracking extracted to token_tracking.py (TokenTracker, threadsafe, global `tracker` singleton at :66) — models.py now imports it rather than owning cost_tracker. CON-002 partially addressed.
+- Per-model partial result checkpoints during call_models_parallel (models.py:~1000-1020) survive process kills.
+- o-series models reject custom temperature; wrapper adjusts (models.py:122-136).

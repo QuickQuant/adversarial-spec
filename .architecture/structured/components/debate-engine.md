@@ -83,3 +83,11 @@ Sessions are created on first critique, saved after each round, and resumed via 
 - debate.py is 1500+ lines. The action routing in main() is the roadmap — read it first.
 - The gauntlet flag names differ from gauntlet/cli.py (`--gauntlet-resume` vs `--resume`, `--codex-reasoning` vs `--attack-codex-reasoning`).
 - `run_critique()` is the core debate loop — it's where consensus checking and user prompting happen.
+
+
+## Update 2026-06-11 (incremental f198887)
+- NEW gates in main() (debate.py:1499): `--pipeline-card` required for critique/gauntlet when session has a fizzy card (IntentionalOverride needs ≥50-char logged reason); tests-pseudo staleness gate (spec mtime > tests mtime → exit 2 unless --accept-tests-stale). debate.py:1374-1497.
+- NEW preflight step: preflight_models() pings all models in parallel before dispatch (models.py:922); --skip-preflight bypass.
+- `--timeout` default raised 900→1200s (2026-06-11); `--show-manifest [HASH]` displays gauntlet run manifests.
+- task_manager glue DELETED (June 2026) — no scheduling interface remains.
+- Decision/override logging: pipeline-card overrides + stale-accepts append to sessions/<id>.decisions.log.

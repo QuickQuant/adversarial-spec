@@ -45,3 +45,9 @@ Providers manages model configuration and cost metadata. `MODEL_COSTS` is a stat
 
 - `MODEL_COSTS` must be updated manually when adding new models or prices change. This is a common mistake.
 - CLI availability is checked at import time, not lazily. If CLIs are installed after import, they won't be detected.
+
+
+## Update 2026-06-11 (incremental f198887)
+- MODEL_COSTS/DEFAULT_COST now consumed by token_tracking.py (extracted module), not an in-models cost tracker.
+- load_dotenv side effect at import: $HOME/.config/secrets/llm-providers (hardcoded path — finding).
+- CLI availability flags (CODEX_AVAILABLE, GEMINI_CLI_AVAILABLE, CLAUDE_CLI_AVAILABLE) consumed by model_dispatch free-first selection and preflight.
