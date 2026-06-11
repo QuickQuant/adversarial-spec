@@ -12,3 +12,4 @@
 2026-06-11T17:52:56Z [commit] Working tree committed: 592ff76 skill, 2f4e071 architecture, bf81293 session, 7127285 fixes, +test fix (556 pass) — session artifacts durable; suite green
 2026-06-11T19:16:03Z [decision] Jason ruled stale-Phase-4 handling: reconcile in place, not rerun and not acknowledge-and-drift — drift after gauntlet is expected, the doc must track the FINAL spec; reconcile path to be codified in 07-execution.md staleness gate
 2026-06-11T19:16:03Z [phase] Phase 4 artifacts reconciled to FINAL spec @ 88a8e664b100 (TA, invariants, dry-run, middleware, bootstrap) — Phase 7 staleness gate now passes; architecture inputs trustworthy for decomposition
+2026-06-11T19:17:59Z [commit] 6361826 skill reconcile-path docs, 0ed68fa Phase 4 reconcile artifacts — drift handling codified + artifact chain consistent at 88a8e664

@@ -3,16 +3,18 @@
   "active_session_id": "adv-spec-202606110339-validation-leg-process",
   "context_name": "Validation-Leg Production Process",
   "current_phase": "execution",
-  "current_step": "Session closing: spec accepted, finalize \u2192 execution recorded, prior checkpoint 202606111802 verified, tree committed through 8bc662f",
-  "next_action": "Fresh session: /adversarial-spec resumes into execution phase. Read phases/07-execution.md fully; v4 altitude session (card 5604, system, pipeline v5) => plan_schema_version 3 tree emission (Step 9b) via mini_spec_emission.py; read ALL .architecture/ docs before decomposition; inputs: spec-output.md, gauntlet-concerns-2026-06-11.json, target-architecture.md (spec_fingerprint drift likely \u2014 spec changed v4\u2192v5\u2192FINAL since Phase 4), middleware-candidates.json",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606111826-session-close-phase7-handoff.md",
+  "current_step": "Phase 7 entry: Phase 4 drift reconciled to FINAL spec (commits 6361826 skill docs, 0ed68fa artifacts); staleness gate passes at arch fingerprint 88a8e664; reconcile-in-place codified as DEFAULT in 07-execution.md + 04-target-architecture.md",
+  "next_action": "Phase 7 Step 2.5 in FRESH context: read ALL .architecture/ docs (~228KB: INDEX, primer, overview, concerns, access-guide, patterns, flows, 12 component docs) + full spec-output.md, then decompose ~18-25 nodes; staleness gate now PASSES (a958bb54 vs phase4_bootstrap.input_fingerprint); v4 altitude session card 5604 => Step 9b plan_schema_version 3 tree emission via mini_spec_emission.py; per-node verification plan artifacts + requirement_metadata required; scope approved by Jason (multi-agent)",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606111950-phase4-reconcile-complete-phase7-decomposition-next.md",
   "execution_plan_path": null,
   "spec_path": ".adversarial-spec/specs/validation-leg-process/spec-output.md",
   "do_not_ask": [
     "Continue debate rounds until convergence without asking Jason unless absolutely necessary (directive 2026-06-11)",
-    "Continue debate rounds until convergence without asking Jason unless absolutely necessary (directive 2026-06-11; debate now converged but spirit applies to gauntlet too)"
+    "Continue debate rounds until convergence without asking Jason unless absolutely necessary (directive 2026-06-11; debate now converged but spirit applies to gauntlet too)",
+    "Scope approved: proceed with decomposition at ~18-25 nodes, schema-3 tree, multi-agent (Jason 2026-06-11)",
+    "Stale Phase 4 handling: reconcile-in-place is the ruled default; never offer bare rerun-vs-acknowledge again (Jason 2026-06-11)"
   ],
-  "updated_at": "2026-06-11T18:26:39Z",
+  "updated_at": "2026-06-11T19:50:43Z",
   "active_session": "adv-spec-202606110339-validation-leg-process",
   "active_session_file": ".adversarial-spec/sessions/adv-spec-202606110339-validation-leg-process.json",
   "session_stack": [
@@ -41,7 +43,7 @@
     "adv-spec-202603201800-gauntlet-refactor-quota-burn",
     "adv-spec-202603051555-philosophy-phase-and-arch-persona"
   ],
-  "completed_work": "Final guardrail pass (5/5) on spec v5; spec-output.md locked FINAL; tests-spec.md promoted (TC-2.6 full-hash, TC-3.8 reset-failed standalone, TC-1.5 BVA; all 14 US covered). Jason ACCEPTED. CON-008 fixed (per-session dispatch baselines + regression test), FIND-015 fixed (LLM_PROVIDERS_ENV_FILE), preflight test mocks; suite 556 pass, ruff clean. CON-001/002 deprioritized by Jason. Card 5604 synced; 6 commits 592ff76..8bc662f.",
+  "completed_work": "Resumed into execution phase; Phase 7 doc read; scope assessed (1005-line FINAL spec, 14 sections, 67 carried concerns, ~18-25 nodes, schema-3 altitude tree, multi-agent; middleware-candidates EMPTY so middleware-creator will be skipped). Jason ruled stale-Phase-4 rerun-vs-acknowledge a false dichotomy: reconciled in place \u2014 TA + architecture-invariants updated (8 mutators CB-6/DD-1; SEC-1 update-file trust boundary + allowed_sender_ids; FM-5 stdout envelope; 13-subcommand surface table; INV-16/17; INV-1..17 footnote), dry-run re-traced all-pass, fingerprints reproduced-then-recomputed (input be87fc05->a958bb54, arch 48a3ed59->88a8e664), stamped across TA/invariants/middleware/dry-run/phase4_bootstrap with reconciliation block. Reconcile path codified in skill docs (live via symlink).",
   "reset_at": "2026-05-30T19:08:15Z",
   "reset_reason": "Zombie pointer cleanup: prior active_session pointed at dispatch-cost-tracker (card 1851) which no longer exists on the now-empty Fizzy board. Parked sessions preserved above; their on-disk artifacts are committed."
 }

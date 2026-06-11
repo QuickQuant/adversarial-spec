@@ -3,10 +3,10 @@
   "session_id": "adv-spec-202606110339-validation-leg-process",
   "context_name": "Validation-Leg Production Process",
   "current_phase": "execution",
-  "current_step": "Session closing: spec accepted, finalize → execution recorded, prior checkpoint 202606111802 verified, tree committed through 8bc662f",
+  "current_step": "Phase 7 entry: Phase 4 drift reconciled to FINAL spec (commits 6361826 skill docs, 0ed68fa artifacts); staleness gate passes at arch fingerprint 88a8e664; reconcile-in-place codified as DEFAULT in 07-execution.md + 04-target-architecture.md",
   "created_at": "2026-06-11T03:39:50Z",
-  "updated_at": "2026-06-11T18:26:39Z",
-  "checkpointed_cleanly": false,
+  "updated_at": "2026-06-11T19:50:43Z",
+  "checkpointed_cleanly": true,
   "session_altitude": "system",
   "session_altitude_source": "declared",
   "fizzy_card_id": "5604",
@@ -25,27 +25,83 @@
   },
   "todowrite_snapshot": [
     {
-      "content": "Finalize: final guardrails (CONS/SCOPE/TRACE/CANON/TCOV) pass; spec-output.md locked; tests-spec.md promoted (3 corrections)",
+      "content": "Phase 4 drift reconciled to FINAL spec; reconcile path codified in skill docs (commits 6361826, 0ed68fa)",
       "status": "completed"
     },
     {
-      "content": "Spec ACCEPTED by Jason; finalize → execution transition recorded (board + telegram synced)",
+      "content": "Load finalized spec and gauntlet concerns",
       "status": "completed"
     },
     {
-      "content": "Working tree committed: 592ff76 skill, 2f4e071 architecture, bf81293 session, 7127285 CON-008+FIND-015 fixes, 37ad835 test fix (556 pass)",
+      "content": "Scope assessment \u2014 presented; Jason approved (~18-25 nodes, schema-3 tree, multi-agent)",
       "status": "completed"
     },
     {
-      "content": "Phase 7 (fresh context): read phases/07-execution.md; alert context-heavy; v4 altitude session => Step 9b schema-3 tree emission via mini_spec_emission.py",
+      "content": "Load codebase architecture docs [GATE] \u2014 read ALL .architecture/ files before decomposition or architecture_refs assignment",
       "status": "pending"
     },
     {
-      "content": "Phase 7: load ALL .architecture/ docs before decomposition; spec-output.md + gauntlet-concerns-2026-06-11.json are inputs; Phase 4 staleness fingerprint check",
+      "content": "Load target architecture and build Architecture Spine (staleness gate now PASSES post-reconcile)",
       "status": "pending"
     },
     {
-      "content": "Phase 7: validation-leg dogfood wiring per spec §8 — module is build target; bootstrap rows after module lands (ACK-4); middleware-candidates.json exists, surface candidates",
+      "content": "Decompose into tasks with gauntlet concern linkage",
+      "status": "pending"
+    },
+    {
+      "content": "Assign architecture_refs per task [GATE] \u2014 grounded in actual doc content, no filename guessing",
+      "status": "pending"
+    },
+    {
+      "content": "Ground implementation_status per task [GATE] \u2014 greenfield/partial/already-built with file:line evidence",
+      "status": "pending"
+    },
+    {
+      "content": "Classify behavior_change and verification_mode for every task [GATE]",
+      "status": "pending"
+    },
+    {
+      "content": "Assign test strategies (test-first/test-after/spike)",
+      "status": "pending"
+    },
+    {
+      "content": "Attach test_refs, test_files, or exemption_reason for every task [GATE]",
+      "status": "pending"
+    },
+    {
+      "content": "Over-decomposition guard check",
+      "status": "pending"
+    },
+    {
+      "content": "Present plan to user for approval [GATE]",
+      "status": "pending"
+    },
+    {
+      "content": "Review verification coverage report before pipeline_load [GATE]",
+      "status": "pending"
+    },
+    {
+      "content": "Review every exemption with the user [GATE]",
+      "status": "pending"
+    },
+    {
+      "content": "Write execution plan to disk [GATE]",
+      "status": "pending"
+    },
+    {
+      "content": "Verify plan file exists and update session state",
+      "status": "pending"
+    },
+    {
+      "content": "Generate fizzy-plan.json (schema 3 \u2014 Step 9b, mini_spec_emission.py) and load into pipeline [GATE]",
+      "status": "pending"
+    },
+    {
+      "content": "Add concern context comments to all cards [GATE]",
+      "status": "pending"
+    },
+    {
+      "content": "Phase 7 validation-leg dogfood wiring: after plan written, before pipeline_load \u2014 derive-conops, draft rows, normalize-rows, check-rows (spec \u00a78; module is build target, bootstrap rows after module lands ACK-4)",
       "status": "pending"
     }
   ],
@@ -85,7 +141,9 @@
   "tests_pseudo_path": ".adversarial-spec/specs/validation-leg-process/tests-pseudo.md",
   "do_not_ask": [
     "Continue debate rounds until convergence without asking Jason unless absolutely necessary (directive 2026-06-11)",
-    "Continue debate rounds until convergence without asking Jason unless absolutely necessary (directive 2026-06-11; debate now converged but spirit applies to gauntlet too)"
+    "Continue debate rounds until convergence without asking Jason unless absolutely necessary (directive 2026-06-11; debate now converged but spirit applies to gauntlet too)",
+    "Scope approved: proceed with decomposition at ~18-25 nodes, schema-3 tree, multi-agent (Jason 2026-06-11)",
+    "Stale Phase 4 handling: reconcile-in-place is the ruled default; never offer bare rerun-vs-acknowledge again (Jason 2026-06-11)"
   ],
   "extended_state": {
     "context_inventory": {
@@ -144,9 +202,9 @@
       ]
     }
   },
-  "completed_work": "Final guardrail pass (5/5) on spec v5; spec-output.md locked FINAL; tests-spec.md promoted (TC-2.6 full-hash, TC-3.8 reset-failed standalone, TC-1.5 BVA; all 14 US covered). Jason ACCEPTED. CON-008 fixed (per-session dispatch baselines + regression test), FIND-015 fixed (LLM_PROVIDERS_ENV_FILE), preflight test mocks; suite 556 pass, ruff clean. CON-001/002 deprioritized by Jason. Card 5604 synced; 6 commits 592ff76..8bc662f.",
-  "next_action": "Fresh session: /adversarial-spec resumes into execution phase. Read phases/07-execution.md fully; v4 altitude session (card 5604, system, pipeline v5) => plan_schema_version 3 tree emission (Step 9b) via mini_spec_emission.py; read ALL .architecture/ docs before decomposition; inputs: spec-output.md, gauntlet-concerns-2026-06-11.json, target-architecture.md (spec_fingerprint drift likely — spec changed v4→v5→FINAL since Phase 4), middleware-candidates.json",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606111826-session-close-phase7-handoff.md",
+  "completed_work": "Resumed into execution phase; Phase 7 doc read; scope assessed (1005-line FINAL spec, 14 sections, 67 carried concerns, ~18-25 nodes, schema-3 altitude tree, multi-agent; middleware-candidates EMPTY so middleware-creator will be skipped). Jason ruled stale-Phase-4 rerun-vs-acknowledge a false dichotomy: reconciled in place \u2014 TA + architecture-invariants updated (8 mutators CB-6/DD-1; SEC-1 update-file trust boundary + allowed_sender_ids; FM-5 stdout envelope; 13-subcommand surface table; INV-16/17; INV-1..17 footnote), dry-run re-traced all-pass, fingerprints reproduced-then-recomputed (input be87fc05->a958bb54, arch 48a3ed59->88a8e664), stamped across TA/invariants/middleware/dry-run/phase4_bootstrap with reconciliation block. Reconcile path codified in skill docs (live via symlink).",
+  "next_action": "Phase 7 Step 2.5 in FRESH context: read ALL .architecture/ docs (~228KB: INDEX, primer, overview, concerns, access-guide, patterns, flows, 12 component docs) + full spec-output.md, then decompose ~18-25 nodes; staleness gate now PASSES (a958bb54 vs phase4_bootstrap.input_fingerprint); v4 altitude session card 5604 => Step 9b plan_schema_version 3 tree emission via mini_spec_emission.py; per-node verification plan artifacts + requirement_metadata required; scope approved by Jason (multi-agent)",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606111950-phase4-reconcile-complete-phase7-decomposition-next.md",
   "status": "active",
   "journey": [
     {
@@ -191,7 +249,7 @@
     },
     {
       "time": "2026-06-11T18:02:26Z",
-      "event": "Spec accepted + finalize → execution transition recorded; Phase 7 planning not started (fresh context mandated)",
+      "event": "Spec accepted + finalize \u2192 execution transition recorded; Phase 7 planning not started (fresh context mandated)",
       "type": "milestone"
     },
     {
@@ -201,12 +259,22 @@
     },
     {
       "time": "2026-06-11T18:26:39Z",
-      "event": "Session closing: spec accepted, finalize → execution recorded, prior checkpoint 202606111802 verified, tree committed through 8bc662f",
+      "event": "Session closing: spec accepted, finalize \u2192 execution recorded, prior checkpoint 202606111802 verified, tree committed through 8bc662f",
       "type": "milestone"
     },
     {
       "time": "2026-06-11T18:26:39Z",
       "event": "Checkpoint saved: session-close-phase7-handoff.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-11T19:50:43Z",
+      "event": "Phase 7 entry: Phase 4 drift reconciled to FINAL spec (commits 6361826 skill docs, 0ed68fa artifacts); staleness gate passes at arch fingerprint 88a8e664; reconcile-in-place codified as DEFAULT in 07-execution.md + 04-target-architecture.md",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-11T19:50:43Z",
+      "event": "Checkpoint saved: phase4-reconcile-complete-phase7-decomposition-next.",
       "type": "checkpoint"
     }
   ],
@@ -483,7 +551,7 @@
         "value": "subcommand CLI, pure-local, no daemon",
         "rationale": "mirrors mini_spec_emission.py pattern; NG4 forbids servers",
         "source_refs": [
-          "spec §7",
+          "spec \u00a77",
           "NG4"
         ]
       },
@@ -492,7 +560,7 @@
         "value": "filelock + atomic rename, single mutating writer",
         "rationale": "established TASK_LOCK pattern; crash-safe by construction",
         "source_refs": [
-          "spec §7 lock semantics"
+          "spec \u00a77 lock semantics"
         ]
       },
       {
@@ -500,7 +568,7 @@
         "value": "exit 0/2/3 + structured {code,row_id,detail}",
         "rationale": "LLM conductor needs machine-readable issues for the playbook",
         "source_refs": [
-          "spec §7, §10"
+          "spec \u00a77, \u00a710"
         ]
       },
       {
@@ -508,7 +576,7 @@
         "value": "JSON ledger + markdown artifacts + Telegram part files",
         "rationale": "single stateful ledger, projections write-only",
         "source_refs": [
-          "spec §6.2"
+          "spec \u00a76.2"
         ]
       },
       {
@@ -516,7 +584,7 @@
         "value": "pytest over module; dogfood validation of process itself",
         "rationale": "verification=pytest, validation=US-10 dogfood, disjoint by construction",
         "source_refs": [
-          "spec §12"
+          "spec \u00a712"
         ]
       }
     ]
