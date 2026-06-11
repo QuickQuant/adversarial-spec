@@ -164,13 +164,26 @@ ls .adversarial-spec/specs/*/target-architecture.md 2>/dev/null | head -1
 
 Phase 4 records a `phase_artifacts` block in the session detail file with `spec_fingerprint` (SHA256 of the spec file at the time Phase 4 published) and `architecture_fingerprint`. Before consuming the target architecture, Phase 7 MUST verify that the spec has not drifted:
 
-1. Read `phase_artifacts.spec_fingerprint` from the session detail file
-2. Compute the current spec's SHA256 and compare
+1. Read `phase_artifacts.spec_fingerprint` (or `phase4_bootstrap.input_fingerprint`) from the session detail file
+2. Compute the current spec's fingerprint using Phase 4's exact formula (`input_fingerprint = sha256(spec_bytes + b"\x00" + roadmap_bytes + b"\x00" + canonical_json({phase_mode, context_mode}))` — see `04-target-architecture.md` Fingerprints) and compare
 3. **If fingerprints match:** target architecture is fresh — proceed with consumption
-4. **If fingerprints do NOT match:** target architecture is stale
-   - Block with a clear message: "Spec has changed since Phase 4 published target architecture (old fingerprint `<hash>`, current `<hash>`). Rerun Phase 4 to refresh target-architecture.md, middleware-candidates.json, and invariant set, or explicitly acknowledge the drift to continue."
-   - If the user explicitly acknowledges the drift (interactive confirmation or equivalent session-level override), log the acknowledgement to the session journey log and proceed with a warning banner in the execution plan noting the known drift. No CLI flag for this is defined in v17 — the acknowledgement path is ad-hoc until a formal override is specified.
-5. Normative source for the fingerprint contract: [`04-target-architecture.md` §7 (Required Headers)](./04-target-architecture.md) and [`04-target-architecture.md` §15 (Session Mutation Contract)](./04-target-architecture.md). Phase 7 MUST NOT mutate `architecture_fingerprint` or `spec_fingerprint` — those are set by Phase 4 and read-only here.
+4. **If fingerprints do NOT match:** target architecture is stale. **This is the EXPECTED state in any session where the gauntlet found real concerns** — Phase 4 runs before the gauntlet, and accepted concerns revise the spec (v_N → v_N+1 → FINAL). Stale-at-Phase-7 is not an anomaly; it is the normal consequence of the canonical phase order. Three handling paths, in order of preference:
+
+   **(a) Reconcile in place (DEFAULT — choose this unless the architecture itself changed):**
+   1. Diff the Phase 4-era spec (the draft whose bytes produced the old `input_fingerprint`) against the current spec. Focus on architecture-relevant sections: system architecture, component design, phase wiring, invariants, security.
+   2. Apply the deltas directly to `target-architecture.md` and `architecture-invariants.json` (and `middleware-candidates.json` if candidates changed) — update concern decisions, surface tables, INV-A* rules, and the framework profile to state what the FINAL spec states. Add a dated `## Reconciliation` note to `target-architecture.md` listing the material deltas applied.
+   3. Sync `phase4_bootstrap.framework_profile` with any profile fields the reconcile changed (it feeds the fingerprint chain).
+   4. Re-trace the dry-run archetypes against the reconciled content; update `dry-run-results.json` evidence (mark "Re-traced <date>").
+   5. Recompute BOTH fingerprints with Phase 4's exact formulas (reproduce the OLD values first from the old inputs to prove the algorithm before computing new ones) and stamp them into: `phase4_bootstrap` (with a `reconciliation` block recording the previous values + reason), the `target-architecture.md` header, `architecture-invariants.json`, `middleware-candidates.json`, and `dry-run-results.json`.
+   6. Log the reconciliation to the journey log (`type: maintenance`) and decisions log, then re-run the staleness check — it must now pass.
+
+   This is the cross-phase application of Phase 4's own post-freeze rule ("if any fingerprint input changes after freeze, the fingerprint must be recomputed"). The reconcile is performed by the Phase 7 agent; it is a content patch, not a Phase 4 rerun — no model dispatch. (Origin: validation-leg-process session, 2026-06-11 — Jason ruled rerun-vs-acknowledge a false dichotomy.)
+
+   **(b) Rerun Phase 4:** only when the spec revisions changed the architecture itself (component boundaries, new surfaces, invariant set no longer derivable by patching). Full multi-model cost; requires user approval.
+
+   **(c) Acknowledge drift and proceed (LAST RESORT):** log the acknowledgement to the journey log and carry a warning banner in the execution plan. This leaves a stale doc as a Phase 7/8 input — prefer (a), which costs minutes and leaves the artifact chain consistent.
+
+5. Normative source for the fingerprint contract: [`04-target-architecture.md` §7 (Required Headers)](./04-target-architecture.md) and [`04-target-architecture.md` §15 (Session Mutation Contract)](./04-target-architecture.md). Phase 7 MUST NOT silently mutate `architecture_fingerprint` or `spec_fingerprint` — outside path (a)'s explicit reconcile procedure (which records previous values in a `reconciliation` block), those fields are Phase 4-owned and read-only here.
 
 **Coordinate middleware candidates with middleware-creator (when present):**
 
