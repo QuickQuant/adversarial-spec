@@ -22,3 +22,4 @@
 {"time": "2026-06-11T17:27:15Z", "event": "Phase transition: reconciliation -> finalize", "type": "transition", "source": "pipeline_advance"}
 {"time":"2026-06-11T17:38:21Z","event":"Spec finalized: .adversarial-spec/specs/validation-leg-process/spec-output.md (final guardrails pass; tests-spec.md promoted)","type":"artifact"}
 {"time":"2026-06-11T17:50:11Z","event":"Spec accepted by Jason","type":"decision"}
+{"time":"2026-06-11T18:00:57Z","event":"Phase transition: finalize → execution (spec accepted by Jason)","type":"transition"}

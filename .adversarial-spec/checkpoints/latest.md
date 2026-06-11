@@ -1,1 +1,1 @@
-checkpoint-202606111728-gauntlet-closed-finalize-next.md
+checkpoint-202606111802-spec-accepted-phase7-next.md

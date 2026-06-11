@@ -9,3 +9,4 @@
 2026-06-11T17:50:11Z [decision] CON-008 fixed: dispatch_check baseline now per-session (+regression test) — parallel same-role workers no longer drop dispatch messages
 2026-06-11T17:50:11Z [decision] FIND-015 fixed: providers.py secrets path via LLM_PROVIDERS_ENV_FILE env (bashrc export added) — portability; old path is fallback
 2026-06-11T17:50:11Z [decision] Jason deprioritized CON-001/CON-002 (litellm/cost-tracker) — usage is CLI-dominant now; no cards this cycle
+2026-06-11T17:52:56Z [commit] Working tree committed: 592ff76 skill, 2f4e071 architecture, bf81293 session, 7127285 fixes, +test fix (556 pass) — session artifacts durable; suite green

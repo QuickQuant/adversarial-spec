@@ -2,11 +2,11 @@
   "schema_version": "1.4",
   "session_id": "adv-spec-202606110339-validation-leg-process",
   "context_name": "Validation-Leg Production Process",
-  "current_phase": "finalize",
-  "current_step": "Spec ACCEPTED by Jason; execution-plan question pending",
+  "current_phase": "execution",
+  "current_step": "Spec accepted + finalize \u2192 execution transition recorded; Phase 7 planning not started (fresh context mandated)",
   "created_at": "2026-06-11T03:39:50Z",
-  "updated_at": "2026-06-11T17:50:11Z",
-  "checkpointed_cleanly": false,
+  "updated_at": "2026-06-11T18:02:26Z",
+  "checkpointed_cleanly": true,
   "session_altitude": "system",
   "session_altitude_source": "declared",
   "fizzy_card_id": "5604",
@@ -25,19 +25,27 @@
   },
   "todowrite_snapshot": [
     {
-      "content": "Gauntlet + synthesis + spec v5 + guardrails + board gates (gauntlet/reconciliation) complete; card 5604 in Finalization",
+      "content": "Finalize: final guardrails (CONS/SCOPE/TRACE/CANON/TCOV) pass; spec-output.md locked; tests-spec.md promoted (3 corrections)",
       "status": "completed"
     },
     {
-      "content": "Finalize: read phases/06-finalize.md, lock spec v5 -> final spec, update spec_path/manifest",
+      "content": "Spec ACCEPTED by Jason; finalize \u2192 execution transition recorded (board + telegram synced)",
+      "status": "completed"
+    },
+    {
+      "content": "Working tree committed: 592ff76 skill, 2f4e071 architecture, bf81293 session, 7127285 CON-008+FIND-015 fixes, 37ad835 test fix (556 pass)",
+      "status": "completed"
+    },
+    {
+      "content": "Phase 7 (fresh context): read phases/07-execution.md; alert context-heavy; v4 altitude session => Step 9b schema-3 tree emission via mini_spec_emission.py",
       "status": "pending"
     },
     {
-      "content": "Ask Jason: generate execution plan now? Then Phase 7 (07-execution.md) incl. validation-leg dogfood (derive-conops + draft rows)",
+      "content": "Phase 7: load ALL .architecture/ docs before decomposition; spec-output.md + gauntlet-concerns-2026-06-11.json are inputs; Phase 4 staleness fingerprint check",
       "status": "pending"
     },
     {
-      "content": "Commit session artifacts (spec v5, concerns, tests-pseudo, architecture refresh, skill edits: lookup-sweep + timeout 1200)",
+      "content": "Phase 7: validation-leg dogfood wiring per spec \u00a78 \u2014 module is build target; bootstrap rows after module lands (ACK-4); middleware-candidates.json exists, surface candidates",
       "status": "pending"
     }
   ],
@@ -136,9 +144,9 @@
       ]
     }
   },
-  "completed_work": "Spec v5 written (all 48 accepted gauntlet themes incl. Jason rulings: natural bulk-pass aliases, payload-extracted sender id, per-story hashes, single artifact, any-state supersession, threat model). tests-pseudo +TC-G1..G13 + 2 P4 TC amendments. Guardrails CONS/CANON/TCOV pass (post-gauntlet-guardrails.md + cons-report-v5.md). Lookup Sweep added to 03-debate.md (Jason's lookup-log idea) + gauntlet briefing hook in 05-gauntlet.md. Incremental mapcodebase 9ca3ccd->f198887: 5 explorers, accessor+structured+component docs refreshed, mcp-tasks retired, new components token-tracking/emission-toolchain/harness-hooks, HAZ-005 + FIND-015..019 + CON-007..009, quality checks ALL PASS, freshness_status=current (fizzy vocabulary). Board: card 5604 Pre-Gauntlet->Gauntlet->Reconciliation->Finalization; gauntlet artifacts + reconciliation artifacts recorded. debate.py timeout 1200 default.",
-  "next_action": "Read phases/06-finalize.md; finalize spec from spec-draft-v5.md; then ask Jason about execution plan (Phase 7 includes validation-leg dogfood: derive-conops + draft rows). Also: commit the session's working tree (large; includes skill edits + architecture refresh).",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606111728-gauntlet-closed-finalize-next.md",
+  "completed_work": "Final guardrail pass (5/5) on spec v5; spec-output.md locked FINAL; tests-spec.md promoted from tests-pseudo (TC-2.6 full-hash fix, TC-3.8 reset-failed standalone, TC-1.5 BVA added; coverage map all 14 US). Jason ACCEPTED. Tree committed (5 commits incl. CON-008 per-session dispatch baselines + regression test, FIND-015 env-var secrets path, preflight test mocks; suite 556 pass, ruff clean). CON-001/002 deprioritized by Jason (CLI-dominant usage). Card 5604 commented + state patched; telegram milestones sent.",
+  "next_action": "Fresh session: /adversarial-spec resumes into execution phase. Read phases/07-execution.md fully; v4 altitude session (card 5604, system altitude, pipeline v5) => plan_schema_version 3 tree emission (Step 9b) via mini_spec_emission.py; read ALL .architecture/ docs (or delegate to subagent) before decomposition; inputs: spec-output.md, gauntlet-concerns-2026-06-11.json, target-architecture.md (verify spec_fingerprint \u2014 spec changed v4\u2192v5\u2192FINAL since Phase 4, drift likely needs acknowledgement), middleware-candidates.json",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606111802-spec-accepted-phase7-next.md",
   "status": "active",
   "journey": [
     {
@@ -179,6 +187,16 @@
     {
       "time": "2026-06-11T17:28:04Z",
       "event": "Checkpoint saved: gauntlet-closed-finalize-next.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-11T18:02:26Z",
+      "event": "Spec accepted + finalize \u2192 execution transition recorded; Phase 7 planning not started (fresh context mandated)",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-11T18:02:26Z",
+      "event": "Checkpoint saved: spec-accepted-phase7-next.",
       "type": "checkpoint"
     }
   ],
@@ -448,7 +466,7 @@
         "value": "subcommand CLI, pure-local, no daemon",
         "rationale": "mirrors mini_spec_emission.py pattern; NG4 forbids servers",
         "source_refs": [
-          "spec §7",
+          "spec \u00a77",
           "NG4"
         ]
       },
@@ -457,7 +475,7 @@
         "value": "filelock + atomic rename, single mutating writer",
         "rationale": "established TASK_LOCK pattern; crash-safe by construction",
         "source_refs": [
-          "spec §7 lock semantics"
+          "spec \u00a77 lock semantics"
         ]
       },
       {
@@ -465,7 +483,7 @@
         "value": "exit 0/2/3 + structured {code,row_id,detail}",
         "rationale": "LLM conductor needs machine-readable issues for the playbook",
         "source_refs": [
-          "spec §7, §10"
+          "spec \u00a77, \u00a710"
         ]
       },
       {
@@ -473,7 +491,7 @@
         "value": "JSON ledger + markdown artifacts + Telegram part files",
         "rationale": "single stateful ledger, projections write-only",
         "source_refs": [
-          "spec §6.2"
+          "spec \u00a76.2"
         ]
       },
       {
@@ -481,7 +499,7 @@
         "value": "pytest over module; dogfood validation of process itself",
         "rationale": "verification=pytest, validation=US-10 dogfood, disjoint by construction",
         "source_refs": [
-          "spec §12"
+          "spec \u00a712"
         ]
       }
     ]
