@@ -3,9 +3,9 @@
   "session_id": "adv-spec-202606110339-validation-leg-process",
   "context_name": "Validation-Leg Production Process",
   "current_phase": "execution",
-  "current_step": "Spec accepted + finalize \u2192 execution transition recorded; Phase 7 planning not started (fresh context mandated)",
+  "current_step": "Session closing: spec accepted, finalize \u2192 execution recorded, prior checkpoint 202606111802 verified, tree committed through 8bc662f",
   "created_at": "2026-06-11T03:39:50Z",
-  "updated_at": "2026-06-11T18:02:26Z",
+  "updated_at": "2026-06-11T18:26:39Z",
   "checkpointed_cleanly": true,
   "session_altitude": "system",
   "session_altitude_source": "declared",
@@ -144,9 +144,9 @@
       ]
     }
   },
-  "completed_work": "Final guardrail pass (5/5) on spec v5; spec-output.md locked FINAL; tests-spec.md promoted from tests-pseudo (TC-2.6 full-hash fix, TC-3.8 reset-failed standalone, TC-1.5 BVA added; coverage map all 14 US). Jason ACCEPTED. Tree committed (5 commits incl. CON-008 per-session dispatch baselines + regression test, FIND-015 env-var secrets path, preflight test mocks; suite 556 pass, ruff clean). CON-001/002 deprioritized by Jason (CLI-dominant usage). Card 5604 commented + state patched; telegram milestones sent.",
-  "next_action": "Fresh session: /adversarial-spec resumes into execution phase. Read phases/07-execution.md fully; v4 altitude session (card 5604, system altitude, pipeline v5) => plan_schema_version 3 tree emission (Step 9b) via mini_spec_emission.py; read ALL .architecture/ docs (or delegate to subagent) before decomposition; inputs: spec-output.md, gauntlet-concerns-2026-06-11.json, target-architecture.md (verify spec_fingerprint \u2014 spec changed v4\u2192v5\u2192FINAL since Phase 4, drift likely needs acknowledgement), middleware-candidates.json",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606111802-spec-accepted-phase7-next.md",
+  "completed_work": "Final guardrail pass (5/5) on spec v5; spec-output.md locked FINAL; tests-spec.md promoted (TC-2.6 full-hash, TC-3.8 reset-failed standalone, TC-1.5 BVA; all 14 US covered). Jason ACCEPTED. CON-008 fixed (per-session dispatch baselines + regression test), FIND-015 fixed (LLM_PROVIDERS_ENV_FILE), preflight test mocks; suite 556 pass, ruff clean. CON-001/002 deprioritized by Jason. Card 5604 synced; 6 commits 592ff76..8bc662f.",
+  "next_action": "Fresh session: /adversarial-spec resumes into execution phase. Read phases/07-execution.md fully; v4 altitude session (card 5604, system, pipeline v5) => plan_schema_version 3 tree emission (Step 9b) via mini_spec_emission.py; read ALL .architecture/ docs before decomposition; inputs: spec-output.md, gauntlet-concerns-2026-06-11.json, target-architecture.md (spec_fingerprint drift likely \u2014 spec changed v4\u2192v5\u2192FINAL since Phase 4), middleware-candidates.json",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606111826-session-close-phase7-handoff.md",
   "status": "active",
   "journey": [
     {
@@ -197,6 +197,16 @@
     {
       "time": "2026-06-11T18:02:26Z",
       "event": "Checkpoint saved: spec-accepted-phase7-next.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-11T18:26:39Z",
+      "event": "Session closing: spec accepted, finalize \u2192 execution recorded, prior checkpoint 202606111802 verified, tree committed through 8bc662f",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-11T18:26:39Z",
+      "event": "Checkpoint saved: session-close-phase7-handoff.",
       "type": "checkpoint"
     }
   ],

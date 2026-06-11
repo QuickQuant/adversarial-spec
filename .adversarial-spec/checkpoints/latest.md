@@ -1,1 +1,1 @@
-checkpoint-202606111802-spec-accepted-phase7-next.md
+checkpoint-202606111826-session-close-phase7-handoff.md
