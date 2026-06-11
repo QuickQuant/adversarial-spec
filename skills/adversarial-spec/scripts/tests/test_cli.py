@@ -394,7 +394,7 @@ class TestCreateParser:
         assert args.models is None  # Now dynamically detected based on API keys
         assert args.doc_type == "spec"
         assert args.round == 1
-        assert args.timeout == 900
+        assert args.timeout == 1200
 
 
 class TestHandleInfoCommand:

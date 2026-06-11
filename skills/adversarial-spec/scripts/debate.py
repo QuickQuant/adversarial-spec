@@ -88,6 +88,7 @@ from models import (  # noqa: E402
     generate_diff,
     get_critique_summary,
     load_context_files,
+    preflight_models,
 )
 from prompts import get_doc_type_name  # noqa: E402
 from providers import (  # noqa: E402
@@ -399,8 +400,13 @@ def add_misc_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--timeout",
         type=int,
-        default=900,
-        help="Timeout in seconds for model API/CLI calls (default: 900 = 15 minutes)",
+        default=1200,
+        help="Timeout in seconds for model API/CLI calls (default: 1200 = 20 minutes)",
+    )
+    parser.add_argument(
+        "--skip-preflight",
+        action="store_true",
+        help="Skip the pre-dispatch model ping (saves ~30s when models are known-good)",
     )
 
 
@@ -1515,6 +1521,33 @@ def main() -> None:
 
     # Validate models have required credentials
     validate_models_before_run(models, bedrock_mode)
+
+    # Live preflight: ping every model before the real dispatch. Credential
+    # validation can't catch invalid model names (404s) or dead auth — without
+    # this, a bad gemini name fails ~10 min later alongside codex's full run.
+    if not args.skip_preflight and not bedrock_mode and args.action != "send-final":
+        print(f"Preflight: pinging {len(models)} model(s)...", file=sys.stderr)
+        preflight_results = preflight_models(
+            models, codex_reasoning=args.codex_reasoning
+        )
+        failed = {m: e for m, e in preflight_results.items() if e is not None}
+        if failed:
+            print("\nError: preflight failed — aborting before dispatch:", file=sys.stderr)
+            for model, err in failed.items():
+                # Prefer the line with the actual error over CLI noise banners
+                # (gemini-cli prepends "YOLO mode..." lines to every failure)
+                lines = [l for l in err.splitlines() if l.strip()]
+                error_line = next(
+                    (l for l in lines if "Error" in l or "error" in l), lines[0] if lines else err
+                )
+                print(f"  - {model}: {error_line.strip()[:200]}", file=sys.stderr)
+            print(
+                "\nFix the model name/auth and re-run. Known-good names live in the "
+                "latest session checkpoint. Use --skip-preflight to bypass.",
+                file=sys.stderr,
+            )
+            sys.exit(2)
+        print("Preflight: all models OK", file=sys.stderr)
 
     if args.action == "send-final":
         handle_send_final(args, models)

@@ -866,6 +866,85 @@ def call_single_model(
     )
 
 
+PREFLIGHT_PROMPT = "Reply with exactly: OK"
+PREFLIGHT_TIMEOUT = 120  # CLI cold-start can take tens of seconds
+
+
+def _preflight_single(
+    model: str,
+    codex_reasoning: str = DEFAULT_CODEX_REASONING,
+    timeout: int = PREFLIGHT_TIMEOUT,
+    cwd: str | None = None,
+) -> Optional[str]:
+    """Ping one model with a trivial prompt. Returns error string or None on success.
+
+    No retries — a preflight failure (bad model name, dead auth, missing CLI)
+    is permanent; retrying just delays discovery.
+    """
+    try:
+        if model.startswith("codex/"):
+            call_codex_model(
+                system_prompt="",
+                user_message=PREFLIGHT_PROMPT,
+                model=model,
+                reasoning_effort=codex_reasoning,
+                timeout=timeout,
+                cwd=cwd,
+            )
+        elif model.startswith("gemini-cli/"):
+            call_gemini_cli_model(
+                system_prompt="",
+                user_message=PREFLIGHT_PROMPT,
+                model=model,
+                timeout=timeout,
+                cwd=cwd,
+            )
+        elif model.startswith("claude-cli/"):
+            call_claude_cli_model(
+                system_prompt="",
+                user_message=PREFLIGHT_PROMPT,
+                model=model,
+                timeout=timeout,
+                cwd=cwd,
+            )
+        else:
+            completion(
+                model=model,
+                messages=[{"role": "user", "content": PREFLIGHT_PROMPT}],
+                max_tokens=8,
+                timeout=timeout,
+            )
+        return None
+    except Exception as e:
+        return str(e)
+
+
+def preflight_models(
+    models: list[str],
+    codex_reasoning: str = DEFAULT_CODEX_REASONING,
+    timeout: int = PREFLIGHT_TIMEOUT,
+    cwd: str | None = None,
+) -> dict[str, Optional[str]]:
+    """Ping every model in parallel before the real dispatch.
+
+    Catches invalid model names (404s), dead auth, and missing CLIs in
+    seconds instead of discovering them after the longest model finishes
+    its full critique. Returns {model: error_or_None}.
+    """
+    results: dict[str, Optional[str]] = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(models)) as executor:
+        future_to_model = {
+            executor.submit(
+                _preflight_single, model, codex_reasoning, timeout, cwd
+            ): model
+            for model in models
+        }
+        for future in concurrent.futures.as_completed(future_to_model):
+            model = future_to_model[future]
+            results[model] = future.result()
+    return results
+
+
 def call_models_parallel(
     models: list[str],
     spec: str,

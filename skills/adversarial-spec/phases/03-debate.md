@@ -423,6 +423,30 @@ The pipeline tools handle workspace creation, MCP isolation, subprocess launchin
 
 **Before EVERY debate round:**
 
+0. **Lookup Sweep (REQUIRED — resolve before dispatching).** Maintain
+   `.adversarial-spec/specs/<slug>/lookup-log.md`: a running register of every
+   open question, ASSUMPTION-n, and hedge in the current draft that is
+   RESOLVABLE BY LOOKUP rather than by debate — served/source code reads,
+   official docs (Docmaster/WebFetch), web search, config-file inspection,
+   or a one-line question to the user. At the top of every round:
+   - Sweep the draft for hedging language ("the spec is not sure", "may or
+     may not", "assumed", "unverified", "TBD") and OQ/ASSUMPTION entries;
+     add any lookup-resolvable item to the log with its lookup method.
+   - RESOLVE every entry whose lookup costs less than a debate round (most
+     do — reading a served-code extract takes minutes; carrying the hedge
+     through N rounds costs every opponent's attention every round).
+   - Record resolutions in place: `RESOLVED <date> via <method>: <answer>`.
+     Only items that genuinely require human judgment or implementation-time
+     verification may stay open, each with a stated reason why lookup can't
+     answer it.
+   - Pass the log as a `--context` file so opponents stop re-raising
+     resolved items.
+   Rationale (2026-06-11): ASSUMPTION-1 (gate unknown-field tolerance) sat
+   unresolved through 4 debate rounds and the gauntlet, generating dozens of
+   redundant concerns and a dual-artifact contingency design — when the
+   served-code extract on disk already answered it. Hedges that can be
+   looked up are debate pollution, not open questions.
+
 1. Write the current spec to `.adversarial-spec/specs/<slug>/spec-draft-vN.md`
 2. Verify the file exists and has expected content: `wc -l .adversarial-spec/specs/<slug>/spec-draft-vN.md`
 3. Read the spec content from disk — the file IS the source of truth, never memory

@@ -414,6 +414,10 @@ Every adversary gets a feature briefing (~800 tokens):
   - concern + triggered-concern decisions and the concern x surface matrix from `04-target-architecture.md` §6 (normative source)
   - invariant set from `04-target-architecture.md` §8 (normative source)
   If missing (Phase 4 skipped or legacy session), note: "No target architecture available — architecture-level concerns may be underrepresented."
+- **Lookup log** — include `.adversarial-spec/specs/<slug>/lookup-log.md` when
+  present (resolved-by-lookup register from the debate rounds) so adversaries
+  do not re-attack already-answered assumptions; any UNRESOLVED entries are
+  explicitly flagged as fair-game attack surface.
 - **Files in blast zone** — file paths with one-line descriptions of what each does
 - **Recent git activity** — last 5 commits touching blast zone files
 
