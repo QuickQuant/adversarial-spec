@@ -93,7 +93,13 @@ def main() -> None:
     role = _detect_role(input_data)
     project = os.path.basename(os.getcwd())
     dispatch_log = Path(f".conductor/dispatch/{role}/updates.jsonl")
-    baseline_file = Path(f"/tmp/dispatch-baseline-{project}-{role}.txt")
+    # Baseline is per-session: a (project, role) shared file races when two
+    # same-role workers run in parallel — one advances the count, the other
+    # silently misses messages (CON-008).
+    session_id = str(input_data.get("session_id", "")).strip() or "nosession"
+    baseline_file = Path(
+        f"/tmp/dispatch-baseline-{project}-{role}-{session_id[:12]}.txt"
+    )
 
     if not dispatch_log.exists():
         json.dump({"decision": "allow"}, sys.stdout)
@@ -107,13 +113,15 @@ def main() -> None:
         json.dump({"decision": "allow"}, sys.stdout)
         return
 
-    # Read baseline
-    baseline = 0
+    # Read baseline. A session's first check starts at the current count:
+    # messages older than the session were addressed to its predecessors,
+    # and replaying the whole log as a fresh ALERT would bury real signals.
+    baseline = current_count
     if baseline_file.exists():
         try:
             baseline = int(baseline_file.read_text().strip())
         except (ValueError, OSError):
-            baseline = 0
+            baseline = current_count
 
     # Update baseline
     try:

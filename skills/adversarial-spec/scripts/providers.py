@@ -12,7 +12,12 @@ from typing import Optional
 from dotenv import load_dotenv
 from prompts import FOCUS_AREAS, PERSONAS
 
-load_dotenv("/home/jason/.config/secrets/llm-providers")
+load_dotenv(
+    os.environ.get(
+        "LLM_PROVIDERS_ENV_FILE",
+        str(Path.home() / ".config" / "secrets" / "llm-providers"),
+    )
+)
 
 PROFILES_DIR = Path.home() / ".config" / "adversarial-spec" / "profiles"
 GLOBAL_CONFIG_PATH = Path.home() / ".claude" / "adversarial-spec" / "config.json"
