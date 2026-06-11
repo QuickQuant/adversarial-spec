@@ -118,9 +118,10 @@ class TestCLISaveProfile:
 
 
 class TestCLICritique:
+    @patch("debate.preflight_models", return_value={})
     @patch("debate.validate_models_before_run")
     @patch("debate.call_models_parallel")
-    def test_critique_with_json_output(self, mock_call, mock_validate, tracked_session):
+    def test_critique_with_json_output(self, mock_call, mock_validate, mock_preflight, tracked_session):
         """Test critique command with JSON output."""
         import debate
         from models import ModelResponse
@@ -157,9 +158,10 @@ class TestCLICritique:
                         assert len(data["results"]) == 1
                         assert data["results"][0]["model"] == "gpt-4o"
 
+    @patch("debate.preflight_models", return_value={})
     @patch("debate.validate_models_before_run")
     @patch("debate.call_models_parallel")
-    def test_critique_with_all_agree(self, mock_call, mock_validate, tracked_session):
+    def test_critique_with_all_agree(self, mock_call, mock_validate, mock_preflight, tracked_session):
         """Test critique when all models agree."""
         import debate
         from models import ModelResponse
@@ -209,9 +211,10 @@ class TestCLICritique:
                         data = json.loads(output)
                         assert data["all_agreed"] is True
 
+    @patch("debate.preflight_models", return_value={})
     @patch("debate.validate_models_before_run")
     @patch("debate.call_models_parallel")
-    def test_critique_passes_options(self, mock_call, mock_validate, tracked_session):
+    def test_critique_passes_options(self, mock_call, mock_validate, mock_preflight, tracked_session):
         """Test that CLI options are passed to model calls."""
         import debate
         from models import ModelResponse
