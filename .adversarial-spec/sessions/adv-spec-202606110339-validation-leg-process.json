@@ -3,10 +3,10 @@
   "session_id": "adv-spec-202606110339-validation-leg-process",
   "context_name": "Validation-Leg Production Process",
   "current_phase": "execution",
-  "current_step": "Session closing: spec accepted, finalize \u2192 execution recorded, prior checkpoint 202606111802 verified, tree committed through 8bc662f",
+  "current_step": "Session closing: spec accepted, finalize → execution recorded, prior checkpoint 202606111802 verified, tree committed through 8bc662f",
   "created_at": "2026-06-11T03:39:50Z",
   "updated_at": "2026-06-11T18:26:39Z",
-  "checkpointed_cleanly": true,
+  "checkpointed_cleanly": false,
   "session_altitude": "system",
   "session_altitude_source": "declared",
   "fizzy_card_id": "5604",
@@ -29,7 +29,7 @@
       "status": "completed"
     },
     {
-      "content": "Spec ACCEPTED by Jason; finalize \u2192 execution transition recorded (board + telegram synced)",
+      "content": "Spec ACCEPTED by Jason; finalize → execution transition recorded (board + telegram synced)",
       "status": "completed"
     },
     {
@@ -45,7 +45,7 @@
       "status": "pending"
     },
     {
-      "content": "Phase 7: validation-leg dogfood wiring per spec \u00a78 \u2014 module is build target; bootstrap rows after module lands (ACK-4); middleware-candidates.json exists, surface candidates",
+      "content": "Phase 7: validation-leg dogfood wiring per spec §8 — module is build target; bootstrap rows after module lands (ACK-4); middleware-candidates.json exists, surface candidates",
       "status": "pending"
     }
   ],
@@ -145,7 +145,7 @@
     }
   },
   "completed_work": "Final guardrail pass (5/5) on spec v5; spec-output.md locked FINAL; tests-spec.md promoted (TC-2.6 full-hash, TC-3.8 reset-failed standalone, TC-1.5 BVA; all 14 US covered). Jason ACCEPTED. CON-008 fixed (per-session dispatch baselines + regression test), FIND-015 fixed (LLM_PROVIDERS_ENV_FILE), preflight test mocks; suite 556 pass, ruff clean. CON-001/002 deprioritized by Jason. Card 5604 synced; 6 commits 592ff76..8bc662f.",
-  "next_action": "Fresh session: /adversarial-spec resumes into execution phase. Read phases/07-execution.md fully; v4 altitude session (card 5604, system, pipeline v5) => plan_schema_version 3 tree emission (Step 9b) via mini_spec_emission.py; read ALL .architecture/ docs before decomposition; inputs: spec-output.md, gauntlet-concerns-2026-06-11.json, target-architecture.md (spec_fingerprint drift likely \u2014 spec changed v4\u2192v5\u2192FINAL since Phase 4), middleware-candidates.json",
+  "next_action": "Fresh session: /adversarial-spec resumes into execution phase. Read phases/07-execution.md fully; v4 altitude session (card 5604, system, pipeline v5) => plan_schema_version 3 tree emission (Step 9b) via mini_spec_emission.py; read ALL .architecture/ docs before decomposition; inputs: spec-output.md, gauntlet-concerns-2026-06-11.json, target-architecture.md (spec_fingerprint drift likely — spec changed v4→v5→FINAL since Phase 4), middleware-candidates.json",
   "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606111826-session-close-phase7-handoff.md",
   "status": "active",
   "journey": [
@@ -191,7 +191,7 @@
     },
     {
       "time": "2026-06-11T18:02:26Z",
-      "event": "Spec accepted + finalize \u2192 execution transition recorded; Phase 7 planning not started (fresh context mandated)",
+      "event": "Spec accepted + finalize → execution transition recorded; Phase 7 planning not started (fresh context mandated)",
       "type": "milestone"
     },
     {
@@ -201,7 +201,7 @@
     },
     {
       "time": "2026-06-11T18:26:39Z",
-      "event": "Session closing: spec accepted, finalize \u2192 execution recorded, prior checkpoint 202606111802 verified, tree committed through 8bc662f",
+      "event": "Session closing: spec accepted, finalize → execution recorded, prior checkpoint 202606111802 verified, tree committed through 8bc662f",
       "type": "milestone"
     },
     {
@@ -215,8 +215,8 @@
     "status": "completed",
     "session_id": "adv-spec-202606110339-validation-leg-process",
     "spec_slug": "validation-leg-process",
-    "input_fingerprint": "be87fc05f189353d799bc19361134e1ac117e62ef798bc9489022df21048f851",
-    "architecture_fingerprint": "48a3ed59fb6478c66ec760b924ab04fdde305de53ad3cd58d75c808536806857",
+    "input_fingerprint": "a958bb54734e027f9d958869101fc7478ceb74ce0bed9012876facd9eb9a98f7",
+    "architecture_fingerprint": "88a8e664b100fdf38b1e530e6945ea4019633da6bec6a5b7f30b971cc7558700",
     "phase_mode": "lightweight",
     "context_mode": "brownfield_feature",
     "artifact_paths": {
@@ -241,11 +241,11 @@
       "subprofiles": {
         "rendering_model": "N/A",
         "data_access_model": "direct file I/O (JSON ledger + markdown)",
-        "mutation_model": "lock-guarded read-mutate-rename, 3 owning subcommands",
+        "mutation_model": "lock-guarded read-mutate-rename, 8 owning subcommands (CB-6/DD-1)",
         "cache_model": "N/A (content hashes for freshness)",
-        "error_model": "exit 0/2/3 with structured issues"
+        "error_model": "exit 0/2/3; one stdout JSON envelope {status, code, issues, data} per invocation (FM-5)"
       },
-      "enforcement_model": "module-enforced shape validation mirroring fizzy gate; sender allowlist on inbound replies"
+      "enforcement_model": "module-enforced shape validation mirroring fizzy gate; module-extracted sender id vs registry allowed_sender_ids on inbound replies (SEC-1/SEC-2), fail-closed config"
     },
     "execution_surfaces": [
       "cli_command",
@@ -286,7 +286,7 @@
     "current_gate": null,
     "blocking_error": null,
     "started_at": "2026-06-11T05:41:35Z",
-    "updated_at": "2026-06-11T14:34:40Z",
+    "updated_at": "2026-06-11T19:15:36Z",
     "completed_at": "2026-06-11T14:34:40Z",
     "story_alignment": [
       {
@@ -465,6 +465,13 @@
         "decided_by": "human",
         "decided_at": "2026-06-11T14:34:40Z"
       }
+    },
+    "reconciliation": {
+      "at": "2026-06-11T19:15:36Z",
+      "reason": "spec drifted v4->v5->FINAL via gauntlet revision + finalize; deltas applied to target-architecture.md and architecture-invariants.json in place per Jason directive (reconcile, not rerun)",
+      "previous_input_fingerprint": "be87fc05f189353d799bc19361134e1ac117e62ef798bc9489022df21048f851",
+      "previous_architecture_fingerprint": "48a3ed59fb6478c66ec760b924ab04fdde305de53ad3cd58d75c808536806857",
+      "spec_input": "spec-output.md"
     }
   },
   "architecture_taxonomy": {
@@ -476,7 +483,7 @@
         "value": "subcommand CLI, pure-local, no daemon",
         "rationale": "mirrors mini_spec_emission.py pattern; NG4 forbids servers",
         "source_refs": [
-          "spec \u00a77",
+          "spec §7",
           "NG4"
         ]
       },
@@ -485,7 +492,7 @@
         "value": "filelock + atomic rename, single mutating writer",
         "rationale": "established TASK_LOCK pattern; crash-safe by construction",
         "source_refs": [
-          "spec \u00a77 lock semantics"
+          "spec §7 lock semantics"
         ]
       },
       {
@@ -493,7 +500,7 @@
         "value": "exit 0/2/3 + structured {code,row_id,detail}",
         "rationale": "LLM conductor needs machine-readable issues for the playbook",
         "source_refs": [
-          "spec \u00a77, \u00a710"
+          "spec §7, §10"
         ]
       },
       {
@@ -501,7 +508,7 @@
         "value": "JSON ledger + markdown artifacts + Telegram part files",
         "rationale": "single stateful ledger, projections write-only",
         "source_refs": [
-          "spec \u00a76.2"
+          "spec §6.2"
         ]
       },
       {
@@ -509,7 +516,7 @@
         "value": "pytest over module; dogfood validation of process itself",
         "rationale": "verification=pytest, validation=US-10 dogfood, disjoint by construction",
         "source_refs": [
-          "spec \u00a712"
+          "spec §12"
         ]
       }
     ]

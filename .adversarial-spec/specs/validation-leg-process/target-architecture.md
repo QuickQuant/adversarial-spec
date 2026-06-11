@@ -8,16 +8,32 @@ framework_version: "Python 3.14 / uv / filelock 3.16.1"
 surfaces: ["cli_command", "outbound_integration"]
 roadmap_path: ".adversarial-spec/specs/validation-leg-process/roadmap/manifest.json"
 tests_pseudo_path: ".adversarial-spec/specs/validation-leg-process/tests-pseudo.md"
-architecture_fingerprint: "48a3ed59fb6478c66ec760b924ab04fdde305de53ad3cd58d75c808536806857"
+architecture_fingerprint: "88a8e664b100fdf38b1e530e6945ea4019633da6bec6a5b7f30b971cc7558700"
 ---
 
 # Target Architecture: Validation-Leg Production Process
 
 > Phase 4, lightweight mode (roadmap `architecture_impact.verdict: extends_existing`).
-> Spec input: `spec-draft-v4.md` (debate-converged R4). Context: brownfield_feature.
+> Spec input: `spec-output.md` (FINAL — originally drafted against `spec-draft-v4.md`,
+> reconciled 2026-06-11 to the post-gauntlet/finalize FINAL spec; see Reconciliation
+> note below). Context: brownfield_feature.
 > Blast zone: `skills/adversarial-spec/scripts/` (new `validation_emission.py`),
 > phase docs `02-roadmap.md` (US-id emission, already done), `07-execution.md`,
 > `08-implementation.md`, plus `scripts/tests/test_validation_emission.py`.
+
+## Reconciliation (2026-06-11)
+
+This document was published against spec-draft-v4 before the gauntlet ran. The
+gauntlet revision (v5) and finalize corrections changed several architecture-level
+facts; rather than rerun Phase 4, the deltas were reconciled in directly and both
+fingerprints recomputed per the Phase 4 post-freeze rule. Material deltas applied:
+mutation ownership expanded 3 → 8 subcommands (CB-6/DD-1); telegram trust boundary
+moved from conductor-typed `--sender-id` to module-side extraction from the raw
+wake-listener payload (SEC-1, Jason-ruled; SEC-2 `allowed_sender_ids` ≠ `chat_id`);
+uniform stdout JSON envelope (FM-5); six new subcommands (`normalize-rows`,
+`record-evidence`, `record-send`, `reset-failed`, `supersede-row`, `status`);
+spec invariants extended to INV-1..INV-17 (INV-16 bulk-verdict delivery guard,
+INV-17 `reply_ref` idempotency).
 
 ## Overview
 
@@ -63,11 +79,11 @@ and an idempotent close path.
   "subprofiles": {
     "rendering_model": "N/A",
     "data_access_model": "direct file I/O — JSON ledger + markdown artifacts under .adversarial-spec/specs/<slug>/",
-    "mutation_model": "lock-guarded read→mutate→atomic-rename, owned by 3 named subcommands",
+    "mutation_model": "lock-guarded read→mutate→atomic-rename, owned by 8 named subcommands (CB-6/DD-1)",
     "cache_model": "N/A — no caching; freshness via content hashes",
-    "error_model": "exit 0/2/3 with structured {code, row_id, detail} issues on stdout (exit 2)"
+    "error_model": "exit 0/2/3; every invocation prints one stdout JSON envelope {status, code, issues:[{code,row_id,detail}], data} (FM-5); warnings to stderr only"
   },
-  "enforcement_model": "cli_command: module-enforced shape validation (check-rows/self-check) mirroring the fizzy gate; outbound_integration: sender-id allowlist on inbound replies, content discipline on outbound digests"
+  "enforcement_model": "cli_command: module-enforced shape validation (check-rows/self-check) mirroring the fizzy gate; outbound_integration: module-extracted sender id vs registry allowed_sender_ids on inbound replies (SEC-1/SEC-2, fail-closed config), content discipline on outbound digests"
 }
 ```
 
@@ -75,7 +91,7 @@ and an idempotent close path.
 
 | surface_id | What it is here |
 |---|---|
-| `cli_command` | `validation_emission.py` subcommands: `derive-conops`, `check-rows`, `self-check`, `assemble-digest`, `cancel-batch`, `parse-reply`, `emit-system-validation`. All pure-local, no MCP. |
+| `cli_command` | `validation_emission.py` subcommands: `derive-conops`, `normalize-rows`, `check-rows`, `record-evidence`, `self-check`, `assemble-digest`, `record-send`, `cancel-batch`, `reset-failed`, `supersede-row`, `parse-reply`, `emit-system-validation`, `status`. All pure-local, no MCP. |
 | `outbound_integration` | Telegram digest send (`telegram-send` loop over part files) and inbound reply ingestion (wake listener → `parse-reply`); the agent-side `mark_system_validation_complete` MCP call (fizzy contract is fixed, NG1). |
 
 Category-native rule satisfied: `cli` category ⇒ `cli_command` surface present.
@@ -87,7 +103,7 @@ Root altitude: **system** (set at triage, card 5604).
 
 | node | altitude | parent | decomposes_into | left-arm definition artifact | right-arm obligations |
 |---|---|---|---|---|---|
-| validation-leg-process (root) | system | — | emission-toolchain, phase-wiring | spec-draft-v4.md (finalized) | component + subsystem + system verification; system validation via THIS process (US-10 dogfood) |
+| validation-leg-process (root) | system | — | emission-toolchain, phase-wiring | spec-output.md (FINAL) | component + subsystem + system verification; system validation via THIS process (US-10 dogfood) |
 | emission-toolchain | subsystem | root | validation_emission.py, test suite | §6–§7 artifact contracts + component design | component + subsystem verification |
 | validation_emission.py | component | emission-toolchain | — | §7 subcommand contracts | component verification (pytest: TC-1.x, TC-2.x, TC-3.2/3.3/3.5/3.6) |
 | test_validation_emission.py | component | emission-toolchain | — | §12 testing strategy | component verification |
@@ -120,8 +136,11 @@ crash mid-write corrupting the ledger.
 **Invariant refs:** INV-A1, INV-A2 | **Test hook:** TC-INV-A1, TC-INV-A2
 
 ### Concern: Enforcement Points
-**Decision:** exactly three subcommands may mutate the ledger (`parse-reply`,
-`assemble-digest`, `cancel-batch`); everything else is read-only. The gate's
+**Decision:** exactly eight subcommands may mutate the ledger (`normalize-rows`,
+`record-evidence`, `parse-reply`, `assemble-digest`, `record-send`,
+`cancel-batch`, `reset-failed`, `supersede-row` — expanded from three per
+gauntlet CB-6/DD-1: every lifecycle event got a named owning command);
+everything else is read-only. The gate's
 reject classes are mirrored locally by `self-check`, which is strictly stricter
 (identical-set anti-relabeling extension) so local-clean ⇒ gate-clean, and MUST
 pass on the exact file passed to the MCP call.
@@ -143,9 +162,14 @@ verification slipping through.
 
 ### Concern: Error Handling Pipeline
 **Decision:** uniform exit-code contract across all subcommands: 0 ok / 2
-validation issues (structured `{code, row_id, detail}` on stdout) / 3
-environment-IO-lock-corrupt. Reply-parse failures raise `RepromptRequired`
-with ZERO ledger mutations — replies apply atomically or not at all.
+validation issues / 3 environment-IO-lock-corrupt, with every invocation
+printing exactly one stdout JSON envelope `{status, code, issues:
+[{code,row_id,detail}], data}` (gauntlet FM-5; warnings to stderr only).
+Reply-parse failures raise `RepromptRequired` with ZERO ledger mutations —
+replies apply atomically or not at all. A corrupt ledger is copied aside to
+`validation-rows.json.corrupt-<ts>` before exit 3 (forensics), never
+auto-repaired; conductor commit cadence (after every batch close and before
+the MCP call) bounds git-restore loss.
 **Surfaces:** cli_command
 **Goals/NFRs:** G1, G3 | **User stories:** US-7, US-0
 **Framework primitive:** Python exceptions mapped to exit codes at the CLI
@@ -181,29 +205,45 @@ digest.
 
 ### Concern: Security and Trust Boundaries
 **Decision:** inbound trust boundary at `parse-reply`: `--source telegram`
-requires `--sender-id` checked against the project's configured Telegram
-allowlist (from the telegram registry — never hardcoded); non-allowlisted
-replies are DISCARDED with a logged warning (no re-prompt, no mutation).
+takes `--update-file` pointing at the RAW wake-listener payload — the module
+extracts sender id, message id, and reply text ITSELF; the conductor never
+transcribes identity (`--sender-id` is ignored for telegram — gauntlet SEC-1,
+Jason-ruled). The extracted sender is checked against the registry's
+`allowed_sender_ids` (distinct from `chat_id` — SEC-2); missing/malformed
+registry → `ALLOWLIST_CONFIG_INVALID`, telegram parsing blocked (fail-closed
+config handling); non-allowlisted replies are DISCARDED with a structured code
+and a hashed-sender security event in the ledger (no re-prompt, no mutation).
 Outbound: digest text carries scenarios/oracles/evidence summaries only —
 no secrets, no tokens; evidence files stay local, referenced by path.
 **Surfaces:** outbound_integration
 **Goals/NFRs:** G3 | **User stories:** US-6, US-7
 **Framework primitive:** wake-listener already scopes updates to the project
-bot's chat; allowlist is defense-in-depth on top.
+bot's chat; allowlist is defense-in-depth on top; the raw payload is the
+identity source of truth (no human-in-the-loop transcription of identity).
 **Default status:** default overridden (listener scoping alone was the default;
-debate added the explicit allowlist — R3 convergent CRITICAL)
+debate added the explicit allowlist — R3 convergent CRITICAL; gauntlet SEC-1
+moved identity extraction into the module).
 **Why insufficient default:** the listener scopes by chat, not by sender;
-group-chat or forwarded-message edge cases could inject judgments.
-**Alternative considered:** trusting the bridge wrapper — rejected R3.
+group-chat or forwarded-message edge cases could inject judgments; a
+conductor-typed identity flag is itself a sieve (SEC-1).
+**Alternative considered:** trusting the bridge wrapper — rejected R3;
+conductor-typed `--sender-id` — rejected by Jason at gauntlet reconciliation
+(SEC-1 right-sizing: module reads the listener payload directly).
 **Failure mode prevented:** a non-Jason sender minting validation judgments
 (INV-1/INV-15 of the spec).
 **Invariant refs:** INV-A4 | **Test hook:** TC-INV-A4
 
 ### Concern: Integration Boundaries and Delivery Semantics
 **Decision:** digest batches are the delivery unit: exactly one open batch at a
-time; batches snapshot row hashes at open; stale replies (non-active digest-id
-or changed row hash) are rejected; multi-part splitting at 3500 chars/part at
-row boundaries, every part labeled with digest-id and total count. The Phase 8
+time; batches snapshot conops/row/evidence hashes at open; per-part delivery is
+recorded by `record-send` (batch flips to `sent` only when every part is
+recorded — gauntlet RC-2); bulk verdicts (`pass all` and natural-language
+aliases) apply only to fully-sent batches (spec INV-16); reply application is
+idempotent by `reply_ref` — edited messages are not re-applied (spec INV-17);
+stale replies (non-active digest-id or changed row hash) are rejected;
+multi-part splitting at 3500 chars/part at row boundaries, every part labeled
+with digest-id and total count; `status` reports batch age (>48h flagged with
+cancel/reissue guidance). The Phase 8
 close is idempotent end-to-end: re-entry skips completed steps
 (`NOTHING_TO_DIGEST` → existing clean emission → card-metadata check before the
 MCP call). Telegram down → terminal AskUserQuestion fallback, same grammar,
@@ -226,8 +266,11 @@ double-close; lost judgments on crash between emission and MCP call.
 **Decision:** the audit trail IS the ledger: `judgment` provenance block
 required on every non-null result (INV-1), `judgment_history` append-only,
 supersessions carry `approval_ref` + timestamp + replacement id, batch
-cancellations audit-logged. Session-level events land in the existing
-decisions log / journey log. No new observability infra.
+cancellations audit-logged, hashed-sender security events recorded for
+discarded replies (gauntlet OP-1), per-part send records, `module_version`
+stamps and `ledger_hash` binding on the emitted artifact (DD-5/DD-6).
+Session-level events land in the existing decisions log / journey log. No new
+observability infra.
 **Surfaces:** cli_command
 **Goals/NFRs:** G5 | **User stories:** US-12
 **Framework primitive:** existing decisions.log + journey.log conventions;
@@ -259,10 +302,10 @@ parity.
 | Concern | cli_command | outbound_integration |
 |---|---|---|
 | SoT/Concurrency | ledger + filelock + atomic rename; owner: module (INV-A1) | N/A — no remote state |
-| Enforcement | 3 mutating subcommands only; self-check before MCP (INV-A2, INV-A5) | gate contract conformance only (NG1) |
-| Error handling | exit 0/2/3, structured issues; zero-mutation re-prompt (INV-A3) | telegram-send failure → log + terminal fallback |
+| Enforcement | 8 mutating subcommands only (named owners); self-check before MCP (INV-A2, INV-A5) | gate contract conformance only (NG1) |
+| Error handling | exit 0/2/3, stdout JSON envelope; zero-mutation re-prompt (INV-A3) | telegram-send failure → log + terminal fallback |
 | Validation | check-rows structural lint; human semantic layers (INV-A5) | N/A |
-| Security | terminal source asserts local operator | sender allowlist, discard non-allowlisted (INV-A4); no secrets in digests |
+| Security | terminal source asserts local operator | module-extracted sender vs `allowed_sender_ids`, fail-closed config, discard non-allowlisted (INV-A4); no secrets in digests |
 | Delivery | batch lifecycle in ledger | one open batch; stale-reply rejection; idempotent close (INV-A6) |
 | Observability | provenance blocks, append-only history (INV-A7) | reply_ref ties judgment to message id |
 | Config | pinned contract constants | registry-sourced allowlist (INV-A4) |
@@ -280,19 +323,23 @@ row state; `system_validation.json` is a write-only projection produced
 exclusively by `emit-system-validation`; no other artifact or process stores or
 transcribes judgments.
 
-INV-A2: [category:enforcement] Only `parse-reply`, `assemble-digest`, and
-`cancel-batch` mutate the ledger; each acquires `validation-rows.json.lock` for
-the full read-modify-write and writes via atomic tmp+rename; all other
-subcommands are read-only.
+INV-A2: [category:enforcement] Only `normalize-rows`, `record-evidence`,
+`parse-reply`, `assemble-digest`, `record-send`, `cancel-batch`,
+`reset-failed`, and `supersede-row` mutate the ledger; each acquires
+`validation-rows.json.lock` for the full read-modify-write and writes via
+atomic tmp+rename; all other subcommands are read-only.
 
-INV-A3: [category:error_handling] Every subcommand terminates with exit 0, 2
-(structured `{code,row_id,detail}` issues), or 3; an invalid or partially valid
-reply produces ZERO ledger mutations and a re-prompt quoting the offending text.
+INV-A3: [category:error_handling] Every subcommand terminates with exit 0, 2,
+or 3 and prints exactly one stdout JSON envelope `{status, code, issues:
+[{code,row_id,detail}], data}`; an invalid or partially valid reply produces
+ZERO ledger mutations and a re-prompt quoting the offending text.
 
-INV-A4: [category:security] A Telegram-sourced judgment is applied only when its
-sender id matches the project's registry-configured allowlist; the allowlist is
-never hardcoded; non-allowlisted replies are discarded and logged, never parsed
-into the ledger.
+INV-A4: [category:security] A Telegram-sourced judgment is applied only when
+the sender id EXTRACTED BY THE MODULE from the raw wake-listener payload
+matches the registry's `allowed_sender_ids` (distinct from `chat_id`); the
+allowlist is never hardcoded; missing/malformed registry fails closed
+(`ALLOWLIST_CONFIG_INVALID`); non-allowlisted replies are discarded with a
+hashed-sender security event, never parsed into the ledger.
 
 INV-A5: [category:validation] `self-check` mirrors every gate reject class,
 is strictly stricter than the gate (identical-set anti-relabeling), and passes
@@ -300,8 +347,10 @@ on the exact bytes passed to `mark_system_validation_complete` immediately
 before every call; gate/local verdict parity is a pinned test.
 
 INV-A6: [category:integration] At most one digest batch is open at any time;
-batches snapshot row hashes at open; replies referencing a non-active digest-id
-or a changed row hash are rejected; the Phase 8 close sequence is idempotent —
+batches snapshot conops/row/evidence hashes at open; per-part delivery is
+recorded and bulk verdicts apply only to fully-sent batches; reply application
+is idempotent by `reply_ref`; replies referencing a non-active digest-id or a
+changed row hash are rejected; the Phase 8 close sequence is idempotent —
 re-entry at any step skips already-completed work without re-judging.
 
 INV-A7: [category:observability] Every non-null `result` carries a full
@@ -309,7 +358,7 @@ provenance block; `judgment_history` is append-only; supersessions and batch
 cancellations carry audit fields including `approval_ref`/reason; no history is
 ever rewritten.
 
-(Spec-level INV-1..INV-15 in `spec-draft-v4.md` §9 remain normative; INV-A*
+(Spec-level INV-1..INV-17 in `spec-output.md` §9 remain normative; INV-A*
 are the architecture-level commitments that make them enforceable.)
 
 ## Middleware Candidates
@@ -322,8 +371,9 @@ script (single consumer, single surface owner), not reusable middleware. See
 ## Dry-run Summary
 
 Lightweight scope: 1 highest-risk archetype per applicable surface.
-- `cli_command`: trace the `parse-reply` mutation path (reply text → grammar →
-  sender allowlist → batch/hash staleness checks → lock → atomic apply →
+- `cli_command`: trace the `parse-reply` mutation path (raw update-file payload
+  → module-side sender/message/text extraction → sender allowlist → grammar →
+  batch/hash staleness checks → `reply_ref` dedup → lock → atomic apply →
   provenance write) against INV-A2/A3/A4/A6.
 - `outbound_integration`: trace the digest batch lifecycle (assemble → part
   files → telegram-send loop → reply → close/cancel → delta re-entry) against

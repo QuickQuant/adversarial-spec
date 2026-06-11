@@ -2,28 +2,60 @@
   "schema_version": "1.0",
   "spec_slug": "validation-leg-process",
   "phase_mode": "lightweight",
-  "architecture_fingerprint": "48a3ed59fb6478c66ec760b924ab04fdde305de53ad3cd58d75c808536806857",
-  "generated_at": "2026-06-11T14:24:30Z",
+  "architecture_fingerprint": "88a8e664b100fdf38b1e530e6945ea4019633da6bec6a5b7f30b971cc7558700",
+  "generated_at": "2026-06-11T19:15:36Z",
   "scope": "1 highest-risk archetype per applicable surface (lightweight)",
   "archetypes": [
     {
       "surface": "cli_command",
       "archetype": "parse-reply mutation path (highest-risk: the only path that writes human judgments)",
       "checks": [
-        {"dry_run_check_id": "cli_parsing", "result": "pass", "evidence": "Reply grammar implemented executably (review-console.html, logic mirrors spec §6.5) and exercised with 15 assertions in node: pass all / fail+pass rest / na-without-justification rejected / superseded row rejected (INV-10) / fail all rejected / bare US-n rejected / duplicate-verdict rejected / unknown row rejected / judged-pass immutability (INV-13) / mixed valid+invalid reply leaves state unchanged (atomicity, INV-A3). All pass."},
-        {"dry_run_check_id": "enforcement_order", "result": "pass", "evidence": "Trace order verified against spec §7: grammar validation → sender allowlist (INV-A4) → batch active check → row-hash staleness check (INV-A6) → lock acquire → atomic apply with provenance (INV-A7). Sender check precedes any mutation; lock wraps full read-modify-write (INV-A2)."},
-        {"dry_run_check_id": "sot_owner", "result": "pass", "evidence": "Mutation ownership trace: parse-reply is one of exactly 3 mutators; judgments enter the ledger at parse time; no intermediate judgment store exists (spec §7); emit-system-validation is read-only projection (INV-A1)."},
-        {"dry_run_check_id": "error_transform", "result": "pass", "evidence": "Failure paths map to exit contract: invalid reply → RepromptRequired, zero mutations, exit 2 structured issues; lock timeout → exit 3 LEDGER_BUSY; corrupt ledger → exit 3 LEDGER_CORRUPT, no auto-repair (INV-A3)."}
+        {
+          "dry_run_check_id": "cli_parsing",
+          "result": "pass",
+          "evidence": "Reply grammar implemented executably (review-console.html, logic mirrors spec §6.5) and exercised with 15 assertions in node: pass all / fail+pass rest / na-without-justification rejected / superseded row rejected (INV-10) / fail all rejected / bare US-n rejected / duplicate-verdict rejected / unknown row rejected / judged-pass immutability (INV-13) / mixed valid+invalid reply leaves state unchanged (atomicity, INV-A3). All pass."
+        },
+        {
+          "dry_run_check_id": "enforcement_order",
+          "result": "pass",
+          "evidence": "Re-traced 2026-06-11 against FINAL spec §7: raw update-file payload → module-side sender/message/text extraction → sender allowlist (INV-A4) → grammar validation → batch active check → row-hash staleness check → reply_ref dedup (INV-17) → lock acquire → atomic apply with provenance (INV-A7). Sender check precedes any mutation; lock wraps full read-modify-write (INV-A2)."
+        },
+        {
+          "dry_run_check_id": "sot_owner",
+          "result": "pass",
+          "evidence": "Re-traced 2026-06-11: parse-reply is one of exactly 8 mutators (CB-6/DD-1 named-owner expansion); judgments enter the ledger at parse time; no intermediate judgment store exists (spec §7); emit-system-validation is read-only projection (INV-A1)."
+        },
+        {
+          "dry_run_check_id": "error_transform",
+          "result": "pass",
+          "evidence": "Re-traced 2026-06-11: invalid reply → RepromptRequired, zero mutations, exit 2; lock timeout → exit 3 LEDGER_BUSY; corrupt ledger → exit 3 LEDGER_CORRUPT with bytes copied aside to .corrupt-<ts>, no auto-repair; every invocation prints one stdout JSON envelope {status, code, issues, data} (FM-5; INV-A3)."
+        }
       ]
     },
     {
       "surface": "outbound_integration",
       "archetype": "digest batch lifecycle incl. crash/re-entry (highest-risk: external service + human in the loop + close idempotency)",
       "checks": [
-        {"dry_run_check_id": "delivery_semantics", "result": "pass", "evidence": "Trace: assemble-digest refuses while a batch is open (single open batch); batch snapshots row hashes; multi-part split at 3500 chars at row boundaries, each part labeled digest-id + i/k; stale digest-id and changed-hash replies rejected at parse (replay protection). At-least-once messaging + parse-layer rejection = effectively-once judgment application (INV-A6)."},
-        {"dry_run_check_id": "idempotency", "result": "pass", "evidence": "Close re-entry walked at every step: all judged → NOTHING_TO_DIGEST skips to emission; clean emission exists → skip to MCP call; card metadata already system_validation_complete → skip MCP entirely. Crash between emission and MCP call re-enters cleanly; no re-judging path exists (spec §8 close-step idempotency)."},
-        {"dry_run_check_id": "security_boundary", "result": "pass", "evidence": "Inbound: --sender-id required for telegram source, checked against registry allowlist (never hardcoded — pinned by TC-INV-A4 static grep); non-allowlisted discarded+logged, no re-prompt. Outbound: digest carries scenario/oracle/evidence summaries only, no secrets; evidence stays local by path reference. Telegram-down fallback: terminal AskUserQuestion, same grammar + provenance (INV-1)."},
-        {"dry_run_check_id": "invariant_coverage", "result": "pass", "evidence": "All 7 INV-A* exercised by at least one archetype check above (A1:sot_owner, A2/A3:cli path, A4:security_boundary, A5:enforcement via self-check-before-MCP ordering in close trace, A6:delivery+idempotency, A7:provenance in apply step). Each invariant has a linked TC-INV test in tests-pseudo.md."}
+        {
+          "dry_run_check_id": "delivery_semantics",
+          "result": "pass",
+          "evidence": "Re-traced 2026-06-11 against FINAL spec: assemble-digest refuses while a non-terminal batch exists; batch snapshots conops/row/evidence hashes; record-send records per-part delivery, batch flips to sent only when all parts recorded (RC-2); bulk verdicts gated on fully-sent batch (INV-16); reply_ref idempotency rejects edited-message re-application (INV-17); multi-part split at 3500 chars at row boundaries, each part labeled digest-id + i/k; stale digest-id and changed-hash replies rejected at parse. At-least-once messaging + parse-layer rejection = effectively-once judgment application (INV-A6)."
+        },
+        {
+          "dry_run_check_id": "idempotency",
+          "result": "pass",
+          "evidence": "Close re-entry walked at every step: all judged → NOTHING_TO_DIGEST skips to emission; clean emission exists → skip to MCP call; card metadata already system_validation_complete → skip MCP entirely. Crash between emission and MCP call re-enters cleanly; no re-judging path exists (spec §8 close-step idempotency)."
+        },
+        {
+          "dry_run_check_id": "security_boundary",
+          "result": "pass",
+          "evidence": "Re-traced 2026-06-11 (SEC-1 Jason-ruled shape): parse-reply --source telegram reads the RAW wake-listener payload via --update-file; the module extracts sender id itself (conductor never transcribes identity); checked against registry allowed_sender_ids, distinct from chat_id (SEC-2); missing/malformed registry fails closed (ALLOWLIST_CONFIG_INVALID); non-allowlisted discarded with hashed-sender security event, no re-prompt. Outbound: secret deny-pattern lint blocks assembly; digest carries scenario/oracle/evidence summaries only; evidence stays local by path reference. Telegram-down fallback: cancel-batch + terminal AskUserQuestion for the whole batch, same grammar + provenance (INV-1)."
+        },
+        {
+          "dry_run_check_id": "invariant_coverage",
+          "result": "pass",
+          "evidence": "All 7 INV-A* exercised by at least one archetype check above (A1:sot_owner, A2/A3:cli path, A4:security_boundary, A5:enforcement via self-check-before-MCP ordering in close trace, A6:delivery+idempotency, A7:provenance in apply step). Each invariant has a linked TC-INV test in tests-pseudo.md."
+        }
       ]
     }
   ],
@@ -32,5 +64,6 @@
     "Direct ledger edits outside the module — single-user discipline, flagged in matrix bypass risks",
     "OQ-1 (gate tolerance of unknown row fields) — implementation-time verification with specified fallback protocol"
   ],
-  "verdict": "pass"
+  "verdict": "pass",
+  "reconciliation_note": "Re-traced 2026-06-11 against spec-output.md (FINAL) during Phase 7 drift reconciliation; all checks re-verified pass."
 }

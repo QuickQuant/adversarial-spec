@@ -2,8 +2,8 @@
   "schema_version": "1.0",
   "spec_slug": "validation-leg-process",
   "phase_mode": "lightweight",
-  "architecture_fingerprint": "48a3ed59fb6478c66ec760b924ab04fdde305de53ad3cd58d75c808536806857",
-  "generated_at": "2026-06-11T05:47:21Z",
+  "architecture_fingerprint": "88a8e664b100fdf38b1e530e6945ea4019633da6bec6a5b7f30b971cc7558700",
+  "generated_at": "2026-06-11T19:15:36Z",
   "invariants": [
     {
       "id": "INV-A1",
@@ -38,7 +38,7 @@
       "surfaces": [
         "cli_command"
       ],
-      "rule": "Only parse-reply, assemble-digest, and cancel-batch mutate the ledger; each holds validation-rows.json.lock for the full read-modify-write and writes atomic tmp+rename; all other subcommands are read-only",
+      "rule": "Only normalize-rows, record-evidence, parse-reply, assemble-digest, record-send, cancel-batch, reset-failed, and supersede-row mutate the ledger; each holds validation-rows.json.lock for the full read-modify-write and writes atomic tmp+rename; all other subcommands are read-only",
       "enforcement": "module structure: single mutation helper requiring the lock; read-only subcommands have no write path",
       "exceptions": [],
       "verification_kind": "dynamic",
@@ -62,7 +62,7 @@
       "surfaces": [
         "cli_command"
       ],
-      "rule": "Every subcommand exits 0, 2 (structured {code,row_id,detail} issues on stdout), or 3; an invalid or partially valid reply produces zero ledger mutations and a re-prompt quoting the offending text",
+      "rule": "Every subcommand exits 0, 2, or 3 and prints exactly one stdout JSON envelope {status, code, issues:[{code,row_id,detail}], data} (warnings to stderr only); an invalid or partially valid reply produces zero ledger mutations and a re-prompt quoting the offending text",
       "enforcement": "CLI boundary maps exceptions to exit codes; parse-reply validates the full reply before any mutation",
       "exceptions": [],
       "verification_kind": "dynamic",
@@ -87,8 +87,8 @@
       "surfaces": [
         "outbound_integration"
       ],
-      "rule": "A telegram-sourced judgment is applied only when --sender-id matches the project's registry-configured allowlist (never hardcoded); non-allowlisted replies are discarded and logged, never parsed into the ledger",
-      "enforcement": "parse-reply requires --sender-id for --source telegram; allowlist loaded from telegram registry config",
+      "rule": "A telegram-sourced judgment is applied only when the sender id extracted by the module from the raw wake-listener payload matches the registry's allowed_sender_ids (distinct from chat_id; never hardcoded); missing/malformed registry fails closed (ALLOWLIST_CONFIG_INVALID); non-allowlisted replies are discarded with a hashed-sender security event, never parsed into the ledger",
+      "enforcement": "parse-reply --source telegram requires --update-file (raw listener payload); the module extracts sender/message/text itself and ignores --sender-id; allowlist loaded from the telegram registry's allowed_sender_ids",
       "exceptions": [
         "--source terminal asserts local operator is Jason (single-user machine, documented)"
       ],
@@ -139,8 +139,8 @@
         "outbound_integration",
         "cli_command"
       ],
-      "rule": "At most one digest batch is open at any time; batches snapshot row hashes at open; replies referencing a non-active digest-id or changed row hash are rejected; close re-entry at any step skips completed work without re-judging",
-      "enforcement": "assemble-digest refuses while a batch is open; parse-reply validates digest-id and snapshot hashes; close sequence checks NOTHING_TO_DIGEST, existing clean emission, and card metadata before the MCP call",
+      "rule": "At most one digest batch is open at any time; batches snapshot conops/row/evidence hashes at open; per-part delivery is recorded (record-send) and bulk verdicts apply only to fully-sent batches; reply application is idempotent by reply_ref; replies referencing a non-active digest-id or changed row hash are rejected; close re-entry at any step skips completed work without re-judging",
+      "enforcement": "assemble-digest refuses while a non-terminal batch exists; record-send flips batch to sent only when all parts recorded; parse-reply validates digest-id, snapshot hashes, and reply_ref dedup; close sequence checks NOTHING_TO_DIGEST (failed rows route to remediation, never emission), existing clean emission, and card metadata before the MCP call",
       "exceptions": [
         "cancel-batch closes an open batch without judgments (audit-logged)"
       ],
