@@ -2515,6 +2515,28 @@ def test_parse_reply_telegram_allowlisted_sender_applies_tcg3(capsys, tmp_path):
         assert "ignored-for-telegram" not in judgment["reply_ref"]
 
 
+def test_parse_reply_telegram_missing_message_id_rejected_tcg3(capsys, tmp_path):
+    """TC-G3: a raw telegram update without message_id cannot establish
+    reply_ref provenance/idempotency, so it fails closed with zero mutations."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path)
+    registry = _write_registry(tmp_path)
+    update = _write_update(tmp_path, ALLOWED_SENDER, "pass all", message_id=7777)
+    payload = json.loads(update.read_text())
+    del payload["message"]["message_id"]
+    update.write_text(json.dumps(payload))
+    before = ledger_path.read_bytes()
+
+    exit_code, out, _err = _telegram_reply(
+        capsys, ledger_path, digest_id, update, registry
+    )
+    envelope = parse_single_envelope(out)
+
+    assert exit_code == EXIT_ISSUES
+    assert envelope["status"] == "reprompt"
+    assert any(i["code"] == "TELEGRAM_UPDATE_MALFORMED" for i in envelope["issues"])
+    assert ledger_path.read_bytes() == before
+
+
 def test_parse_reply_telegram_non_allowlisted_sender_discarded_tcg3(capsys, tmp_path):
     """TC-G3/TC-INV-A4 (negative): a non-allowlisted sender is DISCARDED with
     exit 2 SENDER_NOT_ALLOWLISTED, a hashed-sender security event, and ZERO

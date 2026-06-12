@@ -1922,7 +1922,7 @@ def compute_sender_hash(sender_id: str) -> str:
     return hashlib.sha256(str(sender_id).encode("utf-8")).hexdigest()
 
 
-def load_allowed_sender_ids(registry_path: Path) -> set[str]:
+def load_allowed_sender_ids(registry_path: Path | None) -> set[str]:
     """Resolve the telegram sender allowlist from the registry config,
     FAIL-CLOSED (gauntlet SEC-2). ``allowed_sender_ids`` is distinct from the
     chat id and is never hardcoded. Missing file, unreadable JSON, missing
@@ -1996,6 +1996,15 @@ def extract_telegram_reply(update_path: Path) -> dict[str, str]:
             "update message has no sender (message.from.id)",
         )])
     message_id = message.get("message_id")
+    if (
+        isinstance(message_id, bool)
+        or not isinstance(message_id, (int, str))
+        or not str(message_id).strip()
+    ):
+        raise _RepromptError([make_issue(
+            "TELEGRAM_UPDATE_MALFORMED",
+            "update message has no usable message_id",
+        )])
     text = message.get("text")
     if not isinstance(text, str):
         raise _RepromptError([make_issue(
