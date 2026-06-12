@@ -23,27 +23,36 @@ import re
 import pytest
 from filelock import FileLock, Timeout
 from validation_emission import (
+    CONOPS_MAX_BYTES,
     ENVELOPE_STATUSES,
     EXIT_ENV,
     EXIT_ISSUES,
     EXIT_OK,
     HASH_PREFIX_LEN,
+    JUSTIFICATION_MAX_BYTES,
     LEDGER_LOCK_TIMEOUT_S,
+    LEDGER_MAX_BYTES,
+    REPLY_MAX_BYTES,
     ROW_HASH_FIELDS,
     SCHEMA_VERSION,
     SUBCOMMANDS,
     LedgerBusyError,
     LedgerCorruptError,
+    ValidationIssuesError,
     __version__,
     compute_conops_hash,
     compute_row_hash,
     compute_story_hashes,
+    enforce_input_bounds,
     exit_code_for_status,
+    find_duplicate_row_ids,
+    find_duplicate_story_ids,
     hash_prefix,
     main,
     module_version,
     mutate_ledger,
     read_ledger,
+    resolve_under_root,
     row_hash_for,
     stamp_artifact,
     utc_now,
@@ -460,3 +469,134 @@ def test_hash_constants_pinned():
     assert HASH_PREFIX_LEN == 12
     assert ROW_HASH_FIELDS == ("conops_ref", "scenario", "oracle", "evidence_type")
     assert len(compute_conops_hash(b"")) == 64
+
+
+# ═══ C-1.4 path-containment-bounds (TC-1.4, TC-2.6) ══════════════════════════
+
+
+# ── AC-1: artifact paths resolved under spec root via realpath (SEC-9) ───────
+
+
+def test_path_containment_resolves_relative_candidate_under_root(tmp_path):
+    (tmp_path / "validation-evidence").mkdir()
+    resolved = resolve_under_root(tmp_path, "validation-evidence/r-US1-1/evidence.md")
+    assert resolved == tmp_path.resolve() / "validation-evidence/r-US1-1/evidence.md"
+
+
+def test_path_containment_rejects_dotdot_escape(tmp_path):
+    with pytest.raises(ValidationIssuesError) as exc_info:
+        resolve_under_root(tmp_path, "../outside/evidence.md")
+    assert exc_info.value.code == "PATH_OUTSIDE_ROOT"
+
+
+def test_path_containment_rejects_absolute_path_outside_root(tmp_path):
+    with pytest.raises(ValidationIssuesError):
+        resolve_under_root(tmp_path, "/etc/passwd")
+    # absolute path INSIDE the root is fine
+    inside = tmp_path / "conops.md"
+    assert resolve_under_root(tmp_path, str(inside)) == inside.resolve()
+
+
+def test_path_containment_rejects_symlink_escape(tmp_path):
+    root = tmp_path / "spec-root"
+    outside = tmp_path / "outside"
+    root.mkdir()
+    outside.mkdir()
+    (outside / "secret.md").write_text("secret")
+    (root / "sneaky").symlink_to(outside)
+    with pytest.raises(ValidationIssuesError) as exc_info:
+        resolve_under_root(root, "sneaky/secret.md")
+    assert exc_info.value.code == "PATH_OUTSIDE_ROOT"
+
+
+def test_path_outside_root_maps_to_exit2_envelope_at_boundary(capsys, monkeypatch, tmp_path):
+    import validation_emission as ve
+
+    def boom(_args):
+        resolve_under_root(tmp_path, "../escape.md")
+        raise AssertionError("unreachable")
+
+    monkeypatch.setitem(ve.HANDLERS, "status", boom)
+    exit_code = main(["status"])
+    envelope = parse_single_envelope(capsys.readouterr().out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["status"] == "issues"
+    assert envelope["code"] == "PATH_OUTSIDE_ROOT"
+
+
+# ── AC-2: input byte budgets → structured exit 2 (SEC-10) ────────────────────
+
+
+def test_bounds_constants_pinned():
+    assert REPLY_MAX_BYTES == 16 * 1024
+    assert JUSTIFICATION_MAX_BYTES == 2 * 1024
+    assert LEDGER_MAX_BYTES == 5 * 1024 * 1024
+    assert CONOPS_MAX_BYTES == 1024 * 1024
+
+
+@pytest.mark.parametrize(
+    ("kind", "limit"),
+    [("reply", 16 * 1024), ("justification", 2 * 1024),
+     ("ledger", 5 * 1024 * 1024), ("conops", 1024 * 1024)],
+)
+def test_bounds_at_limit_pass_and_over_limit_reject(kind, limit):
+    enforce_input_bounds(kind, b"x" * limit)  # exactly at the limit: fine
+    with pytest.raises(ValidationIssuesError) as exc_info:
+        enforce_input_bounds(kind, b"x" * (limit + 1))
+    err = exc_info.value
+    assert err.code == "INPUT_BOUNDS_EXCEEDED"
+    assert kind in err.issues[0]["detail"]
+    assert str(limit) in err.issues[0]["detail"]
+
+
+def test_bounds_measure_utf8_bytes_not_characters():
+    # 1024 four-byte emoji = 4096 bytes > 2KB justification budget
+    with pytest.raises(ValidationIssuesError):
+        enforce_input_bounds("justification", "🥊" * 1024)
+
+
+def test_bounds_unknown_kind_is_a_programming_error():
+    with pytest.raises(ValueError):
+        enforce_input_bounds("novel-kind", b"x")
+
+
+def test_bounds_exceeded_maps_to_exit2_envelope_at_boundary(capsys, monkeypatch):
+    import validation_emission as ve
+
+    def boom(_args):
+        enforce_input_bounds("reply", b"x" * (REPLY_MAX_BYTES + 1))
+        raise AssertionError("unreachable")
+
+    monkeypatch.setitem(ve.HANDLERS, "status", boom)
+    exit_code = main(["status"])
+    envelope = parse_single_envelope(capsys.readouterr().out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["code"] == "INPUT_BOUNDS_EXCEEDED"
+
+
+# ── AC-3: row_id global uniqueness incl. superseded; dup story ids exit 2 ────
+
+
+def test_row_id_uniqueness_bounds_include_superseded_snapshots():
+    ledger = {
+        "rows": [{"row_id": "r-US1-1"}, {"row_id": "r-US1-2"}],
+        "superseded": [{"row_snapshot": {"row_id": "r-US1-1"}}],
+    }
+    assert find_duplicate_row_ids(ledger) == ["r-US1-1"]
+
+
+def test_row_id_uniqueness_bounds_clean_ledger_has_no_duplicates():
+    ledger = {
+        "rows": [{"row_id": "r-US1-2"}],
+        "superseded": [{"row_snapshot": {"row_id": "r-US1-1"}}],
+    }
+    assert find_duplicate_row_ids(ledger) == []
+
+
+def test_duplicate_story_ids_rejected_bounds():
+    # duplicates reported in the order the duplication is DETECTED
+    assert find_duplicate_story_ids(["US-0", "US-1", "US-1", "US-2", "US-0"]) == [
+        "US-1",
+        "US-0",
+    ]
+    assert find_duplicate_story_ids(["US-0", "US-1"]) == []

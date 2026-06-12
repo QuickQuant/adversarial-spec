@@ -178,6 +178,109 @@ def stamp_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
     return stamped
 
 
+# ── Path containment + input bounds (SEC-9, SEC-10) ──────────────────────────
+
+#: Input byte budgets (spec §11, SEC-10). Sizes are UTF-8 BYTES, not characters.
+REPLY_MAX_BYTES = 16 * 1024
+JUSTIFICATION_MAX_BYTES = 2 * 1024
+LEDGER_MAX_BYTES = 5 * 1024 * 1024
+CONOPS_MAX_BYTES = 1024 * 1024
+
+_INPUT_BOUNDS = {
+    "reply": REPLY_MAX_BYTES,
+    "justification": JUSTIFICATION_MAX_BYTES,
+    "ledger": LEDGER_MAX_BYTES,
+    "conops": CONOPS_MAX_BYTES,
+}
+
+
+class ValidationIssuesError(Exception):
+    """Validation-class failure → exit 2 ``issues`` envelope at the boundary."""
+
+    def __init__(self, code: str, issues: list[dict[str, Any]]) -> None:
+        self.code = code
+        self.issues = issues
+        super().__init__(issues[0]["detail"] if issues else code)
+
+
+def resolve_under_root(spec_root: Path, candidate: str | Path) -> Path:
+    """Resolve an artifact path and require containment under the spec root.
+
+    realpath both sides (the session.py is_relative_to pattern) so ``..``
+    segments AND symlink escapes are rejected (SEC-9).
+    """
+    root_real = Path(spec_root).resolve()
+    candidate_path = Path(candidate)
+    if not candidate_path.is_absolute():
+        candidate_path = root_real / candidate_path
+    resolved = candidate_path.resolve()
+    if not resolved.is_relative_to(root_real):
+        raise ValidationIssuesError(
+            "PATH_OUTSIDE_ROOT",
+            [
+                make_issue(
+                    "PATH_OUTSIDE_ROOT",
+                    f"artifact path escapes the spec root: {candidate} "
+                    f"(resolved {resolved}, root {root_real})",
+                )
+            ],
+        )
+    return resolved
+
+
+def enforce_input_bounds(kind: str, data: bytes | str) -> None:
+    """Reject inputs over their byte budget (SEC-10) with a structured exit-2.
+
+    Unknown ``kind`` is a programming error, not a validation issue.
+    """
+    try:
+        limit = _INPUT_BOUNDS[kind]
+    except KeyError:
+        raise ValueError(f"unknown input-bounds kind: {kind!r}") from None
+    size = len(data.encode("utf-8")) if isinstance(data, str) else len(data)
+    if size > limit:
+        raise ValidationIssuesError(
+            "INPUT_BOUNDS_EXCEEDED",
+            [
+                make_issue(
+                    "INPUT_BOUNDS_EXCEEDED",
+                    f"{kind} input is {size} bytes, over the {limit}-byte budget",
+                )
+            ],
+        )
+
+
+def find_duplicate_row_ids(ledger: dict[str, Any]) -> list[str]:
+    """row_id must be globally unique across active rows AND superseded
+    snapshots (spec §3); returns duplicates in first-seen order."""
+    seen: set[str] = set()
+    duplicates: list[str] = []
+    active_ids = (row.get("row_id") for row in ledger.get("rows", []))
+    superseded_ids = (
+        entry.get("row_snapshot", {}).get("row_id")
+        for entry in ledger.get("superseded", [])
+    )
+    for row_id in (*active_ids, *superseded_ids):
+        if not row_id:
+            continue
+        if row_id in seen and row_id not in duplicates:
+            duplicates.append(row_id)
+        seen.add(row_id)
+    return duplicates
+
+
+def find_duplicate_story_ids(story_ids: Any) -> list[str]:
+    """Duplicate manifest story ids are a derivation error → exit 2 (SEC-9
+    adjacent, spec §6.1); returns duplicates in first-seen order."""
+    seen: set[str] = set()
+    duplicates: list[str] = []
+    for story_id in story_ids:
+        if story_id in seen and story_id not in duplicates:
+            duplicates.append(story_id)
+        seen.add(story_id)
+    return duplicates
+
+
 # ── Hash canonicalization (INV-12, SEC-8, FM-3) ──────────────────────────────
 #
 # Hashes are computed ONLY by this module — the conductor never writes hex by
@@ -484,6 +587,8 @@ def main(argv: list[str] | None = None) -> int:
     handler = HANDLERS[args.subcommand]
     try:
         envelope = handler(args)
+    except ValidationIssuesError as exc:
+        envelope = Envelope("issues", exc.code, issues=exc.issues)
     except LedgerBusyError as exc:
         print(f"error: {exc}", file=sys.stderr)
         envelope = Envelope(
