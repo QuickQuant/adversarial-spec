@@ -927,7 +927,7 @@ def test_emit_system_validation_refuses_provenance_missing_fields_ac2(capsys, em
     _tmp_path, ledger_path, conops_path = emission_env
     ledger = json.loads(ledger_path.read_text())
     # Truthy but missing required fields (AC-2)
-    ledger["rows"][0]["judgment"] = {"judged_by": "jason"} 
+    ledger["rows"][0]["judgment"] = {"judged_by": "jason"}
     ledger_path.write_text(json.dumps(ledger))
 
     exit_code, out, _err = run_cli(capsys, [
@@ -1326,7 +1326,7 @@ def test_normalize_rows_stamps_hashes(capsys, evidence_env):
         "normalize-rows", str(ledger_path), "--conops", str(conops_path)
     ])
 
-    envelope = parse_single_envelope(out)
+    parse_single_envelope(out)
     assert exit_code == EXIT_OK
 
     ledger = json.loads(ledger_path.read_text())
@@ -1334,6 +1334,112 @@ def test_normalize_rows_stamps_hashes(capsys, evidence_env):
     assert "row_hash" in row
     assert "story_hash" in row
     assert ledger["conops_hash"] == compute_conops_hash(conops_path.read_bytes())
+
+
+def test_normalize_rows_stamps_ledger_schema_fields(capsys, evidence_env):
+    """AC-2 stamping half: ledger header carries schema_version,
+    module_version, kind, conops_hash, story_hashes after normalize."""
+    _tmp_path, ledger_path, conops_path = evidence_env
+    exit_code, out, _err = run_cli(capsys, [
+        "normalize-rows", str(ledger_path), "--conops", str(conops_path)
+    ])
+    parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+
+    ledger = json.loads(ledger_path.read_text())
+    assert ledger["kind"] == "validation-rows-ledger"
+    assert ledger["schema_version"] == SCHEMA_VERSION
+    assert ledger["module_version"] == module_version()
+    assert ledger["story_hashes"] == compute_story_hashes(
+        conops_path.read_text(encoding="utf-8")
+    )
+    # Stamped row_hash matches the pinned canonicalization (TC-G11)
+    row = ledger["rows"][0]
+    assert row["row_hash"] == compute_row_hash(
+        row["conops_ref"], row["scenario"], row["oracle"], row["evidence_type"]
+    )
+
+
+def _normalize_reject_env(tmp_path, rows, superseded=None):
+    conops_path = tmp_path / "conops.md"
+    conops_path.write_text("## User stories\n### US-1: First\n### US-2: Second\n")
+    ledger_path = tmp_path / "validation-rows.json"
+    ledger = {"rows": rows}
+    if superseded is not None:
+        ledger["superseded"] = superseded
+    ledger_path.write_text(json.dumps(ledger))
+    return ledger_path, conops_path
+
+
+def _draft_row(row_id, conops_ref="US-1"):
+    return {
+        "row_id": row_id,
+        "conops_ref": conops_ref,
+        "scenario": "scenario text",
+        "oracle": "Jason passes iff outcome demonstrates US intent.",
+        "evidence_type": "narrative",
+    }
+
+
+@pytest.mark.parametrize(
+    ("rows", "superseded", "code"),
+    [
+        # AC-2: row_id format r-US<n>-<k>
+        ([_draft_row("r-1")], None, "INVALID_ROW_ID"),
+        # AC-2: global uniqueness within rows[]
+        ([_draft_row("r-US1-1"), _draft_row("r-US1-1")], None, "DUPLICATE_ROW_ID"),
+        # AC-2: global uniqueness includes superseded snapshots (spec §3)
+        (
+            [_draft_row("r-US1-1")],
+            [{"row_snapshot": {"row_id": "r-US1-1"}}],
+            "DUPLICATE_ROW_ID",
+        ),
+        # AC-2: story-prefix match — row_id story number vs conops_ref
+        ([_draft_row("r-US2-1", conops_ref="US-1")], None, "ROW_ID_STORY_MISMATCH"),
+        # Fail-fast: conops_ref not present in conops.md (no silent skip)
+        ([_draft_row("r-US9-1", conops_ref="US-9")], None, "UNKNOWN_CONOPS_REF"),
+    ],
+)
+def test_normalize_rows_rejects_invalid_rows(capsys, tmp_path, rows, superseded, code):
+    """AC-2 validation half: invalid rows produce an issues envelope (exit 2)
+    and the ledger file is NOT mutated (mutate_ledger aborts before write)."""
+    ledger_path, conops_path = _normalize_reject_env(tmp_path, rows, superseded)
+    before = ledger_path.read_bytes()
+
+    exit_code, out, _err = run_cli(capsys, [
+        "normalize-rows", str(ledger_path), "--conops", str(conops_path)
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(i["code"] == code for i in envelope["issues"]), envelope["issues"]
+    assert ledger_path.read_bytes() == before
+
+
+def test_normalize_rows_handwritten_hash_flagged_by_check_rows_tcg11(capsys, tmp_path):
+    """TC-G11 second half: a conductor hand-writing a (wrong) row_hash is
+    caught by check-rows as a structured issue — the module is the sole hex
+    producer (CB-7)."""
+    ledger_path, conops_path = _normalize_reject_env(
+        tmp_path, [_draft_row("r-US1-1"), _draft_row("r-US2-1", conops_ref="US-2")]
+    )
+    exit_code, out, _err = run_cli(capsys, [
+        "normalize-rows", str(ledger_path), "--conops", str(conops_path)
+    ])
+    assert exit_code == EXIT_OK
+
+    ledger = json.loads(ledger_path.read_text())
+    ledger["rows"][0]["row_hash"] = "ab" * 32  # hand-written, wrong
+    ledger_path.write_text(json.dumps(ledger))
+
+    exit_code, out, _err = run_cli(capsys, [
+        "check-rows", str(ledger_path), "--conops", str(conops_path)
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(
+        i["code"] == "ROW_HASH_MISMATCH" and i["row_id"] == "r-US1-1"
+        for i in envelope["issues"]
+    )
 
 
 def test_record_evidence_per_story_invalidation_fm3(capsys, tmp_path):

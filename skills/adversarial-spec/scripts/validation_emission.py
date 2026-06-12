@@ -1018,23 +1018,79 @@ def handle_normalize_rows(args: argparse.Namespace) -> Envelope:
     story_hashes = compute_story_hashes(conops_text)
 
     def mutator(ledger: dict[str, Any]) -> dict[str, Any]:
-        ledger["conops_hash"] = conops_hash
-        ledger["story_hashes"] = story_hashes
-        ledger["kind"] = "validation-rows-ledger"
-
         rows = ledger.get("rows", [])
         if not isinstance(rows, list):
-            return ledger
+            rows = []
+
+        # AC-2 validation: reject BEFORE stamping anything — an exception here
+        # aborts mutate_ledger pre-write, leaving the ledger bytes untouched.
+        issues: list[dict[str, Any]] = []
+
+        for duplicate in find_duplicate_row_ids(ledger):
+            issues.append(
+                make_issue("DUPLICATE_ROW_ID", f"duplicate row_id: {duplicate}", duplicate)
+            )
 
         for row in rows:
             if not isinstance(row, dict):
                 continue
-            row["row_hash"] = row_hash_for(row)
+            row_id = row.get("row_id")
+            row_issue_id = row_id if isinstance(row_id, str) else None
             conops_ref = row.get("conops_ref")
-            if conops_ref in story_hashes:
-                row["story_hash"] = story_hashes[conops_ref]
 
-        return ledger
+            row_id_match = _ROW_ID_RE.match(row_id) if isinstance(row_id, str) else None
+            if not row_id_match:
+                issues.append(
+                    make_issue("INVALID_ROW_ID", f"invalid row_id: {row_id!r}", row_issue_id)
+                )
+            if isinstance(conops_ref, str) and conops_ref not in story_hashes:
+                issues.append(
+                    make_issue(
+                        "UNKNOWN_CONOPS_REF",
+                        f"conops_ref {conops_ref} is not present in conops.md",
+                        row_issue_id,
+                    )
+                )
+            if row_id_match and isinstance(conops_ref, str):
+                expected_ref = f"US-{row_id_match.group('story_num')}"
+                if conops_ref != expected_ref:
+                    issues.append(
+                        make_issue(
+                            "ROW_ID_STORY_MISMATCH",
+                            f"row_id prefix {expected_ref} does not match conops_ref {conops_ref}",
+                            row_issue_id,
+                        )
+                    )
+
+            missing_canonical = [
+                name for name in ROW_HASH_FIELDS
+                if not (isinstance(row.get(name), str) and row.get(name).strip())
+            ]
+            if missing_canonical:
+                issues.append(
+                    make_issue(
+                        "ROW_FIELDS_MISSING",
+                        f"row missing canonical fields: {', '.join(missing_canonical)}",
+                        row_issue_id,
+                    )
+                )
+
+        if issues:
+            raise ValidationIssuesError("NORMALIZE_REJECTED", issues)
+
+        # AC-2 stamping: ledger header schema fields (§6.2). stamp_artifact
+        # supplies schema_version + module_version + generated_at (OP-4).
+        ledger["kind"] = "validation-rows-ledger"
+        ledger["conops_hash"] = conops_hash
+        ledger["story_hashes"] = story_hashes
+        stamped = stamp_artifact(ledger)
+
+        # AC-1: sole producer of row/story hashes (CB-7).
+        for row in stamped["rows"]:
+            row["row_hash"] = row_hash_for(row)
+            row["story_hash"] = story_hashes[row["conops_ref"]]
+
+        return stamped
 
     mutate_ledger(ledger_path, mutator)
     return Envelope(status="ok")

@@ -26,5 +26,14 @@ _MODULE = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(_MODULE)
 
 for _name, _value in vars(_MODULE).items():
-    if _name == "pytestmark" or _name.startswith("test_") or _name in ("ledger", "emission_env", "check_env"):
+    if (
+        _name == "pytestmark"
+        or _name.startswith("test_")
+        # Any pytest fixture, detected structurally — a hardcoded name list
+        # here silently breaks every new fixture added to the real suite.
+        # pytest >= 8.4 wraps fixtures in FixtureFunctionDefinition; older
+        # versions tag the function with _pytestfixturefunction.
+        or type(_value).__name__ == "FixtureFunctionDefinition"
+        or hasattr(_value, "_pytestfixturefunction")
+    ):
         globals()[_name] = _value
