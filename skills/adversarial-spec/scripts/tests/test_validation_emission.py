@@ -1195,6 +1195,126 @@ def test_check_rows_detects_relabeled_verification(capsys, check_env):
     assert not any(i["code"] == "RELABELED_VERIFICATION" for i in envelope["issues"])
 
 
+def _structural_conops(tmp_path):
+    conops_path = tmp_path / "conops.md"
+    conops_path.write_text("### US-1: First\n")
+    return conops_path
+
+
+def _structural_valid_row(conops_ref="US-1", row_id="r-US1-1"):
+    """A row that passes every structural + oracle check, for negative isolation."""
+    scenario = "Jason drafts a row and runs check-rows to confirm structural validity."
+    oracle = (
+        "Jason passes this row iff the check-rows envelope confirms the structural"
+        f" intent named in {conops_ref} with an observable envelope artifact."
+    )
+    row = {
+        "row_id": row_id,
+        "conops_ref": conops_ref,
+        "scenario": scenario,
+        "oracle": oracle,
+        "evidence_type": "narrative",
+        "evidence_rationale": "narrative is sufficient for a CLI envelope structural check",
+    }
+    row["row_hash"] = compute_row_hash(conops_ref, scenario, oracle, "narrative")
+    return row
+
+
+def _check_codes(capsys, tmp_path, rows):
+    conops_path = _structural_conops(tmp_path)
+    ledger_path = tmp_path / "validation-rows.json"
+    ledger_path.write_text(json.dumps({"rows": rows}))
+    exit_code, out, _err = run_cli(
+        capsys, ["check-rows", str(ledger_path), "--conops", str(conops_path)]
+    )
+    envelope = parse_single_envelope(out)
+    return exit_code, [i["code"] for i in envelope["issues"]]
+
+
+def test_check_rows_baseline_valid_row_passes(capsys, tmp_path):
+    """Isolation guard: the structural-valid row used by negative tests is clean."""
+    exit_code, codes = _check_codes(capsys, tmp_path, [_structural_valid_row()])
+    assert exit_code == EXIT_OK, codes
+    assert codes == []
+
+
+def test_check_rows_missing_evidence_type_tc24(capsys, tmp_path):
+    """TC-2.4: a row lacking evidence_type fails self-check naming the field."""
+    row = _structural_valid_row()
+    del row["evidence_type"]
+    # row_hash now references an absent evidence_type; that mismatch is incidental,
+    # the field-presence failure is what TC-2.4 asserts.
+    exit_code, codes = _check_codes(capsys, tmp_path, [row])
+    assert exit_code == EXIT_ISSUES
+    assert "MISSING_REQUIRED_FIELD" in codes
+
+
+def test_check_rows_missing_evidence_rationale_tc24(capsys, tmp_path):
+    """TC-2.4: a row lacking the evidence selection rationale fails."""
+    row = _structural_valid_row()
+    del row["evidence_rationale"]
+    exit_code, codes = _check_codes(capsys, tmp_path, [row])
+    assert exit_code == EXIT_ISSUES
+    assert "EVIDENCE_RATIONALE_MISSING" in codes
+
+
+@pytest.mark.parametrize("field", ["scenario", "oracle", "conops_ref", "row_id"])
+def test_check_rows_missing_required_structural_field_tc21(capsys, tmp_path, field):
+    """TC-2.1: every structural field must be non-empty."""
+    row = _structural_valid_row()
+    row[field] = "   "  # whitespace-only is treated as empty
+    exit_code, codes = _check_codes(capsys, tmp_path, [row])
+    assert exit_code == EXIT_ISSUES
+    assert "MISSING_REQUIRED_FIELD" in codes
+
+
+def test_check_rows_invalid_row_id_format_tc21(capsys, tmp_path):
+    """TC-2.1: row_id must match the r-US<story>-<num> format."""
+    row = _structural_valid_row(row_id="bad-id-1")
+    exit_code, codes = _check_codes(capsys, tmp_path, [row])
+    assert exit_code == EXIT_ISSUES
+    assert "INVALID_ROW_ID" in codes
+
+
+def test_check_rows_duplicate_row_id_tc21(capsys, tmp_path):
+    """TC-2.1: row ids must be globally unique within the ledger."""
+    row_a = _structural_valid_row()
+    row_b = _structural_valid_row()  # identical row_id r-US1-1
+    exit_code, codes = _check_codes(capsys, tmp_path, [row_a, row_b])
+    assert exit_code == EXIT_ISSUES
+    assert "DUPLICATE_ROW_ID" in codes
+
+
+def test_check_rows_row_id_conops_ref_prefix_mismatch_tc21(capsys, tmp_path):
+    """TC-2.1: the row_id story prefix must match conops_ref."""
+    # Valid format + valid conops_ref, but the prefixes disagree (r-US2-* vs US-1).
+    row = _structural_valid_row(conops_ref="US-1", row_id="r-US2-1")
+    exit_code, codes = _check_codes(capsys, tmp_path, [row])
+    assert exit_code == EXIT_ISSUES
+    assert "ROW_ID_STORY_MISMATCH" in codes
+
+
+def test_check_rows_missing_row_hash_tc21(capsys, tmp_path):
+    """TC-2.1: row_hash presence is required."""
+    row = _structural_valid_row()
+    del row["row_hash"]
+    exit_code, codes = _check_codes(capsys, tmp_path, [row])
+    assert exit_code == EXIT_ISSUES
+    assert "ROW_HASH_MISSING" in codes
+
+
+def test_check_rows_invalid_evidence_type_tc24(capsys, tmp_path):
+    """TC-2.4: evidence_type must come from the taxonomy."""
+    row = _structural_valid_row()
+    row["evidence_type"] = "vibes"
+    row["row_hash"] = compute_row_hash(
+        row["conops_ref"], row["scenario"], row["oracle"], "vibes"
+    )
+    exit_code, codes = _check_codes(capsys, tmp_path, [row])
+    assert exit_code == EXIT_ISSUES
+    assert "INVALID_EVIDENCE_TYPE" in codes
+
+
 # ═══ C-3.1 record-evidence (TC-3.1, FM-2, INV-9, INV-12) ══════════════════════
 
 
