@@ -103,6 +103,12 @@ _GIT_HASH_RE = re.compile(r"^[0-9a-f]{4,40}$")
 BANNED_ORACLE_PHRASES = (
     "tests pass",
     "all tests pass",
+    "code merged",
+    "gate passed",
+    "ci green",
+    "suite succeeds",
+    "pipeline healthy",
+    "checks satisfied",
     "works as expected",
     "as intended",
     "no issues found",
@@ -111,11 +117,67 @@ BANNED_ORACLE_PHRASES = (
 )
 
 VAGUE_TERMINALS = (
+    "works",
     "looks good",
+    "acceptable",
+    "done",
+    "successful",
     "passed",
     "success",
     "confirmed",
 )
+
+CONCRETE_OBSERVABLE_TERMS = (
+    "artifact",
+    "output",
+    "stdout",
+    "stderr",
+    "envelope",
+    "json",
+    "file",
+    "path",
+    "ledger",
+    "digest",
+    "transcript",
+    "report",
+    "message",
+    "reply",
+    "screen",
+    "ui",
+    "page",
+    "terminal",
+    "command",
+    "response",
+    "user-visible",
+    "visible",
+    "rendered",
+)
+
+
+def _contains_lint_phrase(text_lower: str, phrase: str) -> bool:
+    """Match lint phrases as lowercase terms, not arbitrary substrings."""
+    return re.search(rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])", text_lower) is not None
+
+
+def _oracle_sentences(oracle_text: str) -> list[str]:
+    sentences = [part.strip() for part in re.split(r"(?<=[.!?])\s+", oracle_text) if part.strip()]
+    return sentences or [oracle_text]
+
+
+def _has_concrete_observable(sentence_lower: str) -> bool:
+    return any(_contains_lint_phrase(sentence_lower, term) for term in CONCRETE_OBSERVABLE_TERMS)
+
+
+def _vague_terms_without_observable(oracle_text: str) -> list[str]:
+    missing: list[str] = []
+    for sentence in _oracle_sentences(oracle_text):
+        sentence_lower = sentence.lower()
+        for vague in VAGUE_TERMINALS:
+            if _contains_lint_phrase(sentence_lower, vague) and not _has_concrete_observable(
+                sentence_lower
+            ):
+                missing.append(vague)
+    return sorted(set(missing))
 
 
 # ── Envelope primitives (INV-A3) ─────────────────────────────────────────────
@@ -791,7 +853,7 @@ def handle_check_rows(args: argparse.Namespace) -> Envelope:
         # AC-2: Oracle layer-2 lint
         oracle_lower = oracle_text.lower()
         for phrase in BANNED_ORACLE_PHRASES:
-            if phrase in oracle_lower:
+            if _contains_lint_phrase(oracle_lower, phrase):
                 issues.append(
                     make_issue(
                         "BANNED_ORACLE_PHRASE",
@@ -818,18 +880,14 @@ def handle_check_rows(args: argparse.Namespace) -> Envelope:
                 )
             )
 
-        for vague in VAGUE_TERMINALS:
-            if vague in oracle_lower:
-                # "vague terminals unless paired with concrete observable"
-                # Structural check: if oracle is very short, it's probably just the vague terminal.
-                if len(oracle_text.split()) < 10:
-                    issues.append(
-                        make_issue(
-                            "VAGUE_ORACLE",
-                            f"oracle contains vague terminal {vague!r} without sufficient detail",
-                            row_issue_id,
-                        )
-                    )
+        for vague in _vague_terms_without_observable(oracle_text):
+            issues.append(
+                make_issue(
+                    "VAGUE_ORACLE",
+                    f"oracle contains vague terminal {vague!r} without a concrete observable",
+                    row_issue_id,
+                )
+            )
 
         # AC-3: Anti-relabeling
         if verification_targets and isinstance(test_targets, list) and test_targets:

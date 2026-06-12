@@ -1238,6 +1238,51 @@ def test_check_rows_baseline_valid_row_passes(capsys, tmp_path):
     assert codes == []
 
 
+def test_check_rows_rejects_spec_banned_oracle_synonyms(capsys, tmp_path):
+    """TC-2.3: spec-listed banned oracle phrases are rejected."""
+    row = _structural_valid_row()
+    row["oracle"] = (
+        "Jason passes this row iff code merged for US-1 while the envelope artifact"
+        " remains present."
+    )
+    row["row_hash"] = compute_row_hash(
+        row["conops_ref"], row["scenario"], row["oracle"], row["evidence_type"]
+    )
+    exit_code, codes = _check_codes(capsys, tmp_path, [row])
+    assert exit_code == EXIT_ISSUES
+    assert "BANNED_ORACLE_PHRASE" in codes
+
+
+def test_check_rows_rejects_long_vague_oracle_without_observable(capsys, tmp_path):
+    """TC-2.3: length alone does not make a vague oracle concrete."""
+    row = _structural_valid_row()
+    row["oracle"] = (
+        "Jason passes this row iff US-1 remains acceptable after the conductor"
+        " reviews the final close decision carefully."
+    )
+    row["row_hash"] = compute_row_hash(
+        row["conops_ref"], row["scenario"], row["oracle"], row["evidence_type"]
+    )
+    exit_code, codes = _check_codes(capsys, tmp_path, [row])
+    assert exit_code == EXIT_ISSUES
+    assert "VAGUE_ORACLE" in codes
+
+
+def test_check_rows_allows_vague_term_with_same_sentence_observable(capsys, tmp_path):
+    """TC-2.3: a vague term is allowed only with a same-sentence observable."""
+    row = _structural_valid_row()
+    row["oracle"] = (
+        "Jason passes this row iff US-1 is acceptable after the CLI envelope output"
+        " names the row result."
+    )
+    row["row_hash"] = compute_row_hash(
+        row["conops_ref"], row["scenario"], row["oracle"], row["evidence_type"]
+    )
+    exit_code, codes = _check_codes(capsys, tmp_path, [row])
+    assert exit_code == EXIT_OK, codes
+    assert codes == []
+
+
 def test_check_rows_missing_evidence_type_tc24(capsys, tmp_path):
     """TC-2.4: a row lacking evidence_type fails self-check naming the field."""
     row = _structural_valid_row()
