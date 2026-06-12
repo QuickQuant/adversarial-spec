@@ -28,3 +28,4 @@
 {"time":"2026-06-11T22:21:59Z","event":"Execution plan loaded: 25 schema-3 cards 5616-5640 to board (19 New Todo, 6 Decomposed); Gate V3/V4 passed; validate loop 3 rounds","type":"artifact"}
 {"time":"2026-06-11T22:26:40Z","event":"Phase transition: execution → implementation","type":"transition"}
 {"time":"2026-06-12T05:35:45Z","event":"Reconciled codex detached-HEAD divergence: merge 99e0c76, test fix 6ddf719, 640 tests green","type":"maintenance"}
+{"time":"2026-06-12T06:19:10Z","event":"fizzy MCP disconnected mid-loop; C-4-1 done locally @ cf50180, card 5632 attest/complete pending reconnect","type":"maintenance"}

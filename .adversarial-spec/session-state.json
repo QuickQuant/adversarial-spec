@@ -3,8 +3,8 @@
   "active_session_id": "adv-spec-202606110339-validation-leg-process",
   "context_name": "Validation-Leg Production Process",
   "current_phase": "implementation",
-  "current_step": "Phase 8 Wave 0 complete: C-1-1..C-1-4 implemented test-first, attested, committed (6aca834, a93f622, 6de349f, 8ad1ee2), all in Review; loop idle on cross-agent review gate",
-  "next_action": "Dispatch codex to review the 4 Review-lane cards (requires Jason per-instance OK; claude self-review blocked; 15 feature cards dep-blocked behind them); then resume pipeline_do_next_task loop",
+  "current_step": "Phase 8 loop active: detached-HEAD incident reconciled (merge 99e0c76); C-4-4 reviewed+fixed @ 9b7f86f, C-2-2 @ 3d06daa, C-3-2 @ 30395ec \u2014 3 cards in Review (claude implementer)",
+  "next_action": "Continue pipeline_do_next_task loop (New Todo: C-3-1, C-3-3, C-4-1, C-4-2, C-4-3, C-4-6); claude-implemented Review cards need codex/gemini",
   "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606120430-phase8-wave0-complete-4-cards-in-review.md",
   "execution_plan_path": ".adversarial-spec/specs/validation-leg-process/execution-plan.md",
   "spec_path": ".adversarial-spec/specs/validation-leg-process/spec-output.md",
@@ -17,7 +17,7 @@
     "Stale Phase 4 handling: reconcile-in-place is the ruled default (Jason 2026-06-11)",
     "Persist decomposition to disk pre-approval (Step 3.5) \u2014 codified in 07-execution.md (Jason 2026-06-11)"
   ],
-  "updated_at": "2026-06-12T04:30:59Z",
+  "updated_at": "2026-06-12T06:07:51Z",
   "active_session": "adv-spec-202606110339-validation-leg-process",
   "active_session_file": ".adversarial-spec/sessions/adv-spec-202606110339-validation-leg-process.json",
   "session_stack": [
