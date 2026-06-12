@@ -28,6 +28,7 @@ transitional code that disappears as components C-1.2 … C-4.6 land.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -35,6 +36,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import unicodedata
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -174,6 +176,78 @@ def stamp_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
     stamped["module_version"] = module_version()
     stamped["generated_at"] = utc_now()
     return stamped
+
+
+# ── Hash canonicalization (INV-12, SEC-8, FM-3) ──────────────────────────────
+#
+# Hashes are computed ONLY by this module — the conductor never writes hex by
+# hand (CB-7). Full 64-hex digests are stored; 12-hex prefixes appear only at
+# the artifact boundary via hash_prefix() (SEC-8).
+
+#: Minimum (and default) prefix length at the artifact boundary (SEC-8).
+HASH_PREFIX_LEN = 12
+
+#: The four row fields that feed row_hash, in canonical order. Everything else
+#: — evidence_rationale, test_targets, summaries — is EXCLUDED (TC-2.6).
+ROW_HASH_FIELDS = ("conops_ref", "scenario", "oracle", "evidence_type")
+
+_FULL_HASH_RE = re.compile(r"^[0-9a-f]{64}$")
+_STORY_HEADING_RE = re.compile(r"^### (US-\d+)\b", re.MULTILINE)
+
+
+def _nfc(text: str) -> str:
+    return unicodedata.normalize("NFC", text)
+
+
+def compute_row_hash(
+    conops_ref: str, scenario: str, oracle: str, evidence_type: str
+) -> str:
+    """spec §6.2 canonicalization: sha256 over the NFC-normalized 4-field list
+    in json.dumps list form (ensure_ascii=False, separators=(",",":"))."""
+    payload = json.dumps(
+        [_nfc(conops_ref), _nfc(scenario), _nfc(oracle), _nfc(evidence_type)],
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def row_hash_for(row: dict[str, Any]) -> str:
+    """Compute row_hash from a row dict; missing canonical fields are an error."""
+    missing = [name for name in ROW_HASH_FIELDS if not isinstance(row.get(name), str)]
+    if missing:
+        raise ValueError(f"row is missing canonical hash fields: {', '.join(missing)}")
+    return compute_row_hash(*(row[name] for name in ROW_HASH_FIELDS))
+
+
+def compute_conops_hash(conops_bytes: bytes) -> str:
+    """Full-file conops_hash: sha256 of conops.md bytes (spec §6.1)."""
+    return hashlib.sha256(conops_bytes).hexdigest()
+
+
+def compute_story_hashes(conops_text: str) -> dict[str, str]:
+    """Per-story hashes: sha256 over each ``### US-n`` section's bytes, heading
+    through the next US heading (or EOF). Evidence binds per story, so editing
+    one story invalidates only that story's evidence (spec §6.1, FM-3)."""
+    matches = list(_STORY_HEADING_RE.finditer(conops_text))
+    hashes: dict[str, str] = {}
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(conops_text)
+        section = conops_text[match.start() : end]
+        hashes[match.group(1)] = hashlib.sha256(section.encode("utf-8")).hexdigest()
+    return hashes
+
+
+def hash_prefix(full_hash: str, length: int = HASH_PREFIX_LEN) -> str:
+    """Artifact-boundary prefix of a FULL stored hash. Prefixes shorter than
+    HASH_PREFIX_LEN are rejected (SEC-8 — self-check mirrors this)."""
+    if not _FULL_HASH_RE.match(full_hash):
+        raise ValueError("hash_prefix requires a full 64-hex sha256")
+    if length < HASH_PREFIX_LEN:
+        raise ValueError(
+            f"hash prefix length {length} below minimum {HASH_PREFIX_LEN} (SEC-8)"
+        )
+    return full_hash[:length]
 
 
 # ── Ledger I/O: lock + atomic write + corrupt quarantine (INV-A2, FM-7) ─────

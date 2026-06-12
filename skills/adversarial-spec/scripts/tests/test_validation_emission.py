@@ -16,6 +16,7 @@ Run:
     uv run pytest skills/adversarial-spec/scripts/tests/test_validation_emission.py -q
 """
 
+import hashlib
 import json
 import re
 
@@ -26,17 +27,24 @@ from validation_emission import (
     EXIT_ENV,
     EXIT_ISSUES,
     EXIT_OK,
+    HASH_PREFIX_LEN,
     LEDGER_LOCK_TIMEOUT_S,
+    ROW_HASH_FIELDS,
     SCHEMA_VERSION,
     SUBCOMMANDS,
     LedgerBusyError,
     LedgerCorruptError,
     __version__,
+    compute_conops_hash,
+    compute_row_hash,
+    compute_story_hashes,
     exit_code_for_status,
+    hash_prefix,
     main,
     module_version,
     mutate_ledger,
     read_ledger,
+    row_hash_for,
     stamp_artifact,
     utc_now,
 )
@@ -318,3 +326,137 @@ def test_corrupt_maps_to_exit3_envelope_at_boundary(capsys, monkeypatch, tmp_pat
     assert envelope["status"] == "error"
     assert envelope["code"] == "LEDGER_CORRUPT"
     assert "corrupt-20260612T000000Z" in envelope["issues"][0]["detail"]
+
+
+# ═══ C-1.3 hash-canonicalization (TC-2.6) ════════════════════════════════════
+
+
+ROW = {
+    "conops_ref": "US-3",
+    "scenario": "Jason opens the digest on mobile and judges every row in one sitting.",
+    "oracle": "Jason passes this row iff the digest is judgeable without a laptop demonstrates the one-sitting intent from US-3.",
+    "evidence_type": "agent-walkthrough-transcript",
+    "evidence_rationale": "workflow is conversational; a transcript shows the journey",
+    "test_targets": [],
+}
+
+CONOPS = (
+    "# ConOps: Validation-Leg Production Process\n"
+    "## Operational narrative\n"
+    "The conductor drafts rows; Jason judges from a digest.\n"
+    "## User stories (intent register)\n"
+    "### US-0: Bootstrap\n"
+    "AS A conductor I WANT a documented entry path SO THAT I can start cold.\n"
+    "### US-1: Derive ConOps\n"
+    "AS A conductor I WANT a derived ConOps SO THAT intent is registered.\n"
+    "### US-2: Late binding\n"
+    "AS A conductor I WANT hash binding SO THAT drift is detected.\n"
+)
+
+
+# ── AC-1: pinned canonicalization — NFC, json.dumps list form, full 64-hex ──
+
+
+def test_row_hash_canonicalization_pinned_to_spec_algorithm():
+    import json as json_mod
+    import unicodedata
+
+    expected_payload = json_mod.dumps(
+        [
+            unicodedata.normalize("NFC", ROW["conops_ref"]),
+            unicodedata.normalize("NFC", ROW["scenario"]),
+            unicodedata.normalize("NFC", ROW["oracle"]),
+            unicodedata.normalize("NFC", ROW["evidence_type"]),
+        ],
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+    expected = hashlib.sha256(expected_payload.encode("utf-8")).hexdigest()
+    actual = compute_row_hash(
+        ROW["conops_ref"], ROW["scenario"], ROW["oracle"], ROW["evidence_type"]
+    )
+    assert actual == expected
+    assert len(actual) == 64 and re.fullmatch(r"[0-9a-f]{64}", actual)
+
+
+def test_row_hash_nfc_normalization_unifies_equivalent_unicode():
+    composed = "café closes"  # é as single codepoint
+    decomposed = "café closes"  # e + combining acute
+    h1 = compute_row_hash("US-1", composed, "oracle text", "screenshot")
+    h2 = compute_row_hash("US-1", decomposed, "oracle text", "screenshot")
+    assert h1 == h2
+
+
+# ── AC-2: rationale/test_targets excluded; the 4 inputs each move the hash ──
+
+
+def test_row_hash_excludes_rationale_and_test_targets():
+    base = row_hash_for(ROW)
+    relabeled = {
+        **ROW,
+        "evidence_rationale": "completely different rationale",
+        "test_targets": ["scripts/tests/test_validation_emission.py::test_x"],
+    }
+    assert row_hash_for(relabeled) == base, "TC-2.6: excluded fields must not move the hash"
+
+
+@pytest.mark.parametrize("moving_field", list(ROW_HASH_FIELDS))
+def test_row_hash_changes_when_canonical_field_changes(moving_field):
+    base = row_hash_for(ROW)
+    altered = {**ROW, moving_field: ROW[moving_field] + " CHANGED"}
+    assert row_hash_for(altered) != base, f"{moving_field} must move the hash"
+
+
+def test_row_hash_for_missing_field_raises():
+    incomplete = {k: v for k, v in ROW.items() if k != "oracle"}
+    with pytest.raises(ValueError, match="oracle"):
+        row_hash_for(incomplete)
+
+
+# ── AC-3: conops_hash over bytes; story_hashes per-section; 12-hex boundary ──
+
+
+def test_conops_hash_is_sha256_of_file_bytes():
+    raw = CONOPS.encode("utf-8")
+    assert compute_conops_hash(raw) == hashlib.sha256(raw).hexdigest()
+
+
+def test_story_hashes_cover_each_us_section():
+    hashes = compute_story_hashes(CONOPS)
+    assert set(hashes) == {"US-0", "US-1", "US-2"}
+    # pinned slice semantics: heading line through the next US heading (or EOF)
+    us0_section = CONOPS[CONOPS.index("### US-0") : CONOPS.index("### US-1")]
+    assert hashes["US-0"] == hashlib.sha256(us0_section.encode("utf-8")).hexdigest()
+    us2_section = CONOPS[CONOPS.index("### US-2") :]
+    assert hashes["US-2"] == hashlib.sha256(us2_section.encode("utf-8")).hexdigest()
+
+
+def test_story_hashes_editing_one_story_moves_only_that_hash():
+    before = compute_story_hashes(CONOPS)
+    edited = CONOPS.replace(
+        "AS A conductor I WANT a derived ConOps SO THAT intent is registered.",
+        "AS A conductor I WANT a derived ConOps SO THAT intent is REGISTERED LATE.",
+    )
+    after = compute_story_hashes(edited)
+    assert after["US-1"] != before["US-1"], "edited story must move its hash (FM-3)"
+    assert after["US-0"] == before["US-0"]
+    assert after["US-2"] == before["US-2"]
+
+
+def test_hash_prefix_boundary_enforces_minimum_12(capsys):
+    full = hashlib.sha256(b"x").hexdigest()
+    assert hash_prefix(full) == full[:12]
+    assert hash_prefix(full, 16) == full[:16]
+    with pytest.raises(ValueError):
+        hash_prefix(full, 11)  # SEC-8: prefixes <12 are rejected
+    with pytest.raises(ValueError):
+        hash_prefix("not-a-hash")
+
+
+# ── AC-4: lengths/constants pinned ───────────────────────────────────────────
+
+
+def test_hash_constants_pinned():
+    assert HASH_PREFIX_LEN == 12
+    assert ROW_HASH_FIELDS == ("conops_ref", "scenario", "oracle", "evidence_type")
+    assert len(compute_conops_hash(b"")) == 64
