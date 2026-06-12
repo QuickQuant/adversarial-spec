@@ -2697,3 +2697,489 @@ def test_parse_reply_terminal_records_terminal_source_tcg7(capsys, tmp_path):
     judgment = _row(ledger_path, "r-US1-1")["judgment"]
     assert judgment["source"] == "terminal"
     assert judgment["reply_ref"] == "transcript:sess-1:7"
+
+
+# ═══ C-4.3 reset-failed + supersede-row (TC-2.5, TC-3.8, TC-G5) ══════════════
+#
+# reset-failed: judged-fail result -> judgment_history (append-only, INV-14),
+#   nulls result/judgment, renames evidence to .invalidated-<ts> (FM-4);
+#   --remediation-ref REQUIRED, recorded as a conductor-verified assertion
+#   (FM-1). The conductor verifies card resolution via MCP BEFORE invoking and
+#   asserts it with --remediation-resolved; absent => RemediationUnresolved.
+# supersede-row: legal from ANY state incl judged-pass (CB-1/INV-13); full row
+#   snapshot to superseded[]; transactional replacement in ONE invocation (no
+#   coverage gap, INV-7); approval_ref always required (INV-3); reason confined
+#   to the allowed enum, else REFRESH_DISALLOWED (AC-3/TC-2.5b/G5).
+
+
+def _evidence_path(ledger_path, row_id):
+    return ledger_path.parent / "validation-evidence" / row_id / "evidence.md"
+
+
+def _judged_fail_env(capsys, tmp_path, n_pending=2):
+    """A ledger whose rows have real evidence files and are judged-fail.
+
+    Rows r-US1-1..r-US1-<n>: each fail-judged through the real reply path so
+    the judgment block carries full provenance and the evidence.md exists.
+    """
+    ledger_path, _conops, digest_id = _sent_batch_env(
+        capsys, tmp_path, n_pending=n_pending
+    )
+    for k in range(1, n_pending + 1):
+        exit_code, _o, _e = _parse_reply(
+            capsys, ledger_path, digest_id,
+            f"fail r-US1-{k}: outcome did not demonstrate intent",
+        )
+        assert exit_code == EXIT_OK
+        assert _row(ledger_path, f"r-US1-{k}")["result"] == "fail"
+    return ledger_path
+
+
+def test_reset_failed_moves_fail_to_history_nulls_inv14(capsys, tmp_path):
+    """TC-3.8 / INV-14: a judged-fail row's judgment moves to judgment_history
+    (append-only, original entry intact), result + judgment are nulled, and
+    the row re-enters the delta pool (result == null)."""
+    ledger_path = _judged_fail_env(capsys, tmp_path, n_pending=1)
+    prior = dict(_row(ledger_path, "r-US1-1")["judgment"])
+
+    exit_code, out, _err = run_cli(capsys, [
+        "reset-failed", str(ledger_path), "--row", "r-US1-1",
+        "--remediation-ref", "card-A", "--remediation-resolved",
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK, out
+    row = _row(ledger_path, "r-US1-1")
+    assert row["result"] is None
+    assert row["judgment"] is None
+    hist = row["judgment_history"]
+    assert hist[-1]["result"] == "fail"
+    # Original provenance fields preserved verbatim into history (INV-14).
+    for key in ("digest_id", "source", "reply_ref", "judged_at"):
+        assert hist[-1][key] == prior[key]
+    # The remediation ref is recorded as a conductor-verified assertion (FM-1).
+    assert hist[-1]["remediation_ref"] == "card-A"
+    assert envelope["data"]["row_id"] == "r-US1-1"
+
+
+def test_reset_failed_append_only_repeatable_inv14(capsys, tmp_path):
+    """INV-14: judgment_history is append-only — a second fail->reset cycle
+    appends without rewriting or deleting the prior entry."""
+    ledger_path = _judged_fail_env(capsys, tmp_path, n_pending=1)
+    # First reset.
+    run_cli(capsys, [
+        "reset-failed", str(ledger_path), "--row", "r-US1-1",
+        "--remediation-ref", "card-A1", "--remediation-resolved",
+    ])
+    first_hist = [dict(e) for e in _row(ledger_path, "r-US1-1")["judgment_history"]]
+
+    # Re-execute evidence (fresh), re-digest, re-fail, reset again.
+    conops_path = tmp_path / "conops.md"
+    run_cli(capsys, [
+        "record-evidence", str(ledger_path), "--row", "r-US1-1",
+        "--summary", "fresh evidence after remediation", "--conops", str(conops_path),
+    ])
+    exit_code, out, _e = _run_assemble(capsys, ledger_path, conops_path)
+    digest_id = parse_single_envelope(out)["data"]["digest_id"]
+    batch = _batch(ledger_path, digest_id)
+    for part in batch["parts"]:
+        run_cli(capsys, [
+            "record-send", str(ledger_path), "--digest-id", digest_id,
+            "--part", str(part["i"]), "--result", "sent",
+        ])
+    _parse_reply(capsys, ledger_path, digest_id, "fail r-US1-1: still wrong")
+
+    run_cli(capsys, [
+        "reset-failed", str(ledger_path), "--row", "r-US1-1",
+        "--remediation-ref", "card-A2", "--remediation-resolved",
+    ])
+    hist = _row(ledger_path, "r-US1-1")["judgment_history"]
+    assert len(hist) == 2
+    assert hist[0] == first_hist[0]  # prior entry untouched
+    assert hist[1]["remediation_ref"] == "card-A2"
+
+
+def test_reset_failed_invalidates_evidence_file_fm4(capsys, tmp_path):
+    """FM-4: reset renames the row's evidence.md to evidence.md.invalidated-<ts>
+    (rename, not delete) so stale evidence cannot be silently re-accepted."""
+    ledger_path = _judged_fail_env(capsys, tmp_path, n_pending=1)
+    evidence = _evidence_path(ledger_path, "r-US1-1")
+    assert evidence.exists()
+    original = evidence.read_bytes()
+
+    run_cli(capsys, [
+        "reset-failed", str(ledger_path), "--row", "r-US1-1",
+        "--remediation-ref", "card-A", "--remediation-resolved",
+    ])
+    assert not evidence.exists()
+    invalidated = list(evidence.parent.glob("evidence.md.invalidated-*"))
+    assert len(invalidated) == 1
+    assert invalidated[0].read_bytes() == original  # renamed, not deleted
+
+
+def test_reset_failed_requires_remediation_ref_fm1(capsys, tmp_path):
+    """FM-1: --remediation-ref is REQUIRED. Missing it is an argparse-level
+    rejection that still answers with an exit-2 envelope, zero mutations."""
+    ledger_path = _judged_fail_env(capsys, tmp_path, n_pending=1)
+    before = ledger_path.read_bytes()
+    exit_code, out, _err = run_cli(capsys, [
+        "reset-failed", str(ledger_path), "--row", "r-US1-1",
+        "--remediation-resolved",
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["status"] == "issues"
+    assert ledger_path.read_bytes() == before
+
+
+def test_reset_failed_unresolved_remediation_refused(capsys, tmp_path):
+    """TC-3.8: row C (remediation NOT resolved) — reset is REFUSED with
+    RemediationUnresolved; the conductor never asserted MCP-verified
+    resolution. Zero mutations."""
+    ledger_path = _judged_fail_env(capsys, tmp_path, n_pending=1)
+    before = ledger_path.read_bytes()
+    exit_code, out, _err = run_cli(capsys, [
+        "reset-failed", str(ledger_path), "--row", "r-US1-1",
+        "--remediation-ref", "card-C",  # no --remediation-resolved assertion
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["code"] == "RemediationUnresolved"
+    assert _row(ledger_path, "r-US1-1")["result"] == "fail"  # untouched
+    assert ledger_path.read_bytes() == before
+
+
+def test_reset_failed_rejects_non_fail_row(capsys, tmp_path):
+    """reset-failed is judged-fail-only (S6). A judged-pass / unjudged row is
+    refused — scope change of a passing row goes through supersede-row (CB-1)."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path, n_pending=1)
+    _parse_reply(capsys, ledger_path, digest_id, "pass r-US1-1")
+    before = ledger_path.read_bytes()
+    exit_code, out, _err = run_cli(capsys, [
+        "reset-failed", str(ledger_path), "--row", "r-US1-1",
+        "--remediation-ref", "card-X", "--remediation-resolved",
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["code"] == "ROW_NOT_FAILED"
+    assert ledger_path.read_bytes() == before
+
+
+def test_reset_failed_unknown_row(capsys, tmp_path):
+    """reset-failed on a non-existent row -> ROW_NOT_FOUND, zero mutations."""
+    ledger_path = _judged_fail_env(capsys, tmp_path, n_pending=1)
+    before = ledger_path.read_bytes()
+    exit_code, out, _err = run_cli(capsys, [
+        "reset-failed", str(ledger_path), "--row", "r-US9-9",
+        "--remediation-ref", "card-Z", "--remediation-resolved",
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["code"] == "ROW_NOT_FOUND"
+    assert ledger_path.read_bytes() == before
+
+
+def test_reset_failed_missing_evidence_does_not_crash(capsys, tmp_path):
+    """FM-4 robustness: a missing evidence file must not crash the reset — the
+    ledger mutation (history + null) still lands."""
+    ledger_path = _judged_fail_env(capsys, tmp_path, n_pending=1)
+    _evidence_path(ledger_path, "r-US1-1").unlink()
+    exit_code, out, _err = run_cli(capsys, [
+        "reset-failed", str(ledger_path), "--row", "r-US1-1",
+        "--remediation-ref", "card-A", "--remediation-resolved",
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK, out
+    assert _row(ledger_path, "r-US1-1")["result"] is None
+    assert envelope["data"]["evidence_invalidated"] is None
+
+
+def test_reset_failed_reenters_delta_digest_tc38(capsys, tmp_path):
+    """TC-3.8: after reset, A re-enters the delta digest; the judged-pass B is
+    absent (INV-13)."""
+    ledger_path, conops_path, digest_id = _sent_batch_env(
+        capsys, tmp_path, n_pending=2
+    )
+    _parse_reply(capsys, ledger_path, digest_id, "fail r-US1-1: wrong outcome")
+    _parse_reply(capsys, ledger_path, digest_id, "pass r-US1-2")
+
+    run_cli(capsys, [
+        "reset-failed", str(ledger_path), "--row", "r-US1-1",
+        "--remediation-ref", "card-A", "--remediation-resolved",
+    ])
+    # Re-execute fresh evidence for the reset row, then re-digest.
+    run_cli(capsys, [
+        "record-evidence", str(ledger_path), "--row", "r-US1-1",
+        "--summary", "fresh post-remediation evidence", "--conops", str(conops_path),
+    ])
+    exit_code, out, _err = _run_assemble(capsys, ledger_path, conops_path)
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK, out
+    batch = _batch(ledger_path, envelope["data"]["digest_id"])
+    assert set(batch["row_ids"]) == {"r-US1-1"}  # B (pass) absent (INV-13)
+
+
+def test_reset_failed_routes_through_mutate_ledger(capsys, tmp_path, monkeypatch):
+    """All mutation goes through mutate_ledger (no direct ledger writes)."""
+    import validation_emission as ve
+    ledger_path = _judged_fail_env(capsys, tmp_path, n_pending=1)
+    calls = {"n": 0}
+    real = ve.mutate_ledger
+
+    def spy(*a, **kw):
+        calls["n"] += 1
+        return real(*a, **kw)
+
+    monkeypatch.setattr(ve, "mutate_ledger", spy)
+    run_cli(capsys, [
+        "reset-failed", str(ledger_path), "--row", "r-US1-1",
+        "--remediation-ref", "card-A", "--remediation-resolved",
+    ])
+    assert calls["n"] == 1
+
+
+# ── supersede-row ────────────────────────────────────────────────────────────
+
+
+def _replacement_file(tmp_path, row_id="r-US1-2", conops_ref="US-1"):
+    path = tmp_path / "new-row.json"
+    path.write_text(json.dumps({
+        "row_id": row_id,
+        "conops_ref": conops_ref,
+        "scenario": "Replacement scenario with actor, trigger, action, endpoint.",
+        "oracle": f"Jason passes this row iff the replacement outcome demonstrates the {conops_ref} intent.",
+        "evidence_type": "artifact-demo",
+        "evidence_rationale": "artifacts map to scenario steps",
+        "result": None,
+        "judgment": None,
+    }))
+    return path
+
+
+def test_supersede_from_judged_pass_legal_cb1(capsys, tmp_path):
+    """TC-G5 / CB-1 / INV-13: supersede is legal from judged-pass. Full row
+    snapshot moves to superseded[]; replacement installed in the SAME
+    invocation; coverage never gaps (INV-7 holds at exit)."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path, n_pending=1)
+    _parse_reply(capsys, ledger_path, digest_id, "pass r-US1-1")
+    assert _row(ledger_path, "r-US1-1")["result"] == "pass"
+    replacement = _replacement_file(tmp_path, row_id="r-US1-9", conops_ref="US-1")
+
+    exit_code, out, _err = run_cli(capsys, [
+        "supersede-row", str(ledger_path), "--row", "r-US1-1",
+        "--reason", "approved story change", "--approver", "jason",
+        "--approval-ref", "telegram:123:456",
+        "--replacement-file", str(replacement),
+    ])
+    parse_single_envelope(out)
+    assert exit_code == EXIT_OK, out
+    ledger = json.loads(ledger_path.read_text())
+    sup = ledger["superseded"][-1]
+    assert sup["row_snapshot"]["row_id"] == "r-US1-1"
+    assert sup["row_snapshot"]["result"] == "pass"  # FULL snapshot incl judgment
+    assert sup["reason"] == "approved story change"
+    assert sup["approval_ref"] == "telegram:123:456"
+    assert sup["replacement_row_id"] == "r-US1-9"
+    # Replacement installed in the SAME write -> coverage never gaps (INV-7).
+    active_ids = {r["row_id"] for r in ledger["rows"]}
+    assert "r-US1-1" not in active_ids  # old row retired from rows[]
+    assert "r-US1-9" in active_ids
+    assert any(r["conops_ref"] == "US-1" for r in ledger["rows"]
+               if r["row_id"] == "r-US1-9")
+
+
+def test_supersede_transactional_single_write_inv7(capsys, tmp_path, monkeypatch):
+    """INV-7: snapshot of the old row AND install of the replacement happen in
+    exactly ONE ledger write — a crash between cannot leave a coverage gap."""
+    import validation_emission as ve
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path, n_pending=1)
+    _parse_reply(capsys, ledger_path, digest_id, "pass r-US1-1")
+    replacement = _replacement_file(tmp_path, row_id="r-US1-9", conops_ref="US-1")
+
+    calls = {"n": 0}
+    real = ve.mutate_ledger
+
+    def spy(*a, **kw):
+        calls["n"] += 1
+        return real(*a, **kw)
+
+    monkeypatch.setattr(ve, "mutate_ledger", spy)
+    run_cli(capsys, [
+        "supersede-row", str(ledger_path), "--row", "r-US1-1",
+        "--reason", "approved story change", "--approver", "jason",
+        "--approval-ref", "telegram:1:2", "--replacement-file", str(replacement),
+    ])
+    assert calls["n"] == 1  # one transactional write
+
+
+def test_supersede_without_replacement_retires_row(capsys, tmp_path):
+    """supersede-row without --replacement-file retires the row (snapshot only,
+    replacement_row_id null) — legal when coverage is otherwise satisfied."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path, n_pending=1)
+    _parse_reply(capsys, ledger_path, digest_id, "pass r-US1-1")
+    exit_code, out, _err = run_cli(capsys, [
+        "supersede-row", str(ledger_path), "--row", "r-US1-1",
+        "--reason", "removed story", "--approver", "jason",
+        "--approval-ref", "decision:2026-06-12T00:00:00Z",
+    ])
+    parse_single_envelope(out)
+    assert exit_code == EXIT_OK, out
+    sup = json.loads(ledger_path.read_text())["superseded"][-1]
+    assert sup["replacement_row_id"] is None
+
+
+def test_supersede_missing_approval_ref_refresh_disallowed(capsys, tmp_path):
+    """TC-G5 negative / INV-3: missing approval_ref -> REFRESH_DISALLOWED,
+    zero mutations (argparse-required, still an envelope)."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path, n_pending=1)
+    _parse_reply(capsys, ledger_path, digest_id, "pass r-US1-1")
+    before = ledger_path.read_bytes()
+    exit_code, out, _err = run_cli(capsys, [
+        "supersede-row", str(ledger_path), "--row", "r-US1-1",
+        "--reason", "approved story change", "--approver", "jason",
+    ])
+    parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert ledger_path.read_bytes() == before
+
+
+def test_supersede_empty_approval_ref_refresh_disallowed(capsys, tmp_path):
+    """INV-3: a present-but-empty approval_ref is still REFRESH_DISALLOWED."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path, n_pending=1)
+    _parse_reply(capsys, ledger_path, digest_id, "pass r-US1-1")
+    before = ledger_path.read_bytes()
+    exit_code, out, _err = run_cli(capsys, [
+        "supersede-row", str(ledger_path), "--row", "r-US1-1",
+        "--reason", "approved story change", "--approver", "jason",
+        "--approval-ref", "   ",
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["code"] == "REFRESH_DISALLOWED"
+    assert ledger_path.read_bytes() == before
+
+
+def test_supersede_disallowed_reason_refresh_disallowed_ac3(capsys, tmp_path):
+    """AC-3 / TC-2.5b: a reason outside the allowed enum (implementation
+    failed / evidence missing / prior negative judgment) -> REFRESH_DISALLOWED."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path, n_pending=1)
+    _parse_reply(capsys, ledger_path, digest_id, "fail r-US1-1: it broke")
+    before = ledger_path.read_bytes()
+    for bad in ("implementation failed", "evidence missing",
+                "prior negative judgment", "inconvenient"):
+        exit_code, out, _err = run_cli(capsys, [
+            "supersede-row", str(ledger_path), "--row", "r-US1-1",
+            "--reason", bad, "--approver", "jason",
+            "--approval-ref", "telegram:1:2",
+        ])
+        envelope = parse_single_envelope(out)
+        assert exit_code == EXIT_ISSUES, bad
+        assert envelope["code"] == "REFRESH_DISALLOWED", bad
+    assert ledger_path.read_bytes() == before  # all rejected pre-write
+
+
+def test_supersede_allowed_reason_enum_pinned(capsys, tmp_path):
+    """AC-3: each schema-allowed reason is accepted (enum is the §6.2 list)."""
+    allowed = (
+        "approved story change", "removed story", "replaced workflow",
+        "duplicate coverage", "post-judgment retirement",
+    )
+    for reason in allowed:
+        sub = tmp_path / reason.replace(" ", "_")
+        sub.mkdir()
+        ledger_path, _conops, digest_id = _sent_batch_env(
+            capsys, sub, n_pending=2
+        )
+        _parse_reply(capsys, ledger_path, digest_id, "pass r-US1-1")
+        _parse_reply(capsys, ledger_path, digest_id, "pass r-US1-2")
+        # Retire r-US1-2; r-US1-1 still covers US-1 (no gap).
+        exit_code, out, _err = run_cli(capsys, [
+            "supersede-row", str(ledger_path), "--row", "r-US1-2",
+            "--reason", reason, "--approver", "jason",
+            "--approval-ref", "decision:2026-06-12T00:00:00Z",
+        ])
+        envelope = parse_single_envelope(out)
+        assert exit_code == EXIT_OK, (reason, out)
+        assert envelope["status"] == "ok"
+
+
+def test_supersede_unknown_row(capsys, tmp_path):
+    """supersede-row on a non-existent row -> ROW_NOT_FOUND, zero mutations."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path, n_pending=1)
+    before = ledger_path.read_bytes()
+    exit_code, out, _err = run_cli(capsys, [
+        "supersede-row", str(ledger_path), "--row", "r-US9-9",
+        "--reason", "removed story", "--approver", "jason",
+        "--approval-ref", "decision:2026-06-12T00:00:00Z",
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["code"] == "ROW_NOT_FOUND"
+    assert ledger_path.read_bytes() == before
+
+
+def test_supersede_already_superseded_row_rejected(capsys, tmp_path):
+    """An already-superseded (inactive) row cannot be superseded again."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path, n_pending=2)
+    _parse_reply(capsys, ledger_path, digest_id, "pass r-US1-1")
+    _parse_reply(capsys, ledger_path, digest_id, "pass r-US1-2")
+    run_cli(capsys, [
+        "supersede-row", str(ledger_path), "--row", "r-US1-2",
+        "--reason", "duplicate coverage", "--approver", "jason",
+        "--approval-ref", "decision:2026-06-12T00:00:00Z",
+    ])
+    before = ledger_path.read_bytes()
+    exit_code, out, _err = run_cli(capsys, [
+        "supersede-row", str(ledger_path), "--row", "r-US1-2",
+        "--reason", "removed story", "--approver", "jason",
+        "--approval-ref", "decision:2026-06-12T00:00:00Z",
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["code"] == "ROW_NOT_FOUND"
+    assert ledger_path.read_bytes() == before
+
+
+def test_supersede_replacement_row_id_must_be_unique(capsys, tmp_path):
+    """Replacement row_id must be globally unique (incl. superseded) — reusing
+    an existing active id is rejected pre-write."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path, n_pending=2)
+    _parse_reply(capsys, ledger_path, digest_id, "pass r-US1-1")
+    _parse_reply(capsys, ledger_path, digest_id, "pass r-US1-2")
+    # Replacement collides with the still-active r-US1-2.
+    replacement = _replacement_file(tmp_path, row_id="r-US1-2", conops_ref="US-1")
+    before = ledger_path.read_bytes()
+    exit_code, out, _err = run_cli(capsys, [
+        "supersede-row", str(ledger_path), "--row", "r-US1-1",
+        "--reason", "replaced workflow", "--approver", "jason",
+        "--approval-ref", "telegram:1:2", "--replacement-file", str(replacement),
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["code"] == "DUPLICATE_ROW_ID"
+    assert ledger_path.read_bytes() == before
+
+
+def test_superseded_row_rejected_by_parse_reply_after_supersede(capsys, tmp_path):
+    """TC-G5 last assert: a superseded row's id is rejected by a later
+    parse-reply, with a notice naming the replacement row (INV-10). The row is
+    still in the open batch's row_ids, but supersession excludes it from
+    parsing — the SUPERSEDED_ROW branch fires first and names the replacement."""
+    ledger_path, conops_path, digest_id = _sent_batch_env(
+        capsys, tmp_path, n_pending=2
+    )
+    _parse_reply(capsys, ledger_path, digest_id, "pass r-US1-2")
+    replacement = _replacement_file(tmp_path, row_id="r-US1-9", conops_ref="US-1")
+    run_cli(capsys, [
+        "supersede-row", str(ledger_path), "--row", "r-US1-1",
+        "--reason", "approved story change", "--approver", "jason",
+        "--approval-ref", "telegram:1:2", "--replacement-file", str(replacement),
+    ])
+    # A reply naming the now-superseded r-US1-1 is rejected (INV-10).
+    exit_code, out, _err = _parse_reply(
+        capsys, ledger_path, digest_id, "pass r-US1-1"
+    )
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any("r-US1-9" in i["detail"] for i in envelope["issues"]), (
+        "rejection must name the replacement row (INV-10)"
+    )

@@ -1879,6 +1879,232 @@ def handle_cancel_batch(args: argparse.Namespace) -> Envelope:
     return Envelope(status="ok", data=result_data)
 
 
+# ── C-4.3 reset-failed + supersede-row (S6/S7; INV-3/7/13/14, FM-1/FM-4, CB-1) ─
+
+
+def handle_reset_failed(args: argparse.Namespace) -> Envelope:
+    """Implement C-4.3 (reset-failed): for a judged-FAIL row, move the prior
+    judgment into ``judgment_history`` (append-only, INV-14), null
+    ``result``/``judgment``, and rename the row's evidence file to
+    ``evidence.md.invalidated-<ts>`` (FM-4 — rename, never delete).
+
+    ``--remediation-ref`` is REQUIRED; resolution of the remediation card is
+    verified by the CONDUCTOR via MCP BEFORE invoking and asserted with
+    ``--remediation-resolved`` — the module records the ref as a
+    conductor-verified assertion (honest boundary, FM-1). Without the
+    assertion the reset is refused (``RemediationUnresolved``)."""
+    ledger_path = resolve_under_root(args.ledger.parent, args.ledger)
+
+    remediation_ref = (args.remediation_ref or "").strip()
+    if not remediation_ref:
+        return Envelope(
+            status="issues",
+            code="REMEDIATION_REF_REQUIRED",
+            issues=[make_issue(
+                "REMEDIATION_REF_REQUIRED",
+                "reset-failed requires a non-empty --remediation-ref (FM-1)",
+                args.row,
+            )],
+        )
+    # FM-1 honest boundary: the conductor verifies card resolution via MCP and
+    # asserts it; the module cannot reach MCP, so it refuses absent the assertion.
+    if not args.remediation_resolved:
+        return Envelope(
+            status="issues",
+            code="RemediationUnresolved",
+            issues=[make_issue(
+                "RemediationUnresolved",
+                f"remediation card {remediation_ref} not asserted resolved — "
+                "verify resolution via MCP, then pass --remediation-resolved",
+                args.row,
+            )],
+        )
+
+    reset_at = utc_now()
+    result_data: dict[str, Any] = {}
+
+    def mutator(ledger: dict[str, Any]) -> dict[str, Any]:
+        rows = ledger.get("rows", [])
+        target = next((r for r in rows if r.get("row_id") == args.row), None)
+        if target is None:
+            raise ValidationIssuesError(
+                "ROW_NOT_FOUND",
+                [make_issue("ROW_NOT_FOUND", f"row {args.row} not found", args.row)],
+            )
+        if target.get("result") != "fail":
+            raise ValidationIssuesError(
+                "ROW_NOT_FAILED",
+                [make_issue(
+                    "ROW_NOT_FAILED",
+                    f"reset-failed is judged-fail-only (S6); row {args.row} is "
+                    f"{target.get('result')!r} — scope changes go through "
+                    "supersede-row (CB-1)",
+                    args.row,
+                )],
+            )
+
+        # INV-14: append the prior judgment to history, never rewrite/erase.
+        prior_judgment = dict(target.get("judgment") or {})
+        prior_judgment["result"] = target.get("result")
+        prior_judgment["remediation_ref"] = remediation_ref
+        prior_judgment["reset_at"] = reset_at
+        target.setdefault("judgment_history", []).append(prior_judgment)
+
+        target["result"] = None
+        target["judgment"] = None
+        result_data.update(row_id=args.row, remediation_ref=remediation_ref)
+        return ledger
+
+    mutate_ledger(ledger_path, mutator)
+
+    # FM-4: invalidate evidence by RENAME (outside the lock — the ledger
+    # mutation has already committed; a missing file must not crash the reset).
+    evidence_path = ledger_path.parent / "validation-evidence" / args.row / "evidence.md"
+    invalidated_to: str | None = None
+    if evidence_path.exists():
+        target_path = evidence_path.with_name(f"evidence.md.invalidated-{reset_at}")
+        try:
+            evidence_path.rename(target_path)
+            invalidated_to = str(target_path)
+        except OSError:
+            invalidated_to = None
+    result_data["evidence_invalidated"] = invalidated_to
+    return Envelope(status="ok", data=result_data)
+
+
+#: §6.2 schema enum: the ONLY reasons a row may be superseded. Anything else
+#: (implementation failed, evidence missing, prior negative judgment,
+#: inconvenient) is rejected with REFRESH_DISALLOWED (AC-3, TC-2.5b/G5).
+SUPERSEDE_ALLOWED_REASONS = frozenset({
+    "approved story change",
+    "removed story",
+    "replaced workflow",
+    "duplicate coverage",
+    "post-judgment retirement",
+})
+
+
+def handle_supersede_row(args: argparse.Namespace) -> Envelope:
+    """Implement C-4.3 (supersede-row): retire a row from ANY lifecycle state —
+    including judged-pass (CB-1/INV-13) — with a FULL snapshot into
+    ``superseded[]`` and, when ``--replacement-file`` is given, atomically
+    install the replacement row in the SAME ledger write (transactional refresh,
+    no coverage gap, INV-7).
+
+    ``--approval-ref`` is always required (INV-3); ``--reason`` must be one of
+    the §6.2 enum, else ``REFRESH_DISALLOWED`` (AC-3)."""
+    ledger_path = resolve_under_root(args.ledger.parent, args.ledger)
+
+    approval_ref = (args.approval_ref or "").strip()
+    reason = (args.reason or "").strip()
+    if not approval_ref:
+        return Envelope(
+            status="issues",
+            code="REFRESH_DISALLOWED",
+            issues=[make_issue(
+                "REFRESH_DISALLOWED",
+                "supersede-row requires a non-empty --approval-ref "
+                "(human approval, INV-3)",
+                args.row,
+            )],
+        )
+    if reason not in SUPERSEDE_ALLOWED_REASONS:
+        return Envelope(
+            status="issues",
+            code="REFRESH_DISALLOWED",
+            issues=[make_issue(
+                "REFRESH_DISALLOWED",
+                f"reason {reason!r} not in the allowed enum "
+                f"({', '.join(sorted(SUPERSEDE_ALLOWED_REASONS))}) — "
+                "implementation-failed / evidence-missing / prior-negative-"
+                "judgment are NOT refresh reasons (AC-3)",
+                args.row,
+            )],
+        )
+
+    replacement_row: dict[str, Any] | None = None
+    if args.replacement_file is not None:
+        replacement_path = resolve_under_root(ledger_path.parent, args.replacement_file)
+        replacement_row = _load_json_object(replacement_path, "ledger")
+
+    approved_at = utc_now()
+    result_data: dict[str, Any] = {}
+
+    def mutator(ledger: dict[str, Any]) -> dict[str, Any]:
+        rows = ledger.get("rows", [])
+        superseded = ledger.setdefault("superseded", [])
+        already_superseded = {
+            entry.get("row_snapshot", {}).get("row_id") for entry in superseded
+        }
+        # Active-row predicate (§6.2): in rows[] AND not already superseded.
+        target = next(
+            (r for r in rows
+             if r.get("row_id") == args.row and args.row not in already_superseded),
+            None,
+        )
+        if target is None:
+            raise ValidationIssuesError(
+                "ROW_NOT_FOUND",
+                [make_issue(
+                    "ROW_NOT_FOUND",
+                    f"no active row {args.row} to supersede",
+                    args.row,
+                )],
+            )
+
+        replacement_row_id = None
+        if replacement_row is not None:
+            replacement_row_id = replacement_row.get("row_id")
+            if not replacement_row_id:
+                raise ValidationIssuesError(
+                    "REPLACEMENT_INVALID",
+                    [make_issue(
+                        "REPLACEMENT_INVALID",
+                        "replacement row missing row_id",
+                        args.row,
+                    )],
+                )
+            # §3 global uniqueness: the replacement id must not collide with any
+            # existing active row or superseded snapshot (fail-fast pre-write).
+            existing_ids = {r.get("row_id") for r in rows} | already_superseded
+            if replacement_row_id in existing_ids:
+                raise ValidationIssuesError(
+                    "DUPLICATE_ROW_ID",
+                    [make_issue(
+                        "DUPLICATE_ROW_ID",
+                        f"replacement row_id {replacement_row_id} is not globally "
+                        "unique (collides with an existing active/superseded row)",
+                        replacement_row_id,
+                    )],
+                )
+
+        # INV-7 transactional: snapshot the old row AND install the replacement
+        # in this ONE write so a crash between cannot leave a coverage gap.
+        snapshot = json.loads(json.dumps(target))  # deep copy of the FULL row
+        rows.remove(target)
+        if replacement_row is not None:
+            rows.append(replacement_row)
+
+        superseded.append({
+            "row_snapshot": snapshot,
+            "reason": reason,
+            "approver": args.approver,
+            "approval_ref": approval_ref,
+            "approved_at": approved_at,
+            "replacement_row_id": replacement_row_id,
+        })
+
+        result_data.update(
+            row_id=args.row,
+            replacement_row_id=replacement_row_id,
+            reason=reason,
+        )
+        return ledger
+
+    mutate_ledger(ledger_path, mutator)
+    return Envelope(status="ok", data=result_data)
+
+
 #: §6.5 fixed natural-language bulk-pass alias list (Jason ruling SEC-6 — no
 #: reply passwords). Matched whole-line, case-insensitive, whitespace
 #: normalized. Extension is a one-line change + test.
@@ -2521,6 +2747,291 @@ def emit_system_validation(args: argparse.Namespace) -> Envelope:
     return Envelope(status="ok", data={"path": str(output_path)})
 
 
+SELF_CHECK_RESULT_ENUM = frozenset({"pass", "fail", "not-applicable"})
+SELF_CHECK_CONOPS_SUFFIXES = frozenset({".md", ".txt", ".json"})
+
+
+def _artifact_input_path(path: Path) -> Path:
+    return path if path.is_absolute() else Path.cwd() / path
+
+
+def _load_self_check_artifact(path: Path) -> tuple[dict[str, Any], bytes, str]:
+    try:
+        artifact_bytes = path.read_bytes()
+    except OSError as exc:
+        raise ValidationIssuesError(
+            "VALIDATION_ARTIFACTS_INCOMPLETE",
+            [make_issue("VALIDATION_ARTIFACTS_INCOMPLETE", str(exc))],
+        ) from None
+    enforce_input_bounds("ledger", artifact_bytes)
+    artifact_sha256 = hashlib.sha256(artifact_bytes).hexdigest()
+    try:
+        artifact = json.loads(artifact_bytes.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise ValidationIssuesError(
+            "VALIDATION_ARTIFACT_INVALID",
+            [make_issue("VALIDATION_ARTIFACT_INVALID", str(exc))],
+        ) from None
+    if not isinstance(artifact, dict):
+        raise ValidationIssuesError(
+            "VALIDATION_ARTIFACT_INVALID",
+            [make_issue("VALIDATION_ARTIFACT_INVALID", "validation artifact must be a JSON object")],
+        )
+    return artifact, artifact_bytes, artifact_sha256
+
+
+def _load_self_check_conops(path: Path) -> tuple[bytes, str, str]:
+    if path.suffix.lower() not in SELF_CHECK_CONOPS_SUFFIXES:
+        raise ValidationIssuesError(
+            "VALIDATION_ARTIFACTS_INCOMPLETE",
+            [
+                make_issue(
+                    "VALIDATION_ARTIFACTS_INCOMPLETE",
+                    "conops path must end in .md, .txt, or .json",
+                )
+            ],
+        )
+    try:
+        conops_bytes = path.read_bytes()
+    except OSError as exc:
+        raise ValidationIssuesError(
+            "VALIDATION_ARTIFACTS_INCOMPLETE",
+            [make_issue("VALIDATION_ARTIFACTS_INCOMPLETE", str(exc))],
+        ) from None
+    if len(conops_bytes) < 50:
+        raise ValidationIssuesError(
+            "VALIDATION_ARTIFACTS_INCOMPLETE",
+            [
+                make_issue(
+                    "VALIDATION_ARTIFACTS_INCOMPLETE",
+                    "conops artifact must be at least 50 bytes",
+                )
+            ],
+        )
+    enforce_input_bounds("conops", conops_bytes)
+    conops_text = conops_bytes.decode("utf-8")
+    return conops_bytes, conops_text, compute_conops_hash(conops_bytes)
+
+
+def _target_set(row: Mapping[Any, Any]) -> set[str]:
+    targets = row.get("test_targets")
+    if not isinstance(targets, list):
+        return set()
+    return {target for target in targets if isinstance(target, str) and target.strip()}
+
+
+def _row_has_relabeling_rationale(row: Mapping[Any, Any]) -> bool:
+    for key in (
+        "anti_relabeling_rationale",
+        "validation_rationale",
+        "evidence_rationale",
+        "rationale",
+    ):
+        value = row.get(key)
+        if isinstance(value, str) and value.strip():
+            return True
+    return False
+
+
+def _verification_targets_from_ledger(path: Path) -> set[str]:
+    verification_ledger = _load_json_object(path, "verification-ledger")
+    targets: set[str] = set()
+    rows = verification_ledger.get("rows", [])
+    if not isinstance(rows, list):
+        return targets
+    for row in rows:
+        if isinstance(row, Mapping):
+            targets.update(_target_set(row))
+    return targets
+
+
+def _check_self_check_conops_hash(
+    artifact: Mapping[Any, Any], fresh_conops_hash: str
+) -> list[dict[str, Any]]:
+    issues: list[dict[str, Any]] = []
+    artifact_hash = artifact.get("conops_hash")
+    if not isinstance(artifact_hash, str) or not artifact_hash:
+        issues.append(
+            make_issue(
+                "CONOPS_HASH_MISMATCH",
+                "system-validation artifact missing conops_hash",
+            )
+        )
+        return issues
+    if not re.fullmatch(r"[0-9a-f]+", artifact_hash) or len(artifact_hash) > 64:
+        issues.append(
+            make_issue(
+                "CONOPS_HASH_MISMATCH",
+                "system-validation conops_hash must be lowercase hex",
+            )
+        )
+        return issues
+    if len(artifact_hash) < HASH_PREFIX_LEN:
+        issues.append(
+            make_issue(
+                "CONOPS_HASH_PREFIX_TOO_SHORT",
+                f"conops_hash prefix must be at least {HASH_PREFIX_LEN} hex chars",
+            )
+        )
+        return issues
+    if not (fresh_conops_hash.startswith(artifact_hash) or artifact_hash.startswith(fresh_conops_hash)):
+        issues.append(
+            make_issue(
+                "CONOPS_HASH_MISMATCH",
+                "system-validation conops_hash does not match current ConOps bytes",
+            )
+        )
+    return issues
+
+
+def handle_self_check(args: argparse.Namespace) -> Envelope:
+    """Implement C-4.5: local pre-MCP self-check of system_validation.json."""
+    artifact_arg = Path(args.artifact)
+    artifact_path = resolve_under_root(
+        artifact_arg.parent if artifact_arg.is_absolute() else Path.cwd(),
+        artifact_arg,
+    )
+    if _artifact_input_path(artifact_arg).is_symlink():
+        return Envelope(
+            status="issues",
+            code="ARTIFACT_SYMLINK_REJECTED",
+            issues=[
+                make_issue(
+                    "ARTIFACT_SYMLINK_REJECTED",
+                    "self-check refuses symlinked validation artifacts (RC-1)",
+                )
+            ],
+        )
+
+    artifact, _artifact_bytes, artifact_sha256 = _load_self_check_artifact(artifact_path)
+    conops_path = resolve_under_root(artifact_path.parent, args.conops)
+    conops_bytes, conops_text, fresh_conops_hash = _load_self_check_conops(conops_path)
+
+    issues: list[dict[str, Any]] = []
+    expected_sha256 = (args.expected_sha256 or "").strip()
+    if expected_sha256 and expected_sha256 != artifact_sha256:
+        issues.append(
+            make_issue(
+                "ARTIFACT_SHA_MISMATCH",
+                "system-validation artifact sha256 changed before close call (RC-1)",
+            )
+        )
+
+    if artifact.get("kind") != "system-validation":
+        issues.append(
+            make_issue(
+                "VALIDATION_KIND_MISMATCH",
+                "validation artifact kind must be 'system-validation'",
+            )
+        )
+    issues.extend(_check_self_check_conops_hash(artifact, fresh_conops_hash))
+
+    rows = artifact.get("rows")
+    row_objects: list[dict[str, Any]] = []
+    if not isinstance(rows, list) or not rows:
+        issues.append(make_issue("VALIDATION_ROWS_EMPTY", "rows must be a non-empty list"))
+    else:
+        for index, row in enumerate(rows):
+            if not isinstance(row, dict):
+                issues.append(
+                    make_issue(
+                        "VALIDATION_ROW_INVALID",
+                        f"rows[{index}] must be an object",
+                    )
+                )
+                continue
+            row_objects.append(row)
+            row_id = row.get("row_id") if isinstance(row.get("row_id"), str) else None
+            for field_name in ("conops_ref", "scenario", "oracle"):
+                value = row.get(field_name)
+                if not isinstance(value, str) or not value.strip():
+                    issues.append(
+                        make_issue(
+                            "VALIDATION_ROW_FIELD_MISSING",
+                            f"row missing non-empty {field_name}",
+                            row_id,
+                        )
+                    )
+            result = row.get("result")
+            if result not in SELF_CHECK_RESULT_ENUM:
+                issues.append(
+                    make_issue(
+                        "VALIDATION_RESULT_INVALID",
+                        "result must be pass, fail, or not-applicable",
+                        row_id,
+                    )
+                )
+            elif result == "fail":
+                issues.append(
+                    make_issue(
+                        "VV_LEDGER_HAS_FAILURES",
+                        "system validation cannot close with failed rows",
+                        row_id,
+                    )
+                )
+
+    verification_targets: set[str] = set()
+    rows_with_targets = [row for row in row_objects if _target_set(row)]
+    if args.verification_ledger:
+        verification_path = resolve_under_root(artifact_path.parent, args.verification_ledger)
+        verification_targets = _verification_targets_from_ledger(verification_path)
+    elif rows_with_targets:
+        issues.append(
+            make_issue(
+                "ANTI_RELABELING_UNCHECKED",
+                "--verification-ledger is required when validation rows carry test_targets",
+            )
+        )
+
+    if verification_targets:
+        for row in row_objects:
+            validation_targets = _target_set(row)
+            if not validation_targets:
+                continue
+            row_id = row.get("row_id") if isinstance(row.get("row_id"), str) else None
+            overlap = validation_targets & verification_targets
+            if not overlap:
+                continue
+            if (
+                validation_targets == verification_targets
+                or validation_targets.issubset(verification_targets)
+                or not _row_has_relabeling_rationale(row)
+            ):
+                issues.append(
+                    make_issue(
+                        "VALIDATION_IS_RELABELED_VERIFICATION",
+                        "validation test_targets duplicate, subset, or unjustifiably overlap verification targets",
+                        row_id,
+                    )
+                )
+
+    passing_refs = [
+        row.get("conops_ref")
+        for row in row_objects
+        if row.get("result") == "pass" and isinstance(row.get("conops_ref"), str)
+    ]
+    for story_id in sorted(set(_US_TOKEN_RE.findall(conops_text))):
+        if not any(story_id in conops_ref for conops_ref in passing_refs):
+            issues.append(
+                make_issue(
+                    "UNVALIDATED_USER_STORY",
+                    f"story {story_id} has no passing validation row",
+                )
+            )
+
+    data = {
+        "artifact_path": str(artifact_path),
+        "artifact_sha256": artifact_sha256,
+        "conops_hash": fresh_conops_hash,
+        "conops_bytes": len(conops_bytes),
+        "row_count": len(row_objects),
+    }
+    if issues:
+        code = issues[0]["code"] if len(issues) == 1 else "SELF_CHECK_FAILED"
+        return Envelope(status="issues", code=code, issues=issues, data=data)
+    return Envelope(status="ok", data=data)
+
+
 #: Subcommand → handler. Components C-1.2 … C-4.6 replace stubs in place.
 HANDLERS: dict[str, Callable[[argparse.Namespace], Envelope]] = {
     name: _not_implemented(name) for name in SUBCOMMANDS
@@ -2532,8 +3043,11 @@ HANDLERS["record-evidence"] = handle_record_evidence
 HANDLERS["assemble-digest"] = handle_assemble_digest
 HANDLERS["record-send"] = handle_record_send
 HANDLERS["cancel-batch"] = handle_cancel_batch
+HANDLERS["reset-failed"] = handle_reset_failed
+HANDLERS["supersede-row"] = handle_supersede_row
 HANDLERS["parse-reply"] = handle_parse_reply
 HANDLERS["emit-system-validation"] = emit_system_validation
+HANDLERS["self-check"] = handle_self_check
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -2585,6 +3099,20 @@ def build_parser() -> argparse.ArgumentParser:
             sp.add_argument("--summary", required=True, help="Conductor's evidence_summary prose")
             sp.add_argument("--conops", type=Path, required=True, help="Path to conops.md")
             sp.add_argument("--commit", help="Optional implementation git short hash")
+        if name == "self-check":
+            sp.add_argument("artifact", type=Path, help="Path to system_validation.json")
+            sp.add_argument("--conops", type=Path, required=True, help="Path to conops.md")
+            sp.add_argument(
+                "--verification-ledger",
+                type=Path,
+                default=None,
+                help="Path to system verification ledger for anti-relabeling parity",
+            )
+            sp.add_argument(
+                "--expected-sha256",
+                default=None,
+                help="Expected sha256 of the exact artifact bytes at call time",
+            )
         if name == "assemble-digest":
             sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
             sp.add_argument("--conops", type=Path, required=True, help="Path to conops.md")
@@ -2606,6 +3134,37 @@ def build_parser() -> argparse.ArgumentParser:
             sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
             sp.add_argument("--digest-id", required=True, help="Batch id (d-N)")
             sp.add_argument("--reason", required=True, help="Audit reason (non-empty)")
+        if name == "reset-failed":
+            sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
+            sp.add_argument("--row", required=True, help="Target judged-fail row_id")
+            sp.add_argument(
+                "--remediation-ref", required=True,
+                help="Remediation card id (REQUIRED, FM-1)",
+            )
+            sp.add_argument(
+                "--remediation-resolved", action="store_true",
+                help="Conductor assertion that the remediation card is "
+                     "MCP-verified resolved (honest boundary, FM-1)",
+            )
+        if name == "supersede-row":
+            sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
+            sp.add_argument("--row", required=True, help="Row to retire (any state)")
+            sp.add_argument(
+                "--reason", required=True,
+                help="Refresh reason — must be in the §6.2 allowed enum",
+            )
+            sp.add_argument(
+                "--approver", default="jason", help="Approving human (audit)",
+            )
+            sp.add_argument(
+                "--approval-ref", required=True,
+                help="Durable approval reference (always required, INV-3)",
+            )
+            sp.add_argument(
+                "--replacement-file", type=Path, default=None,
+                help="Optional replacement row JSON installed transactionally "
+                     "(no coverage gap, INV-7)",
+            )
         if name == "parse-reply":
             sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
             sp.add_argument(
