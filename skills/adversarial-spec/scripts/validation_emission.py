@@ -527,6 +527,32 @@ class _Parser(argparse.ArgumentParser):
         raise CliArgumentError(message, code)
 
 
+def _help_requested(argv: list[str]) -> bool:
+    return any(arg in ("-h", "--help") for arg in argv)
+
+
+def _help_envelope(argv: list[str]) -> Envelope:
+    subcommand = next((arg for arg in argv if arg in SUBCOMMANDS), None)
+    usage = (
+        f"validation_emission.py {subcommand} [options]"
+        if subcommand
+        else "validation_emission.py <subcommand> [options]"
+    )
+    return Envelope(
+        status="ok",
+        data={
+            "usage": usage,
+            "subcommand": subcommand,
+            "subcommands": list(SUBCOMMANDS),
+        },
+    )
+
+
+def _module_description() -> str:
+    doc = __doc__ or "validation_emission.py"
+    return doc.splitlines()[0]
+
+
 def _not_implemented(name: str) -> Callable[[argparse.Namespace], Envelope]:
     component = _DELIVERED_BY[name]
 
@@ -555,14 +581,14 @@ HANDLERS: dict[str, Callable[[argparse.Namespace], Envelope]] = {
 def build_parser() -> argparse.ArgumentParser:
     parser = _Parser(
         prog="validation_emission.py",
-        description=__doc__.splitlines()[0],
-        add_help=True,
+        description=_module_description(),
+        add_help=False,
     )
     subparsers = parser.add_subparsers(
         dest="subcommand", required=True, parser_class=_Parser
     )
     for name in SUBCOMMANDS:
-        subparsers.add_parser(name, add_help=True)
+        subparsers.add_parser(name, add_help=False)
     return parser
 
 
@@ -572,6 +598,9 @@ def _emit(envelope: Envelope) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if _help_requested(argv):
+        return _emit(_help_envelope(argv))
     parser = build_parser()
     try:
         args, extras = parser.parse_known_args(argv)

@@ -13,7 +13,7 @@ JSON artifacts stamped with schema_version + module_version and UTC RFC3339-Z
 timestamps (OP-3/OP-4, DD-6).
 
 Run:
-    uv run pytest skills/adversarial-spec/scripts/tests/test_validation_emission.py -q
+    uv run pytest scripts/tests/test_validation_emission.py -q
 """
 
 import hashlib
@@ -150,6 +150,26 @@ def test_envelope_diagnostics_go_to_stderr_not_stdout(capsys):
     _exit_code, out, err = run_cli(capsys, ["status", "--no-such-flag"])
     parse_single_envelope(out)
     assert "--no-such-flag" in err, "diagnostic about ignored args belongs on stderr"
+
+
+def test_envelope_root_help_stays_inside_json_envelope(capsys):
+    exit_code, out, err = run_cli(capsys, ["--help"])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    assert err == ""
+    assert envelope["status"] == "ok"
+    assert envelope["data"]["usage"] == "validation_emission.py <subcommand> [options]"
+    assert envelope["data"]["subcommand"] is None
+
+
+def test_envelope_subcommand_help_stays_inside_json_envelope(capsys):
+    exit_code, out, err = run_cli(capsys, ["status", "--help"])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    assert err == ""
+    assert envelope["status"] == "ok"
+    assert envelope["data"]["usage"] == "validation_emission.py status [options]"
+    assert envelope["data"]["subcommand"] == "status"
 
 
 # ── AC-3: exit-code contract 0/2/3 at the CLI boundary; global row_id null ──
