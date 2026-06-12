@@ -620,3 +620,332 @@ def test_duplicate_story_ids_rejected_bounds():
         "US-0",
     ]
     assert find_duplicate_story_ids(["US-0", "US-1"]) == []
+
+
+# ═══ C-2.1 derive-conops (TC-1.1, TC-1.2, TC-1.3, TC-G13) ═══════════════════
+
+
+def _manifest(stories):
+    return {
+        "title": "Validation Demo",
+        "session_id": "adv-spec-test",
+        "milestones": [
+            {
+                "id": "M1",
+                "name": "ConOps Derivation",
+                "context": "Derive intent from the manifest.",
+                "user_stories": [story["id"] for story in stories],
+            }
+        ],
+        "user_stories": stories,
+    }
+
+
+def _write_manifest(tmp_path, manifest):
+    roadmap = tmp_path / "roadmap"
+    roadmap.mkdir()
+    path = roadmap / "manifest.json"
+    path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    return path
+
+
+def test_conops_derivation_writes_every_story_heading_and_hashes(capsys, tmp_path):
+    manifest_path = _write_manifest(
+        tmp_path,
+        _manifest(
+            [
+                {
+                    "id": "US-0",
+                    "title": "Bootstrap",
+                    "story": "As a conductor, I want one entry point so that setup is repeatable.",
+                },
+                {
+                    "id": "US-1",
+                    "title": "Derive ConOps",
+                    "story": "As a conductor, I want derived intent so that validation is fresh.",
+                },
+            ]
+        ),
+    )
+    output = tmp_path / "roadmap" / "conops.md"
+
+    exit_code, out, err = run_cli(capsys, ["derive-conops", str(manifest_path)])
+
+    envelope = parse_single_envelope(out)
+    conops = output.read_text(encoding="utf-8")
+    assert exit_code == EXIT_OK
+    assert err == ""
+    assert envelope["status"] == "ok"
+    assert re.search(r"^### US-0: Bootstrap$", conops, re.MULTILINE)
+    assert re.search(r"^### US-1: Derive ConOps$", conops, re.MULTILINE)
+    assert len(conops.encode("utf-8")) >= 50
+    assert envelope["data"]["path"] == str(output)
+    assert envelope["data"]["conops_hash"] == compute_conops_hash(
+        conops.encode("utf-8")
+    )
+    assert set(envelope["data"]["story_hashes"]) == {"US-0", "US-1"}
+
+
+def test_conops_derivation_rejects_stray_story_ids_before_write(capsys, tmp_path):
+    manifest_path = _write_manifest(
+        tmp_path,
+        _manifest(
+            [
+                {
+                    "id": "US-1",
+                    "title": "No Phantom Stories",
+                    "story": "As a conductor, I want no reference that replaces US-99.",
+                }
+            ]
+        ),
+    )
+    output = tmp_path / "roadmap" / "conops.md"
+
+    exit_code, out, _err = run_cli(capsys, ["derive-conops", str(manifest_path)])
+
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["code"] == "STRAY_CONOPS_STORY_ID"
+    assert "US-99" in envelope["issues"][0]["detail"]
+    assert not output.exists()
+
+
+def test_conops_derivation_rejects_duplicate_manifest_story_ids(capsys, tmp_path):
+    manifest_path = _write_manifest(
+        tmp_path,
+        _manifest(
+            [
+                {"id": "US-1", "title": "One", "story": "As a user, I want one."},
+                {"id": "US-1", "title": "Again", "story": "As a user, I want two."},
+            ]
+        ),
+    )
+
+    exit_code, out, _err = run_cli(capsys, ["derive-conops", str(manifest_path)])
+
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["code"] == "DUPLICATE_STORY_ID"
+    assert "US-1" in envelope["issues"][0]["detail"]
+
+
+def test_conops_rederive_refuses_ledger_bound_overwrite_without_force(
+    capsys, tmp_path
+):
+    manifest = _manifest(
+        [
+            {
+                "id": "US-1",
+                "title": "Fresh Intent",
+                "story": "As a conductor, I want original intent.",
+            }
+        ]
+    )
+    manifest_path = _write_manifest(tmp_path, manifest)
+    output = tmp_path / "roadmap" / "conops.md"
+    exit_code, out, _err = run_cli(capsys, ["derive-conops", str(manifest_path)])
+    assert exit_code == EXIT_OK
+    prior_hash = parse_single_envelope(out)["data"]["conops_hash"]
+    prior_text = output.read_text(encoding="utf-8")
+    (tmp_path / "validation-rows.json").write_text(
+        json.dumps({"conops_hash": prior_hash, "rows": []}), encoding="utf-8"
+    )
+    manifest["user_stories"][0]["story"] = "As a conductor, I want edited intent."
+    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+
+    exit_code, out, _err = run_cli(capsys, ["derive-conops", str(manifest_path)])
+    envelope = parse_single_envelope(out)
+
+    assert exit_code == EXIT_ISSUES
+    assert envelope["code"] == "CONOPS_OVERWRITE_REQUIRES_FORCE"
+    assert output.read_text(encoding="utf-8") == prior_text
+
+    exit_code, out, _err = run_cli(
+        capsys, ["derive-conops", str(manifest_path), "--force"]
+    )
+    envelope = parse_single_envelope(out)
+
+    assert exit_code == EXIT_OK
+    assert envelope["data"]["prior_conops_hash"] == prior_hash
+    assert envelope["data"]["conops_hash"] != prior_hash
+    assert "edited intent" in output.read_text(encoding="utf-8")
+
+
+# ═══ C-4.4 emit-system-validation (TC-3.1, TC-3.3, TC-3.6, TC-3.8) ═══════════
+
+
+@pytest.fixture
+def emission_env(tmp_path):
+    conops_path = tmp_path / "conops.md"
+    conops_text = (
+        "## User stories\n"
+        "### US-1: First\n"
+        "### US-2: Second\n"
+    )
+    conops_path.write_text(conops_text)
+    story_hashes = compute_story_hashes(conops_text)
+
+    ledger_path = tmp_path / "validation-rows.json"
+    row = {
+        "row_id": "r-US1-1",
+        "conops_ref": "US-1",
+        "scenario": "scenario 1",
+        "oracle": "oracle 1",
+        "evidence_type": "narrative",
+        "story_hash": story_hashes["US-1"],
+        "result": "pass",
+        "judgment": {
+            "judged_by": "jason",
+            "judged_at": "2026-06-12T00:00:00Z",
+            "digest_id": "d-1",
+            "source": "terminal",
+            "reply_ref": "transcript:123"
+        }
+    }
+    # US-2 also needs a pass for coverage
+    row2 = {
+        "row_id": "r-US2-1",
+        "conops_ref": "US-2",
+        "scenario": "scenario 2",
+        "oracle": "oracle 2",
+        "evidence_type": "narrative",
+        "story_hash": story_hashes["US-2"],
+        "result": "pass",
+        "judgment": {
+            "judged_by": "jason",
+            "judged_at": "2026-06-12T00:00:00Z",
+            "digest_id": "d-1",
+            "source": "terminal",
+            "reply_ref": "transcript:123"
+        }
+    }
+    ledger_path.write_text(json.dumps({"rows": [row, row2]}))
+
+    ev_dir = tmp_path / "validation-evidence" / "r-US1-1"
+    ev_dir.mkdir(parents=True)
+    (ev_dir / "evidence.md").write_text("evidence 1")
+
+    ev_dir2 = tmp_path / "validation-evidence" / "r-US2-1"
+    ev_dir2.mkdir(parents=True)
+    (ev_dir2 / "evidence.md").write_text("evidence 2")
+
+    return tmp_path, ledger_path, conops_path
+
+
+def test_emit_system_validation_success_projection(capsys, emission_env):
+    tmp_path, ledger_path, conops_path = emission_env
+    exit_code, out, _err = run_cli(capsys, [
+        "emit-system-validation", str(ledger_path), "--conops", str(conops_path)
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    assert envelope["status"] == "ok"
+
+    artifact_path = tmp_path / "system_validation.json"
+    assert artifact_path.exists()
+    artifact = json.loads(artifact_path.read_text())
+
+    assert artifact["kind"] == "system-validation"
+    assert len(artifact["conops_hash"]) == 12
+    assert len(artifact["ledger_hash"]) == 64
+    assert len(artifact["rows"]) == 2
+    assert artifact["rows"][0]["result"] == "pass"
+    assert artifact["rows"][0]["judged_by"] == "jason"
+    assert artifact["rows"][0]["evidence_ref"] == "validation-evidence/r-US1-1/evidence.md"
+    assert "evidence_hash" in artifact["rows"][0]
+
+
+def test_emit_system_validation_na_mapping_cb12(capsys, emission_env):
+    tmp_path, ledger_path, conops_path = emission_env
+    ledger = json.loads(ledger_path.read_text())
+    ledger["rows"][0]["result"] = "na"
+    # Still need US-1 pass for coverage, so let's add another row
+    new_row = dict(ledger["rows"][0])
+    new_row["row_id"] = "r-US1-2"
+    new_row["result"] = "pass"
+    ledger["rows"].append(new_row)
+    ledger_path.write_text(json.dumps(ledger))
+
+    # ensure evidence exists for r-US1-2
+    ev_dir = tmp_path / "validation-evidence" / "r-US1-2"
+    ev_dir.mkdir(parents=True)
+    (ev_dir / "evidence.md").write_text("evidence 1-2")
+
+    exit_code, out, _err = run_cli(capsys, [
+        "emit-system-validation", str(ledger_path), "--conops", str(conops_path)
+    ])
+    parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+
+    artifact = json.loads((tmp_path / "system_validation.json").read_text())
+    # r-US1-1 was na
+    assert artifact["rows"][0]["result"] == "not-applicable"
+
+
+def test_emit_system_validation_refuses_unjudged_failed(capsys, emission_env):
+    _tmp_path, ledger_path, conops_path = emission_env
+    ledger = json.loads(ledger_path.read_text())
+    ledger["rows"][0]["result"] = None
+    ledger_path.write_text(json.dumps(ledger))
+
+    exit_code, out, _err = run_cli(capsys, [
+        "emit-system-validation", str(ledger_path), "--conops", str(conops_path)
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(i["code"] == "UNJUDGED_ROW" for i in envelope["issues"])
+
+    ledger["rows"][0]["result"] = "fail"
+    ledger_path.write_text(json.dumps(ledger))
+    exit_code, out, _err = run_cli(capsys, [
+        "emit-system-validation", str(ledger_path), "--conops", str(conops_path)
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(i["code"] == "FAILED_ROW" for i in envelope["issues"])
+
+
+def test_emit_system_validation_refuses_provenance_missing_inv1(capsys, emission_env):
+    _tmp_path, ledger_path, conops_path = emission_env
+    ledger = json.loads(ledger_path.read_text())
+    ledger["rows"][0]["judgment"] = None
+    ledger_path.write_text(json.dumps(ledger))
+
+    exit_code, out, _err = run_cli(capsys, [
+        "emit-system-validation", str(ledger_path), "--conops", str(conops_path)
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(i["code"] == "PROVENANCE_MISSING" for i in envelope["issues"])
+
+
+def test_emit_system_validation_refuses_stale_conops_fm3(capsys, emission_env):
+    _tmp_path, ledger_path, conops_path = emission_env
+    # Change conops without updating ledger story_hash
+    conops_text = conops_path.read_text()
+    conops_path.write_text(conops_text + "\n### US-3: Added")
+
+    exit_code, out, _err = run_cli(capsys, [
+        "emit-system-validation", str(ledger_path), "--conops", str(conops_path)
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    # Both US-1/US-2 are now stale because compute_story_hashes for US-2
+    # might include US-3 section if US-2 was last.
+    # Actually US-1 should be same, US-2 changed if it's now followed by US-3.
+    assert any(i["code"] == "STALE_STORY_HASH" for i in envelope["issues"])
+
+
+def test_emit_system_validation_refuses_unvalidated_story_tc36(capsys, emission_env):
+    _tmp_path, ledger_path, conops_path = emission_env
+    ledger = json.loads(ledger_path.read_text())
+    # US-2 row becomes NA -> US-2 has no pass row
+    ledger["rows"][1]["result"] = "na"
+    ledger_path.write_text(json.dumps(ledger))
+
+    exit_code, out, _err = run_cli(capsys, [
+        "emit-system-validation", str(ledger_path), "--conops", str(conops_path)
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(i["code"] == "UNVALIDATED_USER_STORY" for i in envelope["issues"])
