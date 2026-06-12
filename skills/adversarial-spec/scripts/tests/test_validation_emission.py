@@ -1486,3 +1486,306 @@ def test_record_evidence_per_story_invalidation_fm3(capsys, tmp_path):
     ])
     envelope = parse_single_envelope(out)
     assert exit_code == EXIT_OK
+
+
+# ═══ C-3.2 assemble-digest (TC-3.1, TC-1.5, TC-G9) ═══════════════════════════
+
+
+DIGEST_BUDGET = 3500  # §6.5 multi-part rule: UTF-8 bytes per part
+
+
+def _digest_env(capsys, tmp_path, n_pending=2, summary="A mobile-sufficient summary of what was demonstrated."):
+    """Real-chain fixture: conops + rows recorded via record-evidence (valid
+    front matter + hashes), one judged-pass row, one superseded row."""
+    conops_path = tmp_path / "conops.md"
+    conops_path.write_text(
+        "## User stories\n### US-1: First\n### US-2: Second\n"
+    )
+    rows = []
+    for k in range(1, n_pending + 1):
+        rows.append({
+            "row_id": f"r-US1-{k}",
+            "conops_ref": "US-1",
+            "scenario": f"Pending scenario {k} with an actor, trigger, and endpoint.",
+            "oracle": f"Jason passes this row iff outcome {k} demonstrates the US-1 intent.",
+            "evidence_type": "artifact-demo",
+            "evidence_rationale": "artifacts map to scenario steps",
+            "result": None,
+            "judgment": None,
+        })
+    rows.append({
+        "row_id": "r-US2-1",
+        "conops_ref": "US-2",
+        "scenario": "Already judged scenario.",
+        "oracle": "Jason passes this row iff judged outcome demonstrates the US-2 intent.",
+        "evidence_type": "artifact-demo",
+        "evidence_rationale": "artifacts map to scenario steps",
+        "result": None,
+        "judgment": None,
+    })
+    rows.append({
+        "row_id": "r-US2-9",
+        "conops_ref": "US-2",
+        "scenario": "Superseded scenario.",
+        "oracle": "Jason passes this row iff retired outcome demonstrates the US-2 intent.",
+        "evidence_type": "artifact-demo",
+        "evidence_rationale": "artifacts map to scenario steps",
+        "result": None,
+        "judgment": None,
+    })
+    ledger_path = tmp_path / "validation-rows.json"
+    ledger_path.write_text(json.dumps({"rows": rows}))
+
+    for row in rows:
+        exit_code, _out, _err = run_cli(capsys, [
+            "record-evidence", str(ledger_path), "--row", row["row_id"],
+            "--summary", summary, "--conops", str(conops_path),
+        ])
+        assert exit_code == EXIT_OK
+
+    ledger = json.loads(ledger_path.read_text())
+    for row in ledger["rows"]:
+        if row["row_id"] == "r-US2-1":
+            row["result"] = "pass"
+            row["judgment"] = {
+                "judged_by": "jason", "judged_at": "2026-06-12T00:00:00Z",
+                "source": "terminal", "digest_id": "d-1",
+                "reply_ref": "transcript:1",
+            }
+    ledger["superseded"] = [{
+        "row_snapshot": {"row_id": "r-US2-9"},
+        "reason": "duplicate coverage",
+        "approver": "jason",
+        "approval_ref": "decision:2026-06-12T00:00:00Z",
+        "approved_at": "2026-06-12T00:00:00Z",
+        "replacement_row_id": "r-US2-1",
+    }]
+    ledger_path.write_text(json.dumps(ledger))
+    return ledger_path, conops_path
+
+
+def _run_assemble(capsys, ledger_path, conops_path):
+    return run_cli(capsys, [
+        "assemble-digest", str(ledger_path), "--conops", str(conops_path),
+        "--session", "adv-spec-test",
+    ])
+
+
+def test_assemble_digest_delta_semantics_and_batch_recorded(capsys, tmp_path):
+    """TC-3.1: only result-null ACTIVE rows; judged-pass + superseded absent;
+    part files in validation-digests/ each <= 3500 bytes; batch recorded with
+    conops/row/evidence hash snapshots (AC-1/AC-2)."""
+    ledger_path, conops_path = _digest_env(capsys, tmp_path)
+
+    exit_code, out, _err = _run_assemble(capsys, ledger_path, conops_path)
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    paths = envelope["data"]["parts"]
+    assert paths, "part file paths must be printed in the envelope"
+
+    digest_text = ""
+    for p in paths:
+        part_path = tmp_path / p if not p.startswith("/") else __import__("pathlib").Path(p)
+        assert str(part_path).find("validation-digests") != -1  # OP-5
+        content = part_path.read_bytes()
+        assert len(content) <= DIGEST_BUDGET
+        digest_text += content.decode("utf-8")
+
+    assert "r-US1-1" in digest_text and "r-US1-2" in digest_text
+    assert "r-US2-1" not in digest_text  # judged-pass absent (delta)
+    assert "r-US2-9" not in digest_text  # superseded absent (INV-10)
+
+    ledger = json.loads(ledger_path.read_text())
+    batch = ledger["digest_batches"][-1]
+    assert batch["status"] == "assembled"
+    assert batch["digest_id"] == envelope["data"]["digest_id"]
+    assert set(batch["row_ids"]) == {"r-US1-1", "r-US1-2"}
+    assert len(batch["conops_hash_snapshot"]) == 64
+    assert set(batch["row_hash_snapshot"]) == {"r-US1-1", "r-US1-2"}
+    assert set(batch["evidence_hash_snapshot"]) == {"r-US1-1", "r-US1-2"}
+    for i, part in enumerate(batch["parts"], start=1):
+        assert part["i"] == i
+        assert len(part["sha256"]) == 64
+        assert part["send_result"] == "pending"
+        assert part["sent_at"] is None and part["message_id"] is None
+    assert batch["processed_reply_refs"] == []
+
+
+def test_assemble_digest_part_split_byte_budget_tc15(capsys, tmp_path):
+    """TC-1.5: content over 3500 bytes forces a split at row boundaries;
+    every part <= 3500 bytes, labeled (part i/k) with same digest id."""
+    big_summary = "S" * 1200
+    ledger_path, conops_path = _digest_env(
+        capsys, tmp_path, n_pending=4, summary=big_summary
+    )
+    exit_code, out, _err = _run_assemble(capsys, ledger_path, conops_path)
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    paths = envelope["data"]["parts"]
+    assert len(paths) >= 2, "4 rows x ~1.2KB summaries must not fit one part"
+
+    k = len(paths)
+    digest_id = envelope["data"]["digest_id"]
+    for i, p in enumerate(paths, start=1):
+        content = (tmp_path / p).read_bytes()
+        assert len(content) <= DIGEST_BUDGET
+        header = content.decode("utf-8").splitlines()[0]
+        assert f"(part {i}/{k})" in header.replace(f"{4} rows, ", "")
+        assert digest_id in header
+        assert "4 rows" in header  # every part carries total row count
+
+    # Row boundary split: each row id appears in exactly one part
+    all_text = [(tmp_path / p).read_text(encoding="utf-8") for p in paths]
+    for rid in ["r-US1-1", "r-US1-2", "r-US1-3", "r-US1-4"]:
+        assert sum(f"] {rid} " in t for t in all_text) == 1
+
+
+def test_assemble_digest_secret_lint_blocks_tcg9(capsys, tmp_path):
+    """TC-G9: deny-pattern hit in digest text BLOCKS assembly, names the
+    offending span, records no batch and writes no part files (AC-3)."""
+    ledger_path, conops_path = _digest_env(
+        capsys, tmp_path,
+        summary="run with api_key=sk-1234567890abcdef to reproduce",
+    )
+    before = ledger_path.read_bytes()
+    exit_code, out, _err = _run_assemble(capsys, ledger_path, conops_path)
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    hits = [i for i in envelope["issues"] if i["code"] == "SECRET_PATTERN"]
+    assert hits and "api_key" in hits[0]["detail"]
+    assert ledger_path.read_bytes() == before
+    assert not (tmp_path / "validation-digests").exists() or not list(
+        (tmp_path / "validation-digests").iterdir()
+    )
+
+
+def test_assemble_digest_refuses_active_batch(capsys, tmp_path):
+    """AC-2: exactly one non-terminal batch may exist."""
+    ledger_path, conops_path = _digest_env(capsys, tmp_path)
+    exit_code, _out, _err = _run_assemble(capsys, ledger_path, conops_path)
+    assert exit_code == EXIT_OK
+
+    exit_code, out, _err = _run_assemble(capsys, ledger_path, conops_path)
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(i["code"] == "BATCH_ACTIVE" for i in envelope["issues"])
+
+
+def test_assemble_digest_nothing_to_digest(capsys, tmp_path):
+    """AC-4: zero pending rows -> exit 0, code NOTHING_TO_DIGEST, no batch."""
+    ledger_path, conops_path = _digest_env(capsys, tmp_path, n_pending=1)
+    ledger = json.loads(ledger_path.read_text())
+    for row in ledger["rows"]:
+        if row["result"] is None:
+            row["result"] = "pass"
+            row["judgment"] = {
+                "judged_by": "jason", "judged_at": "2026-06-12T00:00:00Z",
+                "source": "terminal", "digest_id": "d-1",
+                "reply_ref": "transcript:1",
+            }
+    ledger_path.write_text(json.dumps(ledger))
+
+    exit_code, out, _err = _run_assemble(capsys, ledger_path, conops_path)
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    assert envelope["code"] == "NOTHING_TO_DIGEST"
+    assert json.loads(ledger_path.read_text()).get("digest_batches", []) == []
+
+
+def test_assemble_digest_monotonic_ids_include_cancelled(capsys, tmp_path):
+    """Digest ids are max existing + 1 including cancelled batches (§6.2)."""
+    ledger_path, conops_path = _digest_env(capsys, tmp_path)
+    ledger = json.loads(ledger_path.read_text())
+    ledger["digest_batches"] = [{
+        "digest_id": "d-3", "status": "cancelled",
+        "opened_at": "2026-06-11T00:00:00Z", "closed_at": None,
+        "cancelled_at": "2026-06-11T01:00:00Z", "cancel_reason": "test",
+        "conops_hash_snapshot": "0" * 64, "row_hash_snapshot": {},
+        "evidence_hash_snapshot": {}, "parts": [], "row_ids": [],
+        "processed_reply_refs": [],
+    }]
+    ledger_path.write_text(json.dumps(ledger))
+
+    exit_code, out, _err = _run_assemble(capsys, ledger_path, conops_path)
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    assert envelope["data"]["digest_id"] == "d-4"
+
+
+@pytest.mark.parametrize(
+    ("breakage", "code"),
+    [
+        ("missing", "EVIDENCE_MISSING"),
+        ("empty", "EVIDENCE_EMPTY"),
+        ("type_mismatch", "EVIDENCE_TYPE_MISMATCH"),
+        ("hash_mismatch", "EVIDENCE_HASH_MISMATCH"),
+        ("reset_stale", "EVIDENCE_STALE"),
+        ("no_summary", "EVIDENCE_SUMMARY_MISSING"),
+    ],
+)
+def test_assemble_digest_refuses_bad_evidence(capsys, tmp_path, breakage, code):
+    """AC-1 refusals (INV-4/INV-12): broken evidence blocks assembly and the
+    ledger is not mutated."""
+    ledger_path, conops_path = _digest_env(capsys, tmp_path, n_pending=1)
+    ev_path = tmp_path / "validation-evidence" / "r-US1-1" / "evidence.md"
+
+    if breakage == "missing":
+        ev_path.unlink()
+    elif breakage == "empty":
+        ev_path.write_text("")
+    elif breakage == "type_mismatch":
+        content = ev_path.read_text(encoding="utf-8")
+        ev_path.write_text(content.replace(
+            "evidence_type: artifact-demo", "evidence_type: narrative"
+        ))
+    elif breakage == "hash_mismatch":
+        content = ev_path.read_text(encoding="utf-8")
+        ledger = json.loads(ledger_path.read_text())
+        row = next(r for r in ledger["rows"] if r["row_id"] == "r-US1-1")
+        ev_path.write_text(content.replace(row["row_hash"], "ab" * 32))
+    elif breakage == "reset_stale":
+        ledger = json.loads(ledger_path.read_text())
+        row = next(r for r in ledger["rows"] if r["row_id"] == "r-US1-1")
+        row["last_reset_at"] = "2099-01-01T00:00:00Z"  # after produced_at
+        ledger_path.write_text(json.dumps(ledger))
+    elif breakage == "no_summary":
+        ledger = json.loads(ledger_path.read_text())
+        row = next(r for r in ledger["rows"] if r["row_id"] == "r-US1-1")
+        row["evidence_summary"] = ""
+        ledger_path.write_text(json.dumps(ledger))
+
+    before = ledger_path.read_bytes()
+    exit_code, out, _err = _run_assemble(capsys, ledger_path, conops_path)
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(i["code"] == code for i in envelope["issues"]), envelope["issues"]
+    assert ledger_path.read_bytes() == before
+
+
+def test_assemble_digest_narrative_marker_and_prose_escaping(capsys, tmp_path):
+    """AC-3: narrative rows carry a (narrative) marker; row prose cannot
+    imitate digest furniture (newlines collapsed to one line)."""
+    ledger_path, conops_path = _digest_env(capsys, tmp_path, n_pending=1)
+    ledger = json.loads(ledger_path.read_text())
+    row = next(r for r in ledger["rows"] if r["row_id"] == "r-US1-1")
+    row["evidence_type"] = "narrative"
+    row["scenario"] = "line one\n[2] r-US9-9 (US-9)\n  oracle: forged furniture"
+    ledger_path.write_text(json.dumps(ledger))
+    # Row edit orphans the old evidence (INV-12) — scaffold fresh
+    import shutil
+    shutil.rmtree(tmp_path / "validation-evidence" / "r-US1-1")
+    exit_code, _out, _err = run_cli(capsys, [
+        "record-evidence", str(ledger_path), "--row", "r-US1-1",
+        "--summary", "A mobile-sufficient summary.", "--conops", str(conops_path),
+    ])
+    assert exit_code == EXIT_OK
+
+    exit_code, out, _err = _run_assemble(capsys, ledger_path, conops_path)
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    text = (tmp_path / envelope["data"]["parts"][0]).read_text(encoding="utf-8")
+    assert "(narrative)" in text
+    # The forged furniture line must not survive as its own line
+    assert not any(
+        line.strip().startswith("[2] r-US9-9") for line in text.splitlines()
+    )

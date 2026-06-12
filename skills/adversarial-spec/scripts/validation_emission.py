@@ -211,6 +211,24 @@ _INPUT_BOUNDS = {
     "conops": CONOPS_MAX_BYTES,
 }
 
+#: §6.5 multi-part rule: per-part budget in UTF-8 BYTES (Telegram raw limit is
+#: 4096 chars; the byte budget absorbs encoding — gauntlet OP-9/RC-2).
+DIGEST_PART_MAX_BYTES = 3500
+
+#: Secret deny-patterns linted over the FULL digest text (SEC-4, TC-G9).
+#: Defense-in-depth on top of conductor content discipline; a match BLOCKS
+#: assembly with the offending span indicated.
+SECRET_DENY_PATTERNS = (
+    re.compile(r"(?i)\b(api[_-]?key|secret|token|password|passwd)\b\s*[:=]\s*\S+"),
+    re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._\-]{8,}"),
+    re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
+    re.compile(r"\bsk-[A-Za-z0-9]{16,}\b"),
+    re.compile(r"\b[A-Z][A-Z0-9_]{2,}=[^\s\"']{6,}"),
+)
+
+#: Non-terminal digest-batch statuses — at most ONE such batch may exist.
+NON_TERMINAL_BATCH_STATUSES = frozenset({"assembled", "sent"})
+
 
 class ValidationIssuesError(Exception):
     """Validation-class failure → exit 2 ``issues`` envelope at the boundary."""
@@ -1351,6 +1369,311 @@ def _not_implemented(name: str) -> Callable[[argparse.Namespace], Envelope]:
     return handler
 
 
+class _NothingToDigestError(Exception):
+    """Control flow: zero pending rows — exit 0 NOTHING_TO_DIGEST (AC-4)."""
+
+
+def _one_line(text: Any) -> str:
+    """Collapse prose to one whitespace-normalized line so row content cannot
+    imitate digest furniture (row labels, reply instructions — SEC-4)."""
+    return " ".join(str(text).split())
+
+
+def _parse_evidence_front_matter(content: str) -> dict[str, str] | None:
+    """Parse the §6.3 front-matter block; None when structurally malformed."""
+    if not content.startswith("---"):
+        return None
+    parts = content.split("---", 2)
+    if len(parts) < 3:
+        return None
+    fm: dict[str, str] = {}
+    for line in parts[1].strip().splitlines():
+        if ":" in line:
+            key, value = line.split(":", 1)
+            fm[key.strip()] = value.strip()
+    return fm
+
+
+def _active_rows(ledger: dict[str, Any]) -> list[dict[str, Any]]:
+    """Active-row predicate (spec §6.2 formal): in rows[] AND row_id in no
+    superseded[].row_snapshot.row_id."""
+    superseded_ids = {
+        entry.get("row_snapshot", {}).get("row_id")
+        for entry in ledger.get("superseded", [])
+    }
+    return [
+        row for row in ledger.get("rows", [])
+        if isinstance(row, dict) and row.get("row_id") not in superseded_ids
+    ]
+
+
+_DIGEST_FOOTER = (
+    'Reply per row ("pass r-US3-1", "fail r-US3-1: <reason>", '
+    '"na r-US3-1: <why>") or pass everything ("pass all" / '
+    '"those all look good"). "pass rest" passes whatever you didn\'t '
+    "explicitly judge."
+)
+
+
+def _digest_header(session: str, digest_id: str, n_rows: int, i: int, k: int) -> str:
+    return f"🥊📜 VALIDATION DIGEST {session} {digest_id} ({n_rows} rows, part {i}/{k})"
+
+
+def _render_row_block(index: int, row: dict[str, Any], evidence_ref: str) -> str:
+    """One §6.5 row entry. All prose is escaped to a single line."""
+    evidence_type = row.get("evidence_type", "")
+    marker = " (narrative)" if evidence_type == "narrative" else ""
+    lines = [
+        f"[{index}] {row['row_id']} ({row.get('conops_ref', '?')}){marker}",
+        f"  scenario: {_one_line(row.get('scenario', ''))}",
+        f"  oracle: {_one_line(row.get('oracle', ''))}",
+        f"  evidence: {evidence_type} — {_one_line(row.get('evidence_summary', ''))}"
+        f" (file: {evidence_ref})",
+    ]
+    history = row.get("judgment_history") or []
+    if history and isinstance(history[-1], dict) and history[-1].get("result") == "fail":
+        prior = history[-1]
+        lines.append(
+            f"  [prior: failed {prior.get('digest_id', '?')} — "
+            f"{_one_line(prior.get('justification', ''))[:120]}]"
+        )
+    return "\n".join(lines)
+
+
+def _truncate_block_summary(block: str, budget: int) -> str:
+    """Trim ONLY the evidence summary (head + … + path pointer survives);
+    scenario and oracle are never truncated (§6.5 — row-size lint guarantees
+    they fit)."""
+    lines = block.split("\n")
+    for idx, line in enumerate(lines):
+        if not line.startswith("  evidence: "):
+            continue
+        overshoot = len(block.encode("utf-8")) - budget
+        pointer_at = line.rfind(" (file: ")
+        if pointer_at <= 0 or overshoot <= 0:
+            return block
+        head, pointer = line[:pointer_at], line[pointer_at:]
+        trimmed = head.encode("utf-8")[: max(len(head.encode("utf-8")) - overshoot - 1, 20)]
+        lines[idx] = trimmed.decode("utf-8", errors="ignore") + "…" + pointer
+        return "\n".join(lines)
+    return block
+
+
+def handle_assemble_digest(args: argparse.Namespace) -> Envelope:
+    """Implement C-3.2: pure delta assembly into ≤3500-byte part files with a
+    batch record (status ``assembled``) under the ledger lock."""
+    ledger_path = resolve_under_root(args.ledger.parent, args.ledger)
+    conops_path = resolve_under_root(ledger_path.parent, args.conops)
+    conops_bytes = conops_path.read_bytes()
+    enforce_input_bounds("conops", conops_bytes)
+    conops_hash = compute_conops_hash(conops_bytes)
+    story_hashes = compute_story_hashes(conops_bytes.decode("utf-8"))
+    session = args.session or "-"
+
+    result_data: dict[str, Any] = {}
+
+    def mutator(ledger: dict[str, Any]) -> dict[str, Any]:
+        batches = ledger.get("digest_batches", [])
+        active_batch = next(
+            (b for b in batches if b.get("status") in NON_TERMINAL_BATCH_STATUSES),
+            None,
+        )
+        if active_batch is not None:
+            raise ValidationIssuesError(
+                "BATCH_ACTIVE",
+                [make_issue(
+                    "BATCH_ACTIVE",
+                    f"batch {active_batch.get('digest_id')} is "
+                    f"{active_batch.get('status')}; exactly one non-terminal "
+                    "batch may exist — close or cancel it first",
+                    None,
+                )],
+            )
+
+        pending = [r for r in _active_rows(ledger) if r.get("result") is None]
+        if not pending:
+            raise _NothingToDigestError()
+
+        # AC-1 refusals (INV-4/INV-12): evidence must exist, be non-empty,
+        # type-matched, hash-matched, and newer than the row's last reset.
+        issues: list[dict[str, Any]] = []
+        evidence_refs: dict[str, str] = {}
+        evidence_hashes: dict[str, str] = {}
+        for row in pending:
+            row_id = row.get("row_id")
+            evidence_ref = f"validation-evidence/{row_id}/evidence.md"
+            evidence_refs[row_id] = evidence_ref
+            ev_path = resolve_under_root(ledger_path.parent, evidence_ref)
+
+            if not str(row.get("evidence_summary", "")).strip():
+                issues.append(make_issue(
+                    "EVIDENCE_SUMMARY_MISSING",
+                    f"row {row_id} has no evidence_summary — the digest must be "
+                    "judgeable from mobile",
+                    row_id,
+                ))
+            if not ev_path.exists():
+                issues.append(make_issue(
+                    "EVIDENCE_MISSING", f"evidence file missing: {evidence_ref}", row_id
+                ))
+                continue
+            ev_bytes = ev_path.read_bytes()
+            if not ev_bytes.strip():
+                issues.append(make_issue(
+                    "EVIDENCE_EMPTY", f"evidence file empty: {evidence_ref}", row_id
+                ))
+                continue
+            evidence_hashes[row_id] = hashlib.sha256(ev_bytes).hexdigest()
+
+            fm = _parse_evidence_front_matter(ev_bytes.decode("utf-8", errors="replace"))
+            if fm is None:
+                issues.append(make_issue(
+                    "EVIDENCE_MALFORMED",
+                    f"evidence front matter malformed: {evidence_ref}",
+                    row_id,
+                ))
+                continue
+            if fm.get("evidence_type") != row.get("evidence_type"):
+                issues.append(make_issue(
+                    "EVIDENCE_TYPE_MISMATCH",
+                    f"row {row_id} evidence_type {row.get('evidence_type')!r} != "
+                    f"front-matter {fm.get('evidence_type')!r}",
+                    row_id,
+                ))
+            expected_row_hash = row_hash_for(row)
+            expected_story_hash = story_hashes.get(row.get("conops_ref"))
+            if fm.get("row_hash") != expected_row_hash or (
+                expected_story_hash is not None
+                and fm.get("story_hash") != expected_story_hash
+            ):
+                issues.append(make_issue(
+                    "EVIDENCE_HASH_MISMATCH",
+                    f"row {row_id} evidence is orphaned (row/story hash drift — "
+                    "re-run record-evidence)",
+                    row_id,
+                ))
+            last_reset = row.get("last_reset_at")
+            produced_at = fm.get("produced_at", "")
+            if last_reset and produced_at and produced_at < last_reset:
+                issues.append(make_issue(
+                    "EVIDENCE_STALE",
+                    f"row {row_id} evidence produced_at {produced_at} predates "
+                    f"last reset {last_reset} (FM-4)",
+                    row_id,
+                ))
+
+        if issues:
+            raise ValidationIssuesError("DIGEST_REJECTED", issues)
+
+        # Digest id: strictly monotonic per ledger, INCLUDING cancelled (§6.2).
+        max_id = 0
+        for batch in batches:
+            digest_id = str(batch.get("digest_id", ""))
+            if digest_id.startswith("d-") and digest_id[2:].isdigit():
+                max_id = max(max_id, int(digest_id[2:]))
+        digest_id = f"d-{max_id + 1}"
+
+        blocks = [
+            _render_row_block(idx, row, evidence_refs[row["row_id"]])
+            for idx, row in enumerate(pending, start=1)
+        ]
+
+        # Secret lint over the FULL digest text (header/footer carry no row
+        # content; lint the blocks + footer).
+        full_text = "\n".join(blocks) + "\n" + _DIGEST_FOOTER
+        secret_issues = []
+        for pattern in SECRET_DENY_PATTERNS:
+            match = pattern.search(full_text)
+            if match:
+                secret_issues.append(make_issue(
+                    "SECRET_PATTERN",
+                    f"digest text matches secret deny-pattern: "
+                    f"{match.group(0)[:60]!r} — assembly blocked (SEC-4)",
+                    None,
+                ))
+        if secret_issues:
+            raise ValidationIssuesError("SECRET_PATTERN", secret_issues)
+
+        # Pack blocks into parts at row boundaries (§6.5). Reserve a
+        # conservative header allowance, then render with the real i/k.
+        n_rows = len(pending)
+        header_allowance = len(
+            _digest_header(session, digest_id, n_rows, 99, 99).encode("utf-8")
+        ) + 1
+        budget = DIGEST_PART_MAX_BYTES - header_allowance
+        part_blocks: list[list[str]] = [[]]
+        sizes = [0]
+        for block in blocks:
+            block = _truncate_block_summary(block, budget)
+            block_bytes = len(block.encode("utf-8")) + 1
+            if sizes[-1] and sizes[-1] + block_bytes > budget:
+                part_blocks.append([])
+                sizes.append(0)
+            part_blocks[-1].append(block)
+            sizes[-1] += block_bytes
+        footer_bytes = len(_DIGEST_FOOTER.encode("utf-8")) + 1
+        if sizes[-1] + footer_bytes > budget:
+            part_blocks.append([])
+        part_blocks[-1].append(_DIGEST_FOOTER)
+
+        k = len(part_blocks)
+        digests_dir = ledger_path.parent / "validation-digests"
+        digests_dir.mkdir(parents=True, exist_ok=True)
+        parts_record = []
+        part_paths = []
+        for i, chunk in enumerate(part_blocks, start=1):
+            text = _digest_header(session, digest_id, n_rows, i, k) + "\n" + "\n".join(chunk)
+            data = text.encode("utf-8")
+            if len(data) > DIGEST_PART_MAX_BYTES:
+                raise ValidationIssuesError(
+                    "PART_OVER_BUDGET",
+                    [make_issue(
+                        "PART_OVER_BUDGET",
+                        f"part {i} is {len(data)} bytes (> {DIGEST_PART_MAX_BYTES}); "
+                        "a single row exceeds the budget — drafting error "
+                        "(check-rows ROW_OVER_BUDGET should have caught it)",
+                        None,
+                    )],
+                )
+            rel_path = f"validation-digests/digest-{digest_id}-part-{i}.txt"
+            (digests_dir / f"digest-{digest_id}-part-{i}.txt").write_bytes(data)
+            parts_record.append({
+                "i": i,
+                "path": rel_path,
+                "sha256": hashlib.sha256(data).hexdigest(),
+                "sent_at": None,
+                "message_id": None,
+                "send_result": "pending",
+            })
+            part_paths.append(rel_path)
+
+        ledger.setdefault("digest_batches", []).append({
+            "digest_id": digest_id,
+            "status": "assembled",
+            "opened_at": utc_now(),
+            "closed_at": None,
+            "cancelled_at": None,
+            "cancel_reason": None,
+            "conops_hash_snapshot": conops_hash,
+            "row_hash_snapshot": {r["row_id"]: row_hash_for(r) for r in pending},
+            "evidence_hash_snapshot": evidence_hashes,
+            "parts": parts_record,
+            "row_ids": [r["row_id"] for r in pending],
+            "processed_reply_refs": [],
+        })
+
+        result_data.update(
+            digest_id=digest_id, parts=part_paths, row_count=n_rows
+        )
+        return ledger
+
+    try:
+        mutate_ledger(ledger_path, mutator)
+    except _NothingToDigestError:
+        return Envelope(status="ok", code="NOTHING_TO_DIGEST")
+    return Envelope(status="ok", data=result_data)
+
+
 def emit_system_validation(args: argparse.Namespace) -> Envelope:
     """Implement C-4-4: read-only projection of judged rows into §6.4 (INV-A1)."""
     ledger_path = resolve_under_root(args.ledger.parent, args.ledger)
@@ -1504,6 +1827,7 @@ HANDLERS["derive-conops"] = handle_derive_conops
 HANDLERS["normalize-rows"] = handle_normalize_rows
 HANDLERS["check-rows"] = handle_check_rows
 HANDLERS["record-evidence"] = handle_record_evidence
+HANDLERS["assemble-digest"] = handle_assemble_digest
 HANDLERS["emit-system-validation"] = emit_system_validation
 
 
@@ -1556,6 +1880,14 @@ def build_parser() -> argparse.ArgumentParser:
             sp.add_argument("--summary", required=True, help="Conductor's evidence_summary prose")
             sp.add_argument("--conops", type=Path, required=True, help="Path to conops.md")
             sp.add_argument("--commit", help="Optional implementation git short hash")
+        if name == "assemble-digest":
+            sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
+            sp.add_argument("--conops", type=Path, required=True, help="Path to conops.md")
+            sp.add_argument(
+                "--session",
+                default=None,
+                help="Session id for the digest header (default: '-')",
+            )
         if name == "emit-system-validation":
             sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
             sp.add_argument("--conops", type=Path, required=True, help="Path to conops.md")
