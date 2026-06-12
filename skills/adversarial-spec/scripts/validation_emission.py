@@ -29,13 +29,18 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
+import tempfile
+import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
+
+from filelock import FileLock, Timeout
 
 __version__ = "0.1.0"
 
@@ -171,6 +176,162 @@ def stamp_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
     return stamped
 
 
+# ── Ledger I/O: lock + atomic write + corrupt quarantine (INV-A2, FM-7) ─────
+
+#: spec §7 (R3 convergent): FileLock timeout before LEDGER_BUSY.
+LEDGER_LOCK_TIMEOUT_S = 10.0
+
+_CORRUPT_TS_FORMAT = "%Y%m%dT%H%M%SZ"
+
+
+class LedgerBusyError(Exception):
+    """Lock not acquired within the timeout → exit 3 ``LEDGER_BUSY``."""
+
+    def __init__(
+        self,
+        lock_path: Path,
+        owner_pid: int | None = None,
+        lock_age_s: float | None = None,
+    ) -> None:
+        self.lock_path = Path(lock_path)
+        self.owner_pid = owner_pid
+        self.lock_age_s = lock_age_s
+        owner = f"owner pid {owner_pid}" if owner_pid is not None else "owner unknown"
+        age = f"lock age {lock_age_s:.1f}s" if lock_age_s is not None else "lock age unknown"
+        super().__init__(f"ledger lock busy ({owner}; {age}): {self.lock_path}")
+
+
+class LedgerCorruptError(Exception):
+    """Unparseable ledger → exit 3 ``LEDGER_CORRUPT``; bytes quarantined first,
+    the ledger itself is NEVER auto-repaired (restore from git — spec §7)."""
+
+    def __init__(self, ledger_path: Path, quarantine_path: Path) -> None:
+        self.ledger_path = Path(ledger_path)
+        self.quarantine_path = Path(quarantine_path)
+        super().__init__(
+            f"ledger unparseable: {self.ledger_path}; "
+            f"corrupt bytes copied to {self.quarantine_path}; restore from git"
+        )
+
+
+def _ledger_lock_path(ledger_path: Path) -> Path:
+    return Path(f"{ledger_path}.lock")
+
+
+def _lock_owner_path(lock_path: Path) -> Path:
+    return Path(f"{lock_path}.owner")
+
+
+def _read_lock_diagnostics(lock_path: Path) -> tuple[int | None, float | None]:
+    """Best-effort owner pid + lock age for the LEDGER_BUSY detail ("when readable")."""
+    owner_pid: int | None = None
+    lock_age_s: float | None = None
+    try:
+        owner = json.loads(_lock_owner_path(lock_path).read_text(encoding="utf-8"))
+        if isinstance(owner.get("pid"), int):
+            owner_pid = owner["pid"]
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        pass
+    try:
+        lock_age_s = max(0.0, time.time() - lock_path.stat().st_mtime)
+    except OSError:
+        pass
+    return owner_pid, lock_age_s
+
+
+def _quarantine_corrupt(ledger_path: Path, raw: bytes) -> Path:
+    """Copy corrupt bytes aside FIRST (forensics); never touch the ledger."""
+    stamp = datetime.now(timezone.utc).strftime(_CORRUPT_TS_FORMAT)
+    quarantine = ledger_path.with_name(f"{ledger_path.name}.corrupt-{stamp}")
+    quarantine.write_bytes(raw)
+    return quarantine
+
+
+def _parse_ledger(ledger_path: Path) -> dict[str, Any]:
+    raw = ledger_path.read_bytes()
+    try:
+        data = json.loads(raw.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        quarantine = _quarantine_corrupt(ledger_path, raw)
+        raise LedgerCorruptError(ledger_path, quarantine) from None
+    if not isinstance(data, dict):
+        quarantine = _quarantine_corrupt(ledger_path, raw)
+        raise LedgerCorruptError(ledger_path, quarantine)
+    return data
+
+
+def read_ledger(ledger_path: Path) -> dict[str, Any]:
+    """Read-only ledger access — no lock file, no write path (INV-A2).
+
+    Atomic rename on the write side guarantees readers never see torn bytes.
+    """
+    return _parse_ledger(Path(ledger_path))
+
+
+def _atomic_write_json(path: Path, data: dict[str, Any]) -> None:
+    """Same-directory tmp + fsync + os.replace (the gauntlet/persistence.py
+    pattern). Crash mid-write leaves the prior file intact and no .tmp litter.
+    Durability scope is process death, not power loss (spec §7 / AUDT)."""
+    tmp = tempfile.NamedTemporaryFile(
+        dir=path.parent, delete=False, suffix=".tmp", mode="w", encoding="utf-8"
+    )
+    try:
+        json.dump(data, tmp, indent=2, ensure_ascii=False)
+        tmp.write("\n")
+        tmp.flush()
+        os.fsync(tmp.fileno())
+        tmp.close()
+        os.replace(tmp.name, path)
+    except Exception:
+        try:
+            tmp.close()
+        except OSError:
+            pass
+        try:
+            os.unlink(tmp.name)
+        except OSError:
+            pass
+        raise
+
+
+def mutate_ledger(
+    ledger_path: Path,
+    mutator: Callable[[dict[str, Any]], dict[str, Any]],
+    *,
+    timeout_s: float = LEDGER_LOCK_TIMEOUT_S,
+) -> dict[str, Any]:
+    """THE single mutation helper (INV-A2): read → mutate → atomic tmp+rename,
+    all INSIDE ``validation-rows.json.lock``. The eight mutating subcommands
+    route through here; nothing else writes the ledger."""
+    ledger_path = Path(ledger_path)
+    lock_path = _ledger_lock_path(ledger_path)
+    lock = FileLock(str(lock_path))
+    try:
+        lock.acquire(timeout=timeout_s)
+    except Timeout:
+        owner_pid, lock_age_s = _read_lock_diagnostics(lock_path)
+        raise LedgerBusyError(lock_path, owner_pid, lock_age_s) from None
+    owner_path = _lock_owner_path(lock_path)
+    try:
+        try:
+            owner_path.write_text(
+                json.dumps({"pid": os.getpid(), "acquired_at": utc_now()}),
+                encoding="utf-8",
+            )
+        except OSError:
+            pass  # owner sidecar is diagnostic-only — never blocks the mutation
+        data = _parse_ledger(ledger_path)
+        mutated = mutator(data)
+        _atomic_write_json(ledger_path, mutated)
+        return mutated
+    finally:
+        try:
+            owner_path.unlink()
+        except OSError:
+            pass
+        lock.release()
+
+
 # ── CLI boundary ─────────────────────────────────────────────────────────────
 
 
@@ -249,6 +410,16 @@ def main(argv: list[str] | None = None) -> int:
     handler = HANDLERS[args.subcommand]
     try:
         envelope = handler(args)
+    except LedgerBusyError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        envelope = Envelope(
+            "error", "LEDGER_BUSY", issues=[make_issue("LEDGER_BUSY", str(exc))]
+        )
+    except LedgerCorruptError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        envelope = Envelope(
+            "error", "LEDGER_CORRUPT", issues=[make_issue("LEDGER_CORRUPT", str(exc))]
+        )
     except Exception as exc:  # noqa: BLE001 — boundary: stdout stays an envelope
         print(f"error: {exc}", file=sys.stderr)
         envelope = Envelope(

@@ -20,17 +20,23 @@ import json
 import re
 
 import pytest
+from filelock import FileLock, Timeout
 from validation_emission import (
     ENVELOPE_STATUSES,
     EXIT_ENV,
     EXIT_ISSUES,
     EXIT_OK,
+    LEDGER_LOCK_TIMEOUT_S,
     SCHEMA_VERSION,
     SUBCOMMANDS,
+    LedgerBusyError,
+    LedgerCorruptError,
     __version__,
     exit_code_for_status,
     main,
     module_version,
+    mutate_ledger,
+    read_ledger,
     stamp_artifact,
     utc_now,
 )
@@ -171,3 +177,144 @@ def test_envelope_module_version_is_version_plus_git_short_hash():
 def test_envelope_timestamps_utc_rfc3339_z():
     now = utc_now()
     assert RFC3339_Z.match(now), now
+
+
+# ═══ C-1.2 lock-atomic-corrupt (TC-3.9) ══════════════════════════════════════
+
+
+@pytest.fixture
+def ledger(tmp_path):
+    path = tmp_path / "validation-rows.json"
+    path.write_text(json.dumps({"rows": [{"row_id": "r-US1-1"}]}, indent=2) + "\n")
+    return path
+
+
+# ── AC-1: FileLock 10s timeout → LEDGER_BUSY (exit 3) ────────────────────────
+
+
+def test_lock_default_timeout_constant_is_10s():
+    assert LEDGER_LOCK_TIMEOUT_S == 10.0
+
+
+def test_lock_contention_raises_ledger_busy(ledger):
+    competitor = FileLock(f"{ledger}.lock")
+    with competitor:
+        with pytest.raises(LedgerBusyError) as exc_info:
+            mutate_ledger(ledger, lambda data: data, timeout_s=0.2)
+    err = exc_info.value
+    assert err.lock_age_s is None or err.lock_age_s >= 0
+    assert str(err), "LedgerBusyError must render a human-readable detail"
+    # the contended mutation must not have touched the ledger
+    assert json.loads(ledger.read_text())["rows"][0]["row_id"] == "r-US1-1"
+
+
+def test_lock_busy_maps_to_exit3_envelope_at_boundary(capsys, monkeypatch, tmp_path):
+    import validation_emission as ve
+
+    def boom(_args):
+        raise LedgerBusyError(tmp_path / "validation-rows.json.lock", 4242, 12.5)
+
+    monkeypatch.setitem(ve.HANDLERS, "status", boom)
+    exit_code = main(["status"])
+    out = capsys.readouterr().out
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ENV
+    assert envelope["status"] == "error"
+    assert envelope["code"] == "LEDGER_BUSY"
+    assert "4242" in envelope["issues"][0]["detail"], "owner pid surfaces when readable"
+
+
+def test_lock_held_for_entire_mutation_single_helper(ledger):
+    """AC-4: the single mutation helper holds the lock around read+mutate+write."""
+
+    def mutator(data):
+        with pytest.raises(Timeout):
+            FileLock(f"{ledger}.lock").acquire(timeout=0.05)
+        data["rows"].append({"row_id": "r-US1-2"})
+        return data
+
+    mutated = mutate_ledger(ledger, mutator, timeout_s=1.0)
+    assert [r["row_id"] for r in mutated["rows"]] == ["r-US1-1", "r-US1-2"]
+    # lock released afterwards: immediate re-acquire must succeed
+    FileLock(f"{ledger}.lock").acquire(timeout=0.05).lock.release()
+
+
+def test_lock_not_created_by_read_only_path(ledger):
+    """AC-4: read-only access has no write path — not even a lock file."""
+    data = read_ledger(ledger)
+    assert data["rows"][0]["row_id"] == "r-US1-1"
+    assert not (ledger.parent / f"{ledger.name}.lock").exists()
+
+
+# ── AC-2: atomic tmp+rename inside the lock; crash leaves prior intact ───────
+
+
+def test_atomic_mutation_persists_and_leaves_no_tmp_litter(ledger):
+    mutate_ledger(ledger, lambda data: {**data, "rows": []}, timeout_s=1.0)
+    assert json.loads(ledger.read_text())["rows"] == []
+    assert not list(ledger.parent.glob("*.tmp")), "no .tmp litter after success"
+
+
+def test_atomic_crash_mid_mutation_leaves_prior_ledger_intact(ledger):
+    """TC-3.9c: a mutator crash must not corrupt or alter the ledger."""
+    before = ledger.read_text()
+
+    def exploding_mutator(data):
+        data["rows"] = "garbage-in-flight"
+        raise RuntimeError("simulated crash mid-mutation")
+
+    with pytest.raises(RuntimeError):
+        mutate_ledger(ledger, exploding_mutator, timeout_s=1.0)
+    assert ledger.read_text() == before, "prior ledger must remain intact"
+    assert not list(ledger.parent.glob("*.tmp")), "no .tmp litter after crash"
+    # lock must be released after the crash: a fresh mutation succeeds
+    mutate_ledger(ledger, lambda data: data, timeout_s=0.5)
+
+
+# ── AC-3: malformed ledger → quarantine copy first, LEDGER_CORRUPT, no repair ─
+
+
+def test_corrupt_ledger_quarantined_and_never_auto_repaired(tmp_path):
+    ledger_path = tmp_path / "validation-rows.json"
+    corrupt_bytes = b'{"rows": [TRUNCATED'
+    ledger_path.write_bytes(corrupt_bytes)
+
+    with pytest.raises(LedgerCorruptError) as exc_info:
+        read_ledger(ledger_path)
+
+    quarantines = sorted(tmp_path.glob("validation-rows.json.corrupt-*"))
+    assert len(quarantines) == 1, "corrupt bytes must be copied aside FIRST"
+    assert quarantines[0].read_bytes() == corrupt_bytes
+    assert exc_info.value.quarantine_path == quarantines[0]
+    assert ledger_path.read_bytes() == corrupt_bytes, "never auto-repaired"
+
+
+def test_corrupt_ledger_during_mutation_quarantines_without_writing(tmp_path):
+    ledger_path = tmp_path / "validation-rows.json"
+    corrupt_bytes = b"not json at all"
+    ledger_path.write_bytes(corrupt_bytes)
+
+    with pytest.raises(LedgerCorruptError):
+        mutate_ledger(ledger_path, lambda data: data, timeout_s=0.5)
+    assert ledger_path.read_bytes() == corrupt_bytes
+    assert list(tmp_path.glob("validation-rows.json.corrupt-*"))
+    assert not list(tmp_path.glob("*.tmp"))
+
+
+def test_corrupt_maps_to_exit3_envelope_at_boundary(capsys, monkeypatch, tmp_path):
+    import validation_emission as ve
+
+    ledger_path = tmp_path / "validation-rows.json"
+    quarantine = tmp_path / "validation-rows.json.corrupt-20260612T000000Z"
+
+    def boom(_args):
+        raise LedgerCorruptError(ledger_path, quarantine)
+
+    monkeypatch.setitem(ve.HANDLERS, "status", boom)
+    exit_code = main(["status"])
+    out = capsys.readouterr().out
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ENV
+    assert envelope["status"] == "error"
+    assert envelope["code"] == "LEDGER_CORRUPT"
+    assert "corrupt-20260612T000000Z" in envelope["issues"][0]["detail"]
