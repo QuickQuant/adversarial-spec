@@ -1324,7 +1324,20 @@ def emit_system_validation(args: argparse.Namespace) -> Envelope:
     # We use the fresh hash for the artifact, but we refuse if the ledger
     # is stale relative to the story hashes (FM-3).
 
-    for row in ledger.get("rows", []):
+    # Active-row predicate (spec §6.2, formal): a row is active iff it appears
+    # in rows[] AND its row_id appears in no superseded[].row_snapshot.row_id.
+    # Superseded rows never appear in the projection (INV-10) and never count
+    # toward coverage (INV-7) — even if unjudged, they must not block.
+    superseded_ids = {
+        entry.get("row_snapshot", {}).get("row_id")
+        for entry in ledger.get("superseded", [])
+    }
+    active_rows = [
+        row for row in ledger.get("rows", [])
+        if row.get("row_id") not in superseded_ids
+    ]
+
+    for row in active_rows:
         row_id = row.get("row_id")
         result = row.get("result")
         conops_ref = row.get("conops_ref")

@@ -975,6 +975,61 @@ def test_emit_system_validation_refuses_unvalidated_story_tc36(capsys, emission_
     assert any(i["code"] == "UNVALIDATED_USER_STORY" for i in envelope["issues"])
 
 
+def test_emit_system_validation_skips_superseded_rows_inv10(capsys, emission_env):
+    """Active-row predicate (spec §6.2): a row left in rows[] whose row_id
+    appears in superseded[].row_snapshot.row_id is INACTIVE — it must neither
+    block emission (even unjudged) nor appear in the projection (INV-10), and
+    it must not satisfy coverage (INV-7)."""
+    tmp_path, ledger_path, conops_path = emission_env
+    ledger = json.loads(ledger_path.read_text())
+
+    # An unjudged superseded row: must not block emission or project.
+    stale_row = dict(ledger["rows"][0])
+    stale_row["row_id"] = "r-US1-9"
+    stale_row["result"] = None
+    stale_row["judgment"] = None
+    ledger["rows"].append(stale_row)
+    ledger["superseded"] = [{
+        "row_snapshot": {"row_id": "r-US1-9"},
+        "reason": "duplicate coverage",
+        "approver": "jason",
+        "approval_ref": "decision:2026-06-12T00:00:00Z",
+        "approved_at": "2026-06-12T00:00:00Z",
+        "replacement_row_id": "r-US1-1",
+    }]
+    ledger_path.write_text(json.dumps(ledger))
+
+    exit_code, out, _err = run_cli(capsys, [
+        "emit-system-validation", str(ledger_path), "--conops", str(conops_path)
+    ])
+    parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+
+    artifact = json.loads((tmp_path / "system_validation.json").read_text())
+    assert [r["row_id"] for r in artifact["rows"]] == ["r-US1-1", "r-US2-1"]
+
+    # A superseded PASS row must not satisfy coverage: retire US-2's only row.
+    ledger["superseded"].append({
+        "row_snapshot": {"row_id": "r-US2-1"},
+        "reason": "post-judgment retirement",
+        "approver": "jason",
+        "approval_ref": "decision:2026-06-12T00:00:01Z",
+        "approved_at": "2026-06-12T00:00:01Z",
+        "replacement_row_id": "r-US2-2",
+    })
+    ledger_path.write_text(json.dumps(ledger))
+
+    exit_code, out, _err = run_cli(capsys, [
+        "emit-system-validation", str(ledger_path), "--conops", str(conops_path)
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(
+        i["code"] == "UNVALIDATED_USER_STORY" and "US-2" in i["detail"]
+        for i in envelope["issues"]
+    )
+
+
 # ═══ C-2.3 check-rows (TC-2.3, INV-6, INV-11, CB-10) ══════════════════════════
 
 
