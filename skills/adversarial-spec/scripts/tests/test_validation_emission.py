@@ -949,3 +949,153 @@ def test_emit_system_validation_refuses_unvalidated_story_tc36(capsys, emission_
     envelope = parse_single_envelope(out)
     assert exit_code == EXIT_ISSUES
     assert any(i["code"] == "UNVALIDATED_USER_STORY" for i in envelope["issues"])
+
+
+# ═══ C-2.3 check-rows (TC-2.3, INV-6, INV-11, CB-10) ══════════════════════════
+
+
+@pytest.fixture
+def check_env(tmp_path):
+    conops_path = tmp_path / "conops.md"
+    conops_text = (
+        "## User stories\n"
+        "### US-1: First\n"
+        "### US-2: Second\n"
+    )
+    conops_path.write_text(conops_text)
+
+    ledger_path = tmp_path / "validation-rows.json"
+    row = {
+        "row_id": "r-US1-1",
+        "conops_ref": "US-1",
+        "scenario": "scenario 1",
+        "oracle": "Jason passes iff US-1 works as intended.",  # Issues: banned phrase, but has iff and US-1
+        "evidence_type": "narrative",
+        "test_targets": ["t1"],
+    }
+    row2 = {
+        "row_id": "r-US2-1",
+        "conops_ref": "US-2",
+        "scenario": "scenario 2",
+        "oracle": "Success iff US-2 is cool.",  # Issues: vague terminal, but has iff and US-2
+        "evidence_type": "narrative",
+        "test_targets": ["t2"],
+    }
+    ledger_path.write_text(json.dumps({"rows": [row, row2]}))
+
+    v_ledger_path = tmp_path / "verification-rows.json"
+    v_ledger_path.write_text(
+        json.dumps({"rows": [{"requirement_id": "req-1", "test_targets": ["t1"]}]})
+    )
+
+    return tmp_path, ledger_path, conops_path, v_ledger_path
+
+
+def test_check_rows_detects_oracle_lint_issues(capsys, check_env):
+    tmp_path, ledger_path, conops_path, _ = check_env
+    exit_code, out, _err = run_cli(
+        capsys, ["check-rows", str(ledger_path), "--conops", str(conops_path)]
+    )
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["status"] == "issues"
+
+    codes = [i["code"] for i in envelope["issues"]]
+    assert "BANNED_ORACLE_PHRASE" in codes  # "works as intended"
+    assert "VAGUE_ORACLE" in codes  # "Success" in short oracle
+
+
+def test_check_rows_detects_missing_iff_and_story_ref(capsys, tmp_path):
+    conops_path = tmp_path / "conops.md"
+    conops_path.write_text("### US-1: First")
+
+    ledger_path = tmp_path / "validation-rows.json"
+    row = {
+        "row_id": "r-1",
+        "conops_ref": "US-1",
+        "scenario": "s",
+        "oracle": "It just works.",  # No iff, no US-1
+        "evidence_type": "n",
+    }
+    ledger_path.write_text(json.dumps({"rows": [row]}))
+
+    exit_code, out, _err = run_cli(
+        capsys, ["check-rows", str(ledger_path), "--conops", str(conops_path)]
+    )
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    codes = [i["code"] for i in envelope["issues"]]
+    assert "ORACLE_MISSING_IFF" in codes
+    assert "ORACLE_MISSING_STORY_REF" in codes
+
+
+def test_check_rows_detects_incomplete_coverage(capsys, tmp_path):
+    conops_path = tmp_path / "conops.md"
+    conops_path.write_text("### US-1: First\n### US-2: Second")
+
+    ledger_path = tmp_path / "validation-rows.json"
+    row = {
+        "row_id": "r-1",
+        "conops_ref": "US-1",
+        "scenario": "s",
+        "oracle": "US-1 iff x",
+        "evidence_type": "n",
+    }
+    ledger_path.write_text(json.dumps({"rows": [row]}))
+
+    # Normal mode: error
+    exit_code, out, _err = run_cli(
+        capsys, ["check-rows", str(ledger_path), "--conops", str(conops_path)]
+    )
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(i["code"] == "INCOMPLETE_COVERAGE" for i in envelope["issues"])
+
+    # Draft mode: advisory (status ok)
+    exit_code, out, _err = run_cli(
+        capsys,
+        ["check-rows", str(ledger_path), "--conops", str(conops_path), "--draft"],
+    )
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    assert any(i["code"] == "INCOMPLETE_COVERAGE_ADVISORY" for i in envelope["issues"])
+
+
+def test_check_rows_detects_relabeled_verification(capsys, check_env):
+    tmp_path, ledger_path, conops_path, v_ledger_path = check_env
+    # r-US1-1 has test_targets ["t1"], which is in v_ledger_path
+
+    exit_code, out, _err = run_cli(
+        capsys,
+        [
+            "check-rows",
+            str(ledger_path),
+            "--conops",
+            str(conops_path),
+            "--verification-ledger",
+            str(v_ledger_path),
+        ],
+    )
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(i["code"] == "RELABELED_VERIFICATION" for i in envelope["issues"])
+
+    # Fixed with rationale
+    ledger = json.loads(ledger_path.read_text())
+    ledger["rows"][0]["evidence_rationale"] = "Validating same target with human eyes."
+    ledger_path.write_text(json.dumps(ledger))
+
+    exit_code, out, _err = run_cli(
+        capsys,
+        [
+            "check-rows",
+            str(ledger_path),
+            "--conops",
+            str(conops_path),
+            "--verification-ledger",
+            str(v_ledger_path),
+        ],
+    )
+    envelope = parse_single_envelope(out)
+    # Still has oracle lint issues, but RELABELED_VERIFICATION should be gone.
+    assert not any(i["code"] == "RELABELED_VERIFICATION" for i in envelope["issues"])

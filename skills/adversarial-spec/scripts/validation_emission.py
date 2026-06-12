@@ -100,6 +100,23 @@ _DELIVERED_BY = {
 
 _GIT_HASH_RE = re.compile(r"^[0-9a-f]{4,40}$")
 
+BANNED_ORACLE_PHRASES = (
+    "tests pass",
+    "all tests pass",
+    "works as expected",
+    "as intended",
+    "no issues found",
+    "behaved correctly",
+    "correctly implemented",
+)
+
+VAGUE_TERMINALS = (
+    "looks good",
+    "passed",
+    "success",
+    "confirmed",
+)
+
 
 # ── Envelope primitives (INV-A3) ─────────────────────────────────────────────
 
@@ -601,6 +618,139 @@ def handle_derive_conops(args: argparse.Namespace) -> Envelope:
     )
 
 
+def handle_check_rows(args: argparse.Namespace) -> Envelope:
+    """Implement C-2.3: check validation rows for oracle quality and coverage (INV-6, INV-11)."""
+    ledger_path = resolve_under_root(args.ledger.parent, args.ledger)
+    ledger = read_ledger(ledger_path)
+
+    conops_path = resolve_under_root(ledger_path.parent, args.conops)
+    conops_bytes = conops_path.read_bytes()
+    enforce_input_bounds("conops", conops_bytes)
+    conops_text = conops_bytes.decode("utf-8")
+    story_hashes = compute_story_hashes(conops_text)
+    all_story_ids = set(story_hashes.keys())
+
+    verification_targets = set()
+    if args.verification_ledger:
+        v_ledger_path = resolve_under_root(ledger_path.parent, args.verification_ledger)
+        v_ledger = _load_json_object(v_ledger_path, "verification-ledger")
+        for row in v_ledger.get("rows", []):
+            targets = row.get("test_targets", [])
+            if isinstance(targets, list):
+                verification_targets.update(targets)
+
+    issues = []
+    seen_stories = set()
+
+    for row in ledger.get("rows", []):
+        row_id = row.get("row_id")
+        conops_ref = row.get("conops_ref")
+        oracle = row.get("oracle", "")
+        evidence_rationale = row.get("evidence_rationale", "")
+        test_targets = row.get("test_targets", [])
+
+        if conops_ref:
+            seen_stories.add(conops_ref)
+
+        # AC-2: Oracle layer-2 lint
+        oracle_lower = oracle.lower()
+        for phrase in BANNED_ORACLE_PHRASES:
+            if phrase in oracle_lower:
+                issues.append(
+                    make_issue(
+                        "BANNED_ORACLE_PHRASE",
+                        f"oracle contains banned phrase: {phrase!r}",
+                        row_id,
+                    )
+                )
+
+        if "iff" not in oracle_lower:
+            issues.append(
+                make_issue(
+                    "ORACLE_MISSING_IFF",
+                    "oracle must contain literal 'iff' (INV-6)",
+                    row_id,
+                )
+            )
+
+        if conops_ref and conops_ref not in oracle:
+            issues.append(
+                make_issue(
+                    "ORACLE_MISSING_STORY_REF",
+                    f"oracle must refer to {conops_ref} (TC-2.3)",
+                    row_id,
+                )
+            )
+
+        for vague in VAGUE_TERMINALS:
+            if vague in oracle_lower:
+                # "vague terminals unless paired with concrete observable"
+                # Structural check: if oracle is very short, it's probably just the vague terminal.
+                if len(oracle.split()) < 10:
+                    issues.append(
+                        make_issue(
+                            "VAGUE_ORACLE",
+                            f"oracle contains vague terminal {vague!r} without sufficient detail",
+                            row_id,
+                        )
+                    )
+
+        # AC-3: Anti-relabeling
+        if verification_targets and test_targets:
+            val_targets_set = set(test_targets)
+            overlap = val_targets_set & verification_targets
+            if val_targets_set and val_targets_set.issubset(verification_targets):
+                if not evidence_rationale:
+                    issues.append(
+                        make_issue(
+                            "RELABELED_VERIFICATION",
+                            "validation test_targets are a subset of verification targets but rationale is missing",
+                            row_id,
+                        )
+                    )
+            elif overlap:
+                if not evidence_rationale:
+                    issues.append(
+                        make_issue(
+                            "OVERLAPPING_TARGETS",
+                            "validation test_targets overlap with verification targets but rationale is missing",
+                            row_id,
+                        )
+                    )
+
+    # AC-1: Coverage check
+    missing_coverage = all_story_ids - seen_stories
+    if missing_coverage:
+        if args.draft:
+            # Advisory: we report it in issues but we might change status to "ok" if no other issues.
+            for story_id in sorted(missing_coverage):
+                issues.append(
+                    make_issue(
+                        "INCOMPLETE_COVERAGE_ADVISORY",
+                        f"draft mode: story {story_id} is not yet covered",
+                        None,
+                    )
+                )
+        else:
+            for story_id in sorted(missing_coverage):
+                issues.append(
+                    make_issue(
+                        "INCOMPLETE_COVERAGE",
+                        f"story {story_id} must have at least one validation row (CB-10)",
+                        None,
+                    )
+                )
+
+    status = "ok"
+    if issues:
+        # If it's only advisory, status is still ok.
+        is_only_advisory = all(i["code"].endswith("_ADVISORY") for i in issues)
+        if not (args.draft and is_only_advisory):
+            status = "issues"
+
+    return Envelope(status=status, issues=issues)
+
+
 # ── Ledger I/O: lock + atomic write + corrupt quarantine (INV-A2, FM-7) ─────
 
 #: spec §7 (R3 convergent): FileLock timeout before LEDGER_BUSY.
@@ -943,6 +1093,7 @@ HANDLERS: dict[str, Callable[[argparse.Namespace], Envelope]] = {
     name: _not_implemented(name) for name in SUBCOMMANDS
 }
 HANDLERS["derive-conops"] = handle_derive_conops
+HANDLERS["check-rows"] = handle_check_rows
 HANDLERS["emit-system-validation"] = emit_system_validation
 
 
@@ -970,6 +1121,19 @@ def build_parser() -> argparse.ArgumentParser:
                 "--force",
                 action="store_true",
                 help="Allow overwrite when an existing ledger references prior conops_hash",
+            )
+        if name == "check-rows":
+            sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
+            sp.add_argument(
+                "--conops", type=Path, required=True, help="Path to conops.md"
+            )
+            sp.add_argument(
+                "--draft", action="store_true", help="Relax coverage to advisory"
+            )
+            sp.add_argument(
+                "--verification-ledger",
+                type=Path,
+                help="Optional path to verification ledger for anti-relabeling check",
             )
         if name == "emit-system-validation":
             sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
