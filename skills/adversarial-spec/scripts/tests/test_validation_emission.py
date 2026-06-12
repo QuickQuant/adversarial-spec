@@ -1315,7 +1315,7 @@ def test_check_rows_invalid_evidence_type_tc24(capsys, tmp_path):
     assert "INVALID_EVIDENCE_TYPE" in codes
 
 
-# ═══ C-3.1 record-evidence (TC-3.1, FM-2, INV-9, INV-12) ══════════════════════
+# ═══ C-3.1 record-evidence (TC-3.7, TC-G4, FM-2, INV-9, INV-12) ═══════════════
 
 
 @pytest.fixture
@@ -1341,6 +1341,10 @@ def evidence_env(tmp_path):
 
 
 def test_record_evidence_scaffolds_file_and_mutates_ledger(capsys, evidence_env):
+    """TC-3.7 (AC-1/AC-2): scaffolds evidence.md with canonical FM-2
+    front-matter (exact keys/order, hashes stamped by the module) and routes
+    the evidence_summary + row_hash/story_hash/commit binding through
+    mutate_ledger (INV-9, INV-12)."""
     tmp_path, ledger_path, conops_path = evidence_env
 
     exit_code, out, _err = run_cli(capsys, [
@@ -1380,6 +1384,9 @@ def test_record_evidence_scaffolds_file_and_mutates_ledger(capsys, evidence_env)
 
 
 def test_record_evidence_validates_existing_file_hashes(capsys, evidence_env):
+    """TC-3.7 hash-chain branch (INV-12): evidence with a stale embedded
+    row_hash (row edited after capture) is rejected via the distinct
+    EVIDENCE_HASH_MISMATCH reject code."""
     tmp_path, ledger_path, conops_path = evidence_env
 
     # First call: scaffold
@@ -1418,6 +1425,9 @@ def test_record_evidence_validates_existing_file_hashes(capsys, evidence_env):
 
 
 def test_record_evidence_detects_malformed_front_matter(capsys, evidence_env):
+    """TC-3.7 malformed branch (AC-1): an evidence file with no front-matter
+    is rejected with the distinct EVIDENCE_MALFORMED code (separate from the
+    hash-mismatch code)."""
     tmp_path, ledger_path, conops_path = evidence_env
 
     ev_dir = tmp_path / "validation-evidence" / "r-US1-1"
@@ -1563,6 +1573,9 @@ def test_normalize_rows_handwritten_hash_flagged_by_check_rows_tcg11(capsys, tmp
 
 
 def test_record_evidence_per_story_invalidation_fm3(capsys, tmp_path):
+    """TC-G4 (AC-3, FM-3): editing one story's conops section invalidates only
+    that story's evidence (story_hash mismatch) while other stories' evidence
+    stays valid."""
     conops_path = tmp_path / "conops.md"
     conops_text = (
         "## User stories\n"
