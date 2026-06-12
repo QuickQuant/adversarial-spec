@@ -266,11 +266,19 @@ JUSTIFICATION_MAX_BYTES = 2 * 1024
 LEDGER_MAX_BYTES = 5 * 1024 * 1024
 CONOPS_MAX_BYTES = 1024 * 1024
 
+#: Raw Telegram update payloads + the sender-allowlist registry are small
+#: JSON files; bound them like a reply to keep the inbound trust boundary
+#: cheap to read (C-1-4 / SEC-10).
+TELEGRAM_UPDATE_MAX_BYTES = REPLY_MAX_BYTES
+REGISTRY_MAX_BYTES = REPLY_MAX_BYTES
+
 _INPUT_BOUNDS = {
     "reply": REPLY_MAX_BYTES,
     "justification": JUSTIFICATION_MAX_BYTES,
     "ledger": LEDGER_MAX_BYTES,
     "conops": CONOPS_MAX_BYTES,
+    "telegram_update": TELEGRAM_UPDATE_MAX_BYTES,
+    "registry": REGISTRY_MAX_BYTES,
 }
 
 #: §6.5 multi-part rule: per-part budget in UTF-8 BYTES (Telegram raw limit is
@@ -1902,6 +1910,103 @@ class _AlreadyProcessedError(Exception):
     """Duplicate reply_ref — acknowledged, zero new mutations (TC-G6/RC-4)."""
 
 
+# ── Inbound telegram trust boundary (C-4.2; SEC-1/SEC-2/SEC-3, INV-15) ───────
+
+
+def compute_sender_hash(sender_id: str) -> str:
+    """sha256 of the sender id (full hex). The RAW sender id is never stored
+    in the ledger — only this hash (gauntlet SEC-1/OP-1, the module's
+    sole-hex-producer rule)."""
+    return hashlib.sha256(str(sender_id).encode("utf-8")).hexdigest()
+
+
+def load_allowed_sender_ids(registry_path: Path) -> set[str]:
+    """Resolve the telegram sender allowlist from the registry config,
+    FAIL-CLOSED (gauntlet SEC-2). ``allowed_sender_ids`` is distinct from the
+    chat id and is never hardcoded. Missing file, unreadable JSON, missing
+    ``telegram.allowed_sender_ids``, a non-list value, or an empty list all
+    raise ``ALLOWLIST_CONFIG_INVALID`` — telegram parsing stays blocked."""
+
+    def _invalid(reason: str) -> ValidationIssuesError:
+        return ValidationIssuesError(
+            "ALLOWLIST_CONFIG_INVALID",
+            [make_issue(
+                "ALLOWLIST_CONFIG_INVALID",
+                f"telegram sender allowlist unusable (fail-closed): {reason}",
+            )],
+        )
+
+    if registry_path is None:
+        raise _invalid("--registry is required for --source telegram")
+    try:
+        raw = Path(registry_path).read_bytes()
+    except OSError as exc:
+        raise _invalid(f"cannot read registry {registry_path}: {exc}") from None
+    enforce_input_bounds("registry", raw)
+    try:
+        config = json.loads(raw)
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise _invalid(f"registry is not valid JSON: {exc}") from None
+    if not isinstance(config, dict):
+        raise _invalid("registry root must be a JSON object")
+    telegram = config.get("telegram")
+    if not isinstance(telegram, dict):
+        raise _invalid("registry missing a telegram block")
+    allowed = telegram.get("allowed_sender_ids")
+    if not isinstance(allowed, list) or not allowed:
+        raise _invalid(
+            "telegram.allowed_sender_ids must be a non-empty list "
+            "(distinct from chat_id — SEC-2)"
+        )
+    return {str(sender) for sender in allowed}
+
+
+def extract_telegram_reply(update_path: Path) -> dict[str, str]:
+    """Extract sender id, message id, and text from a RAW Telegram update
+    payload (gauntlet SEC-1 — the conductor never transcribes identity; the
+    module owns extraction). Returns {sender_id, message_id, text}. A
+    structurally-unusable payload raises a reprompt (no mutation)."""
+    try:
+        raw = Path(update_path).read_bytes()
+    except OSError as exc:
+        raise _RepromptError([make_issue(
+            "TELEGRAM_UPDATE_UNREADABLE",
+            f"cannot read update file {update_path}: {exc}",
+        )]) from None
+    enforce_input_bounds("telegram_update", raw)
+    try:
+        update = json.loads(raw)
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise _RepromptError([make_issue(
+            "TELEGRAM_UPDATE_MALFORMED",
+            f"update file is not valid JSON: {exc}",
+        )]) from None
+    message = (update or {}).get("message") if isinstance(update, dict) else None
+    if not isinstance(message, dict):
+        raise _RepromptError([make_issue(
+            "TELEGRAM_UPDATE_MALFORMED",
+            "update payload has no message object",
+        )])
+    sender = message.get("from")
+    if not isinstance(sender, dict) or sender.get("id") is None:
+        raise _RepromptError([make_issue(
+            "TELEGRAM_UPDATE_MALFORMED",
+            "update message has no sender (message.from.id)",
+        )])
+    message_id = message.get("message_id")
+    text = message.get("text")
+    if not isinstance(text, str):
+        raise _RepromptError([make_issue(
+            "TELEGRAM_UPDATE_MALFORMED",
+            "update message has no text",
+        )])
+    return {
+        "sender_id": str(sender["id"]),
+        "message_id": str(message_id),
+        "text": text,
+    }
+
+
 def _quote(text: str, limit: int = 80) -> str:
     """Quote untrusted reply text, truncated (INV-A3)."""
     text = _one_line(text)
@@ -2417,6 +2522,13 @@ def build_parser() -> argparse.ArgumentParser:
             )
             sp.add_argument("--reply-file", type=Path, default=None,
                             help="Path to a file holding the reply text")
+            sp.add_argument("--update-file", type=Path, default=None,
+                            help="Path to a RAW Telegram update payload "
+                                 "(telegram source — module extracts sender, "
+                                 "message id, and text itself)")
+            sp.add_argument("--registry", type=Path, default=None,
+                            help="Path to the telegram sender-allowlist "
+                                 "registry (required for --source telegram)")
             sp.add_argument("--digest-id", required=True, help="Batch id (d-N)")
             sp.add_argument(
                 "--source", required=True, choices=["telegram", "terminal"],
@@ -2425,7 +2537,8 @@ def build_parser() -> argparse.ArgumentParser:
             sp.add_argument("--reply-ref", required=True,
                             help="Idempotency + provenance reference")
             sp.add_argument("--sender-id", default=None,
-                            help="Asserted identity (terminal source)")
+                            help="Asserted identity (terminal source; IGNORED "
+                                 "for telegram — SEC-1)")
         if name == "emit-system-validation":
             sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
             sp.add_argument("--conops", type=Path, required=True, help="Path to conops.md")

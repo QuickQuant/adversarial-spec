@@ -19,6 +19,7 @@ Run:
 import hashlib
 import json
 import re
+from pathlib import Path
 
 import pytest
 from filelock import FileLock, Timeout
@@ -2389,3 +2390,241 @@ def test_parse_reply_grammar_stale_digest_rejected(capsys, tmp_path):
     envelope = parse_single_envelope(out)
     assert exit_code == EXIT_ISSUES
     assert any(i["code"] == "BATCH_NOT_ACTIVE" for i in envelope["issues"])
+
+
+# ═══ C-4.2 telegram trust boundary / sender allowlist ════════════════════════
+# Selector tokens: telegram, sender, allowlist (the declared verify command is
+#   -k "sender or telegram or allowlist").
+# TC-INV-A4 (no hardcoded literal + counterfactual), TC-G3 (raw-payload sender
+# extraction, fail-closed config, hashed security event, zero mutations),
+# TC-G7 (terminal-source provenance + transcript reply_ref).
+
+ALLOWED_SENDER = "866010103"      # an allowlisted sender id (SYNTHETIC fixture)
+UNKNOWN_SENDER = "999999999"      # a non-allowlisted sender id
+REGISTRY_CHAT_ID = "12340000"     # distinct from any sender id (SEC-2)
+
+
+def _write_registry(tmp_path, allowed=(ALLOWED_SENDER,), chat_id=REGISTRY_CHAT_ID):
+    """A synthetic telegram registry: allowed_sender_ids is distinct from the
+    chat id (SEC-2). Returns the path."""
+    path = tmp_path / "telegram_registry.json"
+    path.write_text(json.dumps({
+        "telegram": {
+            "chat_id": chat_id,
+            "allowed_sender_ids": list(allowed),
+        }
+    }))
+    return path
+
+
+def _write_update(tmp_path, sender_id, text, message_id=4242, chat_id=REGISTRY_CHAT_ID,
+                  name="update.json"):
+    """A RAW Telegram Bot API update payload (the wake-listener writes these)."""
+    path = tmp_path / name
+    path.write_text(json.dumps({
+        "update_id": 100,
+        "message": {
+            "message_id": message_id,
+            "from": {"id": int(sender_id), "is_bot": False, "first_name": "x"},
+            "chat": {"id": int(chat_id), "type": "private"},
+            "text": text,
+        },
+    }))
+    return path
+
+
+def _telegram_reply(capsys, ledger_path, digest_id, update_path, registry_path,
+                    extra=()):
+    return run_cli(capsys, [
+        "parse-reply", str(ledger_path),
+        "--update-file", str(update_path),
+        "--digest-id", digest_id, "--source", "telegram",
+        "--reply-ref", "ignored-for-telegram",
+        "--registry", str(registry_path),
+        *extra,
+    ])
+
+
+def test_parse_reply_telegram_allowlisted_sender_applies_tcg3(capsys, tmp_path):
+    """TC-G3 (positive): a raw telegram update from an allowlisted sender is
+    parsed; reply_ref provenance comes from the payload message id."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path)
+    registry = _write_registry(tmp_path)
+    update = _write_update(tmp_path, ALLOWED_SENDER, "pass all", message_id=7777)
+
+    exit_code, out, _err = _telegram_reply(
+        capsys, ledger_path, digest_id, update, registry
+    )
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    for k in (1, 2, 3):
+        judgment = _row(ledger_path, f"r-US1-{k}")["judgment"]
+        assert _row(ledger_path, f"r-US1-{k}")["result"] == "pass"
+        assert judgment["source"] == "telegram"
+        # reply_ref provenance derives from the payload message id, NOT the
+        # caller-supplied --reply-ref (which is ignored for telegram).
+        assert "7777" in judgment["reply_ref"]
+        assert "ignored-for-telegram" not in judgment["reply_ref"]
+
+
+def test_parse_reply_telegram_non_allowlisted_sender_discarded_tcg3(capsys, tmp_path):
+    """TC-G3/TC-INV-A4 (negative): a non-allowlisted sender is DISCARDED with
+    exit 2 SENDER_NOT_ALLOWLISTED, a hashed-sender security event, and ZERO
+    judgment mutations (INV-15, OP-1)."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path)
+    registry = _write_registry(tmp_path)
+    update = _write_update(tmp_path, UNKNOWN_SENDER, "pass all")
+
+    rows_before = json.loads(ledger_path.read_text())["rows"]
+
+    exit_code, out, _err = _telegram_reply(
+        capsys, ledger_path, digest_id, update, registry
+    )
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["code"] == "SENDER_NOT_ALLOWLISTED"
+
+    ledger = json.loads(ledger_path.read_text())
+    # Zero judgment mutations: every row still unjudged.
+    assert ledger["rows"] == rows_before
+    assert all(r["result"] is None for r in ledger["rows"])
+
+    # A security event records the HASHED sender id — never the raw id.
+    events = [e for e in ledger.get("security_events", [])
+              if e["code"] == "SENDER_NOT_ALLOWLISTED"]
+    assert len(events) == 1
+    event = events[0]
+    assert "sender_hash" in event
+    assert UNKNOWN_SENDER not in json.dumps(event), "raw sender id must never be stored"
+    assert event["sender_hash"] == hashlib.sha256(
+        UNKNOWN_SENDER.encode("utf-8")
+    ).hexdigest()
+    assert event["digest_id"] == digest_id
+
+
+def test_parse_reply_telegram_ignores_caller_sender_id_tcg3(capsys, tmp_path):
+    """TC-G3 (counterfactual): a conductor-supplied --sender-id contradicting
+    the payload is IGNORED for telegram — identity comes from the raw update.
+    Asserting an allowlisted --sender-id while the payload sender is unknown
+    must STILL be discarded (SEC-1)."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path)
+    registry = _write_registry(tmp_path)
+    update = _write_update(tmp_path, UNKNOWN_SENDER, "pass all")
+
+    exit_code, out, _err = _telegram_reply(
+        capsys, ledger_path, digest_id, update, registry,
+        extra=["--sender-id", ALLOWED_SENDER],   # caller lies — must be ignored
+    )
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["code"] == "SENDER_NOT_ALLOWLISTED"
+
+
+def test_parse_reply_telegram_allowlist_config_missing_fail_closed_tcg3(capsys, tmp_path):
+    """TC-G3 (config): a missing registry file fails closed with
+    ALLOWLIST_CONFIG_INVALID; telegram parsing is blocked with zero mutations."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path)
+    update = _write_update(tmp_path, ALLOWED_SENDER, "pass all")
+    before = ledger_path.read_bytes()
+
+    exit_code, out, _err = _telegram_reply(
+        capsys, ledger_path, digest_id, update,
+        registry_path=tmp_path / "does_not_exist.json",
+    )
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["code"] == "ALLOWLIST_CONFIG_INVALID"
+    assert ledger_path.read_bytes() == before
+
+
+@pytest.mark.parametrize("payload", [
+    {},                                            # no telegram block
+    {"telegram": {}},                              # missing allowed_sender_ids
+    {"telegram": {"allowed_sender_ids": "866"}},   # not a list
+    {"telegram": {"allowed_sender_ids": []}},      # empty allowlist
+])
+def test_parse_reply_telegram_allowlist_config_malformed_fail_closed(
+    capsys, tmp_path, payload
+):
+    """TC-G3 (config): a malformed registry fails closed with
+    ALLOWLIST_CONFIG_INVALID (SEC-2 — allowed_sender_ids must be a non-empty
+    list)."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path)
+    registry = tmp_path / "bad_registry.json"
+    registry.write_text(json.dumps(payload))
+    update = _write_update(tmp_path, ALLOWED_SENDER, "pass all")
+    before = ledger_path.read_bytes()
+
+    exit_code, out, _err = _telegram_reply(
+        capsys, ledger_path, digest_id, update, registry
+    )
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["code"] == "ALLOWLIST_CONFIG_INVALID"
+    assert ledger_path.read_bytes() == before
+
+
+def test_parse_reply_telegram_chat_id_is_not_a_sender_authority_sec2(capsys, tmp_path):
+    """SEC-2: the chat id is NOT an authority — a payload whose sender id
+    equals the registry chat id (but is not in allowed_sender_ids) is still
+    discarded."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path)
+    registry = _write_registry(tmp_path, allowed=(ALLOWED_SENDER,),
+                               chat_id=REGISTRY_CHAT_ID)
+    # Sender id == chat id, which is deliberately NOT in allowed_sender_ids.
+    update = _write_update(tmp_path, REGISTRY_CHAT_ID, "pass all")
+
+    exit_code, out, _err = _telegram_reply(
+        capsys, ledger_path, digest_id, update, registry
+    )
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["code"] == "SENDER_NOT_ALLOWLISTED"
+
+
+def test_no_hardcoded_chat_or_sender_literal_in_source_tcinva4():
+    """TC-INV-A4 (counterfactual, static grep): the module source contains no
+    hardcoded chat/sender id literal — the allowlist is resolved from the
+    telegram registry config at runtime, never baked in."""
+    import validation_emission
+
+    source = Path(validation_emission.__file__).read_text()
+    # Jason's real chat/sender id from projects.yaml — must never appear in src.
+    assert "866010103" not in source
+    # No standalone 7+ digit numeric literal that would be a telegram id.
+    bare_ids = [
+        m.group(0) for m in re.finditer(r"(?<![\w.])\d{7,}(?![\w.])", source)
+    ]
+    assert not bare_ids, f"hardcoded telegram-id-like literals: {bare_ids}"
+
+
+def test_parse_reply_terminal_requires_transcript_reply_ref_tcg7(capsys, tmp_path):
+    """TC-G7 (SEC-3): terminal-source judgments must cite the AskUserQuestion
+    transcript — a non-transcript --reply-ref is rejected."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path)
+    before = ledger_path.read_bytes()
+    exit_code, out, _err = run_cli(capsys, [
+        "parse-reply", str(ledger_path), "pass r-US1-1",
+        "--digest-id", digest_id, "--source", "terminal",
+        "--reply-ref", "telegram:smuggled:1",   # not a transcript ref
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["code"] == "TERMINAL_REPLY_REF_REQUIRED"
+    assert ledger_path.read_bytes() == before
+
+
+def test_parse_reply_terminal_records_terminal_source_tcg7(capsys, tmp_path):
+    """TC-G7 (documented boundary): terminal judgments record source
+    'terminal', never 'telegram' — the weaker-trust framing is observable."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path)
+    exit_code, out, _err = run_cli(capsys, [
+        "parse-reply", str(ledger_path), "pass r-US1-1",
+        "--digest-id", digest_id, "--source", "terminal",
+        "--reply-ref", "transcript:sess-1:7",
+    ])
+    parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    judgment = _row(ledger_path, "r-US1-1")["judgment"]
+    assert judgment["source"] == "terminal"
+    assert judgment["reply_ref"] == "transcript:sess-1:7"
