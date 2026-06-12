@@ -3622,3 +3622,74 @@ def test_status_without_conops_still_reports_status(capsys, tmp_path):
     # midclose fixture has US-1 rows plus _digest_env's judged-pass US-2 row.
     assert data["coverage"]["stories"] == ["US-1", "US-2"]
     assert data["unjudged_row_count"] == 2
+
+
+# ── TC-0.2: phase-doc error-code playbook (STATIC) ───────────────────────────
+#
+# Doc-content check (no runtime): 08-implementation.md's "Validation leg" close
+# section must enumerate all eight fizzy gate reject classes, each in a playbook
+# table row paired with a non-empty conductor response. Asserts structure (the
+# code sits in a markdown table row whose response cell is non-empty), not vibes.
+
+#: The six reject classes raised by mark_system_validation_complete plus the two
+#: advance-time codes — the FIXED served-code contract (fizzy-validation-contract.md).
+DOC_GATE_REJECT_CODES = (
+    "SESSION_MISMATCH",
+    "VV_NOT_OBLIGATED_AT_ALTITUDE",
+    "VALIDATION_ARTIFACTS_INCOMPLETE",
+    "VALIDATION_KIND_MISMATCH",
+    "VV_LEDGER_HAS_FAILURES",
+    "VALIDATION_IS_RELABELED_VERIFICATION",
+    "SYSTEM_VALIDATION_MISSING",
+    "UNVALIDATED_USER_STORY",
+)
+
+
+_PHASE_DOC_RELS = (
+    Path("skills/adversarial-spec/phases/08-implementation.md"),  # from repo root
+    Path("phases/08-implementation.md"),  # from skills/adversarial-spec (symlink)
+)
+
+
+def _phase_doc_path() -> Path:
+    """08-implementation.md, located relative to the module source. The module
+    resolves under either the repo-root scripts/ or the symlinked deployed skill
+    (…/skills/adversarial-spec/scripts/), so walk ancestors and try both shapes."""
+    import validation_emission
+
+    here = Path(validation_emission.__file__).resolve()
+    for ancestor in here.parents:
+        for rel in _PHASE_DOC_RELS:
+            candidate = ancestor / rel
+            if candidate.exists():
+                return candidate
+    return here.parents[1] / _PHASE_DOC_RELS[0]  # best-effort for the failure message
+
+
+def test_doc_error_codes_playbook_covers_all_eight_gate_rejects_tc02():
+    """TC-0.2 (STATIC): 08-implementation.md enumerates all 8 gate reject codes,
+    each in a playbook table row with a non-empty conductor response cell."""
+    doc = _phase_doc_path()
+    assert doc.exists(), f"phase doc not found: {doc}"
+    text = doc.read_text(encoding="utf-8")
+
+    # Collect markdown table rows: a leading '|' line with a code in the first
+    # cell and a non-empty response in the last cell. The code is matched as a
+    # backtick-quoted token so prose mentions don't count as the playbook entry.
+    response_by_code: dict[str, str] = {}
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            continue
+        cells = [c.strip() for c in stripped.strip("|").split("|")]
+        if len(cells) < 2:
+            continue
+        first, last = cells[0], cells[-1]
+        for code in DOC_GATE_REJECT_CODES:
+            if f"`{code}`" in first and last:
+                response_by_code[code] = last
+
+    missing = [c for c in DOC_GATE_REJECT_CODES if c not in response_by_code]
+    assert not missing, f"gate reject codes absent from playbook table: {missing}"
+    for code, response in response_by_code.items():
+        assert response, f"{code} has an empty conductor-response cell"

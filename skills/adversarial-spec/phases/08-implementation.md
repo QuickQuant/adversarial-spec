@@ -208,6 +208,163 @@ until the pipeline returns "idle."
 
 ---
 
+### Validation leg (system altitude)
+
+> **Altitude gate — run this leg ONLY for system-altitude sessions.** Read the
+> session's `session_altitude` from the **card metadata via MCP**
+> (`get_card_metadata` with the explicit `board_id` from `projects.yaml` and the
+> `card_id` from the session detail file), never from local session state alone (US-2).
+> - `session_altitude == "system"` → run the close algorithm below before the
+>   Finalization advance.
+> - `session_altitude` is `component`/`feature`, or the v5 obligation is absent →
+>   **SKIP this entire section.** Sub-system altitudes carry no validation obligation
+>   (NG2); there is no ConOps, no ledger, and no close call to make.
+
+**What this closes.** Phase 7 drafted the validation rows (see `07-execution.md`
+"Validation leg"); this leg *executes the scenarios, gets Jason's judgments, and
+closes the gate*. Fizzy pipeline v5 refuses the Finalization→Completed advance for a
+system node whose ConOps user stories lack a *passing validation row* — a gate
+independent of verification (`system_validation_complete` ≠
+`system_verification_complete`; verification asks "built it right?", validation asks
+"built the right thing?"). The conductor drives the close; the module
+(`~/.claude/skills/adversarial-spec/scripts/validation_emission.py`, prefix every call
+with `uv run python`) validates shapes, stamps every hash, and mechanizes the
+emission — **it never generates prose and never judges**. Every invocation prints one
+JSON envelope on stdout (`{"status","code","issues","data"}`); exit 0 = ok, 2 =
+validation issues/reprompt, 3 = environment/lock/corrupt.
+
+**The MCP close call.** The gate is closed CARD-SIDE (never plan-side — a
+`system_validation` key in a task's verification binding is rejected by fizzy as
+`VV_ABOVE_ALTITUDE`). The single tool is
+`pipeline_mark_system_validation_complete`, called with explicit `board_id`:
+
+```
+pipeline_mark_system_validation_complete(
+  card_id                  = SESSION_CARD_ID,
+  session_id               = SESSION_ID,
+  board_id                 = BOARD_ID,            # explicit, from projects.yaml
+  validation_artifact_path = "<…>/system_validation.json",   # kind == "system-validation"
+  conops_path              = "<…>/roadmap/conops.md",
+)
+```
+
+Read-back the true state with `get_card_metadata` (`system_validation_complete: true`).
+A lost MCP response is resolved by reading metadata, never by re-emitting blindly (FM-8).
+
+**Close algorithm (single normative ordering — gauntlet DD-2; every step
+idempotent, re-entry starts at step 1):**
+
+1. **Preflight** `[conductor]`: read `board_id` (projects.yaml), `card_id` +
+   `session_id` (session detail file); `get_card_metadata` → verify session
+   match, `session_altitude == system`, pipeline v5+ obligation; if
+   `system_validation_complete` already true → skip to step 9. Verify clean
+   worktree; verify `conops.md` and ledger exist; re-derive ConOps and
+   compare hashes (OQ-3 RESOLVED: always re-derive at close entry) — story
+   mismatch → refresh protocol (§8 above) before proceeding; compare ledger
+   vs `drafted_baseline_hash` and surface any unexplained drift.
+2. All verification obligations discharged; all task cards through review.
+3. Evidence: for each active unjudged row, execute scenario → `record-evidence`
+   (front matter incl. commit hash, clean worktree).
+4. `assemble-digest`. `NOTHING_TO_DIGEST` + no failed rows → step 7.
+   `NOTHING_TO_DIGEST` + failed rows present → remediation loop (step 6) —
+   never emission (gauntlet CB-5).
+5. Send parts (`telegram-send` via stdin, bounded retry) + `record-send` each;
+   all sent → await replies; `parse-reply --update-file` per inbound message;
+   apply confirmations; loop until batch closed. Bridge down → `cancel-batch`,
+   terminal AskUserQuestion fallback for the whole batch (same grammar;
+   detection = telegram-send nonzero exit/timeout — gauntlet US-6).
+6. Any `fail`: if batch partially judged → `cancel-batch` remainder. Create
+   remediation cards (MCP, payload per §4.7); after fixes: verify card
+   resolution (MCP) → `reset-failed` per row → step 3.
+7. `emit-system-validation` → `self-check` (ALWAYS, on the exact emitted file
+   — including on re-entry; record the artifact's sha256).
+8. Re-verify the artifact's sha256 unchanged (TOCTOU guard, gauntlet RC-1),
+   then `mark_system_validation_complete` (explicit `board_id`). Transient
+   MCP error → bounded retry; lost response → `get_card_metadata` to learn
+   the true state (gauntlet FM-8).
+9. `get_card_metadata` read-back confirms `system_validation_complete: true`
+   → commit artifacts → proceed to Finalization advance. Post-close
+   discovery of an erroneous validation: process-failure note + fizzy
+   handoff item (write-once artifacts, OQ-4c).
+
+**Re-entry routing (read these before re-running the close):**
+
+- **Re-entry always restarts at step 1.** Every step is idempotent, so a crashed
+  or interrupted close is recovered by re-running from the top — preflight will
+  short-circuit to step 9 if `system_validation_complete` is already true (DD-2).
+- **`NOTHING_TO_DIGEST` is a fork, not a finish (CB-5).** No unjudged active rows
+  means one of two things: (a) **failed rows present** → go to the step 6
+  remediation loop (fix, `reset-failed`, re-execute) — **never emit**; (b) no failed
+  rows → all rows are judged-pass, proceed to step 7 emission. The conductor must
+  branch on the presence of failed rows, not treat "nothing to digest" as "ready to
+  close."
+- **`self-check` runs before EVERY `mark_system_validation_complete`, on the exact
+  emitted file (INV-5).** This holds on re-entries too — never skip the self-check
+  because "it passed last time." The module re-verifies the artifact's sha256 at call
+  time (RC-1); a file that changed between emission and the close call is rejected.
+
+**Row state machine (R2 codex — normative; revised per gauntlet CB-1/CB-4):**
+
+| # | From | Event | To | Notes |
+|---|------|-------|----|-------|
+| S1 | drafted (`result:null`, no evidence) | scenario executed (`record-evidence`) | evidence-attached | front matter binds row/story/conops hashes + commit |
+| S2 | evidence-attached | `assemble-digest` | digested (batch d-N) | only `result:null` active rows; batch snapshots hashes |
+| S3 | digested | `parse-reply` pass | judged-pass | exits only via S7 |
+| S4 | digested | `parse-reply` fail | judged-fail | justification required; remediation cards |
+| S5 | digested | `parse-reply` na | judged-na | row-level; sole-row N/A warned at parse, blocks close (TC-3.6) |
+| S6 | judged-fail | card resolved + `reset-failed` | needs-reexecution | fail → history (append-only); evidence invalidated (renamed); distinct from drafted — scenario unchanged, evidence required fresh |
+| S6b | needs-reexecution | scenario re-executed (`record-evidence`) | evidence-attached | fresh evidence, fresh hashes |
+| S7 | ANY state | `supersede-row` (human-approved) | superseded | full snapshot retained; excluded from digests/parsing (INV-10); transactional replacement allowed |
+| S8 | digested | `cancel-batch` | evidence-attached | returns to delta pool; audit on batch |
+
+No other transitions exist. `judgment_history` is never rewritten.
+
+#### Error-code playbook
+
+When a close-leg command or the MCP gate rejects, look the code up here and take the
+documented response — do not improvise. The first table is the **eight fizzy gate
+reject classes** (six raised by `pipeline_mark_system_validation_complete` itself,
+two at the Finalization advance); the second is the module's local codes.
+
+**Gate rejects (from the served fizzy contract — six at the close call + two at advance):**
+
+| Gate reject | Conductor response |
+|---|---|
+| `SESSION_MISMATCH` | Should be unreachable post-preflight (close step 1 verifies ids); if hit, re-run preflight; never re-point at another session's card. |
+| `VV_NOT_OBLIGATED_AT_ALTITUDE` | Card isn't system-altitude: investigate triage/altitude drift; do not force. |
+| `VALIDATION_KIND_MISMATCH` | Artifact `kind` wrong — regenerate via `emit-system-validation` (a hand-edited artifact is suspected). |
+| `VALIDATION_ARTIFACTS_INCOMPLETE` | Run `self-check`; fix reported issues (the gate may group several failures under this code — rely on local self-check granularity, not the gate's message). |
+| `VV_LEDGER_HAS_FAILURES` | Should be unreachable (close algorithm blocks on fail rows at step 4/6); if hit, the remediation loop was bypassed — process-failure note + remediate. |
+| `VALIDATION_IS_RELABELED_VERIFICATION` | Rows re-point at verification fixtures — redraft scenarios from ConOps intent; check `test_targets` sets (local INV-11 should have caught it first). |
+| `SYSTEM_VALIDATION_MISSING` (at advance) | `mark_system_validation_complete` was never called for a system node — run the close algorithm. |
+| `UNVALIDATED_USER_STORY` (at advance) | A ConOps US id lacks a passing row — self-check coverage should have caught it; re-run close with the coverage fix. |
+
+**Local module codes (gauntlet FM-5):**
+
+| Local code | Meaning | Response |
+|---|---|---|
+| `LEDGER_BUSY` (exit 3) | Lock held >10s | Check `status`/live processes; retry once after 30s; stale lock → see filelock stale handling. |
+| `LEDGER_CORRUPT` (exit 3) | Unparseable ledger | Corrupt bytes auto-copied aside; restore from git (commit cadence bounds loss); replay from quarantine + Telegram transcript if needed. |
+| `NOTHING_TO_DIGEST` (exit 0) | No unjudged active rows | Step 4 routing: failed rows → remediation (step 6); else → emission (step 7). Never treat as "ready to close" without checking for fail rows (CB-5). |
+| `SENDER_NOT_ALLOWLISTED` (exit 2) | Telegram reply from unknown sender | Security event logged; if Jason's real reply was discarded, fix the registry allowlist and re-feed the update file. |
+| `ALLOWLIST_CONFIG_INVALID` (exit 2) | Registry missing/malformed | Fix the project telegram registry entry; telegram parsing is blocked until valid. |
+| `STALE_DIGEST` / `STALE_ROW_HASH` / `STALE_CONOPS` (exit 2) | Reply references non-active batch or changed content | Re-digest; notify Jason which digest is current. |
+| `REPROMPT_REQUIRED` (exit 2) | Invalid/partial reply blocks | Send the module's re-prompt text (quoted offending span) to the same channel. |
+| `EVIDENCE_MISSING` / `EVIDENCE_MALFORMED` / `EVIDENCE_HASH_MISMATCH` / `EVIDENCE_STALE` (exit 2) | Evidence chain broken | Re-execute the scenario via `record-evidence` for the named row. |
+| `REFRESH_DISALLOWED` (exit 2) | Supersession reason not in enum / approval missing | Get the human decision; use the allowed reason enum. |
+| `ROW_OVER_BUDGET` (exit 2) | Row exceeds digest byte budget | Redraft the row tighter (drafting error). |
+| `SELF_CHECK_FAILED` (exit 2) | Pre-close `self-check` rejected the emitted artifact | Read the issues; fix the row/evidence/coverage problem and re-emit; never call the MCP gate after a failed self-check (INV-5). |
+| `ARTIFACT_SHA_MISMATCH` (exit 2) | Artifact changed between emission and close (TOCTOU) | Re-emit and re-run self-check on the fresh file before the MCP call (RC-1). |
+| `ANTI_RELABELING_UNCHECKED` (warning) | No verification ledger supplied | Supply `--verification-ledger`; do not close on a warning when verification artifacts exist. |
+
+**[GATE] TodoWrite (system-altitude sessions only): Mark the validation-leg close
+complete — all rows judged-pass (or superseded), `emit-system-validation` +
+`self-check` clean, `mark_system_validation_complete` called, and
+`get_card_metadata` read-back confirms `system_validation_complete: true` — before the
+Finalization advance.**
+
+---
+
 ### Cross-Agent Review: The Core Value Proposition
 
 The pipeline enforces that the implementer cannot review their own work:
