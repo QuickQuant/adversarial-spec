@@ -2009,7 +2009,7 @@ def extract_telegram_reply(update_path: Path) -> dict[str, str]:
     }
 
 
-def _quote(text: str, limit: int = 80) -> str:
+def _quote(text: str, limit: int = 200) -> str:
     """Quote untrusted reply text, truncated (INV-A3)."""
     text = _one_line(text)
     return repr(text if len(text) <= limit else text[: limit - 1] + "…")
@@ -2024,6 +2024,7 @@ def _parse_reply_blocks(reply_text: str) -> dict[str, Any]:
     bulk: str | None = None
     current: str | None = None  # row_id of the open block
     errors: list[dict[str, Any]] = []
+    verdict_sources: dict[str, list[str]] = {}
 
     def err(detail: str, row_id: str | None = None) -> None:
         errors.append(make_issue("REPLY_INVALID", detail, row_id))
@@ -2067,6 +2068,7 @@ def _parse_reply_blocks(reply_text: str) -> dict[str, Any]:
                 current = None
                 continue
             verdicts[target] = [keyword, justification]
+            verdict_sources[target] = [line]
             order.append(target)
             current = target
             continue
@@ -2085,6 +2087,7 @@ def _parse_reply_blocks(reply_text: str) -> dict[str, Any]:
             continue
         existing = verdicts[current][1]
         verdicts[current][1] = (existing + "\n" + line) if existing else line
+        verdict_sources[current].append(line)
 
     # fail/na REQUIRE non-empty justification (FM-10)
     for row_id, (keyword, justification) in verdicts.items():
@@ -2098,6 +2101,9 @@ def _parse_reply_blocks(reply_text: str) -> dict[str, Any]:
         "verdicts": {
             rid: (kw, (just or "").strip() or None)
             for rid, (kw, just) in verdicts.items()
+        },
+        "verdict_sources": {
+            rid: "\n".join(lines) for rid, lines in verdict_sources.items()
         },
         "bulk": bulk,
     }
@@ -2237,6 +2243,7 @@ def handle_parse_reply(args: argparse.Namespace) -> Envelope:
 
         parsed = _parse_reply_blocks(reply_text)
         verdicts, bulk = parsed["verdicts"], parsed["bulk"]
+        verdict_sources = parsed["verdict_sources"]
         if not verdicts and bulk is None:
             raise _RepromptError([make_issue(
                 "REPLY_EMPTY", "reply contains no verdicts", None
@@ -2264,18 +2271,21 @@ def handle_parse_reply(args: argparse.Namespace) -> Envelope:
 
         issues: list[dict[str, Any]] = []
         for row_id, (keyword, justification) in verdicts.items():
+            offending = _quote(verdict_sources.get(row_id, row_id))
             if row_id in superseded_replacement:
                 issues.append(make_issue(
                     "SUPERSEDED_ROW",
                     f"row {row_id} is superseded — reply to its replacement "
-                    f"{superseded_replacement[row_id]} instead",
+                    f"{superseded_replacement[row_id]} instead; offending "
+                    f"untrusted block: {offending}",
                     row_id,
                 ))
                 continue
             if row_id not in snapshot_ids or row_id not in rows_by_id:
                 issues.append(make_issue(
                     "ROW_NOT_IN_BATCH",
-                    f"row {row_id} is not in batch {args.digest_id}",
+                    f"row {row_id} is not in batch {args.digest_id}; offending "
+                    f"untrusted block: {offending}",
                     row_id,
                 ))
                 continue
@@ -2284,7 +2294,7 @@ def handle_parse_reply(args: argparse.Namespace) -> Envelope:
                 issues.append(make_issue(
                     "ROW_ALREADY_JUDGED",
                     f"row {row_id} already judged {row.get('result')!r} in "
-                    "this batch",
+                    f"this batch; offending untrusted block: {offending}",
                     row_id,
                 ))
                 continue
@@ -2292,7 +2302,7 @@ def handle_parse_reply(args: argparse.Namespace) -> Envelope:
                 issues.append(make_issue(
                     "STALE_ROW_HASH",
                     f"row {row_id} changed after batch open (RC-3) — verdict "
-                    "rejected",
+                    f"rejected; offending untrusted block: {offending}",
                     row_id,
                 ))
                 continue

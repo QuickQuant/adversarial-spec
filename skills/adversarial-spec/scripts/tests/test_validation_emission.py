@@ -2323,6 +2323,25 @@ def test_parse_reply_grammar_invalid_replies_zero_mutations_tcg8(
     assert ledger_path.read_bytes() == before
 
 
+def test_parse_reply_semantic_invalid_quotes_offending_block_tcinva3(capsys, tmp_path):
+    """TC-INV-A3: a semantic invalid block after a valid one re-prompts with
+    the offending untrusted text quoted, and applies zero mutations."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path)
+    before = ledger_path.read_bytes()
+
+    exit_code, out, _err = _parse_reply(
+        capsys, ledger_path, digest_id, "pass r-US1-1\npass r-US99-1"
+    )
+    envelope = parse_single_envelope(out)
+
+    assert exit_code == EXIT_ISSUES
+    assert envelope["status"] == "reprompt"
+    assert ledger_path.read_bytes() == before
+    issue = next(i for i in envelope["issues"] if i["code"] == "ROW_NOT_IN_BATCH")
+    assert "offending untrusted block" in issue["detail"]
+    assert "'pass r-US99-1'" in issue["detail"]
+
+
 def test_parse_reply_grammar_superseded_row_names_replacement(capsys, tmp_path):
     """Replies to superseded rows are rejected with a notice naming the
     replacement row (BURN-f702791c)."""
