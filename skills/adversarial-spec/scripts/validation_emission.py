@@ -3113,8 +3113,15 @@ def handle_status(args: argparse.Namespace) -> Envelope:
     active_rows = _active_rows(ledger)
     unjudged = [r for r in active_rows if r.get("result") is None]
     judged = [r for r in active_rows if r.get("result") is not None]
-    unjudged_ids = [r.get("row_id") for r in unjudged]
-    failed_ids = [r.get("row_id") for r in judged if r.get("result") == "fail"]
+    unjudged_ids = [
+        row_id for r in unjudged
+        if isinstance((row_id := r.get("row_id")), str)
+    ]
+    failed_ids = [
+        row_id for r in judged
+        if r.get("result") == "fail"
+        and isinstance((row_id := r.get("row_id")), str)
+    ]
 
     judged_summary = {
         "pass": sum(1 for r in judged if r.get("result") == "pass"),
@@ -3127,10 +3134,11 @@ def handle_status(args: argparse.Namespace) -> Envelope:
     # Coverage: every active ConOps story id needs ≥1 passing active row
     # (INV-7). Derive story ids from active conops_refs (status is read-only and
     # does not require --conops; if provided it scopes the story universe).
-    story_ids: set[str] = {
-        r.get("conops_ref") for r in active_rows
-        if isinstance(r.get("conops_ref"), str)
-    }
+    story_ids: set[str] = set()
+    for row in active_rows:
+        conops_ref = row.get("conops_ref")
+        if isinstance(conops_ref, str):
+            story_ids.add(conops_ref)
     if args.conops is not None:
         conops_path = resolve_under_root(ledger_path.parent, args.conops)
         try:
@@ -3139,9 +3147,11 @@ def handle_status(args: argparse.Namespace) -> Envelope:
             story_ids |= set(compute_story_hashes(conops_bytes.decode("utf-8")))
         except (OSError, UnicodeDecodeError):
             pass  # read-only: a missing/unreadable conops never crashes status
-    passing_stories = {
-        r.get("conops_ref") for r in judged if r.get("result") == "pass"
-    }
+    passing_stories: set[str] = set()
+    for row in judged:
+        conops_ref = row.get("conops_ref")
+        if row.get("result") == "pass" and isinstance(conops_ref, str):
+            passing_stories.add(conops_ref)
     uncovered_stories = sorted(story_ids - passing_stories)
     coverage_complete = not uncovered_stories
 
