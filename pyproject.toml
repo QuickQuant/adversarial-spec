@@ -81,3 +81,7 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --strict-markers"
+markers = [
+    "deterministic: CI-runnable validation-leg tests — no human, no network (spec §12)",
+    "dogfood: requires Jason / real Telegram / real MCP; recorded, not CI-gated (spec §12)",
+]
