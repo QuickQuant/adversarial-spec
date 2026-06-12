@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Validation-Leg Run · adversarial-spec retrospective</title>
+<style>
+  :root{
+    --bg:#0a0e14; --bg2:#0d1219; --panel:#111824; --panel2:#161f2e;
+    --line:#1e2a3c; --line2:#2a3a52;
+    --ink:#c8d6e8; --ink-dim:#7a8aa0; --ink-faint:#4d5d75;
+    --green:#3fd17a; --amber:#f2b347; --red:#ef5a6f; --gray:#5a6b82;
+    --cyan:#39c4d6; --violet:#9d7bff; --blue:#4f86f7;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(79,134,247,.08), transparent 60%),
+      radial-gradient(900px 500px at 10% 5%, rgba(157,123,255,.07), transparent 55%),
+      var(--bg);
+    color:var(--ink);font-family:var(--sans);line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--cyan);text-decoration:none}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+  .mono{font-family:var(--mono)}
+  .dim{color:var(--ink-dim)}
+  .faint{color:var(--ink-faint)}
+
+  /* ---- header ---- */
+  header{
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(13,18,25,.9),rgba(10,14,20,.4));
+    padding:38px 0 30px;position:relative;overflow:hidden;
+  }
+  header::before{
+    content:"";position:absolute;inset:0;
+    background-image:linear-gradient(rgba(57,196,214,.045) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(57,196,214,.045) 1px,transparent 1px);
+    background-size:38px 38px;pointer-events:none;
+    mask:linear-gradient(180deg,#000,transparent 85%);
+  }
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);display:flex;align-items:center;gap:10px}
+  .blip{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(63,209,122,.6);animation:pulse 2.4s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(63,209,122,.55)}70%{box-shadow:0 0 0 9px rgba(63,209,122,0)}100%{box-shadow:0 0 0 0 rgba(63,209,122,0)}}
+  h1{font-size:clamp(30px,4.6vw,52px);line-height:1.05;margin:14px 0 6px;font-weight:700;letter-spacing:-.02em}
+  h1 .accent{color:var(--cyan)}
+  .sub{color:var(--ink-dim);font-size:16px;max-width:760px}
+  .meta-row{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:18px;font-family:var(--mono);font-size:12.5px;color:var(--ink-dim)}
+  .meta-row b{color:var(--ink);font-weight:600}
+
+  section{padding:46px 0;border-bottom:1px solid var(--line)}
+  h2{font-size:13px;font-family:var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--violet);margin:0 0 4px}
+  .h2sub{color:var(--ink-dim);font-size:15px;margin:0 0 26px;max-width:780px}
+  .lead{font-size:17px;color:var(--ink);max-width:820px}
+  .lead b{color:#fff;font-weight:600}
+
+  /* ---- numbers strip ---- */
+  .numbers{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+  .stat{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:12px;padding:18px 16px;position:relative;overflow:hidden}
+  .stat::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--cyan);opacity:.5}
+  .stat.g::after{background:var(--green)} .stat.a::after{background:var(--amber)} .stat.v::after{background:var(--violet)} .stat.r::after{background:var(--red)} .stat.b::after{background:var(--blue)}
+  .stat .num{font-size:34px;font-weight:700;font-family:var(--mono);letter-spacing:-.02em;color:#fff;line-height:1}
+  .stat .lbl{font-size:11.5px;color:var(--ink-dim);margin-top:8px;letter-spacing:.02em;text-transform:uppercase}
+  .stat .delta{font-size:11px;color:var(--green);font-family:var(--mono);margin-top:4px}
+
+  /* ---- pipeline subway ---- */
+  .subway{display:flex;flex-wrap:wrap;gap:0;margin-bottom:8px;position:relative}
+  .stop{flex:1;min-width:110px;cursor:pointer;position:relative;padding-top:30px;text-align:center}
+  .stop .dot{width:20px;height:20px;border-radius:50%;background:var(--panel2);border:2px solid var(--line2);margin:0 auto;position:relative;z-index:2;transition:.18s}
+  .stop .rail{position:absolute;top:39px;left:-50%;width:100%;height:3px;background:var(--line2);z-index:1}
+  .stop:first-child .rail{display:none}
+  .stop .name{margin-top:12px;font-size:12.5px;font-family:var(--mono);color:var(--ink-dim);transition:.18s}
+  .stop .pn{font-size:10px;color:var(--ink-faint);font-family:var(--mono)}
+  .stop:hover .dot{transform:scale(1.18);border-color:var(--cyan)}
+  .stop.active .dot{background:var(--cyan);border-color:var(--cyan);box-shadow:0 0 16px rgba(57,196,214,.55)}
+  .stop.active .name{color:#fff}
+  .stop.done .dot{background:var(--green);border-color:var(--green)}
+  .stop.active.done .dot{background:var(--cyan);border-color:var(--cyan)}
+  .phase-detail{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:12px;padding:22px 24px;margin-top:24px;min-height:120px}
+  .phase-detail .pd-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .phase-detail h3{margin:0;font-size:20px;color:#fff}
+  .phase-detail .pd-date{font-family:var(--mono);font-size:12px;color:var(--cyan)}
+  .phase-detail .pd-note{margin:14px 0 0;color:var(--ink);font-size:15px;line-height:1.6}
+
+  /* ---- funnel ---- */
+  .funnel-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:34px;align-items:center}
+  .funnel svg{width:100%;height:auto}
+  .funnel-legend{display:flex;flex-direction:column;gap:16px}
+  .fl-item{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+  .fl-item .fn{font-size:30px;font-weight:700;font-family:var(--mono);color:#fff}
+  .fl-item .fd{font-size:13px;color:var(--ink-dim);margin-top:2px}
+  .fl-item .pct{font-family:var(--mono);font-size:12px;color:var(--cyan);float:right}
+  .overrides{margin-top:22px;border-top:1px dashed var(--line2);padding-top:18px}
+  .ov-tag{display:inline-block;font-family:var(--mono);font-size:11px;background:rgba(242,179,71,.12);color:var(--amber);border:1px solid rgba(242,179,71,.3);border-radius:5px;padding:2px 8px;margin-right:8px;margin-bottom:6px}
+
+  /* ---- test chart ---- */
+  .chartbox{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:12px;padding:24px 18px 14px}
+  .chart svg{width:100%;height:auto;overflow:visible}
+  .tip{position:fixed;pointer-events:none;background:#05080d;border:1px solid var(--line2);border-radius:8px;padding:9px 12px;font-size:12.5px;color:var(--ink);z-index:50;opacity:0;transition:opacity .12s;max-width:260px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  .tip b{color:#fff} .tip .tm{font-family:var(--mono);color:var(--cyan);font-size:11px}
+
+  /* ---- board grid ---- */
+  .toolbar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+  .btn{font-family:var(--mono);font-size:12.5px;background:var(--panel);border:1px solid var(--line2);color:var(--ink-dim);padding:7px 14px;border-radius:7px;cursor:pointer;transition:.15s}
+  .btn:hover{color:var(--ink);border-color:var(--cyan)}
+  .btn.on{background:var(--cyan);color:#05080d;border-color:var(--cyan);font-weight:600}
+  .lane-legend{margin-left:auto;display:flex;gap:14px;font-size:12px;color:var(--ink-dim);flex-wrap:wrap}
+  .lk{display:inline-flex;align-items:center;gap:6px}
+  .swatch{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .group{margin-bottom:26px}
+  .group .gh{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);margin:0 0 12px;display:flex;align-items:center;gap:10px}
+  .group .gh .ct{color:var(--ink-faint)}
+  .group .gh .bar{flex:1;height:1px;background:var(--line)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:12px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 14px;position:relative;cursor:default;transition:.16s;border-left-width:3px}
+  .card:hover{transform:translateY(-3px);border-color:var(--line2);box-shadow:0 12px 26px rgba(0,0,0,.4)}
+  .card .cid{font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
+  .card .ctitle{font-size:13.5px;color:#fff;font-weight:600;margin:3px 0 8px;line-height:1.3}
+  .card .cimpl{font-family:var(--mono);font-size:11px;color:var(--ink-dim)}
+  .card .cflag{position:absolute;top:11px;right:11px;font-size:9px;font-family:var(--mono);letter-spacing:.05em;padding:2px 5px;border-radius:4px}
+  .flag-ph{background:rgba(157,123,255,.14);color:var(--violet)}
+  .flag-lp{background:rgba(57,196,214,.12);color:var(--cyan)}
+  .flag-fr{background:rgba(239,90,111,.14);color:var(--red)}
+  .cardpop{position:fixed;width:320px;background:#05080d;border:1px solid var(--line2);border-radius:10px;padding:15px 16px;z-index:60;opacity:0;pointer-events:none;transition:opacity .13s;box-shadow:0 16px 40px rgba(0,0,0,.6)}
+  .cardpop h4{margin:0 0 2px;font-size:14px;color:#fff}
+  .cardpop .cp-meta{font-family:var(--mono);font-size:11px;color:var(--cyan);margin-bottom:9px}
+  .cardpop .cp-chain{font-family:var(--mono);font-size:12px;margin:8px 0;color:var(--ink)}
+  .cardpop .cp-sum{font-size:12.5px;color:var(--ink-dim);line-height:1.5}
+  .cardpop .cp-lane{display:inline-block;font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:4px;margin-top:9px}
+
+  /* ---- agents ---- */
+  .agents-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+  .agent{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:18px 20px;display:flex;gap:16px}
+  .agent .av{width:46px;height:46px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:15px;color:#05080d}
+  .agent h4{margin:0 0 2px;font-size:15px;color:#fff}
+  .agent .arole{font-size:13px;color:var(--ink-dim);line-height:1.5}
+  .protocol{margin-top:20px;background:rgba(157,123,255,.06);border:1px solid rgba(157,123,255,.22);border-radius:10px;padding:16px 20px;font-size:14px;color:var(--ink)}
+  .protocol b{color:var(--violet)}
+
+  /* ---- incidents black box ---- */
+  .bb-head{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+  .bb-badge{font-family:var(--mono);font-size:12px;background:rgba(63,209,122,.1);border:1px solid rgba(63,209,122,.35);color:var(--green);padding:6px 14px;border-radius:7px}
+  .incidents{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .inc{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:11px;padding:18px 20px;position:relative}
+  .inc::before{content:"";position:absolute;left:0;top:18px;bottom:18px;width:3px;background:var(--amber);border-radius:3px}
+  .inc .iw{font-family:var(--mono);font-size:11px;color:var(--amber)}
+  .inc h4{margin:6px 0 8px;font-size:15.5px;color:#fff}
+  .inc .iwhat{font-size:13px;color:var(--ink-dim);line-height:1.55}
+  .inc .irule{margin-top:13px;font-size:13px;color:var(--ink);background:rgba(63,209,122,.07);border:1px solid rgba(63,209,122,.2);border-radius:8px;padding:9px 12px}
+  .inc .irule b{color:var(--green);font-family:var(--mono);font-size:11px;display:block;margin-bottom:3px;letter-spacing:.06em}
+
+  /* ---- invariants ---- */
+  .inv-list{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .inv{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:14px 16px;display:flex;gap:14px}
+  .inv .iid{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--cyan);flex-shrink:0;width:78px;padding-top:1px}
+  .inv .itxt{font-size:13px;color:var(--ink-dim);line-height:1.5}
+
+  footer{padding:34px 0 60px;color:var(--ink-faint);font-size:12.5px;font-family:var(--mono)}
+  .remaining{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+  .rem{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;border-top:3px solid var(--gray)}
+  .rem.review{border-top-color:var(--amber)} .rem.todo{border-top-color:var(--blue)}
+  .rem .rc{font-family:var(--mono);font-weight:700;color:#fff;font-size:15px}
+  .rem .rl{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);margin:2px 0 8px}
+  .rem .rb{font-size:13px;color:var(--ink-dim);line-height:1.5}
+
+  @media(max-width:920px){
+    .numbers{grid-template-columns:repeat(3,1fr)}
+    .funnel-grid,.agents-grid,.incidents,.inv-list{grid-template-columns:1fr}
+    .remaining{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow"><span class="blip"></span> adversarial-spec · run retrospective · 🥊📜</div>
+    <h1>One pipeline run, <span class="accent">from debate to dogfood</span></h1>
+    <p class="sub">A single overnight pass of the adversarial-spec pipeline — building the pipeline's own <b>validation leg</b>. Spec debated to v5, stress-tested against 669 adversary concerns, decomposed into 25 cards, and implemented by a swarm of Claude, Codex, and Gemini on one branch.</p>
+    <div class="meta-row">
+      <span><b>Context</b> Validation-Leg Production Process</span>
+      <span><b>Session</b> adv-spec-202606110339</span>
+      <span><b>Window</b> Jun 11 03:39 → Jun 12 08:30 UTC</span>
+      <span><b>Snapshot</b> 16/19 components through all gates</span>
+    </div>
+  </div>
+</header>
+
+<!-- ===== STORY ===== -->
+<section id="story">
+  <div class="wrap">
+    <h2>The arc</h2>
+    <p class="lead">
+      The pipeline turned its tools on itself. The goal: a <b>validation leg</b> — a 13-subcommand CLI (<span class="mono">validation_emission.py</span>) that lets a conductor derive a ConOps from the spec manifest, draft human-judgeable rows, lint them, ship a Telegram digest to <b>Jason</b> (the sole human validator), parse his replies under a strict grammar, manage the judgment lifecycle, self-check against fizzy's close gates, and emit the system-validation artifact.
+      <br><br>
+      The spec was <b>debated v1→v5</b> across 4 rounds with Codex and Gemini, then thrown into the gauntlet where <b>7 adversaries × 2 models surfaced 669 raw concerns</b> — funnelled to 62 unique themes, 48 accepted. Decomposition produced a <b>25-card plan</b> (19 components, 6 decomposed parents). Then a multi-agent implementation loop ran overnight: the test suite grew <b>556 → 760</b>, four incidents were logged with <b>zero data lost</b>, and <b>16 of 19 components</b> cleared every gate. Three cards remain — two doc sections sitting in Review (Claude authored, so Claude can't review them), and the dogfood close-out blocked on those two.
+    </p>
+  </div>
+</section>
+
+<!-- ===== NUMBERS ===== -->
+<section id="numbers">
+  <div class="wrap">
+    <h2>By the numbers</h2>
+    <p class="h2sub">Counters animate as they scroll into view.</p>
+    <div class="numbers" id="numbers"></div>
+  </div>
+</section>
+
+<!-- ===== PIPELINE ===== -->
+<section id="pipeline">
+  <div class="wrap">
+    <h2>The 8-phase pipeline</h2>
+    <p class="h2sub">Every adversarial-spec run walks these phases in order. Click a stop to see what happened in <i>this</i> run. Green = completed, cyan = selected. The last stop (implementation) is still in flight.</p>
+    <div class="subway" id="subway"></div>
+    <div class="phase-detail" id="phaseDetail"></div>
+  </div>
+</section>
+
+<!-- ===== GAUNTLET ===== -->
+<section id="gauntlet">
+  <div class="wrap">
+    <h2>The gauntlet funnel</h2>
+    <p class="h2sub">Phase 5. Seven hostile adversary personas, each run on Codex (GPT-5.5) and Gemini (3.1 Pro), attack the spec. Raw output is deliberately noisy — the funnel dedupes to themes, then triages each by hand.</p>
+    <div class="funnel-grid">
+      <div class="funnel" id="funnel"></div>
+      <div>
+        <div class="funnel-legend" id="funnelLegend"></div>
+        <div class="overrides">
+          <div class="dim mono" style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">Human overrides (Jason)</div>
+          <div id="overrides"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TESTS ===== -->
+<section id="tests">
+  <div class="wrap">
+    <h2>Test-suite growth</h2>
+    <p class="h2sub">Step chart over the implementation window. Each marker is a card completion or a milestone — hover for the count and the moment. +204 tests, 556 → 760.</p>
+    <div class="chartbox"><div class="chart" id="chart"></div></div>
+  </div>
+</section>
+
+<!-- ===== BOARD ===== -->
+<section id="board">
+  <div class="wrap">
+    <h2>The 25-card board</h2>
+    <p class="h2sub">Cards move New Todo → claimed → Review → Untested → Passed Test. The implementer ≠ reviewer rule keeps anyone from grading their own work, and a Failed Review loops a card back. Color = final lane. Hover a card for its implementer chain, commit, and summary.</p>
+    <div class="toolbar">
+      <button class="btn on" id="byWave" onclick="setView('wave')">Group by wave</button>
+      <button class="btn" id="byLane" onclick="setView('lane')">Group by lane</button>
+      <div class="lane-legend" id="laneLegend"></div>
+    </div>
+    <div id="boardGroups"></div>
+  </div>
+</section>
+
+<!-- ===== AGENTS ===== -->
+<section id="agents">
+  <div class="wrap">
+    <h2>Who did what</h2>
+    <p class="h2sub">A conductor + subagent pattern. Claude (Fable 5) ran the board, orchestrated Opus subagents for implementation and adversarial reviews, and delegated bookkeeping to Haiku. Codex and Gemini worked the same branch as peer implementers, reviewers, and debate/gauntlet engines. Jason was the one human in the loop.</p>
+    <div class="agents-grid" id="agentsGrid"></div>
+    <div class="protocol" id="protocol"></div>
+  </div>
+</section>
+
+<!-- ===== INCIDENTS ===== -->
+<section id="incidents">
+  <div class="wrap">
+    <h2>Black box recorder</h2>
+    <div class="bb-head">
+      <span class="bb-badge">● 4 INCIDENTS LOGGED · 0 DATA LOST</span>
+      <span class="dim" style="font-size:13.5px">Multi-agent work on one branch is messy. Every incident recovered cleanly — and each minted a durable rule.</span>
+    </div>
+    <div class="incidents" id="incidents"></div>
+  </div>
+</section>
+
+<!-- ===== INVARIANTS ===== -->
+<section id="invariants">
+  <div class="wrap">
+    <h2>Invariants the module guarantees</h2>
+    <p class="h2sub">The spec's hard contracts — the things that survived the gauntlet and got baked into code. 40 reject codes, INV-1..17 + INV-A1..A7.</p>
+    <div class="inv-list" id="invList"></div>
+  </div>
+</section>
+
+<!-- ===== REMAINING ===== -->
+<section id="remaining">
+  <div class="wrap">
+    <h2>What's left</h2>
+    <p class="h2sub">Three cards from done. The blocker isn't bugs — it's the implementer ≠ reviewer rule doing its job: two Claude-authored doc sections need a Codex/Gemini review, and the final dogfood close-out waits on both.</p>
+    <div class="remaining" id="remaining"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    plan_hash 5f7893a24fa8d0cd · cards 5616–5640 · critical path C-1-1 → C-4-4 → C-4-5 → C-5-1 → C-5-3 · generated from adv-spec-run-data.json · 🥊📜
+  </div>
+</footer>
+
+<div class="tip" id="tip"></div>
+<div class="cardpop" id="cardpop"></div>
+
+<script>
+/* ====== EMBEDDED RUN DATA ====== */
+var DATA = {
+  "session":{"id":"adv-spec-202606110339-validation-leg-process","context_name":"Validation-Leg Production Process","started":"2026-06-11T03:39:00Z","snapshot_at":"2026-06-12T08:30:00Z","what_it_built":"A 'validation leg' for the adversarial-spec pipeline: a 13-subcommand CLI module (validation_emission.py)."},
+  "pipeline_phases":[
+    {"phase":"triage","note":"Front door; altitude set to system."},
+    {"phase":"requirements","note":"US-0..US-7 user stories drafted."},
+    {"phase":"roadmap","note":"Roadmap-tier debate (2 standalone rounds, IntentionalOverride logged — card still in Evaluated Plans)."},
+    {"phase":"debate","date":"2026-06-11","note":"4 rounds with codex (GPT-5.5) + gemini (3.1 Pro), spec drafts v1→v5, guardrails SCOPE/TRACE/CANON/TCOV/CONS each round."},
+    {"phase":"target-architecture","date":"2026-06-11T14:34Z","note":"Lightweight Phase 4 @ 48a3ed59fb64: 7 INV-A invariants, dry-run 8/8, two human-approved quality gates; later reconciled in place to the FINAL spec @ 88a8e664 after Jason ruled reconcile-not-rerun."},
+    {"phase":"gauntlet","date":"2026-06-11T16:09Z","note":"7 adversaries × codex+gemini on spec-draft-v4: 669 raw concerns → 62 unique themes → 48 accept / 8 acknowledge / 6 dismiss; Jason rejected SEC-6 reply friction (natural aliases instead), right-sized SEC-1."},
+    {"phase":"finalize","date":"2026-06-11T17:38Z","note":"spec v5 locked as spec-output.md; tests-spec.md promoted with 3 corrections; Jason ACCEPTED."},
+    {"phase":"execution","date":"2026-06-11T20:54Z","note":"25-node decomposition (19 components, 6 decomposed parents), Gate V4 human approval (3 exemptions), fizzy-plan.json schema-3, cards 5616-5640 loaded; dep-edge loss root-caused and repaired via re-pipeline_load."},
+    {"phase":"implementation","date":"2026-06-12","note":"Phase 8 multi-agent loop: claude (conductor + Opus subagent orchestration), codex, gemini on one board, one branch."}
+  ],
+  "gauntlet":{"adversaries":7,"models_per_adversary":2,"raw_concerns":669,"unique_themes":62,"accepted":48,"acknowledged":8,"dismissed":6,"human_overrides":["SEC-6 reply friction rejected → natural-language bulk-pass aliases","SEC-1 right-sized: no fail-closed gate, module reads listener payload directly"]},
+  "board_lanes_now":{"New Todo":1,"Review":2,"Untested":0,"Passed Test":16,"Failed Review":0,"Decomposed":6},
+  "remaining":[{"card":"C-5-1","lane":"Review","blocker":"needs codex/gemini review (claude authored)"},{"card":"C-5-2","lane":"Review","blocker":"needs codex/gemini review (claude authored)"},{"card":"C-5-3","lane":"New Todo","blocker":"blocked on C-5-1 + C-5-2; the system-validation dogfood close-out"}],
+  "test_suite_progression":[
+    {"label":"session start (Wave 0 begins)","tests":556,"time":"2026-06-11T17:52Z"},
+    {"label":"C-1-1 envelopes","tests":579,"time":"2026-06-12T04:14Z"},
+    {"label":"Wave 0 complete (C-1-4)","tests":620,"time":"2026-06-12T04:28Z"},
+    {"label":"detached-HEAD reconcile","tests":640,"time":"2026-06-12T05:35Z"},
+    {"label":"C-2-2 normalize-rows","tests":648,"time":"2026-06-12T05:50Z"},
+    {"label":"C-3-2 assemble-digest","tests":661,"time":"2026-06-12T06:07Z"},
+    {"label":"C-3-3 record-send","tests":668,"time":"2026-06-12T06:13Z"},
+    {"label":"C-4-1 parse-reply","tests":687,"time":"2026-06-12T06:19Z"},
+    {"label":"C-2-3 regressions","tests":699,"time":"2026-06-12T06:35Z"},
+    {"label":"C-4-2 trust boundary","tests":714,"time":"2026-06-12T06:53Z"},
+    {"label":"C-4-3 reset/supersede","tests":738,"time":"2026-06-12T07:19Z"},
+    {"label":"C-4-6 status","tests":759,"time":"2026-06-12T07:31Z"},
+    {"label":"C-5-2 doc test","tests":760,"time":"2026-06-12T07:54Z"}
+  ],
+  "cards":[
+    {"id":"C-1-1","card":5622,"title":"module-skeleton-envelope","implementer":"claude","commit":"6aca834","wave":0,"lane":"Passed Test","summary":"13-subcommand dispatch, envelope contract, 0/2/3 exits, 23 tests"},
+    {"id":"C-1-2","card":5623,"title":"lock-atomic-corrupt","implementer":"claude","commit":"a93f622","wave":0,"lane":"Passed Test","summary":"mutate_ledger: FileLock 10s + atomic tmp+rename in-lock, corrupt quarantine (INV-A2)"},
+    {"id":"C-1-3","card":5624,"title":"hash-canonicalization","implementer":"claude","commit":"6de349f","wave":0,"lane":"Passed Test","summary":"Pinned NFC row_hash, story hashes, 12-hex prefix boundary (SEC-8, CB-7 sole hex producer)"},
+    {"id":"C-1-4","card":5625,"title":"path-containment-bounds","implementer":"claude","commit":"8ad1ee2","wave":0,"lane":"Passed Test","summary":"resolve_under_root realpath guard (SEC-9), byte budgets (SEC-10), duplicate detection"},
+    {"id":"C-2-2","card":5627,"title":"normalize-rows","implementer":"claude+codexWIP","commit":"3d06daa","wave":1,"lane":"Passed Test","summary":"AC-2 validation 5 reject codes pre-write, ledger schema stamping, TC-G11"},
+    {"id":"C-2-3","card":5628,"title":"check-rows-oracle-lint","implementer":"gemini→opus→codex","commit":"8d2aa10","wave":1,"lane":"Passed Test","flag":"fr","summary":"Coverage + oracle layer-2 lint (banned phrases, iff, US-n, same-sentence observables) + anti-relabeling; went through Failed Review twice, 3 agents touched it"},
+    {"id":"C-3-1","card":5629,"title":"record-evidence","implementer":"codex (phantom-hole)","commit":"a0d47a5","wave":1,"lane":"Passed Test","flag":"ph","summary":"PHANTOM-HOLE: fully implemented in codex WIP 7334cb6 before the card was ever claimed — became a verify task. Evidence scaffold + hash binding + per-story invalidation"},
+    {"id":"C-3-2","card":5630,"title":"assemble-digest","implementer":"claude","commit":"30395ec","wave":1,"lane":"Passed Test","summary":"Delta batching, 3500-byte row-boundary split, secret lint, 6 refusal codes, NOTHING_TO_DIGEST"},
+    {"id":"C-3-3","card":5631,"title":"record-send-cancel-batch","implementer":"claude→codex","commit":"735b984","wave":1,"lane":"Passed Test","summary":"Per-part delivery, all-sent flip; codex added 2-line sent→assembled revert on late failure (RC-2)"},
+    {"id":"C-4-1","card":5632,"title":"parse-reply-grammar","implementer":"claude→codex","commit":"32345fb","wave":1,"lane":"Passed Test","summary":"Block grammar (per_row/bulk_pass/pass_rest), CB-9 ordering, RC-4 idempotency, INV-A3 zero-mutation reprompt; codex fixed quote truncation 80→200 to spec"},
+    {"id":"C-4-2","card":5633,"title":"telegram-trust-boundary","implementer":"opus→codex","commit":"c0514a3","wave":1,"lane":"Passed Test","summary":"SEC-1/2/3: raw update extraction, allowlist≠chat_id fail-closed, hashed-sender events, static literal grep; codex hardened message_id (bool/float/blank)"},
+    {"id":"C-4-3","card":5634,"title":"reset-failed-supersede","implementer":"opus→codex","commit":"84303bb+1line","wave":1,"lane":"Passed Test","summary":"INV-14 append-only history, FM-4 evidence invalidation, INV-7 transactional supersede, REFRESH_DISALLOWED enum; codex 1-line last_reset_at fix activated dormant EVIDENCE_STALE"},
+    {"id":"C-4-4","card":5635,"title":"judgment-projection (long pole)","implementer":"codex→claude","commit":"9b7f86f","wave":1,"lane":"Passed Test","flag":"fr","summary":"Claude review caught missing active-row predicate (superseded rows blocked projection) — Failed Review → fixed same hour"},
+    {"id":"C-4-5","card":5636,"title":"self-check","implementer":"codex","commit":"fb99396","wave":2,"lane":"Passed Test","summary":"Module-local mirror of fizzy's 8 gate reject classes; review built full parity table — anti-relabeling strictly stricter, RC-1 single-read TOCTOU"},
+    {"id":"C-4-6","card":5637,"title":"status","implementer":"opus→codex","commit":"fc469a9+5b93607","wave":1,"lane":"Passed Test","summary":"Read-only mid-close report: stale-batch flag (FM-5), close-step routing, INV-A2 proven by mutation spies"},
+    {"id":"C-5-1","card":5638,"title":"doc-07-execution validation leg","implementer":"opus","commit":"9687818","wave":5,"lane":"Review","summary":"Altitude-gated Phase 7 doc section: derive→draft→normalize→check order, live-verified CLI examples, drafted_baseline_hash, anti-hindsight note. IN REVIEW"},
+    {"id":"C-5-2","card":5639,"title":"doc-08-implementation close-algo","implementer":"opus","commit":"7cb372b","wave":5,"lane":"Review","summary":"§8 close algorithm verbatim (diff-verified), 8 gate + 13 local code playbook, TC-0.2 static doc test. IN REVIEW"},
+    {"id":"C-5-3","card":5640,"title":"system-validation dogfood close-out","implementer":"—","commit":"—","wave":5,"lane":"New Todo","summary":"BLOCKED on C-5-1/C-5-2: run the whole leg for real on this very project and close via pipeline_mark_system_validation_complete"}
+  ],
+  "decomposed_parents":6,
+  "multi_agent":{
+    "agents":[
+      {"name":"claude (Fable 5)","short":"CL","color":"#39c4d6","role":"conductor: card pickup via pipeline_do_next_task, Opus subagent orchestration, validation of every diff/test, commits, reviews of codex work, board bookkeeping via haiku subagents"},
+      {"name":"opus subagents","short":"OP","color":"#9d7bff","role":"implementation + adversarial reviews under claude direction (Jason directive 2026-06-12: orchestrate Opus for most tasks)"},
+      {"name":"haiku subagents","short":"HK","color":"#4f86f7","role":"fizzy board bookkeeping (G6 hook delegates attest/complete/comments away from main context)"},
+      {"name":"codex (GPT-5.5)","short":"CX","color":"#3fd17a","role":"parallel implementer + reviewer + fixer on the same branch; debate opponent; gauntlet adversary engine"},
+      {"name":"gemini (3.1 Pro)","short":"GM","color":"#f2b347","role":"debate opponent, gauntlet adversary engine, implemented C-2-3 base"},
+      {"name":"Jason","short":"JN","color":"#ef5a6f","role":"sole human validator: gate approvals (V4, exemptions, spec acceptance), severity overrides, the validation leg's entire reason to exist"}
+    ],
+    "review_protocol":"Implementer can never review own commit; pipeline_do_next_task walks Review lane first; reviews are adversarial with file:line evidence; tester gate after review; every gate attested with evidence strings on the card"
+  },
+  "incidents":[
+    {"name":"Detached-HEAD shared worktree","when":"2026-06-12T05:35Z","what":"codex reviewed via checkout-by-hash and committed 6 commits + WIP off-branch; merged back hash-preserving (99e0c76), zero loss","rule":"review must be git-show-only in a shared worktree"},
+    {"name":"Bidirectional commit sweep","when":"2026-06-12T06:53Z + 07:39Z","what":"codex commit-am swept Opus's in-flight C-4-2 tests into a mislabeled C-3-1 commit (6839aab); two hours later claude's C-4-6 commit (fc469a9) swept codex's in-flight C-4-3 fix right back","rule":"git diff before staging; confirm every hunk is yours; selective staging when foreign hunks present"},
+    {"name":"Fizzy MCP disconnect","when":"2026-06-12T06:19Z","what":"MCP died between implementing C-4-1 and attesting it; session-state next_action carried the exact recovery steps; reconnect recovered with zero loss","rule":"durable next_action makes crashes boring"},
+    {"name":"Phantom-hole C-3-1","when":"2026-06-12T06:41Z","what":"record-evidence was already fully implemented in codex WIP before the card was claimed; Phase 7 implementation_status gate converted it to a verify task instead of a duplicate rebuild","rule":"check what exists before building"}
+  ],
+  "by_the_numbers":{"spec_drafts":5,"debate_rounds":4,"gauntlet_raw_concerns":669,"gauntlet_unique":62,"gauntlet_accepted":48,"plan_nodes":25,"cards_loaded":25,"cards_passed_test":16,"cards_in_review":2,"cards_blocked":1,"tests_start":556,"tests_now":760,"tests_added":204,"commits_since_jun11":45,"incidents_documented":4,"incidents_data_lost":0,"reject_codes_in_module":40,"invariants":"INV-1..17 + INV-A1..A7","concern_categories":8},
+  "key_invariants_explained":[
+    {"id":"INV-A2","text":"Every ledger mutation goes through one helper: FileLock + atomic tmp+rename inside the lock; validation failures raise pre-write so a rejected command leaves bytes untouched"},
+    {"id":"INV-A3","text":"An invalid or partial human reply causes ZERO mutations and a re-prompt quoting the offending untrusted text (truncated to 200 chars, escaped)"},
+    {"id":"CB-7","text":"The module is the sole producer of hex hashes — the conductor (LLM) never writes hex by hand"},
+    {"id":"INV-7","text":"Superseding a row snapshots the old and installs the new in ONE write — no coverage gap can exist even across a crash"},
+    {"id":"INV-16","text":"Bulk verdicts only allowed while the digest batch is fully sent — a late part failure flips it back"},
+    {"id":"SEC-2","text":"Telegram sender allowlist is distinct from chat_id; missing/malformed registry fails closed"},
+    {"id":"INV-5/RC-1","text":"self-check re-verifies the artifact sha256 at call time on the exact bytes — TOCTOU window closed by single-read design"}
+  ]
+};
+
+/* ====== lane colors ====== */
+var LANE_COLOR = {
+  "Passed Test":"#3fd17a",
+  "Review":"#f2b347",
+  "New Todo":"#4f86f7",
+  "Untested":"#39c4d6",
+  "Failed Review":"#ef5a6f",
+  "Decomposed":"#5a6b82"
+};
+function laneClass(l){return (LANE_COLOR[l]||"#5a6b82");}
+
+/* ====== HERO NUMBERS ====== */
+(function(){
+  var n = DATA.by_the_numbers;
+  var items = [
+    {num:n.debate_rounds, lbl:"debate rounds", cls:"v", suf:""},
+    {num:n.spec_drafts, lbl:"spec drafts (v1→v5)", cls:"v", suf:""},
+    {num:n.gauntlet_raw_concerns, lbl:"raw gauntlet concerns", cls:"a", suf:""},
+    {num:n.gauntlet_accepted, lbl:"concerns accepted", cls:"a", suf:""},
+    {num:n.plan_nodes, lbl:"plan nodes", cls:"b", suf:""},
+    {num:n.cards_passed_test, lbl:"cards passed test", cls:"g", suf:"/19"},
+    {num:n.tests_added, lbl:"tests added", cls:"g", suf:"", pre:"+"},
+    {num:n.tests_now, lbl:"total tests now", cls:"", suf:""},
+    {num:n.commits_since_jun11, lbl:"commits since Jun 11", cls:"", suf:""},
+    {num:n.reject_codes_in_module, lbl:"reject codes in module", cls:"", suf:""},
+    {num:n.incidents_documented, lbl:"incidents logged", cls:"r", suf:""},
+    {num:n.incidents_data_lost, lbl:"data lost", cls:"g", suf:""}
+  ];
+  var html = items.map(function(it,i){
+    return '<div class="stat '+it.cls+'">'+
+      '<div class="num" data-target="'+it.num+'" data-pre="'+(it.pre||'')+'" data-suf="'+(it.suf||'')+'">0</div>'+
+      '<div class="lbl">'+it.lbl+'</div></div>';
+  }).join('');
+  document.getElementById('numbers').innerHTML = html;
+})();
+
+function animateCount(el){
+  var target = +el.getAttribute('data-target');
+  var pre = el.getAttribute('data-pre')||'';
+  var suf = el.getAttribute('data-suf')||'';
+  var dur = 1100, t0 = null;
+  function step(ts){
+    if(t0===null) t0=ts;
+    var p = Math.min((ts-t0)/dur,1);
+    var e = 1-Math.pow(1-p,3);
+    el.textContent = pre + Math.round(target*e) + suf;
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+var counted = false;
+var numObserver = new IntersectionObserver(function(entries){
+  entries.forEach(function(en){
+    if(en.isIntersecting && !counted){
+      counted = true;
+      var nums = document.querySelectorAll('#numbers .num');
+      for(var i=0;i<nums.length;i++) animateCount(nums[i]);
+    }
+  });
+},{threshold:.3});
+numObserver.observe(document.getElementById('numbers'));
+
+/* ====== PIPELINE SUBWAY ====== */
+(function(){
+  var phases = DATA.pipeline_phases;
+  var sub = document.getElementById('subway');
+  var html = '';
+  for(var i=0;i<phases.length;i++){
+    var p = phases[i];
+    var done = (i < phases.length-1); // all but last completed
+    var cls = 'stop'+(done?' done':'')+(i===phases.length-1?' active':'');
+    html += '<div class="'+cls+'" data-idx="'+i+'" onclick="selectPhase('+i+')">'+
+      '<div class="rail"></div>'+
+      '<div class="dot"></div>'+
+      '<div class="pn">P'+i+'</div>'+
+      '<div class="name">'+p.phase+'</div></div>';
+  }
+  sub.innerHTML = html;
+  selectPhase(phases.length-1);
+})();
+
+function selectPhase(idx){
+  var phases = DATA.pipeline_phases;
+  var stops = document.querySelectorAll('.stop');
+  for(var i=0;i<stops.length;i++){
+    if(+stops[i].getAttribute('data-idx')===idx) stops[i].classList.add('active');
+    else stops[i].classList.remove('active');
+  }
+  var p = phases[idx];
+  var d = document.getElementById('phaseDetail');
+  d.innerHTML = '<div class="pd-head">'+
+    '<h3>'+(idx)+'. '+p.phase+'</h3>'+
+    (p.date?'<span class="pd-date">'+p.date+'</span>':'<span class="pd-date">front door</span>')+
+    '</div>'+
+    '<p class="pd-note">'+p.note+'</p>';
+}
+
+/* ====== GAUNTLET FUNNEL ====== */
+(function(){
+  var g = DATA.gauntlet;
+  var stages = [
+    {v:g.raw_concerns, label:"raw concerns", desc:"7 adversaries × 2 models, deliberately noisy", color:"#ef5a6f"},
+    {v:g.unique_themes, label:"unique themes", desc:"deduped by hand into distinct issues", color:"#f2b347"},
+    {v:g.accepted, label:"accepted", desc:g.acknowledged+" acknowledged · "+g.dismissed+" dismissed", color:"#3fd17a"}
+  ];
+  var W=420, H=300, maxV=stages[0].v;
+  var topPad=14, rowH=(H-topPad*2)/stages.length;
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet">';
+  // trapezoids
+  var cx=W/2;
+  function widthFor(v){return 40 + (W-90)*(v/maxV);}
+  for(var i=0;i<stages.length;i++){
+    var topV = stages[i].v;
+    var botV = (i<stages.length-1)? stages[i+1].v : stages[i].v*0.55;
+    var wTop = widthFor(topV), wBot = widthFor(botV);
+    var y0 = topPad + i*rowH, y1 = topPad + (i+1)*rowH - 8;
+    var pts = (cx-wTop/2)+','+y0+' '+(cx+wTop/2)+','+y0+' '+(cx+wBot/2)+','+y1+' '+(cx-wBot/2)+','+y1;
+    svg += '<polygon class="fseg" data-i="'+i+'" points="'+pts+'" fill="'+stages[i].color+'" fill-opacity="0.16" stroke="'+stages[i].color+'" stroke-width="1.5" style="transition:fill-opacity .2s;cursor:pointer"/>';
+    svg += '<text x="'+cx+'" y="'+(y0+rowH/2-4)+'" text-anchor="middle" fill="#fff" font-size="30" font-family="monospace" font-weight="700" class="fnum" data-target="'+topV+'">0</text>';
+    svg += '<text x="'+cx+'" y="'+(y0+rowH/2+16)+'" text-anchor="middle" fill="'+stages[i].color+'" font-size="11" font-family="monospace" letter-spacing="1">'+stages[i].label.toUpperCase()+'</text>';
+  }
+  svg+='</svg>';
+  document.getElementById('funnel').innerHTML = svg;
+
+  // legend
+  var leg='';
+  var pcts=['100%','9.3%','7.2%'];
+  for(var j=0;j<stages.length;j++){
+    leg += '<div class="fl-item" data-i="'+j+'">'+
+      '<span class="pct">'+pcts[j]+' of raw</span>'+
+      '<div class="fn" style="color:'+stages[j].color+'">'+stages[j].v+'</div>'+
+      '<div class="fd">'+stages[j].label+' — '+stages[j].desc+'</div></div>';
+  }
+  document.getElementById('funnelLegend').innerHTML = leg;
+
+  // overrides
+  document.getElementById('overrides').innerHTML =
+    g.human_overrides.map(function(o){return '<div style="margin-bottom:9px;font-size:13px;color:#c8d6e8"><span class="ov-tag">override</span>'+o+'</div>';}).join('');
+
+  // hover link funnel<->legend
+  function hl(i,on){
+    var segs=document.querySelectorAll('.fseg');
+    for(var k=0;k<segs.length;k++){ if(+segs[k].getAttribute('data-i')===i) segs[k].setAttribute('fill-opacity', on?'0.4':'0.16'); }
+  }
+  var segs=document.querySelectorAll('.fseg');
+  for(var s=0;s<segs.length;s++){(function(seg){
+    seg.addEventListener('mouseenter',function(){hl(+seg.getAttribute('data-i'),true);});
+    seg.addEventListener('mouseleave',function(){hl(+seg.getAttribute('data-i'),false);});
+  })(segs[s]);}
+
+  // animate funnel numbers when scrolled
+  var fobs = new IntersectionObserver(function(es){
+    es.forEach(function(en){
+      if(en.isIntersecting){
+        var fn=document.querySelectorAll('.fnum');
+        for(var i=0;i<fn.length;i++) animateCount(fn[i]);
+        fobs.disconnect();
+      }
+    });
+  },{threshold:.4});
+  fobs.observe(document.getElementById('funnel'));
+})();
+
+/* ====== TEST CHART ====== */
+(function(){
+  var prog = DATA.test_suite_progression;
+  var W=1080, H=380, padL=54, padR=24, padT=24, padB=64;
+  var plotW=W-padL-padR, plotH=H-padT-padB;
+  var minT=540, maxT=780;
+  function x(i){return padL + (plotW)*(i/(prog.length-1));}
+  function y(v){return padT + plotH*(1-(v-minT)/(maxT-minT));}
+
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet">';
+  // grid + y labels
+  for(var g=560;g<=760;g+=40){
+    svg+='<line x1="'+padL+'" y1="'+y(g)+'" x2="'+(W-padR)+'" y2="'+y(g)+'" stroke="#1e2a3c" stroke-width="1"/>';
+    svg+='<text x="'+(padL-10)+'" y="'+(y(g)+4)+'" text-anchor="end" fill="#4d5d75" font-size="11" font-family="monospace">'+g+'</text>';
+  }
+  // step path
+  var dPath='M'+x(0)+','+y(prog[0].tests);
+  for(var i=1;i<prog.length;i++){
+    dPath += ' L'+x(i)+','+y(prog[i-1].tests)+' L'+x(i)+','+y(prog[i].tests);
+  }
+  // area fill under step
+  var area=dPath+' L'+x(prog.length-1)+','+(padT+plotH)+' L'+x(0)+','+(padT+plotH)+' Z';
+  svg+='<defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">'+
+    '<stop offset="0%" stop-color="#3fd17a" stop-opacity="0.28"/>'+
+    '<stop offset="100%" stop-color="#3fd17a" stop-opacity="0"/></linearGradient></defs>';
+  svg+='<path d="'+area+'" fill="url(#ag)"/>';
+  svg+='<path id="testline" d="'+dPath+'" fill="none" stroke="#3fd17a" stroke-width="2.5" stroke-linejoin="round"/>';
+  // markers
+  for(var m=0;m<prog.length;m++){
+    var pt=prog[m];
+    svg+='<circle class="tmark" data-i="'+m+'" cx="'+x(m)+'" cy="'+y(pt.tests)+'" r="5" fill="#0a0e14" stroke="#3fd17a" stroke-width="2.5" style="cursor:pointer;transition:r .12s"/>';
+  }
+  // start/end annotations
+  svg+='<text x="'+x(0)+'" y="'+(y(prog[0].tests)-14)+'" fill="#7a8aa0" font-size="12" font-family="monospace">'+prog[0].tests+'</text>';
+  svg+='<text x="'+x(prog.length-1)+'" y="'+(y(prog[prog.length-1].tests)-14)+'" text-anchor="end" fill="#3fd17a" font-size="13" font-family="monospace" font-weight="700">'+prog[prog.length-1].tests+'</text>';
+  svg+='</svg>';
+  document.getElementById('chart').innerHTML=svg;
+
+  var tip=document.getElementById('tip');
+  var marks=document.querySelectorAll('.tmark');
+  for(var k=0;k<marks.length;k++){(function(mk){
+    var i=+mk.getAttribute('data-i'); var pt=prog[i];
+    mk.addEventListener('mouseenter',function(e){
+      mk.setAttribute('r','8');
+      tip.innerHTML='<b>'+pt.label+'</b><br><span class="tm">'+pt.time+'</span><br>'+pt.tests+' tests'+(i>0?' &nbsp;<span style="color:#3fd17a">+'+(pt.tests-prog[i-1].tests)+'</span>':'');
+      tip.style.opacity='1';
+    });
+    mk.addEventListener('mousemove',function(e){
+      tip.style.left=(e.clientX+14)+'px'; tip.style.top=(e.clientY+14)+'px';
+    });
+    mk.addEventListener('mouseleave',function(){mk.setAttribute('r','5');tip.style.opacity='0';});
+  })(marks[k]);}
+
+  // draw-in animation of line
+  var path=document.getElementById('testline');
+  try{
+    var len=path.getTotalLength();
+    path.style.strokeDasharray=len; path.style.strokeDashoffset=len;
+    var cobs=new IntersectionObserver(function(es){
+      es.forEach(function(en){ if(en.isIntersecting){
+        path.style.transition='stroke-dashoffset 1.6s ease-out';
+        path.style.strokeDashoffset='0'; cobs.disconnect();
+      }});
+    },{threshold:.3});
+    cobs.observe(document.getElementById('chart'));
+  }catch(e){/* getTotalLength unavailable on some file:// engines; line just shows */}
+})();
+
+/* ====== BOARD ====== */
+var boardView='wave';
+function setView(v){
+  boardView=v;
+  document.getElementById('byWave').classList.toggle('on', v==='wave');
+  document.getElementById('byLane').classList.toggle('on', v==='lane');
+  renderBoard();
+}
+function renderBoard(){
+  var cards=DATA.cards;
+  var container=document.getElementById('boardGroups');
+  var groups={};
+  var order=[];
+  if(boardView==='wave'){
+    cards.forEach(function(c){
+      var key='Wave '+c.wave;
+      if(!groups[key]){groups[key]=[];order.push(key);}
+      groups[key].push(c);
+    });
+    order.sort();
+    // add decomposed parents pseudo-group
+  } else {
+    var laneOrder=["New Todo","Review","Untested","Failed Review","Passed Test","Decomposed"];
+    laneOrder.forEach(function(l){groups[l]=[];});
+    cards.forEach(function(c){ if(!groups[c.lane])groups[c.lane]=[]; groups[c.lane].push(c); });
+    order=laneOrder.filter(function(l){return groups[l]&&groups[l].length;});
+  }
+  var html='';
+  order.forEach(function(key){
+    var arr=groups[key];
+    html+='<div class="group"><div class="gh">'+key+
+      '<span class="ct">'+arr.length+' cards</span><span class="bar"></span></div><div class="cards">';
+    arr.forEach(function(c){ html+=cardHTML(c); });
+    html+='</div></div>';
+  });
+  // decomposed parents note (only in wave view)
+  if(boardView==='wave'){
+    html+='<div class="group"><div class="gh">Decomposed parents'+
+      '<span class="ct">'+DATA.decomposed_parents+' nodes</span><span class="bar"></span></div>'+
+      '<div class="dim" style="font-size:13px">6 of the 25 plan nodes were parent tasks that decomposed into the leaf components above — they never get implemented directly; their children carry the work.</div></div>';
+  }
+  container.innerHTML=html;
+  attachCardPops();
+}
+function cardHTML(c){
+  var col=laneClass(c.lane);
+  var flag='';
+  if(c.flag==='ph') flag='<span class="cflag flag-ph">PHANTOM</span>';
+  else if(c.flag==='fr') flag='<span class="cflag flag-fr">FAILED RV</span>';
+  if(c.title.indexOf('long pole')>=0) flag='<span class="cflag flag-lp">LONG POLE</span>';
+  return '<div class="card" style="border-left-color:'+col+'" '+
+    'data-card="'+encodeURIComponent(JSON.stringify(c))+'">'+
+    flag+
+    '<div class="cid">'+c.id+' · #'+c.card+'</div>'+
+    '<div class="ctitle">'+c.title.replace(' (long pole)','')+'</div>'+
+    '<div class="cimpl">'+c.implementer+'</div></div>';
+}
+function attachCardPops(){
+  var pop=document.getElementById('cardpop');
+  var els=document.querySelectorAll('.card');
+  for(var i=0;i<els.length;i++){(function(el){
+    el.addEventListener('mouseenter',function(e){
+      var c=JSON.parse(decodeURIComponent(el.getAttribute('data-card')));
+      var col=laneClass(c.lane);
+      pop.innerHTML='<h4>'+c.title+'</h4>'+
+        '<div class="cp-meta">'+c.id+' · card #'+c.card+' · wave '+c.wave+'</div>'+
+        '<div class="cp-chain">chain: '+c.implementer+'</div>'+
+        '<div class="cp-chain">commit: '+(c.commit!=='—'?c.commit:'—')+'</div>'+
+        '<div class="cp-sum">'+c.summary+'</div>'+
+        '<span class="cp-lane" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'55">'+c.lane+'</span>';
+      pop.style.opacity='1';
+      positionPop(e);
+    });
+    el.addEventListener('mousemove',positionPop);
+    el.addEventListener('mouseleave',function(){pop.style.opacity='0';});
+  })(els[i]);}
+  function positionPop(e){
+    var pop=document.getElementById('cardpop');
+    var x=e.clientX+16, y=e.clientY+16;
+    if(x+330>window.innerWidth) x=e.clientX-336;
+    if(y+200>window.innerHeight) y=window.innerHeight-210;
+    pop.style.left=x+'px'; pop.style.top=y+'px';
+  }
+}
+// lane legend
+(function(){
+  var ll=document.getElementById('laneLegend');
+  var lanes=["Passed Test","Review","New Todo","Failed Review","Decomposed"];
+  ll.innerHTML=lanes.map(function(l){
+    return '<span class="lk"><span class="swatch" style="background:'+laneClass(l)+'"></span>'+l+'</span>';
+  }).join('');
+})();
+renderBoard();
+
+/* ====== AGENTS ====== */
+(function(){
+  var ag=DATA.multi_agent;
+  document.getElementById('agentsGrid').innerHTML = ag.agents.map(function(a){
+    return '<div class="agent">'+
+      '<div class="av" style="background:'+a.color+'">'+a.short+'</div>'+
+      '<div><h4>'+a.name+'</h4><div class="arole">'+a.role+'</div></div></div>';
+  }).join('');
+  document.getElementById('protocol').innerHTML =
+    '<b>Review protocol — </b>'+ag.review_protocol;
+})();
+
+/* ====== INCIDENTS ====== */
+(function(){
+  document.getElementById('incidents').innerHTML = DATA.incidents.map(function(it,i){
+    return '<div class="inc">'+
+      '<div class="iw">▣ BLACK BOX '+(i+1)+' · '+it.when+'</div>'+
+      '<h4>'+it.name+'</h4>'+
+      '<div class="iwhat">'+it.what+'</div>'+
+      '<div class="irule"><b>RULE MINTED</b>'+it.rule+'</div></div>';
+  }).join('');
+})();
+
+/* ====== INVARIANTS ====== */
+(function(){
+  document.getElementById('invList').innerHTML = DATA.key_invariants_explained.map(function(iv){
+    return '<div class="inv"><div class="iid">'+iv.id+'</div><div class="itxt">'+iv.text+'</div></div>';
+  }).join('');
+})();
+
+/* ====== REMAINING ====== */
+(function(){
+  document.getElementById('remaining').innerHTML = DATA.remaining.map(function(r){
+    var cls = r.lane==='Review'?'review':(r.lane==='New Todo'?'todo':'');
+    return '<div class="rem '+cls+'"><div class="rc">'+r.card+'</div>'+
+      '<div class="rl">'+r.lane+'</div>'+
+      '<div class="rb">'+r.blocker+'</div></div>';
+  }).join('');
+})();
+</script>
+</body>
+</html>

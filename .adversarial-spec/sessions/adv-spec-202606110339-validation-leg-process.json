@@ -3,9 +3,9 @@
   "session_id": "adv-spec-202606110339-validation-leg-process",
   "context_name": "Validation-Leg Production Process",
   "current_phase": "implementation",
-  "current_step": "Phase 8 loop: reconciled codex detached-HEAD incident (merge 99e0c76); reviewed C-4-4 (changes_requested then fixed @ 9b7f86f); implemented C-2-2 @ 3d06daa, C-3-2 @ 30395ec, C-3-3 @ 6dd8604, C-4-1 @ cf50180; suite 687 green; fizzy MCP disconnected before card 5632 attest/complete",
+  "current_step": "Phase 8 loop: 12 cards through gates this run (C-2-2/2-3/3-1/3-2/3-3/4-1/4-2/4-3/4-5/4-6 passed test or reviewed; C-5-1/C-5-2 implemented @ 9687818/7cb372b); suite 760 green; run-retrospective.html built; idle \u2014 C-5-1/C-5-2 await codex/gemini review, C-5-3 blocked on them",
   "created_at": "2026-06-11T03:39:50Z",
-  "updated_at": "2026-06-12T06:20:56Z",
+  "updated_at": "2026-06-12T08:22:10Z",
   "checkpointed_cleanly": true,
   "session_altitude": "system",
   "session_altitude_source": "declared",
@@ -25,19 +25,14 @@
   },
   "todowrite_snapshot": [
     {
-      "content": "Sync locally-completed card work to board after fizzy MCP reconnect",
-      "status": "pending",
-      "activeForm": "Syncing board after MCP reconnect"
-    },
-    {
-      "content": "Phase 8: resume pipeline_do_next_task loop when board is back",
+      "content": "Phase 8: resume pipeline_do_next_task when C-5-1/C-5-2 reviews land",
       "status": "in_progress",
       "activeForm": "Running self-pickup loop"
     },
     {
-      "content": "Cross-agent review gate: Review lane needs codex/gemini, one card at a time",
+      "content": "C-5-3 dogfood close-out (blocked on C-5-1/C-5-2; manual-ux \u2014 may need Jason)",
       "status": "pending",
-      "activeForm": "Waiting on cross-agent reviews"
+      "activeForm": "Closing out system validation"
     },
     {
       "content": "Review orchestrate-next skill with Jason",

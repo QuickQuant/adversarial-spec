@@ -29,3 +29,4 @@
 {"time":"2026-06-11T22:26:40Z","event":"Phase transition: execution → implementation","type":"transition"}
 {"time":"2026-06-12T05:35:45Z","event":"Reconciled codex detached-HEAD divergence: merge 99e0c76, test fix 6ddf719, 640 tests green","type":"maintenance"}
 {"time":"2026-06-12T06:19:10Z","event":"fizzy MCP disconnected mid-loop; C-4-1 done locally @ cf50180, card 5632 attest/complete pending reconnect","type":"maintenance"}
+{"time":"2026-06-12T06:23:30Z","event":"Phase transition: gauntlet → finalize (backfilled — transition occurred 2026-06-11, artifact gauntlet-concerns-2026-06-11.json exists; event not recorded at the time)","type":"transition"}

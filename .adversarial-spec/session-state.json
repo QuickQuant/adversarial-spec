@@ -3,8 +3,8 @@
   "active_session_id": "adv-spec-202606110339-validation-leg-process",
   "context_name": "Validation-Leg Production Process",
   "current_phase": "implementation",
-  "current_step": "Phase 8 loop: reconciled codex detached-HEAD incident (merge 99e0c76); reviewed C-4-4 (changes_requested then fixed @ 9b7f86f); implemented C-2-2 @ 3d06daa, C-3-2 @ 30395ec, C-3-3 @ 6dd8604, C-4-1 @ cf50180; suite 687 green; fizzy MCP disconnected before card 5632 attest/complete",
-  "next_action": "Reconnect fizzy MCP (/mcp), then: attest 9 steps + pipeline_complete_task card 5632 (C-4-1, commit cf50180, arch refs emission-toolchain+patterns), then resume pipeline_do_next_task loop (New Todo: C-3-1, C-4-2, C-4-3, C-4-6); 5 Review-lane cards need codex/gemini cross-review one card at a time",
+  "current_step": "Phase 8 loop: 12 cards through gates this run (C-2-2/2-3/3-1/3-2/3-3/4-1/4-2/4-3/4-5/4-6 passed test or reviewed; C-5-1/C-5-2 implemented @ 9687818/7cb372b); suite 760 green; run-retrospective.html built; idle \u2014 C-5-1/C-5-2 await codex/gemini review, C-5-3 blocked on them",
+  "next_action": "pipeline_do_next_task when codex/gemini have reviewed C-5-1 (card 5638) + C-5-2 (card 5639); then C-5-3 (card 5640) system-validation dogfood close-out (manual-ux exemption \u2014 likely needs Jason); retrospective at specs/validation-leg-process/run-retrospective.html",
   "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606120620-phase8-six-cards-fizzy-disconnect.md",
   "execution_plan_path": ".adversarial-spec/specs/validation-leg-process/execution-plan.md",
   "spec_path": ".adversarial-spec/specs/validation-leg-process/spec-output.md",
@@ -18,7 +18,7 @@
     "Persist decomposition to disk pre-approval (Step 3.5) \u2014 codified in 07-execution.md (Jason 2026-06-11)",
     "Never pre-claim/batch card sets in handoffs; pipeline_do_next_task one card at a time is the only claim path (Jason 2026-06-12)"
   ],
-  "updated_at": "2026-06-12T06:20:56Z",
+  "updated_at": "2026-06-12T08:22:10Z",
   "active_session": "adv-spec-202606110339-validation-leg-process",
   "active_session_file": ".adversarial-spec/sessions/adv-spec-202606110339-validation-leg-process.json",
   "session_stack": [
