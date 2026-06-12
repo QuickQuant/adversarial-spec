@@ -2110,21 +2110,93 @@ def handle_parse_reply(args: argparse.Namespace) -> Envelope:
     verification are the trust boundary card (C-4.2)."""
     ledger_path = resolve_under_root(args.ledger.parent, args.ledger)
 
-    if args.reply_file is not None:
-        reply_path = resolve_under_root(ledger_path.parent, args.reply_file)
-        reply_bytes = reply_path.read_bytes()
-    elif args.reply_text is not None:
-        reply_bytes = args.reply_text.encode("utf-8")
+    # The provenance reference applied to judgments. For telegram it is DERIVED
+    # from the raw payload message id (never the caller-supplied --reply-ref);
+    # for terminal it is the asserted --reply-ref.
+    reply_ref = args.reply_ref
+
+    # ── Inbound trust boundary (C-4.2) ───────────────────────────────────────
+    if args.source == "telegram":
+        # SEC-1: identity comes ONLY from the raw update — never from the
+        # conductor-asserted --sender-id (ignored here by design).
+        update_path = resolve_under_root(ledger_path.parent, args.update_file) \
+            if args.update_file is not None else None
+        if update_path is None:
+            return Envelope(
+                status="issues",
+                code="TELEGRAM_UPDATE_REQUIRED",
+                issues=[make_issue(
+                    "TELEGRAM_UPDATE_REQUIRED",
+                    "--source telegram requires --update-file (raw payload)",
+                    None,
+                )],
+            )
+        # Fail-closed allowlist resolution BEFORE any extraction (SEC-2).
+        registry_path = resolve_under_root(ledger_path.parent, args.registry) \
+            if args.registry is not None else None
+        try:
+            allowed_senders = load_allowed_sender_ids(registry_path)
+            extracted = extract_telegram_reply(update_path)
+        except _RepromptError as exc:
+            return Envelope("reprompt", "REPROMPT_REQUIRED", issues=exc.issues)
+        sender_id = extracted["sender_id"]
+        reply_ref = f"telegram:{extracted['message_id']}"
+        reply_bytes = extracted["text"].encode("utf-8")
+
+        if sender_id not in allowed_senders:
+            # DISCARD: zero judgment mutations; the ONLY write is a durable
+            # security event recording the HASHED sender id (INV-15, OP-1).
+            sender_hash = compute_sender_hash(sender_id)
+
+            def discard_mutator(ledger: dict[str, Any]) -> dict[str, Any]:
+                ledger.setdefault("security_events", []).append({
+                    "at": utc_now(),
+                    "code": "SENDER_NOT_ALLOWLISTED",
+                    "sender_hash": sender_hash,
+                    "digest_id": args.digest_id,
+                })
+                return ledger
+
+            mutate_ledger(ledger_path, discard_mutator)
+            return Envelope(
+                status="issues",
+                code="SENDER_NOT_ALLOWLISTED",
+                issues=[make_issue(
+                    "SENDER_NOT_ALLOWLISTED",
+                    "telegram reply discarded: sender not in the registry "
+                    "allowlist (security event logged with hashed id)",
+                    None,
+                )],
+            )
     else:
-        return Envelope(
-            status="issues",
-            code="REPLY_TEXT_REQUIRED",
-            issues=[make_issue(
-                "REPLY_TEXT_REQUIRED",
-                "parse-reply needs reply text (--reply-file or positional)",
-                None,
-            )],
-        )
+        # Terminal source (SEC-3): the weaker-trust channel must cite the
+        # AskUserQuestion transcript so the assertion is auditable.
+        if not str(reply_ref).startswith("transcript:"):
+            return Envelope(
+                status="issues",
+                code="TERMINAL_REPLY_REF_REQUIRED",
+                issues=[make_issue(
+                    "TERMINAL_REPLY_REF_REQUIRED",
+                    "terminal judgments must cite the AskUserQuestion "
+                    "transcript (--reply-ref transcript:<session>:<turn>)",
+                    None,
+                )],
+            )
+        if args.reply_file is not None:
+            reply_path = resolve_under_root(ledger_path.parent, args.reply_file)
+            reply_bytes = reply_path.read_bytes()
+        elif args.reply_text is not None:
+            reply_bytes = args.reply_text.encode("utf-8")
+        else:
+            return Envelope(
+                status="issues",
+                code="REPLY_TEXT_REQUIRED",
+                issues=[make_issue(
+                    "REPLY_TEXT_REQUIRED",
+                    "parse-reply needs reply text (--reply-file or positional)",
+                    None,
+                )],
+            )
     enforce_input_bounds("reply", reply_bytes)
     reply_text = reply_bytes.decode("utf-8", errors="replace")
 
@@ -2137,7 +2209,7 @@ def handle_parse_reply(args: argparse.Namespace) -> Envelope:
                 "BATCH_NOT_FOUND",
                 [make_issue("BATCH_NOT_FOUND", f"no batch {args.digest_id}", None)],
             )
-        if args.reply_ref in batch.get("processed_reply_refs", []):
+        if reply_ref in batch.get("processed_reply_refs", []):
             raise _AlreadyProcessedError()
         if batch.get("status") not in NON_TERMINAL_BATCH_STATUSES:
             raise ValidationIssuesError(
@@ -2236,7 +2308,7 @@ def handle_parse_reply(args: argparse.Namespace) -> Envelope:
                 "judged_at": utc_now(),
                 "source": args.source,
                 "digest_id": args.digest_id,
-                "reply_ref": args.reply_ref,
+                "reply_ref": reply_ref,
             }
             if justification:
                 judgment["justification"] = justification
@@ -2255,7 +2327,7 @@ def handle_parse_reply(args: argparse.Namespace) -> Envelope:
                     judge(row, "pass", None)
                     judged.append(row_id)
 
-        batch.setdefault("processed_reply_refs", []).append(args.reply_ref)
+        batch.setdefault("processed_reply_refs", []).append(reply_ref)
         if all(
             rows_by_id.get(rid, {}).get("result") is not None
             for rid in batch.get("row_ids", [])
@@ -2276,7 +2348,7 @@ def handle_parse_reply(args: argparse.Namespace) -> Envelope:
         return Envelope(
             status="ok",
             code="REPLY_ALREADY_PROCESSED",
-            data={"digest_id": args.digest_id, "reply_ref": args.reply_ref},
+            data={"digest_id": args.digest_id, "reply_ref": reply_ref},
         )
     except _RepromptError as exc:
         return Envelope(status="reprompt", code="REPROMPT_REQUIRED", issues=exc.issues)

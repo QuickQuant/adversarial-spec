@@ -2455,7 +2455,7 @@ def test_parse_reply_telegram_allowlisted_sender_applies_tcg3(capsys, tmp_path):
     exit_code, out, _err = _telegram_reply(
         capsys, ledger_path, digest_id, update, registry
     )
-    envelope = parse_single_envelope(out)
+    parse_single_envelope(out)
     assert exit_code == EXIT_OK
     for k in (1, 2, 3):
         judgment = _row(ledger_path, f"r-US1-{k}")["judgment"]
@@ -2485,9 +2485,8 @@ def test_parse_reply_telegram_non_allowlisted_sender_discarded_tcg3(capsys, tmp_
     assert envelope["code"] == "SENDER_NOT_ALLOWLISTED"
 
     ledger = json.loads(ledger_path.read_text())
-    # Zero judgment mutations: every row still unjudged.
+    # Zero judgment mutations: rows array byte-identical to before.
     assert ledger["rows"] == rows_before
-    assert all(r["result"] is None for r in ledger["rows"])
 
     # A security event records the HASHED sender id — never the raw id.
     events = [e for e in ledger.get("security_events", [])
