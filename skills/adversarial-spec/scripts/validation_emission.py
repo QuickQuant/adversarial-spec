@@ -1801,6 +1801,8 @@ def handle_record_send(args: argparse.Namespace) -> Envelope:
 
         if all(p.get("send_result") == "sent" for p in batch.get("parts", [])):
             batch["status"] = "sent"
+        else:
+            batch["status"] = "assembled"
 
         result_data.update(
             digest_id=args.digest_id,

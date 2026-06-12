@@ -2047,6 +2047,35 @@ def test_record_send_failed_part_does_not_flip(capsys, tmp_path):
     assert _batch(ledger_path, digest_id)["status"] == "sent"
 
 
+def test_record_send_sent_batch_failed_update_recomputes_status_tcg1(capsys, tmp_path):
+    """TC-G1/INV-16: a sent batch cannot stay bulk-verdict-eligible after any
+    part is later recorded failed."""
+    from validation_emission import bulk_verdicts_allowed
+
+    ledger_path, _conops, digest_id, n_parts = _multi_part_batch(capsys, tmp_path)
+    for i in range(1, n_parts + 1):
+        exit_code, _out, _err = run_cli(capsys, [
+            "record-send", str(ledger_path), "--digest-id", digest_id,
+            "--part", str(i), "--result", "sent", "--message-id", f"msg-{i}",
+        ])
+        assert exit_code == EXIT_OK
+    assert _batch(ledger_path, digest_id)["status"] == "sent"
+
+    exit_code, out, _err = run_cli(capsys, [
+        "record-send", str(ledger_path), "--digest-id", digest_id,
+        "--part", "1", "--result", "failed",
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    assert envelope["data"]["batch_status"] == "assembled"
+    batch = _batch(ledger_path, digest_id)
+    assert batch["status"] == "assembled"
+    assert batch["parts"][0]["send_result"] == "failed"
+    assert batch["parts"][0]["sent_at"] is None
+    assert batch["parts"][0]["message_id"] is None
+    assert bulk_verdicts_allowed(batch) is False
+
+
 @pytest.mark.parametrize(
     ("argv_patch", "code"),
     [
