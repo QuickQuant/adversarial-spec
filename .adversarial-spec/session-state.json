@@ -3,9 +3,9 @@
   "active_session_id": "adv-spec-202606110339-validation-leg-process",
   "context_name": "Validation-Leg Production Process",
   "current_phase": "implementation",
-  "current_step": "Phase 8 loop active: detached-HEAD incident reconciled (merge 99e0c76); C-4-4 reviewed+fixed @ 9b7f86f, C-2-2 @ 3d06daa, C-3-2 @ 30395ec \u2014 3 cards in Review (claude implementer)",
-  "next_action": "Continue pipeline_do_next_task loop (New Todo: C-3-1, C-3-3, C-4-1, C-4-2, C-4-3, C-4-6); claude-implemented Review cards need codex/gemini",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606120430-phase8-wave0-complete-4-cards-in-review.md",
+  "current_step": "Phase 8 loop: reconciled codex detached-HEAD incident (merge 99e0c76); reviewed C-4-4 (changes_requested then fixed @ 9b7f86f); implemented C-2-2 @ 3d06daa, C-3-2 @ 30395ec, C-3-3 @ 6dd8604, C-4-1 @ cf50180; suite 687 green; fizzy MCP disconnected before card 5632 attest/complete",
+  "next_action": "Reconnect fizzy MCP (/mcp), then: attest 9 steps + pipeline_complete_task card 5632 (C-4-1, commit cf50180, arch refs emission-toolchain+patterns), then resume pipeline_do_next_task loop (New Todo: C-3-1, C-4-2, C-4-3, C-4-6); 5 Review-lane cards need codex/gemini cross-review one card at a time",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606120620-phase8-six-cards-fizzy-disconnect.md",
   "execution_plan_path": ".adversarial-spec/specs/validation-leg-process/execution-plan.md",
   "spec_path": ".adversarial-spec/specs/validation-leg-process/spec-output.md",
   "do_not_ask": [
@@ -15,9 +15,10 @@
     "Stale Phase 4 handling: reconcile-in-place is the ruled default; never offer bare rerun-vs-acknowledge again (Jason 2026-06-11)",
     "Scope approved: decomposition at ~18-25 nodes, schema-3 tree, multi-agent (Jason 2026-06-11)",
     "Stale Phase 4 handling: reconcile-in-place is the ruled default (Jason 2026-06-11)",
-    "Persist decomposition to disk pre-approval (Step 3.5) \u2014 codified in 07-execution.md (Jason 2026-06-11)"
+    "Persist decomposition to disk pre-approval (Step 3.5) \u2014 codified in 07-execution.md (Jason 2026-06-11)",
+    "Never pre-claim/batch card sets in handoffs; pipeline_do_next_task one card at a time is the only claim path (Jason 2026-06-12)"
   ],
-  "updated_at": "2026-06-12T06:07:51Z",
+  "updated_at": "2026-06-12T06:20:56Z",
   "active_session": "adv-spec-202606110339-validation-leg-process",
   "active_session_file": ".adversarial-spec/sessions/adv-spec-202606110339-validation-leg-process.json",
   "session_stack": [
@@ -46,7 +47,7 @@
     "adv-spec-202603201800-gauntlet-refactor-quota-burn",
     "adv-spec-202603051555-philosophy-phase-and-arch-persona"
   ],
-  "completed_work": "Emission dep-edge loss root-caused (prose-only edges + driver (all)-skip + no fidelity gate) and fixed at all layers: per-node depends_on in execution-plan.md, emit_driver fail-fast + tested_by folded in, re-pipeline_load repaired 19 cards in place (plan_hash 5f7893a24fa8d0cd, waves restored, critical path C-1-1>C-4-4>C-4-5>C-5-1>C-5-3). fizzy do_next_task schedule_view gated behind verbose:true (fizzy repo, 620 mock tests pass, uncommitted, MCP restart pending). Wave 0 built: validation_emission.py skeleton (13-subcommand dispatch, envelope contract, 0/2/3 exits, stamping), mutate_ledger lock/atomic/corrupt-quarantine, pinned hash canonicalization (row/conops/story, 12-hex boundary), path containment + input byte budgets + id uniqueness. 62 module tests; suite 618 green; deterministic/dogfood markers registered",
+  "completed_work": "Detached-HEAD reconcile: codex's 6 commits + WIP merged to main hash-preserving, .mcp.json token scrubbed, incident note filed. Cards: C-4-4 review found active-row predicate gap (repro'd) and fix landed; C-2-3 fixture fix 6ddf719; C-2-2 normalize-rows AC-2 validation + schema stamping; C-3-2 assemble-digest delta batching/3500B split/secret lint; C-3-3 record-send all-sent flip + cancel audit + INV-16 gate; C-4-1 parse-reply full grammar (CB-9 ordering, FM-10, RC-4 idempotency, INV-A3 zero-mutation reprompt). 687 tests green, ruff clean.",
   "reset_at": "2026-05-30T19:08:15Z",
   "reset_reason": "Zombie pointer cleanup: prior active_session pointed at dispatch-cost-tracker (card 1851) which no longer exists on the now-empty Fizzy board. Parked sessions preserved above; their on-disk artifacts are committed."
 }
