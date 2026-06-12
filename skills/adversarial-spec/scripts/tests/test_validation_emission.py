@@ -1058,12 +1058,25 @@ def test_check_rows_detects_incomplete_coverage(capsys, tmp_path):
     conops_path.write_text("### US-1: First\n### US-2: Second")
 
     ledger_path = tmp_path / "validation-rows.json"
+    # A fully valid row covering US-1 only — US-2 stays uncovered, so the ONLY
+    # issue is coverage. Draft mode relaxes coverage alone (spec §7); an
+    # invalid row would keep exit 2 in draft mode by design.
+    scenario = (
+        "Jason runs check-rows on the drafted ledger and reads the envelope"
+        " to confirm coverage state before committing."
+    )
+    oracle = (
+        "Jason passes this row iff the check-rows envelope demonstrates the"
+        " coverage-gate intent from US-1."
+    )
     row = {
-        "row_id": "r-1",
+        "row_id": "r-US1-1",
         "conops_ref": "US-1",
-        "scenario": "s",
-        "oracle": "US-1 iff x",
-        "evidence_type": "n",
+        "scenario": scenario,
+        "oracle": oracle,
+        "evidence_type": "narrative",
+        "evidence_rationale": "narrative is sufficient for a CLI envelope check",
+        "row_hash": compute_row_hash("US-1", scenario, oracle, "narrative"),
     }
     ledger_path.write_text(json.dumps({"rows": [row]}))
 
@@ -1073,7 +1086,8 @@ def test_check_rows_detects_incomplete_coverage(capsys, tmp_path):
     )
     envelope = parse_single_envelope(out)
     assert exit_code == EXIT_ISSUES
-    assert any(i["code"] == "INCOMPLETE_COVERAGE" for i in envelope["issues"])
+    codes = [i["code"] for i in envelope["issues"]]
+    assert codes == ["INCOMPLETE_COVERAGE"]
 
     # Draft mode: advisory (status ok)
     exit_code, out, _err = run_cli(
@@ -1082,7 +1096,8 @@ def test_check_rows_detects_incomplete_coverage(capsys, tmp_path):
     )
     envelope = parse_single_envelope(out)
     assert exit_code == EXIT_OK
-    assert any(i["code"] == "INCOMPLETE_COVERAGE_ADVISORY" for i in envelope["issues"])
+    codes = [i["code"] for i in envelope["issues"]]
+    assert codes == ["INCOMPLETE_COVERAGE_ADVISORY"]
 
 
 def test_check_rows_detects_relabeled_verification(capsys, check_env):
