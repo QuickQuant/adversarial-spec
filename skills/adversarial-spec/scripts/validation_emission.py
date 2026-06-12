@@ -315,6 +315,12 @@ ROW_HASH_FIELDS = ("conops_ref", "scenario", "oracle", "evidence_type")
 _FULL_HASH_RE = re.compile(r"^[0-9a-f]{64}$")
 _STORY_HEADING_RE = re.compile(r"^### (US-\d+)\b", re.MULTILINE)
 _US_TOKEN_RE = re.compile(r"\bUS-\d+\b")
+_CONOPS_REF_RE = re.compile(r"^US-\d+$")
+_ROW_ID_RE = re.compile(r"^r-US(?P<story_num>\d+)-(?P<row_num>\d+)$")
+
+EVIDENCE_TYPES = frozenset(
+    {"agent-walkthrough-transcript", "artifact-demo", "narrative"}
+)
 
 
 def _nfc(text: str) -> str:
@@ -641,26 +647,138 @@ def handle_check_rows(args: argparse.Namespace) -> Envelope:
 
     issues = []
     seen_stories = set()
+    rows = ledger.get("rows", [])
 
-    for row in ledger.get("rows", []):
+    if not isinstance(rows, list):
+        return Envelope(
+            status="issues",
+            issues=[make_issue("ROWS_INVALID", "ledger.rows must be a list")],
+        )
+
+    for duplicate in find_duplicate_row_ids(ledger):
+        issues.append(
+            make_issue("DUPLICATE_ROW_ID", f"duplicate row_id: {duplicate}", duplicate)
+        )
+
+    for row in rows:
+        if not isinstance(row, dict):
+            issues.append(make_issue("ROW_INVALID", "ledger row must be an object", None))
+            continue
+
         row_id = row.get("row_id")
         conops_ref = row.get("conops_ref")
         oracle = row.get("oracle", "")
         evidence_rationale = row.get("evidence_rationale", "")
         test_targets = row.get("test_targets", [])
 
-        if conops_ref:
-            seen_stories.add(conops_ref)
+        row_issue_id = row_id if isinstance(row_id, str) else None
+        oracle_text = oracle if isinstance(oracle, str) else ""
+
+        # TC-2.1 / TC-2.4: structural row checks. Semantics remain human-owned.
+        for field_name in ("row_id", "conops_ref", "scenario", "oracle", "evidence_type"):
+            value = row.get(field_name)
+            if not isinstance(value, str) or not value.strip():
+                issues.append(
+                    make_issue(
+                        "MISSING_REQUIRED_FIELD",
+                        f"row missing non-empty {field_name}",
+                        row_issue_id,
+                    )
+                )
+
+        if not isinstance(evidence_rationale, str) or not evidence_rationale.strip():
+            issues.append(
+                make_issue(
+                    "EVIDENCE_RATIONALE_MISSING",
+                    "row missing non-empty evidence_rationale",
+                    row_issue_id,
+                )
+            )
+
+        row_id_match = _ROW_ID_RE.match(row_id) if isinstance(row_id, str) else None
+        if isinstance(row_id, str) and not row_id_match:
+            issues.append(
+                make_issue("INVALID_ROW_ID", f"invalid row_id: {row_id!r}", row_issue_id)
+            )
+
+        if isinstance(conops_ref, str) and conops_ref.strip():
+            if not _CONOPS_REF_RE.match(conops_ref):
+                issues.append(
+                    make_issue(
+                        "INVALID_CONOPS_REF",
+                        f"conops_ref must be exactly one US-n id: {conops_ref!r}",
+                        row_issue_id,
+                    )
+                )
+            elif conops_ref not in all_story_ids:
+                issues.append(
+                    make_issue(
+                        "UNKNOWN_CONOPS_REF",
+                        f"conops_ref {conops_ref} is not present in conops.md",
+                        row_issue_id,
+                    )
+                )
+            else:
+                seen_stories.add(conops_ref)
+
+            if row_id_match:
+                expected_ref = f"US-{row_id_match.group('story_num')}"
+                if conops_ref != expected_ref:
+                    issues.append(
+                        make_issue(
+                            "ROW_ID_STORY_MISMATCH",
+                            f"row_id prefix {expected_ref} does not match conops_ref {conops_ref}",
+                            row_issue_id,
+                        )
+                    )
+
+        evidence_type = row.get("evidence_type")
+        if (
+            isinstance(evidence_type, str)
+            and evidence_type.strip()
+            and evidence_type not in EVIDENCE_TYPES
+        ):
+            issues.append(
+                make_issue(
+                    "INVALID_EVIDENCE_TYPE",
+                    f"invalid evidence_type: {evidence_type!r}",
+                    row_issue_id,
+                )
+            )
+
+        row_hash = row.get("row_hash")
+        canonical_fields_present = all(
+            isinstance(row.get(field_name), str) and row.get(field_name).strip()
+            for field_name in ROW_HASH_FIELDS
+        )
+        if row_hash is None:
+            issues.append(make_issue("ROW_HASH_MISSING", "row_hash is required", row_issue_id))
+        elif not isinstance(row_hash, str) or not _FULL_HASH_RE.match(row_hash):
+            issues.append(
+                make_issue(
+                    "ROW_HASH_INVALID",
+                    "row_hash must be a full 64-hex sha256",
+                    row_issue_id,
+                )
+            )
+        elif canonical_fields_present and row_hash != row_hash_for(row):
+            issues.append(
+                make_issue(
+                    "ROW_HASH_MISMATCH",
+                    "row_hash does not match canonical fields",
+                    row_issue_id,
+                )
+            )
 
         # AC-2: Oracle layer-2 lint
-        oracle_lower = oracle.lower()
+        oracle_lower = oracle_text.lower()
         for phrase in BANNED_ORACLE_PHRASES:
             if phrase in oracle_lower:
                 issues.append(
                     make_issue(
                         "BANNED_ORACLE_PHRASE",
                         f"oracle contains banned phrase: {phrase!r}",
-                        row_id,
+                        row_issue_id,
                     )
                 )
 
@@ -669,16 +787,16 @@ def handle_check_rows(args: argparse.Namespace) -> Envelope:
                 make_issue(
                     "ORACLE_MISSING_IFF",
                     "oracle must contain literal 'iff' (INV-6)",
-                    row_id,
+                    row_issue_id,
                 )
             )
 
-        if conops_ref and conops_ref not in oracle:
+        if isinstance(conops_ref, str) and conops_ref and conops_ref not in oracle_text:
             issues.append(
                 make_issue(
                     "ORACLE_MISSING_STORY_REF",
                     f"oracle must refer to {conops_ref} (TC-2.3)",
-                    row_id,
+                    row_issue_id,
                 )
             )
 
@@ -686,17 +804,17 @@ def handle_check_rows(args: argparse.Namespace) -> Envelope:
             if vague in oracle_lower:
                 # "vague terminals unless paired with concrete observable"
                 # Structural check: if oracle is very short, it's probably just the vague terminal.
-                if len(oracle.split()) < 10:
+                if len(oracle_text.split()) < 10:
                     issues.append(
                         make_issue(
                             "VAGUE_ORACLE",
                             f"oracle contains vague terminal {vague!r} without sufficient detail",
-                            row_id,
+                            row_issue_id,
                         )
                     )
 
         # AC-3: Anti-relabeling
-        if verification_targets and test_targets:
+        if verification_targets and isinstance(test_targets, list) and test_targets:
             val_targets_set = set(test_targets)
             overlap = val_targets_set & verification_targets
             if val_targets_set and val_targets_set.issubset(verification_targets):
@@ -867,6 +985,213 @@ def _atomic_write_json(path: Path, data: dict[str, Any]) -> None:
         except OSError:
             pass
         raise
+
+
+def get_git_info(cwd: Path) -> tuple[str, bool]:
+    """Return (short_hash, is_clean)."""
+    try:
+        proc_hash = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=cwd, capture_output=True, text=True, check=True
+        )
+        short_hash = proc_hash.stdout.strip()
+
+        proc_status = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=cwd, capture_output=True, text=True, check=True
+        )
+        is_clean = not proc_status.stdout.strip()
+        return short_hash, is_clean
+    except (subprocess.SubprocessError, OSError):
+        return "unknown", False
+
+
+def handle_normalize_rows(args: argparse.Namespace) -> Envelope:
+    """Implement C-2.2: stamp row/story hashes and assign schema fields (mutating)."""
+    ledger_path = resolve_under_root(args.ledger.parent, args.ledger)
+    conops_path = resolve_under_root(ledger_path.parent, args.conops)
+
+    conops_bytes = conops_path.read_bytes()
+    enforce_input_bounds("conops", conops_bytes)
+    conops_text = conops_bytes.decode("utf-8")
+    conops_hash = compute_conops_hash(conops_bytes)
+    story_hashes = compute_story_hashes(conops_text)
+
+    def mutator(ledger: dict[str, Any]) -> dict[str, Any]:
+        ledger["conops_hash"] = conops_hash
+        ledger["story_hashes"] = story_hashes
+        ledger["kind"] = "validation-rows-ledger"
+
+        rows = ledger.get("rows", [])
+        if not isinstance(rows, list):
+            return ledger
+
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            row["row_hash"] = row_hash_for(row)
+            conops_ref = row.get("conops_ref")
+            if conops_ref in story_hashes:
+                row["story_hash"] = story_hashes[conops_ref]
+
+        return ledger
+
+    mutate_ledger(ledger_path, mutator)
+    return Envelope(status="ok")
+
+
+def handle_record_evidence(args: argparse.Namespace) -> Envelope:
+    """Implement C-3.1: scaffold evidence.md and record summary (mutating)."""
+    ledger_path = resolve_under_root(args.ledger.parent, args.ledger)
+    conops_path = resolve_under_root(ledger_path.parent, args.conops)
+
+    conops_bytes = conops_path.read_bytes()
+    enforce_input_bounds("conops", conops_bytes)
+    conops_text = conops_bytes.decode("utf-8")
+    conops_hash = compute_conops_hash(conops_bytes)
+    story_hashes = compute_story_hashes(conops_text)
+
+    git_hash, is_clean = get_git_info(ledger_path.parent)
+    if args.commit:
+        git_hash = args.commit
+
+    # Mutation: record evidence_summary and bind hashes
+    def mutator(ledger: dict[str, Any]) -> dict[str, Any]:
+        rows = ledger.get("rows", [])
+        target_row = next((r for r in rows if r.get("row_id") == args.row), None)
+        if not target_row:
+            raise ValidationIssuesError(
+                "ROW_NOT_FOUND",
+                [make_issue("ROW_NOT_FOUND", f"row {args.row} not found", args.row)],
+            )
+
+        target_row["evidence_summary"] = args.summary
+        target_row["row_hash"] = row_hash_for(target_row)
+        conops_ref = target_row.get("conops_ref")
+        if conops_ref not in story_hashes:
+            raise ValidationIssuesError(
+                "UNKNOWN_CONOPS_REF",
+                [
+                    make_issue(
+                        "UNKNOWN_CONOPS_REF",
+                        f"row {args.row} refers to unknown story {conops_ref}",
+                        args.row,
+                    )
+                ],
+            )
+        target_row["story_hash"] = story_hashes[conops_ref]
+        return ledger
+
+    ledger = mutate_ledger(ledger_path, mutator)
+    target_row = next(r for r in ledger["rows"] if r.get("row_id") == args.row)
+
+    # Scaffolding
+    evidence_dir = ledger_path.parent / "validation-evidence" / args.row
+    evidence_path = evidence_dir / "evidence.md"
+
+    expected_fm_keys = [
+        "row_id",
+        "row_hash",
+        "story_hash",
+        "conops_hash",
+        "evidence_type",
+        "produced_at",
+        "commit",
+        "worktree_clean",
+    ]
+
+    if evidence_path.exists():
+        # Re-invocation: validate front matter (INV-12)
+        content = evidence_path.read_text(encoding="utf-8")
+        if not content.startswith("---"):
+            raise ValidationIssuesError(
+                "EVIDENCE_MALFORMED",
+                [
+                    make_issue(
+                        "EVIDENCE_MALFORMED",
+                        "evidence file missing front matter starter",
+                        args.row,
+                    )
+                ],
+            )
+        parts = content.split("---", 2)
+        if len(parts) < 3:
+            raise ValidationIssuesError(
+                "EVIDENCE_MALFORMED",
+                [
+                    make_issue(
+                        "EVIDENCE_MALFORMED",
+                        "evidence file malformed front matter",
+                        args.row,
+                    )
+                ],
+            )
+
+        fm_text = parts[1].strip()
+        fm_data = {}
+        actual_keys = []
+        for line in fm_text.splitlines():
+            if ":" in line:
+                k, v = line.split(":", 1)
+                k = k.strip()
+                fm_data[k] = v.strip()
+                actual_keys.append(k)
+
+        if actual_keys != expected_fm_keys:
+            raise ValidationIssuesError(
+                "EVIDENCE_MALFORMED",
+                [
+                    make_issue(
+                        "EVIDENCE_MALFORMED",
+                        f"front-matter keys/order mismatch. Expected: {', '.join(expected_fm_keys)}",
+                        args.row,
+                    )
+                ],
+            )
+
+        # Hash/ID binding checks
+        if fm_data.get("row_id") != args.row:
+            raise ValidationIssuesError(
+                "EVIDENCE_HASH_MISMATCH",
+                [
+                    make_issue(
+                        "EVIDENCE_HASH_MISMATCH",
+                        f"row_id mismatch: {fm_data.get('row_id')}",
+                        args.row,
+                    )
+                ],
+            )
+        if fm_data.get("row_hash") != target_row["row_hash"]:
+            raise ValidationIssuesError(
+                "EVIDENCE_HASH_MISMATCH",
+                [make_issue("EVIDENCE_HASH_MISMATCH", "row_hash mismatch", args.row)],
+            )
+        if fm_data.get("story_hash") != target_row["story_hash"]:
+            raise ValidationIssuesError(
+                "EVIDENCE_HASH_MISMATCH",
+                [make_issue("EVIDENCE_HASH_MISMATCH", "story_hash mismatch", args.row)],
+            )
+    else:
+        # Initial scaffolding
+        produced_at = utc_now()
+        fm_lines = ["---"]
+        fm_lines.append(f"row_id: {args.row}")
+        fm_lines.append(f"row_hash: {target_row['row_hash']}")
+        fm_lines.append(f"story_hash: {target_row['story_hash']}")
+        fm_lines.append(f"conops_hash: {conops_hash}")
+        fm_lines.append(f"evidence_type: {target_row.get('evidence_type', 'narrative')}")
+        fm_lines.append(f"produced_at: {produced_at}")
+        fm_lines.append(f"commit: {git_hash}")
+        fm_lines.append(f"worktree_clean: {'true' if is_clean else 'false'}")
+        fm_lines.append("---")
+        fm_lines.append("")
+        fm_lines.append("(Attach evidence below this line)")
+        fm_lines.append("")
+
+        evidence_dir.mkdir(parents=True, exist_ok=True)
+        _atomic_write_text(evidence_path, "\n".join(fm_lines))
+
+    return Envelope(status="ok", data={"path": str(evidence_path)})
 
 
 def mutate_ledger(
@@ -1107,7 +1432,9 @@ HANDLERS: dict[str, Callable[[argparse.Namespace], Envelope]] = {
     name: _not_implemented(name) for name in SUBCOMMANDS
 }
 HANDLERS["derive-conops"] = handle_derive_conops
+HANDLERS["normalize-rows"] = handle_normalize_rows
 HANDLERS["check-rows"] = handle_check_rows
+HANDLERS["record-evidence"] = handle_record_evidence
 HANDLERS["emit-system-validation"] = emit_system_validation
 
 
@@ -1149,6 +1476,17 @@ def build_parser() -> argparse.ArgumentParser:
                 type=Path,
                 help="Optional path to verification ledger for anti-relabeling check",
             )
+        if name == "normalize-rows":
+            sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
+            sp.add_argument(
+                "--conops", type=Path, required=True, help="Path to conops.md"
+            )
+        if name == "record-evidence":
+            sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
+            sp.add_argument("--row", required=True, help="Target row_id (r-USn-m)")
+            sp.add_argument("--summary", required=True, help="Conductor's evidence_summary prose")
+            sp.add_argument("--conops", type=Path, required=True, help="Path to conops.md")
+            sp.add_argument("--commit", help="Optional implementation git short hash")
         if name == "emit-system-validation":
             sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
             sp.add_argument("--conops", type=Path, required=True, help="Path to conops.md")

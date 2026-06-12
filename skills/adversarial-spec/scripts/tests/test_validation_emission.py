@@ -1123,3 +1123,190 @@ def test_check_rows_detects_relabeled_verification(capsys, check_env):
     envelope = parse_single_envelope(out)
     # Still has oracle lint issues, but RELABELED_VERIFICATION should be gone.
     assert not any(i["code"] == "RELABELED_VERIFICATION" for i in envelope["issues"])
+
+
+# ═══ C-3.1 record-evidence (TC-3.1, FM-2, INV-9, INV-12) ══════════════════════
+
+
+@pytest.fixture
+def evidence_env(tmp_path):
+    conops_path = tmp_path / "conops.md"
+    conops_text = (
+        "## User stories\n"
+        "### US-1: First\n"
+    )
+    conops_path.write_text(conops_text)
+
+    ledger_path = tmp_path / "validation-rows.json"
+    row = {
+        "row_id": "r-US1-1",
+        "conops_ref": "US-1",
+        "scenario": "scenario 1",
+        "oracle": "Jason passes iff US-1 works.",
+        "evidence_type": "narrative",
+    }
+    ledger_path.write_text(json.dumps({"rows": [row]}))
+
+    return tmp_path, ledger_path, conops_path
+
+
+def test_record_evidence_scaffolds_file_and_mutates_ledger(capsys, evidence_env):
+    tmp_path, ledger_path, conops_path = evidence_env
+
+    exit_code, out, _err = run_cli(capsys, [
+        "record-evidence", str(ledger_path),
+        "--row", "r-US1-1",
+        "--summary", "Summary of evidence",
+        "--conops", str(conops_path),
+        "--commit", "abc1234"
+    ])
+
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    assert envelope["status"] == "ok"
+
+    # Check ledger mutation
+    ledger = json.loads(ledger_path.read_text())
+    row = ledger["rows"][0]
+    assert row["evidence_summary"] == "Summary of evidence"
+    assert "row_hash" in row
+    assert "story_hash" in row
+
+    # Check evidence scaffolding
+    ev_path = tmp_path / "validation-evidence" / "r-US1-1" / "evidence.md"
+    assert ev_path.exists()
+    content = ev_path.read_text()
+    assert "row_id: r-US1-1" in content
+    assert f"row_hash: {row['row_hash']}" in content
+    assert f"story_hash: {row['story_hash']}" in content
+    assert "commit: abc1234" in content
+    assert "worktree_clean: " in content
+
+    # Check FM-2 order (partial check)
+    lines = content.strip().splitlines()
+    assert lines[0] == "---"
+    assert lines[1] == "row_id: r-US1-1"
+    assert lines[2].startswith("row_hash: ")
+
+
+def test_record_evidence_validates_existing_file_hashes(capsys, evidence_env):
+    tmp_path, ledger_path, conops_path = evidence_env
+
+    # First call: scaffold
+    run_cli(capsys, [
+        "record-evidence", str(ledger_path),
+        "--row", "r-US1-1",
+        "--summary", "Summary 1",
+        "--conops", str(conops_path)
+    ])
+
+    # Second call: valid re-invocation
+    exit_code, out, _err = run_cli(capsys, [
+        "record-evidence", str(ledger_path),
+        "--row", "r-US1-1",
+        "--summary", "Summary 2",
+        "--conops", str(conops_path)
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+
+    # Modify ledger (change scenario) -> row_hash changes
+    ledger = json.loads(ledger_path.read_text())
+    ledger["rows"][0]["scenario"] = "changed scenario"
+    ledger_path.write_text(json.dumps(ledger))
+
+    # Third call: hash mismatch (INV-12)
+    exit_code, out, _err = run_cli(capsys, [
+        "record-evidence", str(ledger_path),
+        "--row", "r-US1-1",
+        "--summary", "Summary 3",
+        "--conops", str(conops_path)
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(i["code"] == "EVIDENCE_HASH_MISMATCH" for i in envelope["issues"])
+
+
+def test_record_evidence_detects_malformed_front_matter(capsys, evidence_env):
+    tmp_path, ledger_path, conops_path = evidence_env
+
+    ev_dir = tmp_path / "validation-evidence" / "r-US1-1"
+    ev_dir.mkdir(parents=True)
+    ev_path = ev_dir / "evidence.md"
+    ev_path.write_text("No front matter here")
+
+    exit_code, out, _err = run_cli(capsys, [
+        "record-evidence", str(ledger_path),
+        "--row", "r-US1-1",
+        "--summary", "Summary",
+        "--conops", str(conops_path)
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(i["code"] == "EVIDENCE_MALFORMED" for i in envelope["issues"])
+
+
+# ═══ C-2.2 normalize-rows (TC-2.2, CB-7) ══════════════════════════════════════
+
+
+def test_normalize_rows_stamps_hashes(capsys, evidence_env):
+    tmp_path, ledger_path, conops_path = evidence_env
+
+    exit_code, out, _err = run_cli(capsys, [
+        "normalize-rows", str(ledger_path), "--conops", str(conops_path)
+    ])
+
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+
+    ledger = json.loads(ledger_path.read_text())
+    row = ledger["rows"][0]
+    assert "row_hash" in row
+    assert "story_hash" in row
+    assert ledger["conops_hash"] == compute_conops_hash(conops_path.read_bytes())
+
+
+def test_record_evidence_per_story_invalidation_fm3(capsys, tmp_path):
+    conops_path = tmp_path / "conops.md"
+    conops_text = (
+        "## User stories\n"
+        "### US-1: First\n"
+        "### US-2: Second\n"
+    )
+    conops_path.write_text(conops_text)
+
+    ledger_path = tmp_path / "validation-rows.json"
+    rows = [
+        {"row_id": "r-US1-1", "conops_ref": "US-1", "scenario": "s1", "oracle": "o1", "evidence_type": "n"},
+        {"row_id": "r-US2-1", "conops_ref": "US-2", "scenario": "s2", "oracle": "o2", "evidence_type": "n"},
+    ]
+    ledger_path.write_text(json.dumps({"rows": rows}))
+
+    # Scaffold both
+    for rid in ["r-US1-1", "r-US2-1"]:
+        run_cli(capsys, [
+            "record-evidence", str(ledger_path), "--row", rid,
+            "--summary", "Summary", "--conops", str(conops_path)
+        ])
+
+    # Edit US-1 in ConOps
+    new_conops_text = conops_text.replace("### US-1: First", "### US-1: First (EDITED)")
+    conops_path.write_text(new_conops_text)
+
+    # US-1 should be invalidated
+    exit_code, out, _err = run_cli(capsys, [
+        "record-evidence", str(ledger_path), "--row", "r-US1-1",
+        "--summary", "Summary", "--conops", str(conops_path)
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(i["code"] == "EVIDENCE_HASH_MISMATCH" for i in envelope["issues"])
+    assert "story_hash mismatch" in str(envelope["issues"])
+
+    # US-2 should still be valid (FM-3)
+    exit_code, out, _err = run_cli(capsys, [
+        "record-evidence", str(ledger_path), "--row", "r-US2-1",
+        "--summary", "Summary", "--conops", str(conops_path)
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK

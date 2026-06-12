@@ -26,5 +26,5 @@ _MODULE = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(_MODULE)
 
 for _name, _value in vars(_MODULE).items():
-    if _name == "pytestmark" or _name.startswith("test_") or _name == "ledger" or _name == "emission_env":
+    if _name == "pytestmark" or _name.startswith("test_") or _name in ("ledger", "emission_env", "check_env"):
         globals()[_name] = _value
