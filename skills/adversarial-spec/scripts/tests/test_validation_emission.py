@@ -851,6 +851,10 @@ def test_emit_system_validation_success_projection(capsys, emission_env):
     assert len(artifact["rows"]) == 2
     assert artifact["rows"][0]["result"] == "pass"
     assert artifact["rows"][0]["judged_by"] == "jason"
+    assert artifact["rows"][0]["judged_at"] == "2026-06-12T00:00:00Z"
+    assert artifact["rows"][0]["source"] == "terminal"
+    assert artifact["rows"][0]["digest_id"] == "d-1"
+    assert artifact["rows"][0]["reply_ref"] == "transcript:123"
     assert artifact["rows"][0]["evidence_ref"] == "validation-evidence/r-US1-1/evidence.md"
     assert "evidence_hash" in artifact["rows"][0]
 
@@ -917,6 +921,26 @@ def test_emit_system_validation_refuses_provenance_missing_inv1(capsys, emission
     envelope = parse_single_envelope(out)
     assert exit_code == EXIT_ISSUES
     assert any(i["code"] == "PROVENANCE_MISSING" for i in envelope["issues"])
+
+
+def test_emit_system_validation_refuses_provenance_missing_fields_ac2(capsys, emission_env):
+    _tmp_path, ledger_path, conops_path = emission_env
+    ledger = json.loads(ledger_path.read_text())
+    # Truthy but missing required fields (AC-2)
+    ledger["rows"][0]["judgment"] = {"judged_by": "jason"} 
+    ledger_path.write_text(json.dumps(ledger))
+
+    exit_code, out, _err = run_cli(capsys, [
+        "emit-system-validation", str(ledger_path), "--conops", str(conops_path)
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    issue = next(i for i in envelope["issues"] if i["code"] == "PROVENANCE_MISSING")
+    assert "missing required fields" in issue["detail"]
+    assert "judged_at" in issue["detail"]
+    assert "source" in issue["detail"]
+    assert "digest_id" in issue["detail"]
+    assert "reply_ref" in issue["detail"]
 
 
 def test_emit_system_validation_refuses_stale_conops_fm3(capsys, emission_env):

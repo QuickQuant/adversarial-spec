@@ -1017,6 +1017,17 @@ def emit_system_validation(args: argparse.Namespace) -> Envelope:
             issues.append(make_issue("PROVENANCE_MISSING", f"row {row_id} has result but no judgment block", row_id))
             continue
 
+        # Strictly validate required provenance fields (AC-2)
+        required_provenance = ["judged_by", "judged_at", "source", "digest_id", "reply_ref"]
+        missing_fields = [f for f in required_provenance if not judgment.get(f)]
+        if missing_fields:
+            issues.append(make_issue(
+                "PROVENANCE_MISSING",
+                f"row {row_id} judgment block missing required fields: {', '.join(missing_fields)}",
+                row_id
+            ))
+            continue
+
         # FM-3: story hash check (scoped by story_hashes)
         if conops_ref not in fresh_story_hashes:
             issues.append(make_issue("STORY_DELETED", f"row {row_id} refers to deleted story {conops_ref}", row_id))
@@ -1056,8 +1067,11 @@ def emit_system_validation(args: argparse.Namespace) -> Envelope:
             "evidence_type": row.get("evidence_type"),
             "evidence_ref": evidence_ref,
             "evidence_hash": ev_hash,
-            "judged_by": judgment.get("judged_by", "jason"),
+            "judged_by": judgment.get("judged_by"),
             "judged_at": judgment.get("judged_at"),
+            "source": judgment.get("source"),
+            "digest_id": judgment.get("digest_id"),
+            "reply_ref": judgment.get("reply_ref"),
             "test_targets": row.get("test_targets", [])
         })
 
