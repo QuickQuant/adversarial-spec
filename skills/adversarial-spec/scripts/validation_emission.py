@@ -1952,6 +1952,7 @@ def handle_reset_failed(args: argparse.Namespace) -> Envelope:
 
         target["result"] = None
         target["judgment"] = None
+        target["last_reset_at"] = reset_at
         result_data.update(row_id=args.row, remediation_ref=remediation_ref)
         return ledger
 
@@ -3035,6 +3036,193 @@ def handle_self_check(args: argparse.Namespace) -> Envelope:
     return Envelope(status="ok", data=data)
 
 
+# ── C-4.6 status (read-only; gauntlet FM-5, OP-7/OP-8; INV-A2 read side) ─────
+
+#: FM-5: an active digest batch older than this is flagged with cancel/reissue
+#: guidance (spec §7 ``status`` contract).
+STALE_BATCH_AGE_S = 48 * 3600
+
+
+def _parse_rfc3339_z(timestamp: str) -> datetime | None:
+    """Parse the module's only timestamp shape (``utc_now``) to an aware UTC
+    datetime; None when unparseable (status stays read-only and never crashes
+    on a hand-edited ledger)."""
+    if not isinstance(timestamp, str) or not timestamp:
+        return None
+    try:
+        parsed = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError:
+        return None
+    return parsed.replace(tzinfo=timezone.utc)
+
+
+def _next_close_step(
+    *,
+    active_batch: dict[str, Any] | None,
+    unjudged_ids: list[str],
+    failed_ids: list[str],
+    coverage_complete: bool,
+) -> str:
+    """The single close-algorithm (§8) routing string status hands the
+    conductor: what to do next given the ledger's lifecycle state."""
+    if active_batch is not None:
+        status = active_batch.get("status")
+        digest_id = active_batch.get("digest_id")
+        parts = active_batch.get("parts", [])
+        unsent = [p.get("i") for p in parts if p.get("send_result") != "sent"]
+        if status == "assembled" and unsent:
+            return (
+                f"step 5: send remaining part(s) {unsent} of {digest_id} "
+                "(telegram-send) and record-send each"
+            )
+        if status == "sent":
+            return (
+                f"step 5: await/parse replies for {digest_id} "
+                "(parse-reply per inbound message) until the batch closes"
+            )
+        return f"step 5: process active batch {digest_id} (status {status!r})"
+    if failed_ids:
+        return (
+            "step 6: remediation loop — create/resolve remediation cards for "
+            f"failed row(s) {failed_ids}, then reset-failed and re-execute"
+        )
+    if unjudged_ids:
+        return (
+            "step 3/4: record-evidence for unjudged row(s), then "
+            "assemble-digest"
+        )
+    if not coverage_complete:
+        return (
+            "step 3/4: cover remaining stories with rows, record-evidence, "
+            "then assemble-digest"
+        )
+    return "step 7: emit-system-validation, then self-check"
+
+
+def handle_status(args: argparse.Namespace) -> Envelope:
+    """Implement C-4.6 (status): a pure READ-ONLY report of the validation
+    ledger for the conductor (gauntlet FM-5, OP-7/OP-8).
+
+    INV-A2 read side: never calls ``mutate_ledger`` and never takes the
+    FileLock write path — ``read_ledger`` opens the bytes only. TC-G12 asserts
+    the ledger bytes are byte-identical before and after this call.
+    """
+    ledger_path = resolve_under_root(args.ledger.parent, args.ledger)
+    ledger = read_ledger(ledger_path)
+
+    active_rows = _active_rows(ledger)
+    unjudged = [r for r in active_rows if r.get("result") is None]
+    judged = [r for r in active_rows if r.get("result") is not None]
+    unjudged_ids = [r.get("row_id") for r in unjudged]
+    failed_ids = [r.get("row_id") for r in judged if r.get("result") == "fail"]
+
+    judged_summary = {
+        "pass": sum(1 for r in judged if r.get("result") == "pass"),
+        "fail": len(failed_ids),
+        "not-applicable": sum(
+            1 for r in judged if r.get("result") == "not-applicable"
+        ),
+    }
+
+    # Coverage: every active ConOps story id needs ≥1 passing active row
+    # (INV-7). Derive story ids from active conops_refs (status is read-only and
+    # does not require --conops; if provided it scopes the story universe).
+    story_ids: set[str] = {
+        r.get("conops_ref") for r in active_rows
+        if isinstance(r.get("conops_ref"), str)
+    }
+    if args.conops is not None:
+        conops_path = resolve_under_root(ledger_path.parent, args.conops)
+        try:
+            conops_bytes = conops_path.read_bytes()
+            enforce_input_bounds("conops", conops_bytes)
+            story_ids |= set(compute_story_hashes(conops_bytes.decode("utf-8")))
+        except (OSError, UnicodeDecodeError):
+            pass  # read-only: a missing/unreadable conops never crashes status
+    passing_stories = {
+        r.get("conops_ref") for r in judged if r.get("result") == "pass"
+    }
+    uncovered_stories = sorted(story_ids - passing_stories)
+    coverage_complete = not uncovered_stories
+
+    # Active batch: at most one non-terminal batch may exist (the assemble
+    # invariant). Report it with age and per-part send state.
+    active_batch = next(
+        (b for b in ledger.get("digest_batches", [])
+         if b.get("status") in NON_TERMINAL_BATCH_STATUSES),
+        None,
+    )
+    batch_report: dict[str, Any] | None = None
+    blockers: list[str] = []
+    if active_batch is not None:
+        opened_at = active_batch.get("opened_at")
+        opened_dt = _parse_rfc3339_z(opened_at)
+        age_seconds: float | None = None
+        stale = False
+        if opened_dt is not None:
+            age_seconds = max(
+                0.0, (datetime.now(timezone.utc) - opened_dt).total_seconds()
+            )
+            stale = age_seconds > STALE_BATCH_AGE_S
+        parts_report = [
+            {
+                "i": p.get("i"),
+                "send_result": p.get("send_result"),
+                "sent_at": p.get("sent_at"),
+                "message_id": p.get("message_id"),
+            }
+            for p in active_batch.get("parts", [])
+        ]
+        batch_report = {
+            "digest_id": active_batch.get("digest_id"),
+            "status": active_batch.get("status"),
+            "opened_at": opened_at,
+            "age_seconds": age_seconds,
+            "stale": stale,
+            "parts": parts_report,
+            "row_ids": active_batch.get("row_ids", []),
+        }
+        if stale:
+            blockers.append(
+                f"batch {active_batch.get('digest_id')} is older than 48h "
+                f"(age {age_seconds:.0f}s) — cancel-batch and reissue (FM-5)"
+            )
+
+    if failed_ids:
+        blockers.append(
+            f"failed row(s) {failed_ids} block emission — remediate (CB-5)"
+        )
+    if uncovered_stories:
+        blockers.append(
+            f"stories without a passing row: {uncovered_stories} (INV-7)"
+        )
+
+    next_step = _next_close_step(
+        active_batch=active_batch,
+        unjudged_ids=unjudged_ids,
+        failed_ids=failed_ids,
+        coverage_complete=coverage_complete,
+    )
+
+    return Envelope(
+        status="ok",
+        data={
+            "active_batch": batch_report,
+            "unjudged_row_count": len(unjudged),
+            "unjudged_row_ids": unjudged_ids,
+            "judged_summary": judged_summary,
+            "failed_row_ids": failed_ids,
+            "coverage": {
+                "complete": coverage_complete,
+                "stories": sorted(s for s in story_ids if s),
+                "uncovered_stories": uncovered_stories,
+            },
+            "blockers": blockers,
+            "next_close_step": next_step,
+        },
+    )
+
+
 #: Subcommand → handler. Components C-1.2 … C-4.6 replace stubs in place.
 HANDLERS: dict[str, Callable[[argparse.Namespace], Envelope]] = {
     name: _not_implemented(name) for name in SUBCOMMANDS
@@ -3051,6 +3239,7 @@ HANDLERS["supersede-row"] = handle_supersede_row
 HANDLERS["parse-reply"] = handle_parse_reply
 HANDLERS["emit-system-validation"] = emit_system_validation
 HANDLERS["self-check"] = handle_self_check
+HANDLERS["status"] = handle_status
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -3203,6 +3392,15 @@ def build_parser() -> argparse.ArgumentParser:
                 type=str,
                 default="system_validation.json",
                 help="Output artifact path (default: system_validation.json)",
+            )
+        if name == "status":
+            sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
+            sp.add_argument(
+                "--conops",
+                type=Path,
+                default=None,
+                help="Optional conops.md to scope the coverage story universe "
+                     "(read-only; status never mutates the ledger)",
             )
     return parser
 

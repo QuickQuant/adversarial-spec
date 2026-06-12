@@ -148,7 +148,9 @@ def test_envelope_stdout_is_single_line_json(capsys):
 def test_envelope_diagnostics_go_to_stderr_not_stdout(capsys):
     # Unrecognized extras are tolerated by the skeleton with a stderr warning;
     # stdout must remain a single parseable envelope.
-    _exit_code, out, err = run_cli(capsys, ["status", "--no-such-flag"])
+    _exit_code, out, err = run_cli(
+        capsys, ["status", "validation-rows.json", "--no-such-flag"]
+    )
     parse_single_envelope(out)
     assert "--no-such-flag" in err, "diagnostic about ignored args belongs on stderr"
 
@@ -253,7 +255,7 @@ def test_lock_busy_maps_to_exit3_envelope_at_boundary(capsys, monkeypatch, tmp_p
         raise LedgerBusyError(tmp_path / "validation-rows.json.lock", 4242, 12.5)
 
     monkeypatch.setitem(ve.HANDLERS, "status", boom)
-    exit_code = main(["status"])
+    exit_code = main(["status", "validation-rows.json"])
     out = capsys.readouterr().out
     envelope = parse_single_envelope(out)
     assert exit_code == EXIT_ENV
@@ -349,7 +351,7 @@ def test_corrupt_maps_to_exit3_envelope_at_boundary(capsys, monkeypatch, tmp_pat
         raise LedgerCorruptError(ledger_path, quarantine)
 
     monkeypatch.setitem(ve.HANDLERS, "status", boom)
-    exit_code = main(["status"])
+    exit_code = main(["status", "validation-rows.json"])
     out = capsys.readouterr().out
     envelope = parse_single_envelope(out)
     assert exit_code == EXIT_ENV
@@ -538,7 +540,7 @@ def test_path_outside_root_maps_to_exit2_envelope_at_boundary(capsys, monkeypatc
         raise AssertionError("unreachable")
 
     monkeypatch.setitem(ve.HANDLERS, "status", boom)
-    exit_code = main(["status"])
+    exit_code = main(["status", "validation-rows.json"])
     envelope = parse_single_envelope(capsys.readouterr().out)
     assert exit_code == EXIT_ISSUES
     assert envelope["status"] == "issues"
@@ -589,7 +591,7 @@ def test_bounds_exceeded_maps_to_exit2_envelope_at_boundary(capsys, monkeypatch)
         raise AssertionError("unreachable")
 
     monkeypatch.setitem(ve.HANDLERS, "status", boom)
-    exit_code = main(["status"])
+    exit_code = main(["status", "validation-rows.json"])
     envelope = parse_single_envelope(capsys.readouterr().out)
     assert exit_code == EXIT_ISSUES
     assert envelope["code"] == "INPUT_BOUNDS_EXCEEDED"
@@ -3033,6 +3035,41 @@ def test_reset_failed_invalidates_evidence_file_fm4(capsys, tmp_path):
     assert invalidated[0].read_bytes() == original  # renamed, not deleted
 
 
+def test_reset_failed_stamps_last_reset_blocks_stale_evidence_fm4(capsys, tmp_path):
+    """FM-4: reset must stamp last_reset_at so assemble-digest rejects evidence
+    whose produced_at predates the real reset, even if old evidence.md
+    reappears after invalidation."""
+    ledger_path, conops_path, digest_id = _sent_batch_env(
+        capsys, tmp_path, n_pending=1
+    )
+    evidence = _evidence_path(ledger_path, "r-US1-1")
+    stale_content = re.sub(
+        r"produced_at: .+",
+        "produced_at: 2000-01-01T00:00:00Z",
+        evidence.read_text(encoding="utf-8"),
+    )
+    evidence.write_text(stale_content, encoding="utf-8")
+    _parse_reply(capsys, ledger_path, digest_id, "fail r-US1-1: wrong output")
+
+    run_cli(capsys, [
+        "reset-failed", str(ledger_path), "--row", "r-US1-1",
+        "--remediation-ref", "card-A", "--remediation-resolved",
+    ])
+    row = _row(ledger_path, "r-US1-1")
+    assert row["last_reset_at"] >= "2026-06-12T00:00:00Z"
+    invalidated = next(evidence.parent.glob("evidence.md.invalidated-*"))
+
+    # Simulate stale evidence reappearing; assemble must still fail closed from
+    # last_reset_at, not rely only on the rename side effect.
+    evidence.write_bytes(invalidated.read_bytes())
+    before = ledger_path.read_bytes()
+    exit_code, out, _err = _run_assemble(capsys, ledger_path, conops_path)
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(i["code"] == "EVIDENCE_STALE" for i in envelope["issues"])
+    assert ledger_path.read_bytes() == before
+
+
 def test_reset_failed_requires_remediation_ref_fm1(capsys, tmp_path):
     """FM-1: --remediation-ref is REQUIRED. Missing it is an argparse-level
     rejection that still answers with an exit-2 envelope, zero mutations."""
@@ -3400,3 +3437,188 @@ def test_superseded_row_rejected_by_parse_reply_after_supersede(capsys, tmp_path
     assert any("r-US1-9" in i["detail"] for i in envelope["issues"]), (
         "rejection must name the replacement row (INV-10)"
     )
+
+
+# ── C-4.6 status (read-only report; gauntlet FM-5, TC-G12; INV-A2) ───────────
+#
+# Selector note: `-k status` also matches the two record-send tests whose names
+# end in `_status_*`; every test below carries `status` in its name so the
+# declared verify command (`-k status`) selects the full C-4.6 suite too.
+
+
+def _run_status(capsys, ledger_path, conops_path=None):
+    argv = ["status", str(ledger_path)]
+    if conops_path is not None:
+        argv += ["--conops", str(conops_path)]
+    return run_cli(capsys, argv)
+
+
+def _midclose_status_env(capsys, tmp_path):
+    """TC-G12 fixture: a ledger mid-close — a SENT batch with 2 unjudged rows
+    and 1 failed row. Built on the real assemble→send→parse chain so the batch
+    record, per-part send state, and judgment provenance are genuine."""
+    # n_pending=3 → r-US1-1..r-US1-3 in one sent batch.
+    ledger_path, conops_path, digest_id = _sent_batch_env(
+        capsys, tmp_path, n_pending=3
+    )
+    # Fail exactly one row; leave the other two unjudged → batch stays 'sent'.
+    exit_code, _out, _err = _parse_reply(
+        capsys, ledger_path, digest_id,
+        "fail r-US1-1: scenario shows the wrong lane in the rendered output",
+    )
+    assert exit_code == EXIT_OK
+    assert _batch(ledger_path, digest_id)["status"] == "sent"
+    return ledger_path, conops_path, digest_id
+
+
+def test_status_midclose_report_is_read_only_tcg12(capsys, tmp_path):
+    """TC-G12: mid-close ledger (sent batch, 2 unjudged rows, 1 failed row) —
+    status names the active batch + age, per-part send state, unjudged row ids,
+    the failed row, coverage state, and the next close-algorithm step; the
+    ledger bytes are byte-identical before and after (read-only contract)."""
+    ledger_path, conops_path, digest_id = _midclose_status_env(capsys, tmp_path)
+
+    before = ledger_path.read_bytes()
+    exit_code, out, _err = _run_status(capsys, ledger_path, conops_path)
+    after = ledger_path.read_bytes()
+
+    # AC-1: ledger bytes unchanged after the read-only invocation.
+    assert before == after, "status must not mutate the ledger (AC-1, TC-G12)"
+
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    data = envelope["data"]
+
+    # Active batch named, with age and per-part send state.
+    batch = data["active_batch"]
+    assert batch is not None
+    assert batch["digest_id"] == digest_id
+    assert batch["status"] == "sent"
+    assert batch["age_seconds"] is not None and batch["age_seconds"] >= 0
+    assert batch["stale"] is False  # just opened
+    assert batch["parts"], "per-part send state must be reported"
+    assert all(p["send_result"] == "sent" for p in batch["parts"])
+
+    # Unjudged rows (the two left unjudged).
+    assert data["unjudged_row_count"] == 2
+    assert set(data["unjudged_row_ids"]) == {"r-US1-2", "r-US1-3"}
+
+    # Judged summary + the failed row called out.
+    assert data["judged_summary"]["fail"] == 1
+    assert data["failed_row_ids"] == ["r-US1-1"]
+
+    # Coverage state + blockers.
+    assert data["coverage"]["complete"] is False
+    assert any("r-US1-1" in b for b in data["blockers"])
+
+    # Next close-algorithm step routes to the sent-batch reply loop (step 5).
+    assert "step 5" in data["next_close_step"]
+    assert digest_id in data["next_close_step"]
+
+
+def test_status_no_mutation_path_inv_a2(capsys, tmp_path):
+    """AC-2 / INV-A2 read side: status must NOT call mutate_ledger and must NOT
+    take the FileLock write path — no lock or owner sidecar appears, and the
+    ledger byte image is unchanged even on a fresh (no-batch) ledger."""
+    import validation_emission as ve
+
+    ledger_path, conops_path = _digest_env(capsys, tmp_path, n_pending=2)
+    before = ledger_path.read_bytes()
+
+    calls = {"mutate": 0, "lock_acquire": 0}
+    orig_mutate = ve.mutate_ledger
+    orig_acquire = FileLock.acquire
+
+    def _spy_mutate(*a, **k):  # pragma: no cover - must never run
+        calls["mutate"] += 1
+        return orig_mutate(*a, **k)
+
+    def _spy_acquire(self, *a, **k):  # pragma: no cover - must never run
+        calls["lock_acquire"] += 1
+        return orig_acquire(self, *a, **k)
+
+    monkey = pytest.MonkeyPatch()
+    monkey.setattr(ve, "mutate_ledger", _spy_mutate)
+    monkey.setattr(FileLock, "acquire", _spy_acquire)
+    try:
+        exit_code, out, _err = _run_status(capsys, ledger_path, conops_path)
+    finally:
+        monkey.undo()
+
+    parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    assert calls["mutate"] == 0, "status must never call mutate_ledger (INV-A2)"
+    assert calls["lock_acquire"] == 0, "status must never take the write lock"
+    assert ledger_path.read_bytes() == before
+
+
+def test_status_flags_stale_batch_over_48h_fm5(capsys, tmp_path):
+    """FM-5: an active batch older than 48h is flagged stale, with
+    cancel/reissue guidance surfaced as a blocker. Age is computed against the
+    real current UTC time, so the test sets opened_at deterministically in the
+    past relative to now."""
+    from datetime import datetime, timedelta, timezone
+
+    ledger_path, conops_path, digest_id = _sent_batch_env(
+        capsys, tmp_path, n_pending=2
+    )
+    # Backdate the batch open time to 49h ago (no clock injection exists;
+    # statuses compare opened_at to datetime.now(UTC) — write a past stamp).
+    ledger = json.loads(ledger_path.read_text())
+    old = datetime.now(timezone.utc) - timedelta(hours=49)
+    ledger["digest_batches"][0]["opened_at"] = old.strftime("%Y-%m-%dT%H:%M:%SZ")
+    ledger_path.write_text(json.dumps(ledger))
+
+    exit_code, out, _err = _run_status(capsys, ledger_path, conops_path)
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    batch = envelope["data"]["active_batch"]
+    assert batch["stale"] is True
+    assert batch["age_seconds"] > 48 * 3600
+    assert any("48h" in b or "older than 48" in b for b in envelope["data"]["blockers"])
+    assert "step 5" in envelope["data"]["next_close_step"]
+
+
+def test_status_next_step_emit_when_ready(capsys, tmp_path):
+    """When no batch is active, no rows are unjudged or failed, and coverage is
+    complete, status routes the conductor to step 7 (emit-system-validation)."""
+    ledger_path, conops_path = _digest_env(capsys, tmp_path, n_pending=1)
+    # Drive both pending stories to judged-pass via a full digest+reply cycle.
+    # _digest_env already has r-US2-1 judged-pass; judge r-US1-1 here.
+    exit_code, out, _err = _run_assemble(capsys, ledger_path, conops_path)
+    digest_id = parse_single_envelope(out)["data"]["digest_id"]
+    assert exit_code == EXIT_OK
+    run_cli(capsys, [
+        "record-send", str(ledger_path), "--digest-id", digest_id,
+        "--part", "1", "--result", "sent",
+    ])
+    exit_code, _o, _e = _parse_reply(
+        capsys, ledger_path, digest_id, "pass r-US1-1"
+    )
+    assert exit_code == EXIT_OK
+
+    exit_code, out, _err = _run_status(capsys, ledger_path, conops_path)
+    data = parse_single_envelope(out)["data"]
+    assert exit_code == EXIT_OK
+    assert data["active_batch"] is None
+    assert data["unjudged_row_count"] == 0
+    assert data["failed_row_ids"] == []
+    assert data["coverage"]["complete"] is True
+    assert not data["blockers"]
+    assert "step 7" in data["next_close_step"]
+    assert "emit-system-validation" in data["next_close_step"]
+
+
+def test_status_without_conops_still_reports_status(capsys, tmp_path):
+    """--conops is optional: status reports cleanly using the active rows'
+    conops_refs as the story universe when no ConOps is supplied."""
+    ledger_path, conops_path, _digest_id = _midclose_status_env(capsys, tmp_path)
+    before = ledger_path.read_bytes()
+    exit_code, out, _err = _run_status(capsys, ledger_path)  # no --conops
+    assert ledger_path.read_bytes() == before
+    data = parse_single_envelope(out)["data"]
+    assert exit_code == EXIT_OK
+    # Story universe derived from active rows' conops_refs (no --conops): the
+    # midclose fixture has US-1 rows plus _digest_env's judged-pass US-2 row.
+    assert data["coverage"]["stories"] == ["US-1", "US-2"]
+    assert data["unjudged_row_count"] == 2
