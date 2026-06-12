@@ -37,6 +37,7 @@ import sys
 import tempfile
 import time
 import unicodedata
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -357,7 +358,7 @@ def hash_prefix(full_hash: str, length: int = HASH_PREFIX_LEN) -> str:
 # ── ConOps derivation (DD-7, CB-11, FM-3) ────────────────────────────────────
 
 
-def _text_field(data: dict[str, Any], names: tuple[str, ...], default: str = "") -> str:
+def _text_field(data: Mapping[Any, Any], names: tuple[str, ...], default: str = "") -> str:
     for name in names:
         value = data.get(name)
         if isinstance(value, str) and value.strip():
