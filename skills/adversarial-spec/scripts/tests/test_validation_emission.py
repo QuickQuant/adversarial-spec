@@ -1031,6 +1031,223 @@ def test_emit_system_validation_skips_superseded_rows_inv10(capsys, emission_env
     )
 
 
+# ═══ C-4.5 self-check (TC-3.3, TC-INV-A5, TC-G10) ═══════════════════════════
+
+
+def _write_self_check_json(path, data):
+    path.write_text(json.dumps(data, indent=2, sort_keys=True))
+
+
+def _self_check_env(tmp_path, *, verification_targets=None):
+    conops_path = tmp_path / "conops.md"
+    conops_text = (
+        "# Validation ConOps\n\n"
+        "## Operational narrative\n"
+        "This ConOps is intentionally longer than the gate minimum and covers "
+        "the validation close path without adding unrelated story ids.\n\n"
+        "## User stories\n"
+        "### US-1: First\n"
+        "The operator can close the first validation obligation with evidence.\n\n"
+        "### US-2: Second\n"
+        "The operator can close the second validation obligation with evidence.\n"
+    )
+    conops_path.write_text(conops_text)
+
+    artifact = {
+        "kind": "system-validation",
+        "conops_hash": hash_prefix(compute_conops_hash(conops_text.encode("utf-8"))),
+        "ledger_hash": "a" * 64,
+        "rows": [
+            {
+                "row_id": "r-US1-1",
+                "conops_ref": "US-1",
+                "scenario": "Scenario one produces a user-visible artifact.",
+                "oracle": "Jason passes iff the US-1 artifact is visible.",
+                "result": "pass",
+                "test_targets": ["validation/test_close.py::test_us1_validation"],
+            },
+            {
+                "row_id": "r-US2-1",
+                "conops_ref": "US-2",
+                "scenario": "Scenario two produces a second user-visible artifact.",
+                "oracle": "Jason passes iff the US-2 artifact is visible.",
+                "result": "pass",
+                "test_targets": ["validation/test_close.py::test_us2_validation"],
+            },
+        ],
+        "schema_version": SCHEMA_VERSION,
+        "module_version": "0.1.0+test",
+        "generated_at": "2026-06-12T00:00:00Z",
+    }
+    artifact_path = tmp_path / "system_validation.json"
+    _write_self_check_json(artifact_path, artifact)
+
+    verification_path = tmp_path / "system_verification_ledger.json"
+    if verification_targets is None:
+        verification_targets = ["tests/test_unit.py::test_unrelated_verification"]
+    _write_self_check_json(
+        verification_path,
+        {"rows": [{"row_id": "v-1", "test_targets": verification_targets}]},
+    )
+    return artifact_path, conops_path, verification_path, artifact
+
+
+def _self_check_sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def test_self_check_success_reverifies_exact_sha_tc_inv_a5(capsys, tmp_path):
+    artifact_path, conops_path, verification_path, _artifact = _self_check_env(tmp_path)
+    expected_sha = _self_check_sha(artifact_path)
+
+    exit_code, out, _err = run_cli(capsys, [
+        "self-check", str(artifact_path),
+        "--conops", str(conops_path),
+        "--verification-ledger", str(verification_path),
+        "--expected-sha256", expected_sha,
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK, out
+    assert envelope["status"] == "ok"
+    assert envelope["data"]["artifact_sha256"] == expected_sha
+    assert envelope["data"]["row_count"] == 2
+
+
+@pytest.mark.parametrize(
+    ("case", "expected_code"),
+    [
+        ("kind", "VALIDATION_KIND_MISMATCH"),
+        ("short_hash", "CONOPS_HASH_PREFIX_TOO_SHORT"),
+        ("stale_hash", "CONOPS_HASH_MISMATCH"),
+        ("rows_empty", "VALIDATION_ROWS_EMPTY"),
+        ("missing_field", "VALIDATION_ROW_FIELD_MISSING"),
+        ("result_enum", "VALIDATION_RESULT_INVALID"),
+        ("fail_row", "VV_LEDGER_HAS_FAILURES"),
+        ("anti_relabeling", "VALIDATION_IS_RELABELED_VERIFICATION"),
+        ("coverage_regex", "UNVALIDATED_USER_STORY"),
+    ],
+)
+def test_self_check_mirrors_gate_reject_classes_tc33(
+    capsys, tmp_path, case, expected_code
+):
+    artifact_path, conops_path, verification_path, artifact = _self_check_env(tmp_path)
+    if case == "kind":
+        artifact["kind"] = "verification"
+    elif case == "short_hash":
+        artifact["conops_hash"] = artifact["conops_hash"][:8]
+    elif case == "stale_hash":
+        artifact["conops_hash"] = "f" * HASH_PREFIX_LEN
+    elif case == "rows_empty":
+        artifact["rows"] = []
+    elif case == "missing_field":
+        del artifact["rows"][0]["scenario"]
+    elif case == "result_enum":
+        artifact["rows"][0]["result"] = "na"
+    elif case == "fail_row":
+        artifact["rows"][0]["result"] = "fail"
+    elif case == "anti_relabeling":
+        artifact["rows"][0]["test_targets"] = ["tests/test_unit.py::test_unrelated_verification"]
+    elif case == "coverage_regex":
+        conops_text = (
+            conops_path.read_text()
+            + "\nOperational note: US-77 appears outside a heading and is still gate-covered.\n"
+        )
+        conops_path.write_text(conops_text)
+        artifact["conops_hash"] = hash_prefix(
+            compute_conops_hash(conops_text.encode("utf-8"))
+        )
+    _write_self_check_json(artifact_path, artifact)
+
+    exit_code, out, _err = run_cli(capsys, [
+        "self-check", str(artifact_path),
+        "--conops", str(conops_path),
+        "--verification-ledger", str(verification_path),
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(issue["code"] == expected_code for issue in envelope["issues"]), out
+
+
+@pytest.mark.parametrize(
+    ("validation_targets", "verification_targets"),
+    [
+        (
+            ["tests/test_unit.py::test_a", "tests/test_unit.py::test_b"],
+            ["tests/test_unit.py::test_a", "tests/test_unit.py::test_b"],
+        ),
+        (
+            ["tests/test_unit.py::test_a", "validation/test_close.py::test_us1"],
+            ["tests/test_unit.py::test_a", "tests/test_unit.py::test_b"],
+        ),
+    ],
+)
+def test_self_check_rejects_identical_and_unjustified_overlap_tcg10(
+    capsys, tmp_path, validation_targets, verification_targets
+):
+    artifact_path, conops_path, verification_path, artifact = _self_check_env(
+        tmp_path, verification_targets=verification_targets
+    )
+    artifact["rows"][0]["test_targets"] = validation_targets
+    _write_self_check_json(artifact_path, artifact)
+
+    exit_code, out, _err = run_cli(capsys, [
+        "self-check", str(artifact_path),
+        "--conops", str(conops_path),
+        "--verification-ledger", str(verification_path),
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(
+        issue["code"] == "VALIDATION_IS_RELABELED_VERIFICATION"
+        for issue in envelope["issues"]
+    )
+
+
+def test_self_check_missing_verification_ledger_warns_sec7(capsys, tmp_path):
+    artifact_path, conops_path, _verification_path, _artifact = _self_check_env(tmp_path)
+
+    exit_code, out, _err = run_cli(capsys, [
+        "self-check", str(artifact_path),
+        "--conops", str(conops_path),
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["code"] == "ANTI_RELABELING_UNCHECKED"
+    assert envelope["issues"][0]["code"] == "ANTI_RELABELING_UNCHECKED"
+
+
+def test_self_check_sha_mismatch_rejects_toc_tou_rc1(capsys, tmp_path):
+    artifact_path, conops_path, verification_path, artifact = _self_check_env(tmp_path)
+    prior_sha = _self_check_sha(artifact_path)
+    artifact["rows"][0]["oracle"] = "Jason passes iff the US-1 artifact changed."
+    _write_self_check_json(artifact_path, artifact)
+
+    exit_code, out, _err = run_cli(capsys, [
+        "self-check", str(artifact_path),
+        "--conops", str(conops_path),
+        "--verification-ledger", str(verification_path),
+        "--expected-sha256", prior_sha,
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(issue["code"] == "ARTIFACT_SHA_MISMATCH" for issue in envelope["issues"])
+
+
+def test_self_check_rejects_symlinked_artifact_rc1(capsys, tmp_path):
+    artifact_path, conops_path, verification_path, _artifact = _self_check_env(tmp_path)
+    link_path = tmp_path / "linked_system_validation.json"
+    link_path.symlink_to(artifact_path)
+
+    exit_code, out, _err = run_cli(capsys, [
+        "self-check", str(link_path),
+        "--conops", str(conops_path),
+        "--verification-ledger", str(verification_path),
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["code"] == "ARTIFACT_SYMLINK_REJECTED"
+
+
 # ═══ C-2.3 check-rows (TC-2.3, INV-6, INV-11, CB-10) ══════════════════════════
 
 

@@ -41,7 +41,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 from filelock import FileLock, Timeout
 
@@ -2931,8 +2931,8 @@ def handle_self_check(args: argparse.Namespace) -> Envelope:
     if not isinstance(rows, list) or not rows:
         issues.append(make_issue("VALIDATION_ROWS_EMPTY", "rows must be a non-empty list"))
     else:
-        for index, row in enumerate(rows):
-            if not isinstance(row, dict):
+        for index, raw_row in enumerate(rows):
+            if not isinstance(raw_row, dict):
                 issues.append(
                     make_issue(
                         "VALIDATION_ROW_INVALID",
@@ -2940,8 +2940,10 @@ def handle_self_check(args: argparse.Namespace) -> Envelope:
                     )
                 )
                 continue
+            row = cast("dict[str, Any]", raw_row)
             row_objects.append(row)
-            row_id = row.get("row_id") if isinstance(row.get("row_id"), str) else None
+            row_id_value = row.get("row_id")
+            row_id = row_id_value if isinstance(row_id_value, str) else None
             for field_name in ("conops_ref", "scenario", "oracle"):
                 value = row.get(field_name)
                 if not isinstance(value, str) or not value.strip():
@@ -2988,7 +2990,8 @@ def handle_self_check(args: argparse.Namespace) -> Envelope:
             validation_targets = _target_set(row)
             if not validation_targets:
                 continue
-            row_id = row.get("row_id") if isinstance(row.get("row_id"), str) else None
+            row_id_value = row.get("row_id")
+            row_id = row_id_value if isinstance(row_id_value, str) else None
             overlap = validation_targets & verification_targets
             if not overlap:
                 continue
@@ -3005,11 +3008,11 @@ def handle_self_check(args: argparse.Namespace) -> Envelope:
                     )
                 )
 
-    passing_refs = [
-        row.get("conops_ref")
-        for row in row_objects
-        if row.get("result") == "pass" and isinstance(row.get("conops_ref"), str)
-    ]
+    passing_refs: list[str] = []
+    for row in row_objects:
+        conops_ref_value = row.get("conops_ref")
+        if row.get("result") == "pass" and isinstance(conops_ref_value, str):
+            passing_refs.append(conops_ref_value)
     for story_id in sorted(set(_US_TOKEN_RE.findall(conops_text))):
         if not any(story_id in conops_ref for conops_ref in passing_refs):
             issues.append(
