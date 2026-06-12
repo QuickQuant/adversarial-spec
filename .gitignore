@@ -32,3 +32,4 @@ test.lock
 .codex
 .conductor/
 .backup/
+.mcp.json

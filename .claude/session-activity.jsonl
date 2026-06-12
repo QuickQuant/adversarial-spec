@@ -1716,3 +1716,61 @@
 {"ts": "2026-06-11T18:00:17.820557+00:00", "session_id": "25f08625-0f27-4ca1-98d7-b24f7ad2332e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
 {"ts": "2026-06-11T18:03:40.997035+00:00", "session_id": "25f08625-0f27-4ca1-98d7-b24f7ad2332e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
 {"ts": "2026-06-11T18:26:22.220055+00:00", "session_id": "25f08625-0f27-4ca1-98d7-b24f7ad2332e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T18:30:28.032551+00:00", "session_id": "25f08625-0f27-4ca1-98d7-b24f7ad2332e", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T18:30:29.973983+00:00", "session_id": "25f08625-0f27-4ca1-98d7-b24f7ad2332e", "event": "SessionEnd", "project": "adversarial-spec", "reason": "prompt_input_exit"}
+{"ts": "2026-06-11T18:30:33.129965+00:00", "session_id": "fb684a76-e6d6-4b84-8dbf-2e17bc384bae", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "claude-fable-5"}
+{"ts": "2026-06-11T18:30:36.678100+00:00", "session_id": "fb684a76-e6d6-4b84-8dbf-2e17bc384bae", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T19:06:56.826540+00:00", "session_id": "fb684a76-e6d6-4b84-8dbf-2e17bc384bae", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T19:49:58.727777+00:00", "session_id": "fb684a76-e6d6-4b84-8dbf-2e17bc384bae", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T20:03:31.962527+00:00", "session_id": "fb684a76-e6d6-4b84-8dbf-2e17bc384bae", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T20:03:33.436181+00:00", "session_id": "fb684a76-e6d6-4b84-8dbf-2e17bc384bae", "event": "SessionEnd", "project": "adversarial-spec", "reason": "prompt_input_exit"}
+{"ts": "2026-06-11T20:03:36.225858+00:00", "session_id": "b7ee8c78-fbcd-4159-9035-02ae264ea770", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "claude-opus-4-8[1m]"}
+{"ts": "2026-06-11T20:25:33.933266+00:00", "session_id": "b7ee8c78-fbcd-4159-9035-02ae264ea770", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T20:49:52.016688+00:00", "session_id": "b7ee8c78-fbcd-4159-9035-02ae264ea770", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T20:56:49.278210+00:00", "session_id": "b7ee8c78-fbcd-4159-9035-02ae264ea770", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T21:02:23.726076+00:00", "session_id": "b7ee8c78-fbcd-4159-9035-02ae264ea770", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T21:02:25.184771+00:00", "session_id": "b7ee8c78-fbcd-4159-9035-02ae264ea770", "event": "SessionEnd", "project": "adversarial-spec", "reason": "prompt_input_exit"}
+{"ts": "2026-06-11T21:02:54.675980+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "claude-opus-4-8[1m]"}
+{"ts": "2026-06-11T21:04:27.327939+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T21:07:03.441682+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T21:09:46.296054+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T21:13:07.036265+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T21:14:40.579477+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T21:15:37.029455+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T21:16:31.898395+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T21:17:52.240528+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T21:30:38.482838+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T21:51:14.239731+00:00", "session_id": "63d82e7a-4274-472f-91ac-7f3065411a99", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "claude-fable-5"}
+{"ts": "2026-06-11T21:51:17.702968+00:00", "session_id": "63d82e7a-4274-472f-91ac-7f3065411a99", "event": "SessionEnd", "project": "adversarial-spec", "reason": "logout"}
+{"ts": "2026-06-11T21:51:43.125326+00:00", "session_id": "2c18040d-8f68-4abd-93dc-5b0e1441c935", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "claude-fable-5"}
+{"ts": "2026-06-11T21:51:48.764792+00:00", "session_id": "2c18040d-8f68-4abd-93dc-5b0e1441c935", "event": "SessionEnd", "project": "adversarial-spec", "reason": "other"}
+{"ts": "2026-06-11T21:54:26.746436+00:00", "session_id": "019eb8ad-dd63-7b81-bfd6-fda47a47066b", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.5"}
+{"ts": "2026-06-11T21:54:26.800748+00:00", "session_id": "019eb8ad-dd63-7b81-bfd6-fda47a47066b", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T21:54:27.680914+00:00", "session_id": "019eb8ad-e2bc-7952-b268-2fe7fb91a610", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.5"}
+{"ts": "2026-06-11T21:54:27.740219+00:00", "session_id": "019eb8ad-e2bc-7952-b268-2fe7fb91a610", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T21:58:31.680982+00:00", "session_id": "019eb8ad-e2bc-7952-b268-2fe7fb91a610", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-06-11T21:58:32.339099+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T22:03:43.327191+00:00", "session_id": "019eb8ad-dd63-7b81-bfd6-fda47a47066b", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-06-11T22:03:43.910267+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T22:12:12.470671+00:00", "session_id": "019eb8be-22d7-7b03-8a21-aa658a3d6fe2", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "gpt-5.5"}
+{"ts": "2026-06-11T22:12:12.530209+00:00", "session_id": "019eb8be-22d7-7b03-8a21-aa658a3d6fe2", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T22:16:48.178366+00:00", "session_id": "019eb8be-22d7-7b03-8a21-aa658a3d6fe2", "event": "Stop", "project": "adversarial-spec"}
+{"ts": "2026-06-11T22:16:48.707411+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T22:24:12.431452+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T22:25:39.185930+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T22:29:34.044247+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T23:33:04.509081+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-11T23:47:52.880578+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-12T00:31:14.900670+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-12T00:31:16.359110+00:00", "session_id": "2ea09b69-bcb8-4427-9d0e-58fca5540ec3", "event": "SessionEnd", "project": "adversarial-spec", "reason": "prompt_input_exit"}
+{"ts": "2026-06-12T00:31:19.215241+00:00", "session_id": "804772a7-93fd-4a20-b664-5b9d9d95d474", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "claude-fable-5"}
+{"ts": "2026-06-12T00:32:48.576206+00:00", "session_id": "804772a7-93fd-4a20-b664-5b9d9d95d474", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-12T00:40:32.744878+00:00", "session_id": "804772a7-93fd-4a20-b664-5b9d9d95d474", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-12T01:58:27.870678+00:00", "session_id": "804772a7-93fd-4a20-b664-5b9d9d95d474", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-12T04:07:58.292761+00:00", "session_id": "804772a7-93fd-4a20-b664-5b9d9d95d474", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-12T04:29:53.547060+00:00", "session_id": "804772a7-93fd-4a20-b664-5b9d9d95d474", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-12T04:48:08.475442+00:00", "session_id": "804772a7-93fd-4a20-b664-5b9d9d95d474", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-12T04:48:09.928564+00:00", "session_id": "804772a7-93fd-4a20-b664-5b9d9d95d474", "event": "SessionEnd", "project": "adversarial-spec", "reason": "prompt_input_exit"}
+{"ts": "2026-06-12T04:48:13.704122+00:00", "session_id": "29e5e104-3a61-4bb6-ac52-068f4c55145c", "event": "SessionStart", "project": "adversarial-spec", "source": "startup", "model": "claude-fable-5"}
+{"ts": "2026-06-12T04:48:17.458713+00:00", "session_id": "29e5e104-3a61-4bb6-ac52-068f4c55145c", "event": "UserPromptSubmit", "project": "adversarial-spec"}
+{"ts": "2026-06-12T04:48:34.633651+00:00", "session_id": "29e5e104-3a61-4bb6-ac52-068f4c55145c", "event": "UserPromptSubmit", "project": "adversarial-spec"}

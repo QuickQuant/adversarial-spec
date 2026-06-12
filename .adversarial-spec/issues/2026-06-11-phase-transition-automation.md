@@ -1,3 +1,10 @@
+---
+date: 2026-06-11
+card_id: "5604"
+session_id: adv-spec-202606110339-validation-leg-process
+would_have_used: pipeline_phase4_lightweight_advance
+---
+
 # Phase Transition Automation (2026-06-11)
 
 ## Failure

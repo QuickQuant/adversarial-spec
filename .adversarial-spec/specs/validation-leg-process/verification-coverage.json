@@ -1,0 +1,33 @@
+{
+  "report_schema_version": 1,
+  "total_tasks": 25,
+  "behavior_changing_count": 20,
+  "non_behavior_changing_count": 5,
+  "counts_by_mode": {
+    "automated-integration": 6,
+    "automated-unit": 16,
+    "artifact-sync": 1,
+    "static-check": 1,
+    "manual-ux": 1
+  },
+  "exempt_tasks": [
+    {
+      "task_id": "C-5.1",
+      "mode": "artifact-sync",
+      "reason": "Phase-7 doc section (process narrative, no runtime behavior); cold-read usability verified at dogfood TC-0.1 (fresh agent reaches check-rows-clean draft <30 min), not a CI unit test."
+    },
+    {
+      "task_id": "C-5.2",
+      "mode": "static-check",
+      "reason": "Phase-8 close-algorithm doc; verified by TC-0.2 static grep asserting all 8 gate reject codes appear with documented responses — no runtime behavior of its own."
+    },
+    {
+      "task_id": "C-5.3",
+      "mode": "manual-ux",
+      "reason": "Dogfood close: requires the real fizzy gate accepting on first call AND Jason's intent-level acceptance of the process experience (mobile-sufficient digest, unambiguous reply/re-prompt). Human-gated; cannot assert programmatically (NG3, ACK-4 bootstrap circularity acknowledged)."
+    }
+  ],
+  "unmapped_behavior_tasks": [],
+  "unmapped_non_behavior_tasks": [],
+  "validation_errors": []
+}

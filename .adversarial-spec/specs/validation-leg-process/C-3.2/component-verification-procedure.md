@@ -1,0 +1,32 @@
+# C-3.2 Component Verification
+
+Verification kind: verification
+Altitude obligation: component
+Verification mode: automated-unit
+Verification scope: targeted
+
+## What Runs
+
+- `uv run pytest scripts/tests/test_validation_emission.py -k digest -q`
+
+## Evidence Required
+
+Automated evidence is the declared pytest command passing with mapped TC coverage.
+
+## Mapped Tests
+
+- Test refs: TC-3.1, TC-1.5, TC-G9
+- Test files: scripts/tests/test_validation_emission.py
+
+## Acceptance Criteria Covered
+
+- Pure assembly (reset removed - DD-1); only result==null active rows (delta); refuses missing/empty/type-mismatched/hash-mismatched/reset-stale evidence (INV-4/12)
+- Refuses while non-terminal batch exists; snapshots conops/row/evidence hashes; writes part files to validation-digests/, records sha256s (RC-3, A6)
+- 3500 UTF-8 byte/part split at row boundaries, (part i/k) labels; secret deny-pattern lint blocks assembly; row prose escaped; narrative rows marked (SEC-4, FM-9)
+- Zero pending -> exit 0 NOTHING_TO_DIGEST
+
+## Traceability
+
+- Architecture refs: .architecture/structured/components/harness-hooks.md, .architecture/structured/components/providers.md, .architecture/patterns.md
+- Concern refs: DD-1, RC-3, SEC-4, FM-9, OP-5, OP-9
+- Invariant refs: INV-4, INV-10, INV-12, INV-A6

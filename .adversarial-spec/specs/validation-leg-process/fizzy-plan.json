@@ -1,0 +1,2311 @@
+{
+  "plan_schema_version": 3,
+  "session_id": "adv-spec-202606110339-validation-leg-process",
+  "tasks": [
+    {
+      "task_id": "SYS",
+      "altitude": "system",
+      "parent": null,
+      "decomposes_into": [
+        "SS-1",
+        "SS-2",
+        "SS-3",
+        "SS-4",
+        "SS-5"
+      ],
+      "title": "validation-leg-process",
+      "description": "The system shall satisfy the approved validation leg process acceptance criteria.",
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Full pytest suite green (deterministic markers) across all subcommands",
+        "System verification = the integration close path runs end-to-end on fixtures",
+        "System validation deferred to dogfood C-5.3 (v4 is verification-only — no system_validation plan binding; VV_ABOVE_ALTITUDE guard)"
+      ],
+      "architecture_refs": [
+        ".architecture/primer.md",
+        ".architecture/overview.md",
+        ".architecture/structured/components/emission-toolchain.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "full-suite",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/SYS/system-spec.md",
+        "definition_hash": "7f99d98bc241"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/SYS/component-verification-procedure.md",
+          "plan_hash": "a5905292ee14",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -q"
+          ],
+          "test_refs": [
+            "TC-4.1"
+          ],
+          "verification_mode": "automated-integration",
+          "verification_scope": "full-suite"
+        },
+        "subsystem_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/SYS/subsystem-verification-plan.md",
+          "plan_hash": "1bbdbaa89acc",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -q"
+          ],
+          "test_refs": [
+            "TC-4.1"
+          ],
+          "verification_mode": "automated-integration",
+          "verification_scope": "full-suite"
+        },
+        "system_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/SYS/system-verification-plan.md",
+          "plan_hash": "e62c19153e66",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -q"
+          ],
+          "test_refs": [
+            "TC-4.1"
+          ],
+          "verification_mode": "automated-integration",
+          "verification_scope": "full-suite"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "SYS-1",
+        "rationale": "The system shall preserve validation-leg intent for US-0, US-1, US-2, US-3, US-4, US-5, US-6, US-7, US-8, US-9, US-10, US-11, US-12, US-13.",
+        "traced_from": null,
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "system"
+      },
+      "system_spec_path": ".adversarial-spec/specs/validation-leg-process/SYS/system-spec.md",
+      "conops_refs": [
+        "US-0",
+        "US-1",
+        "US-2",
+        "US-3",
+        "US-4",
+        "US-5",
+        "US-6",
+        "US-7",
+        "US-8",
+        "US-9",
+        "US-10",
+        "US-11",
+        "US-12",
+        "US-13"
+      ],
+      "user_story_refs": [
+        "US-0",
+        "US-1",
+        "US-2",
+        "US-3",
+        "US-4",
+        "US-5",
+        "US-6",
+        "US-7",
+        "US-8",
+        "US-9",
+        "US-10",
+        "US-11",
+        "US-12",
+        "US-13"
+      ],
+      "concern_refs": [
+        "(aggregate)"
+      ],
+      "invariant_refs": [
+        "INV-A1",
+        "INV-A2",
+        "INV-A3",
+        "INV-A4",
+        "INV-A5",
+        "INV-A6",
+        "INV-A7"
+      ],
+      "surface_scope": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "test_refs": [
+        "TC-4.1"
+      ],
+      "test_files": [
+        "scripts/tests/test_validation_emission.py"
+      ],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -q"
+      ]
+    },
+    {
+      "task_id": "SS-1",
+      "altitude": "subsystem",
+      "parent": "SYS",
+      "decomposes_into": [
+        "C-1-1",
+        "C-1-2",
+        "C-1-3",
+        "C-1-4"
+      ],
+      "title": "ledger-core",
+      "description": "The subsystem shall satisfy the approved ledger core acceptance criteria.",
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "shared ledger I/O foundation passes lock/corrupt/hash/path fixtures; blocks all feature subcommands until green."
+      ],
+      "architecture_refs": [
+        ".architecture/primer.md",
+        ".architecture/patterns.md",
+        ".architecture/structured/flows.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "full-suite",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/SS-1/subsystem-spec.md",
+        "definition_hash": "d0105cbdf932"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/SS-1/component-verification-procedure.md",
+          "plan_hash": "1c5d982e1434",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -q"
+          ],
+          "test_refs": [
+            "TC-3.9",
+            "TC-2.6"
+          ],
+          "verification_mode": "automated-integration",
+          "verification_scope": "full-suite"
+        },
+        "subsystem_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/SS-1/subsystem-verification-plan.md",
+          "plan_hash": "ece91bf860e7",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -q"
+          ],
+          "test_refs": [
+            "TC-3.9",
+            "TC-2.6"
+          ],
+          "verification_mode": "automated-integration",
+          "verification_scope": "full-suite"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "SS-1",
+        "rationale": "The subsystem shall preserve validation-leg intent for US-0, US-3, US-7, US-8.",
+        "traced_from": "SYS",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "subsystem"
+      },
+      "subsystem_spec_path": ".adversarial-spec/specs/validation-leg-process/SS-1/subsystem-spec.md",
+      "realizes_refs": [
+        "US-0",
+        "US-3",
+        "US-7",
+        "US-8"
+      ],
+      "concern_refs": [
+        "FM-5",
+        "FM-7",
+        "SEC-8",
+        "SEC-9",
+        "SEC-10",
+        "OP-3",
+        "OP-4",
+        "DD-6"
+      ],
+      "invariant_refs": [
+        "INV-A1",
+        "INV-A2",
+        "INV-A3",
+        "INV-12"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "test_refs": [
+        "TC-3.9",
+        "TC-2.6"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -q"
+      ]
+    },
+    {
+      "task_id": "C-1-1",
+      "altitude": "component",
+      "parent": "SS-1",
+      "decomposes_into": [],
+      "title": "module-skeleton-envelope",
+      "description": "The component shall satisfy the approved module skeleton envelope acceptance criteria.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "argparse dispatch for all 13 subcommands; unknown subcommand → exit 2 envelope",
+        "Every invocation prints exactly one stdout JSON envelope {status,code,issues:[{code,row_id,detail}],data}; warnings to stderr only (FM-5)",
+        "Exit-code contract 0/2/3 wired at CLI boundary; global issues carry row_id:null",
+        "schema_version + module_version (__version__ + git short hash) stamped on JSON artifacts (OP-4, DD-6); all timestamps UTC RFC3339 Z (OP-3)"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/emission-toolchain.md",
+        ".architecture/structured/components/debate-engine.md",
+        ".architecture/patterns.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/C-1.1/normative.md",
+        "definition_hash": "ef89c7308ae3"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/C-1.1/component-verification-procedure.md",
+          "plan_hash": "6a460c320608",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -k envelope -q"
+          ],
+          "test_refs": [
+            "TC-3.9"
+          ],
+          "verification_mode": "automated-unit",
+          "verification_scope": "targeted"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-R101",
+        "rationale": "The component shall preserve validation-leg intent for US-0.",
+        "traced_from": "SS-1",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-0"
+      ],
+      "concern_refs": [
+        "FM-5",
+        "OP-3",
+        "OP-4",
+        "OP-11"
+      ],
+      "invariant_refs": [
+        "INV-A3"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "test_refs": [
+        "TC-3.9"
+      ],
+      "test_files": [
+        "scripts/tests/test_validation_emission.py",
+        "uv run pytest scripts/tests/test_validation_emission.py -k envelope -q"
+      ],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -k envelope -q"
+      ]
+    },
+    {
+      "task_id": "C-1-2",
+      "altitude": "component",
+      "parent": "SS-1",
+      "decomposes_into": [],
+      "title": "lock-atomic-corrupt",
+      "description": "The component shall satisfy the approved lock atomic corrupt acceptance criteria.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "filelock.FileLock 10s timeout → exit 3 LEDGER_BUSY with owner-pid/lock-age when readable",
+        "Every mutation read→mutate→atomic tmp+rename INSIDE the lock; crash mid-write leaves prior ledger intact, no .tmp litter (TC-3.9c)",
+        "Malformed ledger → exit 3 LEDGER_CORRUPT; corrupt bytes copied to validation-rows.json.corrupt-<ts> first; never auto-repaired",
+        "Single mutation helper requiring the lock; read-only subcommands have no write path (INV-A2)"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/flows.md",
+        ".architecture/structured/components/gauntlet.md",
+        ".architecture/patterns.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/C-1.2/normative.md",
+        "definition_hash": "842b5e5e8bcd"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/C-1.2/component-verification-procedure.md",
+          "plan_hash": "ebf476ec5bd8",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -k \"lock or corrupt or atomic\" -q"
+          ],
+          "test_refs": [
+            "TC-3.9"
+          ],
+          "verification_mode": "automated-unit",
+          "verification_scope": "targeted"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-R102",
+        "rationale": "The component shall preserve validation-leg intent for US-8.",
+        "traced_from": "SS-1",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-8"
+      ],
+      "concern_refs": [
+        "FM-7",
+        "DD-6",
+        "US-8(filelock-semantics)",
+        "DIS-1(10s-noted)"
+      ],
+      "invariant_refs": [
+        "INV-A2"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "test_refs": [
+        "TC-3.9"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -k \"lock or corrupt or atomic\" -q"
+      ]
+    },
+    {
+      "task_id": "C-1-3",
+      "altitude": "component",
+      "parent": "SS-1",
+      "decomposes_into": [],
+      "title": "hash-canonicalization",
+      "description": "The component shall satisfy the approved hash canonicalization acceptance criteria.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "row_hash = sha256 over json.dumps([conops_ref,scenario,oracle,evidence_type],ensure_ascii=False,separators=(\",\",\":\")) with all 4 NFC-normalized; FULL 64-hex stored",
+        "evidence_rationale + test_targets EXCLUDED from row_hash (TC-2.6); hash changes when scenario/oracle/conops_ref/evidence_type change",
+        "conops_hash = sha256 of conops.md bytes; story_hashes per-section; 12-hex prefix emitted only at artifact boundary; self-check rejects prefixes <12 (SEC-8)",
+        "Hashes computed ONLY by the module; lengths/constants pinned by tests"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/emission-toolchain.md",
+        ".architecture/structured/components/gauntlet.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/C-1.3/normative.md",
+        "definition_hash": "5b61e825af2a"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/C-1.3/component-verification-procedure.md",
+          "plan_hash": "45996bf3d4e0",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -k hash -q"
+          ],
+          "test_refs": [
+            "TC-2.6"
+          ],
+          "verification_mode": "automated-unit",
+          "verification_scope": "targeted"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-R103",
+        "rationale": "The component shall preserve validation-leg intent for US-3.",
+        "traced_from": "SS-1",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-3"
+      ],
+      "concern_refs": [
+        "SEC-8",
+        "DD-5",
+        "RC-3"
+      ],
+      "invariant_refs": [
+        "INV-12",
+        "INV-A1"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "test_refs": [
+        "TC-2.6"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -k hash -q"
+      ]
+    },
+    {
+      "task_id": "C-1-4",
+      "altitude": "component",
+      "parent": "SS-1",
+      "decomposes_into": [],
+      "title": "path-containment-bounds",
+      "description": "The component shall satisfy the approved path containment bounds acceptance criteria.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Subcommands resolve artifact paths under spec root via realpath; symlinks/escapes rejected (SEC-9)",
+        "Input bounds enforced: reply 16KB, justification 2KB, ledger 5MB, ConOps 1MB → structured exit-2 (SEC-10)",
+        "row_id global uniqueness incl. superseded; duplicate manifest story ids → exit 2"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/session.md",
+        ".architecture/patterns.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/C-1.4/normative.md",
+        "definition_hash": "d2a7e6e75b50"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/C-1.4/component-verification-procedure.md",
+          "plan_hash": "036dba02abb5",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -k \"path or bounds\" -q"
+          ],
+          "test_refs": [
+            "TC-2.6",
+            "TC-1.4"
+          ],
+          "verification_mode": "automated-unit",
+          "verification_scope": "targeted"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-R104",
+        "rationale": "The component shall preserve validation-leg intent for US-7.",
+        "traced_from": "SS-1",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-7"
+      ],
+      "concern_refs": [
+        "SEC-9",
+        "SEC-10",
+        "OP-3"
+      ],
+      "invariant_refs": [
+        "INV-A3"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "test_refs": [
+        "TC-2.6",
+        "TC-1.4"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -k \"path or bounds\" -q"
+      ]
+    },
+    {
+      "task_id": "SS-2",
+      "altitude": "subsystem",
+      "parent": "SYS",
+      "decomposes_into": [
+        "C-2-1",
+        "C-2-2",
+        "C-2-3"
+      ],
+      "title": "drafting-leg",
+      "description": "The subsystem shall satisfy the approved drafting leg acceptance criteria.",
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Phase-7 production path derive→normalize→check clean on the session's real roadmap."
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/emission-toolchain.md",
+        ".architecture/primer.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "full-suite",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/SS-2/subsystem-spec.md",
+        "definition_hash": "9a603a3bfcb0"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/SS-2/component-verification-procedure.md",
+          "plan_hash": "f7751f8febc1",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -q"
+          ],
+          "test_refs": [
+            "TC-1.1",
+            "TC-2.1"
+          ],
+          "verification_mode": "automated-integration",
+          "verification_scope": "full-suite"
+        },
+        "subsystem_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/SS-2/subsystem-verification-plan.md",
+          "plan_hash": "aceda2bf6457",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -q"
+          ],
+          "test_refs": [
+            "TC-1.1",
+            "TC-2.1"
+          ],
+          "verification_mode": "automated-integration",
+          "verification_scope": "full-suite"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "SS-2",
+        "rationale": "The subsystem shall preserve validation-leg intent for US-1, US-2, US-3, US-4.",
+        "traced_from": "SYS",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "subsystem"
+      },
+      "subsystem_spec_path": ".adversarial-spec/specs/validation-leg-process/SS-2/subsystem-spec.md",
+      "realizes_refs": [
+        "US-1",
+        "US-2",
+        "US-3",
+        "US-4"
+      ],
+      "concern_refs": [
+        "DD-7",
+        "DD-8",
+        "CB-7",
+        "CB-10",
+        "CB-11",
+        "SEC-7"
+      ],
+      "invariant_refs": [
+        "INV-6",
+        "INV-7",
+        "INV-8",
+        "INV-11"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "test_refs": [
+        "TC-1.1",
+        "TC-2.1"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -q"
+      ]
+    },
+    {
+      "task_id": "C-2-1",
+      "altitude": "component",
+      "parent": "SS-2",
+      "decomposes_into": [],
+      "title": "derive-conops",
+      "description": "The component shall satisfy the approved derive conops acceptance criteria.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-1-1",
+        "C-1-2",
+        "C-1-3",
+        "C-1-4"
+      ],
+      "acceptance_criteria": [
+        "Deterministic template derivation from manifest id/title/story + milestone context only; never invents stories (DD-7)",
+        "Every US-\\d+ appears as ### US-n heading; stray-id lint (TC-G13: \"replaces US-99\" → exit 2, CB-11); duplicate ids → exit 2",
+        "Records full conops_hash + per-section story_hashes map (FM-3); re-derive refuses without --force when a ledger references prior hash"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/emission-toolchain.md",
+        ".architecture/structured/components/session.md",
+        ".architecture/patterns.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/C-2.1/normative.md",
+        "definition_hash": "5e570d10e7c8"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/C-2.1/component-verification-procedure.md",
+          "plan_hash": "45d818e230bc",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -k conops -q"
+          ],
+          "test_refs": [
+            "TC-1.1",
+            "TC-1.2",
+            "TC-1.3",
+            "TC-G13"
+          ],
+          "verification_mode": "automated-unit",
+          "verification_scope": "targeted"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-R201",
+        "rationale": "The component shall preserve validation-leg intent for US-1.",
+        "traced_from": "SS-2",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-1"
+      ],
+      "concern_refs": [
+        "DD-7",
+        "CB-11",
+        "FM-3",
+        "SEC-9"
+      ],
+      "invariant_refs": [
+        "INV-2",
+        "INV-8"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "test_refs": [
+        "TC-1.1",
+        "TC-1.2",
+        "TC-1.3",
+        "TC-G13"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -k conops -q"
+      ]
+    },
+    {
+      "task_id": "C-2-2",
+      "altitude": "component",
+      "parent": "SS-2",
+      "decomposes_into": [],
+      "title": "normalize-rows",
+      "description": "The component shall satisfy the approved normalize rows acceptance criteria.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-1-1",
+        "C-1-2",
+        "C-1-3",
+        "C-1-4"
+      ],
+      "acceptance_criteria": [
+        "Sole producer of row_hash/story_hash (CB-7); conductor never writes hex",
+        "Stamps schema fields; validates row_id format r-US<n>-<k> + global uniqueness + story-prefix match",
+        "Mutating subcommand — holds lock, atomic write (INV-A2)"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/emission-toolchain.md",
+        ".architecture/structured/components/gauntlet.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/C-2.2/normative.md",
+        "definition_hash": "0fe61762c946"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/C-2.2/component-verification-procedure.md",
+          "plan_hash": "add81bd242f9",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -k normalize -q"
+          ],
+          "test_refs": [
+            "TC-G11"
+          ],
+          "verification_mode": "automated-unit",
+          "verification_scope": "targeted"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-R202",
+        "rationale": "The component shall preserve validation-leg intent for US-3.",
+        "traced_from": "SS-2",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-3"
+      ],
+      "concern_refs": [
+        "CB-7",
+        "DD-4"
+      ],
+      "invariant_refs": [
+        "INV-A1",
+        "INV-12"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "test_refs": [
+        "TC-G11"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -k normalize -q"
+      ]
+    },
+    {
+      "task_id": "C-2-3",
+      "altitude": "component",
+      "parent": "SS-2",
+      "decomposes_into": [],
+      "title": "check-rows-oracle-lint",
+      "description": "The component shall satisfy the approved check rows oracle lint acceptance criteria.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-1-1",
+        "C-1-2",
+        "C-1-3",
+        "C-1-4"
+      ],
+      "acceptance_criteria": [
+        "--conops required; coverage uses exact-token equality conops_ref==\"US-n\" (CB-10); --draft relaxes coverage to advisory (DD-8)",
+        "Oracle layer-2 lint rejects banned phrases (\"tests pass\" + synonyms) and vague terminals unless paired with concrete observable; requires literal iff + named US-n (INV-6, TC-2.3)",
+        "Anti-relabeling: validation test_targets not identical/subset/overlapping verification targets without rationale (INV-11, SEC-7)",
+        "Structural only — semantics human-owned (documented scope honesty)"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/emission-toolchain.md",
+        ".architecture/patterns.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/C-2.3/normative.md",
+        "definition_hash": "eefaebd7345c"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/C-2.3/component-verification-procedure.md",
+          "plan_hash": "1585527388dc",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -k \"check_rows or oracle\" -q"
+          ],
+          "test_refs": [
+            "TC-2.1",
+            "TC-2.2",
+            "TC-2.3",
+            "TC-2.4"
+          ],
+          "verification_mode": "automated-unit",
+          "verification_scope": "targeted"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-R203",
+        "rationale": "The component shall preserve validation-leg intent for US-4.",
+        "traced_from": "SS-2",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-4"
+      ],
+      "concern_refs": [
+        "CB-10",
+        "DD-8",
+        "SEC-7",
+        "DIS-2",
+        "OP-2"
+      ],
+      "invariant_refs": [
+        "INV-6",
+        "INV-7",
+        "INV-11"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "test_refs": [
+        "TC-2.1",
+        "TC-2.2",
+        "TC-2.3",
+        "TC-2.4"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -k \"check_rows or oracle\" -q"
+      ]
+    },
+    {
+      "task_id": "SS-3",
+      "altitude": "subsystem",
+      "parent": "SYS",
+      "decomposes_into": [
+        "C-3-1",
+        "C-3-2",
+        "C-3-3"
+      ],
+      "title": "evidence-and-digest",
+      "description": "The subsystem shall satisfy the approved evidence and digest acceptance criteria.",
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "evidence→digest→delivery path correct on fixtures + real bridge at dogfood."
+      ],
+      "architecture_refs": [
+        ".architecture/primer.md",
+        ".architecture/structured/components/harness-hooks.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "full-suite",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/SS-3/subsystem-spec.md",
+        "definition_hash": "8b719e60c70a"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/SS-3/component-verification-procedure.md",
+          "plan_hash": "e9ce4ded963f",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -q"
+          ],
+          "test_refs": [
+            "TC-3.1",
+            "TC-3.7"
+          ],
+          "verification_mode": "automated-integration",
+          "verification_scope": "full-suite"
+        },
+        "subsystem_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/SS-3/subsystem-verification-plan.md",
+          "plan_hash": "2e68e4fcb27f",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -q"
+          ],
+          "test_refs": [
+            "TC-3.1",
+            "TC-3.7"
+          ],
+          "verification_mode": "automated-integration",
+          "verification_scope": "full-suite"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "SS-3",
+        "rationale": "The subsystem shall preserve validation-leg intent for US-5, US-6, US-13.",
+        "traced_from": "SYS",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "subsystem"
+      },
+      "subsystem_spec_path": ".adversarial-spec/specs/validation-leg-process/SS-3/subsystem-spec.md",
+      "realizes_refs": [
+        "US-5",
+        "US-6",
+        "US-13"
+      ],
+      "concern_refs": [
+        "FM-2",
+        "DD-1",
+        "RC-2",
+        "SEC-4",
+        "FM-9"
+      ],
+      "invariant_refs": [
+        "INV-4",
+        "INV-9",
+        "INV-10",
+        "INV-12",
+        "INV-16",
+        "INV-A6"
+      ],
+      "surface_scope": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "test_refs": [
+        "TC-3.1",
+        "TC-3.7"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -q"
+      ]
+    },
+    {
+      "task_id": "C-3-1",
+      "altitude": "component",
+      "parent": "SS-3",
+      "decomposes_into": [],
+      "title": "record-evidence",
+      "description": "The component shall satisfy the approved record evidence acceptance criteria.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-1-1",
+        "C-1-2",
+        "C-1-3",
+        "C-1-4"
+      ],
+      "acceptance_criteria": [
+        "Scaffolds validation-evidence/<row_id>/evidence.md canonical front-matter (hashes stamped by module, FM-2); exact keys/order, distinct codes for missing/malformed/hash-mismatch",
+        "Records conductor evidence_summary into ledger row (mutating); binds row_hash+story_hash+commit (INV-9, INV-12)",
+        "Per-story binding: editing one story invalidates only that story's evidence (FM-3/G4)"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/emission-toolchain.md",
+        ".architecture/structured/components/gauntlet.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/C-3.1/normative.md",
+        "definition_hash": "0124cfd7c9c8"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/C-3.1/component-verification-procedure.md",
+          "plan_hash": "063e25464afb",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -k evidence -q"
+          ],
+          "test_refs": [
+            "TC-3.7",
+            "TC-G4"
+          ],
+          "verification_mode": "automated-unit",
+          "verification_scope": "targeted"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-R301",
+        "rationale": "The component shall preserve validation-leg intent for US-13.",
+        "traced_from": "SS-3",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-13"
+      ],
+      "concern_refs": [
+        "FM-2",
+        "FM-4",
+        "DD-9",
+        "OP-2"
+      ],
+      "invariant_refs": [
+        "INV-4",
+        "INV-9",
+        "INV-12"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "test_refs": [
+        "TC-3.7",
+        "TC-G4"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -k evidence -q"
+      ]
+    },
+    {
+      "task_id": "C-3-2",
+      "altitude": "component",
+      "parent": "SS-3",
+      "decomposes_into": [],
+      "title": "assemble-digest",
+      "description": "The component shall satisfy the approved assemble digest acceptance criteria.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-1-1",
+        "C-1-2",
+        "C-1-3",
+        "C-1-4"
+      ],
+      "acceptance_criteria": [
+        "Pure assembly (reset removed — DD-1); only result==null active rows (delta); refuses missing/empty/type-mismatched/hash-mismatched/reset-stale evidence (INV-4/12)",
+        "Refuses while non-terminal batch exists; snapshots conops/row/evidence hashes; writes part files to validation-digests/, records sha256s (RC-3, A6)",
+        "3500 UTF-8 byte/part split at row boundaries, (part i/k) labels; secret deny-pattern lint blocks assembly; row prose escaped; narrative rows marked (SEC-4, FM-9)",
+        "Zero pending → exit 0 NOTHING_TO_DIGEST"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/harness-hooks.md",
+        ".architecture/structured/components/providers.md",
+        ".architecture/patterns.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/C-3.2/normative.md",
+        "definition_hash": "ec31ec2dfa3f"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/C-3.2/component-verification-procedure.md",
+          "plan_hash": "3ec2d01524fa",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -k digest -q"
+          ],
+          "test_refs": [
+            "TC-3.1",
+            "TC-1.5",
+            "TC-G9"
+          ],
+          "verification_mode": "automated-unit",
+          "verification_scope": "targeted"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-R302",
+        "rationale": "The component shall preserve validation-leg intent for US-6.",
+        "traced_from": "SS-3",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-6"
+      ],
+      "concern_refs": [
+        "DD-1",
+        "RC-3",
+        "SEC-4",
+        "FM-9",
+        "OP-5",
+        "OP-9"
+      ],
+      "invariant_refs": [
+        "INV-4",
+        "INV-10",
+        "INV-12",
+        "INV-A6"
+      ],
+      "surface_scope": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "test_refs": [
+        "TC-3.1",
+        "TC-1.5",
+        "TC-G9"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -k digest -q"
+      ]
+    },
+    {
+      "task_id": "C-3-3",
+      "altitude": "component",
+      "parent": "SS-3",
+      "decomposes_into": [],
+      "title": "record-send-cancel-batch",
+      "description": "The component shall satisfy the approved record send cancel batch acceptance criteria.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-1-1",
+        "C-1-2",
+        "C-1-3",
+        "C-1-4"
+      ],
+      "acceptance_criteria": [
+        "record-send records per-part delivery + message_id; flips batch to sent only when ALL parts sent (RC-2)",
+        "cancel-batch requires --reason; rows return to delta pool; audit-logged; cancellation notice if parts were sent (FM-12)",
+        "Bulk verdicts gated on sent status (INV-16)"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/harness-hooks.md",
+        ".architecture/structured/components/emission-toolchain.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/C-3.3/normative.md",
+        "definition_hash": "a307f5d08cb7"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/C-3.3/component-verification-procedure.md",
+          "plan_hash": "bcc186d2c74a",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -k \"record_send or cancel\" -q"
+          ],
+          "test_refs": [
+            "TC-G1"
+          ],
+          "verification_mode": "automated-unit",
+          "verification_scope": "targeted"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-R303",
+        "rationale": "The component shall preserve validation-leg intent for US-6.",
+        "traced_from": "SS-3",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-6"
+      ],
+      "concern_refs": [
+        "RC-2",
+        "FM-6",
+        "FM-12",
+        "OP-7"
+      ],
+      "invariant_refs": [
+        "INV-16",
+        "INV-A6"
+      ],
+      "surface_scope": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "test_refs": [
+        "TC-G1"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -k \"record_send or cancel\" -q"
+      ]
+    },
+    {
+      "task_id": "SS-4",
+      "altitude": "subsystem",
+      "parent": "SYS",
+      "decomposes_into": [
+        "C-4-1",
+        "C-4-2",
+        "C-4-3",
+        "C-4-4",
+        "C-4-5",
+        "C-4-6"
+      ],
+      "title": "judgment-and-close",
+      "description": "The subsystem shall satisfy the approved judgment and close acceptance criteria.",
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "reply→judgment→emission→gate-parity close path correct on fixtures."
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/harness-hooks.md",
+        ".architecture/structured/components/emission-toolchain.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "full-suite",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/SS-4/subsystem-spec.md",
+        "definition_hash": "81e2900c46d3"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/SS-4/component-verification-procedure.md",
+          "plan_hash": "c12fc986d94b",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -q"
+          ],
+          "test_refs": [
+            "TC-3.2",
+            "TC-3.3"
+          ],
+          "verification_mode": "automated-integration",
+          "verification_scope": "full-suite"
+        },
+        "subsystem_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/SS-4/subsystem-verification-plan.md",
+          "plan_hash": "769550ec18df",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -q"
+          ],
+          "test_refs": [
+            "TC-3.2",
+            "TC-3.3"
+          ],
+          "verification_mode": "automated-integration",
+          "verification_scope": "full-suite"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "SS-4",
+        "rationale": "The subsystem shall preserve validation-leg intent for US-7, US-8, US-9, US-11, US-12.",
+        "traced_from": "SYS",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "subsystem"
+      },
+      "subsystem_spec_path": ".adversarial-spec/specs/validation-leg-process/SS-4/subsystem-spec.md",
+      "realizes_refs": [
+        "US-7",
+        "US-8",
+        "US-9",
+        "US-11",
+        "US-12"
+      ],
+      "concern_refs": [
+        "CB-1",
+        "CB-9",
+        "SEC-1",
+        "SEC-2",
+        "RC-1",
+        "FM-10",
+        "DD-2"
+      ],
+      "invariant_refs": [
+        "INV-1",
+        "INV-3",
+        "INV-5",
+        "INV-11",
+        "INV-13",
+        "INV-15",
+        "INV-17",
+        "INV-A1",
+        "INV-A4",
+        "INV-A5",
+        "INV-A7"
+      ],
+      "surface_scope": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "test_refs": [
+        "TC-3.2",
+        "TC-3.3"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -q"
+      ]
+    },
+    {
+      "task_id": "C-4-1",
+      "altitude": "component",
+      "parent": "SS-4",
+      "decomposes_into": [],
+      "title": "parse-reply-grammar",
+      "description": "The component shall satisfy the approved parse reply grammar acceptance criteria.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-1-1",
+        "C-1-2",
+        "C-1-3",
+        "C-1-4"
+      ],
+      "acceptance_criteria": [
+        "Block grammar: per_row / bulk_pass (+ fixed natural-alias list) / pass_rest; case-insensitive keywords, exact-case row ids (TG-G2/G8)",
+        "fail+na REQUIRE justification (FM-10); explicit per-row applies before bulk (CB-9); duplicate verdicts invalid; typo'd continuation → parse error",
+        "Idempotent by reply_ref (processed_reply_refs); edited messages ignored (INV-17, RC-4); invalid/partial → ZERO mutations + re-prompt quoting truncated untrusted text (INV-A3)",
+        "Owns the locked judgment mutation; writes provenance block (INV-1)"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/emission-toolchain.md",
+        ".architecture/patterns.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/C-4.1/normative.md",
+        "definition_hash": "dfe35e455698"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/C-4.1/component-verification-procedure.md",
+          "plan_hash": "d8d1ccfc9925",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -k \"parse_reply or grammar\" -q"
+          ],
+          "test_refs": [
+            "TC-3.2",
+            "TC-3.5",
+            "TC-G2",
+            "TC-G6",
+            "TC-G8"
+          ],
+          "verification_mode": "automated-unit",
+          "verification_scope": "targeted"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-R401",
+        "rationale": "The component shall preserve validation-leg intent for US-7.",
+        "traced_from": "SS-4",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-7"
+      ],
+      "concern_refs": [
+        "CB-9",
+        "FM-10",
+        "RC-4",
+        "OP-6",
+        "SEC-6-reject"
+      ],
+      "invariant_refs": [
+        "INV-1",
+        "INV-16",
+        "INV-17",
+        "INV-A3"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "test_refs": [
+        "TC-3.2",
+        "TC-3.5",
+        "TC-G2",
+        "TC-G6",
+        "TC-G8"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -k \"parse_reply or grammar\" -q"
+      ]
+    },
+    {
+      "task_id": "C-4-2",
+      "altitude": "component",
+      "parent": "SS-4",
+      "decomposes_into": [],
+      "title": "telegram-trust-boundary",
+      "description": "The component shall satisfy the approved telegram trust boundary acceptance criteria.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-1-1",
+        "C-1-2",
+        "C-1-3",
+        "C-1-4"
+      ],
+      "acceptance_criteria": [
+        "--source telegram reads RAW --update-file; module extracts sender/message/text; --sender-id ignored for telegram (SEC-1, TC-G3)",
+        "Sender checked vs registry allowed_sender_ids (≠ chat_id, SEC-2); missing/malformed registry → ALLOWLIST_CONFIG_INVALID fail-closed",
+        "Non-allowlisted → DISCARDED, exit 2 SENDER_NOT_ALLOWLISTED + hashed-sender security event, zero mutations (INV-15, OP-1)",
+        "No hardcoded chat/sender literal in source (static grep, TC-INV-A4); terminal source asserts identity + transcript reply_ref (SEC-3, TC-G7)"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/harness-hooks.md",
+        ".architecture/structured/components/providers.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/C-4.2/normative.md",
+        "definition_hash": "54d085a14254"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/C-4.2/component-verification-procedure.md",
+          "plan_hash": "97c037d2f70a",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -k \"sender or telegram or allowlist\" -q"
+          ],
+          "test_refs": [
+            "TC-INV-A4",
+            "TC-G3",
+            "TC-G7"
+          ],
+          "verification_mode": "automated-unit",
+          "verification_scope": "targeted"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-R402",
+        "rationale": "The component shall preserve validation-leg intent for US-7.",
+        "traced_from": "SS-4",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-7"
+      ],
+      "concern_refs": [
+        "SEC-1",
+        "SEC-2",
+        "SEC-3",
+        "OP-1",
+        "US-1"
+      ],
+      "invariant_refs": [
+        "INV-15",
+        "INV-A4"
+      ],
+      "surface_scope": [
+        "outbound_integration"
+      ],
+      "test_refs": [
+        "TC-INV-A4",
+        "TC-G3",
+        "TC-G7"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -k \"sender or telegram or allowlist\" -q"
+      ]
+    },
+    {
+      "task_id": "C-4-3",
+      "altitude": "component",
+      "parent": "SS-4",
+      "decomposes_into": [],
+      "title": "reset-failed-supersede",
+      "description": "The component shall satisfy the approved reset failed supersede acceptance criteria.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-1-1",
+        "C-1-2",
+        "C-1-3",
+        "C-1-4"
+      ],
+      "acceptance_criteria": [
+        "reset-failed: judged-fail result→history (append-only INV-14), nulls result/judgment, renames evidence .invalidated-<ts> (FM-4); --remediation-ref REQUIRED, conductor-verified assertion (FM-1)",
+        "supersede-row: legal from ANY state incl judged-pass (CB-1/INV-13); full snapshot to superseded; transactional replacement in one invocation (no coverage gap, INV-7); approval_ref always required (INV-3)",
+        "Allowed-reason enum enforced; disallowed (impl failed / evidence missing / prior negative judgment) → REFRESH_DISALLOWED (TC-2.5b/G5)"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/emission-toolchain.md",
+        ".architecture/structured/components/gauntlet.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/C-4.3/normative.md",
+        "definition_hash": "96c60228cdf7"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/C-4.3/component-verification-procedure.md",
+          "plan_hash": "e6e0262a4b4d",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -k \"reset or supersede\" -q"
+          ],
+          "test_refs": [
+            "TC-2.5",
+            "TC-3.8",
+            "TC-G5"
+          ],
+          "verification_mode": "automated-unit",
+          "verification_scope": "targeted"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-R403",
+        "rationale": "The component shall preserve validation-leg intent for US-12.",
+        "traced_from": "SS-4",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-12"
+      ],
+      "concern_refs": [
+        "CB-1",
+        "DD-1",
+        "FM-1",
+        "FM-4",
+        "DD-10"
+      ],
+      "invariant_refs": [
+        "INV-3",
+        "INV-13",
+        "INV-14",
+        "INV-A7"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "test_refs": [
+        "TC-2.5",
+        "TC-3.8",
+        "TC-G5"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -k \"reset or supersede\" -q"
+      ]
+    },
+    {
+      "task_id": "C-4-4",
+      "altitude": "component",
+      "parent": "SS-4",
+      "decomposes_into": [],
+      "title": "emit-system-validation",
+      "description": "The component shall satisfy the approved emit system validation acceptance criteria.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-1-1",
+        "C-1-2",
+        "C-1-3",
+        "C-1-4"
+      ],
+      "acceptance_criteria": [
+        "Read-only projection of judged rows into §6.4 (ledger untouched); result==null ⟺ judgment==null (CB-2); na→not-applicable (CB-12)",
+        "Refuses: any active row unjudged/failed; provenance missing on non-null result (INV-1); fresh-ConOps mismatch scoped by story_hashes (FM-3)",
+        "test_targets preserved (anti-relabeling parity SEC-7); ledger_hash binds artifact to exact ledger state (PARA); single artifact (OQ-1, DD-3) with Appendix-A contingency",
+        "Single N/A rule: na rows appear but don't count toward coverage; every story needs ≥1 pass (TC-3.6)"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/emission-toolchain.md",
+        ".architecture/structured/cross-references.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/C-4.4/normative.md",
+        "definition_hash": "d77e0fed815e"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/C-4.4/component-verification-procedure.md",
+          "plan_hash": "aa38847e6d46",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -k \"emit or projection\" -q"
+          ],
+          "test_refs": [
+            "TC-INV-A1",
+            "TC-3.4",
+            "TC-3.6"
+          ],
+          "verification_mode": "automated-unit",
+          "verification_scope": "targeted"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-R404",
+        "rationale": "The component shall preserve validation-leg intent for US-8.",
+        "traced_from": "SS-4",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-8"
+      ],
+      "concern_refs": [
+        "CB-2",
+        "CB-3",
+        "CB-12",
+        "DD-3",
+        "FM-3",
+        "PARA-ledger-hash"
+      ],
+      "invariant_refs": [
+        "INV-1",
+        "INV-8",
+        "INV-A1"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "test_refs": [
+        "TC-INV-A1",
+        "TC-3.4",
+        "TC-3.6"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -k \"emit or projection\" -q"
+      ]
+    },
+    {
+      "task_id": "C-4-5",
+      "altitude": "component",
+      "parent": "SS-4",
+      "decomposes_into": [],
+      "title": "self-check",
+      "description": "The component shall satisfy the approved self check acceptance criteria.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-1-1",
+        "C-1-2",
+        "C-1-3",
+        "C-1-4",
+        "C-4-4"
+      ],
+      "acceptance_criteria": [
+        "Mirrors all 8 gate reject classes (fizzy-validation-contract.md): kind, conops_hash prefix-match (<12 reject), rows non-empty, per-row fields, result enum, all-pass, anti-relabeling, US coverage regex \\bUS-\\d+\\b",
+        "Strictly stricter: rejects identical-set AND unjustified-overlap test_targets locally (INV-11); verdict parity is a pinned test (TC-3.3)",
+        "--verification-ledger required when verification artifacts exist; absent → ANTI_RELABELING_UNCHECKED warning, never silent pass",
+        "Runs on exact emitted bytes immediately before MCP; artifact sha256 re-verified at call time (INV-5, RC-1 TOCTOU)"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/emission-toolchain.md",
+        ".architecture/primer.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/C-4.5/normative.md",
+        "definition_hash": "6096b4a66f0d"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/C-4.5/component-verification-procedure.md",
+          "plan_hash": "77e7dee11d73",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -k self_check -q"
+          ],
+          "test_refs": [
+            "TC-3.3",
+            "TC-INV-A5",
+            "TC-G10"
+          ],
+          "verification_mode": "automated-unit",
+          "verification_scope": "targeted"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-R405",
+        "rationale": "The component shall preserve validation-leg intent for US-11.",
+        "traced_from": "SS-4",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-11"
+      ],
+      "concern_refs": [
+        "RC-1",
+        "SEC-7",
+        "CB-5",
+        "DD-2"
+      ],
+      "invariant_refs": [
+        "INV-5",
+        "INV-11",
+        "INV-A5"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "test_refs": [
+        "TC-3.3",
+        "TC-INV-A5",
+        "TC-G10"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -k self_check -q"
+      ]
+    },
+    {
+      "task_id": "C-4-6",
+      "altitude": "component",
+      "parent": "SS-4",
+      "decomposes_into": [],
+      "title": "status",
+      "description": "The component shall satisfy the approved status acceptance criteria.",
+      "effort": "M",
+      "strategy": "test-after",
+      "depends_on": [
+        "C-1-1",
+        "C-1-2",
+        "C-1-3",
+        "C-1-4"
+      ],
+      "acceptance_criteria": [
+        "Read-only: ledger bytes unchanged (TC-G12); reports active batch + age (>48h flagged), per-part send state, unjudged rows, judged summary, coverage state, blockers, next close-algorithm step",
+        "No mutation path (INV-A2 read-only side)"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/emission-toolchain.md",
+        ".architecture/structured/components/debate-engine.md"
+      ],
+      "behavior_change": false,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/C-4.6/normative.md",
+        "definition_hash": "6b64bdb34eae"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/C-4.6/component-verification-procedure.md",
+          "plan_hash": "3d18697857cb",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -k status -q"
+          ],
+          "test_refs": [
+            "TC-G12"
+          ],
+          "verification_mode": "automated-unit",
+          "verification_scope": "targeted"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-R406",
+        "rationale": "The component shall preserve validation-leg intent for US-8.",
+        "traced_from": "SS-4",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-8"
+      ],
+      "concern_refs": [
+        "FM-5",
+        "OP-7",
+        "OP-8"
+      ],
+      "invariant_refs": [
+        "INV-A7"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "test_refs": [
+        "TC-G12"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -k status -q"
+      ]
+    },
+    {
+      "task_id": "SS-5",
+      "altitude": "subsystem",
+      "parent": "SYS",
+      "decomposes_into": [
+        "C-5-1",
+        "C-5-2",
+        "C-5-3"
+      ],
+      "title": "phase-wiring-and-dogfood",
+      "description": "The subsystem shall satisfy the approved phase wiring and dogfood acceptance criteria.",
+      "effort": "L",
+      "strategy": "spike",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "docs wire the process + dogfood proves on self."
+      ],
+      "architecture_refs": [
+        ".architecture/filesystem-map.md",
+        ".architecture/access-guide.md"
+      ],
+      "behavior_change": false,
+      "verification_mode": "automated-integration",
+      "verification_scope": "full-suite",
+      "implementation_status": "partial",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/SS-5/subsystem-spec.md",
+        "definition_hash": "b9504a440d8d"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/SS-5/component-verification-procedure.md",
+          "plan_hash": "a041b353a8db",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -q"
+          ],
+          "test_refs": [
+            "TC-0.1",
+            "TC-0.2",
+            "TC-4.1"
+          ],
+          "verification_mode": "automated-integration",
+          "verification_scope": "full-suite"
+        },
+        "subsystem_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/SS-5/subsystem-verification-plan.md",
+          "plan_hash": "ab51dde9daf4",
+          "artifact": "scripts/tests/test_validation_emission.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -q"
+          ],
+          "test_refs": [
+            "TC-0.1",
+            "TC-0.2",
+            "TC-4.1"
+          ],
+          "verification_mode": "automated-integration",
+          "verification_scope": "full-suite"
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "SS-5",
+        "rationale": "The subsystem shall preserve validation-leg intent for US-0, US-8, US-9, US-10.",
+        "traced_from": "SYS",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "test",
+        "verification_level": "subsystem"
+      },
+      "subsystem_spec_path": ".adversarial-spec/specs/validation-leg-process/SS-5/subsystem-spec.md",
+      "realizes_refs": [
+        "US-0",
+        "US-8",
+        "US-9",
+        "US-10"
+      ],
+      "concern_refs": [
+        "DD-2",
+        "FM-8",
+        "US-0",
+        "US-10",
+        "ACK-4",
+        "OP-10"
+      ],
+      "invariant_refs": [
+        "INV-5",
+        "INV-7",
+        "INV-A5",
+        "INV-A6"
+      ],
+      "surface_scope": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "test_refs": [
+        "TC-0.1",
+        "TC-0.2",
+        "TC-4.1"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -q"
+      ]
+    },
+    {
+      "task_id": "C-5-1",
+      "altitude": "component",
+      "parent": "SS-5",
+      "decomposes_into": [],
+      "title": "doc-07-execution-validation-leg",
+      "description": "The component shall satisfy the approved doc 07 execution validation leg acceptance criteria.",
+      "effort": "M",
+      "strategy": "spike",
+      "depends_on": [
+        "C-2-1",
+        "C-2-2",
+        "C-2-3",
+        "C-3-1",
+        "C-3-2",
+        "C-3-3",
+        "C-4-1",
+        "C-4-2",
+        "C-4-3",
+        "C-4-4",
+        "C-4-5",
+        "C-4-6"
+      ],
+      "acceptance_criteria": [
+        "\"Validation leg (system altitude)\" section added after execution plan, before pipeline_load; gated on session_altitude==\"system\" (read via MCP card metadata, US-2)",
+        "Documents order derive-conops → draft rows → normalize-rows → check-rows; §3 minimal-row standard; ONE good + ONE rejected row example (CB-7 normalize in sequence)",
+        "Records drafted_baseline_hash; anti-hindsight note (rows precede implementation)"
+      ],
+      "architecture_refs": [
+        ".architecture/filesystem-map.md",
+        ".architecture/structured/components/debate-engine.md"
+      ],
+      "behavior_change": false,
+      "verification_mode": "artifact-sync",
+      "verification_scope": "static",
+      "implementation_status": "partial",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/C-5.1/normative.md",
+        "definition_hash": "61ac54b4054d"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/C-5.1/component-verification-procedure.md",
+          "plan_hash": "8382cfbba7f4",
+          "artifact": "skills/adversarial-spec/phases/07-execution.md",
+          "kind": "verification",
+          "verify_commands": [],
+          "test_refs": [
+            "TC-0.1"
+          ],
+          "verification_mode": "artifact-sync",
+          "verification_scope": "static",
+          "exemption_reason": "Phase-7 doc section (process narrative, no runtime behavior); cold-read usability verified at dogfood TC-0.1 (fresh agent reaches check-rows-clean draft <30 min), not a CI unit test."
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-R501",
+        "rationale": "The component shall preserve validation-leg intent for US-0.",
+        "traced_from": "SS-5",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "inspection",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-0"
+      ],
+      "concern_refs": [
+        "US-0",
+        "CB-7",
+        "DD-10",
+        "OP-11"
+      ],
+      "invariant_refs": [
+        "INV-7",
+        "INV-A5"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "test_refs": [
+        "TC-0.1"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "exemption_reason": "Phase-7 doc section (process narrative, no runtime behavior); cold-read usability verified at dogfood TC-0.1 (fresh agent reaches check-rows-clean draft <30 min), not a CI unit test."
+    },
+    {
+      "task_id": "C-5-2",
+      "altitude": "component",
+      "parent": "SS-5",
+      "decomposes_into": [],
+      "title": "doc-08-implementation-close-algo",
+      "description": "The component shall satisfy the approved doc 08 implementation close algo acceptance criteria.",
+      "effort": "M",
+      "strategy": "spike",
+      "depends_on": [
+        "C-2-1",
+        "C-2-2",
+        "C-2-3",
+        "C-3-1",
+        "C-3-2",
+        "C-3-3",
+        "C-4-1",
+        "C-4-2",
+        "C-4-3",
+        "C-4-4",
+        "C-4-5",
+        "C-4-6"
+      ],
+      "acceptance_criteria": [
+        "\"Validation leg (system altitude)\" close section = the §8 close algorithm verbatim (single normative ordering, every step idempotent, re-entry at step 1; DD-2)",
+        "§10 error-code playbook: all 8 gate rejects + local codes each with documented conductor response (TC-0.2)",
+        "Re-entry routing: NOTHING_TO_DIGEST + failed rows → remediation, never emission (CB-5); self-check before MCP (INV-5); MCP wiring concrete (FM-8)"
+      ],
+      "architecture_refs": [
+        ".architecture/filesystem-map.md",
+        ".architecture/structured/components/debate-engine.md"
+      ],
+      "behavior_change": false,
+      "verification_mode": "static-check",
+      "verification_scope": "static",
+      "implementation_status": "partial",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/C-5.2/normative.md",
+        "definition_hash": "1cedee95a84e"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/C-5.2/component-verification-procedure.md",
+          "plan_hash": "7de12a92b0a7",
+          "artifact": "skills/adversarial-spec/phases/08-implementation.md",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest scripts/tests/test_validation_emission.py -k doc_error_codes -q"
+          ],
+          "test_refs": [
+            "TC-0.2"
+          ],
+          "verification_mode": "static-check",
+          "verification_scope": "static",
+          "exemption_reason": "Phase-8 close-algorithm doc; verified by TC-0.2 static grep asserting all 8 gate reject codes appear with documented responses — no runtime behavior of its own."
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-R502",
+        "rationale": "The component shall preserve validation-leg intent for US-8.",
+        "traced_from": "SS-5",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "inspection",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-8"
+      ],
+      "concern_refs": [
+        "DD-2",
+        "FM-8",
+        "CB-5",
+        "US-4-correction"
+      ],
+      "invariant_refs": [
+        "INV-5",
+        "INV-A6"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "test_refs": [
+        "TC-0.2"
+      ],
+      "test_files": [],
+      "tested_by": "llm",
+      "verify_commands": [
+        "uv run pytest scripts/tests/test_validation_emission.py -k doc_error_codes -q"
+      ],
+      "exemption_reason": "Phase-8 close-algorithm doc; verified by TC-0.2 static grep asserting all 8 gate reject codes appear with documented responses — no runtime behavior of its own."
+    },
+    {
+      "task_id": "C-5-3",
+      "altitude": "component",
+      "parent": "SS-5",
+      "decomposes_into": [],
+      "title": "dogfood-validation-this-session",
+      "description": "The component shall satisfy the approved dogfood validation this session acceptance criteria.",
+      "effort": "M",
+      "strategy": "spike",
+      "depends_on": [
+        "C-1-1",
+        "C-1-2",
+        "C-1-3",
+        "C-1-4",
+        "C-2-1",
+        "C-2-2",
+        "C-2-3",
+        "C-3-1",
+        "C-3-2",
+        "C-3-3",
+        "C-4-1",
+        "C-4-2",
+        "C-4-3",
+        "C-4-4",
+        "C-4-5",
+        "C-4-6",
+        "C-5-1",
+        "C-5-2"
+      ],
+      "acceptance_criteria": [
+        "Card 5604 system_validation_complete == true; Finalization→Completed advance succeeds (TC-4.1)",
+        "Dogfood rows covering US-0/US-6/US-7/US-9 carry Jason's pass with intent-level oracles (not \"the gate accepted\")",
+        "Dogfood metrics record local retries/re-prompts/re-emissions before first MCP call + <30 min bootstrap timing (OP-10) ## Coverage Summary"
+      ],
+      "architecture_refs": [
+        ".architecture/primer.md",
+        ".architecture/structured/components/harness-hooks.md",
+        ".architecture/overview.md"
+      ],
+      "behavior_change": false,
+      "verification_mode": "manual-ux",
+      "verification_scope": "manual",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/validation-leg-process/C-5.3/normative.md",
+        "definition_hash": "a42917bac934"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/validation-leg-process/C-5.3/component-verification-procedure.md",
+          "plan_hash": "056edc71da1a",
+          "artifact": ".adversarial-spec/specs/validation-leg-process/dogfood-validation.md",
+          "kind": "verification",
+          "verify_commands": [],
+          "test_refs": [
+            "TC-4.1"
+          ],
+          "verification_mode": "manual-ux",
+          "verification_scope": "manual",
+          "exemption_reason": "Dogfood close: requires the real fizzy gate accepting on first call AND Jason's intent-level acceptance of the process experience (mobile-sufficient digest, unambiguous reply/re-prompt). Human-gated; cannot assert programmatically (NG3, ACK-4 bootstrap circularity acknowledged)."
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-R503",
+        "rationale": "The component shall preserve validation-leg intent for US-10.",
+        "traced_from": "SS-5",
+        "owner": "adversarial-spec implementation agent",
+        "verification_method": "demonstration",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-10"
+      ],
+      "concern_refs": [
+        "ACK-4",
+        "OP-10",
+        "US-10"
+      ],
+      "invariant_refs": [
+        "INV-A1",
+        "INV-A2",
+        "INV-A3",
+        "INV-A4",
+        "INV-A5",
+        "INV-A6",
+        "INV-A7"
+      ],
+      "surface_scope": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "test_refs": [
+        "TC-4.1"
+      ],
+      "test_files": [],
+      "tested_by": "both",
+      "exemption_reason": "Dogfood close: requires the real fizzy gate accepting on first call AND Jason's intent-level acceptance of the process experience (mobile-sufficient digest, unambiguous reply/re-prompt). Human-gated; cannot assert programmatically (NG3, ACK-4 bootstrap circularity acknowledged)."
+    }
+  ]
+}

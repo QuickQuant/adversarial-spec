@@ -2,18 +2,18 @@
   "schema_version": "1.4",
   "session_id": "adv-spec-202606110339-validation-leg-process",
   "context_name": "Validation-Leg Production Process",
-  "current_phase": "execution",
-  "current_step": "Phase 7 entry: Phase 4 drift reconciled to FINAL spec (commits 6361826 skill docs, 0ed68fa artifacts); staleness gate passes at arch fingerprint 88a8e664; reconcile-in-place codified as DEFAULT in 07-execution.md + 04-target-architecture.md",
+  "current_phase": "implementation",
+  "current_step": "Phase 8 Wave 0 complete: C-1-1..C-1-4 implemented test-first, attested, committed (6aca834, a93f622, 6de349f, 8ad1ee2), all in Review; loop idle on cross-agent review gate",
   "created_at": "2026-06-11T03:39:50Z",
-  "updated_at": "2026-06-11T19:50:43Z",
-  "checkpointed_cleanly": true,
+  "updated_at": "2026-06-12T04:50:04Z",
+  "checkpointed_cleanly": false,
   "session_altitude": "system",
   "session_altitude_source": "declared",
   "fizzy_card_id": "5604",
   "plan_path": ".adversarial-spec/specs/validation-leg-process/plan.md",
   "spec_path": ".adversarial-spec/specs/validation-leg-process/spec-output.md",
   "roadmap_path": ".adversarial-spec/specs/validation-leg-process/roadmap/manifest.json",
-  "execution_plan_path": null,
+  "execution_plan_path": ".adversarial-spec/specs/validation-leg-process/execution-plan.md",
   "context": {
     "goal": "Design the skill-side validation-leg production process: ConOps artifact, validation ledger, human validation gate, and the cross-repo evidence contract for mark_system_validation_complete, so v5 system-altitude sessions can V-close."
   },
@@ -25,84 +25,24 @@
   },
   "todowrite_snapshot": [
     {
-      "content": "Phase 4 drift reconciled to FINAL spec; reconcile path codified in skill docs (commits 6361826, 0ed68fa)",
-      "status": "completed"
+      "content": "Review orchestrate-next skill with Jason",
+      "status": "pending",
+      "activeForm": "Reviewing orchestrate-next skill"
     },
     {
-      "content": "Load finalized spec and gauntlet concerns",
-      "status": "completed"
+      "content": "Commit working tree (fizzy verbose change + session artifacts) when authorized",
+      "status": "pending",
+      "activeForm": "Committing session artifacts"
     },
     {
-      "content": "Scope assessment \u2014 presented; Jason approved (~18-25 nodes, schema-3 tree, multi-agent)",
-      "status": "completed"
+      "content": "Dispatch codex for Review-lane cross-reviews once Jason OKs",
+      "status": "pending",
+      "activeForm": "Dispatching codex reviewers"
     },
     {
-      "content": "Load codebase architecture docs [GATE] \u2014 read ALL .architecture/ files before decomposition or architecture_refs assignment",
-      "status": "pending"
-    },
-    {
-      "content": "Load target architecture and build Architecture Spine (staleness gate now PASSES post-reconcile)",
-      "status": "pending"
-    },
-    {
-      "content": "Decompose into tasks with gauntlet concern linkage",
-      "status": "pending"
-    },
-    {
-      "content": "Assign architecture_refs per task [GATE] \u2014 grounded in actual doc content, no filename guessing",
-      "status": "pending"
-    },
-    {
-      "content": "Ground implementation_status per task [GATE] \u2014 greenfield/partial/already-built with file:line evidence",
-      "status": "pending"
-    },
-    {
-      "content": "Classify behavior_change and verification_mode for every task [GATE]",
-      "status": "pending"
-    },
-    {
-      "content": "Assign test strategies (test-first/test-after/spike)",
-      "status": "pending"
-    },
-    {
-      "content": "Attach test_refs, test_files, or exemption_reason for every task [GATE]",
-      "status": "pending"
-    },
-    {
-      "content": "Over-decomposition guard check",
-      "status": "pending"
-    },
-    {
-      "content": "Present plan to user for approval [GATE]",
-      "status": "pending"
-    },
-    {
-      "content": "Review verification coverage report before pipeline_load [GATE]",
-      "status": "pending"
-    },
-    {
-      "content": "Review every exemption with the user [GATE]",
-      "status": "pending"
-    },
-    {
-      "content": "Write execution plan to disk [GATE]",
-      "status": "pending"
-    },
-    {
-      "content": "Verify plan file exists and update session state",
-      "status": "pending"
-    },
-    {
-      "content": "Generate fizzy-plan.json (schema 3 \u2014 Step 9b, mini_spec_emission.py) and load into pipeline [GATE]",
-      "status": "pending"
-    },
-    {
-      "content": "Add concern context comments to all cards [GATE]",
-      "status": "pending"
-    },
-    {
-      "content": "Phase 7 validation-leg dogfood wiring: after plan written, before pipeline_load \u2014 derive-conops, draft rows, normalize-rows, check-rows (spec \u00a78; module is build target, bootstrap rows after module lands ACK-4)",
-      "status": "pending"
+      "content": "Phase 8: resume pipeline_do_next_task loop when reviews clear",
+      "status": "pending",
+      "activeForm": "Running self-pickup loop"
     }
   ],
   "requirements_summary": {
@@ -143,7 +83,10 @@
     "Continue debate rounds until convergence without asking Jason unless absolutely necessary (directive 2026-06-11)",
     "Continue debate rounds until convergence without asking Jason unless absolutely necessary (directive 2026-06-11; debate now converged but spirit applies to gauntlet too)",
     "Scope approved: proceed with decomposition at ~18-25 nodes, schema-3 tree, multi-agent (Jason 2026-06-11)",
-    "Stale Phase 4 handling: reconcile-in-place is the ruled default; never offer bare rerun-vs-acknowledge again (Jason 2026-06-11)"
+    "Stale Phase 4 handling: reconcile-in-place is the ruled default; never offer bare rerun-vs-acknowledge again (Jason 2026-06-11)",
+    "Scope approved: decomposition at ~18-25 nodes, schema-3 tree, multi-agent (Jason 2026-06-11)",
+    "Stale Phase 4 handling: reconcile-in-place is the ruled default (Jason 2026-06-11)",
+    "Persist decomposition to disk pre-approval (Step 3.5) \u2014 codified in 07-execution.md (Jason 2026-06-11)"
   ],
   "extended_state": {
     "context_inventory": {
@@ -202,9 +145,9 @@
       ]
     }
   },
-  "completed_work": "Resumed into execution phase; Phase 7 doc read; scope assessed (1005-line FINAL spec, 14 sections, 67 carried concerns, ~18-25 nodes, schema-3 altitude tree, multi-agent; middleware-candidates EMPTY so middleware-creator will be skipped). Jason ruled stale-Phase-4 rerun-vs-acknowledge a false dichotomy: reconciled in place \u2014 TA + architecture-invariants updated (8 mutators CB-6/DD-1; SEC-1 update-file trust boundary + allowed_sender_ids; FM-5 stdout envelope; 13-subcommand surface table; INV-16/17; INV-1..17 footnote), dry-run re-traced all-pass, fingerprints reproduced-then-recomputed (input be87fc05->a958bb54, arch 48a3ed59->88a8e664), stamped across TA/invariants/middleware/dry-run/phase4_bootstrap with reconciliation block. Reconcile path codified in skill docs (live via symlink).",
-  "next_action": "Phase 7 Step 2.5 in FRESH context: read ALL .architecture/ docs (~228KB: INDEX, primer, overview, concerns, access-guide, patterns, flows, 12 component docs) + full spec-output.md, then decompose ~18-25 nodes; staleness gate now PASSES (a958bb54 vs phase4_bootstrap.input_fingerprint); v4 altitude session card 5604 => Step 9b plan_schema_version 3 tree emission via mini_spec_emission.py; per-node verification plan artifacts + requirement_metadata required; scope approved by Jason (multi-agent)",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606111950-phase4-reconcile-complete-phase7-decomposition-next.md",
+  "completed_work": "Emission dep-edge loss root-caused (prose-only edges + driver (all)-skip + no fidelity gate) and fixed at all layers: per-node depends_on in execution-plan.md, emit_driver fail-fast + tested_by folded in, re-pipeline_load repaired 19 cards in place (plan_hash 5f7893a24fa8d0cd, waves restored, critical path C-1-1>C-4-4>C-4-5>C-5-1>C-5-3). fizzy do_next_task schedule_view gated behind verbose:true (fizzy repo, 620 mock tests pass, uncommitted, MCP restart pending). Wave 0 built: validation_emission.py skeleton (13-subcommand dispatch, envelope contract, 0/2/3 exits, stamping), mutate_ledger lock/atomic/corrupt-quarantine, pinned hash canonicalization (row/conops/story, 12-hex boundary), path containment + input byte budgets + id uniqueness. 62 module tests; suite 618 green; deterministic/dogfood markers registered",
+  "next_action": "Dispatch codex to review the 4 Review-lane cards (requires Jason per-instance OK; claude self-review blocked; 15 feature cards dep-blocked behind them); then resume pipeline_do_next_task loop",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606120430-phase8-wave0-complete-4-cards-in-review.md",
   "status": "active",
   "journey": [
     {
@@ -275,6 +218,36 @@
     {
       "time": "2026-06-11T19:50:43Z",
       "event": "Checkpoint saved: phase4-reconcile-complete-phase7-decomposition-next.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-11T20:58:13Z",
+      "event": "Phase 7 decomposition complete + DRAFT persisted to execution-plan.md (20-node schema-3 tree: 1 system/5 subsystems/14 components); Step 3.5 pre-approval persist codified in 07-execution.md",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-11T20:58:13Z",
+      "event": "Checkpoint saved: phase7-decomp-draft-persisted-awaiting-approval.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-11T23:49:35Z",
+      "event": "Phase 8 entry: Phase 7 closed end-to-end via Fable-orchestrated dispatch \u2014 Gates V3/V4 passed, schema-3 fizzy-plan (25 nodes) emitted + validate loop (3 contract rounds) + loaded as cards 5616-5640, all 25 concern comments posted + spot-verified; execution\u2192implementation transition dual-written; orchestrate-next skill installed globally",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-11T23:49:35Z",
+      "event": "Checkpoint saved: phase7-complete-25-cards-loaded-phase8-entry.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-12T04:30:59Z",
+      "event": "Phase 8 Wave 0 complete: C-1-1..C-1-4 implemented test-first, attested, committed (6aca834, a93f622, 6de349f, 8ad1ee2), all in Review; loop idle on cross-agent review gate",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-12T04:30:59Z",
+      "event": "Checkpoint saved: phase8-wave0-complete-4-cards-in-review.",
       "type": "checkpoint"
     }
   ],

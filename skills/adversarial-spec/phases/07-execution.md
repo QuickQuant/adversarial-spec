@@ -16,6 +16,7 @@ TodoWrite([
   {content: "Assign test strategies (test-first/test-after)", status: "pending", activeForm: "Assigning test strategies"},
   {content: "Attach test_refs, test_files, or exemption_reason for every task [GATE]", status: "pending", activeForm: "Completing verification mapping"},
   {content: "Over-decomposition guard check", status: "pending", activeForm: "Checking for over-decomposition"},
+  {content: "Persist decomposition draft to execution-plan.md + record execution_plan_path [GATE] — pre-approval, checkpoint-safe (Step 3.5)", status: "pending", activeForm: "Persisting decomposition draft to disk"},
   {content: "Present plan to user for approval [GATE]", status: "pending", activeForm: "Presenting execution plan for approval"},
   {content: "Review verification coverage report before pipeline_load [GATE]", status: "pending", activeForm: "Reviewing verification coverage"},
   {content: "Review every exemption with the user [GATE]", status: "pending", activeForm: "Reviewing verification exemptions"},
@@ -403,6 +404,29 @@ Surface the linkage in the task entry so reviewers can audit coverage:
 ```
 
 **Invariant coverage check:** After decomposition, every invariant listed in §8 MUST be referenced by at least one task. If an invariant has no task, either it is out of scope (document why in the "Uncovered Concerns" section) or you missed a task — revisit decomposition.
+
+---
+
+### Step 3.5: Persist the decomposition to disk NOW (REQUIRED — pre-approval)
+
+**The moment the decomposition exists, write it to `execution-plan.md` — before the approval gate, before Gates V1–V4, before emission.** Do not hold the node table, per-node classifications, concern/invariant/architecture mappings, or grounding evidence in conversation only. The decomposition is the single most expensive artifact in this phase (it consumes the full Step 2.5 architecture read + the spec + the gauntlet concerns); a context switch, compaction, or crash between decomposition and Step 8 destroys it and forces a full redo.
+
+Write the draft now with a clear status banner:
+
+```markdown
+> **STATUS: DRAFT — pending user approval (Phase 7 Gate, "Present plan to user").**
+> Not yet emitted to fizzy-plan.json; not yet pipeline_load-ed.
+> On resume: re-present for approval, then proceed to Step 9 / 9b.
+```
+
+Then record `execution_plan_path` in the session detail file and pointer **immediately** (same atomic-write discipline as Step 8). This is additive to Step 8, not a replacement — Step 8 re-persists the *approved* plan (drop the DRAFT banner, fold in any approval-time edits). Writing twice is intentional:
+
+- **Checkpoint-safety:** the user can `/checkpoint` and resume in fresh context at the approval gate without re-reading ~200KB of inputs or re-deriving the tree.
+- **History:** the draft-then-final pair is an auditable record of what was proposed vs. what was approved. Keep it — do not overwrite the draft silently; let Step 8's update show the delta.
+
+**Do NOT** emit `fizzy-plan.json` or `pipeline_load` at this step — those stay gated on user approval (Step 7 → Gate V3/V4 → Step 9). Step 3.5 persists *text*, which is always safe and reversible.
+
+(Origin: validation-leg-process session, 2026-06-11 — Jason: "persist this by writing the decomp to disk; this also gives us a history that we want to have." The prior failure class is the same one MEMORY.md records for execution plans and gauntlet concerns: conversation-only output lost on context switch.)
 
 ---
 

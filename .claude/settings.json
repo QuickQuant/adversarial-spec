@@ -102,6 +102,16 @@
             "timeout": 30
           }
         ]
+      },
+      {
+        "matcher": "mcp__fizzy__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/fizzy_payload_guard.py",
+            "timeout": 30
+          }
+        ]
       }
     ]
   },
