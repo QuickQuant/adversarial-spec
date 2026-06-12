@@ -777,6 +777,172 @@ Where `<slug>` is the context name slugified (same as the manifest directory).
 
 ---
 
+### Validation leg (system altitude)
+
+> **Altitude gate — run this leg ONLY for system-altitude sessions.** Before doing
+> anything below, read the session's `session_altitude` from the **card metadata via
+> MCP** (`get_card_metadata` with the explicit `board_id` from `projects.yaml` and the
+> `card_id` from the session detail file), not from local session state alone (US-2).
+> - `session_altitude == "system"` → run this leg now (between plan persistence and
+>   `pipeline_load`), so the drafted rows commit alongside the execution plan.
+> - `session_altitude` is `component` or `feature` (or the obligation is absent) →
+>   **SKIP this entire section** and go straight to Step 9. Sub-system altitudes carry
+>   no validation obligation (NG2); do not draft rows, do not derive a ConOps.
+
+**Why this exists.** Fizzy pipeline v5 refuses to close a system-altitude session
+whose ConOps user stories lack passing *validation* rows — a separate gate from
+verification (`system_validation_complete` vs `system_verification_complete`).
+Verification asks "did we build it right?"; validation asks "did we build the right
+thing?" The skill must *produce* the gate's inputs. This Phase 7 leg drafts those
+inputs; Phase 8 executes and closes them (see `08-implementation.md` "Validation leg").
+
+**Anti-hindsight (the reason this is in Phase 7, not Phase 8).** Validation rows are
+drafted **now, before implementation** — so they describe operational intent and cannot
+be reverse-engineered from whatever happened to get built. The committed Phase 7 ledger
+hash is recorded as `drafted_baseline_hash`; the Phase 8 close compares against it and
+surfaces any unexplained drift. Exposing the drafted rows to implementation agents is an
+accepted tradeoff (ACK-7) — the anti-hindsight value is in the *timestamped, hash-bound
+commit ordering*, not in secrecy.
+
+**The CLI.** All commands below are subcommands of one module
+(`~/.claude/skills/adversarial-spec/scripts/validation_emission.py`; the deployed path
+is a symlink to the repo source). It is not executable on its own — prefix with
+`uv run python`. Every invocation prints exactly one JSON envelope on stdout
+(`{"status": "ok|issues|reprompt|error", "code": ..., "issues": [...], "data": {...}}`);
+exit 0 = ok, 2 = validation issues, 3 = environment/lock/corrupt. The conductor writes
+the scenario/oracle/summary prose; **the module stamps every hash — the conductor never
+writes hex by hand** (CB-7).
+
+#### Command order: derive-conops → draft rows → normalize-rows → check-rows
+
+Run these from the project root, against this session's `<slug>` directory.
+
+**1. Derive the ConOps** deterministically from the roadmap manifest. This is the
+intent register the gate measures coverage against; it is templated from manifest
+stories only (never free-generated):
+
+```bash
+uv run python ~/.claude/skills/adversarial-spec/scripts/validation_emission.py \
+  derive-conops .adversarial-spec/specs/<slug>/roadmap/manifest.json
+```
+
+Output: `.adversarial-spec/specs/<slug>/roadmap/conops.md` plus, in the envelope `data`,
+the full `conops_hash`, its 12-hex prefix, and a per-story `story_hashes` map. (Re-deriving
+over a ConOps an existing ledger references needs `--force`.)
+
+**2. Draft the rows** (conductor prose) into
+`.adversarial-spec/specs/<slug>/validation-rows.json` as a `{"rows": [...]}` object —
+at least one row per `US-n`. Hold each row to the §3 minimal-row standard below.
+
+**3. Normalize** — the hash producer. `normalize-rows` is what stamps `row_hash` /
+`story_hash` and the ledger header onto the drafted rows; it must run before `check-rows`
+can pass (an un-normalized row fails `check-rows` with `ROW_HASH_MISSING`). It is also a
+mutating subcommand (writes the ledger under its lock):
+
+```bash
+uv run python ~/.claude/skills/adversarial-spec/scripts/validation_emission.py \
+  normalize-rows .adversarial-spec/specs/<slug>/validation-rows.json \
+  --conops .adversarial-spec/specs/<slug>/roadmap/conops.md
+```
+
+**4. Check** until the envelope reports `"status": "ok"` with zero issues. `check-rows`
+is structural only (syntax, coverage, oracle lint) — semantic intent stays human-owned.
+`--conops` is required (it enforces that every `US-n` has ≥1 active row):
+
+```bash
+uv run python ~/.claude/skills/adversarial-spec/scripts/validation_emission.py \
+  check-rows .adversarial-spec/specs/<slug>/validation-rows.json \
+  --conops .adversarial-spec/specs/<slug>/roadmap/conops.md
+```
+
+Loop draft → normalize → check until clean. (Use `--draft` on `check-rows` while a story
+is still uncovered — it relaxes coverage to advisory so incremental drafting isn't noisy.)
+
+#### §3 minimal valid row standard
+
+Every row MUST satisfy (the module enforces all of these at `normalize-rows`/`check-rows`):
+
+- **`conops_ref`** — exactly one active US id matching `^US-\d+$`. Packed refs like
+  `"US-1, US-2"` are rejected (CB-10).
+- **`row_id`** — format `r-US<n>-<k>`, globally unique across active *and* superseded
+  rows, with the `<n>` prefix matching `conops_ref` (e.g. `r-US1-1` requires `conops_ref: US-1`).
+- **`scenario`** — a user workflow: actor, trigger, action path, expected operational endpoint.
+- **`oracle`** — the canonical form:
+  `Jason passes this row iff <observable user outcome> demonstrates <named intent from US-n>.`
+  The literal `iff` and the `US-n` token are both required. The lint **rejects**
+  verification-success language ("tests pass", "code merged", "CI green", "gate passed",
+  and synonyms) and bare vague terminals ("works", "looks good", "done", "successful")
+  unless the same sentence also names a concrete observable (artifact, output, file,
+  rendered UI, etc.).
+- **`evidence_type`** — one of `agent-walkthrough-transcript` | `artifact-demo` |
+  `narrative`, with a non-empty **`evidence_rationale`** (one line: why this type fits).
+- **`test_targets`** — omit unless the row genuinely needs them; never identical to,
+  a subset of, or overlapping verification targets without rationale (INV-11).
+- Scenario + oracle + digest furniture ≤ 3000 UTF-8 bytes per row (a row that can't fit a
+  digest part is a drafting error, not a runtime failure).
+
+#### Good row (passes normalize-rows + check-rows clean)
+
+```json
+{
+  "row_id": "r-US1-1",
+  "conops_ref": "US-1",
+  "scenario": "A fresh conductor opens 07-execution.md, runs derive-conops on the session manifest, drafts one row per story, and runs check-rows until the envelope reports status ok.",
+  "oracle": "Jason passes this row iff the check-rows envelope prints status ok with zero issues demonstrates the clean-draft intent from US-1.",
+  "evidence_type": "agent-walkthrough-transcript",
+  "evidence_rationale": "the bootstrap is a CLI workflow; a transcript shows the real commands and their envelopes"
+}
+```
+
+`normalize-rows` then stamps `row_hash` and `story_hash`, and `check-rows` returns
+`{"status": "ok", "code": null, "issues": [], "data": {}}`.
+
+#### Rejected row (and why)
+
+```json
+{
+  "row_id": "r-US1-1",
+  "conops_ref": "US-1",
+  "scenario": "A conductor runs the bootstrap.",
+  "oracle": "Jason passes this row iff all tests pass for US-1.",
+  "evidence_type": "agent-walkthrough-transcript",
+  "evidence_rationale": "transcript shows the run"
+}
+```
+
+The oracle re-points validation at the test suite — exactly the relabeling the gate
+forbids (NG5). `check-rows` returns `"status": "issues"` with:
+
+```json
+{"code": "BANNED_ORACLE_PHRASE", "row_id": "r-US1-1", "detail": "oracle contains banned phrase: 'tests pass'"}
+```
+
+Fix it by rewriting the oracle to a concrete user-visible observable
+("…iff the digest is judgeable from a phone without opening a laptop demonstrates the
+one-sitting intent from US-1."), not a CI signal. (Other common rejects: `ORACLE_MISSING_IFF`
+when the literal `iff` is absent, `ORACLE_MISSING_STORY_REF` when the `US-n` token is
+missing, `VAGUE_ORACLE` for a bare "works"/"success", `INCOMPLETE_COVERAGE` when a story
+has no row.)
+
+#### Record the baseline and commit
+
+Once `check-rows` is clean: the `validation-rows.json` ledger header already carries
+`drafted_baseline_hash` (the sha256 of the ledger as committed at Phase 7) — this is the
+anti-hindsight drift baseline the Phase 8 close checks. Commit `conops.md` and
+`validation-rows.json` **alongside the execution plan**, in the same commit, so the
+drafted-before-implementation ordering is provable from git history.
+
+> **Time budget (dogfood acceptance — TC-0.1):** a fresh conductor, with only these docs
+> and the session manifest, should reach a `check-rows`-clean draft in **under 30
+> minutes**. If you are reaching for fizzy source or guessing flag shapes, stop — the four
+> commands above are the whole drafting loop.
+
+**[GATE] TodoWrite (system-altitude sessions only): Mark the validation-leg draft
+complete — `conops.md` derived, rows `check-rows`-clean, `drafted_baseline_hash` recorded,
+artifacts committed with the execution plan — before proceeding to Step 9.**
+
+---
+
 ### Step 9: Load into Fizzy Pipeline
 
 **This step connects the execution plan to the self-pickup loop.** Without it, cards are just text on disk — no agent can pick them up via `pipeline_do_next_task`.
