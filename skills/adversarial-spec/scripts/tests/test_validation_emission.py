@@ -1789,3 +1789,176 @@ def test_assemble_digest_narrative_marker_and_prose_escaping(capsys, tmp_path):
     assert not any(
         line.strip().startswith("[2] r-US9-9") for line in text.splitlines()
     )
+
+
+# ═══ C-3.3 record-send + cancel-batch (TC-G1) ════════════════════════════════
+
+
+def _multi_part_batch(capsys, tmp_path):
+    """Assemble a real multi-part batch (4 rows x ~1.2KB summaries)."""
+    ledger_path, conops_path = _digest_env(
+        capsys, tmp_path, n_pending=4, summary="S" * 1200
+    )
+    exit_code, out, _err = _run_assemble(capsys, ledger_path, conops_path)
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    digest_id = envelope["data"]["digest_id"]
+    n_parts = len(envelope["data"]["parts"])
+    assert n_parts >= 2
+    return ledger_path, conops_path, digest_id, n_parts
+
+
+def _batch(ledger_path, digest_id):
+    ledger = json.loads(ledger_path.read_text())
+    return next(
+        b for b in ledger["digest_batches"] if b["digest_id"] == digest_id
+    )
+
+
+def test_record_send_per_part_then_flip_when_all_sent_tcg1(capsys, tmp_path):
+    """TC-G1 assert: record-send flips batch status to sent ONLY when ALL
+    parts are recorded sent (RC-2); per-part message_id + sent_at recorded."""
+    ledger_path, _conops, digest_id, n_parts = _multi_part_batch(capsys, tmp_path)
+
+    for i in range(1, n_parts):
+        exit_code, out, _err = run_cli(capsys, [
+            "record-send", str(ledger_path), "--digest-id", digest_id,
+            "--part", str(i), "--result", "sent", "--message-id", f"msg-{i}",
+        ])
+        parse_single_envelope(out)
+        assert exit_code == EXIT_OK
+        batch = _batch(ledger_path, digest_id)
+        assert batch["status"] == "assembled", "must not flip before all parts"
+        part = batch["parts"][i - 1]
+        assert part["send_result"] == "sent"
+        assert part["message_id"] == f"msg-{i}"
+        assert part["sent_at"] is not None
+
+    exit_code, out, _err = run_cli(capsys, [
+        "record-send", str(ledger_path), "--digest-id", digest_id,
+        "--part", str(n_parts), "--result", "sent", "--message-id", "msg-last",
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    batch = _batch(ledger_path, digest_id)
+    assert batch["status"] == "sent"
+    assert envelope["data"]["batch_status"] == "sent"
+
+
+def test_record_send_failed_part_does_not_flip(capsys, tmp_path):
+    ledger_path, _conops, digest_id, n_parts = _multi_part_batch(capsys, tmp_path)
+    for i in range(1, n_parts + 1):
+        result = "failed" if i == n_parts else "sent"
+        exit_code, _out, _err = run_cli(capsys, [
+            "record-send", str(ledger_path), "--digest-id", digest_id,
+            "--part", str(i), "--result", result,
+        ])
+        assert exit_code == EXIT_OK
+    batch = _batch(ledger_path, digest_id)
+    assert batch["status"] == "assembled"
+    assert batch["parts"][-1]["send_result"] == "failed"
+    assert batch["parts"][-1]["sent_at"] is None
+
+    # Retry semantics: failed -> sent on re-record flips the batch
+    exit_code, _out, _err = run_cli(capsys, [
+        "record-send", str(ledger_path), "--digest-id", digest_id,
+        "--part", str(n_parts), "--result", "sent",
+    ])
+    assert exit_code == EXIT_OK
+    assert _batch(ledger_path, digest_id)["status"] == "sent"
+
+
+@pytest.mark.parametrize(
+    ("argv_patch", "code"),
+    [
+        ({"--digest-id": "d-99"}, "BATCH_NOT_FOUND"),
+        ({"--part": "99"}, "PART_NOT_FOUND"),
+    ],
+)
+def test_record_send_unknown_batch_or_part(capsys, tmp_path, argv_patch, code):
+    ledger_path, _conops, digest_id, _n = _multi_part_batch(capsys, tmp_path)
+    args = {"--digest-id": digest_id, "--part": "1", "--result": "sent"}
+    args.update(argv_patch)
+    before = ledger_path.read_bytes()
+    argv = ["record-send", str(ledger_path)]
+    for key, value in args.items():
+        argv += [key, value]
+    exit_code, out, _err = run_cli(capsys, argv)
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(i["code"] == code for i in envelope["issues"])
+    assert ledger_path.read_bytes() == before
+
+
+def test_cancel_batch_audit_and_rows_return_to_delta_pool(capsys, tmp_path):
+    """AC-2: cancel requires --reason; batch terminal + audit security event;
+    rows immediately assemblable into a fresh batch (delta pool)."""
+    ledger_path, conops_path, digest_id, _n = _multi_part_batch(capsys, tmp_path)
+    # One part was sent -> cancellation notice required (FM-12)
+    run_cli(capsys, [
+        "record-send", str(ledger_path), "--digest-id", digest_id,
+        "--part", "1", "--result", "sent",
+    ])
+
+    exit_code, out, _err = run_cli(capsys, [
+        "cancel-batch", str(ledger_path), "--digest-id", digest_id,
+        "--reason", "partial send failure",
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    assert envelope["data"]["cancellation_notice_required"] is True
+
+    batch = _batch(ledger_path, digest_id)
+    assert batch["status"] == "cancelled"
+    assert batch["cancel_reason"] == "partial send failure"
+    assert batch["cancelled_at"] is not None
+
+    ledger = json.loads(ledger_path.read_text())
+    events = ledger.get("security_events", [])
+    assert any(
+        e.get("code") == "BATCH_CANCELLED" and e.get("digest_id") == digest_id
+        for e in events
+    )
+
+    # Rows are back in the delta pool: a fresh assemble succeeds, id monotonic
+    exit_code, out, _err = _run_assemble(capsys, ledger_path, conops_path)
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    assert envelope["data"]["digest_id"] == f"d-{int(digest_id[2:]) + 1}"
+
+
+def test_cancel_batch_refuses_terminal_and_empty_reason(capsys, tmp_path):
+    ledger_path, _conops, digest_id, _n = _multi_part_batch(capsys, tmp_path)
+
+    exit_code, out, _err = run_cli(capsys, [
+        "cancel-batch", str(ledger_path), "--digest-id", digest_id,
+        "--reason", "   ",
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(i["code"] == "CANCEL_REASON_REQUIRED" for i in envelope["issues"])
+
+    run_cli(capsys, [
+        "cancel-batch", str(ledger_path), "--digest-id", digest_id,
+        "--reason", "real reason",
+    ])
+    exit_code, out, _err = run_cli(capsys, [
+        "cancel-batch", str(ledger_path), "--digest-id", digest_id,
+        "--reason", "again",
+    ])
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(i["code"] == "BATCH_NOT_ACTIVE" for i in envelope["issues"])
+    # No part sent before cancel -> no notice required on the first cancel
+    batch = _batch(ledger_path, digest_id)
+    assert batch["cancel_reason"] == "real reason"
+
+
+def test_record_send_bulk_verdict_gate_pins_sent_status_inv16():
+    """AC-3 (INV-16): the bulk-verdict gate parse-reply will consume is pinned
+    here — bulk verdicts allowed iff batch status is exactly 'sent'."""
+    from validation_emission import bulk_verdicts_allowed
+
+    assert bulk_verdicts_allowed({"status": "sent"}) is True
+    for status in ("assembled", "closed", "cancelled", "", None):
+        assert bulk_verdicts_allowed({"status": status}) is False

@@ -1674,6 +1674,143 @@ def handle_assemble_digest(args: argparse.Namespace) -> Envelope:
     return Envelope(status="ok", data=result_data)
 
 
+def bulk_verdicts_allowed(batch: dict[str, Any]) -> bool:
+    """INV-16: bulk verdicts (``pass all``/aliases/``pass rest``) are honored
+    ONLY for a batch whose every part is recorded delivered — status exactly
+    ``sent``. parse-reply consumes this gate; the rule has one owner here."""
+    return batch.get("status") == "sent"
+
+
+def _find_batch(ledger: dict[str, Any], digest_id: str) -> dict[str, Any] | None:
+    for batch in ledger.get("digest_batches", []):
+        if batch.get("digest_id") == digest_id:
+            return batch
+    return None
+
+
+def handle_record_send(args: argparse.Namespace) -> Envelope:
+    """Implement C-3.3 (record-send): per-part delivery records; the batch
+    flips to ``sent`` only when ALL parts are sent (RC-2)."""
+    ledger_path = resolve_under_root(args.ledger.parent, args.ledger)
+    result_data: dict[str, Any] = {}
+
+    def mutator(ledger: dict[str, Any]) -> dict[str, Any]:
+        batch = _find_batch(ledger, args.digest_id)
+        if batch is None:
+            raise ValidationIssuesError(
+                "BATCH_NOT_FOUND",
+                [make_issue("BATCH_NOT_FOUND", f"no batch {args.digest_id}", None)],
+            )
+        if batch.get("status") not in NON_TERMINAL_BATCH_STATUSES:
+            raise ValidationIssuesError(
+                "BATCH_NOT_ACTIVE",
+                [make_issue(
+                    "BATCH_NOT_ACTIVE",
+                    f"batch {args.digest_id} is {batch.get('status')} — "
+                    "send results apply to non-terminal batches only",
+                    None,
+                )],
+            )
+        part = next(
+            (p for p in batch.get("parts", []) if p.get("i") == args.part), None
+        )
+        if part is None:
+            raise ValidationIssuesError(
+                "PART_NOT_FOUND",
+                [make_issue(
+                    "PART_NOT_FOUND",
+                    f"batch {args.digest_id} has no part {args.part}",
+                    None,
+                )],
+            )
+
+        part["send_result"] = args.result
+        if args.result == "sent":
+            part["sent_at"] = utc_now()
+            if args.message_id:
+                part["message_id"] = args.message_id
+        else:
+            part["sent_at"] = None
+            part["message_id"] = None
+
+        if all(p.get("send_result") == "sent" for p in batch.get("parts", [])):
+            batch["status"] = "sent"
+
+        result_data.update(
+            digest_id=args.digest_id,
+            part=args.part,
+            send_result=args.result,
+            batch_status=batch["status"],
+        )
+        return ledger
+
+    mutate_ledger(ledger_path, mutator)
+    return Envelope(status="ok", data=result_data)
+
+
+def handle_cancel_batch(args: argparse.Namespace) -> Envelope:
+    """Implement C-3.3 (cancel-batch): close a non-terminal batch without
+    judgments. Audit-logged as a ledger security event; rows return to the
+    delta pool by virtue of the batch going terminal (FM-12)."""
+    ledger_path = resolve_under_root(args.ledger.parent, args.ledger)
+    reason = (args.reason or "").strip()
+    if not reason:
+        return Envelope(
+            status="issues",
+            code="CANCEL_REASON_REQUIRED",
+            issues=[make_issue(
+                "CANCEL_REASON_REQUIRED",
+                "cancel-batch requires a non-empty --reason (audit trail)",
+                None,
+            )],
+        )
+
+    result_data: dict[str, Any] = {}
+
+    def mutator(ledger: dict[str, Any]) -> dict[str, Any]:
+        batch = _find_batch(ledger, args.digest_id)
+        if batch is None:
+            raise ValidationIssuesError(
+                "BATCH_NOT_FOUND",
+                [make_issue("BATCH_NOT_FOUND", f"no batch {args.digest_id}", None)],
+            )
+        if batch.get("status") not in NON_TERMINAL_BATCH_STATUSES:
+            raise ValidationIssuesError(
+                "BATCH_NOT_ACTIVE",
+                [make_issue(
+                    "BATCH_NOT_ACTIVE",
+                    f"batch {args.digest_id} is already {batch.get('status')}",
+                    None,
+                )],
+            )
+
+        any_sent = any(
+            p.get("send_result") == "sent" for p in batch.get("parts", [])
+        )
+        batch["status"] = "cancelled"
+        batch["cancelled_at"] = utc_now()
+        batch["cancel_reason"] = reason
+
+        # Cancellations are durable audit events in the ledger (§6.2).
+        ledger.setdefault("security_events", []).append({
+            "at": utc_now(),
+            "code": "BATCH_CANCELLED",
+            "digest_id": args.digest_id,
+            "reason": reason,
+        })
+
+        # FM-12: if any part already reached Jason, the conductor must send a
+        # cancellation notice through the same channel.
+        result_data.update(
+            digest_id=args.digest_id,
+            cancellation_notice_required=any_sent,
+        )
+        return ledger
+
+    mutate_ledger(ledger_path, mutator)
+    return Envelope(status="ok", data=result_data)
+
+
 def emit_system_validation(args: argparse.Namespace) -> Envelope:
     """Implement C-4-4: read-only projection of judged rows into §6.4 (INV-A1)."""
     ledger_path = resolve_under_root(args.ledger.parent, args.ledger)
@@ -1828,6 +1965,8 @@ HANDLERS["normalize-rows"] = handle_normalize_rows
 HANDLERS["check-rows"] = handle_check_rows
 HANDLERS["record-evidence"] = handle_record_evidence
 HANDLERS["assemble-digest"] = handle_assemble_digest
+HANDLERS["record-send"] = handle_record_send
+HANDLERS["cancel-batch"] = handle_cancel_batch
 HANDLERS["emit-system-validation"] = emit_system_validation
 
 
@@ -1888,6 +2027,19 @@ def build_parser() -> argparse.ArgumentParser:
                 default=None,
                 help="Session id for the digest header (default: '-')",
             )
+        if name == "record-send":
+            sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
+            sp.add_argument("--digest-id", required=True, help="Batch id (d-N)")
+            sp.add_argument("--part", type=int, required=True, help="Part index (1-based)")
+            sp.add_argument(
+                "--result", required=True, choices=["sent", "failed"],
+                help="Delivery outcome for this part",
+            )
+            sp.add_argument("--message-id", default=None, help="Telegram message id")
+        if name == "cancel-batch":
+            sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
+            sp.add_argument("--digest-id", required=True, help="Batch id (d-N)")
+            sp.add_argument("--reason", required=True, help="Audit reason (non-empty)")
         if name == "emit-system-validation":
             sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
             sp.add_argument("--conops", type=Path, required=True, help="Path to conops.md")
