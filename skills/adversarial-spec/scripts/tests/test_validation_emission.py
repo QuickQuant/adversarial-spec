@@ -1962,3 +1962,252 @@ def test_record_send_bulk_verdict_gate_pins_sent_status_inv16():
     assert bulk_verdicts_allowed({"status": "sent"}) is True
     for status in ("assembled", "closed", "cancelled", "", None):
         assert bulk_verdicts_allowed({"status": status}) is False
+
+
+# ═══ C-4.1 parse-reply grammar (TC-3.2, TC-3.5, TC-G2, TC-G6, TC-G8) ═════════
+
+
+def _sent_batch_env(capsys, tmp_path, n_pending=3, send=True):
+    """Ledger with a real assembled (optionally fully sent) batch of
+    n_pending rows r-US1-1..r-US1-<n>."""
+    ledger_path, conops_path = _digest_env(capsys, tmp_path, n_pending=n_pending)
+    exit_code, out, _err = _run_assemble(capsys, ledger_path, conops_path)
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    digest_id = envelope["data"]["digest_id"]
+    if send:
+        for i in range(1, len(envelope["data"]["parts"]) + 1):
+            exit_code, _o, _e = run_cli(capsys, [
+                "record-send", str(ledger_path), "--digest-id", digest_id,
+                "--part", str(i), "--result", "sent",
+            ])
+            assert exit_code == EXIT_OK
+    return ledger_path, conops_path, digest_id
+
+
+_REPLY_SEQ = iter(range(1, 10_000))
+
+
+def _parse_reply(capsys, ledger_path, digest_id, text, reply_ref=None):
+    reply_ref = reply_ref or f"transcript:test:{next(_REPLY_SEQ)}"
+    return run_cli(capsys, [
+        "parse-reply", str(ledger_path), text,
+        "--digest-id", digest_id, "--source", "terminal",
+        "--reply-ref", reply_ref,
+    ])
+
+
+def _row(ledger_path, row_id):
+    ledger = json.loads(ledger_path.read_text())
+    return next(r for r in ledger["rows"] if r["row_id"] == row_id)
+
+
+def test_parse_reply_grammar_per_row_forms_and_close_tc32(capsys, tmp_path):
+    """TC-3.2: per-row pass/fail/na mutate exactly the intended rows with
+    provenance (INV-1); multi-line justification captured; batch closes when
+    every snapshot row is judged."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path)
+
+    exit_code, out, _err = _parse_reply(
+        capsys, ledger_path, digest_id, "pass r-US1-1"
+    )
+    parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    row = _row(ledger_path, "r-US1-1")
+    assert row["result"] == "pass"
+    judgment = row["judgment"]
+    assert judgment["judged_by"] == "jason"
+    assert judgment["source"] == "terminal"
+    assert judgment["digest_id"] == digest_id
+    assert judgment["reply_ref"].startswith("transcript:")
+    assert judgment["judged_at"]
+    assert _row(ledger_path, "r-US1-2")["result"] is None  # exactly one row
+
+    exit_code, _out, _err = _parse_reply(
+        capsys, ledger_path, digest_id,
+        "fail r-US1-2: scenario shows wrong lane\nsecond line of reasoning",
+    )
+    assert exit_code == EXIT_OK
+    row = _row(ledger_path, "r-US1-2")
+    assert row["result"] == "fail"
+    assert "wrong lane" in row["judgment"]["justification"]
+    assert "second line of reasoning" in row["judgment"]["justification"]
+
+    exit_code, _out, _err = _parse_reply(
+        capsys, ledger_path, digest_id, "na r-US1-3: deferred by decision D2"
+    )
+    assert exit_code == EXIT_OK
+    assert _row(ledger_path, "r-US1-3")["result"] == "not-applicable"
+
+    batch = _batch(ledger_path, digest_id)
+    assert batch["status"] == "closed"
+    assert batch["closed_at"] is not None
+
+
+def test_parse_reply_grammar_bulk_pass_and_aliases_tcg2(capsys, tmp_path):
+    """TC-G2: 'pass all' and the fixed natural aliases apply to all unjudged
+    snapshot rows, case-insensitively; off-list phrases re-prompt with zero
+    mutations."""
+    for phrase, applies in [
+        ("pass all", True), ("those all look good", True), ("ALL GOOD", True),
+        ("LGTM", True), ("looks good", True), ("ship it", False),
+    ]:
+        subdir = tmp_path / phrase.replace(" ", "_")
+        subdir.mkdir()
+        ledger_path, _conops, digest_id = _sent_batch_env(capsys, subdir)
+        before = ledger_path.read_bytes()
+        exit_code, out, _err = _parse_reply(capsys, ledger_path, digest_id, phrase)
+        envelope = parse_single_envelope(out)
+        if applies:
+            assert exit_code == EXIT_OK, phrase
+            for k in (1, 2, 3):
+                assert _row(ledger_path, f"r-US1-{k}")["result"] == "pass"
+        else:
+            assert exit_code == EXIT_ISSUES, phrase
+            assert envelope["status"] == "reprompt"
+            assert ledger_path.read_bytes() == before
+
+
+def test_parse_reply_grammar_explicit_before_rest_both_orders_tcg8(capsys, tmp_path):
+    """TC-G8/CB-9: explicit fail + 'pass rest' in either textual order —
+    the explicit verdict applies first, rest passes the remainder."""
+    for idx, text in enumerate([
+        "fail r-US1-1: broken outcome\npass rest",
+        "pass rest\nfail r-US1-1: broken outcome",
+    ]):
+        subdir = tmp_path / f"order{idx}"
+        subdir.mkdir()
+        ledger_path, _conops, digest_id = _sent_batch_env(capsys, subdir)
+        exit_code, _out, _err = _parse_reply(capsys, ledger_path, digest_id, text)
+        assert exit_code == EXIT_OK, text
+        assert _row(ledger_path, "r-US1-1")["result"] == "fail"
+        assert _row(ledger_path, "r-US1-2")["result"] == "pass"
+        assert _row(ledger_path, "r-US1-3")["result"] == "pass"
+
+
+@pytest.mark.parametrize(
+    "bad_reply",
+    [
+        "fail r-US1-1",                      # fail requires justification (FM-10)
+        "na r-US1-1:",                       # TC-3.5: empty justification
+        "fail rest",                         # invalid bulk family
+        "na all",                            # invalid bulk family
+        "pass r-US1-1\npass r-US1-1",        # duplicate verdicts
+        "pass r-US1-1\nfail r-US1-1: x",     # conflicting duplicate
+        "pass r-US99-1",                     # unknown row id
+        "fail US-1: nope",                   # bare story target
+        "US-1 nope",                         # malformed
+        "pass R-us1-1",                      # row ids exact-case
+        "fail r-US1-1: ok\npas r-US1-2",     # typo'd continuation w/ row id
+    ],
+)
+def test_parse_reply_grammar_invalid_replies_zero_mutations_tcg8(
+    capsys, tmp_path, bad_reply
+):
+    """TC-G8 + TC-3.5 + TC-3.2: every invalid case re-prompts with ZERO
+    mutations (INV-A3)."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path)
+    before = ledger_path.read_bytes()
+    exit_code, out, _err = _parse_reply(capsys, ledger_path, digest_id, bad_reply)
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["status"] == "reprompt"
+    assert ledger_path.read_bytes() == before
+
+
+def test_parse_reply_grammar_superseded_row_names_replacement(capsys, tmp_path):
+    """Replies to superseded rows are rejected with a notice naming the
+    replacement row (BURN-f702791c)."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path)
+    exit_code, out, _err = _parse_reply(
+        capsys, ledger_path, digest_id, "pass r-US2-9"
+    )
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any("r-US2-1" in i["detail"] for i in envelope["issues"]), (
+        "rejection must name the replacement row"
+    )
+
+
+def test_parse_reply_grammar_bulk_requires_sent_batch_inv16(capsys, tmp_path):
+    """TC-G1 parse-reply half: bulk verdicts on an assembled (undelivered)
+    batch are rejected; after record-send completes, the same bulk applies."""
+    ledger_path, _conops, digest_id = _sent_batch_env(
+        capsys, tmp_path, send=False
+    )
+    before = ledger_path.read_bytes()
+    exit_code, out, _err = _parse_reply(capsys, ledger_path, digest_id, "pass all")
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert envelope["status"] == "reprompt"
+    assert ledger_path.read_bytes() == before
+
+    batch = _batch(ledger_path, digest_id)
+    for part in batch["parts"]:
+        run_cli(capsys, [
+            "record-send", str(ledger_path), "--digest-id", digest_id,
+            "--part", str(part["i"]), "--result", "sent",
+        ])
+    exit_code, _out, _err = _parse_reply(capsys, ledger_path, digest_id, "pass all")
+    assert exit_code == EXIT_OK
+    assert _row(ledger_path, "r-US1-1")["result"] == "pass"
+
+
+def test_parse_reply_grammar_idempotent_by_reply_ref_tcg6(capsys, tmp_path):
+    """TC-G6: duplicate delivery of the same reply_ref acknowledges with zero
+    new mutations (processed_reply_refs); first capture wins."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path)
+    ref = "transcript:test:dup"
+    exit_code, _out, _err = _parse_reply(
+        capsys, ledger_path, digest_id, "pass r-US1-1", reply_ref=ref
+    )
+    assert exit_code == EXIT_OK
+    judged_at = _row(ledger_path, "r-US1-1")["judgment"]["judged_at"]
+    before = ledger_path.read_bytes()
+
+    # Same ref, different (edited) text — first capture wins, zero mutations
+    exit_code, out, _err = _parse_reply(
+        capsys, ledger_path, digest_id, "fail r-US1-1: edited!", reply_ref=ref
+    )
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_OK
+    assert envelope["code"] == "REPLY_ALREADY_PROCESSED"
+    assert ledger_path.read_bytes() == before
+    assert _row(ledger_path, "r-US1-1")["judgment"]["judged_at"] == judged_at
+
+
+def test_parse_reply_grammar_stale_row_hash_rejected(capsys, tmp_path):
+    """RC-3: a verdict on a row whose hash changed after batch open is
+    rejected (stale-row protection)."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path)
+    ledger = json.loads(ledger_path.read_text())
+    row = next(r for r in ledger["rows"] if r["row_id"] == "r-US1-1")
+    row["scenario"] = "edited after batch open"
+    row["row_hash"] = compute_row_hash(
+        row["conops_ref"], row["scenario"], row["oracle"], row["evidence_type"]
+    )
+    ledger_path.write_text(json.dumps(ledger))
+
+    exit_code, out, _err = _parse_reply(
+        capsys, ledger_path, digest_id, "pass r-US1-1"
+    )
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any("r-US1-1" == i["row_id"] for i in envelope["issues"])
+    assert _row(ledger_path, "r-US1-1")["result"] is None
+
+
+def test_parse_reply_grammar_stale_digest_rejected(capsys, tmp_path):
+    """Replay protection: a reply referencing a non-active digest id is
+    rejected as stale."""
+    ledger_path, _conops, digest_id = _sent_batch_env(capsys, tmp_path)
+    run_cli(capsys, [
+        "cancel-batch", str(ledger_path), "--digest-id", digest_id,
+        "--reason", "test stale rejection",
+    ])
+    exit_code, out, _err = _parse_reply(
+        capsys, ledger_path, digest_id, "pass r-US1-1"
+    )
+    envelope = parse_single_envelope(out)
+    assert exit_code == EXIT_ISSUES
+    assert any(i["code"] == "BATCH_NOT_ACTIVE" for i in envelope["issues"])

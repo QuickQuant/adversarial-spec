@@ -1811,6 +1811,315 @@ def handle_cancel_batch(args: argparse.Namespace) -> Envelope:
     return Envelope(status="ok", data=result_data)
 
 
+#: §6.5 fixed natural-language bulk-pass alias list (Jason ruling SEC-6 — no
+#: reply passwords). Matched whole-line, case-insensitive, whitespace
+#: normalized. Extension is a one-line change + test.
+BULK_PASS_ALIASES = (
+    "pass all",
+    "those all look good",
+    "all look good",
+    "all good",
+    "looks good",
+    "lgtm",
+)
+
+_VERDICT_KEYWORDS = ("pass", "fail", "na")
+_ROW_ID_TOKEN_RE = re.compile(r"\br-US\d+-\d+\b")
+_VERDICT_LINE_RE = re.compile(r"^\s*(\S+)\s+(\S+?)(?::\s*(.*))?$")
+
+#: Reply-result token → ledger/artifact result enum (CB-12: mapping happens
+#: at parse time; the ledger never stores the raw ``na`` token).
+_RESULT_FOR_TOKEN = {"pass": "pass", "fail": "fail", "na": "not-applicable"}
+
+
+class _RepromptError(Exception):
+    """Reply rejected — exit 2 ``reprompt`` envelope, ZERO mutations (INV-A3)."""
+
+    def __init__(self, issues: list[dict[str, Any]]) -> None:
+        self.issues = issues
+        super().__init__(issues[0]["detail"] if issues else "reprompt")
+
+
+class _AlreadyProcessedError(Exception):
+    """Duplicate reply_ref — acknowledged, zero new mutations (TC-G6/RC-4)."""
+
+
+def _quote(text: str, limit: int = 80) -> str:
+    """Quote untrusted reply text, truncated (INV-A3)."""
+    text = _one_line(text)
+    return repr(text if len(text) <= limit else text[: limit - 1] + "…")
+
+
+def _parse_reply_blocks(reply_text: str) -> dict[str, Any]:
+    """Parse the §6.5 block grammar. Returns {verdicts, bulk} or raises
+    _RepromptError. verdicts: row_id → (token, justification); bulk:
+    None | 'all' | 'rest'."""
+    verdicts: dict[str, list[str | None]] = {}
+    order: list[str] = []
+    bulk: str | None = None
+    current: str | None = None  # row_id of the open block
+    errors: list[dict[str, Any]] = []
+
+    def err(detail: str, row_id: str | None = None) -> None:
+        errors.append(make_issue("REPLY_INVALID", detail, row_id))
+
+    for raw_line in reply_text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            current = None
+            continue
+
+        normalized = " ".join(line.lower().split())
+        if normalized in BULK_PASS_ALIASES or normalized == "pass rest":
+            new_bulk = "rest" if normalized == "pass rest" else "all"
+            if bulk is not None:
+                err(f"duplicate bulk verdict {_quote(line)}")
+            bulk = new_bulk
+            current = None
+            continue
+
+        match = _VERDICT_LINE_RE.match(line)
+        keyword = match.group(1).lower() if match else ""
+        if keyword in _VERDICT_KEYWORDS and match:
+            target, justification = match.group(2), match.group(3)
+            if target.lower() in ("all", "rest"):
+                # pass-all handled above as a whole-line form; fail/na all|rest
+                # and decorated pass-all variants are invalid (CB-9).
+                err(f"{keyword} {target.lower()} is not a valid verdict "
+                    f"{_quote(line)}")
+                current = None
+                continue
+            if not _ROW_ID_RE.match(target):
+                err(
+                    f"verdict target must be an exact-case row id "
+                    f"(r-US<n>-<k>): {_quote(line)}"
+                )
+                current = None
+                continue
+            if target in verdicts:
+                err(f"duplicate verdict for {target} — all duplicates are "
+                    f"invalid: {_quote(line)}", target)
+                current = None
+                continue
+            verdicts[target] = [keyword, justification]
+            order.append(target)
+            current = target
+            continue
+
+        # Continuation line: justification for the open block — UNLESS it
+        # starts with a verdict keyword or names a row id (a typo'd verdict
+        # must not be silently swallowed — FM-12/CB-9).
+        first_word = line.split()[0].lower()
+        if first_word in _VERDICT_KEYWORDS or _ROW_ID_TOKEN_RE.search(line):
+            err(f"continuation line looks like a (typo'd) verdict — parse "
+                f"error, not justification: {_quote(line)}")
+            current = None
+            continue
+        if current is None:
+            err(f"line is neither a verdict nor a continuation: {_quote(line)}")
+            continue
+        existing = verdicts[current][1]
+        verdicts[current][1] = (existing + "\n" + line) if existing else line
+
+    # fail/na REQUIRE non-empty justification (FM-10)
+    for row_id, (keyword, justification) in verdicts.items():
+        if keyword in ("fail", "na") and not (justification or "").strip():
+            err(f"{keyword} requires a non-empty justification (re-prompt): "
+                f"row {row_id}", row_id)
+
+    if errors:
+        raise _RepromptError(errors)
+    return {
+        "verdicts": {
+            rid: (kw, (just or "").strip() or None)
+            for rid, (kw, just) in verdicts.items()
+        },
+        "bulk": bulk,
+    }
+
+
+def handle_parse_reply(args: argparse.Namespace) -> Envelope:
+    """Implement C-4.1: §6.5 reply grammar + the locked judgment mutation.
+
+    All-or-nothing: every verdict validates against the batch snapshot before
+    ANY row mutates; any rejection raises pre-write so the ledger bytes are
+    untouched (INV-A3). Telegram update-file extraction and sender
+    verification are the trust boundary card (C-4.2)."""
+    ledger_path = resolve_under_root(args.ledger.parent, args.ledger)
+
+    if args.reply_file is not None:
+        reply_path = resolve_under_root(ledger_path.parent, args.reply_file)
+        reply_bytes = reply_path.read_bytes()
+    elif args.reply_text is not None:
+        reply_bytes = args.reply_text.encode("utf-8")
+    else:
+        return Envelope(
+            status="issues",
+            code="REPLY_TEXT_REQUIRED",
+            issues=[make_issue(
+                "REPLY_TEXT_REQUIRED",
+                "parse-reply needs reply text (--reply-file or positional)",
+                None,
+            )],
+        )
+    enforce_input_bounds("reply", reply_bytes)
+    reply_text = reply_bytes.decode("utf-8", errors="replace")
+
+    result_data: dict[str, Any] = {}
+
+    def mutator(ledger: dict[str, Any]) -> dict[str, Any]:
+        batch = _find_batch(ledger, args.digest_id)
+        if batch is None:
+            raise ValidationIssuesError(
+                "BATCH_NOT_FOUND",
+                [make_issue("BATCH_NOT_FOUND", f"no batch {args.digest_id}", None)],
+            )
+        if args.reply_ref in batch.get("processed_reply_refs", []):
+            raise _AlreadyProcessedError()
+        if batch.get("status") not in NON_TERMINAL_BATCH_STATUSES:
+            raise ValidationIssuesError(
+                "BATCH_NOT_ACTIVE",
+                [make_issue(
+                    "BATCH_NOT_ACTIVE",
+                    f"batch {args.digest_id} is {batch.get('status')} — reply "
+                    "is stale (replay protection)",
+                    None,
+                )],
+            )
+        if ledger.get("conops_hash") and batch.get("conops_hash_snapshot") and \
+                ledger["conops_hash"] != batch["conops_hash_snapshot"]:
+            raise ValidationIssuesError(
+                "CONOPS_SNAPSHOT_CHANGED",
+                [make_issue(
+                    "CONOPS_SNAPSHOT_CHANGED",
+                    "conops changed after batch open (RC-3) — cancel and "
+                    "re-digest",
+                    None,
+                )],
+            )
+
+        parsed = _parse_reply_blocks(reply_text)
+        verdicts, bulk = parsed["verdicts"], parsed["bulk"]
+        if not verdicts and bulk is None:
+            raise _RepromptError([make_issue(
+                "REPLY_EMPTY", "reply contains no verdicts", None
+            )])
+
+        if bulk is not None and not bulk_verdicts_allowed(batch):
+            raise _RepromptError([make_issue(
+                "BATCH_NOT_SENT",
+                f"bulk verdicts require batch status 'sent' (INV-16); "
+                f"{args.digest_id} is {batch.get('status')!r}",
+                None,
+            )])
+
+        rows_by_id = {
+            r.get("row_id"): r for r in ledger.get("rows", [])
+            if isinstance(r, dict)
+        }
+        superseded_replacement = {
+            entry.get("row_snapshot", {}).get("row_id"):
+                entry.get("replacement_row_id")
+            for entry in ledger.get("superseded", [])
+        }
+        snapshot_ids = set(batch.get("row_ids", []))
+        row_hash_snapshot = batch.get("row_hash_snapshot", {})
+
+        issues: list[dict[str, Any]] = []
+        for row_id, (keyword, justification) in verdicts.items():
+            if row_id in superseded_replacement:
+                issues.append(make_issue(
+                    "SUPERSEDED_ROW",
+                    f"row {row_id} is superseded — reply to its replacement "
+                    f"{superseded_replacement[row_id]} instead",
+                    row_id,
+                ))
+                continue
+            if row_id not in snapshot_ids or row_id not in rows_by_id:
+                issues.append(make_issue(
+                    "ROW_NOT_IN_BATCH",
+                    f"row {row_id} is not in batch {args.digest_id}",
+                    row_id,
+                ))
+                continue
+            row = rows_by_id[row_id]
+            if row.get("result") is not None:
+                issues.append(make_issue(
+                    "ROW_ALREADY_JUDGED",
+                    f"row {row_id} already judged {row.get('result')!r} in "
+                    "this batch",
+                    row_id,
+                ))
+                continue
+            if row_hash_snapshot.get(row_id) != row_hash_for(row):
+                issues.append(make_issue(
+                    "STALE_ROW_HASH",
+                    f"row {row_id} changed after batch open (RC-3) — verdict "
+                    "rejected",
+                    row_id,
+                ))
+                continue
+            if justification:
+                enforce_input_bounds(
+                    "justification", justification.encode("utf-8")
+                )
+        if issues:
+            raise _RepromptError(issues)
+
+        def judge(row: dict[str, Any], keyword: str, justification: str | None) -> None:
+            row["result"] = _RESULT_FOR_TOKEN[keyword]
+            judgment = {
+                "judged_by": "jason",
+                "judged_at": utc_now(),
+                "source": args.source,
+                "digest_id": args.digest_id,
+                "reply_ref": args.reply_ref,
+            }
+            if justification:
+                judgment["justification"] = justification
+            row["judgment"] = judgment
+
+        # Explicit per-row verdicts apply BEFORE bulk regardless of textual
+        # order (CB-9).
+        judged: list[str] = []
+        for row_id, (keyword, justification) in verdicts.items():
+            judge(rows_by_id[row_id], keyword, justification)
+            judged.append(row_id)
+        if bulk is not None:
+            for row_id in batch.get("row_ids", []):
+                row = rows_by_id.get(row_id)
+                if row is not None and row.get("result") is None:
+                    judge(row, "pass", None)
+                    judged.append(row_id)
+
+        batch.setdefault("processed_reply_refs", []).append(args.reply_ref)
+        if all(
+            rows_by_id.get(rid, {}).get("result") is not None
+            for rid in batch.get("row_ids", [])
+        ):
+            batch["status"] = "closed"
+            batch["closed_at"] = utc_now()
+
+        result_data.update(
+            digest_id=args.digest_id,
+            judged=judged,
+            batch_status=batch["status"],
+        )
+        return ledger
+
+    try:
+        mutate_ledger(ledger_path, mutator)
+    except _AlreadyProcessedError:
+        return Envelope(
+            status="ok",
+            code="REPLY_ALREADY_PROCESSED",
+            data={"digest_id": args.digest_id, "reply_ref": args.reply_ref},
+        )
+    except _RepromptError as exc:
+        return Envelope(status="reprompt", code="REPROMPT_REQUIRED", issues=exc.issues)
+    return Envelope(status="ok", data=result_data)
+
+
 def emit_system_validation(args: argparse.Namespace) -> Envelope:
     """Implement C-4-4: read-only projection of judged rows into §6.4 (INV-A1)."""
     ledger_path = resolve_under_root(args.ledger.parent, args.ledger)
@@ -1967,6 +2276,7 @@ HANDLERS["record-evidence"] = handle_record_evidence
 HANDLERS["assemble-digest"] = handle_assemble_digest
 HANDLERS["record-send"] = handle_record_send
 HANDLERS["cancel-batch"] = handle_cancel_batch
+HANDLERS["parse-reply"] = handle_parse_reply
 HANDLERS["emit-system-validation"] = emit_system_validation
 
 
@@ -2040,6 +2350,24 @@ def build_parser() -> argparse.ArgumentParser:
             sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
             sp.add_argument("--digest-id", required=True, help="Batch id (d-N)")
             sp.add_argument("--reason", required=True, help="Audit reason (non-empty)")
+        if name == "parse-reply":
+            sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
+            sp.add_argument(
+                "reply_text", nargs="?", default=None,
+                help="Reply text (test-only — multiline shell quoting is a "
+                     "footgun; prefer --reply-file)",
+            )
+            sp.add_argument("--reply-file", type=Path, default=None,
+                            help="Path to a file holding the reply text")
+            sp.add_argument("--digest-id", required=True, help="Batch id (d-N)")
+            sp.add_argument(
+                "--source", required=True, choices=["telegram", "terminal"],
+                help="Reply channel (provenance)",
+            )
+            sp.add_argument("--reply-ref", required=True,
+                            help="Idempotency + provenance reference")
+            sp.add_argument("--sender-id", default=None,
+                            help="Asserted identity (terminal source)")
         if name == "emit-system-validation":
             sp.add_argument("ledger", type=Path, help="Path to validation-rows.json")
             sp.add_argument("--conops", type=Path, required=True, help="Path to conops.md")
