@@ -1,7 +1,11 @@
-# CLAUDE.md
-<!-- Base: Brainquarters v2.2 | Project: v1.7 | Last synced: 2026-06-09 -->
-<!-- Last reviewed: 2026-04-04 | Next review: 2026-04-25 -->
+# AGENTS.md
+<!-- Base: Brainquarters v2.2 | Project: v1.8 | Last synced: 2026-06-09 -->
+<!-- Last reviewed: 2026-06-09 | Next review: 2026-06-30 -->
 <!-- Target: 60-100 lines | If >100 lines, prune or move to .active_context.md -->
+
+## Domain Vocabulary
+Project glossary (auto-loaded): @CONTEXT.md
+Shared ecosystem terms load globally from Brainquarters/shared-context/GLOSSARY.md.
 
 ## WHAT: Project & Stack
 
@@ -18,6 +22,7 @@ Runtime: Python 3.14+ | Deps: uv, pyproject.toml | Tests: pytest | Lint: ruff
 
 ### Session Start
 ```
+/conductor          # Briefing: git, session, pipeline state
 /adversarial-spec   # Start or resume spec workflow
 ```
 
@@ -33,10 +38,8 @@ uvx ruff check --fix --unsafe-fixes      # Lint
 ```
 
 ### Deployment
-Changes to `skills/adversarial-spec/` need manual copy to `~/.claude/skills/`:
-```bash
-cp -r skills/adversarial-spec/* ~/.claude/skills/adversarial-spec/
-```
+`~/.claude/skills/adversarial-spec` is a symlink to `skills/adversarial-spec/` —
+source edits are live immediately; there is no copy step.
 
 ### Documentation Lookup (docmaster)
 There are no external APIs this project interfaces against. If this ever changes, use docmaster. You may request a new API for coverage (and update this line in CLAUDE.md).
@@ -49,14 +52,16 @@ Don't pre-load domain context. Load when needed:
 
 ### Resuming Work
 ```
-/adversarial-spec         # Resume the active session (detects parked work streams)
+/conductor                # Briefing incl. parked sessions and lane state
+/context-switch           # Switch between contexts within the project
 ```
-(Tasks MCP retired June 2026 — `/tasks` is gone; the Fizzy pipeline board is the task system.)
+(Tasks MCP retired June 2026 — `/tasks` is gone; Fizzy pipeline is the task system.)
 
 ## Guardrails
 
 **Hooks enforce safety** — see `.claude/hooks/`.
 
+- **NO GLOBAL KILLS**: Never use `killall`, `pkill`, or broad `kill` patterns. Target specific PIDs from the current project only.
 - Read `.architecture/INDEX.md` first for navigation, then `primer.md` for context. Don't glob/grep when architecture docs exist.
 - Validate required fields before writes (fail-fast, no silent fallbacks)
 - Read official docs with Docmaster before integrating external APIs
