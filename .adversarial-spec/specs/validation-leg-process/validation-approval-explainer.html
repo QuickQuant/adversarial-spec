@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Validation Approval — r-US0-1 … r-US13-1 — card 5604</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --panel2: #1c2330; --border: #2d3748;
+    --text: #d6dde6; --dim: #8b98a9; --accent: #58a6ff; --green: #3fb950;
+    --red: #f85149; --amber: #d29922; --purple: #bc8cff; --teal: #39c5cf;
+    --mono: "SF Mono", "Cascadia Code", Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font: 15px/1.55 -apple-system, "Segoe UI", Roboto, sans-serif; padding: 24px 16px 120px; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 1.45em; margin-bottom: 4px; }
+  h1 .mono { font-family: var(--mono); color: var(--accent); }
+  .sub { color: var(--dim); margin-bottom: 20px; font-size: .92em; }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
+  .panel h2 { font-size: 1.05em; margin-bottom: 10px; color: var(--accent); }
+  .panel h2 .toggle-hint { font-size: .75em; color: var(--dim); font-weight: normal; float: right; }
+  details.panel summary { cursor: pointer; font-size: 1.05em; color: var(--accent); font-weight: 600; list-style: none; }
+  details.panel summary::before { content: "▸ "; }
+  details.panel[open] summary::before { content: "▾ "; }
+  details.panel[open] summary { margin-bottom: 10px; }
+  .mechanics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 8px; }
+  .mech-step { background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: .82em; position: relative; }
+  .mech-step .n { color: var(--teal); font-family: var(--mono); font-weight: 700; }
+  .caveat-list li { margin: 6px 0 6px 18px; font-size: .9em; }
+  .caveat-list .sev { font-family: var(--mono); font-size: .85em; padding: 1px 7px; border-radius: 10px; margin-right: 6px; }
+  .sev.warn { background: rgba(210,153,34,.15); color: var(--amber); border: 1px solid rgba(210,153,34,.4); }
+  .sev.info { background: rgba(88,166,255,.12); color: var(--accent); border: 1px solid rgba(88,166,255,.35); }
+  /* filters */
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .chip { background: var(--panel2); border: 1px solid var(--border); color: var(--dim); border-radius: 16px; padding: 4px 13px; font-size: .82em; cursor: pointer; user-select: none; transition: all .15s; }
+  .chip:hover { border-color: var(--accent); }
+  .chip.on { background: rgba(88,166,255,.15); border-color: var(--accent); color: var(--accent); }
+  /* row cards */
+  .row-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; transition: border-color .15s; }
+  .row-card.v-pass { border-left: 4px solid var(--green); }
+  .row-card.v-fail { border-left: 4px solid var(--red); }
+  .row-card.v-na   { border-left: 4px solid var(--amber); }
+  .row-card.v-none { border-left: 4px solid var(--border); }
+  .row-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; flex-wrap: wrap; }
+  .row-head:hover { background: var(--panel2); }
+  .row-id { font-family: var(--mono); color: var(--accent); font-weight: 700; font-size: .95em; white-space: nowrap; }
+  .row-title { flex: 1; font-size: .92em; min-width: 200px; }
+  .tag { font-family: var(--mono); font-size: .72em; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+  .tag.artifact-demo { background: rgba(63,185,80,.12); color: var(--green); border: 1px solid rgba(63,185,80,.35); }
+  .tag.narrative { background: rgba(188,140,255,.12); color: var(--purple); border: 1px solid rgba(188,140,255,.35); }
+  .tag.agent-walkthrough-transcript { background: rgba(57,197,207,.12); color: var(--teal); border: 1px solid rgba(57,197,207,.35); }
+  .tag.flag { background: rgba(210,153,34,.13); color: var(--amber); border: 1px solid rgba(210,153,34,.4); }
+  .row-body { display: none; padding: 0 16px 16px; border-top: 1px solid var(--border); }
+  .row-card.open .row-body { display: block; }
+  .field { margin-top: 12px; }
+  .field .label { font-size: .72em; text-transform: uppercase; letter-spacing: .07em; color: var(--dim); margin-bottom: 3px; }
+  .field .val { font-size: .9em; }
+  .field .val.oracle { background: var(--panel2); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 0 6px 6px 0; }
+  .field .val.allows { background: rgba(63,185,80,.07); border-left: 3px solid var(--green); padding: 8px 12px; border-radius: 0 6px 6px 0; }
+  .field .val.caveat { background: rgba(210,153,34,.07); border-left: 3px solid var(--amber); padding: 8px 12px; border-radius: 0 6px 6px 0; }
+  .verdict-btns { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
+  .vbtn { border: 1px solid var(--border); background: var(--panel2); color: var(--dim); border-radius: 6px; padding: 5px 16px; font-size: .85em; cursor: pointer; font-weight: 600; }
+  .vbtn.pass.sel { background: rgba(63,185,80,.2); color: var(--green); border-color: var(--green); }
+  .vbtn.fail.sel { background: rgba(248,81,73,.2); color: var(--red); border-color: var(--red); }
+  .vbtn.na.sel   { background: rgba(210,153,34,.2); color: var(--amber); border-color: var(--amber); }
+  .vbtn:hover { border-color: var(--accent); }
+  .reason-input { flex: 1; min-width: 220px; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 5px 10px; font-size: .85em; display: none; }
+  .reason-input.show { display: block; }
+  /* sticky verdict bar */
+  .verdict-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--panel); border-top: 1px solid var(--border); padding: 10px 16px; z-index: 50; box-shadow: 0 -6px 18px rgba(0,0,0,.45); }
+  .vb-inner { max-width: 980px; margin: 0 auto; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .vb-counts { font-family: var(--mono); font-size: .85em; }
+  .vb-counts .p { color: var(--green); } .vb-counts .f { color: var(--red); } .vb-counts .n { color: var(--amber); } .vb-counts .u { color: var(--dim); }
+  .vb-actions { display: flex; gap: 8px; margin-left: auto; }
+  .vb-btn { background: var(--panel2); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 6px 14px; font-size: .83em; cursor: pointer; }
+  .vb-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .vb-btn.primary { background: rgba(63,185,80,.15); border-color: var(--green); color: var(--green); }
+  #reply-out { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: .8em; padding: 8px 10px; margin-top: 8px; display: none; white-space: pre; overflow-x: auto; }
+  #reply-out.show { display: block; }
+  .meter { height: 6px; background: var(--panel2); border-radius: 3px; overflow: hidden; flex: 1; min-width: 120px; display: flex; }
+  .meter div { height: 100%; transition: width .25s; }
+  .m-pass { background: var(--green); } .m-fail { background: var(--red); } .m-na { background: var(--amber); }
+  code { font-family: var(--mono); font-size: .87em; background: var(--panel2); padding: 1px 6px; border-radius: 4px; color: var(--teal); }
+  .commits td { padding: 3px 12px 3px 0; font-size: .87em; vertical-align: top; }
+  .commits .h { font-family: var(--mono); color: var(--teal); white-space: nowrap; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: .8em; color: var(--dim); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🥊📜 Validation Approval — <span class="mono">r-US0-1 … r-US13-1</span></h1>
+  <div class="sub">
+    Session <code>adv-spec-202606110339-validation-leg-process</code> · card <code>5604</code> · digest <code>d-1</code> (14 rows) ·
+    ledger generated 2026-06-12 13:23 UTC @ <code>8aaee5e</code>
+  </div>
+
+  <div class="panel">
+    <h2>What you are approving, exactly</h2>
+    <p style="font-size:.92em">
+      Each row is a claim that one user story (US-0…US-13) of the <strong>Validation-Leg Production Process</strong> spec is
+      operationally satisfied. Your <strong>pass</strong> on a row is recorded as a human judgment in
+      <code>validation-rows.json</code> with provenance. When all 14 rows are judged (every active story needs ≥1 passing
+      row), the close becomes mechanical:
+    </p>
+    <div class="mechanics">
+      <div class="mech-step"><span class="n">1</span> Your verdicts parsed via reply grammar → per-row judgment blocks in the ledger</div>
+      <div class="mech-step"><span class="n">2</span> <code>emit-system-validation</code> writes <code>system_validation.json</code></div>
+      <div class="mech-step"><span class="n">3</span> Local <code>self-check</code> validates the exact artifact (gate-mirror, fail-fast)</div>
+      <div class="mech-step"><span class="n">4</span> MCP <code>pipeline_mark_system_validation_complete</code> on the system-altitude <strong>task node</strong> (<code>task_id "SYS"</code>, card 5616) — <em>not</em> the session card 5604 (corrected 2026-06-14; see note below)</div>
+      <div class="mech-step"><span class="n">5</span> Metadata read-back confirms <code>system_validation_complete: true</code> on the SYS node → session may advance to completion</div>
+    </div>
+    <p style="font-size:.82em; color:var(--amber); margin-top:10px; border-left:3px solid var(--amber); padding-left:10px">
+      <strong>Dogfood finding (2026-06-14):</strong> the close was first attempted on session card 5604 (as the docs originally said) and fizzy rejected it with <code>SESSION_MISMATCH</code> — the gate's <code>_task_belongs_to_session</code> requires a <code>card_type == "task"</code> node, which the session card is not. Retargeted to the SYS task node (5616) and the close completed clean. The Phase 8 doc + error playbook were corrected; this is exactly the seam defect US-10 exists to catch.
+    </div>
+    <p style="font-size:.85em; color:var(--dim); margin-top:10px">
+      A <strong>fail</strong> on any row blocks close and routes to the remediation loop (fix cards → re-exercise → reset row → re-gate).
+      <strong>N/A</strong> is accepted only from you, with justification, at row level — a story still needs a passing row, so N/A on a
+      sole row effectively forces a ConOps edit or a replacement row.
+    </p>
+  </div>
+
+  <details class="panel" open>
+    <summary>⚠ Read before judging — honesty caveats (3)</summary>
+    <ul class="caveat-list">
+      <li><span class="sev warn">WARN</span><strong>Evidence file bodies are empty stubs.</strong> All 14
+        <code>validation-evidence/r-US*/evidence.md</code> files contain only the hash header and the line
+        “(Attach evidence below this line)”. The substantive evidence claim lives in each row's
+        <code>evidence_summary</code> ledger field, not in an attached artifact. Hits <strong>r-US13-1</strong> hardest —
+        its whole point is evidence-before-digest.</li>
+      <li><span class="sev warn">WARN</span><strong><code>dogfood-validation.md</code> does not exist on disk.</strong>
+        The evidence summaries for <strong>r-US0-1</strong> and <strong>r-US11-1</strong> cite it as where commands/envelopes
+        “are recorded”. As of this page's generation it has not been created.</li>
+      <li><span class="sev info">INFO</span><strong>Three rows are forward-looking by design.</strong>
+        <strong>r-US6-1</strong> (“digest <em>will</em> include…”), <strong>r-US7-1</strong> (“<em>planned</em> terminal reply…”),
+        and <strong>r-US10-1</strong> (“<em>will</em> close the live session card…”) describe steps that complete only
+        <em>after</em> your verdicts — they are validated by this very approval round succeeding. Passing them is approving
+        the mechanism contingent on the close actually going through (the gate itself still enforces that).</li>
+    </ul>
+  </details>
+
+  <details class="panel">
+    <summary>The changes this run made (what produced these rows)</summary>
+    <p style="font-size:.9em; margin-bottom:8px">
+      Phase 8 wave 5 of the validation-leg session. The process being validated was built and documented in this run —
+      test suite grew 556 → 760, all green; 17 cards in Passed Test.
+    </p>
+    <table class="commits">
+      <tr><td class="h">9687818</td><td><strong>C-5-1</strong> — <code>07-execution.md</code>: new “Validation leg (system altitude)” section — ConOps derivation, row drafting, normalize/check, evidence taxonomy. The Phase 7 half of the documented entry point (US-0…US-5, US-12).</td></tr>
+      <tr><td class="h">7cb372b</td><td><strong>C-5-2</strong> — <code>08-implementation.md</code>: validation-leg close algorithm + error-code playbook — digest assembly, reply grammar, emit/self-check/MCP-close sequence, fail-path remediation routing. The Phase 8 half (US-6…US-9, US-11, US-13).</td></tr>
+      <tr><td class="h">8aaee5e</td><td>Session sweep — run retrospective (<code>run-retrospective.html</code>), commit-sweep incident note, session logs through C-5-2.</td></tr>
+      <tr><td class="h">earlier</td><td>Waves 1–4: validation toolchain commands (<code>derive-conops</code>, <code>check-rows</code>, <code>record-evidence</code>, digest assembly, <code>parse-reply</code>, <code>emit-system-validation</code>, <code>self-check</code>, status report), trust-boundary + reset/supersede semantics, 8-class close-error parity table.</td></tr>
+    </table>
+  </details>
+
+  <div class="filters" id="filters">
+    <span class="chip" data-f="all">All 14</span>
+    <span class="chip" data-f="artifact-demo">artifact-demo (8)</span>
+    <span class="chip" data-f="agent-walkthrough-transcript">transcript (3)</span>
+    <span class="chip" data-f="narrative">narrative (3)</span>
+    <span class="chip" data-f="flagged">⚠ flagged (5)</span>
+    <span class="chip" data-f="unjudged">unjudged</span>
+  </div>
+  <div class="legend">
+    <span>Click a card to expand · use Pass / Fail / N-A buttons to build your reply</span>
+  </div>
+
+  <div id="rows"></div>
+</div>
+
+<div class="verdict-bar">
+  <div class="vb-inner">
+    <span class="vb-counts" id="counts"></span>
+    <div class="meter" id="meter"><div class="m-pass"></div><div class="m-fail"></div><div class="m-na"></div></div>
+    <div class="vb-actions">
+      <button class="vb-btn primary" id="pass-all">Pass all</button>
+      <button class="vb-btn" id="clear-all">Clear</button>
+      <button class="vb-btn" id="gen-reply">Generate reply</button>
+      <button class="vb-btn" id="copy-reply">Copy</button>
+    </div>
+    <textarea id="reply-out" rows="4" readonly spellcheck="false"></textarea>
+  </div>
+</div>
+
+<script>
+const ROWS = [
+{
+  id: "r-US0-1", us: "US-0", title: "Single documented entry point — docs alone run the validation leg",
+  story: "As a conductor agent entering Phase 7 of a system-altitude session, I want a single documented entry point so that I can run the validation leg end-to-end without reading fizzy source code.",
+  scenario: "A fresh conductor enters Phase 7 for this system-altitude session, opens the Phase 7 validation-leg section and Phase 8 close section, derives ConOps, drafts rows, normalizes them, checks them, and prepares the close without reading Fizzy source code.",
+  oracle: "Jason passes this row iff the phase docs and produced artifacts let the conductor run the validation leg end-to-end from documented steps alone, demonstrating the single-entry-point intent from US-0.",
+  etype: "agent-walkthrough-transcript",
+  rationale: "the bootstrap claim is about an agent workflow; a transcript-style evidence summary shows the actual documented path used",
+  evidence: "Phase 7 and Phase 8 docs were sufficient to derive ConOps, draft rows, normalize, check, and prepare the close without reading Fizzy source; commands and artifacts are recorded in dogfood-validation.md.",
+  allows: "You certify the C-5-1/C-5-2 doc sections (07-execution.md + 08-implementation.md) as the complete, sufficient runbook. Every future system-altitude session gets to rely on those docs as the only entry point — no fizzy source-reading expected or excused.",
+  caveat: "Cites dogfood-validation.md as the transcript record — that file does not exist on disk. The walkthrough demonstrably happened (the artifacts exist), but the promised transcript artifact was never written.",
+  flagged: true
+},
+{
+  id: "r-US1-1", us: "US-1", title: "ConOps derived from roadmap manifest — refreshed intent binding",
+  story: "As a conductor at Phase 7, I want to derive roadmap/conops.md from the roadmap manifest (user stories + operational narrative) so that validation binds to refreshed, post-debate intent.",
+  scenario: "The conductor runs derive-conops against roadmap/manifest.json and inspects roadmap/conops.md for all manifest user stories and an operational narrative.",
+  oracle: "Jason passes this row iff roadmap/conops.md exists with the manifest-derived operational narrative and all story headings from US-0 through US-13, demonstrating refreshed intent binding from US-1.",
+  etype: "artifact-demo",
+  rationale: "the output artifact is the observable product of ConOps derivation",
+  evidence: "derive-conops produced roadmap/conops.md from roadmap/manifest.json with all 14 user story headings and conops_hash 8b94e8639c2e.",
+  allows: "You accept conops_hash 8b94e863… as the binding intent snapshot for this close. All 14 rows and the digest are hash-pinned to it — any later ConOps edit invalidates the batch by design. Verifiable right now: roadmap/conops.md exists with all 14 headings.",
+  caveat: null, flagged: false
+},
+{
+  id: "r-US2-1", us: "US-2", title: "ConOps reads as operational intent, not a test inventory",
+  story: "As the validator, I want the ConOps to read as operational intent, not a test inventory, so that my pass/fail judgments anchor on what was wanted.",
+  scenario: "The validator reads the derived ConOps and the dogfood digest before judgment, checking that they describe wanted operational outcomes rather than a test inventory.",
+  oracle: "Jason passes this row iff the ConOps and digest are judgeable as user-intent statements rather than a list of implementation checks, demonstrating operational-intent anchoring from US-2.",
+  etype: "narrative",
+  rationale: "the observable is the validator-facing narrative quality, captured by Jason's judgment over the produced digest",
+  evidence: "The ConOps and row oracles state user intent and operational outcomes rather than listing implementation checks; check-rows accepted the intent-level oracle form.",
+  allows: "Self-demonstrating: you are the oracle here. If reading this batch you can judge from intent (what was wanted) rather than from test status, the row holds. Passing locks this narrative style in as the standard for every future digest.",
+  caveat: null, flagged: false
+},
+{
+  id: "r-US3-1", us: "US-3", title: "≥1 validation row per story, drafted pre-close with full schema",
+  story: "As a conductor at Phase 7 (pre-implementation), I want to draft >=1 validation row per user story (conops_ref, scenario, oracle, evidence_type) so that the gate's row schema is satisfiable and scenarios precede hindsight.",
+  scenario: "Before closing implementation, the conductor drafts at least one validation row for every active ConOps story with conops_ref, scenario, oracle, evidence_type, and evidence_rationale.",
+  oracle: "Jason passes this row iff validation-rows.json contains active rows covering every ConOps story with the required row fields before judgment, demonstrating pre-close row satisfiability from US-3.",
+  etype: "artifact-demo",
+  rationale: "the ledger itself shows the row fields and story coverage",
+  evidence: "validation-rows.json contains 14 active rows, one per ConOps story US-0 through US-13, with required row fields before judgment.",
+  allows: "You confirm full story coverage: 14 active rows, one per story, all required fields, drafted before your judgment (scenarios precede hindsight). Mechanically verifiable in the ledger — this page is rendered from it. Passing satisfies the close gate's coverage requirement.",
+  caveat: null, flagged: false
+},
+{
+  id: "r-US4-1", us: "US-4", title: "Oracles judge from intent — never 'tests pass'",
+  story: "As the validator, I want every oracle to state how I judge pass/fail FROM INTENT (observable user-level outcome, never 'tests pass') so that rows cannot degrade into checkbox prose.",
+  scenario: "The conductor reviews every dogfood oracle and rejects wording that asks Jason to judge code status, instead using observable user-level outcomes tied to the named story.",
+  oracle: "Jason passes this row iff the row oracles use observable intent-level outcomes and avoid test-status wording while naming US-4, demonstrating intent-first oracle quality from US-4.",
+  etype: "artifact-demo",
+  rationale: "the validation ledger exposes every oracle for direct inspection",
+  evidence: "All dogfood oracles use literal iff, name their US id, and describe observable intent-level outcomes; check-rows returned status ok after lint.",
+  allows: "You certify the oracle quality bar: every oracle on this page uses 'iff', names its US id, and asks you to judge an observable outcome — none asks you to bless test results. Passing makes this the enforced precedent (check-rows lint already encodes it).",
+  caveat: null, flagged: false
+},
+{
+  id: "r-US5-1", us: "US-5", title: "Evidence taxonomy fit — type + rationale per row, async-friendly",
+  story: "As a conductor, I want an evidence-type taxonomy (agent-walkthrough-transcript / artifact-demo / narrative) with per-type minimum bar and required per-row selection rationale, so that evidence matches what each scenario is of without requiring synchronous human participation.",
+  scenario: "The conductor assigns each row an evidence type from the approved taxonomy and adds a one-line rationale explaining why that evidence fits the scenario.",
+  oracle: "Jason passes this row iff each row has an approved evidence_type and a useful evidence_rationale matched to the scenario, demonstrating evidence taxonomy fit from US-5.",
+  etype: "artifact-demo",
+  rationale: "the ledger fields directly show the taxonomy selections and rationales",
+  evidence: "Each row carries an approved evidence_type and non-empty evidence_rationale matched to the scenario; check-rows accepted the taxonomy fields.",
+  allows: "You approve the 3-type taxonomy in practice: this batch uses artifact-demo ×8, transcript ×3, narrative ×3, each with a fit rationale (shown per card). Passing confirms evidence never requires you to participate synchronously — everything is judgeable async.",
+  caveat: null, flagged: false
+},
+{
+  id: "r-US6-1", us: "US-6", title: "One batched mobile digest — judge the whole session in one interaction",
+  story: "As the validator, I want one batched Telegram digest (scenario + oracle + evidence summary per row) so that I can judge the whole session from mobile in one interaction.",
+  scenario: "The conductor assembles one digest batch containing scenario, oracle, evidence summary, and evidence file pointer for every active unjudged row, sized for mobile review.",
+  oracle: "Jason passes this row iff the digest is self-contained enough to judge the session from mobile without opening the repository, demonstrating one-interaction digest intent from US-6.",
+  etype: "agent-walkthrough-transcript",
+  rationale: "the assembled digest and Jason's reply show whether the mobile judgment path worked",
+  evidence: "The digest will include scenario, oracle, evidence summary, and evidence file pointer for each row, with assembled parts kept under the module byte budget for mobile review.",
+  allows: "You confirm the one-interaction judgment path works. Digest d-1 is assembled (3 parts, hash-pinned, under byte budget) but not yet sent — send_result is 'pending' on all parts. If you judge from this page instead, the digest mechanism itself goes unexercised over Telegram this round.",
+  caveat: "Forward-looking evidence ('will include') and the digest parts were never sent (send_result: pending). The assembled artifact exists and is correct; the mobile delivery half of the story has not actually run.",
+  flagged: true
+},
+{
+  id: "r-US7-1", us: "US-7", title: "Deterministic reply grammar — your verdicts become ledger judgments",
+  story: "As a conductor, I want a defined digest reply grammar (pass all | fail US-n: reason | na <row-id>: justification | mixed lines) parsed deterministically; N/A accepted only from Jason with justification, and ONLY at row level — an active ConOps story still requires >=1 passing row; removing a story is a ConOps edit + re-hash, never an N/A.",
+  scenario: "Jason replies to the dogfood digest using the documented row-id verdict grammar, and the conductor parses that reply into row judgments with provenance.",
+  oracle: "Jason passes this row iff the reply grammar is unambiguous enough for his verdicts to become the intended row judgments with provenance, demonstrating deterministic reply handling from US-7.",
+  etype: "agent-walkthrough-transcript",
+  rationale: "the parse-reply command output and ledger judgment blocks show the grammar result",
+  evidence: "The planned terminal reply uses explicit row-id verdict lines parsed by parse-reply with transcript provenance, producing per-row judgment blocks rather than ambiguous free text.",
+  allows: "You approve the verdict grammar as the binding judgment channel: 'pass all', 'pass r-USn-k', 'fail r-USn-k: reason', 'na r-USn-k: justification'. The builder at the bottom of this page emits exactly this grammar. N/A stays human-only and row-level — agents can never N/A scope away.",
+  caveat: "Forward-looking ('planned terminal reply') — parse-reply runs on your actual reply after this approval, so the row is proven by this round completing.",
+  flagged: true
+},
+{
+  id: "r-US8-1", us: "US-8", title: "Mechanical close — emit, self-check, MCP call, error playbook",
+  story: "As a conductor, I want to write system_validation.json and call mark_system_validation_complete with every gate error code mapped to a documented response, so that close is mechanical once judgments exist.",
+  scenario: "After all rows are judged, the conductor emits system_validation.json, runs self-check, calls the system-validation MCP close tool, and reads card metadata back.",
+  oracle: "Jason passes this row iff the close artifacts and metadata show a mechanical path from judged rows to system_validation_complete true with documented responses available for rejects, demonstrating close mechanics from US-8.",
+  etype: "artifact-demo",
+  rationale: "the emitted artifact, self-check envelope, and Fizzy metadata are the observable close outputs",
+  evidence: "Phase 8 docs identify emit-system-validation, self-check, pipeline_mark_system_validation_complete, get_card_metadata read-back, and the error-code playbook for close responses.",
+  allows: "You approve the close pipeline itself: judged rows → emit-system-validation → self-check → MCP close → metadata read-back, with every gate reject code mapped to a documented response (C-5-2's error playbook in 08-implementation.md). No improvisation allowed at close time.",
+  caveat: null, flagged: false
+},
+{
+  id: "r-US9-1", us: "US-9", title: "Fail path — failed rows block close and spawn remediation",
+  story: "As a conductor, I want fail results to spawn a remediation loop (cards -> fix -> re-exercise -> regenerate rows -> re-gate) so that failed validation blocks completion until resolved.",
+  scenario: "The conductor reviews the Phase 8 fail path and dogfood status report, confirming that any failed row would create remediation work, reset the row after resolution, and block close until resolved.",
+  oracle: "Jason passes this row iff the documented remediation path is actionable enough that a failed validation row would block completion and route to fix work, demonstrating remediation-loop intent from US-9.",
+  etype: "narrative",
+  rationale: "this row validates operator guidance quality rather than a triggered failure in the happy-path dogfood run",
+  evidence: "Phase 8 close routing sends failed rows to remediation and reset-failed before re-execution; no fail has occurred in this happy-path dogfood run so remediation count is zero.",
+  allows: "You approve the documented fail path as actionable: a fail verdict from you routes to remediation cards, reset-failed, re-exercise, re-gate — and blocks close until resolved. Note what this is NOT: the path has never been triggered (zero fails this run). You're approving the guidance, not a demonstrated recovery.",
+  caveat: "Untriggered by design — happy-path run. The remediation loop is documented but has never actually fired. If you want it proven, fail a row right now: that exercises US-9 for real (at the cost of delaying close).",
+  flagged: true
+},
+{
+  id: "r-US10-1", us: "US-10", title: "Dogfood proof — card 5604 closes through its own process",
+  story: "As the project owner, I want THIS session (card 5604) to V-close through the new process so that it is proven on itself before any other session depends on it.",
+  scenario: "This session, card 5604, runs the validation leg on itself and reaches system_validation_complete true before the session is advanced to completion.",
+  oracle: "Jason passes this row iff card 5604 closes through the new validation process with real artifacts and metadata, demonstrating dogfood proof from US-10.",
+  etype: "artifact-demo",
+  rationale: "the Fizzy card metadata and dogfood artifact are the visible proof that this session used the process on itself",
+  evidence: "This card will close the live session card 5604 through the produced ConOps, ledger, evidence, system_validation artifact, self-check, and MCP metadata read-back; final metadata is recorded after close.",
+  allows: "The keystone row: you approve that this very session proves the process on itself before any other session depends on it. Inherently forward-looking — the close completes only after your verdicts. Your pass is contingent approval; the gate still hard-fails if the close doesn't actually reach system_validation_complete true.",
+  caveat: "Forward-looking by construction ('will close'). The proof completes after your reply; final card metadata is recorded post-close. If the close errors out, this row's claim is unfulfilled regardless of your pass — the gate enforces that.",
+  flagged: true
+},
+{
+  id: "r-US11-1", us: "US-11", title: "Local self-check mirror — fail fast before any MCP call",
+  story: "As a conductor, I want a local self-check mirroring the gate's reject codes so that artifacts fail fast before any MCP call (dry-run/load symmetry).",
+  scenario: "The conductor runs local self-check on the exact emitted system_validation.json before making the MCP close call and records the clean envelope.",
+  oracle: "Jason passes this row iff self-check rejects no issues on the exact emitted artifact before the MCP call, demonstrating local mirror confidence from US-11.",
+  etype: "artifact-demo",
+  rationale: "the self-check envelope and artifact hash are the observable fail-fast evidence",
+  evidence: "self-check is run on the exact emitted system_validation.json before the MCP close call and its envelope plus artifact sha are recorded in dogfood-validation.md.",
+  allows: "You approve the dry-run/load symmetry guarantee: the exact artifact sent to the gate is locally validated against mirrored reject codes first, so MCP rejections should be near-impossible. The sequencing (self-check strictly before MCP call) is what your pass asserts.",
+  caveat: "Cites dogfood-validation.md for the recorded envelope — that file does not exist on disk, and self-check cannot have run yet (system_validation.json is only emitted after your verdicts). Present-tense evidence for a not-yet-executed step.",
+  flagged: true
+},
+{
+  id: "r-US12-1", us: "US-12", title: "Controlled refresh — no hindsight row rewrites, human-approved supersede only",
+  story: "As a conductor, I want a controlled scenario-refresh rule — refresh only before Jason's final judgment or after a HUMAN-APPROVED remediation/scope decision (an agent may never approve its own scope reduction); allowed/disallowed reasons enumerated; superseded rows kept in an audit section with reason/approver/timestamp/replacement-id.",
+  scenario: "The conductor confirms no dogfood row was refreshed for convenience and that any future scenario refresh would require the documented human-approved supersede path.",
+  oracle: "Jason passes this row iff the dogfood ledger shows no hidden row rewrite and the refresh rule is clear enough to prevent agent-approved scope reduction, demonstrating controlled refresh intent from US-12.",
+  etype: "narrative",
+  rationale: "the acceptance depends on audit clarity and human-control semantics rather than a generated artifact alone",
+  evidence: "No dogfood row has been superseded or refreshed for convenience; the ledger superseded list is empty and the docs require human-approved supersede-row for future changes.",
+  allows: "You confirm the anti-gaming property: the ledger's superseded list is empty (verifiable — it is, literally \"superseded\": []), no row was quietly rewritten to dodge a hard scenario, and future refreshes need your explicit approval with audit trail. Agents can never approve their own scope reduction.",
+  caveat: null, flagged: false
+},
+{
+  id: "r-US13-1", us: "US-13", title: "Evidence before digest — execution-backed, never narrative filler",
+  story: "As a conductor at Phase 8 (post-implementation), I want to EXECUTE each drafted scenario and compile the captured evidence into a per-row evidence artifact BEFORE digest assembly, so that the digest is backed by real execution data, never mock assumptions or narrative-only filler.",
+  scenario: "Before digest assembly, the conductor records evidence for every active row so the digest contains execution-backed summaries rather than unsupported narrative filler.",
+  oracle: "Jason passes this row iff every active row has an evidence file and evidence_summary before digest assembly, demonstrating evidence-before-digest intent from US-13.",
+  etype: "artifact-demo",
+  rationale: "the validation-evidence files and ledger evidence_summary fields show evidence was prepared before the digest",
+  evidence: "record-evidence has run for every active row before digest assembly, creating validation-evidence files and ledger evidence_summary fields for the digest.",
+  allows: "You approve the evidence-before-digest ordering. The sequencing claim is TRUE and hash-proven: all 14 evidence files were created 13:26:09–12, digest d-1 assembled 13:26:21, and the digest pins each evidence file's sha256. The weak spot is depth, not order — see caveat.",
+  caveat: "The strictest reading of US-13 ('compile the CAPTURED evidence into a per-row artifact') is only half-met: evidence files carry hash headers but empty bodies ('Attach evidence below this line'), so the execution data lives in one-line ledger summaries, not compiled artifacts. Ordering ✓, hash-pinning ✓, artifact depth ✗. This is the row where a fail or a demand for backfilled evidence bodies is most defensible.",
+  flagged: true
+}
+];
+
+const rowsEl = document.getElementById('rows');
+const verdicts = {}; // id -> {v: 'pass'|'fail'|'na', reason: ''}
+
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+ROWS.forEach(r => {
+  const card = document.createElement('div');
+  card.className = 'row-card v-none';
+  card.dataset.id = r.id; card.dataset.etype = r.etype; card.dataset.flagged = r.flagged;
+  card.innerHTML = `
+    <div class="row-head">
+      <span class="row-id">${r.id}</span>
+      <span class="row-title"><strong>${r.us}</strong> — ${esc(r.title)}</span>
+      ${r.flagged ? '<span class="tag flag">⚠</span>' : ''}
+      <span class="tag ${r.etype}">${r.etype === 'agent-walkthrough-transcript' ? 'transcript' : r.etype}</span>
+    </div>
+    <div class="row-body">
+      <div class="field"><div class="label">User story (${r.us})</div><div class="val" style="color:var(--dim); font-style:italic">${esc(r.story)}</div></div>
+      <div class="field"><div class="label">Scenario exercised</div><div class="val">${esc(r.scenario)}</div></div>
+      <div class="field"><div class="label">Your oracle — what "pass" means</div><div class="val oracle">${esc(r.oracle)}</div></div>
+      <div class="field"><div class="label">Evidence (${r.etype}) — ${esc(r.rationale)}</div><div class="val">${esc(r.evidence)}</div></div>
+      <div class="field"><div class="label">What passing allows / asserts</div><div class="val allows">${esc(r.allows)}</div></div>
+      ${r.caveat ? `<div class="field"><div class="label">⚠ Caveat</div><div class="val caveat">${esc(r.caveat)}</div></div>` : ''}
+      <div class="verdict-btns">
+        <button class="vbtn pass" data-v="pass">Pass</button>
+        <button class="vbtn fail" data-v="fail">Fail</button>
+        <button class="vbtn na" data-v="na">N-A</button>
+        <input class="reason-input" placeholder="reason / justification (required for fail & n-a)">
+      </div>
+    </div>`;
+  rowsEl.appendChild(card);
+
+  card.querySelector('.row-head').addEventListener('click', () => card.classList.toggle('open'));
+  const reasonInput = card.querySelector('.reason-input');
+  reasonInput.addEventListener('input', () => { if (verdicts[r.id]) verdicts[r.id].reason = reasonInput.value; updateBar(); });
+  card.querySelectorAll('.vbtn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const v = btn.dataset.v;
+      const already = verdicts[r.id] && verdicts[r.id].v === v;
+      card.querySelectorAll('.vbtn').forEach(b => b.classList.remove('sel'));
+      if (already) { delete verdicts[r.id]; card.className = 'row-card v-none' + (card.classList.contains('open') ? ' open' : ''); reasonInput.classList.remove('show'); }
+      else {
+        verdicts[r.id] = { v, reason: reasonInput.value };
+        btn.classList.add('sel');
+        card.className = 'row-card v-' + v + (card.classList.contains('open') ? ' open' : '');
+        reasonInput.classList.toggle('show', v !== 'pass');
+      }
+      updateBar();
+    });
+  });
+});
+
+// filters
+let activeFilter = 'all';
+document.querySelectorAll('#filters .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    activeFilter = chip.dataset.f;
+    document.querySelectorAll('#filters .chip').forEach(c => c.classList.toggle('on', c === chip));
+    applyFilter();
+  });
+});
+document.querySelector('#filters .chip[data-f="all"]').classList.add('on');
+function applyFilter() {
+  document.querySelectorAll('.row-card').forEach(c => {
+    let show = true;
+    if (activeFilter === 'flagged') show = c.dataset.flagged === 'true';
+    else if (activeFilter === 'unjudged') show = !verdicts[c.dataset.id];
+    else if (activeFilter !== 'all') show = c.dataset.etype === activeFilter;
+    c.style.display = show ? '' : 'none';
+  });
+}
+
+function updateBar() {
+  const n = ROWS.length;
+  let p = 0, f = 0, na = 0;
+  Object.values(verdicts).forEach(o => { if (o.v === 'pass') p++; else if (o.v === 'fail') f++; else na++; });
+  const u = n - p - f - na;
+  document.getElementById('counts').innerHTML =
+    `<span class="p">${p} pass</span> · <span class="f">${f} fail</span> · <span class="n">${na} n-a</span> · <span class="u">${u} unjudged</span>`;
+  const m = document.getElementById('meter');
+  m.children[0].style.width = (p/n*100) + '%';
+  m.children[1].style.width = (f/n*100) + '%';
+  m.children[2].style.width = (na/n*100) + '%';
+  if (activeFilter === 'unjudged') applyFilter();
+}
+
+document.getElementById('pass-all').addEventListener('click', () => {
+  ROWS.forEach(r => { verdicts[r.id] = { v: 'pass', reason: '' }; });
+  document.querySelectorAll('.row-card').forEach(c => {
+    c.querySelectorAll('.vbtn').forEach(b => b.classList.toggle('sel', b.dataset.v === 'pass'));
+    c.className = 'row-card v-pass' + (c.classList.contains('open') ? ' open' : '');
+    c.querySelector('.reason-input').classList.remove('show');
+  });
+  updateBar();
+});
+document.getElementById('clear-all').addEventListener('click', () => {
+  Object.keys(verdicts).forEach(k => delete verdicts[k]);
+  document.querySelectorAll('.row-card').forEach(c => {
+    c.querySelectorAll('.vbtn').forEach(b => b.classList.remove('sel'));
+    c.className = 'row-card v-none' + (c.classList.contains('open') ? ' open' : '');
+    c.querySelector('.reason-input').classList.remove('show');
+  });
+  document.getElementById('reply-out').classList.remove('show');
+  updateBar();
+});
+document.getElementById('gen-reply').addEventListener('click', () => {
+  const out = document.getElementById('reply-out');
+  const judged = ROWS.filter(r => verdicts[r.id]);
+  let text;
+  if (judged.length === ROWS.length && judged.every(r => verdicts[r.id].v === 'pass')) {
+    text = 'pass all';
+  } else {
+    text = ROWS.map(r => {
+      const o = verdicts[r.id];
+      if (!o) return null;
+      if (o.v === 'pass') return 'pass ' + r.id;
+      const tail = o.reason.trim() || '<' + (o.v === 'fail' ? 'reason required' : 'justification required') + '>';
+      return o.v + ' ' + r.id + ': ' + tail;
+    }).filter(Boolean).join('\n') || '(no verdicts selected)';
+  }
+  out.value = text;
+  out.classList.add('show');
+});
+document.getElementById('copy-reply').addEventListener('click', () => {
+  const out = document.getElementById('reply-out');
+  if (!out.classList.contains('show')) document.getElementById('gen-reply').click();
+  out.select(); document.execCommand('copy');
+});
+updateBar();
+</script>
+</body>
+</html>

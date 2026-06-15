@@ -240,7 +240,7 @@ validation issues/reprompt, 3 = environment/lock/corrupt.
 
 ```
 pipeline_mark_system_validation_complete(
-  card_id                  = SESSION_CARD_ID,
+  card_id                  = SYSTEM_NODE_CARD_ID,  # the system-altitude TASK node, NOT the session card
   session_id               = SESSION_ID,
   board_id                 = BOARD_ID,            # explicit, from projects.yaml
   validation_artifact_path = "<…>/system_validation.json",   # kind == "system-validation"
@@ -248,15 +248,31 @@ pipeline_mark_system_validation_complete(
 )
 ```
 
+> **`card_id` is the system NODE card, not the session card (hard contract, dogfood
+> 2026-06-14).** The gate's first precondition is `_task_belongs_to_session`, which
+> requires `card_type == "task"` AND `parent_session_id == SESSION_ID`. The session
+> card (the `fizzy_card_id` in the session detail file) has `card_type == "session"`,
+> so passing it **always** fails with `SESSION_MISMATCH` — it can never satisfy this
+> check. The correct target is the single task card with `altitude == "system"`
+> (`task_id "SYS"`, the schema-3 root node), discovered from the board, not from the
+> session detail file. Confirm via `get_card_metadata` that the chosen card has
+> `card_type == "task"`, `altitude == "system"`, and `parent_session_id == SESSION_ID`
+> before calling. (`system_validation_complete` lives on this node, and the
+> Finalization→Completed coverage gate reads it from the system node too.)
+
 Read-back the true state with `get_card_metadata` (`system_validation_complete: true`).
 A lost MCP response is resolved by reading metadata, never by re-emitting blindly (FM-8).
 
 **Close algorithm (single normative ordering — gauntlet DD-2; every step
 idempotent, re-entry starts at step 1):**
 
-1. **Preflight** `[conductor]`: read `board_id` (projects.yaml), `card_id` +
-   `session_id` (session detail file); `get_card_metadata` → verify session
-   match, `session_altitude == system`, pipeline v5+ obligation; if
+1. **Preflight** `[conductor]`: read `board_id` (projects.yaml) and `session_id`
+   (session detail file). Resolve the **system node card_id** — the task card with
+   `card_type == "task"` and `altitude == "system"` (`task_id "SYS"`) whose
+   `parent_session_id == session_id` — from the board (NOT the `fizzy_card_id` in the
+   session detail file, which is the session card and is the wrong target — see "The
+   MCP close call" above). `get_card_metadata` on that node → verify `card_type ==
+   task`, `parent_session_id` match, `altitude == system`, pipeline v5+ obligation; if
    `system_validation_complete` already true → skip to step 9. Verify clean
    worktree; verify `conops.md` and ledger exist; re-derive ConOps and
    compare hashes (OQ-3 RESOLVED: always re-derive at close entry) — story
@@ -330,7 +346,7 @@ two at the Finalization advance); the second is the module's local codes.
 
 | Gate reject | Conductor response |
 |---|---|
-| `SESSION_MISMATCH` | Should be unreachable post-preflight (close step 1 verifies ids); if hit, re-run preflight; never re-point at another session's card. |
+| `SESSION_MISMATCH` | **Almost always means the close targeted the session card instead of the system node** (`_task_belongs_to_session` requires `card_type == "task"` + `parent_session_id` match; the session card fails both). Retarget to the `altitude == "system"` task node (`task_id "SYS"`) per "The MCP close call". Only if already on the correct task node: re-run preflight; never re-point at another session's card. |
 | `VV_NOT_OBLIGATED_AT_ALTITUDE` | Card isn't system-altitude: investigate triage/altitude drift; do not force. |
 | `VALIDATION_KIND_MISMATCH` | Artifact `kind` wrong — regenerate via `emit-system-validation` (a hand-edited artifact is suspected). |
 | `VALIDATION_ARTIFACTS_INCOMPLETE` | Run `self-check`; fix reported issues (the gate may group several failures under this code — rely on local self-check granularity, not the gate's message). |

@@ -1,0 +1,18 @@
+🥊📜 VALIDATION DIGEST adv-spec-202606110339-validation-leg-process d-1 (14 rows, part 3/3)
+[11] r-US10-1 (US-10)
+  scenario: This session, card 5604, runs the validation leg on itself and reaches system_validation_complete true before the session is advanced to completion.
+  oracle: Jason passes this row iff card 5604 closes through the new validation process with real artifacts and metadata, demonstrating dogfood proof from US-10.
+  evidence: artifact-demo — This card will close the live session card 5604 through the produced ConOps, ledger, evidence, system_validation artifact, self-check, and MCP metadata read-back; final metadata is recorded after close. (file: validation-evidence/r-US10-1/evidence.md)
+[12] r-US11-1 (US-11)
+  scenario: The conductor runs local self-check on the exact emitted system_validation.json before making the MCP close call and records the clean envelope.
+  oracle: Jason passes this row iff self-check rejects no issues on the exact emitted artifact before the MCP call, demonstrating local mirror confidence from US-11.
+  evidence: artifact-demo — self-check is run on the exact emitted system_validation.json before the MCP close call and its envelope plus artifact sha are recorded in dogfood-validation.md. (file: validation-evidence/r-US11-1/evidence.md)
+[13] r-US12-1 (US-12) (narrative)
+  scenario: The conductor confirms no dogfood row was refreshed for convenience and that any future scenario refresh would require the documented human-approved supersede path.
+  oracle: Jason passes this row iff the dogfood ledger shows no hidden row rewrite and the refresh rule is clear enough to prevent agent-approved scope reduction, demonstrating controlled refresh intent from US-12.
+  evidence: narrative — No dogfood row has been superseded or refreshed for convenience; the ledger superseded list is empty and the docs require human-approved supersede-row for future changes. (file: validation-evidence/r-US12-1/evidence.md)
+[14] r-US13-1 (US-13)
+  scenario: Before digest assembly, the conductor records evidence for every active row so the digest contains execution-backed summaries rather than unsupported narrative filler.
+  oracle: Jason passes this row iff every active row has an evidence file and evidence_summary before digest assembly, demonstrating evidence-before-digest intent from US-13.
+  evidence: artifact-demo — record-evidence has run for every active row before digest assembly, creating validation-evidence files and ledger evidence_summary fields for the digest. (file: validation-evidence/r-US13-1/evidence.md)
+Reply per row ("pass r-US3-1", "fail r-US3-1: <reason>", "na r-US3-1: <why>") or pass everything ("pass all" / "those all look good"). "pass rest" passes whatever you didn't explicitly judge.

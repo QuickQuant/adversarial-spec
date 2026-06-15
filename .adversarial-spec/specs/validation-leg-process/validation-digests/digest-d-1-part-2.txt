@@ -1,0 +1,21 @@
+🥊📜 VALIDATION DIGEST adv-spec-202606110339-validation-leg-process d-1 (14 rows, part 2/3)
+[6] r-US5-1 (US-5)
+  scenario: The conductor assigns each row an evidence type from the approved taxonomy and adds a one-line rationale explaining why that evidence fits the scenario.
+  oracle: Jason passes this row iff each row has an approved evidence_type and a useful evidence_rationale matched to the scenario, demonstrating evidence taxonomy fit from US-5.
+  evidence: artifact-demo — Each row carries an approved evidence_type and non-empty evidence_rationale matched to the scenario; check-rows accepted the taxonomy fields. (file: validation-evidence/r-US5-1/evidence.md)
+[7] r-US6-1 (US-6)
+  scenario: The conductor assembles one digest batch containing scenario, oracle, evidence summary, and evidence file pointer for every active unjudged row, sized for mobile review.
+  oracle: Jason passes this row iff the digest is self-contained enough to judge the session from mobile without opening the repository, demonstrating one-interaction digest intent from US-6.
+  evidence: agent-walkthrough-transcript — The digest will include scenario, oracle, evidence summary, and evidence file pointer for each row, with assembled parts kept under the module byte budget for mobile review. (file: validation-evidence/r-US6-1/evidence.md)
+[8] r-US7-1 (US-7)
+  scenario: Jason replies to the dogfood digest using the documented row-id verdict grammar, and the conductor parses that reply into row judgments with provenance.
+  oracle: Jason passes this row iff the reply grammar is unambiguous enough for his verdicts to become the intended row judgments with provenance, demonstrating deterministic reply handling from US-7.
+  evidence: agent-walkthrough-transcript — The planned terminal reply uses explicit row-id verdict lines parsed by parse-reply with transcript provenance, producing per-row judgment blocks rather than ambiguous free text. (file: validation-evidence/r-US7-1/evidence.md)
+[9] r-US8-1 (US-8)
+  scenario: After all rows are judged, the conductor emits system_validation.json, runs self-check, calls the system-validation MCP close tool, and reads card metadata back.
+  oracle: Jason passes this row iff the close artifacts and metadata show a mechanical path from judged rows to system_validation_complete true with documented responses available for rejects, demonstrating close mechanics from US-8.
+  evidence: artifact-demo — Phase 8 docs identify emit-system-validation, self-check, pipeline_mark_system_validation_complete, get_card_metadata read-back, and the error-code playbook for close responses. (file: validation-evidence/r-US8-1/evidence.md)
+[10] r-US9-1 (US-9) (narrative)
+  scenario: The conductor reviews the Phase 8 fail path and dogfood status report, confirming that any failed row would create remediation work, reset the row after resolution, and block close until resolved.
+  oracle: Jason passes this row iff the documented remediation path is actionable enough that a failed validation row would block completion and route to fix work, demonstrating remediation-loop intent from US-9.
+  evidence: narrative — Phase 8 close routing sends failed rows to remediation and reset-failed before re-execution; no fail has occurred in this happy-path dogfood run so remediation count is zero. (file: validation-evidence/r-US9-1/evidence.md)
