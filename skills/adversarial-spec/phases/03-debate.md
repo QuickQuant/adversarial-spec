@@ -824,6 +824,15 @@ If the model was being lazy and now has critiques, continue the debate normally.
 
 After writing the revised spec to disk (Step 5 item 7) and BEFORE running checkpoint guardrails:
 
+**0. Morph gate-in (REQUIRED — `reference/morph-reconciliation.md`).** Before diffing tests,
+scan this round's accepted critiques for a **morph verb** (`delete`/`relocate`/`externalize`/
+`absorb`/`merge`/`split`/`reframe`) applied to a named capability. If any fired, a **user-story
+morph** may have occurred: a US whose center of gravity moved, leaving its spine test pointing
+at deleted behavior (grep-clean but semantically rotten). Run the morph-reconciliation procedure
+(migration ledger → fate classification → artifact reconcile → lineage record → `orphaned_spine`
+verify) for each affected capability before proceeding. The Step-5 `orphaned_spine` oracle below
+is the standing backstop if this gate-in is missed.
+
 **1. Diff the spec changes against tests-pseudo.md:**
 - For each spec section that changed in this round, check whether the corresponding test cases still assert the correct behavior
 - Pay special attention to: field names/schemas, formulas, API contracts, edge case rules, error codes

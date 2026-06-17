@@ -62,6 +62,17 @@ A problem a **debater** raises against a claim or test classification during deb
 (e.g., "promote this test to REAL-DATA"). Distinct from a *human correction point*
 (Gate V4), where the user overrides an LLM classification.
 
+**User-story morph** (`user-story morph`):
+A spec revision (debate critique, gauntlet fold, arch reconcile, lookup resolution,
+operator fork, cross-spec split) that **deletes / relocates / externalizes / absorbs /
+splits / reframes** a capability, moving a user story's center of gravity while its
+**anchor artifacts** (scope statement, coverage-map row, **happy-path spine test**) keep
+pointing at the old center. The leak is *semantic, not lexical* — the orphaned spine names
+the moved behavior, not any deleted identifier, so a plain grep misses it. Fates: `Intact`
+/ `Re-centered` / `Absorbed-Dissolved` / `Split`. The canonical resolution flow + the
+`orphaned_spine` TCOV oracle live in `reference/morph-reconciliation.md`.
+_Avoid_: "stale test" (that is a stale *field name*; a morph is a stale *subject*).
+
 ### Debate & Gauntlet
 
 **Debate**:

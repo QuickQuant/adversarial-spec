@@ -3,9 +3,9 @@
   "session_id": "adv-spec-202606110339-validation-leg-process",
   "context_name": "Validation-Leg Production Process",
   "current_phase": "implementation",
-  "current_step": "Phase 8 loop: 12 cards through gates this run (C-2-2/2-3/3-1/3-2/3-3/4-1/4-2/4-3/4-5/4-6 passed test or reviewed; C-5-1/C-5-2 implemented @ 9687818/7cb372b); suite 760 green; run-retrospective.html built; idle \u2014 C-5-1/C-5-2 await codex/gemini review, C-5-3 blocked on them",
+  "current_step": "C-5-3 dogfood V-close COMPLETE: all 14 rows judged-pass (Jason, terminal AskUserQuestion), emit+self-check clean (sha e40b07f8), pipeline_mark_system_validation_complete set system_validation_complete:true on SYS task node 5616 (NOT session card 5604). Wrong-card seam defect fixed in 08-implementation.md + explainer + process note. Committed+pushed b317eed.",
   "created_at": "2026-06-11T03:39:50Z",
-  "updated_at": "2026-06-12T08:22:10Z",
+  "updated_at": "2026-06-15T00:11:16Z",
   "checkpointed_cleanly": true,
   "session_altitude": "system",
   "session_altitude_source": "declared",
@@ -25,14 +25,19 @@
   },
   "todowrite_snapshot": [
     {
-      "content": "Phase 8: resume pipeline_do_next_task when C-5-1/C-5-2 reviews land",
-      "status": "in_progress",
-      "activeForm": "Running self-pickup loop"
+      "content": "C-5-3 dogfood validation-leg close (system_validation_complete on SYS node)",
+      "status": "completed",
+      "activeForm": "Closing out system validation"
     },
     {
-      "content": "C-5-3 dogfood close-out (blocked on C-5-1/C-5-2; manual-ux \u2014 may need Jason)",
+      "content": "Fix wrong-card-target seam defect (docs + explainer + process note), commit+push",
+      "status": "completed",
+      "activeForm": "Fixing close-target doc defect"
+    },
+    {
+      "content": "Decide/advance Finalization->Completed for the session (check SYS verification flags first)",
       "status": "pending",
-      "activeForm": "Closing out system validation"
+      "activeForm": "Advancing session to completed"
     },
     {
       "content": "Review orchestrate-next skill with Jason",
@@ -82,7 +87,8 @@
     "Scope approved: decomposition at ~18-25 nodes, schema-3 tree, multi-agent (Jason 2026-06-11)",
     "Stale Phase 4 handling: reconcile-in-place is the ruled default (Jason 2026-06-11)",
     "Persist decomposition to disk pre-approval (Step 3.5) \u2014 codified in 07-execution.md (Jason 2026-06-11)",
-    "Never pre-claim/batch card sets in handoffs; pipeline_do_next_task one card at a time is the only claim path (Jason 2026-06-12)"
+    "Never pre-claim/batch card sets in handoffs; pipeline_do_next_task one card at a time is the only claim path (Jason 2026-06-12)",
+    "system-validation close targets the system-altitude TASK node (task_id SYS), never the session card - gate _task_belongs_to_session requires card_type==task (dogfood 2026-06-14, fixed in 08-implementation.md)"
   ],
   "extended_state": {
     "context_inventory": {
@@ -141,9 +147,9 @@
       ]
     }
   },
-  "completed_work": "Detached-HEAD reconcile: codex's 6 commits + WIP merged to main hash-preserving, .mcp.json token scrubbed, incident note filed. Cards: C-4-4 review found active-row predicate gap (repro'd) and fix landed; C-2-3 fixture fix 6ddf719; C-2-2 normalize-rows AC-2 validation + schema stamping; C-3-2 assemble-digest delta batching/3500B split/secret lint; C-3-3 record-send all-sent flip + cancel audit + INV-16 gate; C-4-1 parse-reply full grammar (CB-9 ordering, FM-10, RC-4 idempotency, INV-A3 zero-mutation reprompt). 687 tests green, ruff clean.",
-  "next_action": "Reconnect fizzy MCP (/mcp), then: attest 9 steps + pipeline_complete_task card 5632 (C-4-1, commit cf50180, arch refs emission-toolchain+patterns), then resume pipeline_do_next_task loop (New Todo: C-3-1, C-4-2, C-4-3, C-4-6); 5 Review-lane cards need codex/gemini cross-review one card at a time",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606120620-phase8-six-cards-fizzy-disconnect.md",
+  "completed_work": "Validation-leg dogfood close ran end-to-end for the first time. Verdict pass-all recorded via parse-reply (terminal source, transcript reply-ref); digest d-1 sent to Telegram + record-send (batch closed); system_validation.json emitted, self-checked clean; MCP close succeeded on SYS node 5616 (14/14 stories, conops_ref_count 14, completed_at 2026-06-15T00:04:59Z); read-back confirmed system_validation_complete:true. Dogfood caught a real seam defect: close algorithm named SESSION_CARD_ID but fizzy _task_belongs_to_session requires card_type==task, so the session card returns SESSION_MISMATCH. Fixed forward (Jason ruled A): 08-implementation.md close-call block + preflight step1 + SESSION_MISMATCH playbook entry; validation-approval-explainer.html; issues/2026-06-14-system-validation-close-wrong-card-target.md. Committed b317eed, pushed.",
+  "next_action": "Decide whether to advance Finalization->Completed for the session. CAUTION: SYS node 5616 still shows system_verification_complete/component/subsystem flags = false (separate VERIFICATION obligations, distinct from the validation gate just closed) - check whether the advance gate requires them before advancing.",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606150011-phase8-c53-dogfood-close-complete.md",
   "status": "active",
   "journey": [
     {
@@ -254,6 +260,26 @@
     {
       "time": "2026-06-12T06:20:56Z",
       "event": "Checkpoint saved: phase8-six-cards-fizzy-disconnect.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-12T13:00:53Z",
+      "event": "Phase 8 loop: 12 cards through gates this run; C-5-1 (9687818) + C-5-2 (7cb372b) implemented and in Review; suite 760 green; run-retrospective.html built and committed (8aaee5e)",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-12T13:00:53Z",
+      "event": "Checkpoint saved: phase8-wave5-blocked-on-cross-review.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-15T00:11:16Z",
+      "event": "C-5-3 dogfood V-close COMPLETE: all 14 rows judged-pass (Jason, terminal AskUserQuestion), emit+self-check clean (sha e40b07f8), pipeline_mark_system_validation_complete set system_validation_complete:true on SYS task node 5616 (NOT session card 5604). Wrong-card seam defect fixed in 08-implementation.md + explainer + process note. Committed+pushed b317eed.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-15T00:11:16Z",
+      "event": "Checkpoint saved: phase8-c53-dogfood-close-complete.",
       "type": "checkpoint"
     }
   ],

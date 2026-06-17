@@ -61,6 +61,7 @@ Don't pre-load domain context. Load when needed:
 
 **Hooks enforce safety** — see `.claude/hooks/`.
 
+- **NO GLOBAL KILLS**: Never use `killall`, `pkill`, or broad `kill` patterns. Target specific PIDs from the current project only.
 - Read `.architecture/INDEX.md` first for navigation, then `primer.md` for context. Don't glob/grep when architecture docs exist.
 - Validate required fields before writes (fail-fast, no silent fallbacks)
 - Read official docs with Docmaster before integrating external APIs

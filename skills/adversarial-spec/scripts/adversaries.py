@@ -1319,9 +1319,11 @@ Check these specific categories:
 
 11. LOW-VALUE DUPLICATION: Many smoke tests cover the same trivial condition while a higher-risk contract has no falsifying test. This is a warning, not a blocker, unless it crowds out required tests.
 
+12. ORPHANED SPINE: A happy-path spine test (or any test) whose premise describes a behavior the CURRENT spec no longer has — because a revision deleted, relocated, absorbed, or reframed that capability (a "user-story morph"). The test still parses and may name no deleted identifier, yet it asserts a capability that moved out of its user story. This is the SEMANTIC counterpart to stale_test_assumption: not a stale field name, but a stale SUBJECT. For a spine test this is blocking — the user story has no valid primary-success test. Flag the morph and the user story; the fix is to re-center the spine on the surviving deliverable (see morph reconciliation).
+
 Output format — for each finding:
   TEST GAP: [brief title]
-  Category: missing_contract_test | weak_oracle | missing_parameter_causality | missing_formula_test | missing_negative_test | missing_ui_contract_test | missing_surface_coverage | stale_test_assumption | data_strategy_mismatch | missing_bva_state_decision | low_value_duplication
+  Category: missing_contract_test | weak_oracle | missing_parameter_causality | missing_formula_test | missing_negative_test | missing_ui_contract_test | missing_surface_coverage | stale_test_assumption | data_strategy_mismatch | missing_bva_state_decision | low_value_duplication | orphaned_spine
   Requirement / Contract: [user story, acceptance criterion, invariant, or canonical contract]
   Existing test coverage: [test IDs or "none"]
   Why insufficient: [what bug would still pass]

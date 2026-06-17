@@ -2,10 +2,10 @@
   "schema_version": "1.3",
   "active_session_id": "adv-spec-202606151042-liveness-gate-test-ladder",
   "context_name": "Liveness Gate + Test Ladder",
-  "current_phase": "execution",
-  "current_step": "Finalize complete (spec.md accepted, R12 convergence); positioned at Phase 7 entry — decomposition deferred to fresh context per 07-execution FIRST ACTION",
-  "next_action": "Phase 7 Step 9 FINAL: on operator go -> branch off main, commit (conops/validation-rows/plan/reconciled-artifacts), pipeline_load 22 cards (board 03fw5alxw15iqwh6hq15vfdsb), add concern-context comments -> Phase 8. Plan validated clean (v2, plan_hash 9dfb3d4e).",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606170354-phase7-entry-spec-finalized.md",
+  "current_phase": "implementation",
+  "current_step": "Phase 8: 22 task cards loaded (5736-5757), New Todo; concern-context comments posted; tested_by:llm fix applied to fizzy-plan.json (uncommitted)",
+  "next_action": "Phase 8 implementation on branch phase7/liveness-gate-test-ladder-execution-plan: pick up first card via pipeline_do_next_task (one at a time, never batch-claim; reviews before new work). Decide whether to commit the tested_by fizzy-plan.json fix.",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606170628-phase7-execution-plan-validated-held-for-load.md",
   "execution_plan_path": ".adversarial-spec/specs/liveness-gate-test-ladder/execution-plan.md",
   "spec_path": "specs/liveness-gate-test-ladder/spec.md",
   "do_not_ask": [
@@ -16,9 +16,10 @@
     "system-validation close targets the system-altitude TASK node (task_id SYS), never the session card - gate _task_belongs_to_session requires card_type==task (dogfood 2026-06-14)",
     "Trust-model reframe (SEC-1 Fizzy-side gate / DD-1 tmr-registry / SEC-2 Fizzy-card-ts fence / SEC-4 typed receipt) is LOCKED by R4 validation — do not re-debate it",
     "Never dispatch a claude critic from claude in debate/gauntlet; gemini substitute = gemini-3-flash (works after the agents.py -preview fix + restart); a flash 404 is registry/transient -> retry, never fall back to claude",
-    "Registry-unification (fizzy agents.py + skill providers.py) is PUNTED by Jason (no time) - do not start it unprompted"
+    "Registry-unification (fizzy agents.py + skill providers.py) is PUNTED by Jason (no time) - do not start it unprompted",
+    "v3 altitude-tree emission unavailable (session_altitude undeclared -> hard-gate risk); v2 flat is the correct grandfathered path - do not re-litigate emission schema"
   ],
-  "updated_at": "2026-06-17T04:40:00Z",
+  "updated_at": "2026-06-17T06:45:19Z",
   "active_session": "adv-spec-202606151042-liveness-gate-test-ladder",
   "active_session_file": ".adversarial-spec/sessions/adv-spec-202606151042-liveness-gate-test-ladder.json",
   "session_stack": [
@@ -54,7 +55,7 @@
     "adv-spec-202603201800-gauntlet-refactor-quota-burn",
     "adv-spec-202603051555-philosophy-phase-and-arch-persona"
   ],
-  "completed_work": "Resumed at R12 convergence and drove to finalized + handed-over. CANON-r4-1: architecture-invariants.json mirrored to v12 (INV-029 status-enum+array-supersedes+tombstoned_at, INV-024 outcome-only GateResult, INV-004 identity=tmr_uid), fingerprint recomputed. Advanced session FSM Debate→Pre-Gauntlet→Gauntlet→Reconciliation→Finalization; recorded gauntlet_complete (v8 snapshot 8695e8c1, 380 evals, 41 concern IDs) + reconciliation_complete (revised v12 d8deb79d, CONS PASS). Promoted tests-pseudo→tests-spec.md (15 US, 0 orphans, semantic-oracle classified). Finalized spec.md from v12 (stripped v1-v12 changelog header -125L, preserved §0-13 + keystone/fence notes; CONS re-verified). Attested all 5 finalize guardrails. Wrote cross-spec handover (fizzy repo HANDOVER-reconcile-v4-to-skill-v12.md): fizzy v4 is ~5 schema gens stale, missing v9-v12 deltas + the load-bearing gauntlet-entry F-prime gate; all reconciliation is fizzy-side + shared keystone refresh, no skill-spec change.",
+  "completed_work": "Decomposed finalized spec v12 into 22 tasks (Wave 0 + 5 feature waves, 6 workstreams); 24 gauntlet concerns dispositioned; 32/32 active invariants covered; Gates V1-V4 pass (0 exempt, 0 unmapped). Reconcile-in-place: target-arch + architecture-invariants -> v12 (INV-020/022/031 superseded, INV-001/030 revised), fingerprints recomputed (input 327f5f7a, arch fcd7c0d1), staleness PASS; roadmap manifest gap fixed. Validation leg: conops.md + 15 check-rows-clean rows (drafted_baseline 057b5c29). fizzy-plan.json v2 validated clean. All committed in 051b6ff.",
   "reset_at": "2026-05-30T19:08:15Z",
   "reset_reason": "Zombie pointer cleanup: prior active_session pointed at dispatch-cost-tracker (card 1851) which no longer exists on the now-empty Fizzy board. Parked sessions preserved above; their on-disk artifacts are committed."
 }

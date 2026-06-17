@@ -1,8 +1,8 @@
 {
   "session_id": "adv-spec-202606151042-liveness-gate-test-ladder",
   "context_name": "Liveness Gate + Test Ladder",
-  "current_phase": "execution",
-  "current_step": "Phase 7: fizzy-plan.json (v2, 22 tasks) EMITTED + pipeline_validate_plan CLEAN (valid:true, plan_hash 9dfb3d4e); HOLDING before pipeline_load + commit per operator",
+  "current_phase": "implementation",
+  "current_step": "Phase 8 entry: 22 task cards (5736-5757) loaded into board, all New Todo; 22 concern-context comments posted; ready for first pipeline_do_next_task pickup. fizzy-plan.json modified post-051b6ff to add tested_by:llm (load-blocking fix) — UNCOMMITTED.",
   "fizzy_card_id": "5715",
   "session_altitude": "system",
   "session_altitude_source": "declared",
@@ -12,20 +12,27 @@
   "spec_path": "specs/liveness-gate-test-ladder/spec.md",
   "roadmap_path": "specs/liveness-gate-test-ladder/roadmap/manifest.json",
   "execution_plan_path": ".adversarial-spec/specs/liveness-gate-test-ladder/execution-plan.md",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606170354-phase7-entry-spec-finalized.md",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606170628-phase7-execution-plan-validated-held-for-load.md",
   "todowrite_snapshot": [
     {
-      "content": "Finalize: CANON-r4-1 arch-invariants mirror + gauntlet_complete/reconciliation_complete gates + spec.md finalized (v12→clean) + tests-spec.md promoted + finalize guardrails attested",
-      "status": "completed"
-    },
-    {
-      "content": "Cross-spec reconciliation handover doc written to fizzy repo (HANDOVER-reconcile-v4-to-skill-v12.md) — seeds fizzy v5 round",
-      "status": "completed"
-    },
-    {
-      "content": "Phase 7 decomposition (07-execution.md) — START IN FRESH CONTEXT: create Phase-7 TodoWrite; Step 2.5 GATE = read EVERY .architecture/ doc before decomposing; inputs spec.md + gauntlet-concerns-2026-06-16.json + tests-spec.md + target-architecture.md (staleness reconcile-in-place) + middleware-candidates.json; SYSTEM-ALTITUDE validation leg before pipeline_load; persist decomp at Step 3.5",
+      "content": "pipeline_load validated fizzy-plan.json (v2, 22 tasks, plan_hash 9dfb3d4e) into board 03fw5alxw15iqwh6hq15vfdsb (Step 9)",
       "status": "pending",
-      "activeForm": "Running Phase 7 decomposition"
+      "activeForm": "Loading execution plan into Fizzy pipeline"
+    },
+    {
+      "content": "Add concern-context comments to all 22 cards (Step 10)",
+      "status": "pending",
+      "activeForm": "Adding concern-context comments to cards"
+    },
+    {
+      "content": "Advance execution -> implementation (Phase 8)",
+      "status": "pending",
+      "activeForm": "Advancing to implementation"
+    },
+    {
+      "content": "Process next pipeline task via pipeline_do_next_task",
+      "status": "pending",
+      "activeForm": "Processing next pipeline task"
     }
   ],
   "requirements_summary": {
@@ -199,11 +206,11 @@
     ]
   },
   "created_at": "2026-06-15T16:44:39Z",
-  "updated_at": "2026-06-17T04:40:00Z",
+  "updated_at": "2026-06-17T06:45:19Z",
   "tests_pseudo_path": "specs/liveness-gate-test-ladder/tests-pseudo.md",
   "schema_version": "1.4",
-  "completed_work": "Resumed at R12 convergence and drove to finalized + handed-over. CANON-r4-1: architecture-invariants.json mirrored to v12 (INV-029 status-enum+array-supersedes+tombstoned_at, INV-024 outcome-only GateResult, INV-004 identity=tmr_uid), fingerprint recomputed. Advanced session FSM Debate→Pre-Gauntlet→Gauntlet→Reconciliation→Finalization; recorded gauntlet_complete (v8 snapshot 8695e8c1, 380 evals, 41 concern IDs) + reconciliation_complete (revised v12 d8deb79d, CONS PASS). Promoted tests-pseudo→tests-spec.md (15 US, 0 orphans, semantic-oracle classified). Finalized spec.md from v12 (stripped v1-v12 changelog header -125L, preserved §0-13 + keystone/fence notes; CONS re-verified). Attested all 5 finalize guardrails. Wrote cross-spec handover (fizzy repo HANDOVER-reconcile-v4-to-skill-v12.md): fizzy v4 is ~5 schema gens stale, missing v9-v12 deltas + the load-bearing gauntlet-entry F-prime gate; all reconciliation is fizzy-side + shared keystone refresh, no skill-spec change.",
-  "next_action": "START PHASE 7 DECOMPOSITION (07-execution.md) IN A FRESH CONTEXT. FIRST: create Phase-7 TodoWrite. Step 2.5 is a GATE — read EVERY .architecture/ doc before decomposing. Inputs: spec.md (finalized), gauntlet-concerns-2026-06-16.json, tests-spec.md, target-architecture.md (staleness check vs spec fingerprint; reconcile-in-place is the ruled default), middleware-candidates.json (surface candidates; optional middleware-creator AFTER load). SYSTEM-ALTITUDE: run the validation leg (derive-conops→draft rows→normalize→check) before pipeline_load. Persist decomposition to disk at Step 3.5 pre-approval.",
+  "completed_work": "Decomposed finalized spec v12 into 22 tasks (Wave 0 + 5 feature waves, 6 workstreams); 24 gauntlet concerns dispositioned; 32/32 active invariants covered; Gates V1-V4 pass (0 exempt, 0 unmapped). Reconcile-in-place: target-arch + architecture-invariants -> v12 (INV-020/022/031 superseded, INV-001/030 revised), fingerprints recomputed (input 327f5f7a, arch fcd7c0d1), staleness PASS; roadmap manifest gap fixed. Validation leg: conops.md + 15 check-rows-clean rows (drafted_baseline 057b5c29). fizzy-plan.json v2 validated clean. All committed in 051b6ff.",
+  "next_action": "On branch phase7/liveness-gate-test-ladder-execution-plan: pipeline_load the already-validated fizzy-plan.json (plan_hash 9dfb3d4e) into board 03fw5alxw15iqwh6hq15vfdsb; add concern-context comments to all 22 cards (Step 10); advance execution->implementation (Phase 8).",
   "do_not_ask": [
     "Continue debate rounds until convergence without asking Jason unless absolutely necessary (directive 2026-06-11)",
     "Never pre-claim/batch card sets in handoffs; pipeline_do_next_task one card at a time is the only claim path (Jason 2026-06-12)",
@@ -212,7 +219,8 @@
     "system-validation close targets the system-altitude TASK node (task_id SYS), never the session card - gate _task_belongs_to_session requires card_type==task (dogfood 2026-06-14)",
     "Trust-model reframe (SEC-1 Fizzy-side gate / DD-1 tmr-registry / SEC-2 Fizzy-card-ts fence / SEC-4 typed receipt) is LOCKED by R4 validation — do not re-debate it",
     "Never dispatch a claude critic from claude in debate/gauntlet; gemini substitute = gemini-3-flash (works after the agents.py -preview fix + restart); a flash 404 is registry/transient -> retry, never fall back to claude",
-    "Registry-unification (fizzy agents.py + skill providers.py) is PUNTED by Jason (no time) - do not start it unprompted"
+    "Registry-unification (fizzy agents.py + skill providers.py) is PUNTED by Jason (no time) - do not start it unprompted",
+    "v3 altitude-tree emission unavailable (session_altitude undeclared -> hard-gate risk); v2 flat is the correct grandfathered path - do not re-litigate emission schema"
   ],
   "status": "active",
   "journey": [
@@ -354,6 +362,16 @@
     {
       "time": "2026-06-17T03:54:47Z",
       "event": "Checkpoint saved: phase7-entry-spec-finalized.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-17T06:28:05Z",
+      "event": "Phase 7 complete through Step 9 emission + system-altitude validation leg; fizzy-plan.json (v2, 22 tasks) validated CLEAN (plan_hash 9dfb3d4e); committed 051b6ff on branch phase7/liveness-gate-test-ladder-execution-plan; pipeline_load deferred to post-restart",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-17T06:28:05Z",
+      "event": "Checkpoint saved: phase7-execution-plan-validated-held-for-load.",
       "type": "checkpoint"
     }
   ],

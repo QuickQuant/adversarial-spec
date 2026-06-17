@@ -67,5 +67,46 @@
       "gemini-cli/gemini-3.1-pro-preview"
     ],
     "clustering_model": "jaccard-deterministic"
+  },
+  {
+    "timestamp": "2026-06-15T21:09:14.903910+00:00",
+    "spec_hash": "089eb93d",
+    "raw_concerns": 507,
+    "post_filter": 507,
+    "post_cluster": 507,
+    "cluster_deduped": 0,
+    "reduction_pct": 0.0,
+    "attack_models": [
+      "codex/gpt-5.5",
+      "gemini-cli/gemini-3.1-pro-preview"
+    ],
+    "clustering_model": "jaccard-deterministic"
+  },
+  {
+    "timestamp": "2026-06-16T14:18:34.257356+00:00",
+    "spec_hash": "8695e8c1",
+    "raw_concerns": 306,
+    "post_filter": 306,
+    "post_cluster": 306,
+    "cluster_deduped": 0,
+    "reduction_pct": 0.0,
+    "attack_models": [
+      "gemini/gemini-3.5-flash",
+      "codex/gpt-5.5"
+    ],
+    "clustering_model": "jaccard-deterministic"
+  },
+  {
+    "timestamp": "2026-06-16T15:14:31.335691+00:00",
+    "spec_hash": "8695e8c1",
+    "raw_concerns": 82,
+    "post_filter": 74,
+    "post_cluster": 74,
+    "cluster_deduped": 0,
+    "reduction_pct": 0.0,
+    "attack_models": [
+      "gemini-cli/gemini-3-flash-preview"
+    ],
+    "clustering_model": "jaccard-deterministic"
   }
 ]

@@ -37,19 +37,21 @@ MODE = CONFIG.get("deprecated_models_mode", CONFIG.get("mode", "flexible"))
 DEPRECATED_MODELS = {
     # OpenAI legacy models - replaced by gpt-5.x series
     "gpt-4o": "Use codex/gpt-5.2-codex-medium (free with ChatGPT subscription) or claude-sonnet-4-5",
-    "gpt-4o-mini": "Use codex/gpt-5.2-codex-medium (free) or gemini-cli/gemini-3.5-flash-preview (free)",
+    "gpt-4o-mini": "Use codex/gpt-5.2-codex-medium (free) or gemini-cli/gemini-3-flash-preview (free CLI flash)",
     "gpt-4-turbo": "Use codex/gpt-5.2-codex (free with ChatGPT subscription)",
     "gpt-4": "Use codex/gpt-5.2-codex (free with ChatGPT subscription)",
-    "gpt-3.5-turbo": "Use gemini-cli/gemini-3.5-flash-preview (free) or groq/llama-3.3-70b-versatile",
+    "gpt-3.5-turbo": "Use gemini-cli/gemini-3-flash-preview (free CLI flash) or groq/llama-3.3-70b-versatile",
     "o3-mini": "Use codex/gpt-5.2-codex-medium (free with ChatGPT subscription)",
     "o3": "Use codex/gpt-5.4 (current default for Codex CLI)",
 
-    # Old Gemini models — current: gemini-cli/gemini-3.1-pro-preview (heavy/reasoning),
-    # gemini-cli/gemini-3.5-flash-preview (lightweight). 2.5 Pro shares quota with
-    # 3.1 Pro (never use it); 3 Pro superseded by 3.1, 3 Flash by 3.5.
-    "gemini-pro": "Use gemini-cli/gemini-3.1-pro-preview (free) or gemini-cli/gemini-3.5-flash-preview (free)",
+    # Old Gemini models — current CLI (free, OAuth): gemini-cli/gemini-3.1-pro-preview (heavy/reasoning),
+    # gemini-cli/gemini-3-flash-preview (lightweight). 2.5 Pro shares quota with 3.1 Pro (never use it);
+    # 3 Pro superseded by 3.1. NOTE: gemini-3.5-flash (GA 2026-05-20) is API-ONLY — it is NOT on the
+    # gemini-cli OAuth tier (every 3.5 name 404s there). To use it: GEMINI_API_KEY + `gemini/gemini-3.5-flash`
+    # (free AI Studio tier, ~60 rpm). Verified 2026-06-16. (`gemini-3.5-flash-preview` was never a real id.)
+    "gemini-pro": "Use gemini-cli/gemini-3.1-pro-preview (free) or gemini-cli/gemini-3-flash-preview (free CLI flash)",
     "gemini-1.5-pro": "Use gemini-cli/gemini-3.1-pro-preview (free)",
-    "gemini-1.5-flash": "Use gemini-cli/gemini-3.5-flash-preview (free)",
+    "gemini-1.5-flash": "Use gemini-cli/gemini-3-flash-preview (free CLI flash); gemini-3.5-flash is API-only (gemini/gemini-3.5-flash + GEMINI_API_KEY)",
     "gemini-2.5-pro": "Use gemini-cli/gemini-3.1-pro-preview (free). WARNING: 2.5 Pro shares quota with 3.1 Pro",
     "gemini-3-pro-preview": "Use gemini-cli/gemini-3.1-pro-preview (free). 3 Pro superseded by 3.1 Pro",
 

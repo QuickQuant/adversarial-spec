@@ -309,6 +309,15 @@ After sizing is agreed, proceed to step 1 below.
 7. **Revise spec with accepted concerns.**
    - Add mitigations for accepted concerns
    - Update relevant sections (don't summarize or reduce existing content)
+   - **Morph gate-in (REQUIRED — `reference/morph-reconciliation.md`).** Any accepted concern
+     whose fix **deletes, relocates, externalizes, absorbs, splits, or reframes** a named
+     capability can morph a user story — moving its center of gravity while leaving its spine
+     test, scope statement, and coverage-map row pointing at the old (now-deleted) behavior. A
+     plain grep for the deleted identifier will NOT catch this (the orphaned spine names the
+     behavior, not the dead symbol). Run the morph-reconciliation procedure (migration ledger →
+     fate classification → artifact reconcile → lineage record → `orphaned_spine` verify) for
+     each such fix before saving the revision. *(Canonical incident: `DR-5` deleted
+     `TestInputCollector` and orphaned US-7's spine `TC-7.0`.)*
    - Save the full concern report as `gauntlet-concerns-YYYY-MM-DD.json`
    - **Run checkpoint guardrails after incorporating the batch of fixes.** CONS is always required because gauntlet fix incorporation can introduce cross-section contradictions. Run CANON if any accepted concern changes named types/enums, formulas, parameter causality, payload meanings, UI/display claims, or active-vs-legacy classifications. Run TCOV if any accepted concern adds, removes, weakens, or relies on tests-pseudo/tests-spec. SCOPE and TRACE are not normally needed here because gauntlet fixes are evaluated by Claude, not automated scope additions; run them only if a fix expands user-visible scope or changes requirement coverage.
    - If CONS finds issues, fix and re-run (max 2 attempts, then defer to user)

@@ -34,6 +34,10 @@ MODEL_COSTS = {
     # Google models
     "gemini/gemini-3-pro": {"input": 1.25, "output": 5.00},
     "gemini/gemini-3-flash": {"input": 0.075, "output": 0.30},
+    # Gemini 3.5 Flash (GA at Google I/O 2026-05-20; API id `gemini-3.5-flash`, stable).
+    # API-only — NOT on the gemini-cli OAuth/Code-Assist tier (every 3.5 name 404s there).
+    # Free via an AI Studio GEMINI_API_KEY (reduced quota, ~60 rpm); list price below.
+    "gemini/gemini-3.5-flash": {"input": 1.50, "output": 9.00},
     # Other providers
     "xai/grok-3": {"input": 3.00, "output": 15.00},
     "mistral/mistral-large": {"input": 2.00, "output": 6.00},
@@ -295,7 +299,7 @@ def list_providers():
             "ANTHROPIC_API_KEY",
             "claude-opus-4-7, claude-sonnet-4-6",
         ),
-        ("Google", "GEMINI_API_KEY", "gemini/gemini-3-pro, gemini/gemini-3-flash"),
+        ("Google", "GEMINI_API_KEY", "gemini/gemini-3-pro, gemini/gemini-3.5-flash, gemini/gemini-3-flash"),
         ("xAI", "XAI_API_KEY", "xai/grok-3, xai/grok-beta"),
         ("Mistral", "MISTRAL_API_KEY", "mistral/mistral-large, mistral/codestral"),
         ("Groq", "GROQ_API_KEY", "groq/llama-3.3-70b-versatile"),
@@ -390,7 +394,7 @@ def get_available_providers() -> list[tuple[str, Optional[str], str]]:
     providers = [
         # Note: OpenAI direct API deprecated in favor of Codex CLI (free with ChatGPT subscription)
         ("Anthropic", "ANTHROPIC_API_KEY", "claude-opus-4-7"),
-        ("Google", "GEMINI_API_KEY", "gemini/gemini-3-flash"),
+        ("Google", "GEMINI_API_KEY", "gemini/gemini-3.5-flash"),
         ("xAI", "XAI_API_KEY", "xai/grok-3"),
         ("Mistral", "MISTRAL_API_KEY", "mistral/mistral-large"),
         ("Groq", "GROQ_API_KEY", "groq/llama-3.3-70b-versatile"),
