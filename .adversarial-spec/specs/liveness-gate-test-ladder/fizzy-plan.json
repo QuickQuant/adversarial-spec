@@ -59,7 +59,8 @@
         "live_or_induced accepts JSON null XOR {kind,detail?} non-null kind; {kind:null}/{\"kind\":\"null\"}/{kind:'other'}(no detail) rejected",
         "drift lint fails-first and names an unallowlisted copy, never rm; generated-from:<sha256> allowlists derived artifacts",
         "known-bad payload (unknown field + bad enum) rejected with a named error (contract test)"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W0-2",
@@ -114,7 +115,8 @@
         "duplicate JSON keys detected via dup-preserving parse",
         "string 'null' where JSON null is meant is rejected",
         "grep confirms single TMR reader"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W0-3",
@@ -160,7 +162,8 @@
         "one outcome->exit fn: pass 0, block 2, schema_error 3, orch_error 4, setup_error 5; warn exits 0 with findings",
         "outcome is the only normative outcome field (no result on envelope)",
         "schema_error/setup_error NOT override_eligible; coverage block is"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W0-4",
@@ -209,7 +212,8 @@
         "tombstoned records inert (never counted)",
         "also_covers[] does NOT satisfy a secondary US",
         "negative oracle: zero/two designations -> block not pass"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W0-5",
@@ -270,7 +274,8 @@
         "rename keeps tmr_uid (rename event); replace/split/merge tombstones + sets supersedes[]; tombstoned no longer satisfies F'",
         "per-subject replay reads an index, not a full scan",
         "plain-text decisions.log decision_id joins to an override-driven journal record's driver (DR-10)"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W0-6",
@@ -319,7 +324,8 @@
         "only this component reads architecture_link; consumers read normalized critical_seam, reject unclassified record",
         "criticality_unknown on system altitude -> critical; explicit-vs-architecture disagreement -> critical + blocking finding",
         "negative oracle: unclassified record -> consumer REJECTS, never derives"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W1-1",
@@ -383,7 +389,8 @@
         "output JSON matches canonical GateResult envelope; outcome is the only outcome field",
         "gauntlet-check is a real console_script in pyproject [project.scripts]",
         "override --accept-missing-spine + --spine-override-reason (non-empty, no min length) -> decisions.log"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W1-2",
@@ -431,7 +438,8 @@
         "same missing-spine fixture: exit 2 for gauntlet, warn for critique",
         "F' runs as a sibling gate (no regression to pipeline-card/staleness gates)",
         "--accept-missing-spine + reason -> decisions.log; --accept-tests-stale does not bypass F'"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W1-3",
@@ -483,7 +491,8 @@
         "outcome flips on immutable created_at vs fence_cutover_ts, NOT the editable marker",
         "numeric comparator tmr.v10 > tmr.v2; malformed -> version_fence_error fail-closed post-fence",
         "timestamp unfetchable -> fail-closed post-fence + version_fence_error"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W1-4",
@@ -534,7 +543,8 @@
         "pending file non-empty -> phase-advance REFUSED; kill+restart re-surfaces the conflict",
         "conflict detection on typed transition (cross-field); headless precedence records {decision_id,resolution,precedence_rule,winning/losing_transition}",
         "negative oracle: non-empty pending file -> advance REFUSED, survives restart"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W1-5",
@@ -582,7 +592,8 @@
         "golden_cases/manifest.json schema: stable IDs, fixtures, expected findings, negatives, model+settings, threshold, content hashes",
         "every task verification_mode in VALID_VERIFICATION_MODES; golden-eval rejected; code-seam + exempt mode -> flagged",
         "judgment gates 'complete' only when their cases live in the manifest"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W2-1",
@@ -644,7 +655,8 @@
         "one subagent fails -> synthetic ORCH; round does NOT complete green on gauntlet (4/5 != pass)",
         "transient 429/timeout retried with bounded backoff before ORCH (no self-DoS)",
         "join keys scoped to TMR-changing findings; spec/contract findings journaled only if they change a TMR/node field"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W2-2",
@@ -693,7 +705,8 @@
         "US with prose but no spine -> ORPHANED",
         "non-spine missing edge test -> NOT flagged (TC-6.1 false-positive guard)",
         "uses SpineCoverageChecker (no re-implemented coverage logic)"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W2-3",
@@ -751,7 +764,8 @@
         "criticality_unknown on system altitude -> treated critical (consumes CriticalityClassifier, no re-derivation)",
         "promoter requires >=1 named accessor (empty accessors does NOT auto-promote)",
         "coverage is a metadata diff (no test-source ingestion; no TestInputCollector)"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W2-4",
@@ -804,7 +818,8 @@
         "MOCK is sole evidence ONLY when live_or_induced null AND no technique exists; naming a technique -> promote (TC-3.1)",
         "critical seam + non-REAL data_strategy with empty why_impossible_to_reproduce_live -> reject/promote (TC-3.2; not just literal MOCK)",
         "justified MOCK carries non-empty technical_constraint; scale/cost/time excuses rejected (TC-3.0 asserts BOTH why_impossible AND technical_constraint)"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W3-1",
@@ -856,7 +871,8 @@
         "authoring lint confirms exactly one spine per US (consumes SpineCoverageChecker)",
         "maturity ladder documented; acceptance has executable meaning without the facade; nl all-named-accessors -> PROMOTE (>=1 accessor)",
         "a live scoped skill run on a 2-US fixture produces exactly one spine per US (TC-2.2)"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W3-2",
@@ -913,7 +929,8 @@
         "prose-view regenerated; echo-diff surfaced as explicit semantic diff; human confirm gate",
         "a prose rename (TC-0 -> TC-8.0) diffs on tmr_uid -> rename event, not delete+add",
         "compile cite-resolves accessor symbols; echo+confirm backstop"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W4-1",
@@ -971,7 +988,8 @@
         "skill-runner RUNS the test + captures the tier receipt; never trusts hand-written result; mock-detection lint flags a boundary mock",
         "env->real-pass matrix enforced (dev/ci needs recorded technique for a critical seam; null -> not a real pass)",
         "negative oracle: close passing on null run_evidence must FAIL"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W4-3",
@@ -1018,7 +1036,8 @@
         "altitude_fit:right counts correct; altitude_fit:too_low on a stable node -> NOT counted correct",
         "node journal records created @ depth-triage with initial altitude + rationale",
         "meta-analysis queries (distribution, subsystem precision) answer over subject_type:node"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W5-1",
@@ -1058,7 +1077,8 @@
       "exemption_reason": null,
       "acceptance_criteria": [
         "happy-path spine, TMR, maturity ladder, liveness defined; 'happy-path spine' always qualified in PROSE (never bare 'spine'); machine tokens exempt; ADR records the decision + two-spec split"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W5-2",
@@ -1103,7 +1123,8 @@
       "acceptance_criteria": [
         "following the documented bootstrap reaches exit 0 on full-coverage fixture AND exit 2 naming the uncovered story on missing-spine fixture, without reading the implementation (TC-15.0)",
         "docs state symlink (edits live, no copy); no AFFIRMATIVE cp -r ... ~/.claude/skills instruction (negative warning allowed)"
-      ]
+      ],
+      "tested_by": "llm"
     },
     {
       "task_id": "W5-3",
@@ -1150,7 +1171,8 @@
         "all 15 spine tests have an active, spine:true registry record (compiled, TmrParser-valid)",
         "F' checker returns pass (exit 0) against the dogfood registry + roadmap manifest",
         "prose view regenerated; echo-diff clean"
-      ]
+      ],
+      "tested_by": "llm"
     }
   ]
 }

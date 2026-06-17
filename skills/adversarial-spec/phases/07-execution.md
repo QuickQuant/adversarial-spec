@@ -974,6 +974,7 @@ The JSON must follow the v2 pipeline schema. The root includes `plan_schema_vers
       "wave": 0,
       "effort": "M",
       "strategy": "test-first",
+      "tested_by": "llm",
       "depends_on": [],
       "concern_refs": ["PARA-abc", "BURN-def"],
       "invariant_refs": ["INV-3", "INV-7"],
@@ -1004,6 +1005,7 @@ The JSON must follow the v2 pipeline schema. The root includes `plan_schema_vers
       "wave": 1,
       "effort": "S",
       "strategy": "test-after",
+      "tested_by": "llm",
       "depends_on": ["T1"],
       "concern_refs": [],
       "invariant_refs": [],
@@ -1035,6 +1037,7 @@ Core fields (unchanged from v1):
 - `wave`: Wave number from the plan
 - `effort`: S / M / L
 - `strategy` (the **Test Strategy** field on the wire — the JSON key stays `strategy` per ADR `0001`): the generator emits test-first / test-after / spike. fizzy's full enum is `VALID_STRATEGIES = {test-first, test-after, spike, refactor}` (`pipeline.py:164`) — `refactor` is valid to fizzy but Step 4 never assigns it. Use `spike` for deferred / doc-only / config-only / manual-only tasks that commit to **no automated tests** — never emit `"skip"` (not in the enum; fizzy rejects it at load: `PLAN_INVALID "invalid strategy"`). `strategy` is decoupled from the v2 verification gate (`_validate_v2_task` never reads it), so these tasks still verify independently via an EXEMPT `verification_mode` + `exemption_reason`.
+- `tested_by` (**REQUIRED per task on v2+ sessions** — fizzy `VALID_TESTED_BY = {llm, user, both}`, PR 4d): declares who is qualified to verify the task. `llm` for fully automated tests (pytest / golden-corpus / doc-lint / system-validation runs the agent can execute and judge) — the default, and correct for almost every task here. `user` when only the human can verify (manual UX sign-off with no automatable oracle). `both` when an automated pass AND a human attestation are both required before the card leaves Untested. **`load_plan` hard-rejects a v2+ plan missing this field** (`MISSING_OR_INVALID_TESTED_BY`) even though the field has a card-runtime default of `llm` — so always emit it explicitly.
 - `depends_on`: List of task_ids this task depends on (from dependency graph)
 - `concern_refs`: List of gauntlet concern IDs linked to this task
 - `invariant_refs`, `surface_scope`: Populated when Phase 4 ran (see Step 3)
@@ -1053,11 +1056,17 @@ Verification block fields (v2, see Verification Schema reference above for full 
 
 **Validate before loading (authoritative pre-load gate):** Run the **real** fizzy
 validator and loop until clean — do NOT call `pipeline_load` on an unvalidated
-plan. `validate_plan` and `load_plan` both call fizzy's `_validate_plan`, so the
-dry-run rejects exactly what the load would reject, but at zero cost and with
-structured issues you can fix. This is the #11/#12 lesson: **call the
+plan. `validate_plan` re-runs the same `_validate_plan` shape checks plus the v2
+architecture-refs and (as of the parity fix) the v2 `tested_by` gate that
+`load_plan` enforces, so the dry-run rejects what the load would reject, at zero
+cost and with structured issues you can fix. This is the #11/#12 lesson: **call the
 authoritative gate, never reimplement it locally** — a local revalidation once
-"passed" while the real validator rejected the plan.
+"passed" while the real validator rejected the plan. **Caveat (verified 2026-06-17):**
+a clean `validate_plan` is necessary, not a categorical guarantee — the `tested_by`
+gate originally lived in `load_plan` only and the dry-run missed it (fixed in
+fizzy's `validate_plan`). If a future `load_plan` rejects a plan the dry-run passed,
+that is a fizzy validate/load divergence to file, not a plan-content problem to
+guess around.
 
 ```
 loop:
@@ -1071,6 +1080,8 @@ loop:
     PLAN_INVALID "invalid strategy"            → map deferred / manual-only tasks
                                                   to `spike`, never `"skip"` (#12)
     "at least 1 acceptance criterion required" → emit acceptance_criteria (#11)
+    missing_tested_by / invalid_tested_by      → emit `tested_by` per task
+                                                  (llm | user | both; default llm)
 ```
 
 `_validate_plan` raises on the **first** failing task, so one fix can unmask the
