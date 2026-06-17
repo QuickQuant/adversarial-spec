@@ -1,0 +1,28 @@
+# Lookup Log — Liveness Gate + Test Ladder
+
+> Running register of open questions / assumptions / hedges in the draft that are RESOLVABLE BY
+> LOOKUP (code read, docs, web, config, or one-line question to Jason) rather than by debate.
+> Resolve every entry whose lookup costs less than a debate round before dispatching opponents,
+> and pass this file as `--context` so opponents stop re-raising resolved items.
+> (03-debate.md Step 4 item 0.)
+
+| # | Item (draft ref) | Lookup method | Status |
+|---|------------------|---------------|--------|
+| L1 | F′ parse: how a `tests-pseudo` row declares its US + spine tag; how the gate enumerates roadmap US (§6, §12.3) | roadmap/manifest.json + tests-pseudo.md (on disk) | **RESOLVED 2026-06-15:** manifest enumerates US via `milestones[].user_stories[].id` (+ a `.tests:[TC-x.y]` list); tests-pseudo.md is **markdown** with `## US-X` section headers and `### TC-x.y: … [spine]` heading markers (the `[spine]` text token, NOT a structured `spine:true` field — the keystone JSON field maps to this markdown marker). F′ enumerates US from the manifest, then per US scans tests-pseudo for a `[spine]`-marked TC in that US section + reads its maturity annotation. **Markdown-parse vs structured coupling is a debate design point** (carry to R2). |
+| L2 | Current `03-debate.md` guardrail invocation contract being replaced by K (§5.1, §12.2) | phases/03-debate.md | **RESOLVED 2026-06-15:** current contract = Step 3.5 (assemble `--context`) + "Checkpoint Guardrails / Invocation contract" (read persona from adversaries.py → assemble payload per guardrail → `debate.py critique --system-prompt` OR inline). K replaces this with parallel-subagent dispatch + structured aggregation. |
+| L3 | Existing `enforce_pipeline_card_gate()` + tests-pseudo staleness gate shape F′ siblings (§6) | scripts/debate.py:1351 | **RESOLVED 2026-06-15:** gate runs in `main()` @:1504, guarded by `round_actions={"critique","gauntlet"}` (non-round subcommands bypass); walks up for session-state.json, reads pointer+detail for `fizzy_card_id`/`tests_pseudo_path`/`spec_path`; staleness step compares spec vs tests **mtime** → exit 2 unless `--accept-tests-stale`; logs overrides to `sessions/<id>.decisions.log`. **Two refinements:** (a) current `--accept-tests-stale` is a **bare logged flag — no ≥50-char reason**; only `IntentionalOverride` requires the 50-char reason. F′'s "logged ≥50-char reason" is therefore **stricter** → spec a new `--accept-missing-spine --spine-override-reason '<≥50 chars>'` (mirror IntentionalOverride's reason check). (b) the existing gate applies **uniformly** to critique+gauntlet; F′ must **branch on `args.action`** (block on `gauntlet`, warn on `critique`). Folded into §6. |
+| L4 | `verification_mode`/scope/altitude/tested_by exact members (§3.1, §9) | fizzy pipeline.py:167–224 | **RESOLVED 2026-06-15 — exact match to keystone:** `VALID_VERIFICATION_MODES` = the 9 members; `AUTOMATED_MODES`={automated-unit/-integration/-contract/-component, test-producer}; `EXEMPT_MODES`={artifact-sync, static-check, manual-ux}; **`system-validation` is its own category (NOT automated, NOT exempt)**; `VALID_VERIFICATION_SCOPES`/`VALID_ALTITUDES`/`VALID_TESTED_BY`/`VALID_BASELINE_RESULTS` all match. §9's "code seam may not be exempt" = not in `EXEMPT_MODES`. |
+| L5 | Adversary lines to edit for strict MOCK + the guardrail registry (§4.3, §5) | scripts/adversaries.py | **RESOLVED 2026-06-15:** MOCK-falsification directive sites = PEDA :157–158, BURN :301–306, AUDT :662–664; `REQUIREMENTS_TRACER` @:1174; `TEST_COVERAGE_AUDITOR` @:1284 (`data_strategy_mismatch` = its category #9 @:1316); `GUARDRAILS` dict @:1346 (5 entries). Confirmed targets for B/C/D edits. |
+| L6 | Deploy reality for Getting Started (§2): symlink, no copy step | CLAUDE.md + memory | **RESOLVED 2026-06-15** [[skill-deploy-is-symlink]]: symlink; edits live; no `cp -r`. |
+| L7 | "M-4b test-lineage gate" existence (§1 reality check) | memory + fizzy code | **RESOLVED 2026-06-15** [[m4b-test-lineage-gate-is-phantom]]: phantom; fizzy must BUILD, not extend. |
+
+## Genuinely-debate / human-decision (NOT lookup-resolvable)
+- §12.1 per-guardrail Piece-2 taxonomy refinement — design judgment (R2).
+- §12.2 parallel-subagent dispatch replacing inline/critique flow in `03-debate.md` — orchestration design (R2).
+- §12.3 F′ markdown-parse vs structured spine-tag coupling — design (R2; see L1).
+- **§12.9 (NEW) F′ placement under the pipeline-card fence** — dispatch goes through Fizzy tools, not standalone `debate.py`, so `enforce_pipeline_card_gate` (standalone path) may not be the real gauntlet-entry chokepoint. Does F′ also need to gate the Fizzy gauntlet-entry transition (skill-side pre-check before `pipeline_advance`/gauntlet dispatch)? — design (R2).
+- §12.4 version-fence mechanism shape — cross-spec coordination decision (Jason / fizzy spec).
+- §12.6 golden-eval corpus location + count — Jason.
+- §12.7 schema-constants handshake (which repo first) — Jason / cross-session.
+- §12.8 concept-accessor façade ownership — Jason (assign; out of skill scope).
+- **R4 (THIS round, post-gauntlet, Jason-approved 2026-06-16):** validating the v4 trust-model reframe — SEC-1 (Fizzy-side mechanical gate calling the skill's F′ checker) / DD-1 (`tmr-registry.json` system of record) / SEC-2 (`created_at` fence) / SEC-4 (typed run_evidence). These REVERSE the R2 skill-side-PRIMARY decision: design judgment, not lookup-resolvable. Critics briefed via `begin_debate_round` `domain_context` (no `--context` channel in the pipeline dispatch tool). L1–L7 + CB-1..7 carried as "already resolved, do not re-raise."

@@ -1,0 +1,302 @@
+{
+  "schema_version": "1.0",
+  "session_id": "adv-spec-202606151042-liveness-gate-test-ladder",
+  "fizzy_card_id": "5715",
+  "title": "Liveness Gate + Test Ladder (adversarial-spec slice)",
+  "altitude": "system",
+  "complexity": "complex",
+  "tests_pseudo_path": "specs/liveness-gate-test-ladder/tests-pseudo.md",
+  "roadmap_doc": "specs/liveness-gate-test-ladder/roadmap/roadmap.md",
+  "goals": [
+    "Make it impossible to reach the gauntlet without a phase-appropriate happy-path spine test for every user story.",
+    "Force every MOCK to name the live/induced technique or be promoted to REAL-DATA.",
+    "Give the five guardrails structured, persisted, test/US-keyed output.",
+    "Provide a durable decision provenance journal (test-maturity + altitude-triage).",
+    "Define a shared TMR schema contract with fizzy, schema-first.",
+    "Classify every deliverable by verification tier; apply the this-project liveness interpretation.",
+    "Version-fence the new gates so in-flight sessions are unaffected."
+  ],
+  "non_goals": [
+    "Fizzy-side persistence/enforcement (separate coordinated fizzy spec).",
+    "Concept-accessor facade / bindings / fail-closed lint (target-repo + its CI).",
+    "Dogfooding these changes on this session (run on current skill version).",
+    "Sessions stats dashboard (deferred, forward-only, separate trigger).",
+    "Backfilling provenance for past sessions.",
+    "prediction-prime live-fill (Track A) and fault-injection infra (B6)."
+  ],
+  "dependencies": [
+    "M1 (TMR schema) is the keystone: M2, M4, M5 + the fizzy spec all key on it. Land first.",
+    "M3 (structured guardrails) is the prerequisite for M5's test-journey records.",
+    "M4 (F') depends on M2 (spine/maturity fields).",
+    "M6 depends on M1 + M2. M7 runs alongside throughout."
+  ],
+  "roadmap_debate": {
+    "round": 1,
+    "models": [
+      "codex/gpt-5.5",
+      "gemini-cli/gemini-3.1-pro-preview"
+    ],
+    "applied": [
+      "R1: US-8 gauntlet-only blocking, advisory on critique",
+      "R2: added Getting Started/bootstrap (US-15)",
+      "R3: liveness_contract_version marker"
+    ],
+    "carried_to_phase3": [
+      "guardrail-finding contract",
+      "error-code taxonomy",
+      "path-safety/security",
+      "perf/observability",
+      "codex full spec draft as seed"
+    ],
+    "rejected": [
+      "codex 'cp -r' deploy step (deployed skill is a symlink)"
+    ],
+    "critiques_path": ".adversarial-spec-checkpoints/adv-spec-202606151042-liveness-gate-test-ladder-round-1-critiques.json"
+  },
+  "user_stories": [
+    {
+      "id": "US-15",
+      "story": "As an operator, I want a documented first-run path so I can bootstrap the liveness gate + test ladder and verify a gate locally in minutes.",
+      "criteria": [
+        "First-run path documented: start post-fence session -> author one [spine]/US -> run authoring lint -> debate -> attempt gauntlet entry (pass or exit 2).",
+        "A new operator can run F' against a fixture (full-coverage->pass; missing-spine->exit 2) without reading the implementation.",
+        "Deploy reality stated: ~/.claude/skills/adversarial-spec is a symlink (edits live, no copy); no cp -r prescribed."
+      ],
+      "tests": [
+        "TC-15.0",
+        "TC-15.1"
+      ]
+    },
+    {
+      "id": "US-1",
+      "story": "As a spec author and fizzy, I want one agreed TMR field set + enums so the skill's emission and fizzy's validation never drift.",
+      "criteria": [
+        "Schema doc enumerates every field + enum member, marked skill-owned / fizzy-owned / new.",
+        "Both repos reference the same source of truth; a field/enum mismatch is detectable, not silent.",
+        "The handshake (which repo lands the constants first) is decided."
+      ],
+      "tests": [
+        "TC-1.0",
+        "TC-1.1"
+      ]
+    },
+    {
+      "id": "US-2",
+      "story": "As a spec author, I want exactly one happy-path spine (TC-0) per user story with named steps, and every failure test anchored to a spine step.",
+      "criteria": [
+        "One spine per US; failure tests carry spine_step_ref; an unanchored failure test is rejected at authoring."
+      ],
+      "tests": [
+        "TC-2.0",
+        "TC-2.1",
+        "TC-2.2"
+      ]
+    },
+    {
+      "id": "US-3",
+      "story": "As a spec author, I want every MOCK to name the live/induced technique (or be promoted to REAL-DATA).",
+      "criteria": [
+        "A MOCK without a named technique (and no genuine impossibility) is flagged; valid techniques enumerated; promotion path clear."
+      ],
+      "tests": [
+        "TC-3.0",
+        "TC-3.1"
+      ]
+    },
+    {
+      "id": "US-4",
+      "story": "As a spec author, I want tests tracked nl->acceptance->concrete at phase-appropriate rigor.",
+      "criteria": [
+        "Each test carries a maturity; promotion rules defined; debate-time accepts nl/acceptance."
+      ],
+      "tests": [
+        "TC-4.0",
+        "TC-4.1"
+      ]
+    },
+    {
+      "id": "US-5",
+      "story": "As the orchestrator, I want each guardrail to run as a parallel subagent emitting structured, test/US-keyed findings.",
+      "criteria": [
+        "Five guardrails run as separate subagents (never one combined prompt); each finding keyed to test/US; aggregated + persisted per round."
+      ],
+      "tests": [
+        "TC-5.0",
+        "TC-5.1"
+      ]
+    },
+    {
+      "id": "US-6",
+      "story": "As a spec author, I want TRACE to flag a user story with no happy-path spine as ORPHANED.",
+      "criteria": [
+        "TRACE reports US-without-spine as ORPHANED and judges whether the labeled spine is the real primary path; no-test-suggestions rule holds elsewhere."
+      ],
+      "tests": [
+        "TC-6.0",
+        "TC-6.1"
+      ]
+    },
+    {
+      "id": "US-7",
+      "story": "As a spec author, I want TCOV to promote nl->acceptance, ingest ALL owner test files, apply strict data_strategy_mismatch, and flag missing_liveness_test.",
+      "criteria": [
+        "TCOV emits PROMOTE/BLOCK; reads standalone test files; flags MOCK-without-technique; blocks missing_liveness_test on a critical-seam happy-path with no REAL/induced test."
+      ],
+      "tests": [
+        "TC-7.0",
+        "TC-7.1"
+      ]
+    },
+    {
+      "id": "US-8",
+      "story": "As the operator, I want a deterministic gate that blocks gauntlet entry unless every user story has a phase-appropriate-maturity happy-path spine test, with a logged override.",
+      "criteria": [
+        "Gate runs in enforce_pipeline_card_gate; blocks gauntlet entry only (uncovered US -> exit 2); advisory (warn) during critique (R1).",
+        "Maturity-aware: nl/acceptance spine passes at debate->gauntlet; live-run/concrete deferred to G.",
+        "Override requires a logged >=50-char reason."
+      ],
+      "tests": [
+        "TC-8.0",
+        "TC-8.1",
+        "TC-8.2",
+        "TC-8.3"
+      ]
+    },
+    {
+      "id": "US-9",
+      "story": "As the operator, I want an append-only journal of test-maturity transitions (with drivers) to replay each user story's test journey.",
+      "criteria": [
+        "Every TMR-field change appends a record (from/to/driver/phase), keyed subject_type=test; queryable as a per-US journey."
+      ],
+      "tests": [
+        "TC-9.0",
+        "TC-9.1"
+      ]
+    },
+    {
+      "id": "US-10",
+      "story": "As the operator, I want altitude-triage transitions journaled (created->reclassifications->close altitude_fit) to measure triage accuracy and the altitude distribution.",
+      "criteria": [
+        "Node-altitude changes appended with driver; close altitude_fit in {right,too_high,too_low}; supports 'of subsystem-tagged, % right by the end' and 'distribution of altitudes identified'."
+      ],
+      "tests": [
+        "TC-10.0",
+        "TC-10.1"
+      ]
+    },
+    {
+      "id": "US-11",
+      "story": "As the operator, I want critical-seam/spine tests promoted to real and RUN green (at the right tier) before implementation closes.",
+      "criteria": [
+        "A promotion pass writes+runs each critical-seam/spine test (code->pytest, prompt->system-validation, judgment->golden eval); un-run REAL-DATA = failing; spine/critical-seam can't be spike/exempt."
+      ],
+      "tests": [
+        "TC-11.0",
+        "TC-11.1"
+      ]
+    },
+    {
+      "id": "US-12",
+      "story": "As the operator, I want the new gates fenced to new specs so in-flight sessions aren't retroactively failed.",
+      "criteria": [
+        "A version marker (liveness_contract_version, e.g. tmr.v1) gates the new requirements (R3); pre-fence sessions keep original rules."
+      ],
+      "tests": [
+        "TC-12.0",
+        "TC-12.1"
+      ]
+    },
+    {
+      "id": "US-13",
+      "story": "As a future author, I want the new vocabulary and the cross-repo scope decision recorded so terms don't collide and decisions are durable.",
+      "criteria": [
+        "CONTEXT.md entries added; document-types.md row format updated; ADR records the test-ladder/TMR/liveness decision + two-spec scope split; 'happy-path spine' always qualified (no bare 'spine')."
+      ],
+      "tests": [
+        "TC-13.0"
+      ]
+    },
+    {
+      "id": "US-14",
+      "story": "As the operator, I want every deliverable classified by verification tier so this skill's own work is verified appropriately.",
+      "criteria": [
+        "Each task declares a verification tier (code/prompt-doc/llm-judgment) and a consistent verification_mode; the system-validation close exercises the prompt/doc tier."
+      ],
+      "tests": [
+        "TC-14.0",
+        "TC-14.1"
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M0",
+      "name": "Getting Started / bootstrap",
+      "user_stories": [
+        "US-15"
+      ]
+    },
+    {
+      "id": "M1",
+      "name": "Shared TMR schema contract (keystone, schema-first)",
+      "user_stories": [
+        "US-1"
+      ]
+    },
+    {
+      "id": "M2",
+      "name": "Happy-path-spine authoring + strict MOCK",
+      "user_stories": [
+        "US-2",
+        "US-3",
+        "US-4"
+      ]
+    },
+    {
+      "id": "M3",
+      "name": "Guardrail rearchitecture: structured output + parallel subagents",
+      "user_stories": [
+        "US-5",
+        "US-6",
+        "US-7"
+      ]
+    },
+    {
+      "id": "M4",
+      "name": "Deterministic spine-coverage gate (F-prime)",
+      "user_stories": [
+        "US-8"
+      ]
+    },
+    {
+      "id": "M5",
+      "name": "Decision provenance journal",
+      "user_stories": [
+        "US-9",
+        "US-10"
+      ]
+    },
+    {
+      "id": "M6",
+      "name": "Phase-8 pseudo->real promotion + version-fence",
+      "user_stories": [
+        "US-11",
+        "US-12"
+      ]
+    },
+    {
+      "id": "M7",
+      "name": "Glossary / ADR / document-types",
+      "user_stories": [
+        "US-13"
+      ]
+    },
+    {
+      "id": "X",
+      "name": "Cross-cutting: verification tiers",
+      "user_stories": [
+        "US-14"
+      ]
+    }
+  ]
+}

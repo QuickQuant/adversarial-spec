@@ -1,0 +1,99 @@
+{
+  "schema_version": "1.0",
+  "spec_slug": "liveness-gate-test-ladder",
+  "phase_mode": "lightweight",
+  "context_mode": "brownfield_feature",
+  "architecture_fingerprint": "sha256:fcd7c0d1050feff6a6fa2014078b1edb10592fd4eb03279b28adb91cc35acf7a",
+  "run_at": "2026-06-15T20:08:00Z",
+  "archetypes": [
+    {
+      "surface": "cli_command",
+      "operation": "write",
+      "status": "pass",
+      "required_checks": [
+        "cli_parsing",
+        "validation",
+        "error_transform",
+        "observability",
+        "invariant_coverage",
+        "idempotency"
+      ],
+      "checks_run": [
+        "cli_parsing",
+        "validation",
+        "error_transform",
+        "observability",
+        "invariant_coverage",
+        "idempotency"
+      ],
+      "failed_checks": [],
+      "invariant_ids": [
+        "INV-001",
+        "INV-002",
+        "INV-003",
+        "INV-006"
+      ],
+      "evidence": "F' gauntlet-entry gate (highest-risk: irreversible gate decision + user-visible block). Skill-side PRIMARY pre-check parses each test's structured TMR: block (cli_parsing) + roadmap US set, asserts exactly-one spine:true per US at acceptable maturity (validation/invariant_coverage INV-001/006). Missing OR duplicate -> exit 2 naming the US: deterministic exit code + named US on stderr (error_transform/observability INV-002). Override only via --accept-missing-spine + --spine-override-reason (>=50 chars) appended to decisions.log; re-running on unchanged state yields the same exit code with an idempotent decisions.log append on override (idempotency). PRIMARY placement covers the Fizzy-dispatch path that enforce_pipeline_card_gate alone misses (INV-003).",
+      "notes": null
+    },
+    {
+      "surface": "background_job",
+      "operation": "write",
+      "status": "pass",
+      "required_checks": [
+        "delivery_semantics",
+        "error_transform",
+        "observability",
+        "invariant_coverage"
+      ],
+      "checks_run": [
+        "delivery_semantics",
+        "error_transform",
+        "observability",
+        "invariant_coverage"
+      ],
+      "failed_checks": [],
+      "invariant_ids": [
+        "INV-010",
+        "INV-012",
+        "INV-013"
+      ],
+      "evidence": "Parallel guardrail subagent dispatch + aggregation (highest-risk: concurrency exposure + partial-failure false confidence). Five guardrails each run as their own subagent (self-contained prompt + file pointers + round diff); the main loop aggregates N structured returns keyed test/US (delivery_semantics). A subagent that dies/times-out/returns invalid JSON -> synthetic ORCH finding, blocking on gauntlet, warning on critique: never proceed on partial findings as if green (error_transform/fail-closed INV-010). Conflicting required_action on the same target+field -> conflict state requiring disposition BEFORE any journaled transition (INV-012). Each accepted state change appends one append-only journal record; structured per-guardrail output is the observability the token-only tracker lacks (INV-013).",
+      "notes": null
+    },
+    {
+      "surface": "outbound_integration",
+      "operation": "write",
+      "status": "pass",
+      "required_checks": [
+        "delivery_semantics",
+        "validation",
+        "error_transform",
+        "observability",
+        "invariant_coverage"
+      ],
+      "checks_run": [
+        "delivery_semantics",
+        "validation",
+        "error_transform",
+        "observability",
+        "invariant_coverage"
+      ],
+      "failed_checks": [],
+      "invariant_ids": [
+        "INV-004",
+        "INV-008",
+        "INV-016",
+        "INV-017"
+      ],
+      "evidence": "TMR emission -> fizzy validator handshake (highest-risk: cross-repo contract boundary + silent-drop inconsistency). Skill emits the TMR field-for-field against the single canonical contract (referenced, never copied INV-008). fizzy P0 validates each field/enum; an unrecognized field or enum member -> NAMED rejection citing the field, never a silent drop/accept (validation/error_transform INV-004). Pre-fence fields are optional+warn-first, post-fence required, gated by liveness_contract_version -> no retroactive failure (delivery_semantics INV-016). run_evidence{result,env,commit,artifact} carried to fizzy sweep; a declared-but-never-run REAL-DATA critical-seam = failing (INV-017). The named-rejection error is the observable signal on the integration boundary (observability).",
+      "notes": null
+    }
+  ],
+  "summary": {
+    "total_archetypes": 3,
+    "passed": 3,
+    "failed": 0
+  },
+  "traced_at": "2026-06-17 (re-traced; archetypes touch no superseded invariant)"
+}

@@ -1,0 +1,45 @@
+{"time":"2026-06-15T16:44:39Z","event":"Session created; adopted Evaluated Plans card 5715","type":"create"}
+{"time":"2026-06-15T16:44:39Z","event":"Triage: complexity=complex, root altitude=system (cross-repo TMR contract). GO.","type":"decision"}
+{"time":"2026-06-15T16:44:39Z","event":"Phase transition: triage → requirements","type":"transition"}
+{"time":"2026-06-15T16:56:45Z","event":"Built RequirementsSummary (A-K + TMR contract + 3-tier verification); awaiting confirmation gate","type":"artifact"}
+{"time":"2026-06-15T17:03:32Z","event":"Phase transition: requirements → roadmap","type":"transition"}
+{"time":"2026-06-15T17:05:55Z","event":"Drafted roadmap: 7 milestones, 14 user stories (M1 TMR keystone). Persisted roadmap.md","type":"artifact"}
+{"time":"2026-06-15T17:09:33Z","event":"Generated tests-pseudo.md: spine+error per US (14 US, ~28 TCs), tier-tagged","type":"artifact"}
+{"time":"2026-06-15T17:22:29Z","event":"Phase transition: roadmap → debate (roadmap debate R1 applied; manifest persisted)","type":"transition"}
+{"time":"2026-06-15T18:01:19Z","event":"Authored spec-draft-v1.md (13 sections, all 15 US, Getting Started US-15, canonical TMR referenced); seeded lookup-log","type":"artifact"}
+{"time": "2026-06-15T18:21:02Z", "event": "Phase transition: debate -> pre-roadmap", "type": "transition", "source": "pipeline_advance"}
+{"time": "2026-06-15T18:21:19Z", "event": "Phase transition: pre-roadmap -> debate", "type": "transition", "source": "pipeline_advance"}
+{"time":"2026-06-15T18:42:39Z","event":"Debate R1 complete (codex+gemini, 12 findings) → spec-draft-v2; tests-pseudo synced; guardrails passed; recorded on card 5715","type":"artifact"}
+{"time":"2026-06-15T19:02:18Z","event":"Debate R2 complete (architecture, 9 findings, converging) → spec-draft-v3; keystone amended (critical_seam); guardrails clean; recorded on card 5715; dashboard trigger reached","type":"artifact"}
+{"time":"2026-06-15T19:16:35Z","event":"Debate CONVERGED after 3 rounds (codex AGREE; gemini 3 test-completeness findings applied). spec-draft-v3 = converged design.","type":"decision"}
+{"time": "2026-06-15T20:06:00Z", "event": "Phase transition: debate -> target-architecture", "type": "transition"}
+{"time": "2026-06-15T20:10:00Z", "event": "Phase transition: target-architecture -> gauntlet", "type": "transition"}
+{"time": "2026-06-15T20:10:00Z", "event": "Phase 4 published: architecture_fingerprint=sha256:5a4e6762bfee968c735d8f07ad6b79841931aca7e1a4860eb5a1f029167ab866", "type": "artifact"}
+{"time":"2026-06-15T20:39:40Z","event":"Gauntlet armed (7 static personas AUDT/FLOW/PEDA/ASSH/ARCH/BURN/MINI × codex-gpt5.5+gemini-3.1-pro) + enriched briefing; launched debate.py gauntlet --pipeline-card 5715","type":"artifact"}
+{"time":"2026-06-16T04:29:37Z","event":"Phase transition: debate → target-architecture (backfill — target-architecture.md exists; was unlogged)","type":"transition"}
+{"time":"2026-06-16T04:29:37Z","event":"Phase transition: target-architecture → gauntlet (backfill — gauntlet-concerns-2026-06-15.md exists; was unlogged)","type":"transition"}
+{"time":"2026-06-16T04:29:37Z","event":"R4 debate round (validation detour): trust-model reframe validated by codex+gemini; spec-draft-v5; reframe LOCKED","type":"decision"}
+{"time":"2026-06-16T04:55:47Z","event":"spec-draft-v6 written: 23 remaining gauntlet accepts folded (all 27 accepts now incorporated)","type":"artifact"}
+{"time":"2026-06-16T05:06:19Z","event":"CANON-r4-1: architecture artifacts mirrored to v6 (INV-003 reframe + INV-019..035; target-architecture.md + architecture-invariants.json)","type":"artifact"}
+{"time":"2026-06-16T05:38:54Z","event":"R5 convergence round: 9 concerns (codex 6 + gemini 3) applied -> spec-draft-v7; convergence:false","type":"transition"}
+{"time":"2026-06-16T09:15:00Z","event":"R6 convergence re-review: codex R6-C7 (live_or_induced strict union) applied to v8; gemini stub [AGREE]; convergence:false","type":"decision"}
+{"time":"2026-06-16T09:22:00Z","event":"CONVERGENCE at R7 on spec-draft-v8: codex+gemini both [AGREE] with quality justifications, 0 findings; design locked; holding for operator review","type":"decision"}
+{"time":"2026-06-16T11:30:00Z","event":"v9 authored: DR-1..11 applied (post-v8-gauntlet redesign); security stripped, guardrail snapshot deleted, coverage=metadata-diff, receipt union, tombstone+tmr_uid","type":"artifact"}
+{"time":"2026-06-16T20:08:40Z","event":"R8 re-convergence on v9: NOT converged (codex 10 + claude-opus-4.7 4; gemini quota-dead, claude substituted). 2nd US-story morph caught (US-8 TC-8.0/INV-001 skill-side-PRIMARY vs v4 SEC-1 Fizzy-mechanical). v10 authoring pending.","type":"decision"}
+{"time":"2026-06-16T20:29:41Z","event":"R8 recorded convergence=false; spec-draft-v10 authored (19 patches) + guardrails pass; US-8 morph reconciled (Re-centered, 0 orphaned spines). R9 next.","type":"transition"}
+{"time":"2026-06-16T22:31:55Z","event":"R9 recorded convergence=false; spec-draft-v11 authored (8 fixes for 6 convergent findings); flash dispatch fixed (agents.py -preview + restart); codex+flash agreed same 6. R10 next, blocked on codex reset.","type":"transition"}
+{"time":"2026-06-16T23:25:00Z","event":"R10 convergence check: both bare [AGREE]/0 findings, quorum unmet (gemini stub); v11 unchanged; R11 press next","type":"decision"}
+{"time":"2026-06-16T23:40:00Z","event":"R11 press round: codex caught §12.3 stale-tail CANON drift (concealed by R10 bare [AGREE]); flash quality [AGREE]; v12 fixes applied; convergence=false","type":"decision"}
+{"time":"2026-06-16T23:50:00Z","event":"R12 CONVERGENCE on spec-draft-v12: both critics quality [AGREE]/0 findings, 2 families, system quorum met. Design LOCKED. Next: gauntlet->finalize.","type":"decision"}
+{"time": "2026-06-17T00:26:55Z", "event": "Phase transition: gauntlet -> pre-gauntlet", "type": "transition", "source": "pipeline_advance"}
+{"time": "2026-06-17T00:27:04Z", "event": "Phase transition: pre-gauntlet -> gauntlet", "type": "transition", "source": "pipeline_advance"}
+{"time": "2026-06-17T00:29:50Z", "event": "Phase transition: gauntlet -> reconciliation", "type": "transition", "source": "pipeline_advance"}
+{"time": "2026-06-17T00:30:47Z", "event": "Phase transition: reconciliation -> finalize", "type": "transition", "source": "pipeline_advance"}
+{"time":"2026-06-17T01:03:32Z","event":"Spec finalized: specs/liveness-gate-test-ladder/spec.md (1057L, 15 US, 14 §); tests-spec.md promoted","type":"artifact"}
+{"time":"2026-06-17T03:22:13Z","event":"Phase transition: finalize → execution (spec.md accepted; decomposition deferred to fresh context per Phase-7 FIRST ACTION)","type":"transition"}
+{"time":"2026-06-17T03:55:00Z","event":"Phase transition: gauntlet → finalize","type":"transition","note":"backfilled (cosmetic; finalize artifact exists)"}
+{"time":"2026-06-17T04:05:00Z","event":"Phase-7 Step 2.5 reconcile-in-place: target-architecture.md + invariants reconciled to spec v12 (INV-020/022/031 superseded, INV-001/030 revised); fingerprints recomputed input 7b145aab / arch faae303b","type":"maintenance"}
+{"time":"2026-06-17T04:15:00Z","event":"Phase 7 decomposition DRAFT persisted to execution-plan.md (22 tasks, 6 waves, 6 workstreams; 32/32 active invariants covered; 0 exempt tasks)","type":"artifact"}
+{"time":"2026-06-17T04:18:00Z","event":"Phase 7 plan APPROVED (Step 7); execution-plan.md finalized (DRAFT banner dropped, Step 8)","type":"transition"}
+{"time":"2026-06-17T04:30:00Z","event":"Validation leg drafted: 15 rows (1/US), check-rows ok; conops derived; drafted_baseline_hash sha256:057b5c2993e7ed6c9791e64d8d0408c2b91a3bf9610abc7684f3691f68247974","type":"artifact"}
+{"time":"2026-06-17T04:40:00Z","event":"fizzy-plan.json v2 emitted (22 tasks); pipeline_validate_plan CLEAN (valid:true, plan_hash 9dfb3d4e); held before pipeline_load per operator","type":"artifact"}

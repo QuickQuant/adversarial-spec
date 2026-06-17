@@ -1,0 +1,139 @@
+{
+  "schema_version": "1.0",
+  "spec_slug": "liveness-gate-test-ladder",
+  "architecture_fingerprint": "sha256:fcd7c0d1050feff6a6fa2014078b1edb10592fd4eb03279b28adb91cc35acf7a",
+  "generated_at": "2026-06-15T20:05:00Z",
+  "advisory": true,
+  "note": "phase_mode=lightweight → middleware-candidates is advisory (does not block execution planning). architecture_fingerprint is null in draft and injected at publish to match the parent target-architecture.md.",
+  "candidates": [
+    {
+      "id": "MW-001",
+      "name": "TmrParser",
+      "purpose": "Parse a structured TMR: YAML block into the internal TMR record, field-for-field, rejecting unknown/missing keys and non-canonical enum members with named errors.",
+      "inputs": [
+        {
+          "name": "tmr_block",
+          "type": "string",
+          "schema_ref": "Brainquarters/shared-context/test-maturity-record-schema.md"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "tmr_record",
+          "type": "TmrRecord"
+        },
+        {
+          "name": "rejection",
+          "type": "NamedFieldError"
+        }
+      ],
+      "sync_async": "sync",
+      "surfaces": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "depends_on": [],
+      "linked_concerns": [
+        "validation",
+        "sot"
+      ],
+      "linked_invariants": [
+        "INV-004",
+        "INV-008"
+      ],
+      "linked_user_stories": [
+        "US-1"
+      ],
+      "complexity_estimate": "moderate",
+      "linked_goals": [
+        "G-5"
+      ],
+      "rationale": "Typed I/O, isolatable (pure parse over a string, no IO deps), reused by F′, the five guardrails, and emission. The canonical schema is the single source it validates against."
+    },
+    {
+      "id": "MW-002",
+      "name": "SpineCoverageChecker",
+      "purpose": "Pure function: given the roadmap US set and parsed TMRs, return pass | uncovered-US list | duplicate-US list for the F′ gate.",
+      "inputs": [
+        {
+          "name": "roadmap_user_stories",
+          "type": "list[str]"
+        },
+        {
+          "name": "tmr_records",
+          "type": "list[TmrRecord]"
+        },
+        {
+          "name": "phase",
+          "type": "str"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "coverage_result",
+          "type": "SpineCoverageResult"
+        }
+      ],
+      "sync_async": "sync",
+      "surfaces": [
+        "cli_command"
+      ],
+      "depends_on": [
+        "MW-001"
+      ],
+      "linked_concerns": [
+        "enforcement"
+      ],
+      "linked_invariants": [
+        "INV-001",
+        "INV-006"
+      ],
+      "linked_user_stories": [
+        "US-8"
+      ],
+      "complexity_estimate": "moderate",
+      "linked_goals": [
+        "G-1"
+      ],
+      "rationale": "Deterministic, isolatable pure function reused across all three enforcement layers (skill-side pre-check, debate.py fallback, and mirrored by Fizzy sweep) — exactly the reuse-across-surfaces criterion. Consumes MW-001's output."
+    },
+    {
+      "id": "MW-003",
+      "name": "ProvenanceJournalWriter",
+      "purpose": "Append-only writer over subject_type ∈ {test, node}: takes a typed transition record, durably appends one jsonl line, never rewrites a prior record.",
+      "inputs": [
+        {
+          "name": "transition",
+          "type": "JournalTransition"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "appended",
+          "type": "bool"
+        }
+      ],
+      "sync_async": "sync",
+      "surfaces": [
+        "background_job"
+      ],
+      "depends_on": [],
+      "linked_concerns": [
+        "observability"
+      ],
+      "linked_invariants": [
+        "INV-013",
+        "INV-014"
+      ],
+      "linked_user_stories": [
+        "US-9",
+        "US-10"
+      ],
+      "complexity_estimate": "moderate",
+      "linked_goals": [
+        "G-4"
+      ],
+      "rationale": "Typed record in, append-only jsonl out; isolatable (file append, injectable path); reused by guardrail aggregation, Phase-8 promotion, and depth-triage. Append-only shape gives safe concurrent multi-agent writes."
+    }
+  ]
+}

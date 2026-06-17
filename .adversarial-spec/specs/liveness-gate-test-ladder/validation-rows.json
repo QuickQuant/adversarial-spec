@@ -1,0 +1,176 @@
+{
+  "rows": [
+    {
+      "row_id": "r-US1-1",
+      "conops_ref": "US-1",
+      "scenario": "An author writes one TMR with every field a valid enum member, the skill emits it into tmr-registry.json, and fizzy's validator checks it; the author then flips one field to an unknown enum member and re-submits.",
+      "oracle": "Jason passes this row iff the valid TMR round-trips skill-emit then fizzy-validate with no field dropped and the unknown-enum TMR produces a named rejection citing the offending field demonstrates the single-shared-schema intent from US-1.",
+      "evidence_type": "artifact-demo",
+      "evidence_rationale": "the round-tripped record and the named rejection message are concrete artifacts an operator can inspect",
+      "row_hash": "4b26a0e9cdccf3900b55542cbb47d42ffc94f9ad0102957bdd04d5eb2c967255",
+      "story_hash": "359e42d7a3ab0c5877b36d3a352f084710cbc821bda3abfa9eb9bc7c6cd34ed9"
+    },
+    {
+      "row_id": "r-US2-1",
+      "conops_ref": "US-2",
+      "scenario": "An author writes a user story, authors its happy-path spine TC-0 with named steps, then adds two failure tests — one citing a spine_step_ref and one with none — and runs the authoring lint.",
+      "oracle": "Jason passes this row iff the lint reports exactly one happy-path spine for the story and rejects the unanchored failure test with a readable 'branch off an unplanted trunk' message demonstrates the one-spine-per-story intent from US-2.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "authoring is a CLI lint workflow; a transcript shows the authored fixture and the lint's per-finding output",
+      "row_hash": "b0a3b978019dca65faa8497c51998c9128710b8e22e61920af0b4cd364772f90",
+      "story_hash": "bd88c0549dc3c39fdec263a6d1a80c22c5b3a1ac6f3d395a6410ed62a0768dc9"
+    },
+    {
+      "row_id": "r-US3-1",
+      "conops_ref": "US-3",
+      "scenario": "An author marks a critical-seam test MOCK while naming an inducible technique (tc-netem:partition), then a second author marks a MOCK with live_or_induced null citing a genuine technical_constraint, and both pass through the MOCK-falsification guardrail.",
+      "oracle": "Jason passes this row iff the technique-naming MOCK is surfaced for promotion to REAL-DATA while the constraint-citing MOCK is accepted demonstrates the no-convenience-mock intent from US-3.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "the guardrail's promote-vs-accept decision per fixture is visible in the dispatch transcript",
+      "row_hash": "baf6c59845c0546989f208d966803698c333b47cd511e73f946ae8633f604598",
+      "story_hash": "27b4bc947deff83495652c927caefff96ae2ba8b4eeaaff2b824c17c0c69243a"
+    },
+    {
+      "row_id": "r-US4-1",
+      "conops_ref": "US-4",
+      "scenario": "An author has one nl test whose elements all resolve to named concept-accessors and a second nl test whose element maps to no named accessor across rounds; the promoter runs over both.",
+      "oracle": "Jason passes this row iff the all-accessors-named test advances from nl to acceptance while the undesigned-concept test stays nl and is flagged BLOCK demonstrates the phase-appropriate-rigor intent from US-4.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "the promoter's per-test promote/block emission is observable in the run transcript",
+      "row_hash": "97e39c49f2800af871de01879d63fbf78e6b16697ae082223ed88616083931bf",
+      "story_hash": "4ccaa06ca07aeb678c8691dec028736877ba72e4458be2e6ece220cd5e34b820"
+    },
+    {
+      "row_id": "r-US5-1",
+      "conops_ref": "US-5",
+      "scenario": "A conductor submits one spec revision; the orchestrator dispatches the five guardrails as separate subagents and one of them is killed mid-round.",
+      "oracle": "Jason passes this row iff he sees five separate structured guardrail result sets each keyed to test/US ids and the killed subagent surfaces a blocking ORCH finding rather than a clean green round demonstrates the no-false-confidence intent from US-5.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "the five separate result sets and the synthetic ORCH are visible in the aggregation transcript",
+      "row_hash": "75957290f84b0ce444685757e5d273acdb493fd4ca7ac97eba185fe4b2ca6a99",
+      "story_hash": "52a5ee2096facdc851a2b27874c7aafebc1a66e64205636b4d9c672c149aacd7"
+    },
+    {
+      "row_id": "r-US6-1",
+      "conops_ref": "US-6",
+      "scenario": "A spec covers a user journey in prose but has no happy-path spine test for it, and separately omits a minor edge-case test for a journey that does have a spine; TRACE runs over both.",
+      "oracle": "Jason passes this row iff TRACE reports the spine-less journey as ORPHANED and leaves the missing minor edge test unflagged demonstrates the traceability-break intent from US-6.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "TRACE's ORPHANED finding and its non-flag on the edge case appear in the guardrail transcript",
+      "row_hash": "3b3cd94e4025441676b5785892afcd4e8e18ae4b3bba957c2ee37dc4c668473f",
+      "story_hash": "6c2db68a24eb46a3468ce6654a8057d3a61859b7ef85faf9c0f65491e6623a94"
+    },
+    {
+      "row_id": "r-US7-1",
+      "conops_ref": "US-7",
+      "scenario": "TCOV runs over a mock-only critical-seam happy-path TMR and, separately, a mock-only non-critical happy-path TMR.",
+      "oracle": "Jason passes this row iff TCOV surfaces a blocking missing_liveness_test naming the critical-seam story and leaves the non-critical mock-only path unflagged demonstrates the liveness-hole-detection intent from US-7.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "the blocking finding (with the named story) versus the clean non-critical case is observable in the TCOV transcript",
+      "row_hash": "902557d770389c5ac72715b1c2f0b87ed8e162b0c898d3473c56eca726607cee",
+      "story_hash": "8336f3d9384254092386652e95cc330db430d9eec98e6608110c13eb459b9eb4"
+    },
+    {
+      "row_id": "r-US8-1",
+      "conops_ref": "US-8",
+      "scenario": "An agent attempts a gauntlet-entry transition for a session whose registry has one spine per story, then attempts the same transition for a session missing a spine for one story.",
+      "oracle": "Jason passes this row iff the full-coverage attempt is admitted and the missing-spine attempt is refused with exit 2 naming the uncovered user story demonstrates the no-unguarded-gauntlet intent from US-8.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "the admit decision and the exit-2-with-named-story refusal are concrete CLI observables in the transcript",
+      "row_hash": "e57fa6f1f639157cc748ee65b7ba4305346b9192f96ebfa01269500d4528c93c",
+      "story_hash": "4c9e32474e116c3f7f0d0fdb3e3206a535ac78d659b34ed08a7f0af7204cf811"
+    },
+    {
+      "row_id": "r-US9-1",
+      "conops_ref": "US-9",
+      "scenario": "An operator changes one test's data_strategy from MOCK to REAL-DATA, then changes it again, then replays the per-story journey from the provenance journal.",
+      "oracle": "Jason passes this row iff the replay shows both changes as ordered driver-tagged records with the first record's bytes unchanged after the second demonstrates the durable-provenance intent from US-9.",
+      "evidence_type": "artifact-demo",
+      "evidence_rationale": "the ordered journal records and the unchanged prior record are concrete file artifacts",
+      "row_hash": "7755507a4bb696fdc4b5d8064777e5ee0fd14adf60b0db60bf2013cefb19195d",
+      "story_hash": "e90eff525cade149f9e48054a580d14515f52efacbdabb3925abe5c1d6890936"
+    },
+    {
+      "row_id": "r-US10-1",
+      "conops_ref": "US-10",
+      "scenario": "One node is closed with altitude_fit right and another stable node is closed with altitude_fit too_low; the operator runs the altitude calibration query.",
+      "oracle": "Jason passes this row iff the calibration output counts the right-fit node as correct and excludes the stable-but-too_low node from the correct-count demonstrates the honest-altitude-calibration intent from US-10.",
+      "evidence_type": "artifact-demo",
+      "evidence_rationale": "the calibration query output (histogram / precision) is a concrete artifact showing the exclusion",
+      "row_hash": "7d8ac04b1968619f69417912a50d678c24d3fbe7c549b100002f18b6f68ac708",
+      "story_hash": "9b3da134a4639d5e92306e45b8f8c966089e436ba5729f1e5c8c82f65d974fd3"
+    },
+    {
+      "row_id": "r-US11-1",
+      "conops_ref": "US-11",
+      "scenario": "At Phase-8 close one critical-seam REAL-DATA test is declared but never run, and a second is promoted, run by the skill-runner, and its receipt captured; the close evaluator runs over both.",
+      "oracle": "Jason passes this row iff the never-run test halts the close as failing while the promoted test with a skill-captured run receipt closes demonstrates the run-it-live-before-close intent from US-11.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "the halt and the captured run_evidence receipt are observable in the close-pass transcript",
+      "row_hash": "4e025d3431a8d831382cbeebe2d95ac4695bef6bef359d1dab4b3640b215388b",
+      "story_hash": "693d496bb7df75674c91c57402070e070b3fd2607285fb5700cc9a2c6be74111"
+    },
+    {
+      "row_id": "r-US12-1",
+      "conops_ref": "US-12",
+      "scenario": "The same missing-spine input is presented to a post-fence session (card created_at after the cutover) and to a legacy session (card created_at before the cutover).",
+      "oracle": "Jason passes this row iff the post-fence session is refused with exit 2 while the legacy session is left unaffected demonstrates the no-retroactive-failure intent from US-12.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "the divergent outcomes on the two timestamps are concrete CLI observables in the transcript",
+      "row_hash": "e99405ed8ca7097469e0b1f71c6f58a421c7c91fae97952d1c6d2e7630c59ed9",
+      "story_hash": "052b2e3350fadbb5fad6a5170183a2950d5828548ecaf38c6bd14f5c07ad58df"
+    },
+    {
+      "row_id": "r-US13-1",
+      "conops_ref": "US-13",
+      "scenario": "An operator reads the committed CONTEXT.md, document-types reference, and the new ADR after the docs task lands.",
+      "oracle": "Jason passes this row iff he finds happy-path spine, TMR, maturity ladder and liveness defined with 'happy-path spine' always qualified in prose and an ADR recording the two-spec scope split demonstrates the shared-vocabulary intent from US-13.",
+      "evidence_type": "artifact-demo",
+      "evidence_rationale": "the committed docs and ADR are concrete artifacts an operator reads directly",
+      "row_hash": "531f4b87360699b8426180ac4d7c1dae30b99a1920e811d6f07a178747d36714",
+      "story_hash": "8804235ef387f7b2e024a2eaf99ae3b4e80e90b7332e54bc9d099b4685b7d68d"
+    },
+    {
+      "row_id": "r-US14-1",
+      "conops_ref": "US-14",
+      "scenario": "An operator reads the execution plan's task records and the verification-tier lint output.",
+      "oracle": "Jason passes this row iff every task record carries a verification tier with a consistent canonical verification_mode and no golden-eval member appears demonstrates the tier-driven-verification intent from US-14.",
+      "evidence_type": "artifact-demo",
+      "evidence_rationale": "the per-task tier/mode declarations in the plan are concrete inspectable artifacts",
+      "row_hash": "b120cce6e30e151421e249391b6f6b656f98cdc285163aec4a02e1c1696ff9d7",
+      "story_hash": "353c0dcc859186e99281f47a02e0cefe66811ebb5ee60df341eb909eca788cdd"
+    },
+    {
+      "row_id": "r-US15-1",
+      "conops_ref": "US-15",
+      "scenario": "A new operator, reading only the Getting Started doc, authors one spine per story on a fixture feature, runs the authoring lint, and runs the F′ checker against a full-coverage fixture and a missing-spine fixture.",
+      "oracle": "Jason passes this row iff, following only the Getting Started doc, the operator observes the F′ checker print exit 0 on the full-coverage fixture and exit 2 naming the uncovered story on the missing-spine fixture demonstrates the minutes-to-value bootstrap intent from US-15.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "the documented commands and their exit-code observables are captured end-to-end in a transcript",
+      "row_hash": "016b676057c59af15fed7da8ad0d8d0782f57c071f3ae0a7a05d70ae09a12c77",
+      "story_hash": "f39e1a34a10d14b393c90b46f7fd73c49d5c3d93cfeecc7c5b8b8725aa7285a6"
+    }
+  ],
+  "kind": "validation-rows-ledger",
+  "conops_hash": "e5a07738b7058a6f4f8cb9473e7e2622642dc8a6efc701ef9079b68622643443",
+  "story_hashes": {
+    "US-15": "f39e1a34a10d14b393c90b46f7fd73c49d5c3d93cfeecc7c5b8b8725aa7285a6",
+    "US-1": "359e42d7a3ab0c5877b36d3a352f084710cbc821bda3abfa9eb9bc7c6cd34ed9",
+    "US-2": "bd88c0549dc3c39fdec263a6d1a80c22c5b3a1ac6f3d395a6410ed62a0768dc9",
+    "US-3": "27b4bc947deff83495652c927caefff96ae2ba8b4eeaaff2b824c17c0c69243a",
+    "US-4": "4ccaa06ca07aeb678c8691dec028736877ba72e4458be2e6ece220cd5e34b820",
+    "US-5": "52a5ee2096facdc851a2b27874c7aafebc1a66e64205636b4d9c672c149aacd7",
+    "US-6": "6c2db68a24eb46a3468ce6654a8057d3a61859b7ef85faf9c0f65491e6623a94",
+    "US-7": "8336f3d9384254092386652e95cc330db430d9eec98e6608110c13eb459b9eb4",
+    "US-8": "4c9e32474e116c3f7f0d0fdb3e3206a535ac78d659b34ed08a7f0af7204cf811",
+    "US-9": "e90eff525cade149f9e48054a580d14515f52efacbdabb3925abe5c1d6890936",
+    "US-10": "9b3da134a4639d5e92306e45b8f8c966089e436ba5729f1e5c8c82f65d974fd3",
+    "US-11": "693d496bb7df75674c91c57402070e070b3fd2607285fb5700cc9a2c6be74111",
+    "US-12": "052b2e3350fadbb5fad6a5170183a2950d5828548ecaf38c6bd14f5c07ad58df",
+    "US-13": "8804235ef387f7b2e024a2eaf99ae3b4e80e90b7332e54bc9d099b4685b7d68d",
+    "US-14": "353c0dcc859186e99281f47a02e0cefe66811ebb5ee60df341eb909eca788cdd"
+  },
+  "schema_version": 1,
+  "module_version": "0.1.0+3ec70f4",
+  "generated_at": "2026-06-17T05:31:38Z"
+}

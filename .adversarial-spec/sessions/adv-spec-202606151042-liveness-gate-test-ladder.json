@@ -1,0 +1,907 @@
+{
+  "session_id": "adv-spec-202606151042-liveness-gate-test-ladder",
+  "context_name": "Liveness Gate + Test Ladder",
+  "current_phase": "execution",
+  "current_step": "Phase 7: fizzy-plan.json (v2, 22 tasks) EMITTED + pipeline_validate_plan CLEAN (valid:true, plan_hash 9dfb3d4e); HOLDING before pipeline_load + commit per operator",
+  "fizzy_card_id": "5715",
+  "session_altitude": "system",
+  "session_altitude_source": "declared",
+  "checkpointed_cleanly": false,
+  "plan_path": "docs/plans/liveness-gate-and-test-ladder.md",
+  "schema_contract_path": "/home/jason/PycharmProjects/Brainquarters/shared-context/test-maturity-record-schema.md",
+  "spec_path": "specs/liveness-gate-test-ladder/spec.md",
+  "roadmap_path": "specs/liveness-gate-test-ladder/roadmap/manifest.json",
+  "execution_plan_path": ".adversarial-spec/specs/liveness-gate-test-ladder/execution-plan.md",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606170354-phase7-entry-spec-finalized.md",
+  "todowrite_snapshot": [
+    {
+      "content": "Finalize: CANON-r4-1 arch-invariants mirror + gauntlet_complete/reconciliation_complete gates + spec.md finalized (v12→clean) + tests-spec.md promoted + finalize guardrails attested",
+      "status": "completed"
+    },
+    {
+      "content": "Cross-spec reconciliation handover doc written to fizzy repo (HANDOVER-reconcile-v4-to-skill-v12.md) — seeds fizzy v5 round",
+      "status": "completed"
+    },
+    {
+      "content": "Phase 7 decomposition (07-execution.md) — START IN FRESH CONTEXT: create Phase-7 TodoWrite; Step 2.5 GATE = read EVERY .architecture/ doc before decomposing; inputs spec.md + gauntlet-concerns-2026-06-16.json + tests-spec.md + target-architecture.md (staleness reconcile-in-place) + middleware-candidates.json; SYSTEM-ALTITUDE validation leg before pipeline_load; persist decomp at Step 3.5",
+      "status": "pending",
+      "activeForm": "Running Phase 7 decomposition"
+    }
+  ],
+  "requirements_summary": {
+    "doc_type": "spec",
+    "depth": "technical/full",
+    "problem": "prediction-prime 'runs but never fills': a critical seam (feed→bookCache) shipped fake-socket-tested; no REAL-DATA test ever ran live while every guardrail passed green. Two mechanisms in THIS skill: (1) the MOCK-justification bar degraded from 'impossible to reproduce live' to 'hard to make deterministic'; (2) guardrails are document linters and nothing forces a critical-seam REAL-DATA test to execute before the gauntlet.",
+    "user_types": [
+      "Spec authors (Claude + opponent models) running adversarial-spec sessions",
+      "Operator/conductor (Jason) driving sessions and reading meta-analysis",
+      "fizzy_pipeline_mcp (downstream consumer of the shared TMR contract; enforces at sweep)",
+      "Any project specced through adversarial-spec (inherits the new gates, version-fenced)"
+    ],
+    "features": [
+      "A: authoring — happy-path spine (TC-0) per user story w/ named steps; failure tests anchored via spine_step_ref; TMR fields in tests-pseudo.md; maturity-aware",
+      "B: strict MOCK falsification — name the live/induced technique (toxiproxy/tc-netem/external-kill/natural-wait) or promote to REAL-DATA",
+      "C: TRACE inversion — missing happy-path spine = ORPHANED traceability break; absorb 'is the labeled spine the real primary path'",
+      "D: TCOV — promoter (nl→acceptance), ingest ALL test files, strict data_strategy_mismatch, new missing_liveness_test category",
+      "F': deterministic happy-path-spine coverage gate in debate.py enforce_pipeline_card_gate (maturity-aware, logged-override) — the teeth",
+      "G: Phase-8 pseudo→real promotion pass (write+run critical-seam/spine tests, require green)",
+      "H: glossary/ADR/document-types updates",
+      "J: append-only decision provenance journal over subject_type∈{test,node} (test-journey + altitude-triage)",
+      "K: parallel-subagent structured guardrails feeding J",
+      "Keystone: shared TMR schema contract with fizzy (schema-first; field-for-field)",
+      "Verification-tier-per-deliverable classification + this-project liveness interpretation",
+      "Version-fence: new gates apply to new specs only; in-flight sessions untouched"
+    ],
+    "integrations": [
+      "fizzy_pipeline_mcp — cross-repo TMR contract; fizzy P0 adds VALID_DATA_STRATEGIES / VALID_LIVENESS_TECHNIQUES / maturity + builds gates (no M-4b exists)",
+      "adversaries.py — hub (9+ importers); TRACE/TCOV edits ripple",
+      "debate.py enforce_pipeline_card_gate — F' sibling to the existing tests-pseudo staleness gate",
+      "validation-leg / system-validation — the live-run verification mechanism for prompt/doc deliverables (already built in this repo)"
+    ],
+    "verification_tiers": {
+      "code": "executable Python (F', provenance writer, validators, emission) → REAL-DATA pytest against real artifact fixtures",
+      "prompt_doc": "phase-doc/guardrail-prompt behavior → system-validation live skill run + fault-induced fixture specs (broken specs the gate must catch)",
+      "llm_judgment": "guardrail catch quality → golden-case eval against planted-defect corpus (REAL-DATA+PROPERTY)"
+    },
+    "tradeoffs": [
+      "No dogfood now; version the changes (run the session on the current skill version)",
+      "Two coordinated specs (skill + fizzy), schema-first",
+      "Enforcement in CODE (F' deterministic) over LLM judgment where possible",
+      "Keep the guardrail set at five (no new adversaries)"
+    ],
+    "risks": [
+      "Cross-repo schema drift — mitigated schema-first + field-for-field",
+      "Prompt/doc tiers inherently softer (LLM variance) — mitigated by code teeth + system-validation + golden evals",
+      "adversaries.py hub blast radius",
+      "Concept-accessor façade/binding ownership gap (target-repo, unassigned in all 3 reports) — out of skill scope, flag"
+    ],
+    "unknowns": [
+      "Exact per-guardrail structured-finding schema (K output)",
+      "How parallel-subagent dispatch replaces the inline/critique flow in 03-debate.md (orchestration spec)",
+      "F' deterministic parse: roadmap-manifest US enumeration ↔ tests-pseudo spine tags (format coupling)",
+      "Version-fence mechanism (skill marker; fizzy verification_contract_version vs altitude gating)",
+      "Maturity-aware gate's exact phase→acceptable-maturity mapping",
+      "Golden-eval corpus: where planted-defect fixtures live + how many",
+      "Coordination handshake with the fizzy spec (which repo lands the schema constants first)"
+    ],
+    "success_criteria": [
+      "A spec authored through the updated skill cannot reach the gauntlet without a phase-appropriate-maturity happy-path spine test for every user story (F', code-tested)",
+      "Every MOCK names a live/induced technique or is promoted (B/D)",
+      "Guardrails emit structured, persisted, test/US-keyed findings (K)",
+      "The provenance journal answers test-journey, altitude-triage accuracy, and altitude distribution",
+      "Every deliverable passes its verification tier (code→pytest; prompt→system-validation; judgment→golden eval)",
+      "Shared TMR contract matches fizzy field-for-field; changes version-fenced"
+    ]
+  },
+  "extended_state": {
+    "origin": "Closes prediction-prime 'runs but never fills' methodology hole. Source plans: prediction-prime/docs/plans/{live-book-path-and-liveness-gate.md, test-ladder-fizzy-and-adversarial-spec-design.md}.",
+    "scope": "adversarial-spec skill slice (A/B/C/D/F-prime/G/H/J/K). Coordinated fizzy spec (separate session) builds the data_strategy/liveness/spine schema + gates + provenance persistence. Shared TMR field set is the keystone contract.",
+    "locked_decisions": [
+      "happy-path-spine term (never bare 'spine')",
+      "no dogfood now; version the changes newly (fence so in-flight sessions unaffected)",
+      "two coordinated specs, schema-first",
+      "no new adversaries (drop SPINE 6th + gauntlet absent-test); enforce via deterministic F-prime gate + TRACE/TCOV folds",
+      "parallel-subagent structured guardrails feeding an append-only decision provenance journal",
+      "provenance journal generalized over subject_type in {test, node} (test-journey + altitude-triage)"
+    ],
+    "deferred": "Sessions stats dashboard (forward-only, no backfill). Trigger: start building after THIS card reaches 2 debate rounds in.",
+    "verified_correction": "fizzy has no 'M-4b test-lineage gate' (phantom in both source plans); fizzy must BUILD the new axes on its existing altitude/V-model.",
+    "spec_draft_path": "specs/liveness-gate-test-ladder/spec-draft-v1.md",
+    "lookup_log_path": "specs/liveness-gate-test-ladder/lookup-log.md",
+    "context_inventory": {
+      "schema_version": "1.1",
+      "audit_timestamp": "2026-06-15T18:47:30Z",
+      "git_hash": "b317eed",
+      "blast_zone": [
+        "skills/adversarial-spec/phases/01-init-and-requirements.md",
+        "skills/adversarial-spec/phases/02-roadmap.md",
+        "skills/adversarial-spec/phases/03-debate.md",
+        "skills/adversarial-spec/phases/07-execution.md",
+        "skills/adversarial-spec/phases/08-implementation.md",
+        "skills/adversarial-spec/scripts/adversaries.py",
+        "skills/adversarial-spec/scripts/debate.py",
+        "skills/adversarial-spec/reference/guardrail-prompts.md",
+        "skills/adversarial-spec/reference/document-types.md",
+        "CONTEXT.md",
+        "NEW:provenance-journal-writer(J)"
+      ],
+      "sources": {
+        "architecture_primer": {
+          "status": "available",
+          "path": ".architecture/primer.md",
+          "summary": "schema 2.0, slightly stale (f198887 vs HEAD)"
+        },
+        "component_docs": {
+          "status": "available",
+          "path": ".architecture/structured/components/{debate-engine,adversaries,execution-planner,session}.md",
+          "summary": "matched blast zone components"
+        },
+        "keystone_schema": {
+          "status": "available",
+          "path": "Brainquarters/shared-context/test-maturity-record-schema.md",
+          "summary": "canonical TMR contract (US-1)"
+        },
+        "fizzy_enums": {
+          "status": "available",
+          "path": "fizzy-pipeline-mcp/src/fizzy_pipeline_mcp/pipeline.py",
+          "summary": "VALID_* enums code-confirmed match keystone (L4)"
+        },
+        "fprime_gate_site": {
+          "status": "available",
+          "path": "skills/adversarial-spec/scripts/debate.py:1351",
+          "summary": "enforce_pipeline_card_gate — F-prime sibling site"
+        },
+        "guardrail_personas": {
+          "status": "available",
+          "path": "skills/adversarial-spec/scripts/adversaries.py:1174,1284,1346",
+          "summary": "REQUIREMENTS_TRACER/TEST_COVERAGE_AUDITOR/GUARDRAILS (C/D/K)"
+        },
+        "guardrail_invocation_contract": {
+          "status": "available",
+          "path": "skills/adversarial-spec/phases/03-debate.md",
+          "summary": "current assemble->critique/inline contract that K replaces"
+        },
+        "verification_machinery": {
+          "status": "available",
+          "path": "skills/adversarial-spec/phases/07-execution.md",
+          "summary": "verification_mode/test_strategy/automated-* machinery G extends (50 refs)"
+        },
+        "tests_pseudo": {
+          "status": "available",
+          "path": "specs/liveness-gate-test-ladder/tests-pseudo.md"
+        },
+        "test_coverage_tooling": {
+          "status": "partial",
+          "path": "pyproject.toml",
+          "summary": "pytest-cov==7.0.0 configured; suite not run this session"
+        },
+        "deps": {
+          "status": "available",
+          "path": "pyproject.toml",
+          "summary": "pytest 8.4.2/ruff/filelock 3.16.1/litellm"
+        }
+      },
+      "gaps_noted": [
+        "No existing ADR — spec H/US-13 creates one (design gap addressed by spec).",
+        "Build/test status not run this session — defer full pytest to G/Phase-8 promotion.",
+        "critical_seam keystone field not yet in canonical contract — coordinate w/ fizzy (12.7).",
+        "Monitoring/auth/external-API/legacy = NOT_APPLICABLE (CLI tool, no external APIs, no skill legacy dirs)."
+      ]
+    },
+    "context_files": [
+      ".architecture/primer.md",
+      ".architecture/structured/components/debate-engine.md",
+      ".architecture/structured/components/adversaries.md",
+      ".architecture/structured/components/execution-planner.md",
+      ".adversarial-spec/specs/liveness-gate-test-ladder/tests-pseudo.md",
+      "Brainquarters/shared-context/test-maturity-record-schema.md",
+      ".adversarial-spec/specs/liveness-gate-test-ladder/lookup-log.md"
+    ]
+  },
+  "created_at": "2026-06-15T16:44:39Z",
+  "updated_at": "2026-06-17T04:40:00Z",
+  "tests_pseudo_path": "specs/liveness-gate-test-ladder/tests-pseudo.md",
+  "schema_version": "1.4",
+  "completed_work": "Resumed at R12 convergence and drove to finalized + handed-over. CANON-r4-1: architecture-invariants.json mirrored to v12 (INV-029 status-enum+array-supersedes+tombstoned_at, INV-024 outcome-only GateResult, INV-004 identity=tmr_uid), fingerprint recomputed. Advanced session FSM Debate→Pre-Gauntlet→Gauntlet→Reconciliation→Finalization; recorded gauntlet_complete (v8 snapshot 8695e8c1, 380 evals, 41 concern IDs) + reconciliation_complete (revised v12 d8deb79d, CONS PASS). Promoted tests-pseudo→tests-spec.md (15 US, 0 orphans, semantic-oracle classified). Finalized spec.md from v12 (stripped v1-v12 changelog header -125L, preserved §0-13 + keystone/fence notes; CONS re-verified). Attested all 5 finalize guardrails. Wrote cross-spec handover (fizzy repo HANDOVER-reconcile-v4-to-skill-v12.md): fizzy v4 is ~5 schema gens stale, missing v9-v12 deltas + the load-bearing gauntlet-entry F-prime gate; all reconciliation is fizzy-side + shared keystone refresh, no skill-spec change.",
+  "next_action": "START PHASE 7 DECOMPOSITION (07-execution.md) IN A FRESH CONTEXT. FIRST: create Phase-7 TodoWrite. Step 2.5 is a GATE — read EVERY .architecture/ doc before decomposing. Inputs: spec.md (finalized), gauntlet-concerns-2026-06-16.json, tests-spec.md, target-architecture.md (staleness check vs spec fingerprint; reconcile-in-place is the ruled default), middleware-candidates.json (surface candidates; optional middleware-creator AFTER load). SYSTEM-ALTITUDE: run the validation leg (derive-conops→draft rows→normalize→check) before pipeline_load. Persist decomposition to disk at Step 3.5 pre-approval.",
+  "do_not_ask": [
+    "Continue debate rounds until convergence without asking Jason unless absolutely necessary (directive 2026-06-11)",
+    "Never pre-claim/batch card sets in handoffs; pipeline_do_next_task one card at a time is the only claim path (Jason 2026-06-12)",
+    "Stale Phase 4 handling: reconcile-in-place is the ruled default; never offer bare rerun-vs-acknowledge again (Jason 2026-06-11)",
+    "Persist decomposition to disk pre-approval (Step 3.5) — codified in 07-execution.md (Jason 2026-06-11)",
+    "system-validation close targets the system-altitude TASK node (task_id SYS), never the session card - gate _task_belongs_to_session requires card_type==task (dogfood 2026-06-14)",
+    "Trust-model reframe (SEC-1 Fizzy-side gate / DD-1 tmr-registry / SEC-2 Fizzy-card-ts fence / SEC-4 typed receipt) is LOCKED by R4 validation — do not re-debate it",
+    "Never dispatch a claude critic from claude in debate/gauntlet; gemini substitute = gemini-3-flash (works after the agents.py -preview fix + restart); a flash 404 is registry/transient -> retry, never fall back to claude",
+    "Registry-unification (fizzy agents.py + skill providers.py) is PUNTED by Jason (no time) - do not start it unprompted"
+  ],
+  "status": "active",
+  "journey": [
+    {
+      "time": "2026-06-15T17:25:14Z",
+      "event": "Roadmap phase complete (15 US, manifest valid; roadmap debate R1 applied: US-8 gauntlet-only/advisory, Getting Started US-15, liveness_contract_version). Transitioned to debate phase. Initial spec not yet drafted.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-15T17:25:14Z",
+      "event": "Checkpoint saved: phase2-debate-entry-roadmap-complete-spec-draft-next.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-15T19:19:02Z",
+      "event": "Debate CONVERGED after 3 rounds (codex AGREE + gemini 3 test-completeness, applied). spec-draft-v3 = locked design; tests-pseudo synced; guardrails pass; keystone amended (critical_seam+criticality_source).",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-15T19:19:02Z",
+      "event": "Checkpoint saved: phase3-debate-converged-3rounds-spec-v3.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-15T20:13:02Z",
+      "event": "Phase 4 (target-architecture, lightweight, brownfield_feature) complete + published; transitioned target-architecture -> gauntlet",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-15T20:13:02Z",
+      "event": "Checkpoint saved: phase4-target-arch-published-gauntlet-next.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-15T21:28:20Z",
+      "event": "Gauntlet complete: 507 concerns (466 accepted / 24 dismissed / 16 ack / 1 deferred); recovered ASSH@gemini parse failure (+7, 6 accepted); clustering 0 reduction => heavy thematic overlap to dedup in synthesis",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-15T21:28:20Z",
+      "event": "Checkpoint saved: phase5-gauntlet-complete-507concerns-synthesis-next.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-16T00:07:02Z",
+      "event": "Gauntlet synthesized (507 to 32 unique); spec-draft-v4 incorporates CB-cluster (CB-1..7) + trust-model reframe (SEC-1 Fizzy-side gate / DD-1 tmr-registry.json / SEC-2 created_at fence / SEC-3 non-ws override / SEC-4 typed receipt); CONS pass + CANON/TCOV 1 medium each (tracked)",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-16T00:07:02Z",
+      "event": "Checkpoint saved: phase5-gauntlet-v4-trust-model-reframe.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-16T04:35:04Z",
+      "event": "R4 reframe-validation complete; spec-draft-v5 (SEC-1 trust-model reframe LOCKED + 5 hardening edits); guardrails-v5 PASS (CANON-r4-1 + TCOV-r4-1 tracked); card 5715 R4 recorded (convergence:false)",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-16T04:35:04Z",
+      "event": "Checkpoint saved: phase5-gauntlet-r4-reframe-validated-spec-v5.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-16T05:13:41Z",
+      "event": "v6 fold (all 27 gauntlet accepts incorporated; 23 folded this pass) + CANON-r4-1 architecture mirror (architecture-invariants.json 18->35; target-architecture.md reframed) complete",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-16T05:13:41Z",
+      "event": "Checkpoint saved: phase5-gauntlet-v6-fold-canon-r4-1-mirror.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-16T05:40:05Z",
+      "event": "R5 convergence round complete (codex+gemini, both agreed:false, 9 valid concerns all applied) -> spec-draft-v7; guardrail-report-r5 PASS; R5 recorded on card 5715 (convergence:false). R6 re-review pending.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-16T05:40:05Z",
+      "event": "Checkpoint saved: phase5-gauntlet-r5-convergence-round-v7.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-16T09:38:01Z",
+      "event": "Debate CONVERGED at R7 on spec-draft-v8 — codex+gemini both [AGREE] (quality justifications, 0 findings, 2 families = system-altitude quorum). R6-C7 live_or_induced strict-union was the last fix. Design LOCKED at v8.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-16T09:38:01Z",
+      "event": "Checkpoint saved: phase5-r7-converged-v8-hold-for-review.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-16T18:19:58Z",
+      "event": "spec-draft-v9 authored: all 11 post-gauntlet design decisions (DR-1..11) applied + security machinery stripped",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-16T18:19:58Z",
+      "event": "Checkpoint saved: phase5-v9-authored-post-gauntlet-redesign.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-16T19:40:31Z",
+      "event": "Built user-story-morph reconciliation flow into the skill + re-centered US-7 spine (DR-5 morph); v9 verification clean (0 orphaned spines)",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-16T19:40:31Z",
+      "event": "Checkpoint saved: phase5-morph-reconciliation-flow-us7-recenter.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-16T22:54:09Z",
+      "event": "R9 recorded (convergence=false); spec-draft-v11 authored + guardrails pass; codex/gpt-5.5 + gemini-3-flash converged on the same 6 residual fixes; flash debate-pipeline dispatch fixed (fizzy agents.py gemini-3-flash-preview + restart, smoke-verified)",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-16T22:54:09Z",
+      "event": "Checkpoint saved: phase5-r9-v11-authored-codex-flash-converged-6.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-16T23:51:10Z",
+      "event": "R12 CONVERGENCE on spec-draft-v12 — both critics quality [AGREE]/0 findings, 2 families (codex+gemini-3-flash), system-altitude quorum met. Design LOCKED at v12.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-16T23:51:10Z",
+      "event": "Checkpoint saved: phase5-r12-convergence-v12-locked.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-17T03:54:47Z",
+      "event": "Finalize complete (spec.md accepted, R12 convergence); positioned at Phase 7 entry — decomposition deferred to fresh context per 07-execution FIRST ACTION",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-17T03:54:47Z",
+      "event": "Checkpoint saved: phase7-entry-spec-finalized.",
+      "type": "checkpoint"
+    }
+  ],
+  "debate_converged": true,
+  "spec_slug": "liveness-gate-test-ladder",
+  "phase4_bootstrap": {
+    "schema_version": "1.0",
+    "status": "completed",
+    "session_id": "adv-spec-202606151042-liveness-gate-test-ladder",
+    "spec_slug": "liveness-gate-test-ladder",
+    "input_fingerprint": "sha256:327f5f7acbf251d01af9571ca1ef56a8cadb40a680314331c378e52c1075bdae",
+    "architecture_fingerprint": "sha256:fcd7c0d1050feff6a6fa2014078b1edb10592fd4eb03279b28adb91cc35acf7a",
+    "phase_mode": "lightweight",
+    "context_mode": "brownfield_feature",
+    "artifact_paths": {
+      "target_architecture": ".adversarial-spec/specs/liveness-gate-test-ladder/target-architecture.md",
+      "invariants": ".adversarial-spec/specs/liveness-gate-test-ladder/architecture-invariants.json",
+      "tests_pseudo": "specs/liveness-gate-test-ladder/tests-pseudo.md",
+      "dry_run_results": ".adversarial-spec/specs/liveness-gate-test-ladder/dry-run-results.json",
+      "middleware_candidates": ".adversarial-spec/specs/liveness-gate-test-ladder/middleware-candidates.json"
+    },
+    "framework_profile": {
+      "profile_type": "single",
+      "category": "cli",
+      "framework": "Claude Code skill (prompt phase-docs) + Python 3.14 CLI",
+      "framework_version": "Python 3.14; in-repo, no external framework",
+      "runtime": "python",
+      "deployment_target": "serverful",
+      "enabled_features": [
+        "fizzy-mcp-pipeline",
+        "parallel-subagent-dispatch"
+      ],
+      "subprofiles": {
+        "rendering_model": "N/A",
+        "data_access_model": "file artifacts + Fizzy MCP for pipeline state",
+        "mutation_model": "CLI actions (debate.py critique|gauntlet) + Fizzy pipeline tool calls + atomic file writes",
+        "cache_model": "N/A",
+        "error_model": "process exit codes (exit 2 = gate block) + structured findings (ORCH/conflict) + named validation rejections"
+      },
+      "enforcement_model": "Defense-in-depth: skill-side pre-check [PRIMARY] + debate.py enforce_pipeline_card_gate [fallback] + Fizzy sweep.",
+      "notes": "prompt/doc agent-followed surface is verified via the verification-tier model (system-validation), not modeled as a code execution surface. fizzy_pipeline_mcp is an external coordinated codebase (outbound_integration)."
+    },
+    "execution_surfaces": [
+      {
+        "surface_id": "cli_command",
+        "in_scope": true,
+        "uses": "debate.py critique/gauntlet; F' gate; override flags; authoring/doc lints"
+      },
+      {
+        "surface_id": "background_job",
+        "in_scope": true,
+        "uses": "parallel guardrail subagent dispatch + aggregation; append-only journal writer"
+      },
+      {
+        "surface_id": "outbound_integration",
+        "in_scope": true,
+        "uses": "TMR schema handshake with fizzy validator; run_evidence to fizzy sweep"
+      }
+    ],
+    "roadmap_ref": {
+      "goals": [
+        {
+          "id": "G-1",
+          "text": "Impossible to reach the gauntlet without a phase-appropriate happy-path spine test for every user story."
+        },
+        {
+          "id": "G-2",
+          "text": "Force every MOCK to name the live/induced technique or be promoted to REAL-DATA."
+        },
+        {
+          "id": "G-3",
+          "text": "Give the five guardrails structured, persisted, test/US-keyed output."
+        },
+        {
+          "id": "G-4",
+          "text": "Provide a durable decision provenance journal (test-maturity + altitude-triage)."
+        },
+        {
+          "id": "G-5",
+          "text": "Define a shared TMR schema contract with fizzy, schema-first."
+        },
+        {
+          "id": "G-6",
+          "text": "Classify every deliverable by verification tier; apply the this-project liveness interpretation."
+        },
+        {
+          "id": "G-7",
+          "text": "Version-fence the new gates so in-flight sessions are unaffected."
+        }
+      ],
+      "non_goals": [
+        "Fizzy-side persistence/enforcement (separate coordinated fizzy spec).",
+        "Concept-accessor facade / bindings / fail-closed lint (target-repo + its CI).",
+        "Dogfooding these changes on this session (run on current skill version).",
+        "Sessions stats dashboard (deferred, forward-only, separate trigger).",
+        "Backfilling provenance for past sessions.",
+        "prediction-prime live-fill (Track A) and fault-injection infra (B6)."
+      ],
+      "user_stories": [
+        "US-1",
+        "US-2",
+        "US-3",
+        "US-4",
+        "US-5",
+        "US-6",
+        "US-7",
+        "US-8",
+        "US-9",
+        "US-10",
+        "US-11",
+        "US-12",
+        "US-13",
+        "US-14",
+        "US-15"
+      ]
+    },
+    "current_gate": null,
+    "blocking_error": null,
+    "started_at": "2026-06-15T20:05:00Z",
+    "updated_at": "2026-06-15T20:10:00Z",
+    "completed_at": "2026-06-15T20:10:00Z",
+    "story_alignment": [
+      {
+        "story_id": "US-1",
+        "goal_ids": [
+          "G-5"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "maps to listed goal(s); no declared non-goal conflict"
+      },
+      {
+        "story_id": "US-2",
+        "goal_ids": [
+          "G-1"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "maps to listed goal(s); no declared non-goal conflict"
+      },
+      {
+        "story_id": "US-3",
+        "goal_ids": [
+          "G-2"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "maps to listed goal(s); no declared non-goal conflict"
+      },
+      {
+        "story_id": "US-4",
+        "goal_ids": [
+          "G-1"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "maps to listed goal(s); no declared non-goal conflict"
+      },
+      {
+        "story_id": "US-5",
+        "goal_ids": [
+          "G-3"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "maps to listed goal(s); no declared non-goal conflict"
+      },
+      {
+        "story_id": "US-6",
+        "goal_ids": [
+          "G-1",
+          "G-3"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "maps to listed goal(s); no declared non-goal conflict"
+      },
+      {
+        "story_id": "US-7",
+        "goal_ids": [
+          "G-1",
+          "G-3"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "maps to listed goal(s); no declared non-goal conflict"
+      },
+      {
+        "story_id": "US-8",
+        "goal_ids": [
+          "G-1"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "maps to listed goal(s); no declared non-goal conflict"
+      },
+      {
+        "story_id": "US-9",
+        "goal_ids": [
+          "G-4"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "maps to listed goal(s); no declared non-goal conflict"
+      },
+      {
+        "story_id": "US-10",
+        "goal_ids": [
+          "G-4"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "maps to listed goal(s); no declared non-goal conflict"
+      },
+      {
+        "story_id": "US-11",
+        "goal_ids": [
+          "G-1"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "maps to listed goal(s); no declared non-goal conflict"
+      },
+      {
+        "story_id": "US-12",
+        "goal_ids": [
+          "G-7"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "maps to listed goal(s); no declared non-goal conflict"
+      },
+      {
+        "story_id": "US-13",
+        "goal_ids": [
+          "G-5"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "maps to listed goal(s); no declared non-goal conflict"
+      },
+      {
+        "story_id": "US-14",
+        "goal_ids": [
+          "G-6"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "maps to listed goal(s); no declared non-goal conflict"
+      },
+      {
+        "story_id": "US-15",
+        "goal_ids": [
+          "G-1"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "maps to listed goal(s); no declared non-goal conflict"
+      }
+    ],
+    "research_findings": [
+      {
+        "source": "fizzy verification-mode constants (VALID_VERIFICATION_MODES / EXEMPT_MODES / AUTOMATED_MODES)",
+        "finding": "system-validation is its own category, neither automated nor exempt; there is NO golden-eval member",
+        "version": "2026-06-15"
+      },
+      {
+        "source": "scripts/debate.py:1370 enforce_pipeline_card_gate",
+        "finding": "round_actions={critique,gauntlet} applies the gate uniformly; F' is the first check that must branch on args.action (block gauntlet / warn critique)",
+        "version": "2026-06-15"
+      },
+      {
+        "source": "fizzy NASA V-model (VALID_ALTITUDES, ALTITUDE_OBLIGATIONS, mark_system_validation_complete)",
+        "finding": "altitude model is built; data_strategy + liveness attach as two missing axes; no 'M-4b test-lineage gate' exists to extend",
+        "version": "2026-06-15"
+      },
+      {
+        "source": "deployed-skill path",
+        "finding": "~/.claude/skills/adversarial-spec is a symlink to source; no copy-deploy step (edits live immediately)",
+        "version": "2026-06-15"
+      }
+    ],
+    "artifact_publish_state": "published",
+    "gate_approvals": {
+      "scale_check": {
+        "status": "approved",
+        "recommended": "full",
+        "final_value": "lightweight",
+        "decided_by": "human",
+        "decided_at": "2026-06-15T20:05:00Z"
+      },
+      "context_mode": {
+        "status": "approved",
+        "recommended": "brownfield_feature",
+        "final_value": "brownfield_feature",
+        "decided_by": "human",
+        "decided_at": "2026-06-15T20:05:00Z"
+      },
+      "draft_review": {
+        "status": "approved",
+        "decided_by": "human",
+        "decided_at": "2026-06-15T20:08:00Z"
+      },
+      "final_approval": {
+        "status": "approved",
+        "decided_by": "human",
+        "decided_at": "2026-06-15T20:10:00Z"
+      }
+    },
+    "reconciliation": {
+      "performed_at": "2026-06-17",
+      "reason": "Phase-7 Step 2.5 reconcile-in-place: spec finalized at v12 (Phase 4 was v3-era). Content patch, no model dispatch.",
+      "previous_input_fingerprint": "sha256:302940c4ff894e72b657587950348845f54bb5747fbcac4caa1bccb638fc5569",
+      "previous_architecture_fingerprint": "sha256:5a4e6762bfee968c735d8f07ad6b79841931aca7e1a4860eb5a1f029167ab866",
+      "input_fingerprint_basis": "sha256(spec.md bytes + 0x00 + roadmap/manifest.json bytes + 0x00 + canonical_json({phase_mode,context_mode})) — OLD value reproduced over spec-draft-v3.md to prove the algorithm",
+      "architecture_fingerprint_basis": "composite per 04 §0 Fingerprints; active_invariants = architecture-invariants.json .invariants filtered status==active (no active_invariants snapshot was stored in bootstrap, so the v3-era composite is not byte-reproducible — recomputed FORWARD with this documented basis)",
+      "roadmap_manifest_fix_2026-06-17": {
+        "reason": "Phase-7 validation leg: roadmap manifest lacked top-level user_stories (derive-conops requires it; canonical shape per validation-leg-process). Flattened 15 stories to top-level (lossless), milestones keep id-string refs. roadmap_bytes changed -> input/arch fingerprints recomputed again.",
+        "input_before_manifest_fix": "sha256:7b145aabed603dd5d404ce12b7c677e435b16980f16a02dd39bf12e6bc9d9e50",
+        "arch_before_manifest_fix": "sha256:faae303bce9b0d72bed3db2233b76fd2e49978e8c5142e5bda786f1e404af184"
+      }
+    }
+  },
+  "architecture_taxonomy": {
+    "schema_version": "1.0",
+    "category": "cli",
+    "dimensions": [
+      {
+        "name": "execution_model",
+        "value": "agent-driven file-based state machine + Python CLI gates",
+        "rationale": "the skill is prompt phase-docs that an LLM follows, plus debate.py/adversaries.py/gauntlet executable gates",
+        "source_refs": [
+          "spec §1",
+          "spec §5",
+          "spec §6"
+        ]
+      },
+      {
+        "name": "error_model",
+        "value": "process exit codes (exit 2 block) + structured ORCH/conflict findings + named validation rejections",
+        "rationale": "fail-closed everywhere; no silent partial-green",
+        "source_refs": [
+          "spec §5.1",
+          "spec §6"
+        ]
+      },
+      {
+        "name": "config_precedence",
+        "value": "version fence liveness_contract_version=tmr.v1 gates new behavior",
+        "rationale": "no retroactive failure of in-flight sessions",
+        "source_refs": [
+          "spec §8.2"
+        ]
+      },
+      {
+        "name": "io_model",
+        "value": "atomic file writes (session-state, tests-pseudo, append-only journal jsonl) + Fizzy MCP pipeline",
+        "rationale": "multi-agent safe concurrent writes via append-only",
+        "source_refs": [
+          "spec §7"
+        ]
+      },
+      {
+        "name": "observability",
+        "value": "structured per-guardrail output + append-only provenance journal (test + node)",
+        "rationale": "enables meta-analysis queries today impossible",
+        "source_refs": [
+          "spec §5.1",
+          "spec §7"
+        ]
+      },
+      {
+        "name": "testing_architecture",
+        "value": "three verification tiers: code (REAL-DATA pytest) / prompt-doc (system-validation + fault-induced) / llm-judgment (golden-case)",
+        "rationale": "skill is part code, part prompts",
+        "source_refs": [
+          "spec §9"
+        ]
+      }
+    ]
+  },
+  "target_architecture_path": "specs/liveness-gate-test-ladder/target-architecture.md",
+  "decision_journal": [
+    {
+      "entry_id": "dj-20260615-6a7c1a",
+      "idempotency_key": "0dbc79718ffd6e9fc54907dd585fa4398ad66ab78cf49f13f5af6ac53712475c",
+      "time": "2026-06-15T20:10:00Z",
+      "phase": "target-architecture",
+      "phase_mode": "lightweight",
+      "context_mode": "brownfield_feature",
+      "topic": "enforcement-pattern",
+      "decision": "adopt",
+      "choice": "F' three-layer defense-in-depth: skill-side pre-check is PRIMARY (covers Fizzy-dispatch path), enforce_pipeline_card_gate is standalone fallback, Fizzy enforces at sweep; branch on action (block gauntlet / warn critique); exactly-one spine per US.",
+      "surfaces": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "rationale": "The originating incident shipped a critical seam never proven live; a single enforcement point is bypassable. Defense-in-depth + action-branching makes coverage non-bypassable without blocking early debate.",
+      "alternatives_considered": [
+        "enforce_pipeline_card_gate only (bypassed when dispatch is via Fizzy tools)",
+        "absent-test gauntlet adversary F (too late, probabilistic, architecture already designed)"
+      ],
+      "revisit_trigger": "if the dispatch path moves away from Fizzy pipeline tools",
+      "reverses_entry_id": null
+    },
+    {
+      "entry_id": "dj-20260615-20da10",
+      "idempotency_key": "e17b5d7982d3b2c1efd42cccd63479ebda8af7d969df87ed1b03a94093d8d29b",
+      "time": "2026-06-15T20:10:00Z",
+      "phase": "target-architecture",
+      "phase_mode": "lightweight",
+      "context_mode": "brownfield_feature",
+      "topic": "error-handling-failclosed",
+      "decision": "adopt",
+      "choice": "Fail-closed everywhere: dead/timeout/invalid-JSON subagent -> synthetic ORCH (block gauntlet/warn critique); criticality_unknown at system altitude -> treated critical; conflicting findings -> conflict state before any journaled transition.",
+      "surfaces": [
+        "background_job",
+        "cli_command"
+      ],
+      "rationale": "Partial/ambiguous guardrail results read as green are false confidence - the exact failure class this spec exists to kill.",
+      "alternatives_considered": [
+        "proceed on partial findings (false confidence)",
+        "silent last-writer-wins on conflicting findings"
+      ],
+      "revisit_trigger": null,
+      "reverses_entry_id": null
+    },
+    {
+      "entry_id": "dj-20260615-c4e374",
+      "idempotency_key": "5c24bd26a666e319a38fe6c225abffc1e65de16bb4262d25ad34c41abeb674e1",
+      "time": "2026-06-15T20:10:00Z",
+      "phase": "target-architecture",
+      "phase_mode": "lightweight",
+      "context_mode": "brownfield_feature",
+      "topic": "source-of-truth",
+      "decision": "adopt",
+      "choice": "Single canonical TMR schema contract (Brainquarters/shared-context/test-maturity-record-schema.md), referenced never copied; tests-pseudo.md is a feeder/view; critical_seam read only from the normalized field (no re-derivation).",
+      "surfaces": [
+        "outbound_integration",
+        "cli_command"
+      ],
+      "rationale": "Divergence of this contract is the exact failure the work prevents; tests-pseudo drifted v2->v7 unchecked under per-side copies.",
+      "alternatives_considered": [
+        "per-repo schema copies (drift)",
+        "consumers re-derive critical_seam locally (parallel contract)"
+      ],
+      "revisit_trigger": null,
+      "reverses_entry_id": null
+    },
+    {
+      "entry_id": "dj-20260615-7ad335",
+      "idempotency_key": "09e195be55469ae5e10d2aabd0ca128c552aafde01c632af3b5ff3d4b373090e",
+      "time": "2026-06-15T20:10:00Z",
+      "phase": "target-architecture",
+      "phase_mode": "lightweight",
+      "context_mode": "brownfield_feature",
+      "topic": "observability-journal",
+      "decision": "adopt",
+      "choice": "Single append-only provenance journal over subject_type in {test,node}, derived from accepted STATE CHANGES (not findings alone); prior records never rewritten; node altitude_fit required at close.",
+      "surfaces": [
+        "background_job",
+        "cli_command"
+      ],
+      "rationale": "Enables meta-analysis queries impossible today (per-guardrail catch history, altitude calibration); append-only gives safe concurrent multi-agent writes.",
+      "alternatives_considered": [
+        "inline evolution stored on the TMR",
+        "altitude accuracy keyed on stability alone (over-counts silently-wrong altitudes)"
+      ],
+      "revisit_trigger": null,
+      "reverses_entry_id": null
+    },
+    {
+      "entry_id": "dj-20260615-7d9bd0",
+      "idempotency_key": "ae4e784626c8e28211c23a4e281f5ef73567d279d862451899364d3b5455f811",
+      "time": "2026-06-15T20:10:00Z",
+      "phase": "target-architecture",
+      "phase_mode": "lightweight",
+      "context_mode": "brownfield_feature",
+      "topic": "config-version-fence",
+      "decision": "adopt",
+      "choice": "liveness_contract_version (tmr.v1) gates every new requirement; pre-fence sessions keep original rules (no retroactive failure); TMR fields optional+warn-first until required behind the fence.",
+      "surfaces": [
+        "cli_command"
+      ],
+      "rationale": "Tightening rules mid-stream would break in-flight sessions such as validation-leg-process.",
+      "alternatives_considered": [
+        "retroactive application of new gates to all sessions"
+      ],
+      "revisit_trigger": null,
+      "reverses_entry_id": null
+    },
+    {
+      "entry_id": "dj-20260615-146004",
+      "idempotency_key": "13ae8bb200cf3bf5cb7f18e9d72fc62832044001d32d819006b7a8e6eb90bfe2",
+      "time": "2026-06-15T20:10:00Z",
+      "phase": "target-architecture",
+      "phase_mode": "lightweight",
+      "context_mode": "brownfield_feature",
+      "topic": "integration-promotion",
+      "decision": "adopt",
+      "choice": "Phase-8: a declared-but-never-run REAL-DATA/critical-seam/spine pseudo test counts as FAILING; run_evidence required; such a test may not be spike/exempt. No golden-eval verification_mode - LLM-judgment tier uses canonical system-validation + a golden-case corpus oracle.",
+      "surfaces": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "rationale": "A declared-but-never-run test is the liveness hole; verification_mode must stay within fizzy's canonical set (no golden-eval member exists).",
+      "alternatives_considered": [
+        "new golden-eval verification_mode (not canonical)",
+        "allow spike/exempt on critical-seam tests"
+      ],
+      "revisit_trigger": null,
+      "reverses_entry_id": null
+    },
+    {
+      "entry_id": "dj-20260615-20b611",
+      "idempotency_key": "4bef3945bea13697681b90b515d7af3889e515dac9255f1312725154dd28341d",
+      "time": "2026-06-15T20:10:00Z",
+      "phase": "target-architecture",
+      "phase_mode": "lightweight",
+      "context_mode": "brownfield_feature",
+      "topic": "middleware-candidates",
+      "decision": "defer",
+      "choice": "Advisory only (lightweight): MW-001 TmrParser, MW-002 SpineCoverageChecker, MW-003 ProvenanceJournalWriter identified but not materialized; middleware-creator is optional post-execution.",
+      "surfaces": [
+        "cli_command",
+        "background_job",
+        "outbound_integration"
+      ],
+      "rationale": "Lightweight mode -> candidates are advisory and do not block execution planning; materialization is a downstream choice.",
+      "alternatives_considered": [
+        "materialize shared middleware now (premature for a process-skill slice)"
+      ],
+      "revisit_trigger": "if execution planning (Phase 7) chooses to materialize shared middleware",
+      "reverses_entry_id": null
+    }
+  ],
+  "gauntlet_concerns_path": "specs/liveness-gate-test-ladder/gauntlet-concerns-2026-06-16.json",
+  "convergence_round": 7,
+  "converged_spec_path": "specs/liveness-gate-test-ladder/spec-draft-v8.md",
+  "tests_spec_path": "specs/liveness-gate-test-ladder/tests-spec.md",
+  "spec_accepted": true,
+  "validation_leg": {
+    "status": "drafted-check-clean",
+    "rows": 15,
+    "conops_path": "specs/liveness-gate-test-ladder/roadmap/conops.md",
+    "rows_path": "specs/liveness-gate-test-ladder/validation-rows.json",
+    "conops_hash": "e5a07738b7058a6f4f8cb9473e7e2622642dc8a6efc701ef9079b68622643443",
+    "drafted_baseline_hash": "sha256:057b5c2993e7ed6c9791e64d8d0408c2b91a3bf9610abc7684f3691f68247974",
+    "note": "module does not stamp drafted_baseline_hash into ledger header; recorded here + git-commit-bound (anti-hindsight). check-rows: ok/0 issues."
+  }
+}

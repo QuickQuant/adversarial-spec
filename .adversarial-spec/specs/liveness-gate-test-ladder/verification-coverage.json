@@ -1,0 +1,32 @@
+{
+  "report_schema_version": 1,
+  "session_id": "adv-spec-202606151042-liveness-gate-test-ladder",
+  "plan_path": ".adversarial-spec/specs/liveness-gate-test-ladder/execution-plan.md",
+  "generated_at": "2026-06-17T04:16:00Z",
+  "status": "DRAFT (pre-approval)",
+  "total_tasks": 22,
+  "behavior_changing_count": 19,
+  "non_behavior_changing_count": 3,
+  "counts_by_mode": {
+    "automated-unit": 13,
+    "automated-integration": 5,
+    "automated-contract": 1,
+    "automated-component": 0,
+    "system-validation": 3,
+    "static-check": 0,
+    "artifact-sync": 0,
+    "manual-ux": 0,
+    "test-producer": 0
+  },
+  "exempt_tasks": [],
+  "unmapped_behavior_tasks": [],
+  "unmapped_non_behavior_tasks": [],
+  "validation_errors": [],
+  "notes": [
+    "Zero exempt verification modes: §8.1 forbids spine/critical-seam tests from exempt modes, and §9/INV-018 forbid code-seam tasks from exempt modes. Every task is automated-* / system-validation. Gate V4 (exemption review) has nothing to review.",
+    "system-validation (3 tasks: W2-2, W3-1, W5-2) is a fizzy-canonical verification_mode (spec §9, VALID_VERIFICATION_MODES) — NOT in the older 07-execution v2 enum; it is the prompt/doc + judgment tier mode and is NOT exempt. Scope: end-to-end. Realized via scoped skill runs (system-validation) + golden-case corpus (W1-5) for judgment-tier gates.",
+    "Doc-spine tests (US-13 TC-13.0, US-15 TC-15.1) are realized as automated-unit doc-lint pytests (grep assertions) rather than static-check, to satisfy §8.1's spine-not-exempt rule.",
+    "non_behavior_changing tasks (W5-1 glossary/ADR, W5-2 Getting Started doc, W5-3 dogfood fixture) are still verified (doc-lint pytest / system-validation / F′ integration) — none exempt.",
+    "Gate V3 blocking rule SATISFIED: unmapped_behavior_tasks is empty; validation_errors is empty."
+  ]
+}

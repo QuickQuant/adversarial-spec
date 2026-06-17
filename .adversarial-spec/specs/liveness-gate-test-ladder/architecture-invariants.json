@@ -1,0 +1,963 @@
+{
+  "schema_version": "1.0",
+  "spec_slug": "liveness-gate-test-ladder",
+  "phase_mode": "lightweight",
+  "architecture_fingerprint": "sha256:7ca5b71b66d09e159c6459380be8248d34a76370b51b92a1027675ec88611682",
+  "fingerprint_basis": "sha256 over jq -Sc '.invariants' (canonical-sorted, compact)",
+  "generated_for_spec": "spec-draft-v12.md",
+  "spec_version": "v12",
+  "generated_at": "2026-06-16T23:59:00Z",
+  "invariants": [
+    {
+      "id": "INV-001",
+      "status": "active",
+      "category": "enforcement",
+      "scope": "F′ gauntlet-entry spine-coverage gate",
+      "surfaces": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "rule": "Every post-fence session reaching the gauntlet action has exactly one spine:true TMR per roadmap user story at acceptable maturity (nl|acceptance|concrete); missing OR duplicate → exit 2.",
+      "enforcement": "F′ parses tmr-registry.json records (DD-1 — the JSON system of record, NOT embedded markdown YAML) + roadmap-manifest US IDs via the shared TmrParser; structural absence or duplication of the spine:true designation blocks on gauntlet.",
+      "exceptions": [
+        "logged --accept-missing-spine + --spine-override-reason (non-empty, non-whitespace; NO minimum length — DR-7) written to sessions/<id>.decisions.log"
+      ],
+      "verification_kind": "dynamic",
+      "verification": "pytest against real roadmap-manifest + tests-pseudo fixtures (full-coverage → exit 0; missing-spine → exit 2; duplicate → exit 2)",
+      "linked_user_stories": [
+        "US-8"
+      ],
+      "linked_goals": [
+        "G-1"
+      ],
+      "linked_tests": [
+        "TC-8.0",
+        "TC-8.1",
+        "TC-8.4",
+        "TC-INV-001"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-002",
+      "status": "active",
+      "category": "enforcement",
+      "scope": "F′ action-branching",
+      "surfaces": [
+        "cli_command"
+      ],
+      "rule": "F′ blocks (exit 2) on the gauntlet action and warns (non-blocking) on the critique action.",
+      "enforcement": "First enforce_pipeline_card_gate check that branches on args.action (existing chain applies uniformly to both).",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: same missing-spine fixture warns on critique, exits 2 on gauntlet",
+      "linked_user_stories": [
+        "US-8"
+      ],
+      "linked_goals": [
+        "G-1"
+      ],
+      "linked_tests": [
+        "TC-8.3",
+        "TC-INV-001"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-003",
+      "status": "active",
+      "category": "enforcement",
+      "scope": "F′ enforcement placement (SEC-1 reframe: Fizzy-side mechanical, skill-side advisory)",
+      "surfaces": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "rule": "REFRAMED (SEC-1, post-gauntlet): the MECHANICAL, non-bypassable F′ gate is FIZZY-SIDE — pipeline_advance into the gauntlet lane refuses unless valid F′ evidence is attached, and Fizzy calls this skill's F′ checker at transition time. The skill-side pre-check and enforce_pipeline_card_gate are ADVISORY fail-fast checks, NOT the non-bypassable layer (a local pre-check cannot gate an out-of-process MCP call). True non-bypassability REQUIRES the coordinated Fizzy spec (a HARD DEPENDENCY) plus the activation rule: tmr.v1 is not considered enforced until an integration test proves a direct pipeline_advance fails closed without F′ evidence.",
+      "enforcement": "Fizzy-side gauntlet-entry state gate invokes the skill's executable F′ checker contract (CLI 'uv run gauntlet-check' / MCP tool); Fizzy fails closed on checker-not-found / timeout / invalid-JSON / schema-mismatch / unsupported contract_version / stale evidence hash / exit 2|3|4. Skill-side enforce_pipeline_card_gate remains an advisory fail-fast pre-check.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "integration test (coordinated Fizzy spec, activation rule): a direct pipeline_advance into the gauntlet lane WITHOUT valid F′ evidence FAILS CLOSED; the checker is invoked at transition time; pre-attached F′ evidence is accepted only if its roadmap_manifest_sha256 / tmr_registry_sha256 match current artifacts (no stale-evidence replay). Skill-side advisory check covered by pytest.",
+      "linked_user_stories": [
+        "US-8"
+      ],
+      "linked_goals": [
+        "G-1"
+      ],
+      "linked_tests": [
+        "TC-8.0",
+        "TC-INV-001"
+      ],
+      "supersedes": "INV-003@v3 (skill-side pre-check PRIMARY)",
+      "superseded_by": null
+    },
+    {
+      "id": "INV-004",
+      "status": "active",
+      "category": "validation",
+      "scope": "TMR schema field-for-field validation",
+      "surfaces": [
+        "outbound_integration",
+        "cli_command"
+      ],
+      "rule": "A TMR with an unrecognized field or enum member is rejected with a NAMED error citing the field — never silently dropped or accepted. Valid TMRs round-trip with no key dropped and the immutable tmr_uid unchanged (test_id/user_story are current coordinates, preserved on round-trip but NOT the identity; DR-4/§4.2).",
+      "enforcement": "fizzy P0 validator + skill-side TMR parser; both reject on unknown/missing key/enum.",
+      "exceptions": [
+        "pre-fence: TMR fields optional + warn-first (INV-016)"
+      ],
+      "verification_kind": "dynamic",
+      "verification": "pytest: valid TMR round-trips losslessly; unknown enum member / missing required field → named rejection",
+      "linked_user_stories": [
+        "US-1"
+      ],
+      "linked_goals": [
+        "G-5"
+      ],
+      "linked_tests": [
+        "TC-1.1",
+        "TC-1.2",
+        "TC-1.3",
+        "TC-INV-004"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-005",
+      "status": "active",
+      "category": "validation",
+      "scope": "failure-test anchoring",
+      "surfaces": [
+        "cli_command"
+      ],
+      "rule": "Every failure/error test cites a valid spine_step_ref; an unanchored failure test is rejected at authoring.",
+      "enforcement": "authoring lint over tests-pseudo TMR blocks.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "doc-lint pytest: a failure test with no spine_step_ref is flagged 'branch off an unplanted trunk'",
+      "linked_user_stories": [
+        "US-2"
+      ],
+      "linked_goals": [
+        "G-1"
+      ],
+      "linked_tests": [
+        "TC-2.1"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-006",
+      "status": "active",
+      "category": "validation",
+      "scope": "exactly-one-spine-per-US",
+      "surfaces": [
+        "cli_command"
+      ],
+      "rule": "Every user story declares exactly one happy-path spine DESIGNATION (≥1 AND ≤1 spine:true record). Extra concrete tests under that designation are allowed (linked via spine_of) — 'exactly one' constrains the designation, not the test count (DD-6).",
+      "enforcement": "A single shared SpineCoverageChecker implements the ≥1∧≤1 rule, consumed by authoring-lint, F′, TRACE (ORPHANED), and TCOV — no re-implemented coverage logic (DD-7).",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: one spine → pass; zero or two spine tests for a US → flagged",
+      "linked_user_stories": [
+        "US-2"
+      ],
+      "linked_goals": [
+        "G-1"
+      ],
+      "linked_tests": [
+        "TC-2.0",
+        "TC-8.4"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-007",
+      "status": "active",
+      "category": "validation",
+      "scope": "strict MOCK falsification",
+      "surfaces": [
+        "cli_command"
+      ],
+      "rule": "A MOCK is sole evidence ONLY when live_or_induced is null AND no live/induced technique exists; a MOCK naming a technique (or a dev-forceable condition) → reject, promote to REAL-DATA.",
+      "enforcement": "MOCK-falsification check (B/D) + PEDA/BURN/AUDT adversary prompts + 03-debate directive.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "golden-case: justified MOCK (technique denied) accepted; MOCK naming tc-netem:partition or a dev-forceable condition rejected → promote",
+      "linked_user_stories": [
+        "US-3"
+      ],
+      "linked_goals": [
+        "G-2"
+      ],
+      "linked_tests": [
+        "TC-3.0",
+        "TC-3.1"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-008",
+      "status": "active",
+      "category": "sot",
+      "scope": "single canonical TMR contract",
+      "surfaces": [
+        "outbound_integration",
+        "cli_command"
+      ],
+      "rule": "The TMR schema contract exists in exactly one canonical file (Brainquarters/shared-context/test-maturity-record-schema.md), referenced never copied. Drift is caught by a LINT that fails-first and NAMES the copy — it NEVER auto-deletes (FM-4: 'delete any copy' would nuke test fixtures / generated docs / archived tests). Derived artifacts are allowlisted by a 'generated-from: <canonical-sha256>' header; a copy with a current source-hash header passes, a copy without one is a blocking finding. tests-pseudo.md is a generated prose VIEW (DD-1), never the system of record.",
+      "enforcement": "lint across both repos: fail-first naming any unexpected copy; never rm; source-hash allowlist for sanctioned regenerations.",
+      "exceptions": [
+        "derived artifacts carrying a current 'generated-from: <canonical-sha256>' header"
+      ],
+      "verification_kind": "static",
+      "verification": "static check: canonical file exists; an unallowlisted copy of the TMR field table → blocking finding (lint fails, no file deleted); a copy with a stale source-hash header → flagged",
+      "linked_user_stories": [
+        "US-1"
+      ],
+      "linked_goals": [
+        "G-5"
+      ],
+      "linked_tests": [
+        "TC-1.0",
+        "TC-INV-008"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-009",
+      "status": "active",
+      "category": "sot",
+      "scope": "critical_seam single source",
+      "surfaces": [
+        "cli_command"
+      ],
+      "rule": "A single CriticalityClassifier is the SOLE writer of critical_seam + criticality_source and the ONLY component permitted to read architecture_link; it runs once, before the guardrails, and performs the explicit-vs-architecture disagreement check internally (the one allowed re-derivation — DD-2). Every consumer reads ONLY the normalized critical_seam field and REJECTS an unclassified record (criticality_source absent) rather than re-deriving — so the INV-009 'never re-derive' rule and disagreement detection coexist.",
+      "enforcement": "CriticalityClassifier is the only writer of critical_seam/criticality_source and only reader of architecture_link; consumers reject records lacking criticality_source.",
+      "exceptions": [],
+      "verification_kind": "static",
+      "verification": "static check: no re-derivation of criticality from architecture_link outside CriticalityClassifier (planted local derivation caught); pytest: a consumer handed an unclassified record rejects it rather than deriving",
+      "linked_user_stories": [
+        "US-1",
+        "US-7"
+      ],
+      "linked_goals": [
+        "G-5"
+      ],
+      "linked_tests": [
+        "TC-INV-009"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-010",
+      "status": "active",
+      "category": "error_handling",
+      "scope": "guardrail subagent fail-closed",
+      "surfaces": [
+        "background_job"
+      ],
+      "rule": "A guardrail subagent that dies/times-out/returns invalid JSON yields a synthetic ORCH finding — blocking on gauntlet, warning on critique. Never proceed on partial findings as if green.",
+      "enforcement": "orchestrator aggregation emits ORCH on any subagent failure.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest of orchestrator: 4/5 subagents return → ORCH emitted, round does NOT complete green on gauntlet",
+      "linked_user_stories": [
+        "US-5"
+      ],
+      "linked_goals": [
+        "G-3"
+      ],
+      "linked_tests": [
+        "TC-5.2",
+        "TC-INV-010"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-011",
+      "status": "active",
+      "category": "error_handling",
+      "scope": "criticality fail-closed",
+      "surfaces": [
+        "cli_command"
+      ],
+      "rule": "criticality_unknown (critical_seam:null + criticality_source:unknown) on a system-altitude happy-path input is treated as CRITICAL until resolved; explicit vs architecture-derived disagreement → fail closed as critical + blocking finding.",
+      "enforcement": "TCOV / liveness check treats criticality_unknown as critical at system altitude.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: null+unknown at altitude:system covered only by MOCK → blocking missing_liveness_test",
+      "linked_user_stories": [
+        "US-7"
+      ],
+      "linked_goals": [
+        "G-1"
+      ],
+      "linked_tests": [
+        "TC-7.2"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-012",
+      "status": "active",
+      "category": "error_handling",
+      "scope": "conflicting-finding disposition",
+      "surfaces": [
+        "background_job"
+      ],
+      "rule": "Conflicting findings (contradictory required_action on the same target+field) enter a conflict state requiring human/orchestrator disposition BEFORE any journaled transition.",
+      "enforcement": "aggregation conflict state gates the journal write.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: two contradictory required_action on same target+field → conflict state, no silent last-writer-wins",
+      "linked_user_stories": [
+        "US-5"
+      ],
+      "linked_goals": [
+        "G-3"
+      ],
+      "linked_tests": [
+        "TC-5.3"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-013",
+      "status": "active",
+      "category": "observability",
+      "scope": "append-only journal",
+      "surfaces": [
+        "background_job"
+      ],
+      "rule": "The provenance journal is append-only over subject_type ∈ {test, node}: every tracked-field change appends one record; a prior record is never rewritten; evolution is not stored inline on the TMR.",
+      "enforcement": "append-only writer; no in-place edit API.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: N changes → N records in order; prior record bytes unchanged after a later append",
+      "linked_user_stories": [
+        "US-9",
+        "US-10"
+      ],
+      "linked_goals": [
+        "G-4"
+      ],
+      "linked_tests": [
+        "TC-9.0",
+        "TC-9.1",
+        "TC-10.0",
+        "TC-INV-013"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-014",
+      "status": "active",
+      "category": "observability",
+      "scope": "journal derived from state changes",
+      "surfaces": [
+        "background_job"
+      ],
+      "rule": "The journal is derived from accepted STATE CHANGES, not guardrail findings alone — created/promotion/binding_status/run_evidence changes journal even with no finding behind them.",
+      "enforcement": "writer triggered by accepted TMR/node field transitions, not only guardrail dispositions.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: a binding_status/run_evidence change with no guardrail finding still appends a driver-tagged record",
+      "linked_user_stories": [
+        "US-9"
+      ],
+      "linked_goals": [
+        "G-4"
+      ],
+      "linked_tests": [
+        "TC-9.0"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-015",
+      "status": "active",
+      "category": "observability",
+      "scope": "altitude_fit required at close",
+      "surfaces": [
+        "cli_command"
+      ],
+      "rule": "node altitude_fit (right|too_high|too_low) at close is required; altitude stability alone must not count a silently-wrong altitude as correct.",
+      "enforcement": "close attestation requires altitude_fit; precision query keys on it, not stability.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: a node stable at subsystem but closed altitude_fit:too_low is NOT counted correct",
+      "linked_user_stories": [
+        "US-10"
+      ],
+      "linked_goals": [
+        "G-4"
+      ],
+      "linked_tests": [
+        "TC-10.1",
+        "TC-INV-015"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-016",
+      "status": "active",
+      "category": "config",
+      "scope": "version fence (non-retroactive)",
+      "surfaces": [
+        "cli_command"
+      ],
+      "rule": "New gates/fields apply only to sessions at liveness_contract_version ≥ tmr.v1; pre-fence sessions keep their original rules (no retroactive failure). TMR fields are optional+warn-first until promoted to required behind the fence.",
+      "enforcement": "gate reads liveness_contract_version before applying new requirements.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: identical missing-spine input → exit 2 post-fence, NOT failed pre-fence (outcome keyed only on the marker)",
+      "linked_user_stories": [
+        "US-12"
+      ],
+      "linked_goals": [
+        "G-7"
+      ],
+      "linked_tests": [
+        "TC-12.0",
+        "TC-12.1",
+        "TC-INV-016"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-017",
+      "status": "active",
+      "category": "integration",
+      "scope": "Phase-8 pseudo→real promotion",
+      "surfaces": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "rule": "A REAL-DATA / critical-seam / happy-path-spine pseudo test that is declared-but-never-run counts as FAILING; run_evidence{result,env,commit,artifact} is required; such a test may NOT be spike test_strategy nor an exempt verification_mode.",
+      "enforcement": "Phase-8 promotion pass drives the run + passes run_evidence; Fizzy sweep enforces; a blocked first-fill HALTS downstream.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: promoted+run-green spine → close passes; REAL-DATA critical-seam with run_evidence:null → close fails",
+      "linked_user_stories": [
+        "US-11"
+      ],
+      "linked_goals": [
+        "G-1"
+      ],
+      "linked_tests": [
+        "TC-11.0",
+        "TC-11.1",
+        "TC-INV-017"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-018",
+      "status": "active",
+      "category": "validation",
+      "scope": "canonical verification_mode only",
+      "surfaces": [
+        "cli_command"
+      ],
+      "rule": "verification_mode values are drawn ONLY from fizzy's canonical VALID_VERIFICATION_MODES — there is NO golden-eval member; the LLM-judgment tier uses system-validation with a golden-case corpus oracle defined by golden_cases/manifest.json (stable IDs, input fixtures, expected findings, negatives, model+settings, pass threshold, content hashes — US-5); a judgment gate is NOT 'complete' until its cases live in that manifest. A code-seam task assigned an exempt mode (artifact-sync/static-check/manual-ux) is flagged.",
+      "enforcement": "tier-lint over execution-plan task records.",
+      "exceptions": [],
+      "verification_kind": "static",
+      "verification": "lint + pytest: every task's verification_mode ∈ VALID_VERIFICATION_MODES; golden-eval rejected; code-seam with exempt mode flagged",
+      "linked_user_stories": [
+        "US-14"
+      ],
+      "linked_goals": [
+        "G-6"
+      ],
+      "linked_tests": [
+        "TC-14.0",
+        "TC-14.1",
+        "TC-INV-018"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-019",
+      "status": "active",
+      "category": "error_handling",
+      "scope": "transient-failure retry before ORCH (FM-1)",
+      "surfaces": [
+        "background_job"
+      ],
+      "rule": "A transient transport failure (rate-limit/timeout/connection-reset) on a guardrail subagent is retried with bounded backoff (a per-round retry budget) BEFORE any ORCH is emitted; only a real guardrail failure (invalid JSON after retries, refusal, genuine crash) becomes a blocking ORCH. Fail-closed must not weaponize a 429 into a self-DoS.",
+      "enforcement": "dispatch contract distinguishes transient transport errors from real failures; retry budget + backoff applied before ORCH.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: a subagent returning a 429 then succeeding within budget → no ORCH; a subagent returning invalid JSON after exhausting retries → ORCH",
+      "linked_user_stories": [
+        "US-5"
+      ],
+      "linked_goals": [
+        "G-3"
+      ],
+      "linked_tests": [
+        "TC-INV-019"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-020",
+      "status": "superseded",
+      "category": "error_handling",
+      "scope": "orchestrator-root death accounting (FM-2)",
+      "surfaces": [
+        "background_job"
+      ],
+      "rule": "The orchestrator records expected_returns:N and received_returns:k; received < expected (or a missing accounting record) is itself an ORCH, not a clean pass. 'No findings' is trusted ONLY when N subagents are accounted for — a dispatch-loop death returning zero findings must NOT read as green.",
+      "enforcement": "explicit return-accounting gate before any 'green' verdict.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: dispatch loop dies after launching 5, 0 returns recorded → ORCH (not pass); 5/5 with 0 findings → pass",
+      "linked_user_stories": [
+        "US-5"
+      ],
+      "linked_goals": [
+        "G-3"
+      ],
+      "linked_tests": [
+        "TC-INV-020"
+      ],
+      "supersedes": null,
+      "superseded_by": {
+        "driver": "DR-6",
+        "reason": "Orchestrator expected/received accounting machinery removed: a serial/awaited fan-out cannot half-report a green; a crashed orchestrator simply does not complete the round, so nothing writes a pass. The leaf-ORCH rule (INV-010/INV-019) covers subagent death.",
+        "at": "2026-06-17"
+      }
+    },
+    {
+      "id": "INV-021",
+      "status": "active",
+      "category": "error_handling",
+      "scope": "persisted conflict dispositions (RC-2)",
+      "surfaces": [
+        "background_job",
+        "cli_command"
+      ],
+      "rule": "An unresolved conflict/disposition is persisted to a discrete pending-dispositions.json (ConflictDispositionStore), NOT held only in memory and NOT in the append-only journal. The main loop refuses to advance a phase while that file is non-empty, and re-reads it on restart — so a fail-closed mechanism cannot silently fail OPEN after a crash/timeout/laptop-close.",
+      "enforcement": "ConflictDispositionStore persists pending items; phase-advance guard checks it is empty; restart reloads it.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: a pending conflict written, process killed, restart → conflict re-surfaces and phase-advance is refused (TMR not silently advanced)",
+      "linked_user_stories": [
+        "US-5"
+      ],
+      "linked_goals": [
+        "G-3"
+      ],
+      "linked_tests": [
+        "TC-INV-021"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-022",
+      "status": "superseded",
+      "category": "validation",
+      "scope": "pinned input snapshot per round (RC-3)",
+      "surfaces": [
+        "background_job"
+      ],
+      "rule": "The orchestrator freezes a per-round input manifest (every readable path + content_sha256) before launching subagents and does not edit those files while subagents are in flight. Each subagent reports the hash of every file it read; the aggregator REJECTS a round whose subagent hashes disagree with the manifest (a mixed-snapshot read) and re-dispatches against a fresh frozen manifest.",
+      "enforcement": "per-round content-hash manifest; aggregator rejects mixed snapshots.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: a subagent reporting a hash not in the manifest → round rejected and re-dispatched; matching hashes → accepted",
+      "linked_user_stories": [
+        "US-5"
+      ],
+      "linked_goals": [
+        "G-3"
+      ],
+      "linked_tests": [
+        "TC-INV-022"
+      ],
+      "supersedes": null,
+      "superseded_by": {
+        "driver": "DR-6",
+        "reason": "Per-round pinned input-snapshot manifest + content_sha256 self-reporting deleted: guardrails are read-only and receive orchestrator-passed identical bytes (not self-read live files), so there is no mixed-snapshot race to defend. Residual 'don't edit a session's files mid-round from another context' is operational guidance, not a gate (trusted operator, §0.3).",
+        "at": "2026-06-17"
+      }
+    },
+    {
+      "id": "INV-023",
+      "status": "active",
+      "category": "observability",
+      "scope": "ProvenanceJournalWriter concurrency (RC-1)",
+      "surfaces": [
+        "background_job",
+        "outbound_integration"
+      ],
+      "rule": "Journal writes go through a ProvenanceJournalWriter doing locked atomic append (O_APPEND under filelock), each record stamped with record_id + idempotency_key (retried write de-duplicated, not double-appended) + an expected_from optimistic check (transition 'from' must match current value, else reject as stale). No two processes append to the same journal file: the skill writes the session-live journal; on close Fizzy is the single serializing writer of the persisted registry.journal.jsonl (skill emits records to Fizzy via MCP, does not co-write the file).",
+      "enforcement": "single-writer ProvenanceJournalWriter with lock + idempotency + expected_from; Fizzy is the sole writer of the persisted journal.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: concurrent appends do not interleave/corrupt; a replayed idempotency_key appends once; a stale expected_from is rejected",
+      "linked_user_stories": [
+        "US-9",
+        "US-10"
+      ],
+      "linked_goals": [
+        "G-4"
+      ],
+      "linked_tests": [
+        "TC-INV-023"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-024",
+      "status": "active",
+      "category": "error_handling",
+      "scope": "shared GateResult model (US-2, FM-3)",
+      "surfaces": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "rule": "Every gate (F′ checker, staleness gate, ORCH aggregator) returns a typed GateResult with outcome ∈ {pass, warn, block, setup_error, schema_error, orch_error}, findings[], and override_eligible:bool — not an overloaded bare exit 2. `outcome` is the ONLY normative outcome field on the gate envelope (R9/DR — a separate `result` field is NOT emitted or required on the GateResult; the unrelated run_evidence.result:pass|fail receipt field is unaffected, §3.1/§8.1). One canonical map: outcome → CLI exit code (0 pass / 2 block / 3 schema_error / 4 orch_error / 5 setup_error) and → MCP structured-error code. A YAML/schema parse failure is schema_error, NEVER coerced to '0 spines / uncovered US' (FM-3). schema_error and setup_error are NOT override_eligible.",
+      "enforcement": "GateResult is the single gate return type; one outcome→exit map; override eligibility set by the gate.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: a missing manifest → setup_error (exit 5, not overridable); a bad TMR → schema_error (exit 3, not coerced to uncovered); an uncovered US → block (exit 2, overridable); the GateResult envelope carries `outcome` and no separate `result` field",
+      "linked_user_stories": [
+        "US-2",
+        "US-8"
+      ],
+      "linked_goals": [
+        "G-1"
+      ],
+      "linked_tests": [
+        "TC-INV-024"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-025",
+      "status": "active",
+      "category": "error_handling",
+      "scope": "typed-transition conflict + deterministic headless resolution (US-6)",
+      "surfaces": [
+        "background_job",
+        "cli_command"
+      ],
+      "rule": "Conflict detection keys on a typed transition {subject, field, from, to, action} (not identical-required_action string match) so it catches cross-field semantic conflicts (promote vs delete; critical_seam-true vs altitude-lowered). Every conflict has a deterministic resolution: interactive → human disposes; headless → declared precedence (fail-closed / higher-altitude / more-conservative transition wins) + a structured override (decision_id + non-whitespace reason). It NEVER loops forever and NEVER silently picks a winner.",
+      "enforcement": "typed-transition conflict model; headless precedence + structured override; no infinite re-trigger.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: a promote-vs-delete cross-field conflict is detected; headless mode resolves via declared precedence with a recorded decision_id, no deadlock",
+      "linked_user_stories": [
+        "US-5"
+      ],
+      "linked_goals": [
+        "G-3"
+      ],
+      "linked_tests": [
+        "TC-INV-025"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-026",
+      "status": "active",
+      "category": "validation",
+      "scope": "cited MOCK impossibility (DD-3)",
+      "surfaces": [
+        "cli_command"
+      ],
+      "rule": "A justified MOCK carries a citable technical_constraint (a concrete reason the boundary can't be induced on dev infra), not prose denial. Scale/cost/time excuses ('2^31 items', 'exhaust rate limit', 'slow') are REJECTED → promote via state-injection/clock-stub/bounded fixtures. The VALID_LIVENESS_TECHNIQUES enum is non-exhaustive: 'no technique' means 'no technique listed OR constructible'. natural-wait is scrutinized (justify why a clock-stub can't replace the wait); a tc-netem technique records its NET_ADMIN need so an un-runnable env surfaces as setup_error, not a silent pass.",
+      "enforcement": "MOCK-falsification lint requires technical_constraint; rejects scale/cost/time; asks 'could state-injection/clock-stub force this?'.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "golden-case: MOCK with a real technical_constraint accepted; MOCK citing '2^31 items' or 'slow' rejected → promote; natural-wait without clock-stub justification flagged",
+      "linked_user_stories": [
+        "US-3"
+      ],
+      "linked_goals": [
+        "G-2"
+      ],
+      "linked_tests": [
+        "TC-INV-026"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-027",
+      "status": "active",
+      "category": "integration",
+      "scope": "promotion_request producer split (DD-4)",
+      "surfaces": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "rule": "Phase-8 promotion emits a typed promotion_request {tmr_uid, repo, accessors[], command, expected_evidence, negative_oracle}; the executable realization (writing/running the real test) happens in the owner repo / Fizzy sweep (the skill's blast zone is markdown phase-docs, not Python in arbitrary repos). A critical-seam promotion_request MUST declare a negative oracle (the condition under which the test fails) so green can't be smoke-only. Binding the spine's accessors is a blocking dependency: an unbound promotion_request HALTS the close, not slipped as an out-of-scope note.",
+      "enforcement": "promotion driver emits promotion_request; realization owned downstream; negative oracle + accessor binding are blocking.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: a promotion_request without negative_oracle for a critical seam is rejected; unbound accessors HALT the close; the skill emits the request without authoring target-repo Python",
+      "linked_user_stories": [
+        "US-11"
+      ],
+      "linked_goals": [
+        "G-1"
+      ],
+      "linked_tests": [
+        "TC-INV-027"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-028",
+      "status": "active",
+      "category": "sot",
+      "scope": "machine-readable schema is source of truth (DD-5)",
+      "surfaces": [
+        "outbound_integration",
+        "cli_command"
+      ],
+      "rule": "The keystone TMR schema is published as a JSON Schema / Pydantic model with extra='forbid' and is the source of truth; Markdown cannot enforce unknown-field rejection. The prose enum tables in the spec are non-normative snapshots carrying the schema's schema_sha256; CI fails if a snapshot hash drifts. fizzy's strict rejection is VERIFIED not assumed: a contract test sends a known-bad payload (unknown field + bad enum) and asserts fizzy rejects it (validators default to extra='ignore').",
+      "enforcement": "JSON-Schema/Pydantic extra='forbid' as SoR; hashed non-normative snapshots; known-bad-payload contract test against fizzy.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest/contract: a payload with an unknown field is REJECTED by the schema and by fizzy; a snapshot table whose hash drifts from the schema fails CI",
+      "linked_user_stories": [
+        "US-1"
+      ],
+      "linked_goals": [
+        "G-5"
+      ],
+      "linked_tests": [
+        "TC-INV-028"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-029",
+      "status": "active",
+      "category": "observability",
+      "scope": "tombstone / rename over stable identity (DD-8)",
+      "surfaces": [
+        "background_job"
+      ],
+      "rule": "delete / supersede / split / merge / rename are represented over a stable immutable tmr_uid (separate from the human test_id) via an explicit `status` enum field (`active|tombstoned`, default `active`; DR-3) backed by fizzy P0's `VALID_TMR_STATUS`, plus `tombstoned_at` (required & non-null when status=tombstoned). Lineage is recorded in `supersedes`, an ARRAY of tmr_uids (default `[]`; DR-3): a replacement points at one predecessor, a merge at many, a tombstoned-without-replacement record keeps `[]`. A rename (TC-0→TC-8.0, a US renumber) keeps the SAME tmr_uid + appends a rename journal event; only replace/split/merge mints a new tmr_uid. F′ counts ONLY `status=active` records — a tombstoned/superseded TMR no longer satisfies F′ and cannot keep 'covering' a US.",
+      "enforcement": "explicit `status` enum (VALID_TMR_STATUS) + `tombstoned_at` + array `supersedes`; stable tmr_uid; F′ filters to status=active.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: a renamed TMR keeps lineage via tmr_uid (same uid, rename event); status=tombstoned requires non-null tombstoned_at; supersedes is an array (merge cites many, deletion-without-replacement is []); a tombstoned spine no longer counts toward F′ coverage (F′ filters status=active)",
+      "linked_user_stories": [
+        "US-9"
+      ],
+      "linked_goals": [
+        "G-4"
+      ],
+      "linked_tests": [
+        "TC-INV-029"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-030",
+      "status": "active",
+      "category": "observability",
+      "scope": "durable override↔correction join (DD-9)",
+      "surfaces": [
+        "cli_command",
+        "background_job"
+      ],
+      "rule": "sessions/<id>.decisions.log stays PLAIN TEXT (DR-10 — the live project convention; NOT structured JSONL). An override is recorded there with a stable decision_id. A later TMR/node change driven by that override appends a provenance-journal record (over {test,node}) whose driver cites the decision_id — joining 'gate bypassed' to 'field corrected later' without adding a session/gate scope to the journal.",
+      "enforcement": "plain-text decisions.log + decision_id; an override-driven journal record's driver references the decision_id. No JSONL migration of decisions.log.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: an override writes a plain-text decisions.log line with a decision_id; a later TMR change driven by it carries driver=decision:<decision_id>; the two join across the two native-format artifacts",
+      "linked_user_stories": [
+        "US-9"
+      ],
+      "linked_goals": [
+        "G-4"
+      ],
+      "linked_tests": [
+        "TC-INV-030"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-031",
+      "status": "superseded",
+      "category": "validation",
+      "scope": "bounded test-input collector (SCA-1)",
+      "surfaces": [
+        "cli_command",
+        "background_job"
+      ],
+      "rule": "TCOV reasons over a bounded test-input manifest produced by a TestInputCollector (resolved owner paths + include/exclude globs + language patterns covering *.test.* AND test_*.py + a token budget), NOT a live unbounded filesystem walk. Over-budget → a named setup_error that reports which paths were dropped — never a silent partial read that truncates to invalid JSON.",
+      "enforcement": "TestInputCollector emits a bounded manifest; over-budget is setup_error; TCOV reads the manifest.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: standalone test_*.py files are collected; an over-budget repo yields a setup_error naming dropped paths, not a silent truncation",
+      "linked_user_stories": [
+        "US-7"
+      ],
+      "linked_goals": [
+        "G-1"
+      ],
+      "linked_tests": [
+        "TC-INV-031"
+      ],
+      "supersedes": null,
+      "superseded_by": {
+        "driver": "DR-5",
+        "reason": "TestInputCollector deleted: TCOV coverage is now a deterministic metadata diff over each test's user_story link (SpineCoverageChecker, INV-006), not test-source ingestion. The LLM role shrinks to targeted per-test adequacy. SCA-1/SCA-3 (token budget / over-budget setup_error) evaporate — there is no source-ingestion step to overflow.",
+        "at": "2026-06-17"
+      }
+    },
+    {
+      "id": "INV-032",
+      "status": "active",
+      "category": "observability",
+      "scope": "bounded journal replay (SCA-2)",
+      "surfaces": [
+        "background_job"
+      ],
+      "rule": "Per-US journal replay reads a bounded/indexed store (segment rotation + compaction index, OR an indexed immutable store such as SQLite append-only rows), NOT a full-file scan of a growing JSONL. Long sessions stay memory-bounded; couples with the RC-1 single-writer rule.",
+      "enforcement": "retention/rotation or indexed store; queries read an index, not the whole file.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest/bench: a large journal replays a single US without loading the whole file into memory",
+      "linked_user_stories": [
+        "US-9"
+      ],
+      "linked_goals": [
+        "G-4"
+      ],
+      "linked_tests": [
+        "TC-INV-032"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-033",
+      "status": "active",
+      "category": "config",
+      "scope": "ContractVersionResolver fence anchor + comparator (SEC-2, US-8)",
+      "surfaces": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "rule": "A single ContractVersionResolver decides fence status against an IMMUTABLE creation timestamp, not the editable marker alone. Read order: (1) fizzy_card_id present → use the server-side Fizzy session-card creation timestamp (not locally editable); if the card exists but the timestamp is unfetchable → FAIL CLOSED as post-fence + named version_fence_error; (2) cardless/legacy → fall back to local session-state.json created_at (the weaker admin-editable tier); missing/malformed → fail closed post-fence. A missing/lower liveness_contract_version on a session whose authoritative created_at ≥ fence_cutover_ts is POST-fence (deleting the marker cannot downgrade). The version comparator is numeric tmr.v<N> (tmr.v10 > tmr.v2), not lexical; malformed → version_fence_error.",
+      "enforcement": "ContractVersionResolver with defined read order anchored on the immutable Fizzy card timestamp; numeric comparator; fail-closed on unfetchable/missing/malformed.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: deleting the marker on a post-cutover Fizzy-carded session stays post-fence (F′ applies); an unfetchable card timestamp fails closed; tmr.v10 compares greater than tmr.v2",
+      "linked_user_stories": [
+        "US-12"
+      ],
+      "linked_goals": [
+        "G-7"
+      ],
+      "linked_tests": [
+        "TC-INV-033"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-034",
+      "status": "active",
+      "category": "enforcement",
+      "scope": "skill-run typed execution receipt + env-trust matrix (SEC-4, US-4)",
+      "surfaces": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "rule": "Phase-8 promotion RUNS the test itself and captures a typed, tier-aware execution receipt — code: {command, exit, duration, runner, commit, artifact_sha256}; system-validation: {transcript_uri, model, prompt_sha256, corpus_id, run_id}; judgment: {golden_manifest_id, model+settings, score, threshold} — it NEVER trusts a hand-written result:pass. env trust is scored by criticality (an env-trust matrix): env:dev is NOT 'live' for an external critical seam (requires env:live or a recorded induced-fault technique). A best-effort mock-detection lint flags a REAL-DATA/critical-seam test that imports a mock/patch of the boundary it claims to exercise (flag, not hard-block — AST heuristic). Honest local-admin trust limit stated; Fizzy is the terminal auditor.",
+      "enforcement": "skill runs tests + captures tier-aware receipt; criticality×env trust matrix; mock-detection lint; Fizzy audits.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: a hand-written result:pass with no receipt is not trusted; an external critical seam passing only at env:dev is not counted live; a REAL-DATA test importing a boundary mock is flagged",
+      "linked_user_stories": [
+        "US-11"
+      ],
+      "linked_goals": [
+        "G-1"
+      ],
+      "linked_tests": [
+        "TC-INV-034"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "INV-035",
+      "status": "active",
+      "category": "validation",
+      "scope": "structured semantic delta to subagents (FM-5)",
+      "surfaces": [
+        "background_job"
+      ],
+      "rule": "The 'what changed' signal handed to guardrail subagents is a structured TMR semantic-delta ({test_id, field, old, new} per changed record) PLUS the text diff, not the raw diff alone — so a finding's join key (test_id/user_story), which often sits outside the changed hunk, travels with the change and is not dropped by the CB-3 'no join key → rejected' rule for lack of nearby context.",
+      "enforcement": "orchestrator computes a TMR semantic-delta and passes it alongside the diff.",
+      "exceptions": [],
+      "verification_kind": "dynamic",
+      "verification": "pytest: a field change whose test_id is outside the text-diff hunk still reaches subagents with the join key via the semantic delta; the finding is not rejected",
+      "linked_user_stories": [
+        "US-5"
+      ],
+      "linked_goals": [
+        "G-3"
+      ],
+      "linked_tests": [
+        "TC-INV-035"
+      ],
+      "supersedes": null,
+      "superseded_by": null
+    }
+  ],
+  "revision_note": "CANON-r4-1 (post spec-draft-v6 fold): INV-003 reframed (SEC-1 Fizzy-side mechanical / skill-side advisory); INV-001 parses tmr-registry.json (DD-1); INV-006 designation+SpineCoverageChecker (DD-6/DD-7); INV-008 lint-not-delete (FM-4); INV-009 CriticalityClassifier (DD-2); INV-018 golden_cases manifest (US-5); added INV-019..035 for the v6 components. CANON-r4-1 mirror (post spec-draft-v12 R12 convergence, 2026-06-16): INV-029 — explicit `status` enum (active|tombstoned, default active; fizzy VALID_TMR_STATUS) + `tombstoned_at` + `supersedes` as ARRAY of tmr_uids (default []), F′ counts only status=active (DR-3); INV-024 — `outcome` is the ONLY normative outcome field on the GateResult envelope, separate `result` field dropped (run_evidence.result unaffected; R9); INV-004 — identity is the immutable tmr_uid, NOT the session·user_story·test_id tuple (DR-4 reconciled the stale v6 phrasing). architecture_fingerprint recomputed over reconciled invariants.",
+  "fingerprint_status": "current — recomputed against spec-draft-v12 invariants (2026-06-16 R12 convergence). NOTE: the spec-internal §3.1 TMR `schema_sha256` snapshot (hash of the canonical JSON Schema / Pydantic model) is a DISTINCT artifact and remains a tracked finalize/implementation item (§12.11) — not computable in the prose pass because the canonical JSON Schema file does not exist yet; do not fabricate it.",
+  "reconciliation": {
+    "performed_at": "2026-06-17",
+    "performed_by": "phase-7-execution (Step 2.5 reconcile-in-place; content patch, no model dispatch)",
+    "reason": "target-architecture.md + architecture-invariants.json were CANON-r4-1 (v6-era) but the spec finalized at v12; the v9 post-gauntlet redesign (DR-5/DR-6/DR-7/DR-10) deleted/revised invariants still carried as active.",
+    "previous_architecture_fingerprint": "sha256:19e8837f971fbad9f7cd273546fe5cb12a1570b4b28055036f0e83715946e466",
+    "deltas": [
+      "INV-001: override reason min-length 50 -> no minimum (DR-7)",
+      "INV-030: decisions.log structured-JSONL -> plain text; decision_id join via journal driver retained (DR-10)",
+      "INV-020: superseded (DR-6 — orchestrator return-accounting machinery removed)",
+      "INV-022: superseded (DR-6 — pinned input-snapshot manifest removed; orchestrator-passed identical bytes)",
+      "INV-031: superseded (DR-5 — TestInputCollector removed; coverage is a metadata diff)",
+      "MW-008 TestInputCollector marked superseded in middleware-candidates.json (DR-5)"
+    ],
+    "active_invariant_count": 32
+  }
+}

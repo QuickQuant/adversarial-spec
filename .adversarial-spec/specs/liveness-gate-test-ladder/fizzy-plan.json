@@ -1,0 +1,1156 @@
+{
+  "plan_schema_version": 2,
+  "session_id": "adv-spec-202606151042-liveness-gate-test-ladder",
+  "tasks": [
+    {
+      "task_id": "W0-1",
+      "title": "Keystone TMR JSON Schema (extra:forbid) + run_evidence union + schema_sha256 + contract test",
+      "description": "Extend the canonical test-maturity-record-schema.md to the v12 field set (status enum, supersedes array, required/optional partition) and publish it as a machine-readable JSON Schema (extra:forbid) that is the source of truth (DD-5). Declare the run_evidence discriminated union and the live_or_induced strict union. Regenerate and pin the §3.1 schema_sha256. Add a known-bad-payload contract test proving fizzy REJECTS an unknown field + bad enum.",
+      "wave": 0,
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [],
+      "concern_refs": [
+        "CB-1",
+        "CB-2",
+        "CB-8",
+        "FM-4"
+      ],
+      "invariant_refs": [
+        "INV-004",
+        "INV-008",
+        "INV-028"
+      ],
+      "surface_scope": [
+        "outbound_integration",
+        "cli_command"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-contract",
+      "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/structured/components/emission-toolchain.md",
+        ".architecture/structured/cross-references.md",
+        ".architecture/primer.md"
+      ],
+      "implementation_status": "partial",
+      "implementation_evidence": "Brainquarters/shared-context/test-maturity-record-schema.md exists (262 L; 19 hits tmr_uid/live_or_induced/critical_seam/maturity) — extend to v12 + add JSON-Schema artifact (no *.schema.json yet)",
+      "test_refs": [
+        "TC-1.0",
+        "TC-1.1",
+        "TC-1.2",
+        "TC-1.3",
+        "TC-1.4",
+        "TC-INV-004",
+        "TC-INV-008"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_tmr_schema_contract.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_tmr_schema_contract.py -q"
+      ],
+      "verification_notes": "Schema-first; fizzy P0 mirrors VALID_* field-for-field (activation rule). schema_sha256 computed here.",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "Canonical schema defines every always/optional/conditional field per §3.1 (incl tmr_uid,status,supersedes[],tombstoned_at,critical_seam,criticality_source)",
+        "JSON Schema extra:forbid; prose tables carry schema_sha256; CI fails on snapshot drift",
+        "run_evidence is a discriminated union on tier, hard-checked against verification_mode (compat map)",
+        "live_or_induced accepts JSON null XOR {kind,detail?} non-null kind; {kind:null}/{\"kind\":\"null\"}/{kind:'other'}(no detail) rejected",
+        "drift lint fails-first and names an unallowlisted copy, never rm; generated-from:<sha256> allowlists derived artifacts",
+        "known-bad payload (unknown field + bad enum) rejected with a named error (contract test)"
+      ]
+    },
+    {
+      "task_id": "W0-2",
+      "title": "TmrParser — shared registry reader/validator, strict typed coercion, named schema_error",
+      "description": "Implement the single shared TmrParser (MW-001): loads + validates tmr-registry.json field-for-field against the keystone JSON Schema with strict typed coercion (reject ambiguous scalars, unknown/missing keys, duplicate JSON keys, duplicate tmr_uid -> named schema_error). The ONLY TMR reader for F', guardrails, and emission (DD-7).",
+      "wave": 0,
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "W0-1"
+      ],
+      "concern_refs": [
+        "CB-6",
+        "CB-7",
+        "US-7",
+        "US-4"
+      ],
+      "invariant_refs": [
+        "INV-004"
+      ],
+      "surface_scope": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/structured/components/debate-engine.md",
+        ".architecture/structured/components/session.md",
+        ".architecture/primer.md"
+      ],
+      "implementation_status": "greenfield",
+      "implementation_evidence": "grep -rIl TmrParser scripts/ -> 0; tmr-registry -> 0 files. No implementer.",
+      "test_refs": [
+        "TC-1.0",
+        "TC-1.3",
+        "TC-1.4",
+        "TC-INV-004"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_tmr_parser.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_tmr_parser.py -q"
+      ],
+      "verification_notes": "Only TMR reader (DD-7).",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "Valid record round-trips, no key dropped; identity on immutable tmr_uid",
+        "Unknown/missing key / bad enum / ambiguous scalar -> named schema_error citing the field (never coerced to '0 spines')",
+        "duplicate JSON keys detected via dup-preserving parse",
+        "string 'null' where JSON null is meant is rejected",
+        "grep confirms single TMR reader"
+      ]
+    },
+    {
+      "task_id": "W0-3",
+      "title": "GateResult model + canonical outcome->exit map",
+      "description": "Implement the typed GateResult (MW-006): outcome + findings[] + override_eligible, with one canonical outcome->exit-code map (0/2/3/4/5) and outcome->MCP-error. outcome is the only normative outcome field; schema_error/setup_error are not override-eligible.",
+      "wave": 0,
+      "effort": "S",
+      "strategy": "test-first",
+      "depends_on": [],
+      "concern_refs": [
+        "US-2",
+        "FM-1"
+      ],
+      "invariant_refs": [
+        "INV-024"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/structured/components/debate-engine.md",
+        ".architecture/primer.md"
+      ],
+      "implementation_status": "greenfield",
+      "implementation_evidence": "grep GateResult scripts/ -> 0.",
+      "test_refs": [
+        "TC-INV-018",
+        "TC-8.0",
+        "TC-8.1"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_gate_result.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_gate_result.py -q"
+      ],
+      "verification_notes": "Negative oracle: schema_error/setup_error NOT override_eligible.",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "one outcome->exit fn: pass 0, block 2, schema_error 3, orch_error 4, setup_error 5; warn exits 0 with findings",
+        "outcome is the only normative outcome field (no result on envelope)",
+        "schema_error/setup_error NOT override_eligible; coverage block is"
+      ]
+    },
+    {
+      "task_id": "W0-4",
+      "title": "SpineCoverageChecker — >=1 AND <=1 designation rule",
+      "description": "Implement the shared SpineCoverageChecker (MW-002): pure function (roadmap US set, parsed TMRs, phase) -> pass | uncovered[] | duplicate[], counting only scalar user_story of active spine:true records (ignores also_covers[]). Consumed by authoring-lint, F', TRACE, TCOV (no re-implementation).",
+      "wave": 0,
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "W0-2"
+      ],
+      "concern_refs": [
+        "DD-6",
+        "DD-7"
+      ],
+      "invariant_refs": [
+        "INV-006"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/structured/components/debate-engine.md",
+        ".architecture/primer.md"
+      ],
+      "implementation_status": "greenfield",
+      "implementation_evidence": "grep SpineCoverageChecker scripts/ -> 0.",
+      "test_refs": [
+        "TC-8.0",
+        "TC-8.4",
+        "TC-INV-001"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_spine_coverage_checker.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_spine_coverage_checker.py -q"
+      ],
+      "verification_notes": "Consumed by authoring-lint/F'/TRACE/TCOV (no re-impl).",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "full coverage -> pass; US with 0 -> uncovered; US with 2 active spine:true -> duplicate",
+        "tombstoned records inert (never counted)",
+        "also_covers[] does NOT satisfy a secondary US",
+        "negative oracle: zero/two designations -> block not pass"
+      ]
+    },
+    {
+      "task_id": "W0-5",
+      "title": "ProvenanceJournalWriter — locked append + idempotency + expected_from + tombstone/rename",
+      "description": "Implement the append-only ProvenanceJournalWriter (MW-003) over subject_type in {test,node}: locked atomic append, record_id + idempotency_key + expected_from, tombstone/rename over the stable tmr_uid (DD-8), atomic registry-update+journal-append (RC-3), bounded/indexed replay (SCA-2), and locking for registry/decisions.log/pending-dispositions (RC-2). Skill writes the session-live journal; Fizzy is the single writer of the persisted journal (RC-1).",
+      "wave": 0,
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [],
+      "concern_refs": [
+        "RC-1",
+        "RC-2",
+        "RC-3",
+        "SCA-2",
+        "DD-8",
+        "DD-9"
+      ],
+      "invariant_refs": [
+        "INV-013",
+        "INV-014",
+        "INV-023",
+        "INV-029",
+        "INV-030",
+        "INV-032"
+      ],
+      "surface_scope": [
+        "background_job",
+        "cli_command"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/structured/components/session.md",
+        ".architecture/structured/components/gauntlet.md",
+        ".architecture/structured/flows.md"
+      ],
+      "implementation_status": "greenfield",
+      "implementation_evidence": "grep ProvenanceJournalWriter scripts/ -> 0. FileLock/atomic pattern exists in gauntlet/persistence.py (reuse pattern, not module).",
+      "test_refs": [
+        "TC-9.0",
+        "TC-9.1",
+        "TC-INV-013"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_provenance_journal.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_provenance_journal.py -q"
+      ],
+      "verification_notes": "Skill writes session-live journal; Fizzy is single writer of persisted journal (RC-1).",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "append-only: two changes -> two records; prior byte-range unchanged (no in-place edit API)",
+        "journals on accepted state changes even with no guardrail finding",
+        "replayed idempotency_key appends once; stale expected_from rejected",
+        "registry update + journal append atomic (no orphan on crash)",
+        "rename keeps tmr_uid (rename event); replace/split/merge tombstones + sets supersedes[]; tombstoned no longer satisfies F'",
+        "per-subject replay reads an index, not a full scan",
+        "plain-text decisions.log decision_id joins to an override-driven journal record's driver (DR-10)"
+      ]
+    },
+    {
+      "task_id": "W0-6",
+      "title": "CriticalityClassifier — sole writer of critical_seam/criticality_source",
+      "description": "Implement CriticalityClassifier (MW-004): the sole writer of critical_seam/criticality_source and the only reader of architecture_link; runs once before guardrails, does the explicit-vs-architecture disagreement check internally, and fails closed on criticality_unknown at system altitude (DD-2 resolution of the INV-009 paradox).",
+      "wave": 0,
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "W0-2"
+      ],
+      "concern_refs": [
+        "DD-2"
+      ],
+      "invariant_refs": [
+        "INV-009",
+        "INV-011"
+      ],
+      "surface_scope": [
+        "cli_command",
+        "background_job"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/structured/components/debate-engine.md",
+        ".architecture/structured/cross-references.md",
+        ".architecture/primer.md"
+      ],
+      "implementation_status": "greenfield",
+      "implementation_evidence": "grep CriticalityClassifier scripts/ -> 0.",
+      "test_refs": [
+        "TC-7.2",
+        "TC-INV-009"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_criticality_classifier.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_criticality_classifier.py -q"
+      ],
+      "verification_notes": "Sole reader of architecture_link; runs once before guardrails.",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "only this component reads architecture_link; consumers read normalized critical_seam, reject unclassified record",
+        "criticality_unknown on system altitude -> critical; explicit-vs-architecture disagreement -> critical + blocking finding",
+        "negative oracle: unclassified record -> consumer REJECTS, never derives"
+      ]
+    },
+    {
+      "task_id": "W1-1",
+      "title": "F-prime checker gauntlet-check CLI + MCP contract + console script",
+      "description": "Implement the normative F' checker contract (spec §6 R4-2) as an executable: uv run gauntlet-check ... --output json, exposed as a new console_script in pyproject.toml (OP-2). Emits the canonical GateResult envelope; uses TmrParser + SpineCoverageChecker (never reimplements them); branches on action; exit map per GateResult. Defines the contract Fizzy invokes at gauntlet-entry.",
+      "wave": 1,
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [
+        "W0-2",
+        "W0-3",
+        "W0-4"
+      ],
+      "concern_refs": [
+        "OP-2",
+        "US-2",
+        "US-3",
+        "SEC-5",
+        "SEC-6"
+      ],
+      "invariant_refs": [
+        "INV-001",
+        "INV-002",
+        "INV-003"
+      ],
+      "surface_scope": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/structured/components/debate-engine.md",
+        ".architecture/structured/components/emission-toolchain.md",
+        ".architecture/structured/flows.md"
+      ],
+      "implementation_status": "greenfield",
+      "implementation_evidence": "pyproject [project.scripts] has only adversarial-spec (no gauntlet-check); no checker module.",
+      "test_refs": [
+        "TC-8.0",
+        "TC-8.1",
+        "TC-8.2",
+        "TC-8.3",
+        "TC-8.4",
+        "TC-INV-001"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_gauntlet_check_cli.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_gauntlet_check_cli.py -q"
+      ],
+      "verification_notes": "Defines the contract Fizzy invokes; skill never embeds Fizzy logic.",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "full coverage -> exit 0 pass; uncovered US -> exit 2 naming the US; duplicate spine -> exit 2",
+        "branches on action: block on gauntlet, warn (exit 0) on critique",
+        "maturity-aware: nl spine passes at debate->gauntlet",
+        "schema_error -> exit 3; setup_error (missing manifest/registry) -> exit 5; neither overridable",
+        "output JSON matches canonical GateResult envelope; outcome is the only outcome field",
+        "gauntlet-check is a real console_script in pyproject [project.scripts]",
+        "override --accept-missing-spine + --spine-override-reason (non-empty, no min length) -> decisions.log"
+      ]
+    },
+    {
+      "task_id": "W1-2",
+      "title": "F-prime integration into debate.py enforce_pipeline_card_gate (branch on action)",
+      "description": "Wire the advisory skill-side F' check into debate.py enforce_pipeline_card_gate as a sibling to the tests-pseudo staleness gate, as the first check that branches on args.action (block exit 2 on gauntlet, warn on critique). --accept-tests-stale does not bypass F'; separate --accept-missing-spine override to decisions.log. Advisory only.",
+      "wave": 1,
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "W1-1"
+      ],
+      "concern_refs": [
+        "US-8",
+        "SEC-1"
+      ],
+      "invariant_refs": [
+        "INV-002",
+        "INV-030"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/structured/components/debate-engine.md",
+        ".architecture/structured/flows.md"
+      ],
+      "implementation_status": "partial",
+      "implementation_evidence": "debate.py:1351 def enforce_pipeline_card_gate; :1370 round_actions={'critique','gauntlet'} (uniform today — F' must add the action branch).",
+      "test_refs": [
+        "TC-8.3",
+        "TC-INV-001"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_fprime_gate_integration.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_fprime_gate_integration.py -q"
+      ],
+      "verification_notes": "Advisory only; not the non-bypassable layer.",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "same missing-spine fixture: exit 2 for gauntlet, warn for critique",
+        "F' runs as a sibling gate (no regression to pipeline-card/staleness gates)",
+        "--accept-missing-spine + reason -> decisions.log; --accept-tests-stale does not bypass F'"
+      ]
+    },
+    {
+      "task_id": "W1-3",
+      "title": "ContractVersionResolver + version fence",
+      "description": "Implement ContractVersionResolver (MW-007): fence-status resolver anchored on the immutable Fizzy session-card creation timestamp vs fence_cutover_ts (local created_at = editable fallback), numeric tmr.v<N> comparator; unfetchable timestamp -> fail-closed post-fence + version_fence_error; missing/lower marker on a post-cutover session = post-fence (defeats the marker-deletion downgrade).",
+      "wave": 1,
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "W0-3"
+      ],
+      "concern_refs": [
+        "SEC-2",
+        "FM-2",
+        "US-8"
+      ],
+      "invariant_refs": [
+        "INV-016",
+        "INV-033"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/structured/components/session.md",
+        ".architecture/structured/components/debate-engine.md",
+        ".architecture/primer.md"
+      ],
+      "implementation_status": "greenfield",
+      "implementation_evidence": "grep ContractVersionResolver scripts/ -> 0.",
+      "test_refs": [
+        "TC-12.0",
+        "TC-12.1",
+        "TC-INV-016"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_contract_version_resolver.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_contract_version_resolver.py -q"
+      ],
+      "verification_notes": "Anchored on immutable Fizzy card timestamp; offline-DoS tradeoff accepted (fail-closed).",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "legacy (created_at < cutover) -> original rules; same input post-fence -> new F' applies (exit 2)",
+        "outcome flips on immutable created_at vs fence_cutover_ts, NOT the editable marker",
+        "numeric comparator tmr.v10 > tmr.v2; malformed -> version_fence_error fail-closed post-fence",
+        "timestamp unfetchable -> fail-closed post-fence + version_fence_error"
+      ]
+    },
+    {
+      "task_id": "W1-4",
+      "title": "ConflictDispositionStore — persisted pending dispositions",
+      "description": "Implement ConflictDispositionStore (MW-005): persists pending conflict dispositions to pending-dispositions.json keyed on a typed transition {subject,field,from,to,action}; the main loop refuses to advance a phase while non-empty; survives crash/restart; headless deterministic resolution via declared precedence + structured machine justification.",
+      "wave": 1,
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "W0-5"
+      ],
+      "concern_refs": [
+        "RC-2",
+        "US-6"
+      ],
+      "invariant_refs": [
+        "INV-012",
+        "INV-021",
+        "INV-025"
+      ],
+      "surface_scope": [
+        "cli_command",
+        "background_job"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/structured/components/session.md",
+        ".architecture/structured/flows.md",
+        ".architecture/primer.md"
+      ],
+      "implementation_status": "greenfield",
+      "implementation_evidence": "grep ConflictDispositionStore scripts/ -> 0.",
+      "test_refs": [
+        "TC-5.3"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_conflict_disposition_store.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_conflict_disposition_store.py -q"
+      ],
+      "verification_notes": "Typed transition keying; headless precedence resolution.",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "contradictory required_action on same target+field -> conflict state before any journaled transition",
+        "pending file non-empty -> phase-advance REFUSED; kill+restart re-surfaces the conflict",
+        "conflict detection on typed transition (cross-field); headless precedence records {decision_id,resolution,precedence_rule,winning/losing_transition}",
+        "negative oracle: non-empty pending file -> advance REFUSED, survives restart"
+      ]
+    },
+    {
+      "task_id": "W1-5",
+      "title": "Verification-tier lint + golden_cases/manifest.json corpus & schema",
+      "description": "Ship the golden_cases/manifest.json schema (stable case IDs, fixtures, expected findings, negatives, model+settings, threshold, content hashes) — the reproducible LLM-judgment-tier oracle (US-5) — and the verification-tier lint: every task declares a tier driving a consistent verification_mode; code-seam + exempt mode flagged; no golden-eval member exists.",
+      "wave": 1,
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "W0-3"
+      ],
+      "concern_refs": [
+        "US-5"
+      ],
+      "invariant_refs": [
+        "INV-018"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/structured/components/adversaries.md",
+        ".architecture/structured/components/gauntlet.md",
+        ".architecture/primer.md"
+      ],
+      "implementation_status": "greenfield",
+      "implementation_evidence": "grep golden_cases skills/adversarial-spec/ -> 0.",
+      "test_refs": [
+        "TC-14.0",
+        "TC-14.1",
+        "TC-INV-018"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_verification_tier_lint.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_verification_tier_lint.py -q"
+      ],
+      "verification_notes": "Golden corpus is the judgment-tier oracle (no golden-eval mode).",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "golden_cases/manifest.json schema: stable IDs, fixtures, expected findings, negatives, model+settings, threshold, content hashes",
+        "every task verification_mode in VALID_VERIFICATION_MODES; golden-eval rejected; code-seam + exempt mode -> flagged",
+        "judgment gates 'complete' only when their cases live in the manifest"
+      ]
+    },
+    {
+      "task_id": "W2-1",
+      "title": "Parallel-subagent guardrail dispatch + structured findings + aggregation + ORCH fail-closed + retry",
+      "description": "Rearchitect the five guardrails (CONS/SCOPE/TRACE/CANON/TCOV) to run as separate parallel subagents (never one combined prompt), each self-contained (persona + orchestrator-passed identical content + round diff + TMR semantic-delta). Aggregate N structured findings keyed to test/US ids; subagent death -> synthetic ORCH (block on gauntlet, warn on critique); transient transport error retried with bounded backoff BEFORE any ORCH. Updates phases/03-debate.md invocation contract.",
+      "wave": 2,
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [
+        "W0-5",
+        "W1-4",
+        "W0-3"
+      ],
+      "concern_refs": [
+        "DD-1",
+        "FM-1",
+        "FM-5",
+        "SCA-1",
+        "SEC-2"
+      ],
+      "invariant_refs": [
+        "INV-010",
+        "INV-019",
+        "INV-035"
+      ],
+      "surface_scope": [
+        "background_job",
+        "cli_command"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/structured/components/adversaries.md",
+        ".architecture/structured/components/models.md",
+        ".architecture/structured/components/debate-engine.md",
+        ".architecture/structured/flows.md"
+      ],
+      "implementation_status": "partial",
+      "implementation_evidence": "adversaries.py GUARDRAILS personas exist (REQUIREMENTS_TRACER:1174, TEST_COVERAGE_AUDITOR:1284); dispatch not yet parallel-subagent+structured. 03-debate.md invocation contract exists.",
+      "test_refs": [
+        "TC-5.0",
+        "TC-5.1",
+        "TC-5.2",
+        "TC-5.3",
+        "TC-INV-010"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_guardrail_orchestration.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_guardrail_orchestration.py -q"
+      ],
+      "verification_notes": "Conflict handoff to W1-4; journal via W0-5.",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "five separate structured result sets each keyed to test/US id, aggregated+persisted per round (never one combined prompt)",
+        "subagents receive TMR semantic-delta + text diff (join keys outside the hunk not dropped)",
+        "one subagent fails -> synthetic ORCH; round does NOT complete green on gauntlet (4/5 != pass)",
+        "transient 429/timeout retried with bounded backoff before ORCH (no self-DoS)",
+        "join keys scoped to TMR-changing findings; spec/contract findings journaled only if they change a TMR/node field"
+      ]
+    },
+    {
+      "task_id": "W2-2",
+      "title": "TRACE spine-inversion (ORPHANED)",
+      "description": "Invert TRACE for the happy-path spine: a journey with prose but no spine test = ORPHANED (traceability break), not a test suggestion; the general no-test-suggestions rule still holds for non-spine. TRACE also judges whether the labeled spine is the primary success path. Edit adversaries.py REQUIREMENTS_TRACER + reference/guardrail-prompts.md; verified judgment-tier via golden corpus.",
+      "wave": 2,
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "W0-4",
+        "W1-5",
+        "W2-1"
+      ],
+      "concern_refs": [
+        "OP-3"
+      ],
+      "invariant_refs": [
+        "INV-006"
+      ],
+      "surface_scope": [
+        "background_job"
+      ],
+      "behavior_change": true,
+      "verification_mode": "system-validation",
+      "verification_scope": "end-to-end",
+      "architecture_refs": [
+        ".architecture/structured/components/adversaries.md",
+        ".architecture/structured/components/prompts.md"
+      ],
+      "implementation_status": "partial",
+      "implementation_evidence": "adversaries.py:1174 REQUIREMENTS_TRACER; reference/guardrail-prompts.md exists.",
+      "test_refs": [
+        "TC-6.0",
+        "TC-6.1"
+      ],
+      "test_files": [
+        ".adversarial-spec/specs/liveness-gate-test-ladder/golden_cases/manifest.json",
+        "skills/adversarial-spec/scripts/tests/test_trace_golden.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_trace_golden.py -q"
+      ],
+      "verification_notes": "Judgment-tier; corpus from W1-5; non-exempt.",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "US with prose but no spine -> ORPHANED",
+        "non-spine missing edge test -> NOT flagged (TC-6.1 false-positive guard)",
+        "uses SpineCoverageChecker (no re-implemented coverage logic)"
+      ]
+    },
+    {
+      "task_id": "W2-3",
+      "title": "TCOV liveness guardrail (missing_liveness_test) + promoter + data_strategy_mismatch",
+      "description": "Re-center TCOV (DR-5): primary deliverable missing_liveness_test (mock-only critical seam -> blocking). Coverage is a deterministic metadata diff over each test's user_story link via SpineCoverageChecker (NOT test-source ingestion; TestInputCollector deleted). Secondary: the promoter (PROMOTE/BLOCK, CB-5 >=1-accessor guard) and data_strategy_mismatch. Edit adversaries.py TEST_COVERAGE_AUDITOR + guardrail-prompts.md.",
+      "wave": 2,
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [
+        "W0-2",
+        "W0-4",
+        "W0-6",
+        "W1-5"
+      ],
+      "concern_refs": [
+        "SCA-1",
+        "DD-3",
+        "CB-5"
+      ],
+      "invariant_refs": [
+        "INV-011"
+      ],
+      "surface_scope": [
+        "background_job",
+        "cli_command"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/structured/components/adversaries.md",
+        ".architecture/structured/components/prompts.md",
+        ".architecture/structured/cross-references.md"
+      ],
+      "implementation_status": "partial",
+      "implementation_evidence": "adversaries.py:1284 TEST_COVERAGE_AUDITOR; DR-5 deleted TestInputCollector (never built — grep 0).",
+      "test_refs": [
+        "TC-7.0",
+        "TC-7.1",
+        "TC-7.2",
+        "TC-4.0",
+        "TC-4.1"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_tcov_liveness.py",
+        ".adversarial-spec/specs/liveness-gate-test-ladder/golden_cases/manifest.json"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_tcov_liveness.py -q"
+      ],
+      "verification_notes": "TC-7.1 judgment-tier (golden corpus); TC-7.0/7.2/4.x code-tier.",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "critical seam with real/induced test -> no missing_liveness_test; mock-only critical seam -> blocking missing_liveness_test; non-critical mock-only -> not flagged",
+        "criticality_unknown on system altitude -> treated critical (consumes CriticalityClassifier, no re-derivation)",
+        "promoter requires >=1 named accessor (empty accessors does NOT auto-promote)",
+        "coverage is a metadata diff (no test-source ingestion; no TestInputCollector)"
+      ]
+    },
+    {
+      "task_id": "W2-4",
+      "title": "Strict MOCK falsification (PEDA/BURN/AUDT + 03-debate)",
+      "description": "Implement the strict MOCK rule (§4.3): a justified MOCK must deny that ANY listed or constructible technique could induce the behavior; naming a technique -> promote to REAL-DATA. Keys on real-ness not the label (DR-8); justified MOCK carries a cited technical_constraint (DD-3); scale/cost/time excuses rejected. Mirror into adversaries.py PEDA/BURN/AUDT + phases/03-debate.md.",
+      "wave": 2,
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "W0-2",
+        "W1-5"
+      ],
+      "concern_refs": [
+        "CB-3",
+        "CB-4",
+        "DD-3"
+      ],
+      "invariant_refs": [
+        "INV-007",
+        "INV-026"
+      ],
+      "surface_scope": [
+        "background_job",
+        "cli_command"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/structured/components/adversaries.md",
+        ".architecture/structured/components/prompts.md"
+      ],
+      "implementation_status": "partial",
+      "implementation_evidence": "PEDA/BURN/AUDT personas in adversaries.py; 03-debate.md MOCK directive ~line 404.",
+      "test_refs": [
+        "TC-3.0",
+        "TC-3.1",
+        "TC-3.2"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_mock_falsification.py",
+        ".adversarial-spec/specs/liveness-gate-test-ladder/golden_cases/manifest.json"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_mock_falsification.py -q"
+      ],
+      "verification_notes": "TC-3.1 judgment-tier; TC-3.0/3.2 code/doc-tier.",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "MOCK is sole evidence ONLY when live_or_induced null AND no technique exists; naming a technique -> promote (TC-3.1)",
+        "critical seam + non-REAL data_strategy with empty why_impossible_to_reproduce_live -> reject/promote (TC-3.2; not just literal MOCK)",
+        "justified MOCK carries non-empty technical_constraint; scale/cost/time excuses rejected (TC-3.0 asserts BOTH why_impossible AND technical_constraint)"
+      ]
+    },
+    {
+      "task_id": "W3-1",
+      "title": "Happy-path spine + maturity ladder authoring (phases 01/02 + document-types)",
+      "description": "Add the happy-path-spine authoring model + maturity ladder to the phase docs: one spine designation per US (named steps), failure tests cite spine_step_ref (unanchored -> rejected), one designation/many concrete tests via spine_of; the nl->acceptance->concrete ladder with acceptance defined WITHOUT the facade. Authoring lint uses SpineCoverageChecker. Edit phases/01,02 + reference/document-types.md.",
+      "wave": 3,
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "W0-4"
+      ],
+      "concern_refs": [
+        "CB-8",
+        "DD-6"
+      ],
+      "invariant_refs": [
+        "INV-005",
+        "INV-006"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "behavior_change": true,
+      "verification_mode": "system-validation",
+      "verification_scope": "end-to-end",
+      "architecture_refs": [
+        ".architecture/structured/components/debate-engine.md",
+        ".architecture/primer.md"
+      ],
+      "implementation_status": "partial",
+      "implementation_evidence": "phases/01-init-and-requirements.md, phases/02-roadmap.md, reference/document-types.md exist.",
+      "test_refs": [
+        "TC-2.0",
+        "TC-2.1",
+        "TC-2.2",
+        "TC-4.0",
+        "TC-4.1"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_authoring_lint.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_authoring_lint.py -q"
+      ],
+      "verification_notes": "Spine TC-2.0 = doc-lint pytest + system-validation live run (TC-2.2); non-exempt.",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "failure test with no spine_step_ref -> rejected at authoring (TC-2.1)",
+        "authoring lint confirms exactly one spine per US (consumes SpineCoverageChecker)",
+        "maturity ladder documented; acceptance has executable meaning without the facade; nl all-named-accessors -> PROMOTE (>=1 accessor)",
+        "a live scoped skill run on a 2-US fixture produces exactly one spine per US (TC-2.2)"
+      ]
+    },
+    {
+      "task_id": "W3-2",
+      "title": "LLM compile step (prose->registry) + prose-view regen + echo-diff + tmr_uid ULID allocation",
+      "description": "Implement the R4-4 authoring compile step: human authors prose in tests-pseudo.md; an LLM compile step emits validated records into tmr-registry.json (validate-on-emit via TmrParser; malformed -> schema_error), regenerates the prose VIEW + surfaces an echo-diff for human confirm. The compiler mints the tmr_uid ULID on first emit (LLM never allocates), diffs on tmr_uid (rename detected, DD-8), rejects duplicate tmr_uid/anchor; cite-resolves accessor symbols (FM-5).",
+      "wave": 3,
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [
+        "W0-1",
+        "W0-2",
+        "W0-5"
+      ],
+      "concern_refs": [
+        "CB-7",
+        "FM-5",
+        "SEC-2",
+        "CB-8"
+      ],
+      "invariant_refs": [
+        "INV-029",
+        "INV-004"
+      ],
+      "surface_scope": [
+        "cli_command",
+        "background_job"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/structured/components/debate-engine.md",
+        ".architecture/structured/components/emission-toolchain.md",
+        ".architecture/structured/components/session.md"
+      ],
+      "implementation_status": "greenfield",
+      "implementation_evidence": "no compile step; tmr-registry 0 hits.",
+      "test_refs": [
+        "TC-1.0",
+        "TC-1.3",
+        "TC-INV-004"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_tmr_compile_step.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_tmr_compile_step.py -q"
+      ],
+      "verification_notes": "echo-diff + human confirm is the injection backstop (SEC-2).",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "compiler mints a 26-char ULID tmr_uid on first emit; LLM never allocates; duplicate tmr_uid/anchor -> schema_error",
+        "validate-on-emit (TmrParser); malformed -> schema_error fail-closed",
+        "prose-view regenerated; echo-diff surfaced as explicit semantic diff; human confirm gate",
+        "a prose rename (TC-0 -> TC-8.0) diffs on tmr_uid -> rename event, not delete+add",
+        "compile cite-resolves accessor symbols; echo+confirm backstop"
+      ]
+    },
+    {
+      "task_id": "W4-1",
+      "title": "Phase-8 pseudo->real promotion (promotion_request, run_evidence capture, negative oracle, mock-lint, DR-9)",
+      "description": "Add a Phase-8 promotion pass (phases/08,07): each REAL-DATA/critical-seam/spine pseudo test is written real, RUN, required green. Producer split (DD-4): the skill emits a typed promotion_request; the owner repo authors/binds; the skill-runner executes the declared command and captures the typed run_evidence receipt (never trusts owner-written result). DR-9 env->real-pass matrix at close; negative oracle required; unbound accessors HALT close; mock-detection lint.",
+      "wave": 4,
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [
+        "W0-1",
+        "W0-2",
+        "W0-6"
+      ],
+      "concern_refs": [
+        "US-1",
+        "CB-5",
+        "DD-4",
+        "SEC-1"
+      ],
+      "invariant_refs": [
+        "INV-017",
+        "INV-027",
+        "INV-034"
+      ],
+      "surface_scope": [
+        "cli_command",
+        "outbound_integration"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/structured/components/debate-engine.md",
+        ".architecture/structured/components/gauntlet.md",
+        ".architecture/structured/flows.md"
+      ],
+      "implementation_status": "partial",
+      "implementation_evidence": "phases/08-implementation.md, phases/07-execution.md exist; run_evidence capture + promotion_request greenfield (0 hits).",
+      "test_refs": [
+        "TC-11.0",
+        "TC-11.1",
+        "TC-INV-017"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_phase8_promotion.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_phase8_promotion.py -q"
+      ],
+      "verification_notes": "Owner-repo code-authoring + command sandbox are out of skill scope; skill-runner executes the declared command.",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "declared-but-never-run REAL-DATA critical-seam -> FAILING (close fails on run_evidence null, TC-11.1); spine/critical-seam may not be spike/exempt",
+        "emits typed promotion_request; owner repo authors/binds; negative oracle required; unbound accessors HALT close",
+        "skill-runner RUNS the test + captures the tier receipt; never trusts hand-written result; mock-detection lint flags a boundary mock",
+        "env->real-pass matrix enforced (dev/ci needs recorded technique for a critical seam; null -> not a real pass)",
+        "negative oracle: close passing on null run_evidence must FAIL"
+      ]
+    },
+    {
+      "task_id": "W4-3",
+      "title": "Altitude-triage provenance + altitude_fit (skill side)",
+      "description": "Skill-side altitude-triage provenance: the Phase-7 depth-triage step contributes the initial node altitude + rationale (created record); consume/query the node-altitude journal for meta-analysis (distribution, subsystem precision, confusion matrix) and the close-time altitude_fit in {right,too_high,too_low}. Node-altitude journaling/enforcement is fizzy-side; the skill emits/queries.",
+      "wave": 4,
+      "effort": "M",
+      "strategy": "test-after",
+      "depends_on": [
+        "W0-5"
+      ],
+      "concern_refs": [],
+      "invariant_refs": [
+        "INV-015"
+      ],
+      "surface_scope": [
+        "cli_command",
+        "background_job"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/structured/components/session.md",
+        ".architecture/structured/flows.md",
+        ".architecture/primer.md"
+      ],
+      "implementation_status": "partial",
+      "implementation_evidence": "depth-triage altitude exists in 07-execution flow; node journaling consumes W0-5 (skill side); fizzy-side journaling/enforcement external.",
+      "test_refs": [
+        "TC-10.0",
+        "TC-10.1",
+        "TC-INV-015"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_altitude_provenance.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_altitude_provenance.py -q"
+      ],
+      "verification_notes": "Node journaling/enforcement is fizzy-side; skill emits/queries.",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "altitude_fit:right counts correct; altitude_fit:too_low on a stable node -> NOT counted correct",
+        "node journal records created @ depth-triage with initial altitude + rationale",
+        "meta-analysis queries (distribution, subsystem precision) answer over subject_type:node"
+      ]
+    },
+    {
+      "task_id": "W5-1",
+      "title": "Glossary / ADR / document-types (happy-path-spine collision)",
+      "description": "Add CONTEXT.md entries for happy-path spine, TMR, maturity ladder, liveness; resolve the Architecture Spine collision (qualify 'happy-path spine' in prose; machine tokens exempt); update reference/document-types.md tests-pseudo row to the extended TMR row; write a new ADR recording the test-ladder/TMR/liveness decision + the two-spec cross-project scope split.",
+      "wave": 5,
+      "effort": "S",
+      "strategy": "test-after",
+      "depends_on": [],
+      "concern_refs": [
+        "CB-8",
+        "DD-6"
+      ],
+      "invariant_refs": [],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "behavior_change": false,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/INDEX.md",
+        ".architecture/primer.md"
+      ],
+      "implementation_status": "partial",
+      "implementation_evidence": "CONTEXT.md, reference/document-types.md exist; new ADR greenfield.",
+      "test_refs": [
+        "TC-13.0"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_glossary_doclint.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_glossary_doclint.py -q"
+      ],
+      "verification_notes": "TC-13.0 spine realized as automated doc-lint pytest (non-exempt per §8.1).",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "happy-path spine, TMR, maturity ladder, liveness defined; 'happy-path spine' always qualified in PROSE (never bare 'spine'); machine tokens exempt; ADR records the decision + two-spec split"
+      ]
+    },
+    {
+      "task_id": "W5-2",
+      "title": "Getting Started bootstrap (no copy-deploy; symlink note)",
+      "description": "Author the §2 Getting Started bootstrap: the post-fence first-run path (author one spine/US -> compile -> authoring lint -> attempt gauntlet -> observe pass/exit-2) and running F' against full-coverage + missing-spine fixtures. Must state the deployed skill is a symlink (edits live, no copy) and contain no prescriptive cp -r ... ~/.claude/skills step.",
+      "wave": 5,
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "W1-1",
+        "W3-1"
+      ],
+      "concern_refs": [
+        "OP-3",
+        "CB-8"
+      ],
+      "invariant_refs": [],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "behavior_change": false,
+      "verification_mode": "system-validation",
+      "verification_scope": "end-to-end",
+      "architecture_refs": [
+        ".architecture/structured/components/debate-engine.md",
+        ".architecture/primer.md"
+      ],
+      "implementation_status": "partial",
+      "implementation_evidence": "§2 content is new doc; reference/ exists; CLAUDE.md symlink fact corrected.",
+      "test_refs": [
+        "TC-15.0",
+        "TC-15.1"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_getting_started_doclint.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_getting_started_doclint.py -q"
+      ],
+      "verification_notes": "Spine TC-15.0 = system-validation (live bootstrap run); non-exempt.",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "following the documented bootstrap reaches exit 0 on full-coverage fixture AND exit 2 naming the uncovered story on missing-spine fixture, without reading the implementation (TC-15.0)",
+        "docs state symlink (edits live, no copy); no AFFIRMATIVE cp -r ... ~/.claude/skills instruction (negative warning allowed)"
+      ]
+    },
+    {
+      "task_id": "W5-3",
+      "title": "Dogfood fixture — tmr-registry.json with all 15 spine records via compile step",
+      "description": "Produce a tmr-registry.json with a validated spine:true record for all 15 spine tests (today only TC-8.0 has one) via the R4-4 compile step, plus the regenerated prose view + echo-diff. This is the fixture that makes F' actually pass this slice (closes the OP-3/§12.11 activation gap); verified by running the F' checker against it.",
+      "wave": 5,
+      "effort": "M",
+      "strategy": "test-after",
+      "depends_on": [
+        "W1-1",
+        "W3-2"
+      ],
+      "concern_refs": [
+        "OP-3"
+      ],
+      "invariant_refs": [
+        "INV-001"
+      ],
+      "surface_scope": [
+        "cli_command"
+      ],
+      "behavior_change": false,
+      "verification_mode": "automated-integration",
+      "verification_scope": "targeted",
+      "architecture_refs": [
+        ".architecture/structured/components/debate-engine.md",
+        ".architecture/primer.md"
+      ],
+      "implementation_status": "greenfield",
+      "implementation_evidence": "tmr-registry 0 hits; only TC-8.0 has a TMR block in tests-pseudo.",
+      "test_refs": [
+        "TC-8.0",
+        "TC-INV-001"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_dogfood_fprime.py"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_dogfood_fprime.py -q"
+      ],
+      "verification_notes": "Closes the OP-3/§12.11 activation gap (F' would not pass the draft until this).",
+      "exemption_reason": null,
+      "acceptance_criteria": [
+        "all 15 spine tests have an active, spine:true registry record (compiled, TmrParser-valid)",
+        "F' checker returns pass (exit 0) against the dogfood registry + roadmap manifest",
+        "prose view regenerated; echo-diff clean"
+      ]
+    }
+  ]
+}
