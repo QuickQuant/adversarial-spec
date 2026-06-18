@@ -128,12 +128,10 @@ def main() -> None:
             roadmap_data = json.load(f)
         if not isinstance(roadmap_data, dict) or "user_stories" not in roadmap_data:
             raise ValueError("Missing 'user_stories' key in roadmap manifest")
-        roadmap_user_stories = roadmap_data["user_stories"]
-        if not isinstance(roadmap_user_stories, list):
+        raw_user_stories = roadmap_data["user_stories"]
+        if not isinstance(raw_user_stories, list):
             raise ValueError("'user_stories' must be a list")
-        for idx, story in enumerate(roadmap_user_stories):
-            if not isinstance(story, str):
-                raise ValueError(f"User story at index {idx} must be a string")
+        roadmap_user_stories = _normalize_user_story_ids(raw_user_stories)
     except json.JSONDecodeError as exc:
         finding = GateFinding(
             code="schema_error",
@@ -272,6 +270,26 @@ def write_result_and_exit(result: GateResult, output_format: str | None) -> None
             sys.stderr.write(f"[{finding.severity.upper()}] {finding.message}\n")
         sys.stderr.write(f"Outcome: {result.outcome}\n")
     sys.exit(result.exit_code())
+
+
+def _normalize_user_story_ids(raw_user_stories: list[object]) -> list[str]:
+    """Accept compact fixture manifests and rich roadmap manifests."""
+
+    roadmap_user_stories: list[str] = []
+    for idx, story in enumerate(raw_user_stories):
+        if isinstance(story, str):
+            roadmap_user_stories.append(story)
+            continue
+        if isinstance(story, dict):
+            story_id = story.get("id")
+            if isinstance(story_id, str) and story_id:
+                roadmap_user_stories.append(story_id)
+                continue
+            raise ValueError(
+                f"User story object at index {idx} must have a non-empty string id"
+            )
+        raise ValueError(f"User story at index {idx} must be a string or object")
+    return roadmap_user_stories
 
 
 if __name__ == "__main__":

@@ -1,0 +1,602 @@
+[
+  {
+    "anchor": "tests-pseudo.md#tc-15-0",
+    "record": {
+      "accessors": [
+        "dogfood_fprime_fixture"
+      ],
+      "also_covers": [],
+      "altitude": "system",
+      "architecture_link": [],
+      "binding_status": "unbound",
+      "critical_seam": false,
+      "criticality_source": "explicit",
+      "data_strategy": "REAL-DATA",
+      "live_or_induced": {
+        "kind": "natural-wait"
+      },
+      "maturity": "acceptance",
+      "run_evidence": null,
+      "source_spec": "liveness-gate-test-ladder/tests-pseudo.md",
+      "spine": true,
+      "spine_of": null,
+      "spine_step_ref": null,
+      "spine_steps": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "status": "active",
+      "supersedes": [],
+      "technical_constraint": null,
+      "test_id": "TC-15.0",
+      "tested_by": "llm",
+      "title": "Getting Started bootstrap verifies the F-prime gate",
+      "tombstoned_at": null,
+      "user_story": "US-15",
+      "verification_mode": "automated-contract",
+      "verification_scope": "targeted",
+      "why_impossible_to_reproduce_live": null
+    }
+  },
+  {
+    "anchor": "tests-pseudo.md#tc-1-0",
+    "record": {
+      "accessors": [
+        "dogfood_fprime_fixture"
+      ],
+      "also_covers": [],
+      "altitude": "system",
+      "architecture_link": [],
+      "binding_status": "unbound",
+      "critical_seam": false,
+      "criticality_source": "explicit",
+      "data_strategy": "REAL-DATA",
+      "live_or_induced": {
+        "kind": "natural-wait"
+      },
+      "maturity": "acceptance",
+      "run_evidence": null,
+      "source_spec": "liveness-gate-test-ladder/tests-pseudo.md",
+      "spine": true,
+      "spine_of": null,
+      "spine_step_ref": null,
+      "spine_steps": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "status": "active",
+      "supersedes": [],
+      "technical_constraint": null,
+      "test_id": "TC-1.0",
+      "tested_by": "llm",
+      "title": "Shared TMR schema round-trip",
+      "tombstoned_at": null,
+      "user_story": "US-1",
+      "verification_mode": "automated-contract",
+      "verification_scope": "targeted",
+      "why_impossible_to_reproduce_live": null
+    }
+  },
+  {
+    "anchor": "tests-pseudo.md#tc-2-0",
+    "record": {
+      "accessors": [
+        "dogfood_fprime_fixture"
+      ],
+      "also_covers": [],
+      "altitude": "system",
+      "architecture_link": [],
+      "binding_status": "unbound",
+      "critical_seam": false,
+      "criticality_source": "explicit",
+      "data_strategy": "REAL-DATA",
+      "live_or_induced": {
+        "kind": "natural-wait"
+      },
+      "maturity": "acceptance",
+      "run_evidence": null,
+      "source_spec": "liveness-gate-test-ladder/tests-pseudo.md",
+      "spine": true,
+      "spine_of": null,
+      "spine_step_ref": null,
+      "spine_steps": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "status": "active",
+      "supersedes": [],
+      "technical_constraint": null,
+      "test_id": "TC-2.0",
+      "tested_by": "llm",
+      "title": "Happy-path spine authoring contract",
+      "tombstoned_at": null,
+      "user_story": "US-2",
+      "verification_mode": "automated-contract",
+      "verification_scope": "targeted",
+      "why_impossible_to_reproduce_live": null
+    }
+  },
+  {
+    "anchor": "tests-pseudo.md#tc-3-0",
+    "record": {
+      "accessors": [
+        "dogfood_fprime_fixture"
+      ],
+      "also_covers": [],
+      "altitude": "system",
+      "architecture_link": [],
+      "binding_status": "unbound",
+      "critical_seam": false,
+      "criticality_source": "explicit",
+      "data_strategy": "REAL-DATA",
+      "live_or_induced": {
+        "kind": "natural-wait"
+      },
+      "maturity": "acceptance",
+      "run_evidence": null,
+      "source_spec": "liveness-gate-test-ladder/tests-pseudo.md",
+      "spine": true,
+      "spine_of": null,
+      "spine_step_ref": null,
+      "spine_steps": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "status": "active",
+      "supersedes": [],
+      "technical_constraint": null,
+      "test_id": "TC-3.0",
+      "tested_by": "llm",
+      "title": "Strict mock falsification happy path",
+      "tombstoned_at": null,
+      "user_story": "US-3",
+      "verification_mode": "automated-contract",
+      "verification_scope": "targeted",
+      "why_impossible_to_reproduce_live": null
+    }
+  },
+  {
+    "anchor": "tests-pseudo.md#tc-4-0",
+    "record": {
+      "accessors": [
+        "dogfood_fprime_fixture"
+      ],
+      "also_covers": [],
+      "altitude": "system",
+      "architecture_link": [],
+      "binding_status": "unbound",
+      "critical_seam": false,
+      "criticality_source": "explicit",
+      "data_strategy": "REAL-DATA",
+      "live_or_induced": {
+        "kind": "natural-wait"
+      },
+      "maturity": "acceptance",
+      "run_evidence": null,
+      "source_spec": "liveness-gate-test-ladder/tests-pseudo.md",
+      "spine": true,
+      "spine_of": null,
+      "spine_step_ref": null,
+      "spine_steps": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "status": "active",
+      "supersedes": [],
+      "technical_constraint": null,
+      "test_id": "TC-4.0",
+      "tested_by": "llm",
+      "title": "Maturity ladder promotion happy path",
+      "tombstoned_at": null,
+      "user_story": "US-4",
+      "verification_mode": "automated-contract",
+      "verification_scope": "targeted",
+      "why_impossible_to_reproduce_live": null
+    }
+  },
+  {
+    "anchor": "tests-pseudo.md#tc-5-0",
+    "record": {
+      "accessors": [
+        "dogfood_fprime_fixture"
+      ],
+      "also_covers": [],
+      "altitude": "system",
+      "architecture_link": [],
+      "binding_status": "unbound",
+      "critical_seam": false,
+      "criticality_source": "explicit",
+      "data_strategy": "REAL-DATA",
+      "live_or_induced": {
+        "kind": "natural-wait"
+      },
+      "maturity": "acceptance",
+      "run_evidence": null,
+      "source_spec": "liveness-gate-test-ladder/tests-pseudo.md",
+      "spine": true,
+      "spine_of": null,
+      "spine_step_ref": null,
+      "spine_steps": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "status": "active",
+      "supersedes": [],
+      "technical_constraint": null,
+      "test_id": "TC-5.0",
+      "tested_by": "llm",
+      "title": "Parallel guardrail structured findings",
+      "tombstoned_at": null,
+      "user_story": "US-5",
+      "verification_mode": "automated-contract",
+      "verification_scope": "targeted",
+      "why_impossible_to_reproduce_live": null
+    }
+  },
+  {
+    "anchor": "tests-pseudo.md#tc-6-0",
+    "record": {
+      "accessors": [
+        "dogfood_fprime_fixture"
+      ],
+      "also_covers": [],
+      "altitude": "system",
+      "architecture_link": [],
+      "binding_status": "unbound",
+      "critical_seam": false,
+      "criticality_source": "explicit",
+      "data_strategy": "REAL-DATA",
+      "live_or_induced": {
+        "kind": "natural-wait"
+      },
+      "maturity": "acceptance",
+      "run_evidence": null,
+      "source_spec": "liveness-gate-test-ladder/tests-pseudo.md",
+      "spine": true,
+      "spine_of": null,
+      "spine_step_ref": null,
+      "spine_steps": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "status": "active",
+      "supersedes": [],
+      "technical_constraint": null,
+      "test_id": "TC-6.0",
+      "tested_by": "llm",
+      "title": "TRACE orphaned-story happy-path spine check",
+      "tombstoned_at": null,
+      "user_story": "US-6",
+      "verification_mode": "automated-contract",
+      "verification_scope": "targeted",
+      "why_impossible_to_reproduce_live": null
+    }
+  },
+  {
+    "anchor": "tests-pseudo.md#tc-7-0",
+    "record": {
+      "accessors": [
+        "dogfood_fprime_fixture"
+      ],
+      "also_covers": [],
+      "altitude": "system",
+      "architecture_link": [],
+      "binding_status": "unbound",
+      "critical_seam": false,
+      "criticality_source": "explicit",
+      "data_strategy": "REAL-DATA",
+      "live_or_induced": {
+        "kind": "natural-wait"
+      },
+      "maturity": "acceptance",
+      "run_evidence": null,
+      "source_spec": "liveness-gate-test-ladder/tests-pseudo.md",
+      "spine": true,
+      "spine_of": null,
+      "spine_step_ref": null,
+      "spine_steps": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "status": "active",
+      "supersedes": [],
+      "technical_constraint": null,
+      "test_id": "TC-7.0",
+      "tested_by": "llm",
+      "title": "TCOV liveness happy path",
+      "tombstoned_at": null,
+      "user_story": "US-7",
+      "verification_mode": "automated-contract",
+      "verification_scope": "targeted",
+      "why_impossible_to_reproduce_live": null
+    }
+  },
+  {
+    "anchor": "tests-pseudo.md#tc-8-0",
+    "record": {
+      "accessors": [
+        "dogfood_fprime_fixture"
+      ],
+      "also_covers": [],
+      "altitude": "system",
+      "architecture_link": [],
+      "binding_status": "unbound",
+      "critical_seam": false,
+      "criticality_source": "explicit",
+      "data_strategy": "REAL-DATA",
+      "live_or_induced": {
+        "kind": "natural-wait"
+      },
+      "maturity": "acceptance",
+      "run_evidence": null,
+      "source_spec": "liveness-gate-test-ladder/tests-pseudo.md",
+      "spine": true,
+      "spine_of": null,
+      "spine_step_ref": null,
+      "spine_steps": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "status": "active",
+      "supersedes": [],
+      "technical_constraint": null,
+      "test_id": "TC-8.0",
+      "tested_by": "llm",
+      "title": "F-prime full spine coverage gate",
+      "tombstoned_at": null,
+      "user_story": "US-8",
+      "verification_mode": "automated-contract",
+      "verification_scope": "targeted",
+      "why_impossible_to_reproduce_live": null
+    }
+  },
+  {
+    "anchor": "tests-pseudo.md#tc-9-0",
+    "record": {
+      "accessors": [
+        "dogfood_fprime_fixture"
+      ],
+      "also_covers": [],
+      "altitude": "system",
+      "architecture_link": [],
+      "binding_status": "unbound",
+      "critical_seam": false,
+      "criticality_source": "explicit",
+      "data_strategy": "REAL-DATA",
+      "live_or_induced": {
+        "kind": "natural-wait"
+      },
+      "maturity": "acceptance",
+      "run_evidence": null,
+      "source_spec": "liveness-gate-test-ladder/tests-pseudo.md",
+      "spine": true,
+      "spine_of": null,
+      "spine_step_ref": null,
+      "spine_steps": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "status": "active",
+      "supersedes": [],
+      "technical_constraint": null,
+      "test_id": "TC-9.0",
+      "tested_by": "llm",
+      "title": "TMR provenance journal append",
+      "tombstoned_at": null,
+      "user_story": "US-9",
+      "verification_mode": "automated-contract",
+      "verification_scope": "targeted",
+      "why_impossible_to_reproduce_live": null
+    }
+  },
+  {
+    "anchor": "tests-pseudo.md#tc-10-0",
+    "record": {
+      "accessors": [
+        "dogfood_fprime_fixture"
+      ],
+      "also_covers": [],
+      "altitude": "system",
+      "architecture_link": [],
+      "binding_status": "unbound",
+      "critical_seam": false,
+      "criticality_source": "explicit",
+      "data_strategy": "REAL-DATA",
+      "live_or_induced": {
+        "kind": "natural-wait"
+      },
+      "maturity": "acceptance",
+      "run_evidence": null,
+      "source_spec": "liveness-gate-test-ladder/tests-pseudo.md",
+      "spine": true,
+      "spine_of": null,
+      "spine_step_ref": null,
+      "spine_steps": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "status": "active",
+      "supersedes": [],
+      "technical_constraint": null,
+      "test_id": "TC-10.0",
+      "tested_by": "llm",
+      "title": "Altitude provenance journal lifecycle",
+      "tombstoned_at": null,
+      "user_story": "US-10",
+      "verification_mode": "automated-contract",
+      "verification_scope": "targeted",
+      "why_impossible_to_reproduce_live": null
+    }
+  },
+  {
+    "anchor": "tests-pseudo.md#tc-11-0",
+    "record": {
+      "accessors": [
+        "dogfood_fprime_fixture"
+      ],
+      "also_covers": [],
+      "altitude": "system",
+      "architecture_link": [],
+      "binding_status": "unbound",
+      "critical_seam": false,
+      "criticality_source": "explicit",
+      "data_strategy": "REAL-DATA",
+      "live_or_induced": {
+        "kind": "natural-wait"
+      },
+      "maturity": "acceptance",
+      "run_evidence": null,
+      "source_spec": "liveness-gate-test-ladder/tests-pseudo.md",
+      "spine": true,
+      "spine_of": null,
+      "spine_step_ref": null,
+      "spine_steps": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "status": "active",
+      "supersedes": [],
+      "technical_constraint": null,
+      "test_id": "TC-11.0",
+      "tested_by": "llm",
+      "title": "Phase-8 promotion runs required green",
+      "tombstoned_at": null,
+      "user_story": "US-11",
+      "verification_mode": "automated-contract",
+      "verification_scope": "targeted",
+      "why_impossible_to_reproduce_live": null
+    }
+  },
+  {
+    "anchor": "tests-pseudo.md#tc-12-0",
+    "record": {
+      "accessors": [
+        "dogfood_fprime_fixture"
+      ],
+      "also_covers": [],
+      "altitude": "system",
+      "architecture_link": [],
+      "binding_status": "unbound",
+      "critical_seam": false,
+      "criticality_source": "explicit",
+      "data_strategy": "REAL-DATA",
+      "live_or_induced": {
+        "kind": "natural-wait"
+      },
+      "maturity": "acceptance",
+      "run_evidence": null,
+      "source_spec": "liveness-gate-test-ladder/tests-pseudo.md",
+      "spine": true,
+      "spine_of": null,
+      "spine_step_ref": null,
+      "spine_steps": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "status": "active",
+      "supersedes": [],
+      "technical_constraint": null,
+      "test_id": "TC-12.0",
+      "tested_by": "llm",
+      "title": "Version-fence preserves legacy sessions",
+      "tombstoned_at": null,
+      "user_story": "US-12",
+      "verification_mode": "automated-contract",
+      "verification_scope": "targeted",
+      "why_impossible_to_reproduce_live": null
+    }
+  },
+  {
+    "anchor": "tests-pseudo.md#tc-13-0",
+    "record": {
+      "accessors": [
+        "dogfood_fprime_fixture"
+      ],
+      "also_covers": [],
+      "altitude": "system",
+      "architecture_link": [],
+      "binding_status": "unbound",
+      "critical_seam": false,
+      "criticality_source": "explicit",
+      "data_strategy": "REAL-DATA",
+      "live_or_induced": {
+        "kind": "natural-wait"
+      },
+      "maturity": "acceptance",
+      "run_evidence": null,
+      "source_spec": "liveness-gate-test-ladder/tests-pseudo.md",
+      "spine": true,
+      "spine_of": null,
+      "spine_step_ref": null,
+      "spine_steps": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "status": "active",
+      "supersedes": [],
+      "technical_constraint": null,
+      "test_id": "TC-13.0",
+      "tested_by": "llm",
+      "title": "Glossary ADR document-types vocabulary",
+      "tombstoned_at": null,
+      "user_story": "US-13",
+      "verification_mode": "automated-contract",
+      "verification_scope": "targeted",
+      "why_impossible_to_reproduce_live": null
+    }
+  },
+  {
+    "anchor": "tests-pseudo.md#tc-14-0",
+    "record": {
+      "accessors": [
+        "dogfood_fprime_fixture"
+      ],
+      "also_covers": [],
+      "altitude": "system",
+      "architecture_link": [],
+      "binding_status": "unbound",
+      "critical_seam": false,
+      "criticality_source": "explicit",
+      "data_strategy": "REAL-DATA",
+      "live_or_induced": {
+        "kind": "natural-wait"
+      },
+      "maturity": "acceptance",
+      "run_evidence": null,
+      "source_spec": "liveness-gate-test-ladder/tests-pseudo.md",
+      "spine": true,
+      "spine_of": null,
+      "spine_step_ref": null,
+      "spine_steps": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "status": "active",
+      "supersedes": [],
+      "technical_constraint": null,
+      "test_id": "TC-14.0",
+      "tested_by": "llm",
+      "title": "Verification tier declaration gate",
+      "tombstoned_at": null,
+      "user_story": "US-14",
+      "verification_mode": "automated-contract",
+      "verification_scope": "targeted",
+      "why_impossible_to_reproduce_live": null
+    }
+  }
+]
