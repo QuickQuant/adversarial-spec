@@ -50,6 +50,38 @@ Generate `tests-pseudo.md` alongside the roadmap:
 
 **`tests-pseudo.md` is the canonical source of truth for tests.** `roadmap/manifest.json` links to it via path but does not duplicate test content.
 
+#### Happy-Path Spine Authoring Model
+
+Every roadmap user story MUST have exactly one happy-path spine designation.
+This is the primary-success test for the user story, not every test that touches
+the story. Author it as the `TC-X.0` spine where possible and give it named
+`spine_steps` such as `S1`, `S2`, and `S3`.
+
+Authoring rules:
+- Exactly one active `spine: true` record per roadmap user story is allowed.
+  Authoring lint consumes `SpineCoverageChecker` with phase `authoring` to reject
+  zero-spine and duplicate-spine cases.
+- One spine designation can have many concrete tests. Secondary, branch, and
+  failure tests use `spine_of: <spine test_id>` to point at the spine they
+  elaborate.
+- Every failure or branch test that uses `spine_of` MUST cite a named
+  `spine_step_ref`. A failure test with no `spine_step_ref` is rejected at
+  authoring because reviewers cannot tell which happy-path obligation it
+  falsifies.
+- `also_covers` never creates a spine designation. Only the scalar `user_story`
+  field on an active `spine: true` record counts for the one-spine-per-US rule.
+
+Maturity ladder:
+- `nl -> acceptance -> concrete` is the only promotion path.
+- `nl` records are natural-language intent. They can be promoted only when they
+  name at least one accessor (`>=1 named accessor`); empty `accessors` means
+  `BLOCK`, not automatic promotion.
+- acceptance has executable meaning without the facade: it states observable
+  inputs, actions, outputs, and failure conditions that can be checked without
+  pretending a UI/API facade already exists.
+- `concrete` records are bound to actual commands, artifacts, or code-level
+  verification evidence.
+
 **Phase 4 Invariant Tests — Upsert Protocol (CRITICAL):**
 
 Phase 4 (target-architecture) injects invariant-derived test cases into `tests-pseudo.md` via a marker-delimited upsert block:

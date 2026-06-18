@@ -108,6 +108,11 @@ Phase 1.5: Roadmap Alignment (spec only, REQUIRED)
 - [ ] Create user story Tasks
 - [ ] Note: Test cases expand from natural language → concrete during implementation
 
+**Happy-path spine seed:** During requirements capture, assign stable user story IDs
+early enough that Phase 02 can author exactly one happy-path spine designation per
+US. Capture the primary-success path in plain language; failure and variant tests
+will anchor to named spine steps later via `spine_step_ref` and `spine_of`.
+
 Phase 2: Adversarial Debate
 - [ ] Check available API providers
 - [ ] User selects opponent models
@@ -647,4 +652,3 @@ If the user opts for interview mode, conduct a comprehensive interview using the
 3. Proceed to Step 1.6 (Roadmap Alignment)
 
 **[GATE] TodoWrite: Mark "User confirms requirements before roadmap" completed before proceeding to Step 1.6 (Roadmap).**
-

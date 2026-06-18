@@ -64,6 +64,25 @@ adversarial-spec critique --doc-type spec --depth full
 
 **Full depth**: All sections from both product and technical.
 
+#### Happy-Path Spine And Maturity Ladder
+
+Spec documents that produce roadmap artifacts must preserve the happy-path spine
+model from authoring through implementation:
+- Each user story has exactly one happy-path spine designation. The shared
+  `SpineCoverageChecker` is the authoring-lint source of truth for zero or
+  duplicate spine designations.
+- The spine record names `spine_steps`; every branch or failure test that hangs
+  off it uses `spine_of` plus `spine_step_ref`. A failure test missing
+  `spine_step_ref` is invalid because it is not anchored to a happy-path
+  obligation.
+- The maturity ladder is `nl -> acceptance -> concrete`. `acceptance` has
+  executable meaning without the facade: inputs, actions, expected observations,
+  and failure conditions are concrete enough to test before the final UI/API
+  surface exists.
+- `nl` tests promote only with `>=1 named accessor`; empty `accessors` blocks
+  promotion until the author names the seam, function, route, actor, or artifact
+  the test will exercise.
+
 #### Critique Criteria by Depth
 
 **Product depth:**
@@ -207,4 +226,3 @@ python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models co
 ...
 SPEC_EOF
 ```
-
