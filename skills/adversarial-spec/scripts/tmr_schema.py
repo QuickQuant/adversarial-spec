@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated, Any, Literal, Union
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator, PrivateAttr
 
 CONTRACT_VERSION = "tmr.v1"
 
@@ -216,6 +216,56 @@ class TestMaturityRecord(StrictSchemaModel):
     tombstoned_at: str | None = None
     spine_of: str | None = None
     spine_step_ref: str | None = None
+
+    _classified: bool = PrivateAttr(default=False)
+
+    def __getattribute__(self, name: str) -> Any:
+        if name in ("critical_seam", "criticality_source", "architecture_link"):
+            import sys
+            import os
+            frame = sys._getframe(1)
+            is_allowed = False
+            while frame:
+                filename = frame.f_code.co_filename
+                basename = os.path.basename(filename)
+                if basename == "criticality_classifier.py" or basename == "tmr_schema.py" or "pydantic" in filename:
+                    is_allowed = True
+                    break
+                frame = frame.f_back
+            
+            if not is_allowed:
+                if name == "architecture_link":
+                    raise ValueError("Access to 'architecture_link' is restricted to CriticalityClassifier.")
+                
+                try:
+                    pydantic_private = object.__getattribute__(self, "__pydantic_private__")
+                    classified_val = pydantic_private.get("_classified", False) if pydantic_private else False
+                except AttributeError:
+                    classified_val = False
+                
+                if not classified_val:
+                    raise ValueError(
+                        f"Access to field {name!r} is rejected because the record has not been classified. "
+                        "You must run CriticalityClassifier on the record first."
+                    )
+        return super().__getattribute__(name)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name in ("critical_seam", "criticality_source"):
+            import sys
+            import os
+            frame = sys._getframe(1)
+            is_allowed = False
+            while frame:
+                filename = frame.f_code.co_filename
+                basename = os.path.basename(filename)
+                if basename == "criticality_classifier.py" or basename == "tmr_schema.py" or "pydantic" in filename:
+                    is_allowed = True
+                    break
+                frame = frame.f_back
+            if not is_allowed:
+                raise ValueError(f"Only CriticalityClassifier can write to/update field {name!r}.")
+        super().__setattr__(name, value)
 
     @model_validator(mode="after")
     def enforce_conditional_contract(self) -> "TestMaturityRecord":
