@@ -389,6 +389,28 @@ def test_tc_8_4_duplicate_designations(temp_workspace: Path) -> None:
     assert data["findings"][0]["code"] == "duplicate_story"
     assert data["findings"][0]["target"] == {"user_story": "US-1"}
 
+    args_with_missing_spine_override = [
+        "gauntlet-check",
+        "--session", str(session_dir),
+        "--roadmap-manifest", str(roadmap_path),
+        "--tmr-registry", str(tmr_path),
+        "--action", "gauntlet",
+        "--accept-missing-spine",
+        "--spine-override-reason", "temporarily accept missing spine",
+        "--output", "json",
+    ]
+
+    with patch("sys.argv", args_with_missing_spine_override):
+        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+
+    assert exc_info.value.code == 2
+    data = json.loads(mock_stdout.getvalue())
+    assert data["outcome"] == "block"
+    assert data["findings"][0]["code"] == "duplicate_story"
+    assert data["findings"][0]["severity"] == "blocking"
+
 
 def test_tc_inv_001_tombstoned_and_also_covers_ignored_and_missing_setup_error_and_invalid_schema(
     temp_workspace: Path,

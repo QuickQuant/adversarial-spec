@@ -188,15 +188,19 @@ def main() -> None:
     if not coverage_result.passed:
         # Construct findings for coverage check failure
         findings = []
-        is_blocking = (args.action == "gauntlet" and not args.accept_missing_spine)
-        severity = "blocking" if is_blocking else "warning"
+        uncovered_severity = (
+            "blocking"
+            if args.action == "gauntlet" and not args.accept_missing_spine
+            else "warning"
+        )
+        duplicate_severity = "blocking" if args.action == "gauntlet" else "warning"
 
         for story in coverage_result.uncovered:
             findings.append(
                 GateFinding(
                     code="uncovered_story",
                     message=f"User story '{story}' has no active spine designation",
-                    severity=severity,
+                    severity=uncovered_severity,
                     target={"user_story": story}
                 )
             )
@@ -205,7 +209,7 @@ def main() -> None:
                 GateFinding(
                     code="duplicate_story",
                     message=f"User story '{story}' has duplicate active spine designations",
-                    severity=severity,
+                    severity=duplicate_severity,
                     target={"user_story": story}
                 )
             )
@@ -215,6 +219,10 @@ def main() -> None:
             write_result_and_exit(result, args.output)
         elif args.action == "gauntlet":
             if args.accept_missing_spine:
+                if coverage_result.duplicate:
+                    result = coverage_block(findings)
+                    write_result_and_exit(result, args.output)
+
                 reason = args.spine_override_reason
                 if not reason or not isinstance(reason, str) or not reason.strip():
                     finding = GateFinding(
