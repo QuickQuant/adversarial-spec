@@ -9,4 +9,12 @@ As a registered user, I want to upload a new profile picture so that my profile 
 - Pictures must be cropped to a square aspect ratio.
 
 ### Verification Plan
-No automated test is currently mapped to US-101. The team will perform manual exploratory testing during the sprint review.
+The spec contains the primary success journey for US-101, but the TMR registry has
+no active happy-path spine bound to this user story.
+
+SpineCoverageChecker result:
+- uncovered: ["US-101"]
+- duplicate: []
+
+Do not flag missing edge, error, boundary, negative, or unit tests for this case.
+Only the missing happy-path spine is a TRACE finding.

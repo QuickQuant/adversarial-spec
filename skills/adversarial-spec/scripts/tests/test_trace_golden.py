@@ -106,13 +106,16 @@ def test_tc_6_0_oracle_present_and_hash_valid():
     """
     case = _tc_6_0_case()
     finding_ids = {f["finding_id"] for f in case.expected_findings}
-    assert "ORPHANED_USER_STORY" in finding_ids
-    # The orphaned story (US-101) and its subject must be named in the oracle.
-    orphaned = next(f for f in case.expected_findings if f["finding_id"] == "ORPHANED_USER_STORY")
+    assert "ORPHANED_SPINE" in finding_ids
+    # The orphaned spine story (US-101) and spine-specific status must be named.
+    orphaned = next(f for f in case.expected_findings if f["finding_id"] == "ORPHANED_SPINE")
     assert "US-101" in orphaned["description"]
-    # Negatives encode the false-positive guard: a US WITH a test is not orphaned.
+    assert "ORPHANED-SPINE" in orphaned["description"]
+    assert "unit" not in orphaned["description"].lower()
+    # Negatives encode the false-positive guard: non-spine missing tests are not TRACE findings.
     assert case.negatives, "TC-6.0 must carry negatives (false-positive guard)"
-    assert any("not flagged" in n.lower() or "not" in n.lower() for n in case.negatives)
+    assert any("happy-path spine" in n.lower() for n in case.negatives)
+    assert any("unit tests are not trace findings" in n.lower() for n in case.negatives)
 
 
 # --- 2. Coverage logic via SpineCoverageChecker (AC-1 / AC-2 / AC-3) ----------

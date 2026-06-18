@@ -5,18 +5,18 @@
       "fixture_path": "fixtures/tc_6_0_fixture.md",
       "expected_findings": [
         {
-          "finding_id": "ORPHANED_USER_STORY",
-          "description": "User story US-101 (Update Profile Picture) is specified in the requirements document but lacks any automated spine, unit, or integration test validating it, representing an orphaned requirement."
+          "finding_id": "ORPHANED_SPINE",
+          "description": "User story US-101 (Update Profile Picture) has prose for the primary success journey, but SpineCoverageChecker reports no active happy-path spine bound to it; TRACE reports this as ORPHANED-SPINE, not as a general missing-test suggestion."
         }
       ],
       "negatives": [
-        "A user story that has a corresponding automated test is not flagged as orphaned",
-        "Fully verified requirements with active spine tests are not flagged"
+        "A user story that has an active happy-path spine is not flagged as ORPHANED-SPINE",
+        "Missing edge, error, boundary, negative, or unit tests are not TRACE findings when the happy-path spine exists"
       ],
       "model": "mock-model",
       "model_settings": {},
       "threshold": 0.8,
-      "content_hash": "e67048d6b5f05472711bfbb39089e26f3946374188147de1a0b3beaf9dd5d3bb"
+      "content_hash": "2e06c3fb10c7eb637b7bf9e584490df5dd24f6886d558aec9a2db3f8f2da7586"
     },
     {
       "case_id": "TC-7.1",
