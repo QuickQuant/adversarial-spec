@@ -456,6 +456,15 @@ Assign these **during decomposition**, not as a deferred second pass. If you can
 
 > **Note:** This assigns the task's **Test Strategy** (`test_strategy`) — *when/whether* tests are written relative to implementation (test-first vs test-after vs `spike` = no automated-test commitment). It is distinct from the Phase 2 **Data Strategy** (`data_strategy`) label on individual test cases (REAL-DATA / SYNTHETIC / MOCK / FRONTEND / STATIC), which classifies *what data* a test uses. Both were once bare "Strategy"; now disambiguated (see `CONTEXT.md` / ADR `0001`).
 
+**Phase-8 promotion obligations:** Any TMR that is `REAL-DATA`/`REAL-DATA + PROPERTY`
+and is either a happy-path spine or a critical seam must be schedulable as a real
+run in Phase 8. Do not assign these rows to `spike`, `artifact-sync`,
+`static-check`, or `manual-ux`; the close pass requires a typed
+`promotion_request`, bound accessors, a negative oracle, and later a skill-runner
+`run_evidence` receipt. If owner-repo code still has to author or bind the test,
+record the command target and accessor binding gap explicitly so Phase 8 can halt
+with `unbound_accessor_halt` instead of silently closing.
+
 Assign test-first or test-after to each task based on risk:
 
 **Use test-first when:**

@@ -23,6 +23,34 @@ After execution plan is generated, ask: *"Execution plan generated with N tasks.
 
 ---
 
+### Phase-8 pseudo-to-real promotion pass
+
+Before closing implementation for a session that contains TMR records, run the
+promotion pass for every active `REAL-DATA` / `REAL-DATA + PROPERTY` row that is
+either a happy-path spine or a critical seam:
+
+1. Emit a typed `promotion_request` from the skill. The request names `tmr_uid`,
+   `test_id`, user story, bound accessors, owner-repo command, cwd, repo, commit,
+   and `negative_oracle_required:true`.
+2. The owner repo authors and binds the test. The skill does not trust an
+   owner-written pass/fail result.
+3. The skill-runner runs the declared command and captures the code-tier
+   `run_evidence` receipt (`runner:"skill-runner"`, exit, env, artifact URI/hash,
+   and `live_or_induced` when applicable).
+4. Close fails if a required REAL-DATA spine/critical-seam row has
+   `run_evidence:null`, an unbound/empty accessor, no negative oracle, an exempt or
+   spike verification strategy, a non-green receipt, or a boundary mock finding.
+5. For critical seams executed in `dev` or `ci`, a pass is not a real pass unless
+   the receipt records a live/induced technique. `env:"live"` may close without a
+   technique when the data strategy is genuinely REAL-DATA.
+
+Use `phase8_promotion.py` as the deterministic contract mirror:
+`build_promotion_requests` emits requests, `capture_run_evidence` owns the trust
+boundary, and `evaluate_phase8_close` returns the blocking close issues. A null
+`run_evidence` path is a negative oracle and must fail.
+
+---
+
 ### Agent Identity (REQUIRED)
 
 Cross-agent review enforcement depends on a stable agent name. Pipeline skips Review cards where `last_agent == requester`.
