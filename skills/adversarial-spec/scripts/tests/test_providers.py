@@ -763,7 +763,7 @@ class TestGetDefaultModel:
 
         with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}, clear=True):
             default = get_default_model()
-            assert default == "gemini/gemini-3-flash"
+            assert default == "gemini/gemini-3.5-flash"
 
     def test_returns_none_when_no_keys(self):
         from providers import get_default_model
