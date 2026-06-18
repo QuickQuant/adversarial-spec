@@ -1,0 +1,34 @@
+{
+  "cases": [
+    {
+      "case_id": "TC-6.0",
+      "fixture_path": "fixtures/tc_6_0_fixture.md",
+      "expected_findings": [],
+      "negatives": [],
+      "model": "mock-model",
+      "model_settings": {},
+      "threshold": 0.8,
+      "content_hash": "333eeb711cb55fe0e7e546ccb2b1a7375cad463e910fe35c13b088becbc4a359"
+    },
+    {
+      "case_id": "TC-7.1",
+      "fixture_path": "fixtures/tc_7_1_fixture.md",
+      "expected_findings": [],
+      "negatives": [],
+      "model": "mock-model",
+      "model_settings": {},
+      "threshold": 0.8,
+      "content_hash": "03a9a9f9835c018cbc011db950361b40b300bf0c65067ea5f28df3f960f9f4c2"
+    },
+    {
+      "case_id": "TC-3.1",
+      "fixture_path": "fixtures/tc_3_1_fixture.md",
+      "expected_findings": [],
+      "negatives": [],
+      "model": "mock-model",
+      "model_settings": {},
+      "threshold": 0.8,
+      "content_hash": "a692413fc261538d5d8a199ecc097901c564c2f8beba9e51573e02ab7c692c3d"
+    }
+  ]
+}

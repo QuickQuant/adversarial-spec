@@ -60,7 +60,8 @@
         "drift lint fails-first and names an unallowlisted copy, never rm; generated-from:<sha256> allowlists derived artifacts",
         "known-bad payload (unknown field + bad enum) rejected with a named error (contract test)"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "code"
     },
     {
       "task_id": "W0-2",
@@ -116,7 +117,8 @@
         "string 'null' where JSON null is meant is rejected",
         "grep confirms single TMR reader"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "code"
     },
     {
       "task_id": "W0-3",
@@ -163,7 +165,8 @@
         "outcome is the only normative outcome field (no result on envelope)",
         "schema_error/setup_error NOT override_eligible; coverage block is"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "code"
     },
     {
       "task_id": "W0-4",
@@ -213,7 +216,8 @@
         "also_covers[] does NOT satisfy a secondary US",
         "negative oracle: zero/two designations -> block not pass"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "code"
     },
     {
       "task_id": "W0-5",
@@ -275,7 +279,8 @@
         "per-subject replay reads an index, not a full scan",
         "plain-text decisions.log decision_id joins to an override-driven journal record's driver (DR-10)"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "code"
     },
     {
       "task_id": "W0-6",
@@ -325,7 +330,8 @@
         "criticality_unknown on system altitude -> critical; explicit-vs-architecture disagreement -> critical + blocking finding",
         "negative oracle: unclassified record -> consumer REJECTS, never derives"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "code"
     },
     {
       "task_id": "W1-1",
@@ -390,7 +396,8 @@
         "gauntlet-check is a real console_script in pyproject [project.scripts]",
         "override --accept-missing-spine + --spine-override-reason (non-empty, no min length) -> decisions.log"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "code"
     },
     {
       "task_id": "W1-2",
@@ -439,7 +446,8 @@
         "F' runs as a sibling gate (no regression to pipeline-card/staleness gates)",
         "--accept-missing-spine + reason -> decisions.log; --accept-tests-stale does not bypass F'"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "code"
     },
     {
       "task_id": "W1-3",
@@ -492,7 +500,8 @@
         "numeric comparator tmr.v10 > tmr.v2; malformed -> version_fence_error fail-closed post-fence",
         "timestamp unfetchable -> fail-closed post-fence + version_fence_error"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "code"
     },
     {
       "task_id": "W1-4",
@@ -544,7 +553,8 @@
         "conflict detection on typed transition (cross-field); headless precedence records {decision_id,resolution,precedence_rule,winning/losing_transition}",
         "negative oracle: non-empty pending file -> advance REFUSED, survives restart"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "code"
     },
     {
       "task_id": "W1-5",
@@ -593,7 +603,8 @@
         "every task verification_mode in VALID_VERIFICATION_MODES; golden-eval rejected; code-seam + exempt mode -> flagged",
         "judgment gates 'complete' only when their cases live in the manifest"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "code"
     },
     {
       "task_id": "W2-1",
@@ -656,7 +667,8 @@
         "transient 429/timeout retried with bounded backoff before ORCH (no self-DoS)",
         "join keys scoped to TMR-changing findings; spec/contract findings journaled only if they change a TMR/node field"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "code"
     },
     {
       "task_id": "W2-2",
@@ -706,7 +718,8 @@
         "non-spine missing edge test -> NOT flagged (TC-6.1 false-positive guard)",
         "uses SpineCoverageChecker (no re-implemented coverage logic)"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "llm-judgment"
     },
     {
       "task_id": "W2-3",
@@ -765,7 +778,8 @@
         "promoter requires >=1 named accessor (empty accessors does NOT auto-promote)",
         "coverage is a metadata diff (no test-source ingestion; no TestInputCollector)"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "code"
     },
     {
       "task_id": "W2-4",
@@ -819,7 +833,8 @@
         "critical seam + non-REAL data_strategy with empty why_impossible_to_reproduce_live -> reject/promote (TC-3.2; not just literal MOCK)",
         "justified MOCK carries non-empty technical_constraint; scale/cost/time excuses rejected (TC-3.0 asserts BOTH why_impossible AND technical_constraint)"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "code"
     },
     {
       "task_id": "W3-1",
@@ -872,7 +887,8 @@
         "maturity ladder documented; acceptance has executable meaning without the facade; nl all-named-accessors -> PROMOTE (>=1 accessor)",
         "a live scoped skill run on a 2-US fixture produces exactly one spine per US (TC-2.2)"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "llm-judgment"
     },
     {
       "task_id": "W3-2",
@@ -930,7 +946,8 @@
         "a prose rename (TC-0 -> TC-8.0) diffs on tmr_uid -> rename event, not delete+add",
         "compile cite-resolves accessor symbols; echo+confirm backstop"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "code"
     },
     {
       "task_id": "W4-1",
@@ -989,7 +1006,8 @@
         "env->real-pass matrix enforced (dev/ci needs recorded technique for a critical seam; null -> not a real pass)",
         "negative oracle: close passing on null run_evidence must FAIL"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "code"
     },
     {
       "task_id": "W4-3",
@@ -1037,7 +1055,8 @@
         "node journal records created @ depth-triage with initial altitude + rationale",
         "meta-analysis queries (distribution, subsystem precision) answer over subject_type:node"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "code"
     },
     {
       "task_id": "W5-1",
@@ -1078,7 +1097,8 @@
       "acceptance_criteria": [
         "happy-path spine, TMR, maturity ladder, liveness defined; 'happy-path spine' always qualified in PROSE (never bare 'spine'); machine tokens exempt; ADR records the decision + two-spec split"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "code"
     },
     {
       "task_id": "W5-2",
@@ -1124,7 +1144,8 @@
         "following the documented bootstrap reaches exit 0 on full-coverage fixture AND exit 2 naming the uncovered story on missing-spine fixture, without reading the implementation (TC-15.0)",
         "docs state symlink (edits live, no copy); no AFFIRMATIVE cp -r ... ~/.claude/skills instruction (negative warning allowed)"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "llm-judgment"
     },
     {
       "task_id": "W5-3",
@@ -1172,7 +1193,8 @@
         "F' checker returns pass (exit 0) against the dogfood registry + roadmap manifest",
         "prose view regenerated; echo-diff clean"
       ],
-      "tested_by": "llm"
+      "tested_by": "llm",
+      "verification_tier": "code"
     }
   ]
 }
