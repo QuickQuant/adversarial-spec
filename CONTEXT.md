@@ -13,6 +13,35 @@ execution → implementation).
 
 ### Testing
 
+**Happy-Path Spine** (`spine: true`, `spine_steps`, `spine_of`, `spine_step_ref`):
+The single primary-success test designation for a user story. It anchors the main
+journey and gives branch/failure tests named steps to hang from. Always qualify the
+term as **happy-path spine** in prose to avoid collision with the Phase 7
+**Architecture Spine**. Machine tokens (`spine`, `spine_of`, `spine_steps`,
+`spine_step_ref`, `orphaned_spine`, `SpineCoverageChecker`) keep their exact names.
+_Avoid_: unqualified "happy-path spine" shorthand in prose; use the full term
+unless the text is a machine token.
+
+**Test Maturity Record** (`TMR`, `tmr-registry.json`):
+The schema-validated record for one test case: identity (`tmr_uid`), current
+coordinates (`test_id`, `user_story`), happy-path spine designation, maturity,
+data/liveness classification, binding status, run evidence, and lineage. The local
+system of record is `tmr-registry.json`; `tests-pseudo.md` is a prose view.
+_Avoid_: treating Markdown test prose as authoritative once a TMR registry exists.
+
+**Maturity Ladder** (`maturity`):
+The lifecycle of a TMR: `nl` (natural-language intent) → `acceptance` (testable
+contract with named accessors/observations) → `concrete` (bound implementation plus
+green run evidence where required). The ladder is about evidence maturity, not
+implementation priority.
+_Avoid_: "stage" for this concept unless qualifying as "maturity stage".
+
+**Liveness** (`live_or_induced`, `run_evidence`):
+Proof that a critical seam has been exercised with real data or with a named,
+constructible live/fault-induced technique. A mock is supplementary; it is not
+liveness evidence unless the behavior is induced and the technique is recorded.
+_Avoid_: counting unit-green or owner-written pass/fail prose as liveness.
+
 **Test Strategy** (`test_strategy`):
 A Phase 7 per-task choice of testing approach: `test-first`, `test-after`, `spike`
 (ship with no automated-test commitment), or `refactor` (restructure existing code,
@@ -28,9 +57,8 @@ The gauntlet flags violations as the concern category `data_strategy_mismatch`.
 _Avoid_: bare "strategy" (collides with Test Strategy).
 
 **Test-Case Maturity Stage** (`stage:` field on a test case):
-The lifecycle of a test case through the workflow: `nl` (natural language, roadmap
-creation) → `acceptance` (post-debate) → `concrete` (implementation). Scoped to the
-`(stage: …)` parenthetical on TC lines.
+Legacy display wording for the Maturity Ladder on roadmap TC lines. Scoped to the
+`(stage: …)` parenthetical; canonical TMR records use the `maturity` field.
 _Avoid_: numbering these as bare "Stage 1/2/3" in prose — say "maturity stage `nl`" etc.
 
 ### Problems & feedback
@@ -67,10 +95,11 @@ A spec revision (debate critique, gauntlet fold, arch reconcile, lookup resoluti
 operator fork, cross-spec split) that **deletes / relocates / externalizes / absorbs /
 splits / reframes** a capability, moving a user story's center of gravity while its
 **anchor artifacts** (scope statement, coverage-map row, **happy-path spine test**) keep
-pointing at the old center. The leak is *semantic, not lexical* — the orphaned spine names
-the moved behavior, not any deleted identifier, so a plain grep misses it. Fates: `Intact`
-/ `Re-centered` / `Absorbed-Dissolved` / `Split`. The canonical resolution flow + the
-`orphaned_spine` TCOV oracle live in `reference/morph-reconciliation.md`.
+pointing at the old center. The leak is *semantic, not lexical* — the orphaned
+happy-path spine names the moved behavior, not any deleted identifier, so a plain
+grep misses it. Fates: `Intact` / `Re-centered` / `Absorbed-Dissolved` / `Split`.
+The canonical resolution flow + the `orphaned_spine` TCOV oracle live in
+`reference/morph-reconciliation.md`.
 _Avoid_: "stale test" (that is a stale *field name*; a morph is a stale *subject*).
 
 ### Debate & Gauntlet

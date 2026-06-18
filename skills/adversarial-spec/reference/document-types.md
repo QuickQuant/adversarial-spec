@@ -70,9 +70,9 @@ Spec documents that produce roadmap artifacts must preserve the happy-path spine
 model from authoring through implementation:
 - Each user story has exactly one happy-path spine designation. The shared
   `SpineCoverageChecker` is the authoring-lint source of truth for zero or
-  duplicate spine designations.
-- The spine record names `spine_steps`; every branch or failure test that hangs
-  off it uses `spine_of` plus `spine_step_ref`. A failure test missing
+  duplicate happy-path spine designations.
+- The happy-path spine record names `spine_steps`; every branch or failure test
+  that hangs off it uses `spine_of` plus `spine_step_ref`. A failure test missing
   `spine_step_ref` is invalid because it is not anchored to a happy-path
   obligation.
 - The maturity ladder is `nl -> acceptance -> concrete`. `acceptance` has
@@ -82,6 +82,16 @@ model from authoring through implementation:
 - `nl` tests promote only with `>=1 named accessor`; empty `accessors` blocks
   promotion until the author names the seam, function, route, actor, or artifact
   the test will exercise.
+
+`tests-pseudo.md` rows are authoring prose for the extended TMR row. The compile
+step must be able to emit: `tmr_uid`, `test_id`, `title`, `user_story`,
+`maturity`, `data_strategy`, `live_or_induced`, `spine`, `spine_steps`,
+`spine_of`, `spine_step_ref`, `accessors`, `binding_status`, `run_evidence`,
+`critical_seam`, `criticality_source`, `verification_mode`,
+`verification_scope`, `altitude`, `tested_by`, `status`, `source_spec`,
+`also_covers`, `supersedes`, and tombstone/technical-constraint fields where
+applicable. Markdown is a view; `tmr-registry.json` is authoritative after
+compile.
 
 #### Critique Criteria by Depth
 
