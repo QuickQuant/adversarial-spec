@@ -1245,6 +1245,12 @@ pre-flight before the live dry-run. If a deployment ever rejects a schema-3 plan
 stand-in gate and record the live dry-run as a blocker. **Do not `pipeline_load` a
 schema-3 plan against an MCP that rejects it.**
 
+For each emitted node, also write the skill-side node-altitude journal record via
+`altitude_provenance.record_depth_triage_node`: `subject_type:"node"`,
+`event_type:"created"`, field `altitude`, driver `depth_triage`, and the triage
+rationale. Fizzy owns enforcement; the skill owns this provenance emission and
+later meta-analysis queries.
+
 ---
 
 ### Step 10: Add Concern Context Comments to Cards

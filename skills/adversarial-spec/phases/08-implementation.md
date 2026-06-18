@@ -49,6 +49,12 @@ Use `phase8_promotion.py` as the deterministic contract mirror:
 boundary, and `evaluate_phase8_close` returns the blocking close issues. A null
 `run_evidence` path is a negative oracle and must fail.
 
+When closing altitude-aware implementation, append close-time node
+`altitude_fit` records through `altitude_provenance.record_close_altitude_fit`.
+Only `altitude_fit:"right"` counts correct in skill-side meta-analysis; `too_low`
+and `too_high` are precision failures even when the implementation is otherwise
+stable.
+
 ---
 
 ### Agent Identity (REQUIRED)
