@@ -401,7 +401,7 @@ When tests-pseudo.md is included as context, opponents must critique both misali
 
 **MOCK falsification directive (REQUIRED in every debate round's prompt preamble).** When `tests-pseudo.md` is in context, append this sentence to the debate prompt so both debaters (and Claude) attack weak mock justifications:
 
-> *"For any test with `Data Strategy: MOCK*` (or the legacy `Strategy: MOCK*` label in pre-rename artifacts), challenge the `why_impossible_to_reproduce_live` claim. If you can name one plausible live reproduction path against dev infrastructure or small real money (e.g., fund a dev account, rapid-fire real orders, submit malformed inputs, cancel a nonexistent order), report it as a correction — the test should be promoted to REAL-DATA."*
+> *"For any **critical-seam** test on a non-REAL `Data Strategy` (MOCK / MOCK-EXTERNAL / SYNTHETIC / STATIC / FRONTEND — the rule keys on real-ness, not the label, DR-8), challenge its justification. If you can name one plausible live reproduction path against dev infrastructure or small real money (e.g., fund a dev account, rapid-fire real orders, submit malformed inputs, cancel a nonexistent order), report it as a correction — the test should be promoted to REAL-DATA. A justified MOCK must cite a concrete `technical_constraint` (DD-3); scale / cost / time excuses ('too slow', 'rate-limited', '2^31 items') are inducible, not impossibility, and also promote."*
 
 **Test adequacy directive (REQUIRED in every debate round's prompt preamble when tests are in context):**
 
