@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import pytest
-from tests.test_tmr_schema_contract import valid_tmr
-from tmr_schema import validate_tmr_record, TestMaturityRecord
 from criticality_classifier import CriticalityClassifier
+from tests.test_tmr_schema_contract import valid_tmr
+from tmr_schema import TestMaturityRecord, validate_tmr_record
 
 
 def make_record(**overrides) -> TestMaturityRecord:
@@ -63,7 +63,6 @@ def test_tc_7_2_disagreement_resolution():
 
 def test_tc_inv_009_criticality_unknown_fail_closed_and_rejection():
     """TC-INV-009: Criticality unknown fail-closed on system altitude and unclassified record rejection by consumers."""
-    
     # Part 1: Criticality unknown fail-closed on system altitude
     record_unknown = make_record(
         altitude="system",
@@ -124,18 +123,7 @@ def test_non_system_altitude_behavior():
     # Non-system altitude:
     # 1. criticality_source updated to "architecture_link" due to presence of links
     assert classified_rec.criticality_source == "architecture_link"
-    # 2. critical_seam keeps raw value (or does it? Wait, let's check: at non-system altitude,
-    # does the presence of architecture_link coerce critical_seam? We decided to let it keep raw_seam
-    # or coerce to True because it is an architectural link. Let's make sure our assertion matches our implementation.
-    # Our implementation: resolved_seam = raw_seam if altitude != "system" but wait!
-    # Let's check our implementation:
-    #             if altitude == "system":
-    #                 ...
-    #             else:
-    #                 # Non-system altitude
-    #                 if arch_link:
-    #                     resolved_source = "architecture_link"
-    # Since we kept resolved_seam as raw_seam (False), classified_rec.critical_seam is False.
+    # 2. critical_seam keeps its explicit value for non-system records.
     assert classified_rec.critical_seam is False
     # 3. No findings/disagreement warnings
     assert len(findings) == 0

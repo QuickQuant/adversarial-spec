@@ -9,12 +9,21 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated, Any, Literal, Union
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator, PrivateAttr
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    ValidationError,
+    model_validator,
+)
 
 CONTRACT_VERSION = "tmr.v1"
 
@@ -221,28 +230,32 @@ class TestMaturityRecord(StrictSchemaModel):
 
     def __getattribute__(self, name: str) -> Any:
         if name in ("critical_seam", "criticality_source", "architecture_link"):
-            import sys
-            import os
             frame = sys._getframe(1)
             is_allowed = False
             while frame:
                 filename = frame.f_code.co_filename
                 basename = os.path.basename(filename)
-                if basename == "criticality_classifier.py" or basename == "tmr_schema.py" or "pydantic" in filename:
+                if (
+                    basename == "criticality_classifier.py"
+                    or basename == "tmr_schema.py"
+                    or "pydantic" in filename
+                ):
                     is_allowed = True
                     break
                 frame = frame.f_back
-            
+
             if not is_allowed:
                 if name == "architecture_link":
-                    raise ValueError("Access to 'architecture_link' is restricted to CriticalityClassifier.")
-                
+                    raise ValueError(
+                        "Access to 'architecture_link' is restricted to CriticalityClassifier."
+                    )
+
                 try:
                     pydantic_private = object.__getattribute__(self, "__pydantic_private__")
                     classified_val = pydantic_private.get("_classified", False) if pydantic_private else False
                 except AttributeError:
                     classified_val = False
-                
+
                 if not classified_val:
                     raise ValueError(
                         f"Access to field {name!r} is rejected because the record has not been classified. "
@@ -252,14 +265,16 @@ class TestMaturityRecord(StrictSchemaModel):
 
     def __setattr__(self, name: str, value: Any) -> None:
         if name in ("critical_seam", "criticality_source"):
-            import sys
-            import os
             frame = sys._getframe(1)
             is_allowed = False
             while frame:
                 filename = frame.f_code.co_filename
                 basename = os.path.basename(filename)
-                if basename == "criticality_classifier.py" or basename == "tmr_schema.py" or "pydantic" in filename:
+                if (
+                    basename == "criticality_classifier.py"
+                    or basename == "tmr_schema.py"
+                    or "pydantic" in filename
+                ):
                     is_allowed = True
                     break
                 frame = frame.f_back
