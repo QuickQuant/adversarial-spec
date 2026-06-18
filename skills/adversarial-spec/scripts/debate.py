@@ -505,6 +505,21 @@ def add_pipeline_gate_arguments(parser: argparse.ArgumentParser) -> None:
             "updated in a follow-up. Logged to decisions.log."
         ),
     )
+    parser.add_argument(
+        "--accept-missing-spine",
+        action="store_true",
+        default=False,
+        help=(
+            "Advisory F-prime override for missing happy-path spine coverage. "
+            "Requires --spine-override-reason and logs to decisions.log. "
+            "Does not bypass duplicate-spine or tests-stale gates."
+        ),
+    )
+    parser.add_argument(
+        "--spine-override-reason",
+        default=None,
+        help="Required non-empty reason for --accept-missing-spine.",
+    )
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -1365,6 +1380,7 @@ def enforce_pipeline_card_gate(args: argparse.Namespace) -> None:
     import json
     import os
     import re
+    import subprocess
     from pathlib import Path
 
     round_actions = {"critique", "gauntlet"}
@@ -1374,6 +1390,8 @@ def enforce_pipeline_card_gate(args: argparse.Namespace) -> None:
     pipeline_card = getattr(args, "pipeline_card", None)
     override_reason = getattr(args, "override_reason", None)
     accept_stale = getattr(args, "accept_tests_stale", False)
+    accept_missing_spine = getattr(args, "accept_missing_spine", False)
+    spine_override_reason = getattr(args, "spine_override_reason", None)
 
     # 1) Required arg check
     if not pipeline_card:
@@ -1421,20 +1439,35 @@ def enforce_pipeline_card_gate(args: argparse.Namespace) -> None:
     session_fizzy_card = None
     spec_path_hint = None
     tests_pseudo_hint = None
+    roadmap_path_hint = None
+    tmr_registry_hint = None
     if state_path:
         try:
             pointer = json.loads(state_path.read_text())
             session_file_id = pointer.get("active_session_id")
             spec_path_hint = pointer.get("spec_path")
+            roadmap_path_hint = pointer.get("roadmap_path")
+            tmr_registry_hint = pointer.get("tmr_registry_path")
             # Resolve session detail file for fizzy_card_id + tests_pseudo_path
             detail_relpath = pointer.get("active_session_file")
             if detail_relpath:
-                detail_abspath = (state_path.parent.parent / detail_relpath).resolve()
-                if detail_abspath.is_file():
+                detail_abspath = None
+                for detail_base in (state_path.parent, state_path.parent.parent):
+                    candidate = (detail_base / detail_relpath).resolve()
+                    if candidate.is_file():
+                        detail_abspath = candidate
+                        break
+                if detail_abspath is not None:
                     detail = json.loads(detail_abspath.read_text())
                     session_fizzy_card = detail.get("fizzy_card_id")
                     tests_pseudo_hint = detail.get("tests_pseudo_path") or tests_pseudo_hint
                     spec_path_hint = detail.get("spec_path") or spec_path_hint
+                    roadmap_path_hint = detail.get("roadmap_path") or roadmap_path_hint
+                    tmr_registry_hint = (
+                        detail.get("tmr_registry_path")
+                        or detail.get("tmr_registry")
+                        or tmr_registry_hint
+                    )
         except (OSError, json.JSONDecodeError):
             pass
 
@@ -1474,7 +1507,98 @@ def enforce_pipeline_card_gate(args: argparse.Namespace) -> None:
                 )
                 sys.exit(2)
 
-    # 7) Log overrides + stale accepts to decisions.log
+    # 7) Advisory F-prime spine coverage gate.
+    if state_path:
+        root = state_path.parent
+
+        def resolve_hint(path_hint: str | None) -> Path | None:
+            if not path_hint:
+                return None
+            candidate = Path(path_hint)
+            if candidate.is_absolute():
+                return candidate
+            return (root / path_hint).resolve()
+
+        roadmap_abs = resolve_hint(roadmap_path_hint)
+        tmr_abs = resolve_hint(tmr_registry_hint)
+
+        candidate_bases = []
+        for hint in (roadmap_path_hint, tests_pseudo_hint, spec_path_hint):
+            resolved = resolve_hint(hint)
+            if resolved:
+                candidate_bases.append(resolved.parent)
+        candidate_bases.append(root)
+
+        if roadmap_abs is None:
+            for base in candidate_bases:
+                candidate = base / "roadmap" / "manifest.json"
+                if candidate.is_file():
+                    roadmap_abs = candidate.resolve()
+                    break
+                candidate = base / "manifest.json"
+                if candidate.is_file():
+                    roadmap_abs = candidate.resolve()
+                    break
+
+        if tmr_abs is None:
+            for base in candidate_bases:
+                candidate = base / "tmr-registry.json"
+                if candidate.is_file():
+                    tmr_abs = candidate.resolve()
+                    break
+
+        if roadmap_abs and tmr_abs and roadmap_abs.is_file() and tmr_abs.is_file():
+            cmd = [
+                sys.executable,
+                str(Path(__file__).with_name("gauntlet_check_cli.py")),
+                "--session",
+                str(root),
+                "--roadmap-manifest",
+                str(roadmap_abs),
+                "--tmr-registry",
+                str(tmr_abs),
+                "--action",
+                args.action,
+                "--output",
+                "json",
+            ]
+            if accept_missing_spine:
+                cmd.append("--accept-missing-spine")
+                if spine_override_reason is not None:
+                    cmd.extend(["--spine-override-reason", spine_override_reason])
+
+            completed = subprocess.run(
+                cmd,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            output = completed.stdout.strip()
+            try:
+                gate_result = json.loads(output) if output else {}
+            except json.JSONDecodeError:
+                gate_result = {}
+
+            findings = gate_result.get("findings", [])
+            if findings:
+                level = "ERROR" if completed.returncode else "WARNING"
+                print(
+                    f"{level}: F-prime spine coverage check produced findings:",
+                    file=sys.stderr,
+                )
+                for finding in findings:
+                    print(
+                        f"  - {finding.get('code', '<unknown>')}: "
+                        f"{finding.get('message', '<no message>')}",
+                        file=sys.stderr,
+                    )
+
+            if completed.returncode != 0:
+                if completed.stderr:
+                    print(completed.stderr, file=sys.stderr, end="")
+                sys.exit(completed.returncode)
+
+    # 8) Log overrides + stale accepts to decisions.log
     if state_path and session_file_id and (
         pipeline_card == "IntentionalOverride" or accept_stale
     ):
@@ -1536,9 +1660,10 @@ def main() -> None:
             for model, err in failed.items():
                 # Prefer the line with the actual error over CLI noise banners
                 # (gemini-cli prepends "YOLO mode..." lines to every failure)
-                lines = [l for l in err.splitlines() if l.strip()]
+                lines = [line for line in err.splitlines() if line.strip()]
                 error_line = next(
-                    (l for l in lines if "Error" in l or "error" in l), lines[0] if lines else err
+                    (line for line in lines if "Error" in line or "error" in line),
+                    lines[0] if lines else err,
                 )
                 print(f"  - {model}: {error_line.strip()[:200]}", file=sys.stderr)
             print(
