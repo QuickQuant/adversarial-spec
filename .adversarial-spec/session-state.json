@@ -1,61 +1,14 @@
 {
   "schema_version": "1.3",
   "active_session_id": "adv-spec-202606151042-liveness-gate-test-ladder",
-  "context_name": "Liveness Gate + Test Ladder",
-  "current_phase": "implementation",
-  "current_step": "Phase 8: 22 task cards loaded (5736-5757), New Todo; concern-context comments posted; tested_by:llm fix applied to fizzy-plan.json (uncommitted)",
-  "next_action": "Phase 8 implementation on branch phase7/liveness-gate-test-ladder-execution-plan: pick up first card via pipeline_do_next_task (one at a time, never batch-claim; reviews before new work). Decide whether to commit the tested_by fizzy-plan.json fix.",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606170628-phase7-execution-plan-validated-held-for-load.md",
-  "execution_plan_path": ".adversarial-spec/specs/liveness-gate-test-ladder/execution-plan.md",
-  "spec_path": "specs/liveness-gate-test-ladder/spec.md",
-  "do_not_ask": [
-    "Continue debate rounds until convergence without asking Jason unless absolutely necessary (directive 2026-06-11)",
-    "Never pre-claim/batch card sets in handoffs; pipeline_do_next_task one card at a time is the only claim path (Jason 2026-06-12)",
-    "Stale Phase 4 handling: reconcile-in-place is the ruled default; never offer bare rerun-vs-acknowledge again (Jason 2026-06-11)",
-    "Persist decomposition to disk pre-approval (Step 3.5) — codified in 07-execution.md (Jason 2026-06-11)",
-    "system-validation close targets the system-altitude TASK node (task_id SYS), never the session card - gate _task_belongs_to_session requires card_type==task (dogfood 2026-06-14)",
-    "Trust-model reframe (SEC-1 Fizzy-side gate / DD-1 tmr-registry / SEC-2 Fizzy-card-ts fence / SEC-4 typed receipt) is LOCKED by R4 validation — do not re-debate it",
-    "Never dispatch a claude critic from claude in debate/gauntlet; gemini substitute = gemini-3-flash (works after the agents.py -preview fix + restart); a flash 404 is registry/transient -> retry, never fall back to claude",
-    "Registry-unification (fizzy agents.py + skill providers.py) is PUNTED by Jason (no time) - do not start it unprompted",
-    "v3 altitude-tree emission unavailable (session_altitude undeclared -> hard-gate risk); v2 flat is the correct grandfathered path - do not re-litigate emission schema"
-  ],
-  "updated_at": "2026-06-17T06:45:19Z",
-  "active_session": "adv-spec-202606151042-liveness-gate-test-ladder",
   "active_session_file": ".adversarial-spec/sessions/adv-spec-202606151042-liveness-gate-test-ladder.json",
-  "session_stack": [
-    "adv-spec-202606151042-liveness-gate-test-ladder"
-  ],
-  "parked_sessions": [
-    {
-      "session_id": "adv-spec-202606110339-validation-leg-process",
-      "context_name": "Validation-Leg Production Process",
-      "phase": "implementation",
-      "note": "COMPLETE: C-5-3 dogfood V-close done (all 14 rows judged-pass; system_validation_complete:true on SYS node 5616; committed b317eed). Only a finalize→Completed advance remains (next_action: check whether the advance gate requires the still-false component/subsystem/system VERIFICATION flags on SYS node 5616). Parked 2026-06-15 to adopt liveness-gate-test-ladder.",
-      "session_file": ".adversarial-spec/sessions/adv-spec-202606110339-validation-leg-process.json"
-    },
-    {
-      "session_id": "adv-spec-202604291604-dispatch-cost-tracker-unify",
-      "context_name": "Dispatch & Cost-Tracker Unification (CON-001 + CON-002)",
-      "phase": "target-architecture",
-      "note": "Debate converged R3 (2026-04-30); parked at Phase 4 final_approval gate. Referenced Fizzy card 1851, which no longer exists (board empty). Artifacts committed da95f56.",
-      "session_file": ".adversarial-spec/sessions/adv-spec-202604291604-dispatch-cost-tracker-unify.json"
-    },
-    {
-      "session_id": "adv-spec-202604111912-test-mapping-verification-gates",
-      "context_name": "Test Mapping & Verification Gates",
-      "phase": "execution",
-      "note": "Prior stacked session; mapcodebase 3.6 incremental update complete.",
-      "session_file": ".adversarial-spec/sessions/adv-spec-202604111912-test-mapping-verification-gates.json"
-    }
-  ],
-  "completed_sessions": [
-    "adv-spec-202604021743-phase4-architecture-rewrite",
-    "adv-spec-202603211620-adversary-system-redesign",
-    "adv-spec-202603230138-concern-remediation-plan",
-    "adv-spec-202603201800-gauntlet-refactor-quota-burn",
-    "adv-spec-202603051555-philosophy-phase-and-arch-persona"
-  ],
-  "completed_work": "Decomposed finalized spec v12 into 22 tasks (Wave 0 + 5 feature waves, 6 workstreams); 24 gauntlet concerns dispositioned; 32/32 active invariants covered; Gates V1-V4 pass (0 exempt, 0 unmapped). Reconcile-in-place: target-arch + architecture-invariants -> v12 (INV-020/022/031 superseded, INV-001/030 revised), fingerprints recomputed (input 327f5f7a, arch fcd7c0d1), staleness PASS; roadmap manifest gap fixed. Validation leg: conops.md + 15 check-rows-clean rows (drafted_baseline 057b5c29). fizzy-plan.json v2 validated clean. All committed in 051b6ff.",
-  "reset_at": "2026-05-30T19:08:15Z",
-  "reset_reason": "Zombie pointer cleanup: prior active_session pointed at dispatch-cost-tracker (card 1851) which no longer exists on the now-empty Fizzy board. Parked sessions preserved above; their on-disk artifacts are committed."
+  "context_name": "Liveness Gate + Architecture-Linked Test Ladder (adversarial-spec slice)",
+  "current_phase": "finalize",
+  "current_step": "Pipeline synced Finalization",
+  "next_action": "Finalize the spec and prepare execution planning.",
+  "updated_at": "2026-06-18T19:34:35Z",
+  "written_by": "pipeline_sync_local_session",
+  "pipeline_card_id": "5715",
+  "plan_path": "docs/plans/liveness-gate-and-test-ladder.md",
+  "spec_path": null
 }
