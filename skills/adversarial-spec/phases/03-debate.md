@@ -887,16 +887,17 @@ After incorporating critiques into a new spec version (Step 5 item 8), run check
 
 **First-draft exemption:** CONS cannot run on the first draft (it compares sections against each other — only meaningful after revision introduces cross-section drift). **SCOPE, TRACE, CANON, and TCOV CAN run on the first draft** because they compare the spec/tests against external inputs (requirements, roadmap, codebase/contracts), which exist before the first draft. TCOV requires tests-pseudo.md or tests-spec.md; if no test artifact exists yet, emit a blocking setup warning rather than silently passing.
 
-**Invocation contract — how Claude assembles guardrail inputs:**
+**Invocation contract — guardrail orchestration:**
 
-1. Read the guardrail prompt from `adversaries.py` (CONS, SCOPE, TRACE, CANON, TCOV)
-2. Assemble the input payload:
-   - **CONS:** prompt + current spec text
-   - **SCOPE:** prompt + original requirements (from session file `requirements_summary`) + current spec text
-   - **TRACE:** prompt + roadmap manifest (user stories + acceptance criteria) + current spec text
-   - **CANON:** prompt + current spec text + **canonical contract index** + relevant architecture/code/UI excerpts. The index should include named domain enums, formulas, derived metrics, config fields classified as active_formula / active_gate / threshold / telemetry_only / legacy_display, payload field meanings, and UI labels/tooltips that claim behavior. Use `.architecture/manifest.json`, `.architecture/primer.md`, `.architecture/structured/components/*`, `.architecture/structured/cross-references.md`, `.architecture/structured/flows.md`, `.architecture/.work/discovery/contracts.md`, and targeted owner-code excerpts where available.
-   - **TCOV:** prompt + current spec text + roadmap manifest/user stories/acceptance criteria + tests-pseudo.md/tests-spec.md + canonical contract index. Include the same relevant architecture/code/UI excerpts used by CANON when the tests must cover brownfield behavior.
-3. Send the assembled input to a model via `debate.py critique --model <model> --system-prompt <guardrail-prompt>` or evaluate inline if the spec fits in Claude's own context
+1. Run the five guardrails as **five separate parallel subagents**: CONS, SCOPE, TRACE, CANON, and TCOV. Never collapse them into one combined prompt or one shared model call.
+2. Each subagent receives a self-contained payload:
+   - persona prompt from `adversaries.py`
+   - identical orchestrator-passed content bundle (current spec, roadmap/user stories, tests-pseudo/tests-spec when present, canonical contract index, relevant architecture/code excerpts)
+   - this round's text diff
+   - TMR semantic-delta with stable join keys (`tmr_uid`, `test_id`, `user_story`) even when the key text is outside the changed hunk
+3. Each subagent returns a structured result set: `{guardrail, findings[]}`. Every finding MUST carry a key to a `test_id`, `user_story`, `tmr_uid`, section id, or `ORCH` target. Persist the per-guardrail result sets and the aggregate for the round.
+4. Transient transport failures (`429`, timeout, retryable CLI/API failure) are retried with bounded backoff before any orchestration error is synthesized. A dead or exhausted subagent yields a synthetic `ORCH` finding: `blocking` on gauntlet, `warning` on critique. Four passing guardrails plus one ORCH is not green for gauntlet.
+5. Join keys are journaled only for findings that mutate a TMR/node field. Spec/contract-only findings are recorded in the round aggregate, but they do not create conflict-disposition entries unless they identify a concrete TMR/node field transition.
 
 **Session file dependency:** SCOPE, TRACE, CANON, and TCOV all require external input beyond the spec. If `requirements_summary` (SCOPE), the roadmap manifest (TRACE/TCOV), the canonical contract index (CANON/TCOV), or tests-pseudo/tests-spec (TCOV) is missing or empty, warn the user and skip only the affected guardrail rather than running it without the external input. CANON with an empty contract index degrades to repeated-inline-union and repeated-formula detection only; it cannot audit parameter causality or display-contract drift without owner excerpts.
 
