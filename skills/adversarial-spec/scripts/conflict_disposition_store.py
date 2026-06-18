@@ -51,6 +51,10 @@ _CONSERVATISM = {
 }
 
 
+class ConflictDispositionStoreError(RuntimeError):
+    """Raised when persisted disposition state cannot be trusted."""
+
+
 @dataclass(frozen=True)
 class TypedTransition:
     """A typed field transition ``{subject, field, from, to, action}``."""
@@ -224,13 +228,29 @@ class ConflictDispositionStore:
 
     # --- persistence ---------------------------------------------------------
 
+    def _empty_store(self) -> dict:
+        return {"version": STORE_VERSION, "pending": [], "resolved": []}
+
     def _read(self) -> dict:
         if not self._path.exists():
-            return {"version": STORE_VERSION, "pending": [], "resolved": []}
+            return self._empty_store()
         try:
-            return json.loads(self._path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            return {"version": STORE_VERSION, "pending": [], "resolved": []}
+            data = json.loads(self._path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as exc:
+            raise ConflictDispositionStoreError(
+                f"pending disposition store is unreadable: {self._path}"
+            ) from exc
+
+        if (
+            not isinstance(data, dict)
+            or data.get("version") != STORE_VERSION
+            or not isinstance(data.get("pending"), list)
+            or not isinstance(data.get("resolved"), list)
+        ):
+            raise ConflictDispositionStoreError(
+                f"pending disposition store has invalid schema: {self._path}"
+            )
+        return data
 
     def _write(self, data: dict) -> None:
         tmp = self._path.with_suffix(self._path.suffix + ".tmp")
@@ -261,7 +281,10 @@ class ConflictDispositionStore:
             return len(self._read()["pending"]) > 0
 
     def can_advance_phase(self) -> bool:
-        return not self.has_pending()
+        try:
+            return not self.has_pending()
+        except ConflictDispositionStoreError:
+            return False
 
     def _resolve(self, disp: Disposition) -> Disposition:
         with self._lock:

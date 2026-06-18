@@ -10,7 +10,11 @@ declared precedence and records a structured machine justification.
 from __future__ import annotations
 
 import pytest
-from conflict_disposition_store import ConflictDispositionStore, TypedTransition
+from conflict_disposition_store import (
+    ConflictDispositionStore,
+    ConflictDispositionStoreError,
+    TypedTransition,
+)
 
 pytestmark = pytest.mark.deterministic
 
@@ -86,6 +90,16 @@ def test_inv021_rc2_pending_survives_restart_negative_oracle(tmp_path):
     s2 = ConflictDispositionStore(path)
     assert s2.has_pending() is True
     assert s2.can_advance_phase() is False
+
+
+def test_inv021_rc2_corrupt_pending_file_fails_closed(tmp_path):
+    path = tmp_path / "pending-dispositions.json"
+    path.write_text("{bad json", encoding="utf-8")
+
+    s = ConflictDispositionStore(path)
+    with pytest.raises(ConflictDispositionStoreError):
+        s.pending()
+    assert s.can_advance_phase() is False
 
 
 # --- INV-025 / US-6: deterministic headless resolution records justification ---
