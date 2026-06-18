@@ -1,0 +1,76 @@
+[
+  {
+    "tmr_uid": "01J0BOOTSTRAPFULL0000000A",
+    "test_id": "TC-1.0",
+    "title": "US-1 happy-path bootstrap fixture",
+    "user_story": "US-1",
+    "maturity": "nl",
+    "data_strategy": "REAL-DATA",
+    "spine": true,
+    "verification_mode": "automated-contract",
+    "verification_scope": "targeted",
+    "altitude": "system",
+    "tested_by": "llm",
+    "critical_seam": false,
+    "criticality_source": "explicit",
+    "binding_status": "unbound",
+    "status": "active",
+    "source_spec": "liveness-gate-test-ladder",
+    "live_or_induced": {
+      "kind": "natural-wait"
+    },
+    "run_evidence": null,
+    "why_impossible_to_reproduce_live": null,
+    "technical_constraint": null,
+    "also_covers": [],
+    "accessors": [
+      "bootstrap_fixture"
+    ],
+    "architecture_link": [],
+    "spine_steps": [
+      "S1",
+      "S2"
+    ],
+    "supersedes": [],
+    "tombstoned_at": null,
+    "spine_of": null,
+    "spine_step_ref": null
+  },
+  {
+    "tmr_uid": "01J0BOOTSTRAPFULL0000000B",
+    "test_id": "TC-2.0",
+    "title": "US-2 happy-path bootstrap fixture",
+    "user_story": "US-2",
+    "maturity": "nl",
+    "data_strategy": "REAL-DATA",
+    "spine": true,
+    "verification_mode": "automated-contract",
+    "verification_scope": "targeted",
+    "altitude": "system",
+    "tested_by": "llm",
+    "critical_seam": false,
+    "criticality_source": "explicit",
+    "binding_status": "unbound",
+    "status": "active",
+    "source_spec": "liveness-gate-test-ladder",
+    "live_or_induced": {
+      "kind": "natural-wait"
+    },
+    "run_evidence": null,
+    "why_impossible_to_reproduce_live": null,
+    "technical_constraint": null,
+    "also_covers": [],
+    "accessors": [
+      "bootstrap_fixture"
+    ],
+    "architecture_link": [],
+    "spine_steps": [
+      "S1",
+      "S2"
+    ],
+    "supersedes": [],
+    "tombstoned_at": null,
+    "spine_of": null,
+    "spine_step_ref": null
+  }
+]

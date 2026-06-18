@@ -151,8 +151,24 @@ locally in minutes, without reading the implementation.
    block is Fizzy-side at the gauntlet transition — §6, SEC-1.)*
 
 **Run the F′ gate against a fixture (no implementation reading required)**
-- Full-coverage fixture → gate passes (exit 0).
-- Missing-spine fixture → gate `exit 2` naming the uncovered US.
+- Full-coverage fixture → gate passes (exit 0):
+  ```bash
+  uv run gauntlet-check \
+    --session .adversarial-spec/specs/liveness-gate-test-ladder/bootstrap_fixtures/session \
+    --roadmap-manifest .adversarial-spec/specs/liveness-gate-test-ladder/bootstrap_fixtures/roadmap-manifest.json \
+    --tmr-registry .adversarial-spec/specs/liveness-gate-test-ladder/bootstrap_fixtures/tmr-registry-full.json \
+    --action gauntlet \
+    --output json
+  ```
+- Missing-spine fixture → gate `exit 2` naming uncovered `US-2`:
+  ```bash
+  uv run gauntlet-check \
+    --session .adversarial-spec/specs/liveness-gate-test-ladder/bootstrap_fixtures/session \
+    --roadmap-manifest .adversarial-spec/specs/liveness-gate-test-ladder/bootstrap_fixtures/roadmap-manifest.json \
+    --tmr-registry .adversarial-spec/specs/liveness-gate-test-ladder/bootstrap_fixtures/tmr-registry-missing-spine.json \
+    --action gauntlet \
+    --output json
+  ```
 - Bypass only via a logged override (`--accept-…` + a reason (non-empty, non-whitespace; no minimum
   length — DR-7) written to `sessions/<id>.decisions.log`).
 
