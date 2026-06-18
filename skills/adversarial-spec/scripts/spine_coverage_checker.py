@@ -1,4 +1,18 @@
-"""Spine coverage checker for active TMR records."""
+"""Spine coverage checker for active TMR records (W0-4 / MW-002).
+
+The one shared implementation of the "≥1 ∧ ≤1 happy-path-spine *designation* per
+US" rule (spec S2 / §4.1 / §6, INV-006). Consumed by authoring-lint (warn), F′
+(block), TRACE (ORPHANED) and TCOV (promote) — none of them re-implement coverage
+logic (DD-6/DD-7).
+
+Contract signature (W0-4): ``(roadmap US set, parsed TMRs, phase) ->
+pass | uncovered[] | duplicate[]``. The structural ≥1 ∧ ≤1 rule is itself
+phase-independent; ``phase`` is part of the contract so every consumer states the
+phase/action it is checking for (e.g. ``"debate"``, ``"gauntlet"``, ``"critique"``,
+``"authoring"``, ``"trace"``, ``"tcov"``). It is carried onto the result for
+traceability; maturity-awareness (e.g. an ``nl`` spine passing at debate→gauntlet)
+is handled by the F′ checker, not by this structural count.
+"""
 
 from __future__ import annotations
 
@@ -16,6 +30,7 @@ class SpineCoverageResult:
     passed: bool
     uncovered: list[str]
     duplicate: list[str]
+    phase: str
 
 
 class SpineCoverageChecker:
@@ -25,8 +40,9 @@ class SpineCoverageChecker:
     def check(
         roadmap_user_stories: list[str],
         tmr_records: list[TestMaturityRecord],
+        phase: str,
     ) -> SpineCoverageResult:
-        """Run the spine coverage check.
+        """Run the spine coverage check for ``phase``.
 
         Rules:
         - Only active records (status == "active") where spine == True are counted.
@@ -36,6 +52,9 @@ class SpineCoverageChecker:
         - Exactly one active spine designation per user story in roadmap_user_stories -> pass.
         - 0 active spine records for a story in roadmap_user_stories -> uncovered.
         - >=2 active spine records for any story -> duplicate.
+
+        ``phase`` is the consuming phase/action (carried onto the result for
+        traceability); the structural ≥1 ∧ ≤1 rule does not vary by phase.
         """
         active_spine_counts: dict[str, int] = {}
         for record in tmr_records:
@@ -70,12 +89,14 @@ class SpineCoverageChecker:
             passed=passed,
             uncovered=uncovered,
             duplicate=duplicate,
+            phase=phase,
         )
 
 
 def check_spine_coverage(
     roadmap_user_stories: list[str],
     tmr_records: list[TestMaturityRecord],
+    phase: str,
 ) -> SpineCoverageResult:
-    """Helper function wrapping SpineCoverageChecker.check."""
-    return SpineCoverageChecker.check(roadmap_user_stories, tmr_records)
+    """Helper function wrapping SpineCoverageChecker.check (W0-4 contract signature)."""
+    return SpineCoverageChecker.check(roadmap_user_stories, tmr_records, phase)

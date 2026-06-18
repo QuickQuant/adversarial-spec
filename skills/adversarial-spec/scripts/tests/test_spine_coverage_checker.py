@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import inspect
+
+import pytest
 from spine_coverage_checker import SpineCoverageChecker, check_spine_coverage
 from tmr_schema import validate_tmr_record
 
@@ -73,16 +76,19 @@ def test_tc_8_0_valid_full_coverage():
         make_valid_tmr(tmr_uid="01J0EXEMPLARULID00000000A4", test_id="TC-4.0", user_story="US-1", spine=False),
     ]
 
-    result = SpineCoverageChecker.check(roadmap, records)
+    result = SpineCoverageChecker.check(roadmap, records, "gauntlet")
     assert result.passed is True
     assert result.uncovered == []
     assert result.duplicate == []
 
     # Verify checker function wrapper also works
-    func_result = check_spine_coverage(roadmap, records)
+    func_result = check_spine_coverage(roadmap, records, "gauntlet")
     assert func_result.passed is True
     assert func_result.uncovered == []
     assert func_result.duplicate == []
+    # phase is carried onto the result for traceability
+    assert result.phase == "gauntlet"
+    assert func_result.phase == "gauntlet"
 
 
 def test_tc_8_4_duplicate_designations():
@@ -94,7 +100,7 @@ def test_tc_8_4_duplicate_designations():
         make_valid_tmr(tmr_uid="01J0EXEMPLARULID00000000B3", test_id="TC-3.0", user_story="US-1", spine=True),
     ]
 
-    result = SpineCoverageChecker.check(roadmap, records)
+    result = SpineCoverageChecker.check(roadmap, records, "gauntlet")
     assert result.passed is False
     assert result.uncovered == []
     assert result.duplicate == ["US-1"]
@@ -132,9 +138,24 @@ def test_tc_inv_001_tombstoned_and_also_covers_ignored_and_uncovered():
         ),
     ]
 
-    result = SpineCoverageChecker.check(roadmap, records)
+    result = SpineCoverageChecker.check(roadmap, records, "gauntlet")
     assert result.passed is False
     # US-1 is duplicate because we have C1 (active spine for US-1) and C3 (active spine for US-1, also_covers US-3)
     assert result.duplicate == ["US-1"]
     # US-2 (tombstoned), US-3 (only in also_covers), US-4 (only in list user_story) are uncovered
     assert result.uncovered == ["US-2", "US-3", "US-4"]
+
+
+def test_w04_contract_signature_requires_phase():
+    """W0-4 contract: (roadmap US set, parsed TMRs, phase). phase is required."""
+    for fn in (SpineCoverageChecker.check, check_spine_coverage):
+        params = list(inspect.signature(fn).parameters)
+        assert "phase" in params, f"{fn.__name__} missing phase param"
+        # phase has no default -> part of the required contract signature
+        assert inspect.signature(fn).parameters["phase"].default is inspect.Parameter.empty
+
+    # omitting phase is a TypeError (the 2-arg form codex flagged is no longer valid)
+    with pytest.raises(TypeError):
+        SpineCoverageChecker.check(["US-1"], [])  # type: ignore[call-arg]
+    with pytest.raises(TypeError):
+        check_spine_coverage(["US-1"], [])  # type: ignore[call-arg]
