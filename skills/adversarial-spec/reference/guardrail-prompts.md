@@ -176,13 +176,13 @@ TCOV audits whether tests would actually fail for the semantic bugs the spec is 
 3. TESTS (`tests-pseudo.md` or `tests-spec.md`)
 4. CANONICAL CONTRACT INDEX
 
-It rejects false confidence from field-presence, HTTP 200, non-null, range-only, and snapshot-only checks. It looks for missing contract tests, weak oracles, missing parameter-causality tests, formula tests, negative/counterfactual tests, UI/display contract tests, surface coverage, stale assumptions, data-strategy mismatches, BVA/state/decision-row gaps, low-value duplication, and **orphaned spines** (a spine/test whose premise describes a capability the current spec no longer has after a user-story morph — see `morph-reconciliation.md`).
+It rejects false confidence from field-presence, HTTP 200, non-null, range-only, and snapshot-only checks. It looks for missing contract tests, weak oracles, missing parameter-causality tests, formula tests, negative/counterfactual tests, UI/display contract tests, surface coverage, stale assumptions, data-strategy mismatches, BVA/state/decision-row gaps, low-value duplication, **orphaned spines** (a spine/test whose premise describes a capability the current spec no longer has after a user-story morph — see `morph-reconciliation.md`), **missing liveness tests** (where a critical seam has a MOCK data strategy but lacks a live_or_induced technique), and **promoter gating** (which controls promotion of tests from nl to acceptance based on whether accessors are named).
 
 Output format:
 
 ```text
 TEST GAP: [brief title]
-Category: missing_contract_test | weak_oracle | missing_parameter_causality | missing_formula_test | missing_negative_test | missing_ui_contract_test | missing_surface_coverage | stale_test_assumption | data_strategy_mismatch | missing_bva_state_decision | low_value_duplication | orphaned_spine
+Category: missing_contract_test | weak_oracle | missing_parameter_causality | missing_formula_test | missing_negative_test | missing_ui_contract_test | missing_surface_coverage | stale_test_assumption | data_strategy_mismatch | missing_bva_state_decision | low_value_duplication | orphaned_spine | missing_liveness_test
 Requirement / Contract: [user story, acceptance criterion, invariant, or canonical contract]
 Existing test coverage: [test IDs or "none"]
 Why insufficient: [what bug would still pass]

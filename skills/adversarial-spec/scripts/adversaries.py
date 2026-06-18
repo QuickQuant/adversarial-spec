@@ -1313,7 +1313,7 @@ Check these specific categories:
 
 8. STALE TEST ASSUMPTION: A test name, docstring, setup comment, expected field, or assertion still describes an old contract.
 
-9. DATA STRATEGY MISMATCH: A test uses SYNTHETIC or MOCK when REAL-DATA / REAL-DATA + PROPERTY is feasible, or a MOCK test lacks a concrete why_impossible_to_reproduce_live justification.
+9. DATA STRATEGY MISMATCH: A test uses SYNTHETIC or MOCK when REAL-DATA / REAL-DATA + PROPERTY is feasible, or a TMR record has a non-real data strategy (e.g. MOCK or SYNTHETIC) and why_impossible_to_reproduce_live is empty/null.
 
 10. MISSING BVA / STATE / DECISION ROW: Numeric boundaries, state transitions, or decision-table combinations specified by the spec are missing tests.
 
@@ -1321,9 +1321,13 @@ Check these specific categories:
 
 12. ORPHANED SPINE: A happy-path spine test (or any test) whose premise describes a behavior the CURRENT spec no longer has — because a revision deleted, relocated, absorbed, or reframed that capability (a "user-story morph"). The test still parses and may name no deleted identifier, yet it asserts a capability that moved out of its user story. This is the SEMANTIC counterpart to stale_test_assumption: not a stale field name, but a stale SUBJECT. For a spine test this is blocking — the user story has no valid primary-success test. Flag the morph and the user story; the fix is to re-center the spine on the surviving deliverable (see morph reconciliation).
 
+13. MISSING LIVENESS TEST: A critical seam has a MOCK data strategy but lacks a live_or_induced technique (mock-only critical seams are blocked).
+
+14. PROMOTER GATING: Controls promotion of tests from nl to acceptance. If a test has maturity nl, it is promoted (PROMOTE nl→acceptance) when accessors are named (>=1 named accessor, CB-5 guard); it is blocked (BLOCK) when unnamed.
+
 Output format — for each finding:
   TEST GAP: [brief title]
-  Category: missing_contract_test | weak_oracle | missing_parameter_causality | missing_formula_test | missing_negative_test | missing_ui_contract_test | missing_surface_coverage | stale_test_assumption | data_strategy_mismatch | missing_bva_state_decision | low_value_duplication | orphaned_spine
+  Category: missing_contract_test | weak_oracle | missing_parameter_causality | missing_formula_test | missing_negative_test | missing_ui_contract_test | missing_surface_coverage | stale_test_assumption | data_strategy_mismatch | missing_bva_state_decision | low_value_duplication | orphaned_spine | missing_liveness_test
   Requirement / Contract: [user story, acceptance criterion, invariant, or canonical contract]
   Existing test coverage: [test IDs or "none"]
   Why insufficient: [what bug would still pass]
