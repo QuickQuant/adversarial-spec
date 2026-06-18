@@ -3,32 +3,56 @@
     {
       "case_id": "TC-6.0",
       "fixture_path": "fixtures/tc_6_0_fixture.md",
-      "expected_findings": [],
-      "negatives": [],
+      "expected_findings": [
+        {
+          "finding_id": "ORPHANED_USER_STORY",
+          "description": "User story US-101 (Update Profile Picture) is specified in the requirements document but lacks any automated spine, unit, or integration test validating it, representing an orphaned requirement."
+        }
+      ],
+      "negatives": [
+        "A user story that has a corresponding automated test is not flagged as orphaned",
+        "Fully verified requirements with active spine tests are not flagged"
+      ],
       "model": "mock-model",
       "model_settings": {},
       "threshold": 0.8,
-      "content_hash": "333eeb711cb55fe0e7e546ccb2b1a7375cad463e910fe35c13b088becbc4a359"
+      "content_hash": "e67048d6b5f05472711bfbb39089e26f3946374188147de1a0b3beaf9dd5d3bb"
     },
     {
       "case_id": "TC-7.1",
       "fixture_path": "fixtures/tc_7_1_fixture.md",
-      "expected_findings": [],
-      "negatives": [],
+      "expected_findings": [
+        {
+          "finding_id": "MISSING_LIVENESS_TEST_ON_SEAM",
+          "description": "The PaymentServiceClient integration depends on an external service. While mocked in tests, there are no liveness tests validating the API contract with the third-party credit card processor, allowing API drift to go undetected."
+        }
+      ],
+      "negatives": [
+        "Seams targeting local in-memory systems without external network calls do not require liveness tests",
+        "Seams that are fully validated via mock-free automated integration tests are not flagged"
+      ],
       "model": "mock-model",
       "model_settings": {},
       "threshold": 0.8,
-      "content_hash": "03a9a9f9835c018cbc011db950361b40b300bf0c65067ea5f28df3f960f9f4c2"
+      "content_hash": "8e542d31aaa8311d5292d1ae2faed0a42411125cf11e8f7c18bf84bdbb7759db"
     },
     {
       "case_id": "TC-3.1",
       "fixture_path": "fixtures/tc_3_1_fixture.md",
-      "expected_findings": [],
-      "negatives": [],
+      "expected_findings": [
+        {
+          "finding_id": "MOCK_PROMOTION_AVAILABLE",
+          "description": "The GeolocationResolver uses a static mock for geocoding lookups. Since the geocoding service provides a lightweight health-check status endpoint and static sandbox IP, this mock should be promoted to a constructive liveness test."
+        }
+      ],
+      "negatives": [
+        "Mocks for completely non-deterministic services with no sandbox or status endpoints are not flagged",
+        "Mocks where no liveness verification technique exists are not promoted"
+      ],
       "model": "mock-model",
       "model_settings": {},
       "threshold": 0.8,
-      "content_hash": "a692413fc261538d5d8a199ecc097901c564c2f8beba9e51573e02ab7c692c3d"
+      "content_hash": "94bc63010d46b7c281b5938ab4df66b2d418c20d3df6515ad7f75526384f09f1"
     }
   ]
 }

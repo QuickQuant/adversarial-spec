@@ -29,6 +29,30 @@ class GoldenCase(BaseModel):
     threshold: float
     content_hash: str
 
+    @field_validator("expected_findings")
+    @classmethod
+    def validate_non_empty_expected_findings(cls, v: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        if not v:
+            raise ValueError("expected_findings must be non-empty for judgment cases")
+        for finding in v:
+            if not isinstance(finding, dict):
+                raise ValueError("Each finding must be a dictionary")
+            if "finding_id" not in finding or not finding["finding_id"]:
+                raise ValueError("Each finding must contain a non-empty finding_id")
+            if "description" not in finding or not finding["description"]:
+                raise ValueError("Each finding must contain a non-empty description")
+        return v
+
+    @field_validator("negatives")
+    @classmethod
+    def validate_non_empty_negatives(cls, v: List[str]) -> List[str]:
+        if not v:
+            raise ValueError("negatives must be non-empty for judgment cases")
+        for item in v:
+            if not item or not isinstance(item, str) or not item.strip():
+                raise ValueError("Each negative must be a non-empty string")
+        return v
+
     @field_validator("content_hash")
     @classmethod
     def validate_sha256(cls, v: str) -> str:
@@ -38,6 +62,7 @@ class GoldenCase(BaseModel):
         if len(v_clean) != 64 or not all(c in "0123456789abcdef" for c in v_clean):
             raise ValueError("content_hash must be a valid 64-character SHA256 hex string")
         return v_clean
+
 
 
 class GoldenManifest(BaseModel):

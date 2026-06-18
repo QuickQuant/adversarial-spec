@@ -29,7 +29,7 @@ def test_tc_14_0_manifest_schema():
             {
                 "case_id": "TC-6.0",
                 "fixture_path": "fixtures/tc_6_0_fixture.md",
-                "expected_findings": [{"code": "ERR_1", "message": "fail"}],
+                "expected_findings": [{"finding_id": "ERR_1", "description": "fail"}],
                 "negatives": ["no err"],
                 "model": "mock-model",
                 "model_settings": {"temp": 0.0},
@@ -42,7 +42,7 @@ def test_tc_14_0_manifest_schema():
     assert len(manifest.cases) == 1
     assert manifest.cases[0].case_id == "TC-6.0"
     assert manifest.cases[0].fixture_path == "fixtures/tc_6_0_fixture.md"
-    assert manifest.cases[0].expected_findings == [{"code": "ERR_1", "message": "fail"}]
+    assert manifest.cases[0].expected_findings == [{"finding_id": "ERR_1", "description": "fail"}]
     assert manifest.cases[0].negatives == ["no err"]
     assert manifest.cases[0].model == "mock-model"
     assert manifest.cases[0].model_settings == {"temp": 0.0}
@@ -55,8 +55,8 @@ def test_tc_14_0_manifest_schema():
             {
                 "case_id": "TC-6.0",
                 "fixture_path": "fixtures/tc_6_0_fixture.md",
-                "expected_findings": [],
-                "negatives": [],
+                "expected_findings": [{"finding_id": "ERR_1", "description": "fail"}],
+                "negatives": ["no err"],
                 "model": "mock-model",
                 "model_settings": {},
                 "threshold": 0.8,
@@ -74,8 +74,8 @@ def test_tc_14_0_manifest_schema():
             {
                 "case_id": "TC-6.0",
                 "fixture_path": "fixtures/tc_6_0_fixture.md",
-                "expected_findings": [],
-                "negatives": [],
+                "expected_findings": [{"finding_id": "ERR_1", "description": "fail"}],
+                "negatives": ["no err"],
                 "model": "mock-model",
                 "model_settings": {},
                 "threshold": 0.8,
@@ -85,6 +85,43 @@ def test_tc_14_0_manifest_schema():
     }
     with pytest.raises(ValidationError):
         GoldenManifest.model_validate(invalid_hash)
+
+    # Empty expected_findings should raise ValidationError
+    empty_findings = {
+        "cases": [
+            {
+                "case_id": "TC-6.0",
+                "fixture_path": "fixtures/tc_6_0_fixture.md",
+                "expected_findings": [],
+                "negatives": ["no err"],
+                "model": "mock-model",
+                "model_settings": {},
+                "threshold": 0.8,
+                "content_hash": "333eeb711cb55fe0e7e546ccb2b1a7375cad463e910fe35c13b088becbc4a359"
+            }
+        ]
+    }
+    with pytest.raises(ValidationError):
+        GoldenManifest.model_validate(empty_findings)
+
+    # Empty negatives should raise ValidationError
+    empty_negatives = {
+        "cases": [
+            {
+                "case_id": "TC-6.0",
+                "fixture_path": "fixtures/tc_6_0_fixture.md",
+                "expected_findings": [{"finding_id": "ERR_1", "description": "fail"}],
+                "negatives": [],
+                "model": "mock-model",
+                "model_settings": {},
+                "threshold": 0.8,
+                "content_hash": "333eeb711cb55fe0e7e546ccb2b1a7375cad463e910fe35c13b088becbc4a359"
+            }
+        ]
+    }
+    with pytest.raises(ValidationError):
+        GoldenManifest.model_validate(empty_negatives)
+
 
 
 def test_tc_14_1_plan_lint():
@@ -188,8 +225,8 @@ def test_tc_inv_018_manifest_validation(tmp_path):
             {
                 "case_id": "TC-6.0",
                 "fixture_path": "fixtures/tc_6_0.md",
-                "expected_findings": [],
-                "negatives": [],
+                "expected_findings": [{"finding_id": "ERR_1", "description": "fail"}],
+                "negatives": ["no err"],
                 "model": "mock-model",
                 "model_settings": {},
                 "threshold": 0.8,
@@ -198,8 +235,8 @@ def test_tc_inv_018_manifest_validation(tmp_path):
             {
                 "case_id": "TC-7.1",
                 "fixture_path": "fixtures/tc_7_1.md",
-                "expected_findings": [],
-                "negatives": [],
+                "expected_findings": [{"finding_id": "ERR_2", "description": "fail"}],
+                "negatives": ["no err"],
                 "model": "mock-model",
                 "model_settings": {},
                 "threshold": 0.8,
@@ -217,8 +254,8 @@ def test_tc_inv_018_manifest_validation(tmp_path):
             {
                 "case_id": "TC-6.0",
                 "fixture_path": "fixtures/tc_6_0.md",
-                "expected_findings": [],
-                "negatives": [],
+                "expected_findings": [{"finding_id": "ERR_1", "description": "fail"}],
+                "negatives": ["no err"],
                 "model": "mock-model",
                 "model_settings": {},
                 "threshold": 0.8,
@@ -227,8 +264,8 @@ def test_tc_inv_018_manifest_validation(tmp_path):
             {
                 "case_id": "TC-7.1",
                 "fixture_path": "fixtures/tc_7_1.md",
-                "expected_findings": [],
-                "negatives": [],
+                "expected_findings": [{"finding_id": "ERR_2", "description": "fail"}],
+                "negatives": ["no err"],
                 "model": "mock-model",
                 "model_settings": {},
                 "threshold": 0.8,
@@ -237,8 +274,8 @@ def test_tc_inv_018_manifest_validation(tmp_path):
             {
                 "case_id": "TC-3.1",
                 "fixture_path": "fixtures/tc_3_1.md",
-                "expected_findings": [],
-                "negatives": [],
+                "expected_findings": [{"finding_id": "ERR_3", "description": "fail"}],
+                "negatives": ["no err"],
                 "model": "mock-model",
                 "model_settings": {},
                 "threshold": 0.8,
@@ -277,8 +314,8 @@ def test_tc_inv_018_manifest_validation(tmp_path):
             {
                 "case_id": "TC-6.0",
                 "fixture_path": "fixtures/tc_6_0.md",
-                "expected_findings": [],
-                "negatives": [],
+                "expected_findings": [{"finding_id": "ERR_1", "description": "fail"}],
+                "negatives": ["no err"],
                 "model": "mock-model",
                 "model_settings": {},
                 "threshold": 0.8,
@@ -287,8 +324,8 @@ def test_tc_inv_018_manifest_validation(tmp_path):
             {
                 "case_id": "TC-7.1",
                 "fixture_path": "fixtures/tc_7_1.md",
-                "expected_findings": [],
-                "negatives": [],
+                "expected_findings": [{"finding_id": "ERR_2", "description": "fail"}],
+                "negatives": ["no err"],
                 "model": "mock-model",
                 "model_settings": {},
                 "threshold": 0.8,
@@ -297,8 +334,8 @@ def test_tc_inv_018_manifest_validation(tmp_path):
             {
                 "case_id": "TC-3.1",
                 "fixture_path": "fixtures/tc_3_1.md",
-                "expected_findings": [],
-                "negatives": [],
+                "expected_findings": [{"finding_id": "ERR_3", "description": "fail"}],
+                "negatives": ["no err"],
                 "model": "mock-model",
                 "model_settings": {},
                 "threshold": 0.8,
@@ -311,3 +348,4 @@ def test_tc_inv_018_manifest_validation(tmp_path):
     # Should pass now!
     res = lint_manifest_and_fixtures(manifest_file)
     assert len(res.cases) == 3
+
