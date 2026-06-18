@@ -1,0 +1,581 @@
+{
+  "$comment": "generated-from:sha256:aa8fe8f16de468037d6001f6176c6a13ed39c21ec00bff819b19df66bc4f33bf",
+  "$defs": {
+    "CodeRunEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_sha256": {
+          "title": "Artifact Sha256",
+          "type": "string"
+        },
+        "artifact_uri": {
+          "title": "Artifact Uri",
+          "type": "string"
+        },
+        "command": {
+          "title": "Command",
+          "type": "string"
+        },
+        "commit": {
+          "title": "Commit",
+          "type": "string"
+        },
+        "cwd": {
+          "title": "Cwd",
+          "type": "string"
+        },
+        "env": {
+          "enum": [
+            "live",
+            "dev",
+            "ci"
+          ],
+          "title": "Env",
+          "type": "string"
+        },
+        "exit": {
+          "title": "Exit",
+          "type": "integer"
+        },
+        "finished_at": {
+          "title": "Finished At",
+          "type": "string"
+        },
+        "live_or_induced": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LiveOrInducedTechnique"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "repo": {
+          "title": "Repo",
+          "type": "string"
+        },
+        "result": {
+          "enum": [
+            "pass",
+            "fail"
+          ],
+          "title": "Result",
+          "type": "string"
+        },
+        "runner": {
+          "title": "Runner",
+          "type": "string"
+        },
+        "started_at": {
+          "title": "Started At",
+          "type": "string"
+        },
+        "tier": {
+          "const": "code",
+          "title": "Tier",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tier",
+        "command",
+        "cwd",
+        "repo",
+        "commit",
+        "started_at",
+        "finished_at",
+        "exit",
+        "result",
+        "env",
+        "artifact_uri",
+        "artifact_sha256",
+        "runner",
+        "live_or_induced"
+      ],
+      "title": "CodeRunEvidence",
+      "type": "object"
+    },
+    "JudgmentRunEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "captured_at": {
+          "title": "Captured At",
+          "type": "string"
+        },
+        "golden_manifest_id": {
+          "title": "Golden Manifest Id",
+          "type": "string"
+        },
+        "golden_manifest_sha256": {
+          "title": "Golden Manifest Sha256",
+          "type": "string"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "model_settings": {
+          "additionalProperties": true,
+          "title": "Model Settings",
+          "type": "object"
+        },
+        "per_case_results": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Per Case Results",
+          "type": "array"
+        },
+        "result": {
+          "enum": [
+            "pass",
+            "fail"
+          ],
+          "title": "Result",
+          "type": "string"
+        },
+        "runner": {
+          "title": "Runner",
+          "type": "string"
+        },
+        "score": {
+          "title": "Score",
+          "type": "number"
+        },
+        "threshold": {
+          "title": "Threshold",
+          "type": "number"
+        },
+        "tier": {
+          "const": "judgment",
+          "title": "Tier",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tier",
+        "golden_manifest_id",
+        "golden_manifest_sha256",
+        "model",
+        "model_settings",
+        "score",
+        "threshold",
+        "per_case_results",
+        "result",
+        "runner",
+        "captured_at"
+      ],
+      "title": "JudgmentRunEvidence",
+      "type": "object"
+    },
+    "LiveOrInducedTechnique": {
+      "additionalProperties": false,
+      "description": "Tagged object form of ``live_or_induced``.\n\nJSON null is represented by Python ``None`` at the TMR field. A present\nobject must have a non-null kind; ``other`` and ``state-injection`` are\nuseful only with a concrete detail.",
+      "properties": {
+        "detail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Detail"
+        },
+        "kind": {
+          "enum": [
+            "natural-wait",
+            "toxiproxy:corrupt",
+            "toxiproxy:drop",
+            "tc-netem:latency",
+            "tc-netem:partition",
+            "external-kill",
+            "clock-stub",
+            "state-injection",
+            "other"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "LiveOrInducedTechnique",
+      "type": "object"
+    },
+    "SystemValidationRunEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "captured_at": {
+          "title": "Captured At",
+          "type": "string"
+        },
+        "corpus_id": {
+          "title": "Corpus Id",
+          "type": "string"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "model_settings": {
+          "additionalProperties": true,
+          "title": "Model Settings",
+          "type": "object"
+        },
+        "prompt_sha256": {
+          "title": "Prompt Sha256",
+          "type": "string"
+        },
+        "result": {
+          "enum": [
+            "pass",
+            "fail"
+          ],
+          "title": "Result",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "runner": {
+          "title": "Runner",
+          "type": "string"
+        },
+        "tier": {
+          "const": "system-validation",
+          "title": "Tier",
+          "type": "string"
+        },
+        "transcript_sha256": {
+          "title": "Transcript Sha256",
+          "type": "string"
+        },
+        "transcript_uri": {
+          "title": "Transcript Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tier",
+        "transcript_uri",
+        "transcript_sha256",
+        "model",
+        "model_settings",
+        "prompt_sha256",
+        "corpus_id",
+        "run_id",
+        "result",
+        "runner",
+        "captured_at"
+      ],
+      "title": "SystemValidationRunEvidence",
+      "type": "object"
+    }
+  },
+  "$id": "https://brainquarters.local/schemas/test-maturity-record.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One TMR record in ``tmr-registry.json``.",
+  "properties": {
+    "accessors": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Accessors",
+      "type": "array"
+    },
+    "also_covers": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Also Covers",
+      "type": "array"
+    },
+    "altitude": {
+      "enum": [
+        "component",
+        "subsystem",
+        "system"
+      ],
+      "title": "Altitude",
+      "type": "string"
+    },
+    "architecture_link": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Architecture Link",
+      "type": "array"
+    },
+    "binding_status": {
+      "enum": [
+        "unbound",
+        "bound"
+      ],
+      "title": "Binding Status",
+      "type": "string"
+    },
+    "critical_seam": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Critical Seam"
+    },
+    "criticality_source": {
+      "enum": [
+        "explicit",
+        "architecture_link",
+        "unknown"
+      ],
+      "title": "Criticality Source",
+      "type": "string"
+    },
+    "data_strategy": {
+      "enum": [
+        "REAL-DATA",
+        "REAL-DATA + PROPERTY",
+        "SYNTHETIC",
+        "MOCK",
+        "MOCK-EXTERNAL",
+        "FRONTEND",
+        "STATIC"
+      ],
+      "title": "Data Strategy",
+      "type": "string"
+    },
+    "live_or_induced": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/LiveOrInducedTechnique"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "maturity": {
+      "enum": [
+        "nl",
+        "acceptance",
+        "concrete"
+      ],
+      "title": "Maturity",
+      "type": "string"
+    },
+    "run_evidence": {
+      "anyOf": [
+        {
+          "discriminator": {
+            "mapping": {
+              "code": "#/$defs/CodeRunEvidence",
+              "judgment": "#/$defs/JudgmentRunEvidence",
+              "system-validation": "#/$defs/SystemValidationRunEvidence"
+            },
+            "propertyName": "tier"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/CodeRunEvidence"
+            },
+            {
+              "$ref": "#/$defs/SystemValidationRunEvidence"
+            },
+            {
+              "$ref": "#/$defs/JudgmentRunEvidence"
+            }
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Run Evidence"
+    },
+    "source_spec": {
+      "title": "Source Spec",
+      "type": "string"
+    },
+    "spine": {
+      "title": "Spine",
+      "type": "boolean"
+    },
+    "spine_of": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Spine Of"
+    },
+    "spine_step_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Spine Step Ref"
+    },
+    "spine_steps": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Spine Steps",
+      "type": "array"
+    },
+    "status": {
+      "enum": [
+        "active",
+        "tombstoned"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "supersedes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Supersedes",
+      "type": "array"
+    },
+    "technical_constraint": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Technical Constraint"
+    },
+    "test_id": {
+      "title": "Test Id",
+      "type": "string"
+    },
+    "tested_by": {
+      "enum": [
+        "llm",
+        "user",
+        "both"
+      ],
+      "title": "Tested By",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "tmr_uid": {
+      "title": "Tmr Uid",
+      "type": "string"
+    },
+    "tombstoned_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Tombstoned At"
+    },
+    "user_story": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      ],
+      "title": "User Story"
+    },
+    "verification_mode": {
+      "enum": [
+        "automated-unit",
+        "automated-integration",
+        "automated-contract",
+        "automated-component",
+        "test-producer",
+        "artifact-sync",
+        "static-check",
+        "manual-ux",
+        "system-validation"
+      ],
+      "title": "Verification Mode",
+      "type": "string"
+    },
+    "verification_scope": {
+      "enum": [
+        "targeted",
+        "full-suite",
+        "static",
+        "manual",
+        "end-to-end"
+      ],
+      "title": "Verification Scope",
+      "type": "string"
+    },
+    "why_impossible_to_reproduce_live": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Why Impossible To Reproduce Live"
+    }
+  },
+  "required": [
+    "tmr_uid",
+    "test_id",
+    "title",
+    "user_story",
+    "maturity",
+    "data_strategy",
+    "spine",
+    "verification_mode",
+    "verification_scope",
+    "altitude",
+    "tested_by",
+    "critical_seam",
+    "criticality_source",
+    "binding_status",
+    "status",
+    "source_spec",
+    "live_or_induced",
+    "run_evidence"
+  ],
+  "title": "TestMaturityRecord",
+  "type": "object",
+  "x-contract-version": "tmr.v1"
+}
