@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Adversarial Pipeline — Field Guide to a NASA-V Spec-to-Ship System</title>
+<meta name="description" content="A developer's field guide to the three-project adversarial pipeline: adversarial-spec, fizzy-pipeline-mcp, and Fizzy — a NASA V-model systems-engineering process for AI agents.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@400;500;600;700&family=Spline+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* surfaces */
+  --bg0:#06080e; --bg1:#0b101b; --bg2:#111827; --bg3:#172135; --bg4:#1e2c45;
+  --grid:rgba(120,165,230,.05); --grid2:rgba(120,165,230,.10);
+  /* ink */
+  --ink:#dde5f4; --ink2:#97a6c4; --ink3:#5d6b89; --ink4:#3c4760;
+  /* signal palette (mission control) */
+  --amber:#ffb13b; --cyan:#46d6e6; --coral:#ff7a59; --green:#5fd38a; --red:#ff5d6c; --rose:#ff7aa8; --violet:#b89bff;
+  /* altitude (component / subsystem / system) */
+  --comp:#46d6e6; --sub:#ffb13b; --sys:#ff7a59; --vald:#b89bff;
+  /* project identity */
+  --asp:#ffce5c;   /* adversarial-spec — the mind / left arm */
+  --fpm:#46d6e6;   /* fizzy-pipeline-mcp — the spine / right arm */
+  --fzy:#b89bff;   /* fizzy — the board / memory */
+  /* agent brand */
+  --claude:#d97757; --codex:#e9ecf2; --gemini:#5b8def;
+  --line:rgba(150,180,230,.13); --line2:rgba(150,180,230,.22);
+  --shadow:0 30px 70px -28px rgba(0,0,0,.78);
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --disp:'Saira Condensed',sans-serif;
+  --body:'Spline Sans',system-ui,sans-serif;
+  --serif:'Fraunces',Georgia,serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg0);color:var(--ink);font-family:var(--body);
+  font-size:16px;line-height:1.66;overflow-x:hidden;-webkit-font-smoothing:antialiased;
+  background-image:
+    linear-gradient(var(--grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px),
+    radial-gradient(1200px 760px at 82% -10%,rgba(255,177,59,.08),transparent 60%),
+    radial-gradient(1000px 680px at 2% 8%,rgba(70,214,230,.07),transparent 56%),
+    radial-gradient(900px 900px at 50% 120%,rgba(184,155,255,.06),transparent 60%);
+  background-size:46px 46px,46px 46px,100% 100%,100% 100%,100% 100%;
+  background-attachment:fixed;
+}
+/* film grain */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.45;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");}
+::selection{background:var(--amber);color:#08080a}
+a{color:var(--cyan);text-decoration:none}
+
+/* ---------- nav furniture ---------- */
+#prog{position:fixed;top:0;left:0;height:3px;width:0;z-index:60;background:linear-gradient(90deg,var(--cyan),var(--amber),var(--coral),var(--violet));box-shadow:0 0 14px rgba(255,177,59,.5)}
+#dots{position:fixed;right:20px;top:50%;transform:translateY(-50%);z-index:45;display:flex;flex-direction:column;gap:12px}
+#dots a{width:9px;height:9px;border-radius:50%;border:1px solid var(--ink3);background:transparent;transition:.25s;position:relative}
+#dots a:hover,#dots a.on{background:var(--amber);border-color:var(--amber);box-shadow:0 0 11px var(--amber)}
+#dots a span{position:absolute;right:20px;top:50%;transform:translateY(-50%);font:600 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink);white-space:nowrap;opacity:0;transition:.2s;pointer-events:none;background:var(--bg2);padding:6px 9px;border:1px solid var(--line2);border-radius:5px}
+#dots a:hover span{opacity:1}
+@media(max-width:1040px){#dots{display:none}}
+
+.wrap{max-width:1180px;margin:0 auto;padding:0 30px;position:relative;z-index:2}
+.wide{max-width:1320px}
+section{padding:84px 0;border-bottom:1px solid var(--line);position:relative}
+.kicker{font:600 12px/1 var(--mono);letter-spacing:.34em;text-transform:uppercase;color:var(--amber);display:flex;align-items:center;gap:13px;margin-bottom:20px}
+.kicker::before{content:"";width:36px;height:1px;background:var(--amber)}
+.kicker .id{color:var(--ink3);margin-left:auto;letter-spacing:.18em}
+h1,h2,h3,h4{font-family:var(--disp);font-weight:700;line-height:1.02;letter-spacing:.01em;margin:0}
+h2{font-size:clamp(34px,5.4vw,62px);text-transform:uppercase}
+h3{font-size:25px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink)}
+h4{font-size:17px;text-transform:uppercase;letter-spacing:.05em}
+.lead{font-size:19px;color:var(--ink2);max-width:74ch;margin:20px 0 0}
+.lead b{color:var(--ink);font-weight:600}
+p{max-width:76ch}
+.mut{color:var(--ink2)}.dim{color:var(--ink3)}
+.mono{font-family:var(--mono)}
+code{font-family:var(--mono);font-size:.85em;background:var(--bg2);border:1px solid var(--line);padding:1.5px 6px;border-radius:5px;color:var(--amber);white-space:nowrap}
+em{color:var(--ink);font-style:italic;font-family:var(--serif)}
+
+/* tooltip */
+[data-tip]{border-bottom:1px dotted var(--ink3);cursor:help}
+#tip{position:fixed;z-index:90;max-width:340px;background:linear-gradient(180deg,var(--bg3),var(--bg2));border:1px solid var(--line2);
+  border-left:3px solid var(--cyan);border-radius:9px;padding:12px 15px;font:400 13.5px/1.55 var(--body);color:var(--ink);
+  box-shadow:var(--shadow);opacity:0;transform:translateY(7px);transition:.16s;pointer-events:none}
+#tip.on{opacity:1;transform:translateY(0)}
+#tip b{color:var(--amber);font-family:var(--mono);font-size:12px;letter-spacing:.03em;display:block;margin-bottom:3px}
+
+/* ---------- hero ---------- */
+#hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:120px 0 80px;border-bottom:1px solid var(--line);overflow:hidden}
+.badge{display:inline-flex;align-items:center;gap:10px;font:600 11px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;
+  border:1px solid var(--line2);background:var(--bg1);padding:10px 15px;border-radius:40px;color:var(--ink2)}
+.dotpulse{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(95,211,138,.6);animation:pulse 2.4s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 10px rgba(95,211,138,0)}100%{box-shadow:0 0 0 0 rgba(95,211,138,0)}}
+.hero-title{font-family:var(--disp);font-weight:700;font-size:clamp(56px,12.5vw,176px);line-height:.84;text-transform:uppercase;letter-spacing:-.015em;margin:30px 0 0}
+.hero-title .l1{display:block;color:var(--ink)}
+.hero-title .l2{display:block}
+.hero-title .a{color:var(--amber)}
+.hero-title .o{-webkit-text-stroke:1.6px var(--ink3);color:transparent}
+.hero-sub{font-family:var(--serif);font-size:clamp(19px,2.5vw,30px);color:var(--ink);font-weight:400;margin-top:30px;max-width:40ch;line-height:1.35}
+.hero-sub b{color:var(--cyan);font-weight:500}
+.hero-grid{display:grid;grid-template-columns:1.35fr .65fr;gap:50px;align-items:center}
+@media(max-width:920px){.hero-grid{grid-template-columns:1fr;gap:34px}}
+.statline{display:flex;flex-wrap:wrap;gap:11px;margin-top:38px}
+.stat{font:600 12px/1 var(--mono);letter-spacing:.05em;border:1px solid var(--line2);background:linear-gradient(180deg,var(--bg1),var(--bg0));padding:12px 16px;border-radius:8px;color:var(--ink2)}
+.stat b{color:var(--ink);font-size:19px;display:block;margin-bottom:5px;font-family:var(--disp);letter-spacing:.02em}
+.stat.a b{color:var(--amber)}.stat.c b{color:var(--cyan)}.stat.v b{color:var(--violet)}
+.scrollcue{margin-top:58px;font:600 11px/1 var(--mono);letter-spacing:.3em;text-transform:uppercase;color:var(--ink3);display:flex;align-items:center;gap:11px}
+.scrollcue::after{content:"↓";animation:bob 1.7s infinite}
+@keyframes bob{50%{transform:translateY(6px)}}
+/* hero mini-V */
+.heroV{width:100%;height:auto;filter:drop-shadow(0 14px 40px rgba(0,0,0,.5))}
+.heroV .e{fill:none;stroke:var(--line2);stroke-width:2}
+.heroV .e.lit{stroke:var(--amber);stroke-width:2.4;animation:dash 3s linear infinite}
+.heroV .nd{fill:var(--bg2);stroke:var(--line2);stroke-width:1.5}
+.heroV .nd.l{stroke:var(--asp)}.heroV .nd.r{stroke:var(--fpm)}.heroV .nd.b{stroke:var(--coral)}
+.heroV .pl{stroke:var(--ink4);stroke-width:1.3;stroke-dasharray:4 5}
+@keyframes dash{to{stroke-dashoffset:-40}}
+
+/* ---------- reveal ---------- */
+.rv{opacity:0;transform:translateY(28px);transition:.75s cubic-bezier(.2,.7,.2,1)}
+.rv.in{opacity:1;transform:none}
+.rv2{transition-delay:.08s}.rv3{transition-delay:.16s}.rv4{transition-delay:.24s}
+
+/* ---------- generic cards / grid ---------- */
+.grid{display:grid;gap:18px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:880px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.card{background:linear-gradient(180deg,var(--bg1),rgba(11,16,27,.5));border:1px solid var(--line);border-radius:13px;padding:24px;position:relative;overflow:hidden;transition:.25s}
+.card:hover{border-color:var(--line2);transform:translateY(-2px)}
+.card .t{font-family:var(--disp);font-size:20px;text-transform:uppercase;letter-spacing:.03em;margin-bottom:10px}
+.card .n{position:absolute;top:15px;right:17px;font:700 12px/1 var(--mono);color:var(--ink4)}
+.card .bartop{position:absolute;top:0;left:0;right:0;height:3px;background:var(--line2)}
+.panel{background:linear-gradient(180deg,var(--bg1),var(--bg0));border:1px solid var(--line2);border-radius:15px;padding:28px;box-shadow:var(--shadow);position:relative}
+
+/* project cards */
+.proj{border-radius:14px;border:1px solid var(--line2);padding:26px;position:relative;overflow:hidden;background:
+  radial-gradient(420px 240px at 100% 0%,var(--gl),transparent 70%),linear-gradient(180deg,var(--bg1),var(--bg0))}
+.proj .glyph{font:700 13px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;padding:6px 11px;border-radius:6px;display:inline-block}
+.proj h3{margin:16px 0 4px;font-size:27px}
+.proj .role{font:600 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+.proj.asp{--gl:rgba(255,206,92,.16)}.proj.asp .glyph{background:rgba(255,206,92,.12);color:var(--asp);border:1px solid rgba(255,206,92,.35)}.proj.asp h3{color:var(--asp)}
+.proj.fpm{--gl:rgba(70,214,230,.16)}.proj.fpm .glyph{background:rgba(70,214,230,.12);color:var(--fpm);border:1px solid rgba(70,214,230,.35)}.proj.fpm h3{color:var(--fpm)}
+.proj.fzy{--gl:rgba(184,155,255,.16)}.proj.fzy .glyph{background:rgba(184,155,255,.12);color:var(--fzy);border:1px solid rgba(184,155,255,.35)}.proj.fzy h3{color:var(--fzy)}
+.proj .path{font:500 12px var(--mono);color:var(--ink3);margin-top:14px;word-break:break-all}
+.proj ul{margin:14px 0 0;padding:0;list-style:none}
+.proj li{font-size:14px;color:var(--ink2);padding:5px 0 5px 18px;position:relative}
+.proj li::before{content:"▸";position:absolute;left:0;color:var(--ink4)}
+
+/* tags / pills */
+.tag{display:inline-flex;align-items:center;gap:6px;font:600 11px/1 var(--mono);letter-spacing:.05em;padding:5px 9px;border-radius:5px;border:1px solid var(--line);text-transform:uppercase;white-space:nowrap}
+.tag.comp{color:var(--comp);border-color:rgba(70,214,230,.4);background:rgba(70,214,230,.07)}
+.tag.sub{color:var(--sub);border-color:rgba(255,177,59,.4);background:rgba(255,177,59,.07)}
+.tag.sys{color:var(--sys);border-color:rgba(255,122,89,.4);background:rgba(255,122,89,.07)}
+.tag.vald{color:var(--vald);border-color:rgba(184,155,255,.4);background:rgba(184,155,255,.08)}
+.tag.ok{color:var(--green);border-color:rgba(95,211,138,.4);background:rgba(95,211,138,.07)}
+.tag.no{color:var(--red);border-color:rgba(255,93,108,.4);background:rgba(255,93,108,.07)}
+.tag.asp{color:var(--asp);border-color:rgba(255,206,92,.4);background:rgba(255,206,92,.07)}
+.tag.fpm{color:var(--fpm);border-color:rgba(70,214,230,.4);background:rgba(70,214,230,.07)}
+.tag.fzy{color:var(--fzy);border-color:rgba(184,155,255,.4);background:rgba(184,155,255,.08)}
+
+/* code blocks */
+pre{background:var(--bg0);border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:10px;padding:17px 19px;overflow:auto;font:400 12.5px/1.7 var(--mono);color:#cdd8ee;margin:16px 0}
+pre .k{color:var(--cyan)}pre .s{color:var(--green)}pre .c{color:var(--ink3);font-style:italic}pre .a{color:var(--amber)}pre .v{color:var(--violet)}pre .r{color:var(--red)}
+
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:14px;margin:16px 0}
+th,td{text-align:left;padding:11px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);background:rgba(255,255,255,.012)}
+td .y{color:var(--green);font-weight:700}td .x{color:var(--red);font-weight:700}td .r{color:var(--amber);font-weight:700}
+tbody tr:hover{background:rgba(120,165,230,.03)}
+
+/* buttons */
+.btn{font:600 12px/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;background:var(--bg2);color:var(--ink);border:1px solid var(--line2);padding:11px 16px;border-radius:8px;cursor:pointer;transition:.18s;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{border-color:var(--amber);color:var(--amber);transform:translateY(-1px)}
+.btn.pri{background:linear-gradient(180deg,rgba(255,177,59,.18),rgba(255,177,59,.06));border-color:rgba(255,177,59,.5);color:var(--amber)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* note box */
+.note{border:1px solid var(--line);border-left:3px solid var(--cyan);background:rgba(70,214,230,.05);border-radius:0 10px 10px 0;padding:14px 17px;font-size:14px;color:var(--ink2);margin:16px 0}
+.note b{color:var(--cyan);font-family:var(--mono);font-size:12px;letter-spacing:.03em}
+.note.warn{border-left-color:var(--amber);background:rgba(255,177,59,.05)}.note.warn b{color:var(--amber)}
+.note.gap{border-left-color:var(--rose);background:rgba(255,122,168,.05)}.note.gap b{color:var(--rose)}
+
+/* ---------- AGENT LOGOS ---------- */
+.lg{width:1em;height:1em;display:inline-block;vertical-align:-.16em}
+.agent-chip{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line2);background:var(--bg1);border-radius:40px;padding:8px 15px 8px 9px;font:600 12px/1 var(--mono);letter-spacing:.04em;color:var(--ink)}
+.agent-chip .av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto}
+.agent-chip .av svg{width:19px;height:19px}
+.av.claude{background:radial-gradient(circle at 50% 40%,rgba(217,119,87,.25),rgba(217,119,87,.06));border:1px solid rgba(217,119,87,.5)}
+.av.codex{background:radial-gradient(circle at 50% 40%,rgba(233,236,242,.16),rgba(233,236,242,.04));border:1px solid rgba(233,236,242,.32)}
+.av.gemini{background:radial-gradient(circle at 50% 40%,rgba(91,141,239,.25),rgba(91,141,239,.06));border:1px solid rgba(91,141,239,.5)}
+.av.glm{background:radial-gradient(circle at 50% 40%,rgba(95,211,138,.2),rgba(95,211,138,.05));border:1px solid rgba(95,211,138,.45);font:700 11px var(--mono);color:var(--green)}
+.agent-chip .role{font-weight:400;color:var(--ink3);letter-spacing:.1em;font-size:10px;text-transform:uppercase}
+
+/* cast row */
+.cast{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:30px}
+@media(max-width:880px){.cast{grid-template-columns:1fr 1fr}}
+.crew{border:1px solid var(--line2);border-radius:13px;padding:22px;background:linear-gradient(180deg,var(--bg1),var(--bg0));position:relative;overflow:hidden}
+.crew .av{width:50px;height:50px;border-radius:13px}
+.crew .av svg{width:30px;height:30px}
+.crew h4{margin:16px 0 2px;font-size:19px;color:var(--ink)}
+.crew .sub{font:500 11px/1.3 var(--mono);letter-spacing:.04em;color:var(--ink3)}
+.crew p{font-size:13.5px;color:var(--ink2);margin:12px 0 0}
+.crew .runner{margin-top:13px;font:600 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+.crew .runner b{color:var(--ink2);font-weight:600}
+
+/* =====================================================================
+   THE V — interactive navigator
+   ===================================================================== */
+.vstage{display:grid;grid-template-columns:1fr;gap:0;border:1px solid var(--line2);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);background:var(--bg0)}
+.vtop{position:relative;padding:24px 26px 14px;background:
+  radial-gradient(700px 380px at 18% 0%,rgba(255,206,92,.06),transparent 60%),
+  radial-gradient(700px 380px at 82% 0%,rgba(70,214,230,.06),transparent 60%),
+  linear-gradient(180deg,var(--bg1),var(--bg0))}
+.vtop .armlabel{display:flex;justify-content:space-between;font:600 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);padding:0 6px 12px}
+.vtop .armlabel .l{color:var(--asp)}.vtop .armlabel .r{color:var(--fpm)}
+#vsvg{width:100%;height:auto;font-family:var(--mono)}
+#vsvg .vedge{fill:none;stroke:var(--line2);stroke-width:2.4}
+#vsvg .vfloor{fill:none;stroke:url(#floorGrad);stroke-width:3;opacity:.55}
+#vsvg .vlink{fill:none;stroke:var(--ink4);stroke-width:1.4;stroke-dasharray:5 5;opacity:.5;transition:.2s}
+#vsvg .vlink.lit{stroke:var(--amber);opacity:1;stroke-width:1.8;animation:dash 2.4s linear infinite}
+#vsvg .plabel{fill:var(--ink3);font-size:11px;letter-spacing:.04em;text-anchor:middle;transition:.2s;cursor:pointer}
+#vsvg .plabel:hover,#vsvg .plabel.lit{fill:var(--amber)}
+#vsvg .vnode{cursor:pointer}
+#vsvg .vnode rect{fill:var(--bg2);stroke:var(--line2);stroke-width:1.6;transition:.18s;rx:7}
+#vsvg .vnode text{fill:var(--ink);font-size:12.5px;font-weight:500;text-anchor:middle;pointer-events:none;letter-spacing:.01em}
+#vsvg .vnode .sub{font-size:9.5px;fill:var(--ink3);letter-spacing:.1em;text-transform:uppercase}
+#vsvg .vnode:hover rect{stroke-width:2.2;filter:brightness(1.25)}
+#vsvg .vnode.comp rect{stroke:var(--comp)}#vsvg .vnode.sub rect{stroke:var(--sub)}
+#vsvg .vnode.sys rect{stroke:var(--sys)}#vsvg .vnode.vald rect{stroke:var(--vald)}
+#vsvg .vnode.impl rect{stroke:var(--coral);fill:#22161a}
+#vsvg .vnode.active rect{stroke-width:3;fill:var(--bg4);filter:drop-shadow(0 0 14px currentColor)}
+#vsvg .vnode.comp.active rect{stroke:var(--comp);filter:drop-shadow(0 0 16px rgba(70,214,230,.6))}
+#vsvg .vnode.sub.active rect{stroke:var(--sub);filter:drop-shadow(0 0 16px rgba(255,177,59,.6))}
+#vsvg .vnode.sys.active rect{stroke:var(--sys);filter:drop-shadow(0 0 16px rgba(255,122,89,.6))}
+#vsvg .vnode.vald.active rect{stroke:var(--vald);filter:drop-shadow(0 0 16px rgba(184,155,255,.6))}
+#vsvg .vnode.impl.active rect{filter:drop-shadow(0 0 18px rgba(255,122,89,.7))}
+#vsvg .vnode.dimmed{opacity:.32}
+#vsvg .armtag{fill:var(--ink4);font-size:10px;letter-spacing:.2em;text-transform:uppercase}
+#vsvg .agent-marker{transition:transform .8s cubic-bezier(.5,0,.3,1)}
+.vctrls{display:flex;gap:9px;align-items:center;padding:6px 6px 2px;flex-wrap:wrap}
+.vctrls .hint{font:500 11px var(--mono);color:var(--ink3);margin-left:auto}
+
+/* bottom detail panel */
+.vbot{border-top:1px solid var(--line2);background:var(--bg1);min-height:340px;display:grid;grid-template-columns:1.15fr 1fr;gap:0}
+@media(max-width:920px){.vbot{grid-template-columns:1fr}}
+.vbot .left{padding:26px 28px;border-right:1px solid var(--line)}
+.vbot .right{padding:26px 28px;background:var(--bg0)}
+@media(max-width:920px){.vbot .left{border-right:0;border-bottom:1px solid var(--line)}}
+.dpanel-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:6px}
+.dpanel-head .lvl{font:700 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:6px 10px;border-radius:6px;margin-top:4px;white-space:nowrap}
+.dpanel-head h3{font-size:28px;line-height:.98}
+.dpanel-arm{font:600 11px/1 var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--ink3);margin-bottom:18px}
+.dpanel-desc{font-size:15px;color:var(--ink2);margin:0 0 20px}
+.kv{display:grid;grid-template-columns:118px 1fr;gap:7px 16px;font-size:13.5px;margin:0}
+.kv dt{font:600 10.5px/1.5 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);padding-top:2px}
+.kv dd{margin:0;color:var(--ink)}
+.kv dd .pj{font-weight:600}
+.phasepill{display:inline-flex;align-items:center;gap:6px;font:600 11px/1 var(--mono);background:var(--bg2);border:1px solid var(--line2);border-radius:5px;padding:5px 9px;margin:0 5px 5px 0;color:var(--ink2)}
+.phasepill b{color:var(--amber)}
+/* folder tree */
+.tree{font:500 12.5px/1.85 var(--mono);color:var(--ink2);margin:4px 0 0;white-space:pre;overflow-x:auto}
+.tree .d{color:var(--fpm)}.tree .f{color:var(--ink)}.tree .hl{color:var(--amber);font-weight:600}.tree .cm{color:var(--ink4)}
+.detail-tools{margin-top:18px}
+.detail-tools .lbl,.detail-folder .lbl,.detail-plan .lbl{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:9px;display:block}
+.toolchip{display:inline-block;font:500 12px var(--mono);background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:5px 9px;margin:0 6px 6px 0;color:var(--cyan)}
+.detail-plan{margin-top:20px;border:1px solid var(--line);border-left:3px solid var(--amber);background:rgba(255,177,59,.04);border-radius:0 10px 10px 0;padding:13px 16px}
+.detail-plan .pln{font-family:var(--disp);text-transform:uppercase;font-size:17px;color:var(--amber);letter-spacing:.02em}
+.detail-plan p{font-size:13px;color:var(--ink2);margin:5px 0 0}
+.detail-tech{margin-top:18px;font-size:13.5px;color:var(--ink2)}
+.detail-tech .lbl{font:600 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:9px;display:block}
+.agentsHere{display:inline-flex;align-items:center;gap:7px;font:600 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--green);border:1px solid rgba(95,211,138,.4);background:rgba(95,211,138,.07);border-radius:40px;padding:6px 11px;margin-top:4px}
+.agentsHere .av{width:20px;height:20px;border-radius:50%}.agentsHere .av svg{width:13px;height:13px}
+#dCrew{line-height:1.7}
+#dCrew .av{width:19px!important;height:19px!important;border-radius:50%;display:inline-grid!important;place-items:center;overflow:hidden;flex:0 0 auto;vertical-align:-.35em}
+#dCrew .av svg{width:12px;height:12px}
+
+/* level legend */
+.vlegend{display:flex;gap:18px;flex-wrap:wrap;font:600 11px/1 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);padding:14px 6px 2px}
+.vlegend .it{display:flex;align-items:center;gap:7px}
+.vlegend .sw{width:11px;height:11px;border-radius:3px;border:1.5px solid currentColor}
+.vlegend .comp{color:var(--comp)}.vlegend .sub{color:var(--sub)}.vlegend .sys{color:var(--sys)}.vlegend .vald{color:var(--vald)}.vlegend .impl{color:var(--coral)}
+
+footer{padding:70px 0 90px;text-align:center}
+footer .big{font-family:var(--disp);font-size:clamp(30px,6vw,64px);text-transform:uppercase;color:var(--ink);line-height:.9}
+footer .big span{color:var(--amber)}
+.refgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;text-align:left;margin:40px 0}
+@media(max-width:880px){.refgrid{grid-template-columns:1fr}}
+.refgrid .card .t{font-size:16px}
+.refgrid code{white-space:normal}
+.sig{margin-top:50px;font:500 12px/1.7 var(--mono);color:var(--ink3);letter-spacing:.02em}
+
+/* misc layout helpers */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
+@media(max-width:900px){.split{grid-template-columns:1fr}}
+.spacer{height:14px}
+.flowwrap{overflow-x:auto;padding-bottom:8px}
+hr.div{border:0;border-top:1px solid var(--line);margin:34px 0}
+
+/* ---------- MISSION CONTROL (moving agents + dependency locks) ---------- */
+.mc{border:1px solid var(--line2);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);background:var(--bg0);margin-top:24px}
+.mc-legend{display:flex;gap:24px;flex-wrap:wrap;align-items:center;padding:13px 18px;border-bottom:1px solid var(--line);background:var(--bg1);font:500 12px var(--mono);color:var(--ink2)}
+.mc-legend .it{display:flex;align-items:center;gap:8px}
+.mc-legend .swdot{width:13px;height:13px;border-radius:4px;background:var(--c)}
+.mc-legend .swlock{width:19px;height:19px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--c);color:var(--c);background:var(--bg2)}
+.mc-legend .swlock svg{width:10px;height:10px}
+.mc-legend .soon{margin-left:auto;color:var(--ink3);font-style:italic}
+.mc-board{position:relative;display:grid;grid-template-columns:repeat(4,1fr);min-height:478px;background:
+  repeating-linear-gradient(90deg,transparent,transparent calc(25% - 1px),var(--line) calc(25% - 1px),var(--line) 25%),
+  linear-gradient(180deg,var(--bg1),var(--bg0))}
+.mc-lane{padding:42px 12px 16px;position:relative}
+.mc-lane h5{position:absolute;top:13px;left:13px;font:600 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin:0}
+.mc-lane h5 b{color:var(--ink);font-weight:600}
+.mc-lane.satisfy h5 b{color:var(--green)}
+.mc-field{position:absolute;inset:0;pointer-events:none;z-index:5}
+.mc-card{position:absolute;width:118px;height:40px;border-radius:9px;border:1px solid var(--line2);
+  background:linear-gradient(180deg,var(--bg3),var(--bg2));box-shadow:0 8px 20px -12px rgba(0,0,0,.7);
+  transition:transform 1s cubic-bezier(.55,0,.3,1),border-color .35s,opacity .4s,box-shadow .35s;
+  padding:6px 9px;will-change:transform;--cc:var(--ink3);--lockc:var(--ink4)}
+.mc-card .ct{font:600 11px/1.1 var(--mono);color:var(--ink2);display:flex;align-items:center;gap:6px}
+.mc-card .ct .dot{width:8px;height:8px;border-radius:50%;background:var(--ink4);flex:0 0 auto}
+.mc-card .cd{font-size:9.5px;color:var(--ink4);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* color states — a card wears its FAMILY hue once deps are satisfied (workable → in-flight → done) */
+.mc-card.ready{border-color:var(--cc);box-shadow:0 0 0 1px color-mix(in srgb,var(--cc) 42%,transparent),0 0 17px -3px var(--cc),0 9px 22px -10px rgba(0,0,0,.7)}
+.mc-card.ready .ct,.mc-card.flight .ct,.mc-card.done .ct{color:var(--ink)}
+.mc-card.ready .ct .dot{background:var(--cc);box-shadow:0 0 9px var(--cc)}
+.mc-card.flight{border-color:var(--cc);opacity:1;box-shadow:0 0 0 1px color-mix(in srgb,var(--cc) 38%,transparent),0 10px 26px -8px rgba(0,0,0,.7)}
+.mc-card.flight .ct .dot{background:var(--cc)}
+.mc-card.waiting{border-color:var(--cc);border-style:dashed;opacity:.9}.mc-card.waiting .ct{color:var(--ink2)}.mc-card.waiting .ct .dot{background:var(--cc)}
+.mc-card.done{border-color:var(--cc);opacity:.88}.mc-card.done .ct .dot{background:var(--cc)}.mc-card.done .cd{color:var(--cc)}
+/* blocked = grey body; lock badge carries the color */
+.mc-card.locked{opacity:.58;border-style:dashed;border-color:var(--line)}.mc-card.locked .ct .dot{background:var(--ink4)}
+/* done check — family hue, never green */
+.mc-chk{position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:50%;display:none;place-items:center;background:var(--bg1);border:1px solid var(--cc);color:var(--cc);font:700 11px/1 var(--mono)}
+.mc-card.done .mc-chk{display:grid}
+/* lock STACK — one badge per unresolved generation; front = parent (may be colored), deeper = grey */
+.mc-locks{position:absolute;top:0;right:0;width:0;height:0;z-index:6}
+.mc-lock{position:absolute;top:-8px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;
+  background:var(--bg1);border:1px solid var(--lockc);color:var(--lockc);box-shadow:0 3px 9px rgba(0,0,0,.6);--lockc:var(--ink4)}
+.mc-lock svg{width:10px;height:10px}
+/* implementer avatar (who built it) */
+.mc-by{position:absolute;top:-7px;left:-7px;width:18px;height:18px;border-radius:50%;display:none;place-items:center;background:var(--bg1);border:1px solid var(--line2);overflow:hidden}
+.mc-by svg{width:11px;height:11px}
+.mc-card.built .mc-by{display:grid}
+.mc-agent{position:absolute;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;z-index:8;
+  transition:transform 1s cubic-bezier(.5,0,.3,1);will-change:transform;filter:drop-shadow(0 6px 14px rgba(0,0,0,.6))}
+.mc-agent svg{width:23px;height:23px}
+.mc-agent.claude{background:radial-gradient(circle at 50% 38%,rgba(217,119,87,.4),rgba(217,119,87,.1));border:1.5px solid rgba(217,119,87,.7)}
+.mc-agent.codex{background:radial-gradient(circle at 50% 38%,rgba(233,236,242,.22),rgba(233,236,242,.05));border:1.5px solid rgba(233,236,242,.5)}
+.mc-agent.gemini{background:radial-gradient(circle at 50% 38%,rgba(91,141,239,.4),rgba(91,141,239,.1));border:1.5px solid rgba(91,141,239,.7)}
+.mc-agent .ring{position:absolute;inset:-5px;border-radius:50%;border:1.5px solid transparent;opacity:0}
+.mc-agent.working .ring{opacity:1;border-top-color:var(--amber);animation:spin 1s linear infinite}
+.mc-agent .act{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font:600 8px/1 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--amber);white-space:nowrap;opacity:0;transition:.2s}
+.mc-agent.working .act{opacity:1}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mc-readout{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line2);background:var(--bg1)}
+@media(max-width:760px){.mc-readout{grid-template-columns:1fr 1fr}}
+.mc-readout .ro{padding:15px 18px;border-right:1px solid var(--line)}
+.mc-readout .ro:last-child{border-right:0}
+.mc-readout .rl{font:600 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:9px}
+.mc-readout .rv2{font:600 16px/1.2 var(--disp);color:var(--ink);letter-spacing:.02em;min-height:20px}
+.mc-readout .chip{display:inline-block;font:600 11px var(--mono);border:1px solid var(--line2);border-radius:5px;padding:3px 7px;margin:2px 3px 0 0;color:var(--ink)}
+.mc-bar{display:flex;gap:9px;align-items:center;padding:13px 18px;background:var(--bg1);border-top:1px solid var(--line)}
+.mc-bar .narr{font:500 12.5px var(--mono);color:var(--ink2);margin-left:auto;text-align:right;max-width:64%}
+
+/* ---------- PHASE FLOW ---------- */
+.flow{display:flex;gap:0;align-items:stretch;margin-top:30px;min-width:920px}
+.fstep{flex:1;position:relative;padding:0 7px}
+.fstep .box{border:1px solid var(--line2);border-radius:11px;background:linear-gradient(180deg,var(--bg1),var(--bg0));padding:16px 14px;height:100%;transition:.22s;cursor:default;position:relative;overflow:hidden}
+.fstep .box::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--c,var(--ink4))}
+.fstep:hover .box{transform:translateY(-3px);border-color:var(--c,var(--line2))}
+.fstep .ph{font:700 11px/1 var(--mono);letter-spacing:.06em;color:var(--c,var(--ink3))}
+.fstep .nm{font-family:var(--disp);font-size:18px;text-transform:uppercase;letter-spacing:.02em;margin:7px 0 6px;color:var(--ink);line-height:.98}
+.fstep .ar{font:500 11px/1.4 var(--mono);color:var(--ink3);word-break:break-word}
+.fstep .ar b{color:var(--amber);font-weight:600}
+.fstep::after{content:"→";position:absolute;right:-7px;top:46%;color:var(--ink4);font-size:15px;z-index:3}
+.fstep:last-child::after{display:none}
+.fstep.vtx .box{border-color:var(--coral)}
+.flowwrap{overflow-x:auto;padding-bottom:10px}
+
+/* gauntlet ladder */
+.gring{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:26px}
+@media(max-width:880px){.gring{grid-template-columns:1fr 1fr}}
+.gph{border:1px solid var(--line);border-radius:11px;padding:16px;background:linear-gradient(180deg,var(--bg1),var(--bg0));position:relative}
+.gph .gn{font:700 12px/1 var(--mono);color:var(--coral);position:absolute;top:13px;right:14px}
+.gph .gt{font-family:var(--disp);font-size:16px;text-transform:uppercase;letter-spacing:.02em;margin:0 0 7px;padding-right:24px}
+.gph p{font-size:12.5px;color:var(--ink2);margin:0}
+.gph code{white-space:normal}
+
+/* altitude / obligations table */
+.oblt td .check{color:var(--green);font-weight:700}
+.oblt td .none{color:var(--ink4)}
+.altbadge{display:inline-block;font:700 10px/1 var(--mono);letter-spacing:.06em;padding:4px 8px;border-radius:5px;text-transform:uppercase}
+.altbadge.comp{color:var(--comp);background:rgba(70,214,230,.1);border:1px solid rgba(70,214,230,.4)}
+.altbadge.sub{color:var(--sub);background:rgba(255,177,59,.1);border:1px solid rgba(255,177,59,.4)}
+.altbadge.sys{color:var(--sys);background:rgba(255,122,89,.1);border:1px solid rgba(255,122,89,.4)}
+
+/* reject code chips */
+.rejects{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.rej{font:600 11px var(--mono);color:var(--red);background:rgba(255,93,108,.06);border:1px solid rgba(255,93,108,.3);border-radius:5px;padding:5px 9px;letter-spacing:.02em}
+.rej.warn{color:var(--amber);background:rgba(255,177,59,.06);border-color:rgba(255,177,59,.3)}
+
+/* tool catalog */
+.toolcat{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:24px}
+@media(max-width:880px){.toolcat{grid-template-columns:1fr}}
+.tcg{border:1px solid var(--line);border-radius:11px;padding:18px 20px;background:linear-gradient(180deg,var(--bg1),var(--bg0))}
+.tcg h4{font-size:14px;color:var(--cyan);margin-bottom:12px;letter-spacing:.04em}
+.tcg .tl{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+.tcg .tl:last-child{border-bottom:0}
+.tcg .tl code{background:transparent;border:0;padding:0;color:var(--ink);font-size:12px;white-space:normal}
+.tcg .tl .d{color:var(--ink3);text-align:right;font-size:11.5px;flex:0 0 44%}
+
+/* board lanes (fizzy) */
+.fboard{display:flex;gap:10px;overflow-x:auto;margin-top:28px;padding-bottom:10px}
+.fcol{flex:0 0 150px;border:1px solid var(--line);border-radius:10px;background:var(--bg1);padding:11px;min-height:120px}
+.fcol h6{font:600 10px/1.2 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--ink2);margin:0 0 10px;display:flex;justify-content:space-between}
+.fcol .pos{color:var(--ink4)}
+.fcol.session{border-color:rgba(255,206,92,.35)}.fcol.session h6{color:var(--asp)}
+.fcol.task{border-color:rgba(70,214,230,.3)}.fcol.task h6{color:var(--fpm)}
+.fcol.term{border-color:rgba(95,211,138,.3)}.fcol.term h6{color:var(--green)}
+.fmini{font:600 10px var(--mono);background:var(--bg3);border:1px solid var(--line);border-radius:5px;padding:5px 7px;margin-bottom:6px;color:var(--ink2)}
+
+/* wiring diagram */
+.wire{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:0;align-items:center;margin-top:30px}
+@media(max-width:900px){.wire{grid-template-columns:1fr;gap:14px}}
+.wnode{border:1px solid var(--line2);border-radius:13px;padding:20px;text-align:center;background:linear-gradient(180deg,var(--bg1),var(--bg0))}
+.wnode .wt{font-family:var(--disp);font-size:19px;text-transform:uppercase}
+.wnode.asp{border-color:rgba(255,206,92,.4)}.wnode.asp .wt{color:var(--asp)}
+.wnode.fpm{border-color:rgba(70,214,230,.4)}.wnode.fpm .wt{color:var(--fpm)}
+.wnode.fzy{border-color:rgba(184,155,255,.4)}.wnode.fzy .wt{color:var(--fzy)}
+.wnode p{font-size:12px;color:var(--ink3);margin:8px 0 0}
+.warr{padding:0 16px;text-align:center;color:var(--ink3);font:600 10px var(--mono);letter-spacing:.05em}
+.warr .a{font-size:22px;color:var(--amber);display:block}
+@media(max-width:900px){.warr .a{transform:rotate(90deg)}}
+</style>
+</head>
+<body>
+
+<!-- ====================== LOGO SPRITE ====================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="gemGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4893fc"/><stop offset=".5" stop-color="#9168f0"/><stop offset="1" stop-color="#e0588f"/>
+    </linearGradient>
+    <linearGradient id="floorGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="var(--comp)"/><stop offset="1" stop-color="var(--coral)"/>
+    </linearGradient>
+    <!-- Claude / Anthropic — sunburst -->
+    <symbol id="lg-claude" viewBox="0 0 24 24">
+      <g stroke="#d97757" stroke-width="1.75" stroke-linecap="round">
+        <line x1="12" y1="12" x2="21" y2="12"/><line x1="12" y1="12" x2="19.79" y2="16.5"/>
+        <line x1="12" y1="12" x2="16.5" y2="19.79"/><line x1="12" y1="12" x2="12" y2="21"/>
+        <line x1="12" y1="12" x2="7.5" y2="19.79"/><line x1="12" y1="12" x2="4.21" y2="16.5"/>
+        <line x1="12" y1="12" x2="3" y2="12"/><line x1="12" y1="12" x2="4.21" y2="7.5"/>
+        <line x1="12" y1="12" x2="7.5" y2="4.21"/><line x1="12" y1="12" x2="12" y2="3"/>
+        <line x1="12" y1="12" x2="16.5" y2="4.21"/><line x1="12" y1="12" x2="19.79" y2="7.5"/>
+      </g>
+      <circle cx="12" cy="12" r="2.1" fill="#d97757"/>
+    </symbol>
+    <!-- Codex / OpenAI — blossom rosette -->
+    <symbol id="lg-codex" viewBox="0 0 24 24">
+      <g fill="none" stroke="#e9ecf2" stroke-width="1.5">
+        <ellipse cx="12" cy="12" rx="9.2" ry="3.7"/>
+        <ellipse cx="12" cy="12" rx="9.2" ry="3.7" transform="rotate(60 12 12)"/>
+        <ellipse cx="12" cy="12" rx="9.2" ry="3.7" transform="rotate(120 12 12)"/>
+      </g>
+      <circle cx="12" cy="12" r="1.5" fill="#e9ecf2"/>
+    </symbol>
+    <!-- Gemini / Google — spark -->
+    <symbol id="lg-gemini" viewBox="0 0 24 24">
+      <path d="M12 1 Q12 12 23 12 Q12 12 12 23 Q12 12 1 12 Q12 12 12 1 Z" fill="url(#gemGrad)"/>
+    </symbol>
+    <!-- Fizzy wordmark glyph -->
+    <symbol id="lg-fizzy" viewBox="0 0 37 37">
+      <path fill="currentColor" d="m3.07143.5c1.42016 0 2.57143 1.15127 2.57143 2.57143v21.85717c0 1.2552-.89982 2.2978-2.08929 2.5237v8.5656c0 .2662-.21586.4821-.48214.4821-.26629 0-.48214-.2159-.48214-.4821v-8.5656c-1.18947-.2259-2.08929-1.2685-2.08929-2.5237v-21.85717c0-1.42016 1.15127-2.57143 2.57143-2.57143zm7.71427 0c1.4202 0 2.5714 1.15127 2.5714 2.57143v30.85717c0 1.4202-1.1512 2.5714-2.5714 2.5714-1.42015 0-2.57141-1.1512-2.57141-2.5714v-30.85717c0-1.42016 1.15126-2.57143 2.57141-2.57143zm7.7143 0c1.4202 0 2.5714 1.15127 2.5714 2.57143v26.35717c0 1.2552-.8998 2.2978-2.0893 2.5237v4.0656c0 .2662-.2158.4821-.4821.4821s-.4821-.2159-.4821-.4821v-4.0656c-1.1895-.2259-2.0893-1.2685-2.0893-2.5237v-26.35717c0-1.42016 1.1512-2.57143 2.5714-2.57143zm7.7143 0c1.4202 0 2.5714 1.15127 2.5714 2.57143v17.35717c0 1.2552-.8999 2.2978-2.0893 2.5237v13.0656c0 .2662-.2158.4821-.4821.4821s-.4822-.2159-.4822-.4821v-13.0656c-1.1894-.2259-2.0892-1.2685-2.0892-2.5237v-17.35717c0-1.42016 1.1512-2.57143 2.5714-2.57143zm7.7143 0c1.4202 0 2.5714 1.15127 2.5714 2.57143v21.85717c0 1.2552-.8999 2.2978-2.0893 2.5237v8.5656c0 .2662-.2159.4821-.4821.4821-.2663 0-.4822-.2159-.4822-.4821v-8.5656c-1.1894-.2259-2.0893-1.2685-2.0893-2.5237v-21.85717c0-1.42016 1.1513-2.57143 2.5715-2.57143z"/>
+    </symbol>
+    <!-- padlock -->
+    <symbol id="lg-lock" viewBox="0 0 24 24">
+      <path d="M7 11V7.6a5 5 0 0 1 10 0V11" fill="none" stroke="currentColor" stroke-width="2.1"/>
+      <rect x="4.6" y="10.6" width="14.8" height="9.6" rx="2.2" fill="currentColor"/>
+      <circle cx="12" cy="14.7" r="1.45" fill="#0b101b"/><rect x="11.2" y="14.6" width="1.6" height="3.6" rx=".8" fill="#0b101b"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div id="prog"></div>
+<nav id="dots"></nav>
+<div id="tip"></div>
+
+<!-- ====================== HERO ====================== -->
+<header id="hero"><div class="wrap hero-grid">
+  <div>
+    <span class="badge"><span class="dotpulse"></span>NASA SP-2016-6105 · Systems-Engineering "V" · for AI agents</span>
+    <h1 class="hero-title">
+      <span class="l1">The Adversarial</span>
+      <span class="l2"><span class="a">Pipeline</span></span>
+    </h1>
+    <p class="hero-sub">Three projects, one spine. A spec is <b>argued down</b> a definition arm, stress-tested at the vertex, then <b>verified back up</b> — every artifact bound to its proof.</p>
+    <div class="statline">
+      <div class="stat a"><b>8</b>pipeline phases</div>
+      <div class="stat c"><b>67</b>MCP pipeline tools</div>
+      <div class="stat"><b>15</b>board lanes</div>
+      <div class="stat v"><b>3</b>altitudes</div>
+      <div class="stat"><b>9</b>adversary personas</div>
+    </div>
+    <div class="scrollcue">Begin descent</div>
+  </div>
+  <div>
+    <!-- hero mini-V, animated -->
+    <svg class="heroV" viewBox="0 0 320 300" aria-label="The NASA V model">
+      <path class="pl" d="M70 46 H250"/><path class="pl" d="M95 96 H225"/><path class="pl" d="M120 146 H200"/>
+      <path class="e lit" d="M60 40 L150 220" stroke-dasharray="6 6"/>
+      <path class="e lit" d="M260 40 L170 220" stroke-dasharray="6 6"/>
+      <path class="e" d="M150 220 L160 240 L170 220" />
+      <g><rect class="nd l" x="34" y="28" width="58" height="26" rx="6"/><rect class="nd l" x="60" y="78" width="58" height="26" rx="6"/><rect class="nd l" x="86" y="128" width="58" height="26" rx="6"/><rect class="nd l" x="112" y="178" width="58" height="26" rx="6"/></g>
+      <g><rect class="nd r" x="228" y="28" width="58" height="26" rx="6"/><rect class="nd r" x="202" y="78" width="58" height="26" rx="6"/><rect class="nd r" x="176" y="128" width="58" height="26" rx="6"/><rect class="nd r" x="150" y="178" width="58" height="26" rx="6"/></g>
+      <rect class="nd b" x="132" y="232" width="56" height="28" rx="6"/>
+      <text x="160" y="250" text-anchor="middle" fill="#ff7a59" font-family="var(--mono)" font-size="9" letter-spacing="1">VERTEX</text>
+    </svg>
+  </div>
+</div></header>
+
+<!-- ====================== §1 THREE SYSTEMS ====================== -->
+<section id="systems" data-sec="The Stack"><div class="wrap">
+  <div class="kicker rv">Orientation <span class="id">01 · THE STACK</span></div>
+  <h2 class="rv">Three projects,<br>one process</h2>
+  <p class="lead rv">The pipeline is not one program. It is a <b>mind</b> that argues a spec into shape, a <b>spine</b> that enforces the engineering process, and a <b>board</b> that remembers every move. Each is its own repository; together they implement a tailored NASA systems-engineering "V."</p>
+
+  <div class="grid g3" style="margin-top:36px">
+    <div class="proj asp rv">
+      <span class="glyph">the mind</span>
+      <h3>adversarial-spec</h3>
+      <div class="role">Definition · Decomposition · Stress-test</div>
+      <p class="mut" style="font-size:14px;margin:14px 0 0">A Claude Code skill. Refines a spec through multi-model <em>debate</em> until consensus, runs it through an adversarial <em>gauntlet</em>, then emits an altitude-aware execution plan. It owns the <b>left arm</b> of the V and the vertex.</p>
+      <ul>
+        <li><code>debate.py</code> — the master CLI</li>
+        <li><code>gauntlet/</code> — 7-phase stress-test</li>
+        <li><code>mini_spec_emission.py</code> — the plan contract</li>
+      </ul>
+      <div class="path">~/PycharmProjects/adversarial-spec</div>
+    </div>
+    <div class="proj fpm rv rv2">
+      <span class="glyph">the spine</span>
+      <h3>fizzy-pipeline-mcp</h3>
+      <div class="role">Gates · Scheduling · Verification</div>
+      <p class="mut" style="font-size:14px;margin:14px 0 0">A Python <em>FastMCP</em> server — 67 tools over stdio. It loads the plan into cards, schedules them critical-path-first, and walks each up the <b>right arm</b>: component → subsystem → system verification, then validation.</p>
+      <ul>
+        <li><code>pipeline.py</code> — contract v5, the gates</li>
+        <li><code>client.py</code> — the only path to Fizzy REST</li>
+        <li><code>agents.py</code> / <code>relay.py</code> — the crew + human gate</li>
+      </ul>
+      <div class="path">~/PycharmProjects/fizzy-pipeline-mcp</div>
+    </div>
+    <div class="proj fzy rv rv3">
+      <span class="glyph">the board</span>
+      <h3>Fizzy</h3>
+      <div class="role">State · Memory · Surface</div>
+      <p class="mut" style="font-size:14px;margin:14px 0 0">A Rails + Hotwire kanban app (37signals' Fizzy, forked). Boards → columns → cards. The pipeline adds a typed <code>card_links</code> join and a JSON <code>pipeline_metadata</code> column. Every move is durable and visible.</p>
+      <ul>
+        <li>15 canonical pipeline columns</li>
+        <li><code>card_links</code> — decomposes_into / verifies_at_level</li>
+        <li>Optimistic locking on every write</li>
+      </ul>
+      <div class="path">~/PycharmProjects/fizzy</div>
+    </div>
+  </div>
+
+  <div class="note rv" style="margin-top:26px"><b>HOW THEY TALK</b> &nbsp;adversarial-spec emits a <code>fizzy-plan.json</code> (schema v3). fizzy-pipeline-mcp's <code>pipeline_load</code> validates and materializes it into Fizzy cards over REST, authenticated by a three-part key: a <b>Bearer token</b> (identity), an <b>account_slug</b> in the URL (tenant), and a per-call <b>board_id</b> (the board). No global board lock — ever.</p></div>
+</div></section>
+
+<!-- ====================== §2 THE CAST ====================== -->
+<section id="cast" data-sec="The Crew"><div class="wrap">
+  <div class="kicker rv">Who flies the mission <span class="id">02 · FLIGHT CREW</span></div>
+  <h2 class="rv">The crew</h2>
+  <p class="lead rv">Work is done by a fleet of model-agents, each a registered identity in <code>agents.py</code> with a <b>family</b>, a <b>runner</b>, and a Fizzy board member name. They critique each other in debate, race each other in middleware fanouts, and pick up cards in parallel during the build. You will see them move.</p>
+
+  <div class="cast">
+    <div class="crew rv">
+      <div class="av claude"><svg><use href="#lg-claude"/></svg></div>
+      <h4>Claude</h4>
+      <div class="sub">claude-opus-4.7 · anthropic</div>
+      <p>The conductor &amp; builder. Runs the session, adjudicates debate, plans the approach, writes code TDD-style, and reviews.</p>
+      <div class="runner">runner <b>claude</b> · family <b>claude</b></div>
+    </div>
+    <div class="crew rv rv2">
+      <div class="av codex"><svg><use href="#lg-codex"/></svg></div>
+      <h4>Codex</h4>
+      <div class="sub">gpt-5.5xhigh · openai</div>
+      <p>The default critic. Highest-reasoning adversary in debate and the gauntlet; an independent reviewer that never touches the code.</p>
+      <div class="runner">runner <b>codex</b> · family <b>codex</b></div>
+    </div>
+    <div class="crew rv rv3">
+      <div class="av gemini"><svg><use href="#lg-gemini"/></svg></div>
+      <h4>Gemini</h4>
+      <div class="sub">gemini-3.1-pro · google</div>
+      <p>The second family. Brings a distinct training lineage so consensus means <em>cross-family</em> agreement, not an echo.</p>
+      <div class="runner">runner <b>gemini</b> · family <b>gemini</b></div>
+    </div>
+    <div class="crew rv rv4">
+      <div class="av glm">智</div>
+      <h4>GLM</h4>
+      <div class="sub">glm · zhipu</div>
+      <p>A third-family swing seat. Available as a debate critic and middleware implementer when quorum demands more distinct lineages.</p>
+      <div class="runner">runner <b>glm</b> · family <b>glm</b></div>
+    </div>
+  </div>
+
+  <div class="note rv" style="margin-top:24px"><b>WHY FAMILIES MATTER</b> &nbsp;Quorum is counted in <em>distinct families</em>, not bodies. At system altitude, <code>ALTITUDE_DEBATE_QUORUM</code> demands 2 counting critics across 2 families over 2 rounds — two Claudes would not satisfy it. Cross-family disagreement is the whole point.</div>
+</div></section>
+
+<!-- ====================== §3 THE V (CENTERPIECE) ====================== -->
+<section id="thev" data-sec="The V"><div class="wrap wide">
+  <div class="kicker rv">The centerpiece — click any node <span class="id">03 · THE V-MODEL</span></div>
+  <h2 class="rv">Down the left, up the right</h2>
+  <p class="lead rv">The descending arm <b>decomposes</b> intent into ever-smaller design; the ascending arm <b>verifies</b> each level against the design that defined it. The dashed horizontals are the <em>plans</em> — each binds a left-arm artifact to its right-arm proof by a re-derived hash. Select a node to inspect the segment of work, the project that owns it, and the folder it lives in.</p>
+
+  <div class="vstage rv" style="margin-top:30px">
+    <div class="vtop">
+      <div class="armlabel"><span class="l">◀ Definition &amp; Decomposition · adversarial-spec</span><span>Traceability ⇆ bindings</span><span class="r">Integration &amp; Verification · fizzy-pipeline-mcp ▶</span></div>
+      <svg id="vsvg" viewBox="0 0 1180 560" role="group" aria-label="Interactive NASA V model">
+        <!-- arms -->
+        <path class="vedge" d="M150 70 L560 480"/>
+        <path class="vedge" d="M1030 70 L620 480"/>
+        <path class="vfloor" d="M560 480 Q590 510 620 480"/>
+        <!-- horizontal plan links (dashed) -->
+        <path class="vlink" id="lk0" data-plan="p-val"  d="M250 78  H930"/>
+        <path class="vlink" id="lk1" data-plan="p-sys"  d="M335 178 H845"/>
+        <path class="vlink" id="lk2" data-plan="p-sub"  d="M420 278 H760"/>
+        <path class="vlink" id="lk3" data-plan="p-comp" d="M505 378 H675"/>
+        <text class="plabel" id="pl0" data-plan="p-val"  x="590" y="68">System Validation Plan</text>
+        <text class="plabel" id="pl1" data-plan="p-sys"  x="590" y="168">System Verification Plan</text>
+        <text class="plabel" id="pl2" data-plan="p-sub"  x="590" y="268">Sub-System Verification Plan</text>
+        <text class="plabel" id="pl3" data-plan="p-comp" x="590" y="368">Component Verification Procedure</text>
+        <!-- arm tags -->
+        <text class="armtag" x="150" y="44" text-anchor="start">descend ↓</text>
+        <text class="armtag" x="1030" y="44" text-anchor="end">↑ ascend</text>
+        <!-- LEFT nodes -->
+        <g class="vnode sys" data-node="L0"><rect x="60" y="58" width="190" height="40"/><text x="155" y="76">Requirements / ConOps</text><text class="sub" x="155" y="90">system · phase 1–2</text></g>
+        <g class="vnode sys" data-node="L1"><rect x="150" y="158" width="190" height="40"/><text x="245" y="176">System Requirements</text><text class="sub" x="245" y="190">system · phase 3 · debate</text></g>
+        <g class="vnode sub" data-node="L2"><rect x="235" y="258" width="190" height="40"/><text x="330" y="276">Subsystem Reqs / HLD</text><text class="sub" x="330" y="290">subsystem · phase 4</text></g>
+        <g class="vnode comp" data-node="L3"><rect x="320" y="358" width="190" height="40"/><text x="415" y="376">Component Design</text><text class="sub" x="415" y="390">component · phase 7</text></g>
+        <!-- VERTEX -->
+        <g class="vnode impl" data-node="B"><rect x="490" y="462" width="200" height="46"/><text x="590" y="482">Gauntlet · Implementation</text><text class="sub" x="590" y="497">the vertex · phase 5 / 8</text></g>
+        <!-- RIGHT nodes -->
+        <g class="vnode comp" data-node="R3"><rect x="670" y="358" width="190" height="40"/><text x="765" y="376">Component Verify</text><text class="sub" x="765" y="390">component · mark_*</text></g>
+        <g class="vnode sub" data-node="R2"><rect x="755" y="258" width="190" height="40"/><text x="850" y="276">Subsystem Verify</text><text class="sub" x="850" y="290">subsystem · closure</text></g>
+        <g class="vnode sys" data-node="R1"><rect x="840" y="158" width="190" height="40"/><text x="935" y="176">System Verify</text><text class="sub" x="935" y="190">system · E2E + human</text></g>
+        <g class="vnode vald" data-node="R0"><rect x="930" y="58" width="190" height="40"/><text x="1025" y="76">System Validation</text><text class="sub" x="1025" y="90">v5 · vs ConOps</text></g>
+      </svg>
+      <div class="vlegend">
+        <span class="it comp"><span class="sw"></span>component</span>
+        <span class="it sub"><span class="sw"></span>subsystem</span>
+        <span class="it sys"><span class="sw"></span>system</span>
+        <span class="it vald"><span class="sw"></span>validation</span>
+        <span class="it impl"><span class="sw"></span>vertex</span>
+      </div>
+      <div class="vctrls">
+        <button class="btn pri" id="vPlay">▶ Walk the V</button>
+        <button class="btn" id="vReset">↺ Reset</button>
+        <span class="hint">click a node or plan · ← → to step · agents <svg class="lg"><use href="#lg-claude"/></svg> ride the build</span>
+      </div>
+    </div>
+
+    <!-- BOTTOM DETAIL PANEL -->
+    <div class="vbot">
+      <div class="left">
+        <div class="dpanel-head">
+          <span class="lvl" id="dLvl">SYSTEM</span>
+          <div><h3 id="dTitle">Requirements / ConOps</h3></div>
+        </div>
+        <div class="dpanel-arm" id="dArm">Descending arm · definition</div>
+        <p class="dpanel-desc" id="dDesc"></p>
+        <dl class="kv">
+          <dt>Owner</dt><dd id="dOwner"></dd>
+          <dt>Phase</dt><dd id="dPhase"></dd>
+          <dt>Board lane</dt><dd id="dLane"></dd>
+          <dt>Crew</dt><dd id="dCrew"></dd>
+        </dl>
+        <div class="detail-plan">
+          <div class="pln" id="dPlanName"></div>
+          <p id="dPlanDesc"></p>
+        </div>
+      </div>
+      <div class="right">
+        <div class="detail-folder">
+          <span class="lbl">Folder · the artifacts on disk</span>
+          <div class="tree" id="dTree"></div>
+        </div>
+        <div class="detail-tools">
+          <span class="lbl">Tools &amp; entry points</span>
+          <div id="dTools"></div>
+        </div>
+        <div class="detail-tech">
+          <span class="lbl">Engineering detail</span>
+          <div id="dTech"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="mut rv" style="font-size:13px;margin-top:16px">Geometry mirrors NASA SP-2016-6105 Fig 2.5. v4 shipped the three <b>verification</b> levels; <span data-tip="System validation — 'did we build the RIGHT thing?' — re-derives pass/fail from the ConOps user stories. Shipped in pipeline contract v5 with an anti-cheat: its test targets cannot be a strict subset of system-verification's.">v5 added the <b>validation</b> cap</span> against the ConOps.</p>
+</div></section>
+
+<!-- ====================== §4 MISSION CONTROL (moving agents) ====================== -->
+<section id="control" data-sec="Mission Ctrl"><div class="wrap wide">
+  <div class="kicker rv">The vertex, live <span class="id">04 · MISSION CONTROL</span></div>
+  <h2 class="rv">Agents on the board</h2>
+  <p class="lead rv">Eight cards, two unlock waves. A card shows its <b>family color</b> — orange or teal — once every card it depends on is done; until then it stays grey with a <b>stack of locks</b>, one per level of chain still above it. A <em>colored</em> lock means that blocker is in progress right now; deeper levels stay grey. And no agent ever reviews or tests its own card — work moves right only by passing to a <b>different</b> pair of hands.</p>
+
+  <div class="mc rv">
+    <div class="mc-legend">
+      <span class="it" style="--c:#ff9d42"><span class="swdot"></span>workable now — wears its color, pick it up</span>
+      <span class="it" style="--c:#ff9d42"><span class="swlock"><svg><use href="#lg-lock"/></svg></span>colored lock — that blocker is in progress</span>
+      <span class="it" style="--c:var(--ink4)"><span class="swlock"><svg><use href="#lg-lock"/></svg></span>grey lock — a deeper level (locks stack by depth)</span>
+      <span class="soon">↳ same convention, headed for the live Fizzy board</span>
+    </div>
+    <div class="mc-board" id="mcBoard">
+      <div class="mc-lane"><h5>New Todo · <b>implement</b></h5></div>
+      <div class="mc-lane"><h5>Review · <b>review</b></h5></div>
+      <div class="mc-lane"><h5>Untested · <b>test</b></h5></div>
+      <div class="mc-lane satisfy"><h5>Passed Test · <b>done</b></h5></div>
+      <div class="mc-field" id="mcField"></div>
+    </div>
+    <div class="mc-readout">
+      <div class="ro"><div class="rl">ready_now (workable)</div><div class="rv2" id="roReady">—</div></div>
+      <div class="ro"><div class="rl">parallel_capacity</div><div class="rv2" id="roCap">—</div></div>
+      <div class="ro"><div class="rl">in_flight</div><div class="rv2" id="roFlight">—</div></div>
+      <div class="ro"><div class="rl">passed test</div><div class="rv2" id="roDone">0 / 8</div></div>
+    </div>
+    <div class="mc-bar">
+      <button class="btn pri" id="mcToggle">⏸ Pause</button>
+      <button class="btn" id="mcReset">↺ Reset</button>
+      <div class="narr" id="mcNarr">Only A and B are workable — the two roots.</div>
+    </div>
+  </div>
+
+  <div class="split" style="margin-top:30px">
+    <div class="rv">
+      <h3>Lane priority &amp; claims</h3>
+      <p class="mut" style="font-size:14.5px">A worker never asks "what next?" — <code>pipeline_do_next_task</code> answers it deterministically. It walks lanes in a fixed priority and, within <em>New Todo</em>, dispatches critical-path-first:</p>
+      <pre style="margin-top:14px"><span class="c"># TASK_PRIORITY — fix before you build</span>
+Failed Review  <span class="a">→ fix</span>      <span class="c"># reviews block new work</span>
+Review         <span class="a">→ review</span>
+Untested       <span class="a">→ test</span>
+New Todo       <span class="a">→ implement</span>  <span class="c"># cp_priority orders the ready set</span>
+Passed Test    <span class="a">→ sweep</span></pre>
+      <p class="mut" style="font-size:13.5px;margin-top:12px">A <b>claim</b> is not a lane — it stamps <code>claim_status</code>, <code>claim_agent</code>, <code>claim_ts</code> on the card and is made authoritative by optimistic locking. Abandoned claims expire after <code>CLAIM_TTL_SECONDS</code> (default 3600).</p>
+    </div>
+    <div class="rv rv2">
+      <h3>The schedule is immutable</h3>
+      <p class="mut" style="font-size:14.5px"><code>_build_schedule</code> runs once at <code>load_plan</code> and is frozen on the session card. It is a pure function — no I/O — so the same plan always yields the same waves.</p>
+      <pre style="margin-top:14px"><span class="k">def</span> _build_schedule(tasks):
+    topo  = kahn_topological_sort(tasks)   <span class="c"># ties by task_id</span>
+    waves = ready_levels(topo)             <span class="c"># parallel-safe sets</span>
+    cp    = longest_weighted_path(topo)    <span class="c"># S:1 M:2 L:3 XL:4</span>
+    <span class="k">return</span> Schedule(order=waves, critical_path=cp,
+                    parallel_capacity=<span class="a">len(ready_now)</span>)</pre>
+      <p class="mut" style="font-size:13.5px;margin-top:12px">A <code>depends_on</code> pointing at a non-leaf container is rewritten to its <b>leaf descendants</b> at load; a third pass over the expanded graph raises <code>CROSS_GRAPH_CYCLE</code> for loops that only appear after expansion.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ====================== §5 DESCENDING ARM ====================== -->
+<section id="descend" data-sec="Left Arm"><div class="wrap wide">
+  <div class="kicker rv">adversarial-spec · the mind <span class="id">05 · THE DESCENDING ARM</span></div>
+  <h2 class="rv">Arguing a spec<br>into shape</h2>
+  <p class="lead rv">Eight phases carry intent down the left arm. Each writes a concrete artifact to disk under <code>.adversarial-spec/specs/&lt;slug&gt;/</code>, and a router-completion table refuses to advance until that file exists. Hover a phase to see what it leaves behind.</p>
+
+  <div class="flowwrap rv">
+    <div class="flow">
+      <div class="fstep" style="--c:var(--asp)"><div class="box"><div class="ph">PHASE 1</div><div class="nm">Requirements</div><div class="ar">interview → <b>RequirementsSummary</b>, session card</div></div></div>
+      <div class="fstep" style="--c:var(--asp)"><div class="box"><div class="ph">PHASE 2</div><div class="nm">Roadmap</div><div class="ar">user stories → <b>roadmap/manifest.json</b>, tests-pseudo.md</div></div></div>
+      <div class="fstep" style="--c:var(--amber)"><div class="box"><div class="ph">PHASE 3</div><div class="nm">Debate</div><div class="ar">multi-model critique → <b>spec-draft-vN.md</b></div></div></div>
+      <div class="fstep" style="--c:var(--sub)"><div class="box"><div class="ph">PHASE 4</div><div class="nm">Target Arch</div><div class="ar">mandatory → <b>architecture-invariants.json</b></div></div></div>
+      <div class="fstep vtx" style="--c:var(--coral)"><div class="box"><div class="ph">PHASE 5</div><div class="nm">Gauntlet</div><div class="ar">9 adversaries → <b>gauntlet-concerns.json</b></div></div></div>
+      <div class="fstep" style="--c:var(--coral)"><div class="box"><div class="ph">PHASE 6</div><div class="nm">Finalize</div><div class="ar">lock spec → <b>spec-output.md</b>, tests-spec.md</div></div></div>
+      <div class="fstep" style="--c:var(--comp)"><div class="box"><div class="ph">PHASE 7</div><div class="nm">Execution</div><div class="ar">decompose → <b>fizzy-plan.json</b> (v3)</div></div></div>
+      <div class="fstep" style="--c:var(--fpm)"><div class="box"><div class="ph">PHASE 8</div><div class="nm">Implement</div><div class="ar">agents pull cards → the board</div></div></div>
+    </div>
+  </div>
+  <p class="mut rv" style="font-size:13px;margin-top:8px">Phase 4 (<em>target-architecture</em>) is the one most often skipped and the one the router refuses to skip silently — even <code>phase_mode=skip</code> emits a stub as the attribution artifact.</p>
+
+  <hr class="div">
+
+  <div class="split">
+    <div class="rv">
+      <div class="kicker" style="color:var(--coral)">The vertex <span class="id">phase 5</span></div>
+      <h3>The gauntlet</h3>
+      <p class="mut" style="font-size:14.5px"><code>run_gauntlet()</code> drives seven phases. Adversary × model pairs attack in parallel; surviving concerns are clustered <em>deterministically</em>, evaluated by frontier models, rebutted, and adjudicated with medals. Every phase checkpoints to an integrity-hashed envelope.</p>
+      <div class="gring">
+        <div class="gph"><span class="gn">1</span><div class="gt">Attack</div><p>9 personas × models, <code>ThreadPoolExecutor</code> ≤32, stable concern IDs</p></div>
+        <div class="gph"><span class="gn">2</span><div class="gt">Synthesis</div><p>one model synthesizes across all raw concerns</p></div>
+        <div class="gph"><span class="gn">3</span><div class="gt">Filter</div><p>drop concerns already in the resolved DB</p></div>
+        <div class="gph" style="border-color:rgba(70,214,230,.4)"><span class="gn">3.5</span><div class="gt">Cluster</div><p>Jaccard 0.65, deterministic, auto at ≥200</p></div>
+        <div class="gph"><span class="gn">4</span><div class="gt">Evaluate</div><p>frontier verdicts, power-law batches 75/30/12</p></div>
+        <div class="gph"><span class="gn">5</span><div class="gt">Rebut</div><p>dismissed adversaries challenge the verdict</p></div>
+        <div class="gph"><span class="gn">6</span><div class="gt">Adjudicate</div><p>aggregate + <code>calculate_medals()</code> accuracy</p></div>
+        <div class="gph" style="border-color:rgba(255,177,59,.4)"><span class="gn">7</span><div class="gt">Final boss</div><p>holistic review → PASS / REFINE / RECONSIDER</p></div>
+      </div>
+      <div class="note warn" style="margin-top:18px"><b>FATAL BY DESIGN</b> &nbsp;If any adversary × model pair returns text but parses to <em>zero</em> concerns, the run aborts — raw responses are preserved for a manual checkpoint patch and <code>--resume</code>. Better to stop loudly than silently drop an adversary.</div>
+    </div>
+    <div class="rv rv2">
+      <div class="kicker" style="color:var(--comp)">The contract <span class="id">phase 7</span></div>
+      <h3>The plan, as a tree</h3>
+      <p class="mut" style="font-size:14.5px">Execution emits a <code>fizzy-plan.json</code> at <code>PLAN_SCHEMA_VERSION = 3</code>: a single rooted altitude tree. Right-arm obligations are a pure function of altitude — a strict superset chain.</p>
+      <table class="oblt" style="margin-top:8px">
+        <thead><tr><th>Altitude</th><th>component</th><th>subsystem</th><th>system</th></tr></thead>
+        <tbody>
+          <tr><td><span class="altbadge comp">component</span></td><td><span class="check">✓</span></td><td><span class="none">—</span></td><td><span class="none">—</span></td></tr>
+          <tr><td><span class="altbadge sub">subsystem</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="none">—</span></td></tr>
+          <tr><td><span class="altbadge sys">system</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+        </tbody>
+      </table>
+      <p class="mut" style="font-size:12.5px">Each row is the set of <code>*_verification</code> kinds that node must discharge. <code>self_check_plan()</code> mirrors the live validator offline so the emit fails before the load does.</p>
+      <h4 style="margin:22px 0 0;color:var(--ink)">Gates V1–V4</h4>
+      <div class="grid g2" style="margin-top:12px">
+        <div class="card" style="padding:16px"><div class="t" style="font-size:15px;color:var(--cyan)">V1 · Classify</div><p class="mut" style="font-size:12.5px;margin:0">every task gets <code>behavior_change</code>, <code>verification_mode</code> (1 of 8), <code>verification_scope</code></p></div>
+        <div class="card" style="padding:16px"><div class="t" style="font-size:15px;color:var(--cyan)">V2 · Map</div><p class="mut" style="font-size:12.5px;margin:0">automated modes require <code>test_refs</code> + <code>verify_commands</code>; exemptions need a reason</p></div>
+        <div class="card" style="padding:16px"><div class="t" style="font-size:15px;color:var(--cyan)">V3 · Cover</div><p class="mut" style="font-size:12.5px;margin:0">emit <code>verification-coverage.json</code> — blocks load if <code>unmapped_behavior_tasks</code> ≠ ∅</p></div>
+        <div class="card" style="padding:16px"><div class="t" style="font-size:15px;color:var(--cyan)">V4 · Review</div><p class="mut" style="font-size:12.5px;margin:0">surface every exemption to the human — the correction point</p></div>
+      </div>
+      <div class="note warn" style="margin-top:16px"><b>HONEST CAVEAT</b> &nbsp;V1–V4 are <em>LLM-enforced process gates</em> — the checklist, not the compiler. The mechanically-checkable half lives in <code>pipeline_validate_plan</code>; promoting the rest into hard rejects is the pipeline's own stated next overhaul.</div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ====================== §6 ASCENDING ARM ====================== -->
+<section id="ascend" data-sec="Right Arm"><div class="wrap wide">
+  <div class="kicker rv">fizzy-pipeline-mcp · the spine <span class="id">06 · THE ASCENDING ARM</span></div>
+  <h2 class="rv">Verifying back<br>up the V</h2>
+  <p class="lead rv">The right arm is not advisory. Each level has a <code>mark_*_verification_complete</code> tool, a ledger, and a <b>closure rule</b>: a node is verified only when its own flags are set <em>and</em> every child beneath it is already verified. You cannot certify a subsystem on top of an unverified component.</p>
+
+  <div class="split" style="margin-top:30px">
+    <div class="panel rv">
+      <div class="rl" style="font:600 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:14px">The closure recursion · <code>_check_vv_closure_sync</code></div>
+      <pre style="margin:0"><span class="k">def</span> node_is_v_complete(node):
+    <span class="k">if not</span> all(node.flags[k] <span class="k">for</span> k <span class="k">in</span>
+           ALTITUDE_OBLIGATIONS[node.altitude]):
+        <span class="k">return</span> <span class="r">False</span>          <span class="c"># own kinds unmet</span>
+    <span class="k">for</span> child <span class="k">in</span> node.children:
+        <span class="k">if not</span> node_is_v_complete(child):
+            <span class="k">return</span> <span class="r">False</span>      <span class="c"># gate: unverified_descendant</span>
+    <span class="k">if</span> node.altitude == <span class="s">"system"</span> <span class="k">and</span> v &gt;= 5:
+        <span class="k">return</span> node.flags[<span class="s">"system_validation"</span>]
+    <span class="k">return</span> <span class="s">True</span></pre>
+      <p class="mut" style="font-size:13px;margin-top:14px">The first incomplete descendant is surfaced by id — there is no "mostly verified." Subsystem marks additionally require ≥2 <code>crosses</code> (distinct components that integrate).</p>
+    </div>
+    <div class="rv rv2">
+      <h3>Quorum scales with blast radius</h3>
+      <p class="mut" style="font-size:14.5px">Altitude is <em>blast radius</em> — how far a mistake propagates — not complexity. Review rigor scales with it, and the floor is never zero (the import-time <code>assert</code> crashes startup if any obligation set is emptied).</p>
+      <table style="margin-top:10px">
+        <thead><tr><th>Altitude</th><th>reviewers</th><th>human?</th><th>debate quorum</th></tr></thead>
+        <tbody>
+          <tr><td><span class="altbadge comp">component</span></td><td>1</td><td><span class="dim">no</span></td><td>1 critic · 1 family · 1 round</td></tr>
+          <tr><td><span class="altbadge sub">subsystem</span></td><td>2</td><td><span class="dim">no</span></td><td>2 · 2 · 1</td></tr>
+          <tr><td><span class="altbadge sys">system</span></td><td>2</td><td><span class="y" style="color:var(--green);font-weight:700">yes</span></td><td>2 · 2 · 2</td></tr>
+        </tbody>
+      </table>
+      <p class="mut" style="font-size:12.5px">Only system altitude pulls a human into the loop — through the <code>relay.py</code> Telegram gate. <code>ALTITUDE_REVIEW_QUORUM</code> · <code>ALTITUDE_DEBATE_QUORUM</code> are distinct tables, never unified.</p>
+    </div>
+  </div>
+
+  <hr class="div">
+
+  <div class="split">
+    <div class="rv">
+      <h3>The dashed line is a hash</h3>
+      <p class="mut" style="font-size:14.5px">Traceability isn't a comment — it's enforced. At load, every left-arm <code>definition_artifact</code> and every plan <code>plan_artifact</code> is <b>re-hashed from the real file</b> ("derive truth, don't trust the emit-time hash"). A missing artifact fails the entire load closed; nothing half-materializes.</p>
+      <pre style="margin-top:14px"><span class="c"># at load — _derive_v4_node_lift</span>
+binding.definition_hash = <span class="a">sha256(read(definition_artifact))</span>
+<span class="k">if</span> artifact_missing:
+    <span class="k">raise</span> <span class="r">BINDING_ARTIFACT_NOT_FOUND</span>   <span class="c"># 0 cards created</span>
+
+<span class="c"># at discharge — _vv_check_freshness</span>
+<span class="k">if</span> sha256(read(artifact)) != bound_hash:
+    <span class="k">raise</span> <span class="r">STALE_VV</span>   <span class="c"># spec drifted; re-bind to proceed</span></pre>
+      <p class="mut" style="font-size:13px;margin-top:12px">Change a left-arm spec after binding and <code>STALE_VV</code> fires on its right-arm gate until you re-bind. That is the V's traceability arrow, made mechanical.</p>
+    </div>
+    <div class="rv rv2">
+      <h3>The validator's vocabulary</h3>
+      <p class="mut" style="font-size:14.5px"><code>_validate_altitude_node</code> and <code>_validate_altitude_tree</code> reject a malformed plan before a single card exists. The same codes are mirrored offline by <code>self_check_plan()</code> in adversarial-spec, so the two repos never disagree about what a legal tree is.</p>
+      <div class="rejects">
+        <span class="rej">NO_ROOT</span><span class="rej">MULTIPLE_ROOTS</span><span class="rej">ROOT_NOT_SYSTEM</span>
+        <span class="rej">ALTITUDE_INVERSION</span><span class="rej">DEGENERATE_DECOMPOSITION</span><span class="rej">MISSING_PARENT</span>
+        <span class="rej">DECOMPOSE_EDGE_MISMATCH</span><span class="rej">ORPHAN_REALIZATION</span><span class="rej">UNDECOMPOSED_REQUIREMENT</span>
+        <span class="rej warn">MISSING_LEVEL_VV</span><span class="rej warn">UNKNOWN_VV_BINDING</span><span class="rej warn">VV_ABOVE_ALTITUDE</span>
+        <span class="rej warn">VV_KIND_MISMATCH</span><span class="rej warn">MISSING_VV_PLAN_HASH</span><span class="rej">CROSS_GRAPH_CYCLE</span>
+        <span class="rej">STALE_VV</span><span class="rej">BINDING_ARTIFACT_NOT_FOUND</span>
+      </div>
+      <div class="note gap" style="margin-top:18px"><b>HONEST STATUS</b> &nbsp;The verification arm (3 levels) and v5 validation cap are <em>shipped</em>. The altitude-scaling of debate &amp; gauntlet intensity has tables in code but enforcement is still scaffolding — running a debate does not yet scale rigor by altitude. The guide reflects what is built.</div>
+    </div>
+  </div>
+
+  <hr class="div">
+  <h3 class="rv">67 tools, by job</h3>
+  <p class="mut rv" style="font-size:14px">Every tool is a gated transition. A worker calls them; the server enforces order, closure, and locking.</p>
+  <div class="toolcat rv">
+    <div class="tcg"><h4>SESSION &amp; PLAN</h4>
+      <div class="tl"><code>pipeline_create_session</code><span class="d">open a session card</span></div>
+      <div class="tl"><code>pipeline_validate_plan</code><span class="d">dry-run all gates, 0 cards</span></div>
+      <div class="tl"><code>pipeline_load</code><span class="d">3-pass materialize → cards</span></div>
+      <div class="tl"><code>pipeline_advance</code><span class="d">session FSM hop (gated)</span></div>
+      <div class="tl"><code>pipeline_map / _lane_state</code><span class="d">schedule_view + anomalies</span></div>
+    </div>
+    <div class="tcg"><h4>TASK EXECUTION</h4>
+      <div class="tl"><code>pipeline_do_next_task</code><span class="d">lane-walk + claim</span></div>
+      <div class="tl"><code>pipeline_complete_task</code><span class="d">→ Review, with commit</span></div>
+      <div class="tl"><code>pipeline_review / _test</code><span class="d">advance or fail a card</span></div>
+      <div class="tl"><code>pipeline_sweep</code><span class="d">Passed Test → Completed</span></div>
+      <div class="tl"><code>pipeline_block / _unblock</code><span class="d">park on a dependency</span></div>
+    </div>
+    <div class="tcg"><h4>V&amp;V LADDER</h4>
+      <div class="tl"><code>mark_component_verification</code><span class="d">floor obligation</span></div>
+      <div class="tl"><code>mark_subsystem_verification</code><span class="d">closure + ≥2 crosses</span></div>
+      <div class="tl"><code>mark_system_verification</code><span class="d">E2E + human attest</span></div>
+      <div class="tl"><code>mark_system_validation</code><span class="d">v5 · vs ConOps</span></div>
+      <div class="tl"><code>pipeline_vv_status</code><span class="d">read-only rollup tree</span></div>
+    </div>
+    <div class="tcg"><h4>DEBATE &amp; MIDDLEWARE</h4>
+      <div class="tl"><code>begin / advance / finalize_debate_round</code><span class="d">convergence FSM</span></div>
+      <div class="tl"><code>dispatch_single_agent_debate</code><span class="d">spawn one critic subprocess</span></div>
+      <div class="tl"><code>create_middleware_fanout</code><span class="d">race N models on one impl</span></div>
+      <div class="tl"><code>middleware_judge / promote_winner</code><span class="d">deterministic pick</span></div>
+      <div class="tl"><code>pipeline_patch_state</code><span class="d">escape hatch (logs a reason)</span></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ====================== §7 THE BOARD ====================== -->
+<section id="board" data-sec="The Board"><div class="wrap wide">
+  <div class="kicker rv">Fizzy · the memory <span class="id">07 · THE BOARD</span></div>
+  <h2 class="rv">Where the work<br>actually lives</h2>
+  <p class="lead rv">Fizzy is a Rails + Hotwire kanban app — 37signals' open-source board, forked. The pipeline doesn't run <em>in</em> Fizzy; it drives Fizzy over REST. Two additions make the V possible: a typed <code>card_links</code> join and a JSON <code>pipeline_metadata</code> column. A <code>pipeline_setup</code> endpoint stamps the 15 canonical columns.</p>
+
+  <div class="fboard rv">
+    <div class="fcol session"><h6>1 · Evaluated<span class="pos">·</span></h6><div class="fmini">intake</div></div>
+    <div class="fcol session"><h6>2 · Pre-Roadmap</h6><div class="fmini">requirements</div></div>
+    <div class="fcol session"><h6>3 · Debate</h6><div class="fmini">spec-draft</div></div>
+    <div class="fcol session"><h6>4 · Pre-Gauntlet</h6><div class="fmini">map fresh</div></div>
+    <div class="fcol session"><h6>5 · Gauntlet</h6><div class="fmini">adversaries</div></div>
+    <div class="fcol session"><h6>6 · Reconcile</h6><div class="fmini">fold concerns</div></div>
+    <div class="fcol session"><h6>7 · Finalize</h6><div class="fmini">lock spec</div></div>
+    <div class="fcol task"><h6>8 · New Todo</h6><div class="fmini cp" style="border-color:rgba(255,122,89,.4);color:var(--coral)">A1 · cp</div><div class="fmini">B1</div></div>
+    <div class="fcol task"><h6>9 · Review</h6><div class="fmini">A2</div></div>
+    <div class="fcol task"><h6>10 · Untested</h6></div>
+    <div class="fcol task"><h6>11 · Passed Test</h6><div class="fmini" style="color:var(--green)">B2 ✓</div></div>
+    <div class="fcol task"><h6>12 · Failed Review</h6></div>
+    <div class="fcol term"><h6>13 · Compl-Unmapped</h6></div>
+    <div class="fcol term"><h6>14 · Compl-Mapped</h6></div>
+    <div class="fcol term"><h6>15 · Cross-Project</h6></div>
+  </div>
+  <p class="mut rv" style="font-size:12.5px;margin-top:6px">Columns 1–7 are <span style="color:var(--asp)">session lanes</span> (the left arm); 8–12 are <span style="color:var(--fpm)">task lanes</span> (the build + right arm); 13–15 are <span style="color:var(--green)">terminal</span>. The v4 <code>Decomposed</code> lane holds non-leaf container cards — not workable, not dependency-satisfying.</p>
+
+  <div class="split" style="margin-top:30px">
+    <div class="rv">
+      <h3>The data model</h3>
+      <p class="mut" style="font-size:14px">UUID primary keys (UUIDv7), every row tenant-scoped by <code>account_id</code>. The pipeline rides on two structures:</p>
+      <pre style="margin-top:12px"><span class="c"># card_links — the typed join (the V's edges)</span>
+LINK_TYPES = [<span class="s">"decomposes_into"</span>,   <span class="c"># altitude tree</span>
+              <span class="s">"verifies_at_level"</span>]  <span class="c"># horizontal V&amp;V</span>
+unique(from_card, to_card, link_type)  · account-scoped
+
+<span class="c"># pipeline_metadata — JSON column, default {}</span>
+{ card_type, session_id, task_id,        <span class="c"># → indexed virtual cols</span>
+  altitude, depends_on, schedule,
+  verification_binding, *_complete }
+metadata_version: <span class="a">bigint</span>   <span class="c"># optimistic-lock counter</span></pre>
+      <p class="mut" style="font-size:12.5px;margin-top:10px">Four hot keys (<code>card_type</code>, <code>session_id</code>, <code>parent_session_id</code>, <code>task_id</code>) are extracted to generated, indexed columns — fast lane queries without parsing JSON.</p>
+    </div>
+    <div class="rv rv2">
+      <h3>Auth is a triad</h3>
+      <p class="mut" style="font-size:14px">No global board lock. Every tool call targets a board through three independent facts — and a write token can't be a read token in disguise.</p>
+      <pre style="margin-top:12px"><span class="c"># the request that creates a card</span>
+POST {base_url}/<span class="v">{account_slug}</span>/boards/<span class="a">{board_id}</span>/cards.json
+Authorization: <span class="s">Bearer {api_token}</span>
+
+  <span class="v">account_slug</span>  → selects the tenant   (URL path)
+  <span class="s">api_token</span>     → proves identity     (Bearer)
+  <span class="a">board_id</span>      → per-call parameter  (never default)</pre>
+      <p class="mut" style="font-size:12.5px;margin-top:10px">Metadata writes carry <code>If-Match-Metadata-Version</code>; a mismatch returns <code>409 METADATA_VERSION_CONFLICT</code> with <code>{expected, actual}</code>. That is how parallel agents never clobber each other.</p>
+      <div class="note" style="margin-top:14px"><b>STACK</b> &nbsp;Rails (edge) · Ruby 3.4 · Hotwire (Turbo + Stimulus) · SQLite for OSS, MySQL 8 via Trilogy for the dockerized dev stack. Jobs/cache/cable on Solid Queue/Cache/Cable — no Redis in core.</div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ====================== §8 WIRING ====================== -->
+<section id="wiring" data-sec="Wiring"><div class="wrap wide">
+  <div class="kicker rv">How it holds together <span class="id">08 · THE WIRING</span></div>
+  <h2 class="rv">One spine,<br>three repos</h2>
+  <p class="lead rv">The seams are contracts, not conventions. A plan schema couples the mind to the spine; optimistic locking lets many agents share one board; a suite of harness hooks — not a daemon — keeps workers moving; and a Telegram relay is the single human-in-the-loop surface for the gates that demand a signature.</p>
+
+  <div class="wire rv">
+    <div class="wnode asp"><div class="wt">adversarial-spec</div><p>emits <code>fizzy-plan.json</code><br>schema v3 · altitude tree</p></div>
+    <div class="warr"><span class="a">→</span>pipeline_load<br>validate + materialize</div>
+    <div class="wnode fpm"><div class="wt">fizzy-pipeline-mcp</div><p>67 tools · gates · closure<br>the only path to REST</p></div>
+    <div class="warr"><span class="a">→</span>httpx · Bearer<br>account_slug / board_id</div>
+    <div class="wnode fzy"><div class="wt">Fizzy</div><p>cards · card_links<br>pipeline_metadata</p></div>
+  </div>
+
+  <div class="grid g3" style="margin-top:34px">
+    <div class="card rv"><div class="bartop" style="background:var(--cyan)"></div><div class="t" style="font-size:17px">The plan seam</div><p class="mut" style="font-size:13px"><code>PLAN_SCHEMA_VERSION = 3</code> in the emitter must match the spine's expectation. <code>self_check_plan()</code> runs the validator's logic offline, so a bad tree fails in adversarial-spec before it ever reaches <code>pipeline_load</code>. Two repos, one definition of "legal."</p></div>
+    <div class="card rv rv2"><div class="bartop" style="background:var(--amber)"></div><div class="t" style="font-size:17px">The coordination plane</div><p class="mut" style="font-size:13px">No orchestrator daemon. PreToolUse / PostToolUse <b>hooks</b> inject system messages: <code>dispatch_check</code> surfaces pending work, <code>pipeline_continue</code> forbids stopping mid-flow, <code>pipeline_idle_retry</code> backs off with overnight schedules. Workers can't drift.</p></div>
+    <div class="card rv rv3"><div class="bartop" style="background:var(--violet)"></div><div class="t" style="font-size:17px">The human gate</div><p class="mut" style="font-size:13px"><code>relay.py</code> is a standalone Telegram daemon — the only place a person touches the pipeline. <code>/approve</code> and <code>/reject</code> patch the session's gate metadata for g1/g2/g3 and the system-verification signature. Crash-safe: offset advances before handling.</p></div>
+  </div>
+
+  <div class="panel rv" style="margin-top:30px;text-align:center;padding:38px">
+    <div style="font:600 11px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ink3);margin-bottom:14px">The two questions the V exists to answer</div>
+    <div style="display:flex;gap:40px;justify-content:center;flex-wrap:wrap">
+      <div><div style="font-family:var(--disp);font-size:34px;text-transform:uppercase;color:var(--cyan)">Built it right?</div><div class="mut" style="font-size:13px">verification · vs the specified design · the ascending arm</div></div>
+      <div style="width:1px;background:var(--line)"></div>
+      <div><div style="font-family:var(--disp);font-size:34px;text-transform:uppercase;color:var(--violet)">Built the right thing?</div><div class="mut" style="font-size:13px">validation · vs the ConOps intent · the cap of the V</div></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ====================== FOOTER ====================== -->
+<footer><div class="wrap">
+  <div class="big rv">build it <span>right</span>.<br>build the <span>right</span> thing.</div>
+  <div class="refgrid">
+    <div class="card"><div class="bartop" style="background:var(--asp)"></div><div class="t" style="color:var(--asp)">adversarial-spec</div><p class="mut" style="font-size:13px">Left arm + vertex. <code>debate.py</code>, <code>gauntlet/orchestrator.py</code>, <code>mini_spec_emission.py</code>. Phases in <code>skills/adversarial-spec/phases/</code>. Artifacts under <code>.adversarial-spec/specs/&lt;slug&gt;/</code>.</p></div>
+    <div class="card"><div class="bartop" style="background:var(--fpm)"></div><div class="t" style="color:var(--fpm)">fizzy-pipeline-mcp</div><p class="mut" style="font-size:13px">Right arm + gates. <code>pipeline.py</code> (contract v5), <code>client.py</code>, <code>agents.py</code>, <code>relay.py</code>. 67 tools over stdio MCP. Altitude obligations + closure.</p></div>
+    <div class="card"><div class="bartop" style="background:var(--fzy)"></div><div class="t" style="color:var(--fzy)">Fizzy</div><p class="mut" style="font-size:13px">Board + memory. Rails + Hotwire. <code>card_links</code>, <code>pipeline_metadata</code>, <code>pipeline_setup</code>. 15 columns. REST under <code>/:slug/...</code>, Bearer auth.</p></div>
+  </div>
+  <div class="sig">A field guide to the adversarial pipeline · the NASA "V" for AI agents<br>down the left · stress the vertex · up the right · every artifact bound to its proof</div>
+</div></footer>
+
+<script>
+/* ============================================================
+   SHARED UTILITIES
+   ============================================================ */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+
+/* reveal on scroll */
+const io=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
+$$('.rv').forEach(el=>io.observe(el));
+
+/* progress bar */
+addEventListener('scroll',()=>{const h=document.documentElement;const p=h.scrollTop/(h.scrollHeight-h.clientHeight);$('#prog').style.width=(p*100)+'%';},{passive:true});
+
+/* side dots */
+const secs=$$('section[data-sec], footer');
+const dn=$('#dots');
+secs.forEach((s)=>{const a=document.createElement('a');a.href='#'+(s.id||'');a.innerHTML='<span>'+(s.dataset.sec||'End')+'</span>';dn.appendChild(a);});
+const dotEls=$$('#dots a');
+const so=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){const i=secs.indexOf(e.target);dotEls.forEach((d,j)=>d.classList.toggle('on',j===i));}}),{threshold:.4});
+secs.forEach(s=>so.observe(s));
+
+/* tooltip */
+const tip=$('#tip');
+addEventListener('mouseover',e=>{const t=e.target.closest('[data-tip]');if(!t)return;tip.innerHTML='<b>DETAIL</b>'+t.getAttribute('data-tip');tip.classList.add('on');});
+addEventListener('mousemove',e=>{if(!tip.classList.contains('on'))return;let x=e.clientX+16,y=e.clientY+16;if(x>innerWidth-352)x=e.clientX-352;if(y>innerHeight-130)y=e.clientY-130;tip.style.left=x+'px';tip.style.top=y+'px';});
+addEventListener('mouseout',e=>{if(e.target.closest('[data-tip]'))tip.classList.remove('on');});
+
+/* ============================================================
+   THE V — node data + interactivity
+   ============================================================ */
+const A={  // reusable crew markup
+  claude:'<span class="av claude" style="display:inline-grid"><svg><use href="#lg-claude"/></svg></span>',
+  codex:'<span class="av codex" style="display:inline-grid"><svg><use href="#lg-codex"/></svg></span>',
+  gemini:'<span class="av gemini" style="display:inline-grid"><svg><use href="#lg-gemini"/></svg></span>'
+};
+const PLANS={
+  'p-val':{name:'System Validation Plan',desc:'Binds the ConOps / user stories to end-to-end validation. "Did we build the right thing?" Re-derived from US-n stories, not from the verification suite.'},
+  'p-sys':{name:'System Verification Plan',desc:'Binds the system requirement text to a full-suite end-to-end run. "Did we build it right?" at the top level.'},
+  'p-sub':{name:'Sub-System Verification Plan',desc:'Binds subsystem high-level design to integration evidence that ≥2 distinct components cross correctly.'},
+  'p-comp':{name:'Component Verification Procedure',desc:'Binds each component’s detailed design to its unit/contract proof — the floor obligation present at every altitude.'}
+};
+const NODES={
+  L0:{title:'Requirements / ConOps',lvl:'SYSTEM',lvlClass:'sys',arm:'Descending arm · definition',plan:'p-val',
+    desc:'The mission intent. A structured requirements interview becomes a ConOps and a roadmap of user stories with natural-language success criteria — the operational truth everything is later validated against.',
+    owner:'<span class="pj" style="color:var(--asp)">adversarial-spec</span> · phases 1–2',
+    phase:'<span class="phasepill"><b>1</b> requirements</span><span class="phasepill"><b>2</b> roadmap</span>',
+    lane:'<span class="tag fzy">Pre-Roadmap</span>',crew:A.claude+' Claude interviews &amp; authors',
+    tools:['RequirementsSummary','pipeline_create_session','roadmap/manifest.json'],
+    tree:[['d','.adversarial-spec/specs/&lt;slug&gt;/'],['d','  roadmap/'],['hl','    conops.md'],['hl','    manifest.json'],['f','  tests-pseudo.md'],['cm','  # session pointer:'],['f','.adversarial-spec/session-state.json']],
+    tech:'Captures <code>user_types</code>, <code>feature_groups</code>, <code>external_integrations</code>, <code>unknowns</code>. A <code>[GATE]</code> requires the user to confirm requirements before the roadmap is allowed to open. The full vision goes in — the pipeline decomposes it later.'},
+  L1:{title:'System Requirements',lvl:'SYSTEM',lvlClass:'sys',arm:'Descending arm · definition',plan:'p-sys',
+    desc:'The spec is argued into shape. Multiple model-agents critique it round after round; convergence means every counting critic across distinct families emits [AGREE]. Tests-pseudo is kept in lockstep each round.',
+    owner:'<span class="pj" style="color:var(--asp)">adversarial-spec</span> · phase 3',
+    phase:'<span class="phasepill"><b>3</b> debate</span>',
+    lane:'<span class="tag fzy">Debate</span>',crew:A.codex+A.gemini+' critique · '+A.claude+' adjudicates',
+    tools:['debate.py critique','pipeline_begin_debate_round','ALTITUDE_DEBATE_QUORUM','tests-pseudo.md'],
+    tree:[['d','.adversarial-spec/specs/&lt;slug&gt;/'],['hl','  spec-draft-vN.md'],['f','  tests-pseudo.md'],['d','  roadmap/manifest.json'],['cm','  # per-round critic returns:'],['d','.adversarial-spec/debate-workspaces/&lt;s&gt;/round-&lt;id&gt;/']],
+    tech:'Loops until ALL opponent models <em>and</em> Claude emit <code>[AGREE]</code>. Five guardrails run every round — <b>CONS · SCOPE · TRACE · CANON · TCOV</b>. System altitude demands 2 critics / 2 families / 2 rounds. Be skeptical of agreement in the first two rounds.'},
+  L2:{title:'Subsystem Requirements (HLD)',lvl:'SUBSYSTEM',lvlClass:'sub',arm:'Descending arm · decomposition',plan:'p-sub',
+    desc:'The mandatory architecture phase. The system is decomposed into subsystems with a high-level design and a set of machine-checkable invariants — the spine the altitude tree hangs on.',
+    owner:'<span class="pj" style="color:var(--asp)">adversarial-spec</span> · phase 4 (mandatory)',
+    phase:'<span class="phasepill"><b>4</b> target-architecture</span>',
+    lane:'<span class="tag fzy">Debate → Pre-Gauntlet</span>',crew:A.claude+' designs · invariants drafted',
+    tools:['target-architecture.md','architecture-invariants.json','middleware-candidates.json'],
+    tree:[['d','.adversarial-spec/specs/&lt;slug&gt;/'],['hl','  target-architecture.md'],['hl','  architecture-invariants.json'],['f','  middleware-candidates.json'],['f','  dry-run-results.json'],['cm','  # write-guard:'],['f','  .phase4.lock']],
+    tech:'Modes: <code>phase_mode = skip | lightweight | full</code> × <code>context_mode = greenfield | brownfield_feature | brownfield_debug</code>. Even <code>skip</code> emits a stub — the attribution artifact. Invariant tests are upserted into tests-pseudo between <code>&lt;!-- P4_INVARIANT_TESTS --&gt;</code> markers. Silently skipping this phase is a logged process failure.'},
+  L3:{title:'Component Detailed Design',lvl:'COMPONENT',lvlClass:'comp',arm:'Descending arm · decomposition',plan:'p-comp',
+    desc:'The finalized spec is decomposed into typed, verification-classified tasks and emitted as an altitude tree — the contract handed across to the spine. This is where the left arm ends and the board begins.',
+    owner:'<span class="pj" style="color:var(--asp)">adversarial-spec</span> → <span class="pj" style="color:var(--fpm)">fizzy-pipeline-mcp</span> · phase 7',
+    phase:'<span class="phasepill"><b>7</b> execution</span>',
+    lane:'<span class="tag fzy">New Todo (after load)</span>',crew:A.claude+' decomposes &amp; emits the plan',
+    tools:['mini_spec_emission.emit_fizzy_plan()','self_check_plan()','pipeline_validate_plan','PLAN_SCHEMA_VERSION = 3'],
+    tree:[['d','.adversarial-spec/specs/&lt;slug&gt;/'],['f','  execution-plan.md'],['hl','  fizzy-plan.json'],['hl','  verification-coverage.json'],['f','  validation-rows.json'],['cm','  # then: pipeline_load →']],
+    tech:'Gates <b>V1–V4</b> classify every task: <code>behavior_change</code>, <code>verification_mode</code> (1 of 8), <code>verification_scope</code>. The emitted tree is a strict superset chain — <code>component ⊂ subsystem ⊂ system</code> — each node carrying a <code>verification_binding</code> whose keys exactly equal its altitude’s obligations. <code>self_check_plan()</code> mirrors the live validator offline, same reject codes.'},
+  B:{title:'Gauntlet · Implementation',lvl:'VERTEX',lvlClass:'impl',arm:'The vertex · stress &amp; build',plan:null,
+    desc:'At maximum decomposition the spec meets resistance. Nine adversary personas attack it; surviving concerns are clustered, evaluated by frontier models, rebutted and adjudicated. Then agents build — claiming cards critical-path-first and racing the schedule.',
+    owner:'<span class="pj" style="color:var(--asp)">all three projects</span> · phases 5 / 6 / 8',
+    phase:'<span class="phasepill"><b>5</b> gauntlet</span><span class="phasepill"><b>6</b> finalize</span><span class="phasepill"><b>8</b> implementation</span>',
+    lane:'<span class="tag fzy">Gauntlet → New Todo → Review</span>',crew:A.claude+A.codex+A.gemini+' attack, then build in waves',
+    tools:['debate.py gauntlet','gauntlet/orchestrator.py:run_gauntlet()','pipeline_do_next_task','_build_schedule'],
+    tree:[['d','.adversarial-spec-gauntlet/'],['f','  raw-responses-&lt;hash&gt;.json'],['f','  clustered-concerns-&lt;hash&gt;.json'],['f','  evaluations-&lt;hash&gt;.json'],['f','  run-manifest-&lt;hash&gt;-&lt;ts&gt;.json'],['cm','  # build happens in a git worktree']],
+    tech:'7 internal phases. Deterministic <b>Jaccard clustering</b> at threshold 0.65 (auto at ≥200 concerns — pure code after the LLM version lost 48%). <b>Power-law batch tiering</b> 75 / 30 / 12 by length. <code>ThreadPoolExecutor</code> up to 32 workers. Checkpoints are FileLock-guarded, fsync+rename atomic, sha256 integrity-hashed. The scheduler runs a Kahn sort → ready waves + the weighted critical path.'},
+  R3:{title:'Component Verification',lvl:'COMPONENT',lvlClass:'comp',arm:'Ascending arm · verification',plan:'p-comp',
+    desc:'Each leaf component is proven against its detailed design. This is the floor obligation — present at every altitude — and the first rung of the closure ladder.',
+    owner:'<span class="pj" style="color:var(--fpm)">fizzy-pipeline-mcp</span> + <span class="pj" style="color:var(--fzy)">Fizzy</span>',
+    phase:'<span class="phasepill">right arm</span>',
+    lane:'<span class="tag fzy">New Todo → Review → Untested → Passed Test</span>',crew:A.claude+' builds · '+A.codex+' reviews (1 reviewer)',
+    tools:['pipeline_mark_component_verification_complete','pipeline_attest_task','VV_KIND_MODE_MATRIX'],
+    tree:[['cm','# driver:'],['d','fizzy-pipeline-mcp/src/.../pipeline.py'],['hl','  pipeline_mark_component_verification_complete'],['cm','# state:'],['d','Fizzy card · pipeline_metadata.component_verification_complete = true']],
+    tech:'Obligation set <code>{component_verification}</code>. Review quorum: 1 distinct reviewer, no human attestation. The <code>{kind}_complete</code> flag flips only when methods in <code>VV_KIND_MODE_MATRIX</code> (analysis / inspection / test) are satisfied. <code>VV_KIND = {verification}</code> — never validation, here.'},
+  R2:{title:'Subsystem Verification',lvl:'SUBSYSTEM',lvlClass:'sub',arm:'Ascending arm · verification',plan:'p-sub',
+    desc:'A subsystem is verified only once every child component beneath it is already verified — and only if the evidence shows at least two distinct components actually integrate.',
+    owner:'<span class="pj" style="color:var(--fpm)">fizzy-pipeline-mcp</span>',
+    phase:'<span class="phasepill">right arm · closure</span>',
+    lane:'<span class="tag fzy">Review → Passed Test</span>',crew:A.codex+A.gemini+' review (2 reviewers)',
+    tools:['pipeline_mark_subsystem_verification_complete','_check_vv_closure_sync','crosses ≥ 2'],
+    tree:[['cm','# closure rule (C4 RECURSION):'],['d','pipeline.py:_check_vv_closure_sync'],['hl','  node V-complete ⇔ all flags true'],['hl','                  AND every child V-complete'],['cm','# first gap surfaced as:'],['r','  gate: "unverified_descendant"']],
+    tech:'Obligation set <code>{component_verification, subsystem_verification}</code>. Review quorum: 2 distinct reviewers. The ledger must record ≥2 <code>crosses</code> — distinct components that integrate — or the mark is refused. A subsystem that decomposes into fewer than two children raises <code>DEGENERATE_DECOMPOSITION</code> at load.'},
+  R1:{title:'System Verification',lvl:'SYSTEM',lvlClass:'sys',arm:'Ascending arm · verification',plan:'p-sys',
+    desc:'The whole system is run end-to-end against the requirement text that specified it. The top of the verification ladder — and the one rung that requires a human to sign.',
+    owner:'<span class="pj" style="color:var(--fpm)">fizzy-pipeline-mcp</span>',
+    phase:'<span class="phasepill">right arm · E2E</span>',
+    lane:'<span class="tag fzy">Completed-Mapped</span>',crew:A.codex+A.gemini+' + human attestation',
+    tools:['pipeline_mark_system_verification_complete','ALTITUDE_REVIEW_QUORUM','relay.py human gate'],
+    tree:[['cm','# obligation: all three kinds'],['hl','{component, subsystem, system}_verification'],['cm','# review quorum (system):'],['hl','  distinct_reviewers: 2, human_attest: TRUE'],['cm','# human signs via Telegram relay']],
+    tech:'Obligation set is all three verification kinds. <code>ALTITUDE_REVIEW_QUORUM[system] = {2, human_attest: True}</code> — the only altitude that pulls a human into the loop, via the <code>relay.py</code> Telegram gate. End-to-end against the <em>specified</em> requirement, not the operational intent — that comes next.'},
+  R0:{title:'System Validation',lvl:'VALIDATION',lvlClass:'vald',arm:'Ascending arm · validation (v5)',plan:'p-val',
+    desc:'The cap of the V. "Did we build the right thing?" Re-derives pass/fail straight from the ConOps user stories — not from the verification suite — with an anti-cheat that forbids reusing the same tests.',
+    owner:'<span class="pj" style="color:var(--fpm)">fizzy-pipeline-mcp</span> (v5) + <span class="pj" style="color:var(--fzy)">Fizzy</span>',
+    phase:'<span class="phasepill">right arm · cap</span>',
+    lane:'<span class="tag fzy">Completed-Mapped → done</span>',crew:A.claude+' rolls up · human confirms',
+    tools:['pipeline_mark_system_validation_complete','_check_system_validation_coverage_sync','validation-rows.json'],
+    tree:[['cm','# v5 — ConOps-bound'],['d','adversarial-spec emits:'],['hl','  validation-rows.json'],['hl','  SYS/system-spec.md'],['cm','# coverage: every US-n covered'],['r','  by ≥1 passing validation row']],
+    tech:'Shipped in pipeline contract v5 (was deferred in v4). <code>_check_system_validation_coverage_sync</code> requires every <code>US-&lt;n&gt;</code> user story covered by ≥1 passing validation row. <b>Anti-cheat:</b> validation <code>test_targets</code> may not be a strict subset of <code>system_verification.json</code>’s targets — you cannot pass validation by re-running verification.'}
+};
+const ORDER=['L0','L1','L2','L3','B','R3','R2','R1','R0'];
+
+const vsvg=$('#vsvg');
+function setNode(id){
+  const n=NODES[id];if(!n)return;
+  $$('#vsvg .vnode').forEach(g=>g.classList.toggle('active',g.dataset.node===id));
+  // plan link highlight
+  $$('#vsvg .vlink').forEach(l=>l.classList.toggle('lit',n.plan && l.dataset.plan===n.plan));
+  $$('#vsvg .plabel').forEach(l=>l.classList.toggle('lit',n.plan && l.dataset.plan===n.plan));
+  // panel
+  const dLvl=$('#dLvl');dLvl.textContent=n.lvl;
+  const col={SYSTEM:'var(--sys)',SUBSYSTEM:'var(--sub)',COMPONENT:'var(--comp)',VALIDATION:'var(--vald)',VERTEX:'var(--coral)'}[n.lvl];
+  dLvl.style.color=col;dLvl.style.background='color-mix(in srgb,'+col+' 14%,transparent)';dLvl.style.border='1px solid '+col;
+  $('#dTitle').textContent=n.title;
+  $('#dArm').textContent=n.arm;
+  $('#dDesc').innerHTML=n.desc;
+  $('#dOwner').innerHTML=n.owner;
+  $('#dPhase').innerHTML=n.phase;
+  $('#dLane').innerHTML=n.lane;
+  $('#dCrew').innerHTML='<span style="display:inline-flex;align-items:center;gap:2px;vertical-align:-.4em">'+n.crew+'</span>';
+  $('#dTree').innerHTML=n.tree.map(([c,t])=>'<span class="'+c+'">'+t+'</span>').join('\n');
+  $('#dTools').innerHTML=n.tools.map(t=>'<span class="toolchip">'+t+'</span>').join('');
+  $('#dTech').innerHTML=n.tech;
+  const pl=n.plan?PLANS[n.plan]:null;
+  $('#dPlanName').textContent=pl?pl.name:'No horizontal plan';
+  $('#dPlanDesc').textContent=pl?pl.desc:'The vertex is where definition meets verification — the implementation itself, bound by no single horizontal plan but stress-tested by all of them.';
+}
+$$('#vsvg .vnode').forEach(g=>g.addEventListener('click',()=>setNode(g.dataset.node)));
+$$('#vsvg .plabel, #vsvg .vlink').forEach(el=>el.addEventListener('click',()=>{
+  const pid=el.dataset.plan;const nid=ORDER.find(k=>NODES[k].plan===pid);if(nid)setNode(nid);
+}));
+// keyboard step
+let cur=0;
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'){cur=(cur+1)%ORDER.length;setNode(ORDER[cur]);}
+  if(e.key==='ArrowLeft'){cur=(cur-1+ORDER.length)%ORDER.length;setNode(ORDER[cur]);}
+});
+$$('#vsvg .vnode').forEach(g=>g.addEventListener('click',()=>cur=ORDER.indexOf(g.dataset.node)));
+// walk
+let walkT=null;
+$('#vPlay').addEventListener('click',()=>{
+  if(walkT){clearInterval(walkT);walkT=null;$('#vPlay').textContent='▶ Walk the V';return;}
+  $('#vPlay').textContent='⏸ Pause';cur=0;setNode(ORDER[0]);
+  walkT=setInterval(()=>{cur=(cur+1)%ORDER.length;setNode(ORDER[cur]);if(cur===ORDER.length-1){clearInterval(walkT);walkT=null;$('#vPlay').textContent='▶ Walk the V';}},1700);
+});
+$('#vReset').addEventListener('click',()=>{cur=0;setNode('L0');if(walkT){clearInterval(walkT);walkT=null;$('#vPlay').textContent='▶ Walk the V';}});
+setNode('L0');
+
+/* ============================================================
+   MISSION CONTROL — moving agents + dependency-lock convention
+   Rules (these map 1:1 to the planned Fizzy board feature):
+   · color is a FAMILY identity (A=orange, B=teal); a card shows it
+     once its deps are satisfied — workable, in-flight, then done
+   · a locked card is grey-bodied; its lock badge is COLORED iff its
+     sole remaining blocker is a live (colored) card, else GREY
+   · no agent reviews or tests a card it implemented
+   ============================================================ */
+(function(){
+  const field=$('#mcField'); if(!field) return;
+  const FAM={a:'#ff9d42',b:'#2fd6b0'};                 // A-family = orange · B-family = teal
+  const FAMOF={A:'a',A1:'a',A2:'a',A3:'a',B:'b',B1:'b',B3:'b',B2:'b'};
+  const COLOR=id=>FAM[FAMOF[id]];                       // a card's color is its FAMILY's, always
+  const CARDS={
+    A :{row:0,dep:[],         label:'A', name:'auth · parse token'},
+    A1:{row:1,dep:['A'],      label:'A1',name:'auth · verify sig'},
+    A2:{row:2,dep:['A'],      label:'A2',name:'auth · refresh'},
+    A3:{row:3,dep:['A1','A2'],label:'A3',name:'auth · session join'},
+    B :{row:4,dep:[],         label:'B', name:'billing · invoice'},
+    B1:{row:5,dep:['B'],      label:'B1',name:'billing · tax calc'},
+    B3:{row:6,dep:['B'],      label:'B3',name:'billing · notify'},
+    B2:{row:7,dep:['B3'],     label:'B2',name:'billing · receipt'}
+  };
+  const IDS=Object.keys(CARDS);
+  const AGENTS=['claude','codex','gemini'];
+  const cardEl={},agentEl={},state={},busyAgent={claude:null,codex:null,gemini:null};
+  let running=true,gen=0,tick=null,wave1=false;
+
+  IDS.forEach(id=>{const c=CARDS[id];
+    const e=document.createElement('div');
+    e.className='mc-card';e.id='mc-'+id;e.style.setProperty('--cc',COLOR(id));
+    e.innerHTML='<div class="mc-locks" id="locks-'+id+'"></div>'
+      +'<div class="mc-chk">✓</div>'
+      +'<div class="mc-by" id="by-'+id+'"></div>'
+      +'<div class="ct"><span class="dot"></span>'+c.label+'</div><div class="cd">'+c.name+'</div>';
+    field.appendChild(e);cardEl[id]=e;state[id]={lane:0,impl:null,claimed:null};
+  });
+  AGENTS.forEach(a=>{const e=document.createElement('div');
+    e.className='mc-agent '+a;
+    e.innerHTML='<div class="ring"></div><svg><use href="#lg-'+a+'"/></svg><span class="act" id="act-'+a+'"></span>';
+    field.appendChild(e);agentEl[a]=e;
+  });
+
+  const geom=()=>({W:field.clientWidth,H:field.clientHeight,laneW:field.clientWidth/4});
+  const cardX=lane=>{const{laneW}=geom();return lane*laneW+(laneW-118)/2;};
+  const cardY=row=>40+row*49;
+  const isDone=id=>state[id].lane>=3;
+  const depsSat=id=>CARDS[id].dep.every(isDone);        // deps satisfied → card wears its color
+  const workable=id=>state[id].lane===0&&depsSat(id);
+  const inFlight=id=>state[id].lane===1||state[id].lane===2;  // advanced out of New Todo, not done
+  function blockDepth(id){              // # of unresolved generations above this card (→ stack height)
+    if(depsSat(id))return 0;
+    let d=0;CARDS[id].dep.forEach(p=>{if(!isDone(p))d=Math.max(d,1+blockDepth(p));});
+    return d;
+  }
+  const frontLockColor=id=>{            // parent-level lock is colored ONLY if a parent is in-flight
+    const p=CARDS[id].dep.find(d=>!isDone(d)&&inFlight(d));return p?COLOR(p):null;
+  };
+  function lockStack(id){               // front=parent (maybe colored), each deeper level a grey badge
+    if(depsSat(id))return '';
+    const d=Math.min(blockDepth(id),3),fc=frontLockColor(id);let h='';
+    for(let i=0;i<d;i++){const col=(i===0&&fc)?fc:'var(--ink4)';
+      h+='<span class="mc-lock" style="--lockc:'+col+';right:'+(-8+i*12)+'px;z-index:'+(12-i)+'"><svg><use href="#lg-lock"/></svg></span>';}
+    return h;
+  }
+  const dock=i=>{const{H,laneW}=geom();return{x:14+i*46+laneW*0.02,y:H-44};};
+  const moveAgent=(a,x,y)=>{agentEl[a].style.transform='translate('+x+'px,'+y+'px)';};
+  const parkAgents=()=>{AGENTS.forEach((a,i)=>{const p=dock(i);moveAgent(a,p.x,p.y);agentEl[a].classList.remove('working');$('#act-'+a).textContent='';});};
+  const narrate=t=>{$('#mcNarr').innerHTML=t;};
+  const chip=(id)=>'<span class="chip" style="color:'+COLOR(id)+';border-color:'+COLOR(id)+'66">'+CARDS[id].label+'</span>';
+
+  function render(){
+    IDS.forEach(id=>{
+      const e=cardEl[id],s=state[id];
+      e.classList.remove('ready','locked','flight','done','waiting','built');
+      if(s.impl){e.classList.add('built');$('#by-'+id).innerHTML='<svg><use href="#lg-'+s.impl+'"/></svg>';}
+      $('#locks-'+id).innerHTML=lockStack(id);
+      if(!depsSat(id))e.classList.add('locked');          // grey body; the lock stack shows depth
+      else if(s.lane>=3)e.classList.add('done');           // colored from here — family hue, never green/pink
+      else if(s.lane===0)e.classList.add('ready');
+      else e.classList.add(s.claimed?'flight':'waiting');
+      e.style.transform='translate('+cardX(s.lane)+'px,'+cardY(CARDS[id].row)+'px)';
+    });
+    const ready=IDS.filter(workable);
+    $('#roReady').innerHTML=ready.length?ready.map(chip).join(''):'—';
+    $('#roCap').textContent=ready.length;
+    const fl=Object.values(busyAgent).filter(Boolean);
+    $('#roFlight').innerHTML=fl.length?fl.map(chip).join(''):'—';
+    $('#roDone').textContent=IDS.filter(isDone).length+' / 8';
+  }
+  const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+
+  function step(){
+    if(!running)return;const myGen=gen;
+    // actionable work, priority: review > test > implement (reviews block new work)
+    const acts=[];
+    IDS.forEach(id=>{const s=state[id];if(s.lane>=3||s.claimed)return;
+      if(s.lane===0){if(workable(id))acts.push({id,kind:'implement',pr:2});}
+      else if(s.lane===1)acts.push({id,kind:'review',pr:0});
+      else if(s.lane===2)acts.push({id,kind:'test',pr:1});
+    });
+    acts.sort((x,y)=>x.pr-y.pr||CARDS[x.id].row-CARDS[y.id].row);
+    const used=new Set();
+    acts.forEach(act=>{
+      // a card's implementer may NOT review or test it
+      const elig=AGENTS.filter(a=>!busyAgent[a]&&!used.has(a)&&(act.kind==='implement'||a!==state[act.id].impl));
+      if(!elig.length)return;
+      const a=elig[0];used.add(a);busyAgent[a]=act.id;state[act.id].claimed=a;
+      $('#act-'+a).textContent=act.kind;agentEl[a].classList.add('working');
+      const s=state[act.id];
+      moveAgent(a,cardX(s.lane)+39,cardY(CARDS[act.id].row));
+      render();
+      ((a,id,kind)=>{setTimeout(()=>{if(myGen!==gen)return;
+        if(kind==='implement')state[id].impl=a;
+        state[id].lane++;
+        moveAgent(a,cardX(state[id].lane)+39,cardY(CARDS[id].row));
+        render();
+        setTimeout(()=>{if(myGen!==gen)return;
+          state[id].claimed=null;busyAgent[a]=null;
+          agentEl[a].classList.remove('working');$('#act-'+a).textContent='';
+          const p=dock(AGENTS.indexOf(a));moveAgent(a,p.x,p.y);
+          render();
+        },840);
+      },760);})(a,act.id,act.kind);
+    });
+    render();
+    // narration
+    if(IDS.every(isDone)){narrate('All 8 cards in <b style="color:var(--green)">Passed Test</b>. Run green — resetting.');setTimeout(()=>{if(myGen===gen)reset(true);},2100);return;}
+    const revC=IDS.find(id=>state[id].lane===1&&state[id].claimed&&state[id].impl);
+    const waitC=IDS.find(id=>state[id].lane===1&&!state[id].claimed&&state[id].impl);
+    const rootsDone=isDone('A')&&isDone('B');
+    if(revC)narrate('<b>'+cap(state[revC].impl)+'</b> built <code>'+CARDS[revC].label+'</code> → <b>'+cap(state[revC].claimed)+'</b> reviews it. An agent never reviews its own card.');
+    else if(waitC)narrate('<code>'+CARDS[waitC].label+'</code> sits in Review waiting for an agent that <em>isn’t</em> <b>'+cap(state[waitC].impl)+'</b> — no self-review.');
+    else if(!rootsDone)narrate('Only <span style="color:'+FAM.a+'">A</span> and <span style="color:'+FAM.b+'">B</span> are workable. Their direct children wear <em>colored</em> locks; deeper cards wear grey.');
+    else if(!wave1){wave1=true;narrate('<b>Wave 1 cleared.</b> A &amp; B reached Passed Test → their children unlock and color up. Grey locks recolor as their blocker goes live.');}
+    else narrate('<b>Wave 2.</b> <code>A3</code> waits on two cards — its lock stays grey until only one blocker (A1 or A2) remains.');
+  }
+
+  function reset(auto){
+    gen++;wave1=false;
+    IDS.forEach(id=>{state[id].lane=0;state[id].impl=null;state[id].claimed=null;cardEl[id].classList.remove('built');$('#by-'+id).innerHTML='';});
+    AGENTS.forEach(a=>busyAgent[a]=null);
+    render();parkAgents();
+    narrate('Only <span style="color:'+FAM.a+'">A</span> and <span style="color:'+FAM.b+'">B</span> are workable — the two roots.');
+    if(auto&&running){clearInterval(tick);tick=setInterval(step,1650);}
+  }
+
+  $('#mcToggle').addEventListener('click',function(){running=!running;this.textContent=running?'⏸ Pause':'▶ Resume';if(running)tick=setInterval(step,1650);else clearInterval(tick);});
+  $('#mcReset').addEventListener('click',()=>{running=true;$('#mcToggle').textContent='⏸ Pause';clearInterval(tick);reset(false);tick=setInterval(step,1650);});
+  addEventListener('resize',()=>{render();if(Object.values(busyAgent).every(v=>!v))parkAgents();});
+
+  let started=false;
+  const mcio=new IntersectionObserver(es=>es.forEach(e=>{
+    if(e.isIntersecting&&!started){started=true;render();parkAgents();setTimeout(()=>{step();tick=setInterval(step,1650);},600);}
+  }),{threshold:.2});
+  mcio.observe($('#mcBoard'));
+})();
+</script>
+</body>
+</html>
