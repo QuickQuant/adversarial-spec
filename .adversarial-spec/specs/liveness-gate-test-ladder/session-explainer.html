@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🥊📜 Liveness Gate + Test Ladder — Session Explainer</title>
+<style>
+  :root{
+    --bg:#0c0e14; --panel:#151823; --panel2:#1c2030; --ink:#e8ecf4; --mut:#8b93a7;
+    --line:#272c3d; --acc:#6ea8fe; --acc2:#9d7bff; --grn:#46d29b; --red:#ff6b81;
+    --yel:#ffcf5c; --org:#ff9d5c; --claude:#d97757; --codex:#10a37f; --gemini:#4b8bf5;
+    --shadow:0 8px 30px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:linear-gradient(180deg,#0a0c12,#0c0e14 30%);color:var(--ink);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 22px 90px}
+  a{color:var(--acc);text-decoration:none}
+  h1,h2,h3{line-height:1.18;margin:0}
+  .mono{font-family:"SF Mono",ui-monospace,"Cascadia Code",Menlo,Consolas,monospace}
+
+  /* hero */
+  header.hero{padding:64px 0 30px;text-align:center;position:relative}
+  .hero .kick{color:var(--acc2);letter-spacing:.32em;font-size:12px;font-weight:700;text-transform:uppercase}
+  .hero h1{font-size:clamp(30px,5vw,52px);margin:14px 0 8px;
+    background:linear-gradient(90deg,#fff,#9db6ff 60%,#9d7bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p.sub{color:var(--mut);max-width:760px;margin:10px auto 0;font-size:17px}
+  .hero .tagrow{margin-top:22px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .pill{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;color:var(--mut)}
+  .pill b{color:var(--ink)}
+
+  /* stat counters */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:34px 0 8px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 16px;text-align:center;box-shadow:var(--shadow)}
+  .stat .n{font-size:34px;font-weight:800;letter-spacing:-.5px}
+  .stat .n.g{color:var(--grn)} .stat .n.b{color:var(--acc)} .stat .n.p{color:var(--acc2)} .stat .n.o{color:var(--org)}
+  .stat .l{color:var(--mut);font-size:12.5px;margin-top:4px;text-transform:uppercase;letter-spacing:.06em}
+
+  section{margin-top:56px}
+  .shead{display:flex;align-items:baseline;gap:14px;margin-bottom:8px}
+  .shead h2{font-size:25px}
+  .shead .num{font:700 13px/1 var(--mono);color:var(--acc2);background:#241d3a;border:1px solid #392c5e;
+    padding:6px 9px;border-radius:8px;font-family:"SF Mono",monospace}
+  .lead{color:var(--mut);max-width:840px;margin:6px 0 22px}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+
+  /* problem callout */
+  .prob{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .prob .bad{border-left:3px solid var(--red)}
+  .prob .good{border-left:3px solid var(--grn)}
+  .prob h3{font-size:16px;margin-bottom:8px;display:flex;gap:8px;align-items:center}
+  .prob ul{margin:6px 0 0;padding-left:18px;color:var(--mut)} .prob li{margin:5px 0}
+  @media(max-width:720px){.prob{grid-template-columns:1fr}}
+
+  /* concept flashcards */
+  .concepts{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:14px}
+  .concept{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;
+    transition:.18s;position:relative;overflow:hidden}
+  .concept:hover{border-color:var(--acc);transform:translateY(-2px)}
+  .concept .tok{font-family:"SF Mono",monospace;font-size:11.5px;color:var(--acc);background:#16243d;
+    border:1px solid #21385c;padding:3px 7px;border-radius:6px;display:inline-block}
+  .concept h3{font-size:16.5px;margin:10px 0 6px}
+  .concept .desc{color:var(--mut);font-size:13.5px;max-height:0;opacity:0;transition:.25s;overflow:hidden}
+  .concept.open .desc{max-height:340px;opacity:1;margin-top:8px}
+  .concept .more{position:absolute;top:14px;right:14px;color:var(--mut);font-size:18px;transition:.2s}
+  .concept.open .more{transform:rotate(45deg);color:var(--acc)}
+
+  /* maturity ladder */
+  .ladder{display:flex;gap:0;align-items:stretch;flex-wrap:wrap}
+  .rung{flex:1;min-width:200px;background:var(--panel2);border:1px solid var(--line);padding:16px;cursor:pointer;transition:.2s;position:relative}
+  .rung:first-child{border-radius:12px 0 0 12px} .rung:last-child{border-radius:0 12px 12px 0}
+  .rung.active{background:linear-gradient(160deg,#1d2740,#191d2c);border-color:var(--acc)}
+  .rung .step{font-family:"SF Mono",monospace;font-size:12px;color:var(--acc2);font-weight:700}
+  .rung h4{margin:6px 0 4px;font-size:16px}
+  .rung small{color:var(--mut)}
+  .rung .arrow{position:absolute;right:-1px;top:50%;transform:translateY(-50%);color:var(--line);font-size:22px;z-index:2}
+  .ladderbody{margin-top:14px;color:var(--mut)}
+  .ladderbody .k{color:var(--ink);font-weight:600}
+
+  /* mock decider */
+  .decider{display:grid;grid-template-columns:1fr;gap:12px}
+  .q{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .q p{margin:0 0 10px;font-weight:600}
+  .btns{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{background:#222a3d;border:1px solid var(--line);color:var(--ink);padding:8px 16px;border-radius:9px;cursor:pointer;font-size:14px;transition:.15s}
+  .btn:hover{border-color:var(--acc);background:#27314a}
+  .btn.sel{background:var(--acc);color:#0a0c12;border-color:var(--acc);font-weight:600}
+  .verdict{border-radius:12px;padding:16px;font-size:15px;display:none}
+  .verdict.show{display:block}
+  .verdict.promote{background:#0f2a1e;border:1px solid #1f6b48;color:#9af0c8}
+  .verdict.mock{background:#2a2410;border:1px solid #6b5a1f;color:#f0dd9a}
+  .verdict.reject{background:#2a1216;border:1px solid #6b1f2c;color:#f0a0ad}
+  .verdict b{display:block;font-size:16px;margin-bottom:4px}
+
+  /* f-prime simulator */
+  .sim{display:grid;grid-template-columns:280px 1fr;gap:16px}
+  @media(max-width:720px){.sim{grid-template-columns:1fr}}
+  .toggle{display:flex;flex-direction:column;gap:10px}
+  .fix{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;cursor:pointer;transition:.15s}
+  .fix:hover{border-color:var(--acc)} .fix.sel{border-color:var(--acc);background:#1a2236}
+  .fix h4{font-size:14.5px;margin:0 0 4px} .fix small{color:var(--mut)}
+  .term{background:#080a0f;border:1px solid var(--line);border-radius:12px;padding:0;overflow:hidden;font-family:"SF Mono",monospace;font-size:13px}
+  .term .bar{background:#11141d;padding:8px 14px;border-bottom:1px solid var(--line);color:var(--mut);font-size:12px;display:flex;gap:8px;align-items:center}
+  .dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+  .term pre{margin:0;padding:16px;white-space:pre-wrap;color:#cdd6e6;min-height:150px}
+  .exit{display:inline-block;padding:2px 9px;border-radius:6px;font-weight:700;margin-left:auto}
+  .exit.ok{background:#0f2a1e;color:var(--grn)} .exit.bad{background:#2a1216;color:var(--red)}
+
+  /* timeline */
+  .tl{position:relative;padding-left:6px}
+  .tline{display:flex;gap:0;flex-wrap:wrap;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .phz{flex:1;min-width:120px;padding:14px 12px;cursor:pointer;border-right:1px solid var(--line);transition:.2s;background:var(--panel)}
+  .phz:last-child{border-right:none}
+  .phz.active{background:linear-gradient(160deg,#1d2740,#171b28)}
+  .phz .ph{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em}
+  .phz h4{margin:5px 0 0;font-size:14.5px}
+  .phz .meta{color:var(--acc);font-size:12px;margin-top:4px;font-family:"SF Mono",monospace}
+  .phzbody{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;color:var(--mut)}
+  .phzbody h4{color:var(--ink);margin-bottom:6px}
+
+  /* convergence chart */
+  .chart{display:flex;align-items:flex-end;gap:10px;height:170px;padding:14px 6px 0;border-bottom:1px solid var(--line)}
+  .bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;justify-content:flex-end;height:100%}
+  .bar .col{width:100%;max-width:48px;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--acc),#3a63b8);transition:.3s;position:relative}
+  .bar .col.zero{background:linear-gradient(180deg,var(--grn),#1f7a52)}
+  .bar .col .v{position:absolute;top:-20px;left:0;right:0;text-align:center;font-size:12px;font-weight:700;color:var(--ink)}
+  .bar .lab{font-size:11px;color:var(--mut);font-family:"SF Mono",monospace;text-align:center}
+  .chartnote{color:var(--mut);font-size:13px;margin-top:12px}
+
+  /* wave board */
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .fbtn{background:var(--panel2);border:1px solid var(--line);color:var(--mut);padding:7px 14px;border-radius:9px;cursor:pointer;font-size:13px;transition:.15s}
+  .fbtn:hover{border-color:var(--acc);color:var(--ink)} .fbtn.on{background:var(--acc);color:#0a0c12;border-color:var(--acc);font-weight:600}
+  .board{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:12px}
+  .task{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;transition:.2s;border-top:3px solid var(--w)}
+  .task:hover{transform:translateY(-2px);border-color:var(--acc)}
+  .task .tid{font-family:"SF Mono",monospace;font-weight:700;font-size:13px;color:var(--w)}
+  .task .ttl{font-size:13.5px;margin:6px 0 8px;color:var(--ink)}
+  .task .tmeta{display:flex;gap:6px;flex-wrap:wrap;font-size:11px}
+  .chip{background:#1c2233;border:1px solid var(--line);padding:2px 7px;border-radius:6px;color:var(--mut)}
+  .chip.dep{color:var(--acc)}
+  .chip.mine{background:#2a1d16;border-color:#5a3a28;color:var(--claude)}
+
+  /* session sweep */
+  .sweep{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:720px){.sweep{grid-template-columns:1fr}}
+  .agent-legend{display:flex;gap:16px;flex-wrap:wrap;margin:4px 0 18px}
+  .alg{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--mut)}
+  .swatch{width:12px;height:12px;border-radius:3px;display:inline-block}
+  table.sw{width:100%;border-collapse:collapse;font-size:13.5px}
+  table.sw th,table.sw td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+  table.sw th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+  table.sw td .tg{font-family:"SF Mono",monospace;font-weight:700}
+  .badge{font-size:11px;padding:2px 8px;border-radius:6px;font-weight:600}
+  .badge.appr{background:#0f2a1e;color:var(--grn)} .badge.test{background:#16243d;color:var(--acc)}
+  .badge.impl{background:#241d3a;color:var(--acc2)}
+  .race{color:var(--yel);font-size:12px}
+
+  .loop{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:6px}
+  .node{padding:12px 18px;border-radius:12px;border:1px solid var(--line);font-weight:600;font-size:14px}
+  .node.c{background:#2a1d16;border-color:#5a3a28;color:var(--claude)}
+  .node.x{background:#0f261f;border-color:#1f5a48;color:var(--codex)}
+  .node.g{background:#142036;border-color:#28477a;color:var(--gemini)}
+  .lparr{color:var(--mut);font-size:20px}
+
+  footer{margin-top:70px;padding-top:24px;border-top:1px solid var(--line);color:var(--mut);font-size:13px;text-align:center}
+  .toc{position:sticky;top:0;background:rgba(12,14,20,.85);backdrop-filter:blur(8px);z-index:50;
+    border-bottom:1px solid var(--line);padding:10px 0;margin-bottom:-30px}
+  .toc .wrap{display:flex;gap:6px;flex-wrap:wrap;padding:0 22px}
+  .toc a{font-size:12.5px;color:var(--mut);padding:5px 10px;border-radius:7px}
+  .toc a:hover{background:var(--panel2);color:var(--ink)}
+</style>
+</head>
+<body>
+
+<nav class="toc"><div class="wrap">
+  <a href="#problem">The Problem</a>
+  <a href="#concepts">Concepts</a>
+  <a href="#ladder">Maturity Ladder</a>
+  <a href="#mock">MOCK Decider</a>
+  <a href="#fprime">F′ Gate</a>
+  <a href="#journey">Pipeline Journey</a>
+  <a href="#waves">22 Tasks</a>
+  <a href="#session">This Session</a>
+</div></nav>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="kick">🥊📜 adversarial-spec · implementation phase</div>
+  <h1>Liveness Gate &amp; Architecture-Linked Test Ladder</h1>
+  <p class="sub">We built a system that refuses to call a critical seam "tested" until it has been
+  exercised with <b>real data</b> or a <b>named, constructible live/fault-induced technique</b> —
+  killing the "green unit test over a mock" theatre. This slice was debated to convergence over
+  12 rounds, stress-tested by a 7-persona gauntlet, decomposed into 22 tasks, and implemented by
+  three AI agents working the same board.</p>
+  <div class="tagrow">
+    <span class="pill">session <b>adv-spec-…-liveness-gate-test-ladder</b></span>
+    <span class="pill">card <b>#5715</b></span>
+    <span class="pill">board <b>03fw5alxw15iqwh6hq15vfdsb</b></span>
+    <span class="pill">phase <b>implementation → finalization</b></span>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="n g">891</div><div class="l">tests passing</div></div>
+    <div class="stat"><div class="n b">22 / 22</div><div class="l">tasks complete</div></div>
+    <div class="stat"><div class="n p">12</div><div class="l">debate rounds</div></div>
+    <div class="stat"><div class="n o">507→32</div><div class="l">gauntlet concerns</div></div>
+    <div class="stat"><div class="n">3</div><div class="l">AI agents</div></div>
+    <div class="stat"><div class="n">v1→v12</div><div class="l">spec drafts</div></div>
+  </div>
+</header>
+
+<!-- PROBLEM -->
+<section id="problem">
+  <div class="shead"><h2>The problem this kills</h2></div>
+  <p class="lead">A critical seam can have rich prose, a clean design, and a wall of green unit
+  tests — and still have <i>never actually run</i>. The tests mock the seam away. "Liveness" is the
+  evidence that the real path executed.</p>
+  <div class="prob">
+    <div class="card bad">
+      <h3>🎭 Mock theatre <span style="color:var(--red)">(rejected)</span></h3>
+      <ul>
+        <li>Behaviour is mocked; the seam is never exercised.</li>
+        <li>"Unit-green" is counted as proof the path works.</li>
+        <li>A <span class="mono">MOCK</span> is justified with a scale / cost / time excuse.</li>
+        <li>Owner-written "pass/fail" prose is trusted at face value.</li>
+      </ul>
+    </div>
+    <div class="card good">
+      <h3>✅ Liveness <span style="color:var(--grn)">(required)</span></h3>
+      <ul>
+        <li>Real data, or a <b>named</b> live / fault-induced technique, runs the seam.</li>
+        <li>A typed <span class="mono">run_evidence</span> receipt is captured by the skill-runner.</li>
+        <li>A <span class="mono">MOCK</span> is only valid if <i>no</i> technique could induce it — cited in <span class="mono">technical_constraint</span>.</li>
+        <li>The skill never trusts owner-reported results — it re-runs and records its own.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- CONCEPTS -->
+<section id="concepts">
+  <div class="shead"><h2>Key concepts</h2><span class="num">click to expand</span></div>
+  <p class="lead">The vocabulary the whole slice hangs on. Machine tokens (in code font) keep their
+  exact names; the prose terms are always qualified to avoid collisions.</p>
+  <div class="concepts" id="conceptGrid"></div>
+</section>
+
+<!-- LADDER -->
+<section id="ladder">
+  <div class="shead"><h2>The maturity ladder</h2><span class="num">click a rung</span></div>
+  <p class="lead">Every Test Maturity Record climbs three rungs. The ladder measures
+  <b>evidence maturity</b>, not implementation priority.</p>
+  <div class="ladder" id="ladder">
+    <div class="rung active" data-r="0"><div class="step">nl</div><h4>Natural language</h4><small>intent only</small><span class="arrow">›</span></div>
+    <div class="rung" data-r="1"><div class="step">acceptance</div><h4>Testable contract</h4><small>named accessors</small><span class="arrow">›</span></div>
+    <div class="rung" data-r="2"><div class="step">concrete</div><h4>Bound + green</h4><small>run evidence</small></div>
+  </div>
+  <div class="ladderbody card" id="ladderBody"></div>
+</section>
+
+<!-- MOCK DECIDER -->
+<section id="mock">
+  <div class="shead"><h2>Strict MOCK falsification</h2><span class="num">interactive</span></div>
+  <p class="lead">The rule (spec §4.3, mirrored into the PEDA/BURN/AUDT adversaries + debate):
+  a <span class="mono">MOCK</span> keys on <i>real-ness</i>, not the label. Naming any technique that
+  <i>could</i> induce the behaviour forces a promotion to <span class="mono">REAL-DATA</span>. Walk it:</p>
+  <div class="card">
+    <div class="decider">
+      <div class="q">
+        <p>1 · Is this test the <b>sole evidence</b> for a critical seam, and is its <span class="mono">live_or_induced</span> field null?</p>
+        <div class="btns" data-q="q1"><button class="btn" data-v="yes">Yes</button><button class="btn" data-v="no">No — real data already runs it</button></div>
+      </div>
+      <div class="q" id="q2box" style="display:none">
+        <p>2 · Can you <b>name a constructible</b> live or fault-induced technique that would exercise the behaviour?</p>
+        <div class="btns" data-q="q2"><button class="btn" data-v="yes">Yes, I can name one</button><button class="btn" data-v="no">No technique exists</button></div>
+      </div>
+      <div class="q" id="q3box" style="display:none">
+        <p>3 · Your justification for the MOCK is…</p>
+        <div class="btns" data-q="q3"><button class="btn" data-v="excuse">"too slow / costly / large-scale"</button><button class="btn" data-v="constraint">a concrete <span class="mono">technical_constraint</span></button></div>
+      </div>
+      <div class="verdict" id="verdict"></div>
+    </div>
+  </div>
+</section>
+
+<!-- F-PRIME -->
+<section id="fprime">
+  <div class="shead"><h2>The F′ spine-coverage gate</h2><span class="num">live behaviour</span></div>
+  <p class="lead">F′ (<span class="mono">gauntlet-check</span>) blocks the gauntlet transition unless every
+  roadmap user story has exactly one active happy-path-spine test. This is the actual output from the
+  dogfood &amp; bootstrap fixtures built this session — pick one:</p>
+  <div class="sim">
+    <div class="toggle">
+      <div class="fix sel" data-f="full"><h4>✅ Full-coverage fixture</h4><small>15 spine records — one per US</small></div>
+      <div class="fix" data-f="miss"><h4>⚠ Missing-spine fixture</h4><small>US-2 has no spine test</small></div>
+    </div>
+    <div class="term">
+      <div class="bar"><span class="dot" style="background:#ff6b81"></span><span class="dot" style="background:#ffcf5c"></span><span class="dot" style="background:#46d29b"></span>
+        <span>uv run gauntlet-check</span><span class="exit ok" id="exitTag">exit 0</span></div>
+      <pre id="termOut"></pre>
+    </div>
+  </div>
+</section>
+
+<!-- JOURNEY -->
+<section id="journey">
+  <div class="shead"><h2>How it got here</h2><span class="num">click a phase</span></div>
+  <p class="lead">The full adversarial-spec pipeline ran end to end. The interesting part: convergence
+  was declared <i>falsely</i> once (v8), the gauntlet broke it, and a disciplined "press" round later
+  caught a real contradiction a bare <span class="mono">[AGREE]</span> had hidden.</p>
+  <div class="tline" id="tline">
+    <div class="phz active" data-p="0"><div class="ph">Phase 3</div><h4>Debate</h4><div class="meta">12 rounds</div></div>
+    <div class="phz" data-p="1"><div class="ph">Phase 4</div><h4>Target arch</h4><div class="meta">35 invariants</div></div>
+    <div class="phz" data-p="2"><div class="ph">Phase 5</div><h4>Gauntlet</h4><div class="meta">507→32</div></div>
+    <div class="phz" data-p="3"><div class="ph">Phase 6</div><h4>Finalize</h4><div class="meta">spec.md</div></div>
+    <div class="phz" data-p="4"><div class="ph">Phase 7</div><h4>Execution</h4><div class="meta">22 tasks</div></div>
+    <div class="phz" data-p="5"><div class="ph">Phase 8</div><h4>Implement</h4><div class="meta">3 agents</div></div>
+  </div>
+  <div class="phzbody" id="phzBody"></div>
+
+  <div class="card" style="margin-top:18px">
+    <h3 style="font-size:16px;margin-bottom:4px">Convergence severity trend</h3>
+    <p style="color:var(--mut);font-size:13px;margin:0 0 4px">Findings per round across the second
+    (post-gauntlet) convergence arc. Zero ≠ done until a <i>quality</i> 2-family agreement holds.</p>
+    <div class="chart" id="chart"></div>
+    <p class="chartnote" id="chartNote">Hover a bar. R10's "0" was a <b>bare</b> [AGREE] (quorum unmet);
+    the R11 press surfaced a real CANON drift → R12 cleanly re-converged on <span class="mono">spec-draft-v12</span>.</p>
+  </div>
+</section>
+
+<!-- WAVES -->
+<section id="waves">
+  <div class="shead"><h2>The 22 tasks</h2><span class="num">filter by wave</span></div>
+  <p class="lead">Phase 7 decomposed the spec into 6 waves: a foundation layer (W0) of shared
+  contracts, then features that depend on it. Hover a card for its dependencies.</p>
+  <div class="filters" id="filters"></div>
+  <div class="board" id="board"></div>
+</section>
+
+<!-- SESSION -->
+<section id="session">
+  <div class="shead"><h2>What I did this session</h2><span class="num">claude, this turn</span></div>
+  <p class="lead">Resumed into the Phase 8 self-pickup loop as <b>claude</b> on a board shared live with
+  <b>codex</b> and <b>gemini</b>. The pipeline enforces that no agent reviews its own work — so the value
+  is genuinely independent review. I cleared the remaining Review/Untested debt:</p>
+
+  <div class="agent-legend">
+    <span class="alg"><span class="swatch" style="background:var(--claude)"></span> claude (me) — review, fix, test</span>
+    <span class="alg"><span class="swatch" style="background:var(--codex)"></span> codex — impl, oracle-refine</span>
+    <span class="alg"><span class="swatch" style="background:var(--gemini)"></span> gemini — impl, review</span>
+  </div>
+
+  <div class="card">
+    <table class="sw">
+      <thead><tr><th>Card</th><th>What</th><th>Action</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td class="tg" style="color:var(--codex)">W5-1</td><td>Glossary / ADR 0002 / document-types — happy-path-spine vs Architecture-Spine collision</td><td>review of codex&nbsp;<span class="mono">9eca94a</span></td><td><span class="badge appr">APPROVED</span> 4/4 doclint</td></tr>
+        <tr><td class="tg" style="color:var(--codex)">W5-2</td><td>Getting Started bootstrap (symlink, no copy-deploy)</td><td>review + test</td><td><span class="badge appr">APPROVED</span> <span class="race">live exit 0 / exit 2 ✓</span></td></tr>
+        <tr><td class="tg" style="color:var(--codex)">W5-3</td><td>Dogfood F′ registry — 15 spine records via compile step</td><td>review of codex&nbsp;<span class="mono">13da866</span></td><td><span class="badge appr">APPROVED</span> 13 passed, F′ live ✓</td></tr>
+        <tr><td class="tg" style="color:var(--claude)">W2-4</td><td>Strict MOCK falsification → PEDA/BURN/AUDT + 03-debate</td><td>impl <span class="mono">b54baed</span> + test</td><td><span class="badge test">TESTED</span> 12 passed</td></tr>
+      </tbody>
+    </table>
+    <p style="color:var(--mut);font-size:13px;margin:14px 0 0">Five <span class="race">benign board races</span> this
+    session: a concurrent agent moved a card to <i>Passed Test</i> between my attestation and the
+    <span class="mono">pipeline_test</span> call (→ <span class="mono">WRONG_LANE</span>). Correct behaviour — my
+    attestation evidence is recorded as independent confirmation, the card is rightly green.</p>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h3 style="font-size:16px;margin-bottom:12px">The cross-agent loop in action</h3>
+    <p style="color:var(--mut);font-size:13.5px;margin:0 0 14px">W2-2 (TRACE spine-inversion) is the
+    pattern in miniature — no single agent confirmed its own work:</p>
+    <div class="loop">
+      <span class="node c">claude implements <span class="mono">586c61c</span></span>
+      <span class="lparr">→</span>
+      <span class="node x">codex tightens the golden oracle <span class="mono">e7231dd</span></span>
+      <span class="lparr">→</span>
+      <span class="node c">claude re-reviews + tests</span>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h3 style="font-size:16px;margin-bottom:6px">📍 Where it stands now</h3>
+    <p style="color:var(--mut);margin:0">All 22 task cards are terminal (<span class="mono">Completed-Unmapped</span>);
+    every working lane is empty and <span class="mono">pipeline_do_next_task</span> returns
+    <b>idle</b>. The full suite is <b style="color:var(--grn)">891 passing</b>. The session card sits in
+    the <b>Finalization</b> lane — the next move is the finalize / verification advance, which I paused
+    when you asked for this explainer.</p>
+  </div>
+</section>
+
+<footer>
+  Generated from the session decisions log, execution plan &amp; live fixture runs ·
+  <span class="mono">.adversarial-spec/specs/liveness-gate-test-ladder/</span><br>
+  🥊📜 adversarial-spec — refine specs through multi-model adversarial debate.
+</footer>
+
+</div>
+
+<script>
+/* ---------- concepts ---------- */
+const CONCEPTS=[
+  {tok:"happy-path spine",t:"Happy-Path Spine",d:"The single primary-success test for a user story. It anchors the main journey; branch/failure tests hang off it via spine_of + spine_step_ref. Always qualified in prose to avoid colliding with Phase 7's <i>Architecture Spine</i>. Exactly one per story — no more, no less."},
+  {tok:"TMR",t:"Test Maturity Record",d:"The schema-validated record for one test: identity (tmr_uid), coordinates (test_id, user_story), spine designation, maturity, data/liveness class, binding, run evidence, lineage. tmr-registry.json is the local system of record; tests-pseudo.md is just a prose view."},
+  {tok:"maturity",t:"Maturity Ladder",d:"nl → acceptance → concrete. A test climbs from natural-language intent, to a testable contract with named accessors, to a bound implementation with green run evidence. Measures evidence, not priority."},
+  {tok:"live_or_induced",t:"Liveness",d:"Proof a critical seam ran with real data or a named, constructible live/fault-induced technique. A mock is supplementary — never liveness unless the behaviour is <i>induced</i> and the technique recorded. Unit-green doesn't count."},
+  {tok:"gauntlet-check",t:"F′ checker",d:"A standalone CLI + MCP gate. Blocks the gauntlet transition (exit 2) unless every roadmap user story has exactly one active spine:true record. Bypass only via a logged override + reason. This is what makes liveness non-optional."},
+  {tok:"critical_seam",t:"Criticality",d:"A keystone field set by a single writer (CriticalityClassifier). A critical seam with a non-REAL data strategy and an empty why_impossible_to_reproduce_live is auto-promoted — the gate keys on real-ness, not the label (DR-8)."},
+  {tok:"run_evidence",t:"Typed receipt",d:"A discriminated-union receipt captured by the skill-runner: runner, exit, env, artifact URI/hash, and the live/induced technique where applicable. A null run_evidence on a required REAL-DATA spine row is a negative oracle — it fails the close."},
+  {tok:"user-story morph",t:"Story morph",d:"A revision that moves a story's centre of gravity, orphaning its spine test — a semantic, not lexical, leak that a plain grep misses. US-7 and US-8 both morphed mid-debate and were re-centred (0 orphaned spines) by the reconciliation flow + orphaned_spine oracle."}
+];
+const cg=document.getElementById('conceptGrid');
+CONCEPTS.forEach(c=>{
+  const el=document.createElement('div');el.className='concept';
+  el.innerHTML=`<span class="more">+</span><span class="tok">${c.tok}</span><h3>${c.t}</h3><div class="desc">${c.d}</div>`;
+  el.onclick=()=>el.classList.toggle('open');
+  cg.appendChild(el);
+});
+
+/* ---------- ladder ---------- */
+const LADDER=[
+  {h:"<span class='k'>nl</span> — natural-language intent.",b:"The test exists only as a sentence of intent, authored at roadmap time. No accessors, no binding. It states <i>what</i> success means, not how it's observed. Promotion out of nl requires naming the accessors."},
+  {h:"<span class='k'>acceptance</span> — a testable contract.",b:"Now it names concrete accessors and observations: what's called, what's read, what counts as pass. Still no bound implementation — but it's falsifiable. AuthoringLint enforces that failure tests are anchored to a spine step here."},
+  {h:"<span class='k'>concrete</span> — bound + green where required.",b:"Bound to a real implementation with a green run-evidence receipt. For a critical-seam spine, that receipt must record a live/induced technique — a green mock is not enough. This is the rung the liveness gate guards."}
+];
+const lb=document.getElementById('ladderBody');
+function setLadder(i){
+  document.querySelectorAll('.rung').forEach((r,j)=>r.classList.toggle('active',j===i));
+  lb.innerHTML=`<div style="font-size:15px">${LADDER[i].h}</div><p style="margin:8px 0 0">${LADDER[i].b}</p>`;
+}
+document.querySelectorAll('.rung').forEach(r=>r.onclick=()=>setLadder(+r.dataset.r));
+setLadder(0);
+
+/* ---------- mock decider ---------- */
+const st={q1:null,q2:null,q3:null};
+const vbox=document.getElementById('verdict');
+function resetBelow(level){
+  if(level<2){st.q2=null;document.getElementById('q2box').style.display='none';clearSel('q2');}
+  if(level<3){st.q3=null;document.getElementById('q3box').style.display='none';clearSel('q3');}
+}
+function clearSel(q){document.querySelectorAll(`[data-q="${q}"] .btn`).forEach(b=>b.classList.remove('sel'));}
+function show(cls,title,body){vbox.className='verdict show '+cls;vbox.innerHTML=`<b>${title}</b>${body}`;}
+function evalMock(){
+  vbox.className='verdict';
+  if(st.q1===null)return;
+  if(st.q1==='no'){show('promote','→ REAL-DATA','Real data already exercises the seam. This isn\'t a sole-evidence MOCK at all — classify it as REAL-DATA and capture run_evidence.');return;}
+  document.getElementById('q2box').style.display='block';
+  if(st.q2===null)return;
+  if(st.q2==='yes'){show('promote','→ Promote to REAL-DATA','You named a constructible technique — so the behaviour <i>is</i> inducible. A MOCK can\'t be the sole evidence. The gate promotes it (INV-007).');resetBelow(3);return;}
+  document.getElementById('q3box').style.display='block';
+  if(st.q3===null)return;
+  if(st.q3==='excuse'){show('reject','✗ Rejected — not a valid MOCK','Scale / cost / time are excuses, not constraints. The MOCK is rejected and the row is promoted. "Slow" is not "impossible."');return;}
+  show('mock','✓ Justified MOCK','No technique exists and you cited a concrete technical_constraint (DD-3) <b>plus</b> why_impossible_to_reproduce_live. This is the one valid MOCK — supplementary, honestly labelled.');
+}
+document.querySelectorAll('.btns').forEach(g=>{
+  g.querySelectorAll('.btn').forEach(b=>b.onclick=()=>{
+    const q=g.dataset.q;clearSel(q);b.classList.add('sel');st[q]=b.dataset.v;
+    if(q==='q1')resetBelow(2);if(q==='q2')resetBelow(3);evalMock();
+  });
+});
+
+/* ---------- f-prime sim ---------- */
+const FIX={
+  full:{exit:0,cls:'ok',out:`$ uv run gauntlet-check \\
+    --roadmap-manifest .../roadmap/manifest.json \\
+    --tmr-registry    .../tmr-registry-full.json \\
+    --action gauntlet --output json
+
+{
+  "outcome": "pass",
+  "findings": [],
+  "override_eligible": false
+}
+
+# 15 user stories, 15 active spine:true records.
+# exactly-one-spine satisfied → gauntlet may proceed.`},
+  miss:{exit:2,cls:'bad',out:`$ uv run gauntlet-check \\
+    --roadmap-manifest .../roadmap/manifest.json \\
+    --tmr-registry    .../tmr-registry-missing-spine.json \\
+    --action gauntlet --output json
+
+{
+  "outcome": "block",
+  "findings": [
+    { "code": "uncovered_story",
+      "target": { "user_story": "US-2" } }
+  ],
+  "override_eligible": false
+}
+
+# US-2 has no active spine test → gate BLOCKS.
+# Bypass only via a logged --accept-… override + reason.`}
+};
+const termOut=document.getElementById('termOut'),exitTag=document.getElementById('exitTag');
+function setFix(k){
+  document.querySelectorAll('.fix').forEach(f=>f.classList.toggle('sel',f.dataset.f===k));
+  const f=FIX[k];termOut.textContent=f.out;
+  exitTag.className='exit '+f.cls;exitTag.textContent='exit '+f.exit;
+}
+document.querySelectorAll('.fix').forEach(f=>f.onclick=()=>setFix(f.dataset.f));
+setFix('full');
+
+/* ---------- journey ---------- */
+const PHZ=[
+  {h:"Phase 3 — Debate (12 rounds)",b:"Multi-model critique (codex/gpt-5.5 + gemini-3.1-pro / 3-flash, with claude participating). Converged at R3, then the gauntlet reopened the design. A second arc ran R4→R12. R7 declared a <b>false</b> convergence on v8; the v8 gauntlet broke it. The anti-laziness 'press' discipline at R11 caught a real CANON drift a bare [AGREE] had hidden. R12 cleanly re-converged on spec-draft-v12."},
+  {h:"Phase 4 — Target architecture",b:"Lightweight target-architecture.md + a machine-readable invariant set, grown from 18 → 35 invariants as the trust model was reframed. Gives the gauntlet a concrete surface to attack and Phase 8 a contract to verify. Fingerprinted (sha256) and re-mirrored to v12."},
+  {h:"Phase 5 — Gauntlet (507 → 32)",b:"7 static adversary personas × two attack families produced 507 raw concerns → 32 unique (27 accept / 4 ack / 5 dismiss). A parse-failure recovered 7 sharp ASSH concerns rather than discarding them. The load-bearing outcome: the trust model moved skill-side-PRIMARY → Fizzy-side mechanical gate (SEC-1)."},
+  {h:"Phase 6 — Finalize",b:"spec.md cut from v12 (the v1–v12 changelog header stripped, the §0–13 body preserved). tests-spec.md promoted with a coverage matrix: 0 orphans, 0 uncovered. All finalize guardrails (CONS / SCOPE / TRACE / CANON / TCOV) pass."},
+  {h:"Phase 7 — Execution planning",b:"Target arch reconciled v6→v12, fingerprints recomputed, decomposed into a 22-task execution plan: W0 foundation + 5 feature waves. 32/32 active invariants covered, 0 exempt verification modes. Emitted as fizzy-plan.json, validated clean, loaded as cards 5736–5757 (each task needed tested_by:llm — a dogfood seam fixed on both sides)."},
+  {h:"Phase 8 — Implementation",b:"Three agents (claude, codex, gemini) working the same board via the self-pickup loop. Cross-agent review is enforced — no agent reviews its own work. All 22 cards driven through Review → Untested → Passed Test. Full suite 891 green. (This explainer was written from inside this phase.)"}
+];
+const pb=document.getElementById('phzBody');
+function setPhz(i){
+  document.querySelectorAll('.phz').forEach((p,j)=>p.classList.toggle('active',j===i));
+  pb.innerHTML=`<h4>${PHZ[i].h}</h4><p style="margin:0">${PHZ[i].b}</p>`;
+}
+document.querySelectorAll('.phz').forEach(p=>p.onclick=()=>setPhz(+p.dataset.p));
+setPhz(0);
+
+/* ---------- convergence chart ---------- */
+const TREND=[
+  {r:"R5",v:9},{r:"R6",v:1},{r:"R7",v:0,note:"false conv. (v8)"},
+  {r:"R8",v:14,note:"gauntlet reopened"},{r:"R9",v:6},{r:"R10",v:0,note:"bare [AGREE]"},
+  {r:"R11",v:1,note:"press caught CANON drift"},{r:"R12",v:0,note:"true convergence"}
+];
+const maxV=14,chart=document.getElementById('chart'),cnote=document.getElementById('chartNote');
+const baseNote=cnote.innerHTML;
+TREND.forEach(t=>{
+  const b=document.createElement('div');b.className='bar';
+  const h=t.v===0?6:Math.round(t.v/maxV*140);
+  b.innerHTML=`<div class="col${t.v===0?' zero':''}" style="height:${h}px"><span class="v">${t.v}</span></div><div class="lab">${t.r}</div>`;
+  b.onmouseenter=()=>{if(t.note)cnote.innerHTML=`<b>${t.r}:</b> ${t.v} findings — ${t.note}.`;};
+  b.onmouseleave=()=>cnote.innerHTML=baseNote;
+  chart.appendChild(b);
+});
+
+/* ---------- waves ---------- */
+const WC=['#46d29b','#6ea8fe','#9d7bff','#ffcf5c','#ff9d5c','#ff6b81'];
+const TASKS=[
+{id:"W0-1",w:0,e:"M",s:"test-first",dep:[],t:"Keystone TMR JSON Schema (extra:forbid) + run_evidence union + schema_sha256"},
+{id:"W0-2",w:0,e:"M",s:"test-first",dep:["W0-1"],t:"TmrParser — shared registry reader/validator, strict typed coercion"},
+{id:"W0-3",w:0,e:"S",s:"test-first",dep:[],t:"GateResult model + canonical outcome→exit map"},
+{id:"W0-4",w:0,e:"M",s:"test-first",dep:["W0-2"],t:"SpineCoverageChecker — ≥1 AND ≤1 designation rule"},
+{id:"W0-5",w:0,e:"L",s:"test-first",dep:[],t:"ProvenanceJournalWriter — locked append + idempotency + tombstone/rename"},
+{id:"W0-6",w:0,e:"M",s:"test-first",dep:["W0-2"],t:"CriticalityClassifier — sole writer of critical_seam"},
+{id:"W1-1",w:1,e:"L",s:"test-first",dep:["W0-2","W0-3","W0-4"],t:"F-prime gauntlet-check CLI + MCP contract + console script"},
+{id:"W1-2",w:1,e:"M",s:"test-first",dep:["W1-1"],t:"F-prime integration into debate.py gate (branch on action)"},
+{id:"W1-3",w:1,e:"M",s:"test-first",dep:["W0-3"],t:"ContractVersionResolver + version fence"},
+{id:"W1-4",w:1,e:"M",s:"test-first",dep:["W0-5"],t:"ConflictDispositionStore — persisted pending dispositions"},
+{id:"W1-5",w:1,e:"M",s:"test-first",dep:["W0-3"],t:"Verification-tier lint + golden_cases corpus & schema"},
+{id:"W2-1",w:2,e:"L",s:"test-first",dep:["W0-5","W1-4","W0-3"],t:"Parallel-subagent guardrail dispatch + ORCH fail-closed + retry"},
+{id:"W2-2",w:2,e:"M",s:"test-first",dep:["W0-4","W1-5","W2-1"],t:"TRACE spine-inversion (ORPHANED-SPINE)"},
+{id:"W2-3",w:2,e:"L",s:"test-first",dep:["W0-2","W0-4","W0-6","W1-5"],t:"TCOV liveness guardrail + promoter + data_strategy_mismatch"},
+{id:"W2-4",w:2,e:"M",s:"test-first",dep:["W0-2","W1-5"],t:"Strict MOCK falsification (PEDA/BURN/AUDT + 03-debate)",mine:1},
+{id:"W3-1",w:3,e:"M",s:"test-first",dep:["W0-4"],t:"Happy-path spine + maturity ladder authoring (phases 01/02)"},
+{id:"W3-2",w:3,e:"L",s:"test-first",dep:["W0-1","W0-2","W0-5"],t:"LLM compile step (prose→registry) + echo-diff + tmr_uid ULID"},
+{id:"W4-1",w:4,e:"L",s:"test-first",dep:["W0-1","W0-2","W0-6"],t:"Phase-8 pseudo→real promotion (run_evidence, negative oracle, mock-lint)"},
+{id:"W4-3",w:4,e:"M",s:"test-after",dep:["W0-5"],t:"Altitude-triage provenance + altitude_fit (skill side)"},
+{id:"W5-1",w:5,e:"S",s:"test-after",dep:[],t:"Glossary / ADR / document-types (spine collision)"},
+{id:"W5-2",w:5,e:"M",s:"test-first",dep:["W1-1","W3-1"],t:"Getting Started bootstrap (no copy-deploy; symlink note)"},
+{id:"W5-3",w:5,e:"M",s:"test-after",dep:["W1-1","W3-2"],t:"Dogfood fixture — tmr-registry.json, 15 spine records via compile"}
+];
+const WAVE_NAMES=["W0 · Foundation","W1 · F′ gate & contracts","W2 · Guardrails","W3 · Authoring & compile","W4 · Promotion & altitude","W5 · Docs & dogfood"];
+const filters=document.getElementById('filters'),board=document.getElementById('board');
+let activeW=-1;
+function renderFilters(){
+  filters.innerHTML='';
+  const all=document.createElement('button');all.className='fbtn'+(activeW===-1?' on':'');all.textContent='All 22';
+  all.onclick=()=>{activeW=-1;renderFilters();renderBoard();};filters.appendChild(all);
+  WAVE_NAMES.forEach((n,i)=>{
+    const b=document.createElement('button');b.className='fbtn'+(activeW===i?' on':'');b.textContent=n;
+    b.style.borderColor=activeW===i?WC[i]:'';if(activeW===i){b.style.background=WC[i];b.style.color='#0a0c12';}
+    b.onclick=()=>{activeW=i;renderFilters();renderBoard();};filters.appendChild(b);
+  });
+}
+function renderBoard(){
+  board.innerHTML='';
+  TASKS.filter(t=>activeW===-1||t.w===activeW).forEach(t=>{
+    const el=document.createElement('div');el.className='task';el.style.setProperty('--w',WC[t.w]);
+    const deps=t.dep.length?t.dep.map(d=>`<span class="chip dep">${d}</span>`).join(''):'<span class="chip">no deps</span>';
+    el.innerHTML=`<div class="tid">${t.id}${t.mine?' <span class="chip mine">claude impl</span>':''}</div>
+      <div class="ttl">${t.t}</div>
+      <div class="tmeta"><span class="chip">${t.e}</span><span class="chip">${t.s}</span>${deps}</div>`;
+    board.appendChild(el);
+  });
+}
+renderFilters();renderBoard();
+</script>
+</body>
+</html>

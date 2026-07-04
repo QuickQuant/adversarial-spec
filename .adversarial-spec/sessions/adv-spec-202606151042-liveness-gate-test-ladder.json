@@ -1,13 +1,63 @@
 {
-  "schema_version": "1.3",
+  "schema_version": "1.4",
   "session_id": "adv-spec-202606151042-liveness-gate-test-ladder",
   "card_id": "5715",
   "title": "Liveness Gate + Architecture-Linked Test Ladder (adversarial-spec slice)",
   "plan_path": "docs/plans/liveness-gate-and-test-ladder.md",
-  "spec_path": null,
-  "current_phase": "finalize",
-  "current_step": "Pipeline synced Finalization",
+  "spec_path": "specs/liveness-gate-test-ladder/spec.md",
+  "current_phase": "complete",
+  "current_step": "Pipeline advanced Finalization -> Completed-Unmapped",
   "created_at": "2026-06-18T19:34:35Z",
-  "updated_at": "2026-06-18T19:34:35Z",
-  "written_by": "pipeline_sync_local_session"
+  "updated_at": "2026-07-03T19:29:04Z",
+  "written_by": "pipeline_sync_local_session",
+  "checkpointed_cleanly": true,
+  "completed_work": "Resumed Phase 8 self-pickup loop as claude on shared board (codex+gemini live). Cleared remaining Review/Untested debt: approved W5-1 glossary/ADR/document-types (codex 9eca94a, 4/4 doclint), W5-2 Getting Started bootstrap (codex 0440c92; AC-1 LIVE full->exit0/pass, missing-spine->exit2/block US-2), W5-3 dogfood F-prime registry (codex 13da866; AC-2 LIVE F'->exit0/pass/0-findings, 15 spine records, CLI _normalize_user_story_ids no W5-2 regression). Tested W5-2 + W2-4 (attested TCs; both benign WRONG_LANE concurrent races, attestation recorded). pipeline_do_next_task=idle; full suite 891 passed; ruff clean. Built interactive session-explainer.html. Wake-listener exited 144 once (dual-session thrash), relaunched + holding.",
+  "next_action": "Run finalize/verification advance for session card #5715: session FSM pipeline_do_next_task returns action=finalize -> pipeline_finalize (Finalization lane). Board 22/22 terminal, suite 891 green. Paused for the explainer request.",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606201549-phase8-sweep-complete-finalization-pending.md",
+  "do_not_ask": [],
+  "status": "active",
+  "todowrite_snapshot": [
+    {
+      "content": "Run finalize/verification advance for the session card (pipeline_finalize)",
+      "status": "pending",
+      "activeForm": "Running the finalization advance"
+    },
+    {
+      "content": "Process any new Review/Failed/Untested cards if the board reopens",
+      "status": "pending",
+      "activeForm": "Processing next pipeline card"
+    }
+  ],
+  "journey": [
+    {
+      "time": "2026-06-18T21:18:55Z",
+      "event": "Phase 8 self-pickup loop (claude): reviewed/tested/implemented Wave 0-2 cards; W2-4 code committed, prompt-mirror pending",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-18T21:18:55Z",
+      "event": "Checkpoint saved: phase8-wave0-1-impl-claude-batch.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-18T21:56:25Z",
+      "event": "Cleared all Review/Untested debt this session; 18/22 Passed Test",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-18T21:56:25Z",
+      "event": "Checkpoint saved: phase8-claude-review-test-sweep.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-06-20T15:49:49Z",
+      "event": "Phase 8 review/test sweep complete; board 22/22 terminal (Completed-Unmapped); session card #5715 in Finalization lane (finalize advance paused); session-explainer.html delivered",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-06-20T15:49:49Z",
+      "event": "Checkpoint saved: phase8-sweep-complete-finalization-pending.",
+      "type": "checkpoint"
+    }
+  ]
 }
