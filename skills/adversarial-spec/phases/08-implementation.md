@@ -159,7 +159,16 @@ Returns: `{card_id, task_id, action_string, lane, effort, strategy}` or idle.
    - Follow validation strategy from `strategy` field (test-first or test-after)
    - Address all acceptance criteria
 5. Run project tests and lint (commands from CLAUDE.md / AGENTS.md)
-6. Commit with card reference: `[TASK_ID] Short description`
+6. Commit with card reference: `[TASK_ID] Short description`.
+   **Commit hygiene (P8-2 — scope to the card; never `git add -A` / `git commit -a`).** Stage ONLY the
+   files in this card's declared scope (`git add <explicit paths>`). Before committing run
+   `git status --porcelain`; if the worktree carries modified files OUTSIDE this card's scope (another
+   card's WIP, an unrelated re-scan, probe/scratch files), do NOT sweep them in — STOP and surface it
+   (they belong to their own card or a separate housekeeping commit). One card = one scoped commit. A
+   flush of the whole worktree under one card breaks the cross-agent review model (the reviewer can no
+   longer see a per-card diff) and mis-attributes other cards' work. (Origin: 2026-06-20 — a
+   `behavior_change:false` bootstrap card's commit was 6340 lines / 61 files because it staged the entire
+   dirty tree, including another card's test and ~600 lines of live runtime logic.)
 7. Complete: `pipeline_complete_task(session_id, card_id, agent, commit_hash, board_id)`
 8. **Append to decisions log** (see SKILL.md "Decisions Log"):
    ```bash
@@ -496,6 +505,16 @@ For single-card operations (get_card_description, pipeline_do_next_task, pipelin
 - Write tests based on acceptance criteria before implementation
 - Ensure tests cover failure modes from concerns
 - Implementation must pass all tests
+
+**Test-ahead-of-impl quarantine (P8-1 — keep the suite-wide baseline meaningful).** A test-first card's
+not-yet-passing tests must NOT land in the suite-wide default test glob, or every later card sees a red
+suite and a genuine regression hides among the expected reds. Put them where a whole-suite run does NOT
+auto-collect them — a quarantined directory (e.g. `tests/plan/`, `tests/pending/`) run only by the card's
+own `verify_commands` — OR mark them `test.todo` / `skip` / `it.skip` with an `// unblocks: <CARD_ID>`
+reference, until the implementing card turns them green (then they move into the gated suite). The
+suite-wide baseline must stay usable as a "did I regress anything?" gate throughout the build-out.
+(Origin: 2026-06-20 — test-ahead files were committed into `node --test tests/*.test.mjs`, so the gateway
+suite went 51/524-red and a possibly-real regression couldn't be told apart from the expected reds.)
 
 **Lower-risk tasks** (`strategy: "test-after"`) use test-after validation:
 - Implement the feature

@@ -313,6 +313,7 @@ Invalid combinations (e.g., `automated-unit` + `manual`, or `static-check` + `ta
 
 - `test_files` must be repo-relative paths rooted at the git repository root. No absolute paths, no `..` traversal. Example: `tests/test_api.py`, not `/home/user/project/tests/test_api.py`.
 - `verify_commands` are shell command strings (`string[]`). Each entry is a single command to be executed in a shell. They must be literal — no template interpolation (`${VAR}`), no environment variable expansion. Phase 07 stores commands; Phase 08-09 execute them.
+- **Exact-command rule (P7-3 — no vague baselines).** A `verify_command` must name the exact runner, path, and working directory needed to actually collect+run the test from a clean checkout — e.g. `cd gateway && npx vitest run tests/plan/c-apr-mapper.test.mjs`, never a bare `npx vitest run`, and never an acceptance criterion like "confirm a green tsc and vitest baseline." A repo can have MORE THAN ONE runner (e.g. repo-root `vitest` + a package's `node --test`); emit the command for the runner that actually owns that test's directory, and for a baseline-confirmation task enumerate one exact command per suite that gates (each with its own `cd <pkg>`). Vague "green baseline" wording is the defect that lets one card read green under one runner and red under another. Every `verify_command` emitted here is smoke-tested before load (Step 9, "Smoke the verify-command harness").
 - Empty strings and whitespace-only strings are invalid for all required fields. `test_refs: [""]` or `exemption_reason: "  "` fail validation.
 
 **Typed validation error codes** (used in Gate V2 and coverage report):
@@ -1097,6 +1098,19 @@ loop:
 next (#11 masked #12 this way). Loop until `valid:true` — a single clean pass, not
 a single fix.
 
+**Smoke the verify-command harness (P7-2 — REQUIRED before `pipeline_load`).** `pipeline_validate_plan`
+checks the plan's *shape*; it does NOT prove the `verify_commands` actually run. Before loading, execute
+each **distinct** `verify_command` shape once against a trivial throwaway fixture placed in the target
+test directory, and confirm the runner actually **collected and ran** it (output shows test count > 0 and
+the named file appears) — not merely that the process exited 0. This catches a wrong runner, a wrong
+`cwd`, and a config `include`/glob that doesn't cover the test path — e.g. a repo-root `vitest.config`
+whose `include: ["tests/plan/**"]` silently matches *zero* files when the tests live at
+`gateway/tests/plan/**`, so a suite-wide `vitest run` gates nothing. If any shape fails to collect its
+fixture, fix the command (or the runner config) and re-emit before loading. Record the smoke result
+(commands tried + collected counts) in the session decisions log, and delete the throwaway fixtures.
+(Origin: 2026-06-20 — verify commands and a "green baseline" AC were both accepted without ever being
+run, so a broken vitest `include` and a node:test/vitest API mismatch reached Phase 8 undetected.)
+
 **Load into pipeline:**
 ```
 pipeline_load(
@@ -1219,6 +1233,31 @@ Optionally emit `conops-outline.md` shaped to the NASA Appx S annotated outline
 as a clean source of truth for a future validation migration. v4 does NOT
 require it, does NOT bind a `conops_hash`, and does NOT emit
 `validation-ledger.json`.
+
+#### Execution-order dependencies (wave spine → `depends_on`) — P7-4
+
+The tree fields (`parent` / `decomposes_into` / `realizes_refs`) encode **structural** decomposition,
+NOT **execution order**. A schema-3 plan with a wave/dependency spine (e.g. "M1+M2 block M5/M6/M7; no
+live-execution change until the pure middleware + lease hardening close") MUST also carry explicit
+`depends_on` edges on the affected nodes — the same `depends_on` the v2 flat schema uses — so the
+pipeline actually blocks premature pickup. Without them every node loads `ready_now` and
+`pipeline_do_next_task` will hand out a late-wave node (e.g. a live-execution routing/cancel component)
+before its foundations exist, silently bypassing the spec's own ordering gate.
+
+Rules:
+- Translate every edge from the execution plan's dependency graph into node `depends_on` (a node depends
+  on the foundational nodes whose output it consumes — typically the prior wave's subsystem/component
+  nodes, not merely its tree parent).
+- After emission, before `pipeline_load`, assert the readiness profile MATCHES the wave structure: a
+  multi-wave plan whose `pipeline_validate_plan`/`pipeline_lane_state` shows **every** node `ready_now`
+  with `blocked: 0` is a red flag that the spine wasn't encoded — fix `depends_on` and re-emit. Do not
+  load a multi-wave plan that reports zero blocked nodes.
+- If the served pipeline genuinely cannot express cross-subtree `depends_on` for a schema-3 node, record
+  it as a blocker and have Phase 8 enforce wave order by judgment (block premature live-path cards) — but
+  encode it first; the default failure mode is silently shipping the plan un-ordered.
+
+(Origin: 2026-06-20 — a 31-node schema-3 plan loaded with all nodes `wave:0`/`ready_now`; the M0→M7 spine
+lived only in plan prose, so the pipeline offered a live-execution M6 card before M1/M2 existed.)
 
 #### Producer self-check loop (the dry-run/load symmetry)
 
