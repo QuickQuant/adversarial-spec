@@ -249,6 +249,32 @@ Same as "implement" but:
 After each completed action, immediately return to Step 1. The loop continues
 until the pipeline returns "idle."
 
+#### Human-Gated Cards (blocker_type=human_decision) — HUMAN BRIEF required
+
+When you call `pipeline_block_task` with `blocker_type: "human_decision"`, the card
+is now a question **for the operator**, not for agents. Two obligations, both
+mandatory (origin: card 5966, 2026-07-08 — operator could not act on a block whose
+reason was written entirely in spec/agent jargon):
+
+1. **HUMAN BRIEF on the card.** Update the card description (`update_card`) to
+   include a section starting with the literal marker `HUMAN BRIEF:` — 2-5 plain
+   sentences a non-participant can act on: what is being asked, why the agents
+   can't decide it, and what the answer choices actually mean in product terms.
+   No internal IDs, no AC/TC references, no diagnosis-file paths inside the brief
+   (they belong in the machine `reason`/`evidence` fields, which you still fill
+   with full rigor).
+2. **Auto-surface, don't wait to be asked.** A human-gated card must reach the
+   operator's attention the same session it is blocked: regenerate `recent.html`
+   (html-recent-activity renders `human_decision` blocks as decision widgets from
+   the HUMAN BRIEF) or, if no report rebuild is happening, `telegram-send` the
+   brief directly. A human_decision block that only lives in board state is a
+   silent stall.
+
+When the operator resolves or defers the question, **re-block with the new
+truth**: a deferral is `blocker_type: "external_dependency"` with the deferral
+reason and the unblocking artifact named — never leave the machine state reading
+`human_decision`/awaiting-operator after the operator has already answered.
+
 ---
 
 ### Validation leg (system altitude)
