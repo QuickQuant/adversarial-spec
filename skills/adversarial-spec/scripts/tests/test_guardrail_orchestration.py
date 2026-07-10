@@ -121,6 +121,65 @@ def test_tc_5_3_transient_error_retries_before_orch():
     assert sleeps == [0.01]
 
 
+def test_finalize_gate_blocks_on_warning_severity_cons_finding():
+    """Option a (q-20260709-two-matrix-ownership): finalize has no next round —
+    an unresolved CONS finding blocks even at warning severity."""
+
+    def dispatch(payload: GuardrailPayload) -> GuardrailResult:
+        if payload.guardrail != "CONS":
+            return GuardrailResult(guardrail=payload.guardrail)
+        return GuardrailResult(
+            guardrail="CONS",
+            findings=[
+                StructuredFinding(
+                    guardrail="CONS",
+                    code="OWNERSHIP_CONTRADICTION",
+                    message="table homed in two components",
+                    target_type="section",
+                    target_id="sec-10.5",
+                    severity="warning",
+                )
+            ],
+        )
+
+    assert run_orchestrator(dispatch, action="finalize").outcome == "block"
+    # Same finding mid-debate stays a warning (fix-next-round preserved).
+    assert run_orchestrator(dispatch, action="critique").outcome == "warn"
+
+
+def test_finalize_gate_non_cons_warning_does_not_block():
+    def dispatch(payload: GuardrailPayload) -> GuardrailResult:
+        if payload.guardrail != "TCOV":
+            return GuardrailResult(guardrail=payload.guardrail)
+        return GuardrailResult(
+            guardrail="TCOV",
+            findings=[
+                StructuredFinding(
+                    guardrail="TCOV",
+                    code="TCOV_GAP",
+                    message="coverage gap",
+                    target_type="test",
+                    target_id="TC-1.0",
+                    severity="warning",
+                )
+            ],
+        )
+
+    assert run_orchestrator(dispatch, action="finalize").outcome == "warn"
+
+
+def test_finalize_subagent_failure_is_fail_closed():
+    def dispatch(payload: GuardrailPayload) -> GuardrailResult:
+        if payload.guardrail == "CONS":
+            raise RuntimeError("subagent died")
+        return GuardrailResult(guardrail=payload.guardrail)
+
+    aggregate = run_orchestrator(dispatch, action="finalize")
+
+    assert aggregate.outcome == "block"
+    assert aggregate.results["CONS"].findings[0].severity == "blocking"
+
+
 def test_tc_inv_010_journal_only_tmr_changing_findings():
     def dispatch(payload: GuardrailPayload) -> GuardrailResult:
         if payload.guardrail != "CANON":

@@ -17,8 +17,15 @@ GUARDRAIL_ORDER = (
     "TCOV",
 )
 
-Action = Literal["critique", "gauntlet"]
+Action = Literal["critique", "gauntlet", "finalize"]
 Severity = Literal["blocking", "warning"]
+
+# Actions where guardrail failures must not be waved through to the next step.
+# "finalize" was added 2026-07-10 (operator decision q-20260709-two-matrix-ownership,
+# option a): mid-debate CONS findings stay warnings (fix-next-round preserved), but
+# the finalize checkpoint has no next round — an unresolved ownership/consistency
+# finding there escapes into the final spec (the exit_preview_records incident).
+GATED_ACTIONS: frozenset[str] = frozenset({"gauntlet", "finalize"})
 
 
 class GuardrailTransientError(RuntimeError):
@@ -97,9 +104,16 @@ class GuardrailAggregate:
     def outcome(self) -> Literal["pass", "warn", "block"]:
         if not self.findings:
             return "pass"
-        if self.action == "gauntlet" and any(
+        if self.action in GATED_ACTIONS and any(
             finding.severity == "blocking" for finding in self.findings
         ):
+            return "block"
+        if self.action == "finalize" and any(
+            finding.guardrail == "CONS" for finding in self.findings
+        ):
+            # Finalize-gate amendment: ANY unresolved CONS (ownership/consistency)
+            # finding blocks finalize, even at warning severity — there is no
+            # later round left to fix it in.
             return "block"
         return "warn"
 
@@ -206,7 +220,7 @@ class GuardrailOrchestrator:
         attempts: int,
         error: str,
     ) -> GuardrailResult:
-        severity: Severity = "blocking" if action == "gauntlet" else "warning"
+        severity: Severity = "blocking" if action in GATED_ACTIONS else "warning"
         finding = StructuredFinding(
             guardrail=guardrail,
             code="ORCH",

@@ -895,6 +895,7 @@ After incorporating critiques into a new spec version (Step 5 item 8), run check
    - identical orchestrator-passed content bundle (current spec, roadmap/user stories, tests-pseudo/tests-spec when present, canonical contract index, relevant architecture/code excerpts)
    - this round's text diff
    - TMR semantic-delta with stable join keys (`tmr_uid`, `test_id`, `user_story`) even when the key text is outside the changed hunk
+   - **ownership matrices, when present** (`specs/<slug>/ownership-baseline.md` written by mapcodebase, ≤40 rows; `specs/<slug>/ownership-live.md` amended each round): before dispatch, amend ownership-live.md with a provenance note for every entity (table, endpoint, store, config key) whose home this round's spec version introduces or moves, then compute the deterministic baseline↔live A/B diff and include it in the CONS payload. Two homes for one entity, or a home contradicting the baseline without a provenance note, is a CONS finding. See `docs/proposals/ownership-matrices-cons.md`. Mid-debate these stay warning severity (fix next round); the finalize pass runs `action="finalize"` where any unresolved CONS finding blocks (06-finalize.md).
 3. Each subagent returns a structured result set: `{guardrail, findings[]}`. Every finding MUST carry a key to a `test_id`, `user_story`, `tmr_uid`, section id, or `ORCH` target. Persist the per-guardrail result sets and the aggregate for the round.
 4. Transient transport failures (`429`, timeout, retryable CLI/API failure) are retried with bounded backoff before any orchestration error is synthesized. A dead or exhausted subagent yields a synthetic `ORCH` finding: `blocking` on gauntlet, `warning` on critique. Four passing guardrails plus one ORCH is not green for gauntlet.
 5. Join keys are journaled only for findings that mutate a TMR/node field. Spec/contract-only findings are recorded in the round aggregate, but they do not create conflict-disposition entries unless they identify a concrete TMR/node field transition.
@@ -950,7 +951,7 @@ TCOV (test_coverage_auditor): 1 finding
 **If `fizzy_card_id` exists:**
 1. Use a **haiku subagent** (to keep MCP payload out of main context) to:
    - `pipeline_patch_state(card_id, session_id, {"debate_round": N, "last_agent": "claude-opus-4-7"})` where N is the round just completed
-   - `add_comment(card_id, "Round N complete: <1-2 sentence synthesis summary>. Spec version: vN.")`
+   - `add_comment(card_id, "## Debate round N complete\n\n**Why it matters:** <plain-language synthesis decision>.\n**Evidence:** Spec vN at <path>; <count> concerns accepted.\n**Next:** <guardrail or next-round action>.")`
 2. Board is pinned at Fizzy server startup. The `board_id` parameter is optional and validated.
 
 **If `fizzy_card_id` is missing:** Log a warning but do not block. The card may not have been created (legacy session) or the session predates this sync requirement.

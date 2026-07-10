@@ -35,6 +35,8 @@ When ALL opponent models AND you have said `[AGREE]` (and gauntlet is complete o
 
 Fix any CONS findings. Present SCOPE additions for user approval. Restore TRACE-flagged coverage or explicitly descope with user approval. Apply CANON contract fixes or explicitly document a migration from the old contract. Apply TCOV fixes by strengthening tests or explicitly deferring uncovered semantic claims with user approval. Only proceed after guardrails pass or user overrides.
 
+**Finalize is a hard gate for CONS (2026-07-10 amendment, decision q-20260709-two-matrix-ownership option a):** run this pass with `action="finalize"` (`guardrail_orchestration.py`). ANY unresolved CONS finding — including warning severity — BLOCKS finalize; there is no next round left to fix it in, so "warn and continue" here is how the exit_preview_records ownership contradiction escaped into a finalized spec (v4, 2026-07). Mid-debate rounds keep warn-and-fix-next-round; only this last checkpoint refuses. A user override requires a written process-failure note, same standard as a pipeline-fence override. When ownership matrices exist for the session (`ownership-baseline.md` / `ownership-live.md` — see `docs/proposals/ownership-matrices-cons.md`), include their A/B diff in the CONS content bundle; an unresolved ownership-diff row counts as a CONS finding.
+
 **TEST guardrails (when `tests_pseudo_path` or `tests_spec_path` exists):** Verify test cases don't exceed requirement boundaries. Tests for behaviors not in any user story or requirement are scope drift — flag via SCOPE. Then run TCOV against the tests: every user-facing parameter, emitted metric, UI label/tooltip, state transition, and formula needs at least one falsifying oracle or an explicit deferral. Field existence, HTTP 200, non-null, and range checks are smoke tests only.
 
 **[GATE] TodoWrite: Mark all final guardrail items (CONS, SCOPE, TRACE, CANON, TCOV) completed before proceeding to quality verification.**
@@ -122,7 +124,7 @@ Before writing the final spec, promote the test pseudocode to formalized accepta
    - Update both files with `current_phase: "finalize"`, `current_step: "Document finalized, awaiting user review"`
    - Use atomic writes for both files
 6. **Fizzy sync** (if `fizzy_card_id` exists in session detail file):
-   - Use a **haiku subagent** to add a comment: `"Spec finalized: <spec_path>. <total rounds> debate rounds, consensus reached."`
+   - Use a **haiku subagent** to add a comment: `"## Spec finalized\n\n**Evidence:** <spec_path>; <total rounds> debate rounds reached consensus.\n**Next:** <execution-plan or user-review action>."`
    - If the card should advance in the pipeline (e.g., out of Evaluated Plans), call `pipeline_advance(card_id, session_id, agent)` via the subagent
 
 ### Step 7: User Review Period
