@@ -12,6 +12,7 @@ from typing import Optional
 
 import token_tracking
 from models import (
+    call_antigravity_model,
     call_claude_cli_model,
     call_codex_model,
     call_gemini_cli_model,
@@ -20,6 +21,7 @@ from providers import (
     CODEX_AVAILABLE,
     DEFAULT_CODEX_REASONING,
     GEMINI_CLI_AVAILABLE,
+    GPT_56_SOL,
 )
 
 try:
@@ -71,8 +73,8 @@ def call_model(
 
     Args:
         json_mode: Request JSON output via response_format (litellm path only).
-            CLI models (codex/, gemini-cli/, claude-cli/) ignore this flag —
-            use prompt-driven JSON requests for those.
+            CLI models (codex/, gemini-cli/, claude-cli/, antigravity/) ignore
+            this flag — use prompt-driven JSON requests for those.
 
     Returns:
         (response_text, input_tokens, output_tokens)
@@ -110,6 +112,16 @@ def call_model(
         token_tracking.tracker.record_call(model, input_tokens, output_tokens)
         return content, input_tokens, output_tokens
 
+    if model.startswith("antigravity/"):
+        content, input_tokens, output_tokens = call_antigravity_model(
+            system_prompt=system_prompt,
+            user_message=user_message,
+            model=model,
+            timeout=timeout,
+        )
+        token_tracking.tracker.record_call(model, input_tokens, output_tokens)
+        return content, input_tokens, output_tokens
+
     # Standard litellm path
     kwargs: dict = {
         "model": model,
@@ -136,7 +148,7 @@ def call_model(
 # MODEL SELECTION (FREE-FIRST)
 # =============================================================================
 
-_PREFERRED_CODEX_EVAL_MODEL = "codex/gpt-5.5"
+_PREFERRED_CODEX_EVAL_MODEL = GPT_56_SOL
 _FALLBACK_CODEX_EVAL_MODEL = "codex/gpt-5.3-codex"
 
 

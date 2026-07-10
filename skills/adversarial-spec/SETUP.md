@@ -13,16 +13,16 @@ This document covers provider configuration. For usage, see [SKILL.md](SKILL.md)
 
 | Provider   | API Key Env Var        | Example Models                              |
 |------------|------------------------|---------------------------------------------|
-| OpenAI     | `OPENAI_API_KEY`       | `gpt-5.5`                                   |
+| OpenAI     | `OPENAI_API_KEY`       | `gpt-5.6-sol`                               |
 | Anthropic  | `ANTHROPIC_API_KEY`    | `claude-opus-4-7`, `claude-sonnet-4-6`  |
 | Google     | `GEMINI_API_KEY`       | `gemini/gemini-3-pro`, `gemini/gemini-3-flash` |
 | xAI        | `XAI_API_KEY`          | `xai/grok-3`, `xai/grok-beta`               |
 | Mistral    | `MISTRAL_API_KEY`      | `mistral/mistral-large`, `mistral/codestral`|
 | Groq       | `GROQ_API_KEY`         | `groq/llama-3.3-70b-versatile`              |
-| OpenRouter | `OPENROUTER_API_KEY`   | `openrouter/openai/gpt-5.5`, `openrouter/anthropic/claude-sonnet-4-6` |
+| OpenRouter | `OPENROUTER_API_KEY`   | `openrouter/openai/gpt-5.6-sol`, `openrouter/anthropic/claude-sonnet-4-6` |
 | Deepseek   | `DEEPSEEK_API_KEY`     | `deepseek/deepseek-chat`                    |
 | Zhipu      | `ZHIPUAI_API_KEY`      | `zhipu/glm-4`, `zhipu/glm-4-plus`           |
-| Codex CLI  | (ChatGPT subscription) | `codex/gpt-5.5` |
+| Codex CLI  | (ChatGPT subscription) | `codex/gpt-5.6-luna`, `codex/gpt-5.6-terra`, `codex/gpt-5.6-sol` |
 | Gemini CLI | (Google account)       | `gemini-cli/gemini-3.1-pro-preview`, `gemini-cli/gemini-3-flash-preview` |
 
 Run `python3 ~/.claude/skills/adversarial-spec/scripts/debate.py providers` to see which keys are set.

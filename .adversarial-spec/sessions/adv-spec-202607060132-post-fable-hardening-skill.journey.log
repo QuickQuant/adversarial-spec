@@ -1,0 +1,9 @@
+{"time": "2026-07-06T01:32:38Z", "event": "Session created via triage (GO, altitude=system, tier=complex) \u2014 Jason approval 'yes create it' via Telegram", "type": "create"}
+{"time": "2026-07-06T01:37:32Z", "event": "RequirementsSummary built (11 features, 8 unknowns) from improvement-goals + 2 process studies", "type": "artifact"}
+{"time":"2026-07-08T04:55:23Z","event":"Requirements confirmed by Jason with G1-F2 amendment (no size caps; discrete-task decomposition) + Fable window extended to ~2026-07-12","type":"decision"}
+{"time":"2026-07-08T04:55:39Z","event":"Phase transition: requirements → roadmap","type":"transition"}
+{"time": "2026-07-08T04:56:04Z", "event": "Phase transition: roadmap -> pre-roadmap", "type": "transition", "source": "pipeline_advance"}
+{"time":"2026-07-08T05:30:26Z","event":"Goal alignment confirmed (G4 excluded); roadmap draft v1 on disk","type":"decision"}
+{"time":"2026-07-08T05:51:46Z","event":"Roadmap artifacts persisted (manifest 9M/17US, roadmap.md, tests-pseudo v1.1, trello-plan placeholder)","type":"artifact"}
+{"time":"2026-07-08T05:51:46Z","event":"Phase transition: roadmap → debate","type":"transition"}
+{"time": "2026-07-08T05:52:16Z", "event": "Phase transition: debate -> debate", "type": "transition", "source": "pipeline_advance"}

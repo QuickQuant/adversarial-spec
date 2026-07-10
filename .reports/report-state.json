@@ -1,0 +1,38 @@
+{
+ "schema_version": "1.0",
+ "recent": {
+  "generated_at": "2026-07-08T16:19:34Z",
+  "covered_sessions": [
+   "3ba11a17-79e7-4c2b-afa4-6d13b2e22e94",
+   "078a6e36-cf43-4244-b143-76541d6dbb8a"
+  ],
+  "last_event_ts": "2026-07-08T16:19:34Z",
+  "git_head": "b31f8fd",
+  "covers_checkpoint": "checkpoint-202607081610-roadmap-complete-debate-entered.md",
+  "summary_recent": "Requirements gate passed with G1-F2 amendment (discrete phase-doc units, no size caps). Roadmap completed: 9 milestones/17 user stories through one debate round (codex + gemini-3.5-flash), 4 revisions folded in, G4 excluded. Card 5857 advanced to Debate lane.",
+  "next_up": "Author spec draft v1 (technical depth) from the roadmap manifest, then run debate rounds via pipeline tools.",
+  "pending_questions": []
+ },
+ "feedback": {
+  "last_ingested": "2026-07-10T15:07:25Z"
+ },
+ "overview": {
+  "last_full_revamp_at": "2026-07-08T16:29:25Z",
+  "mapcodebase_git_hash": "f198887",
+  "appended": [
+   {
+    "at": "2026-07-08T16:29:25Z",
+    "session_id": "3ba11a17-79e7-4c2b-afa4-6d13b2e22e94",
+    "checkpoint_file": "checkpoint-202607081610-roadmap-complete-debate-entered.md",
+    "git_head": "b31f8fd"
+   },
+   {
+    "at": "2026-07-09T00:00:00Z",
+    "session_id": "adv-spec-202607060132-post-fable-hardening-skill",
+    "checkpoint_file": null,
+    "git_head": "35738f0"
+   }
+  ],
+  "redlines": []
+ }
+}

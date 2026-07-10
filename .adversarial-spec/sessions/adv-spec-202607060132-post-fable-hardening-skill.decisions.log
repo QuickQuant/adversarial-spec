@@ -1,0 +1,6 @@
+2026-07-08T04:55:23Z [decision] Requirements gate passed: G1-F2 amended (no arbitrary doc-size caps; decompose into discrete exactly-what-is-needed units), G2+G5 as-is — shapes Phase 2 roadmap: doc-slimming stories must be organization-driven, not byte-capped; Fable window now ~2026-07-12
+2026-07-08T05:30:26Z [decision] Goal-alignment gate passed: 15 US aligned; G4 excluded entirely from skill slice — scope contract = confirmed RequirementsSummary (G1+G2+G5); G4 to its own later session
+2026-07-08T05:51:46Z [roadmap] Roadmap confirmed after R1 (codex+gemini-3.5-flash): 9 milestones, 17 US incl. waiver US-15 + boundary US-16; gemini 15KB KPI rejected — scope locked for debate; gemini-cli tier dead, API flash is sole gemini path
+
+2026-07-10 | feedback q-20260708-branch-commit=a: create branch + commit now; RENAME context/branch to "increased-intelligence-hardening" (upgraded codex now in scope, not just Fable).
+2026-07-10 | feedback q-20260708-wake-cost-concern=a: add wake/listener lifecycle cost as named debate concern. Also investigate: (1) can codex be woken (inotify/bg-task) or is it poll-only? if wakeable, do it. (2) else build cheap-claude->codex-exec shim so hermes gets ask-codex skill w/ repo access (hermes jailed, no direct codex exec). Direct codex comms preferred.

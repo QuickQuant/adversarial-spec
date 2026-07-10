@@ -1,0 +1,218 @@
+{
+ "schema_version": "3.0",
+ "slug": "post-fable-hardening-skill",
+ "generated_at": "2026-07-08T00:55:00Z",
+ "note": "Milestone-level placeholder plan. Phase 7 replaces with task-level fizzy-plan.json. Do NOT pipeline_load.",
+ "tasks": [
+  {
+   "task_id": "M0",
+   "title": "Getting Started (Bootstrap)",
+   "wave": 0,
+   "effort": "M",
+   "depends_on": [],
+   "description": "Milestone M0: Getting Started (Bootstrap). Stories: US-0",
+   "acceptance_criteria": [
+    "All M0 success criteria in roadmap.md satisfied"
+   ],
+   "test_cases": [
+    "TC-0.0",
+    "TC-0.2"
+   ],
+   "tested_by": "llm",
+   "context_map": [
+    "roadmap/roadmap.md",
+    "tests-pseudo.md"
+   ]
+  },
+  {
+   "task_id": "M1",
+   "title": "Gate Inventory & Mechanization (G1-F1)",
+   "wave": 1,
+   "effort": "M",
+   "depends_on": [],
+   "description": "Milestone M1: Gate Inventory & Mechanization (G1-F1). Stories: US-1, US-2, US-3, US-15",
+   "acceptance_criteria": [
+    "All M1 success criteria in roadmap.md satisfied"
+   ],
+   "test_cases": [
+    "TC-1.0",
+    "TC-1.2",
+    "TC-2.0",
+    "TC-2.2",
+    "TC-3.0",
+    "TC-3.2",
+    "TC-15.0",
+    "TC-15.2"
+   ],
+   "tested_by": "llm",
+   "context_map": [
+    "roadmap/roadmap.md",
+    "tests-pseudo.md"
+   ]
+  },
+  {
+   "task_id": "M2",
+   "title": "Phase-Doc Decomposition (G1-F2 amended)",
+   "wave": 2,
+   "effort": "M",
+   "depends_on": [
+    "M1"
+   ],
+   "description": "Milestone M2: Phase-Doc Decomposition (G1-F2 amended). Stories: US-4, US-5",
+   "acceptance_criteria": [
+    "All M2 success criteria in roadmap.md satisfied"
+   ],
+   "test_cases": [
+    "TC-4.0",
+    "TC-4.2",
+    "TC-5.0",
+    "TC-5.2"
+   ],
+   "tested_by": "llm",
+   "context_map": [
+    "roadmap/roadmap.md",
+    "tests-pseudo.md"
+   ]
+  },
+  {
+   "task_id": "M3",
+   "title": "Conductor Competence Harness (G1-F3)",
+   "wave": 3,
+   "effort": "M",
+   "depends_on": [
+    "M1",
+    "M2"
+   ],
+   "description": "Milestone M3: Conductor Competence Harness (G1-F3). Stories: US-6",
+   "acceptance_criteria": [
+    "All M3 success criteria in roadmap.md satisfied"
+   ],
+   "test_cases": [
+    "TC-6.0",
+    "TC-6.2"
+   ],
+   "tested_by": "llm",
+   "context_map": [
+    "roadmap/roadmap.md",
+    "tests-pseudo.md"
+   ]
+  },
+  {
+   "task_id": "M4",
+   "title": "System-Spine Verification Phases (G2-F1)",
+   "wave": 4,
+   "effort": "M",
+   "depends_on": [
+    "M1"
+   ],
+   "description": "Milestone M4: System-Spine Verification Phases (G2-F1). Stories: US-7, US-16",
+   "acceptance_criteria": [
+    "All M4 success criteria in roadmap.md satisfied"
+   ],
+   "test_cases": [
+    "TC-7.0",
+    "TC-7.2",
+    "TC-16.0",
+    "TC-16.2"
+   ],
+   "tested_by": "llm",
+   "context_map": [
+    "roadmap/roadmap.md",
+    "tests-pseudo.md"
+   ]
+  },
+  {
+   "task_id": "M5",
+   "title": "Pseudo\u2192Real Promotion Gate (G2-F2)",
+   "wave": 5,
+   "effort": "M",
+   "depends_on": [
+    "M4"
+   ],
+   "description": "Milestone M5: Pseudo\u2192Real Promotion Gate (G2-F2). Stories: US-8",
+   "acceptance_criteria": [
+    "All M5 success criteria in roadmap.md satisfied"
+   ],
+   "test_cases": [
+    "TC-8.0",
+    "TC-8.2",
+    "TC-8.3"
+   ],
+   "tested_by": "llm",
+   "context_map": [
+    "roadmap/roadmap.md",
+    "tests-pseudo.md"
+   ]
+  },
+  {
+   "task_id": "M6",
+   "title": "ConOps Validation + Durable Spine Artifacts (G2-F3/F4)",
+   "wave": 6,
+   "effort": "M",
+   "depends_on": [
+    "M5"
+   ],
+   "description": "Milestone M6: ConOps Validation + Durable Spine Artifacts (G2-F3/F4). Stories: US-9, US-10",
+   "acceptance_criteria": [
+    "All M6 success criteria in roadmap.md satisfied"
+   ],
+   "test_cases": [
+    "TC-9.0",
+    "TC-9.2",
+    "TC-10.0",
+    "TC-10.2"
+   ],
+   "tested_by": "llm",
+   "context_map": [
+    "roadmap/roadmap.md",
+    "tests-pseudo.md"
+   ]
+  },
+  {
+   "task_id": "M7",
+   "title": "Settle/Freeze + Debate Node Registry (G5-F1/F2)",
+   "wave": 7,
+   "effort": "M",
+   "depends_on": [],
+   "description": "Milestone M7: Settle/Freeze + Debate Node Registry (G5-F1/F2). Stories: US-11, US-12",
+   "acceptance_criteria": [
+    "All M7 success criteria in roadmap.md satisfied"
+   ],
+   "test_cases": [
+    "TC-11.0",
+    "TC-11.2",
+    "TC-12.0",
+    "TC-12.2"
+   ],
+   "tested_by": "llm",
+   "context_map": [
+    "roadmap/roadmap.md",
+    "tests-pseudo.md"
+   ]
+  },
+  {
+   "task_id": "M8",
+   "title": "Deterministic Reconciliation + False-Convergence Guard (G5-F3/F4)",
+   "wave": 8,
+   "effort": "M",
+   "depends_on": [
+    "M7"
+   ],
+   "description": "Milestone M8: Deterministic Reconciliation + False-Convergence Guard (G5-F3/F4). Stories: US-13, US-14",
+   "acceptance_criteria": [
+    "All M8 success criteria in roadmap.md satisfied"
+   ],
+   "test_cases": [
+    "TC-13.0",
+    "TC-13.2",
+    "TC-14.0",
+    "TC-14.2"
+   ],
+   "tested_by": "llm",
+   "context_map": [
+    "roadmap/roadmap.md",
+    "tests-pseudo.md"
+   ]
+  }
+ ]
+}

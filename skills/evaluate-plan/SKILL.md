@@ -100,8 +100,9 @@ Present these options:
 4. `Recommend a plan of action`
 
 If the user chooses option 1:
-- use full `/mapcodebase` for legacy output
-- use `/mapcodebase --update` only for existing 3.x output that is merely stale
+- use `/mapcodebase --nuke-existing-docs` for legacy (schema < 2.0) output
+- use plain `/mapcodebase` for existing 2.0-schema output that is merely stale
+  (incremental update is the default mode; the old `--update` flag was removed in v3.6)
 - stop the evaluation until mapcodebase completes
 
 ### 3. Fresh-Docs Path
@@ -123,6 +124,13 @@ If architecture state is `fresh`, use the accessor layer in this order:
    - auth boundaries
    - data model / RPC surfaces
 9. Read `.architecture/structured/flows.md` only if the plan crosses component boundaries or introduces a new end-to-end flow
+10. If the manifest has `verification_items[]` / `boundary_contracts[]` (mapcodebase ≥ 4.0;
+    absent on older corpora — skip silently): intersect the blast zone with open
+    verification items' `owner_files` and with boundary-contract chains. Any hit goes into
+    the output's `open_questions` (unverified claims the plan would build on) and
+    `explore_targets` (boundaries whose field contracts the plan touches). A plan that
+    modifies a boundary with `defect_candidates` or `fields_unverified > 0` should say so
+    explicitly in "Key contracts and boundaries".
 
 Do not read the full architecture corpus by default.
 

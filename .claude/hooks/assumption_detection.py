@@ -63,7 +63,9 @@ ADVISORY_MESSAGE = (
     "that coming up with a more accurate answer will help the user. "
     "If the user expected you to be guessing or otherwise indicated that you "
     "were supposed to give some attempt at an answer without being robust, "
-    "you may ignore this."
+    "you may ignore this. When you acknowledge or respond to this message, "
+    "avoid repeating the flagged word itself purely to reference it — doing "
+    "so re-triggers this same check needlessly."
 )
 
 # Exit behavior. Exit 2 on Stop sends stderr back to the model.

@@ -94,7 +94,7 @@ Only use these when CLI tools are unavailable.
 
 | Tier | Old Reference | Current Model | Notes |
 |------|---------------|---------------|-------|
-| Frontier | `o1`, `gpt-4-turbo` | `gpt-5.5` | Best reasoning, $5/$30 per 1M tokens |
+| Frontier | `o1`, `gpt-4-turbo` | `gpt-5.6-sol` | Best reasoning, max effort |
 | Balanced | `gpt-4o` | `o3-mini` | Good reasoning at lower cost |
 | Fast | `gpt-4o-mini` | `gpt-5.2-mini` | Fast, cheaper |
 | Budget | - | `o4-mini` | Batch processing available |
@@ -103,8 +103,8 @@ Only use these when CLI tools are unavailable.
 
 | Tier | Old Reference | Current Model | Notes |
 |------|---------------|---------------|-------|
-| Frontier | `codex/gpt-5.2-codex` | `codex/gpt-5.5` | Current flagship, 1M ctx, 128k output |
-| Balanced | `codex/o1-codex` | `codex/gpt-5.5` | Current recommended Codex model |
+| Frontier | `codex/gpt-5.2-codex` | `codex/gpt-5.6-sol` | Current flagship, max effort |
+| Balanced | `codex/o1-codex` | `codex/gpt-5.6-terra` | Sonnet-level quality, max effort |
 | Extended | - | `codex/gpt-5.1-codex-max` | 24+ hour tasks |
 
 ### Anthropic (API: `ANTHROPIC_API_KEY`)

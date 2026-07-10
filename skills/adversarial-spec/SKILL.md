@@ -31,8 +31,8 @@ Write `.conductor/agents/<role>.json` with `{role, pid, started_at, is_conductor
 **Always relaunch on session start. Never reuse an existing listener PID.**
 
 - **Why:** `task-notification` is session-scoped — it only fires to the Claude session that launched the `run_in_background` task. A listener "alive" but launched by a previous (dead/compacted/different) session is a zombie wake-target: the notification fires into a void. The stop hook's binding check passes (banner exists in `/tmp/claude-*/.../tasks/*.output`) but it's the *old* session's banner. Result: messages accumulate in `updates.jsonl`, no wake fires, session goes silent for hours. This pattern has surfaced and been "fixed" 5+ times by tightening stop-hook gates (PID alive → PID bound to a task → ...). Each gate was symptom-patching a shared resource model that's structurally incompatible with session-scoped wake semantics. Drop the reuse optimization. Listener launch is ~50ms.
-- **Conductor (claude):** if `/tmp/claude-telegram-wake-<project>.pid` exists, kill the recorded PID (best-effort) and remove the file. THEN launch `~/.claude/bin/telegram-wake-listener` via `Bash(run_in_background=true)`. Enforced by `require-listener.sh` stop hook.
-- **Workers (gemini/codex):** same pattern for `/tmp/claude-dispatch-wake-<project>-<role>.pid`. Script `~/.claude/bin/dispatch-wake-listener <role>`. Claude's `run_in_background` is Claude-only; Gemini/Codex use native backgrounding (`nohup … &` etc.), accounting for bubblewrap `/tmp` constraints.
+- **Conductor (claude):** just launch `~/.claude/bin/telegram-wake-listener` via `Bash(run_in_background=true)`. **Do NOT kill anything first** — the script is self-superseding: on startup it kills the pidfile-recorded PID for THIS project (verified by command line, with a supersede breadcrumb) and claims the marker itself. An absent pidfile means nothing to do. NEVER hunt listeners via `pgrep` — other projects' live sessions own theirs, and a shotgun kill severs their wake paths (incident 2026-07-08). Enforced by `require-listener.sh` stop hook.
+- **Workers (gemini/codex):** same rule for `~/.claude/bin/dispatch-wake-listener <role>` (`/tmp/claude-dispatch-wake-<project>-<role>.pid`): launch fresh, no manual kills. Claude's `run_in_background` is Claude-only; Gemini/Codex use native backgrounding (`nohup … &` etc.), accounting for bubblewrap `/tmp` constraints.
 - Listener tails `.conductor/dispatch/<role>/updates.jsonl` and exits on first new line.
 - Can't background at all? Inline-check the dispatch log at the top of each pickup iteration (compare `wc -l` to baseline).
 - Missing binary → report the path and stop.
@@ -498,7 +498,7 @@ Do NOT run `debate.py critique` when the user wants the gauntlet, and vice versa
 
 3. **Fizzy card** (if `fizzy_card_id` present) — third:
    - Add comment: `"Phase: <old> → <new>. <1-line accomplishment>."`
-   - Call `pipeline_patch_state(card_id, session_id, patch)` with relevant state updates (`debate_round`, `last_agent`, etc.).
+   - Advance the card with `pipeline_advance` (gate-enforcing) — NEVER `pipeline_patch_state` for a phase transition. `patch_state` is for intra-phase state only (`debate_round`, `last_agent` after debate rounds) or gate-recovery with an on-disk process-failure note; the tool rejects transition misuse.
    - Use a **haiku subagent** to keep MCP payload out of main context.
 
 4. **Telegram** (if project has telegram config) — fourth:

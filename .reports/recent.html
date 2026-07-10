@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=768">
+  <title>adversarial-spec — recent activity</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #ece7dc;
+      --paper: #fbf9f3;
+      --paper-2: #f4efe4;
+      --paper-3: #e6ded0;
+      --ink: #201e1a;
+      --muted: #5f5a50;
+      --line: #cfc5b4;
+      --line-strong: #aa9d87;
+      --green: #24613b;
+      --green-soft: #dfeadf;
+      --rust: #8c4b28;
+      --rust-soft: #f1ded3;
+      --gold: #80631f;
+      --gold-soft: #f1e5c6;
+      --black: #0f0f0f;
+      --blue: #1a73e8;
+      --blue-soft: #d7e7ff;
+      --red: #8a2e25;
+      --red-soft: #ead3ce;
+      --radius: 8px;
+      --focus: 0 0 0 3px rgba(36, 97, 59, 0.24);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { min-width: 320px; background: var(--bg); color: var(--ink); }
+    body { margin: 0; background: var(--bg); color: var(--ink); line-height: 1.45; }
+    button, input, textarea { font: inherit; }
+    button { min-height: 2.35rem; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--paper); color: var(--ink); cursor: pointer; padding: 0.48rem 0.76rem; }
+    button:hover { border-color: var(--green); }
+    button:focus-visible, input:focus-visible, textarea:focus-visible { outline: none; box-shadow: var(--focus); }
+    .page { max-width: 1160px; margin: 0 auto; padding: 22px; }
+    .topline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 0 0 14px; border-bottom: 1px solid var(--line-strong); }
+    .eyebrow { margin: 0; color: var(--muted); font-size: 0.82rem; font-weight: 800; letter-spacing: 0; text-transform: uppercase; }
+    .head-meta { margin: 0; color: var(--muted); font-size: 0.92rem; }
+    header { padding: 20px 0 18px; }
+    h1 { margin: 0 0 14px; font-size: 2.45rem; line-height: 1.04; letter-spacing: 0; }
+    h2 { margin: 0; font-size: 1.55rem; line-height: 1.16; letter-spacing: 0; }
+    h3 { margin: 0; font-size: 1rem; line-height: 1.22; letter-spacing: 0; }
+    p { margin: 0; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.94em; }
+    .status-grid { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: 16px; align-items: stretch; }
+    .status-wrap { overflow-x: auto; border: 1px solid var(--line); background: var(--paper); border-radius: var(--radius); }
+    .status-table { width: 100%; min-width: 680px; border-collapse: collapse; }
+    .status-table th, .status-table td { padding: 0.9rem 1rem; border-bottom: 1px solid var(--line); vertical-align: top; text-align: left; }
+    .status-table tr:last-child th, .status-table tr:last-child td { border-bottom: 0; }
+    .status-table th { width: 10rem; color: var(--ink); white-space: nowrap; }
+    .status-table td { color: var(--muted); }
+    .jason-quote { color: var(--green); font-weight: 900; }
+    .clock-card { display: grid; align-content: center; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper-2); padding: 1rem; }
+    .clock-title { margin: 0 0 0.55rem; color: var(--muted); font-size: 0.78rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0; }
+    .clock { margin: 0; white-space: pre; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.94rem; line-height: 1.55; color: var(--ink); }
+    main { display: grid; gap: 0; border-top: 1px solid var(--line-strong); }
+    .report-section, footer { padding: 24px 0; border-bottom: 1px solid var(--line-strong); }
+    .section-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+    .section-tag, .chip, .mini-chip { display: inline-flex; align-items: center; max-width: 100%; min-width: 0; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--paper); color: var(--muted); font-weight: 800; white-space: normal; overflow-wrap: anywhere; }
+    .section-tag { min-height: 1.7rem; padding: 0.16rem 0.52rem; font-size: 0.78rem; }
+    .chip { min-height: 1.65rem; padding: 0.18rem 0.52rem; font-size: 0.78rem; }
+    .mini-chip { min-height: 1.45rem; padding: 0.12rem 0.42rem; font-size: 0.72rem; }
+    .green { border-color: #8eb592; background: var(--green-soft); color: var(--green); }
+    .rust { border-color: #c89476; background: var(--rust-soft); color: var(--rust); }
+    .gold { border-color: #c3aa5f; background: var(--gold-soft); color: var(--gold); }
+    .red { border-color: #c28f87; background: var(--red-soft); color: var(--red); }
+    .muted { color: var(--muted); }
+    .flow { display: flex; align-items: stretch; gap: 0.5rem; overflow-x: auto; padding: 2px 0 6px; }
+    .phase { display: grid; align-content: center; gap: 0.22rem; min-width: 8.7rem; min-height: 4rem; padding: 0.62rem 0.72rem; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--paper); text-align: center; }
+    .phase.done { background: var(--green-soft); border-color: #8eb592; }
+    .phase.current { background: var(--gold-soft); border-color: #c3aa5f; box-shadow: inset 0 0 0 2px rgba(128, 99, 31, 0.16); }
+    .phase.pending { color: var(--muted); background: var(--paper-2); }
+    .phase-mark { font-size: 1.05rem; font-weight: 900; }
+    .phase-name { font-size: 0.86rem; font-weight: 850; overflow-wrap: anywhere; }
+    .arrow { display: flex; align-items: center; justify-content: center; min-width: 1.2rem; color: var(--muted); font-weight: 900; }
+    .caption { margin-top: 0.7rem; color: var(--muted); font-size: 0.92rem; }
+    .comment-panel { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .field-label { display: block; margin: 0 0 0.36rem; color: var(--muted); font-size: 0.82rem; font-weight: 850; }
+    textarea { display: block; width: 100%; min-height: 5rem; resize: vertical; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--paper); color: var(--ink); padding: 0.68rem; }
+    .ladder { display: grid; gap: 12px; }
+    .ladder-row, .branch-row { display: flex; align-items: stretch; gap: 0.55rem; min-width: 0; overflow-x: auto; padding-bottom: 4px; }
+    .branch-wrap { display: grid; grid-template-columns: minmax(11.5rem, 15rem) minmax(0, 1fr); gap: 12px; align-items: stretch; }
+    .branch-stack { display: grid; gap: 10px; min-width: 0; }
+    .milestone { flex: 1 0 12.6rem; min-width: 12.6rem; max-width: 18rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 0.82rem; }
+    .milestone.shared { max-width: none; min-width: 0; }
+    .milestone-top { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0.45rem; margin-bottom: 0.45rem; }
+    .milestone-id { font-weight: 950; color: var(--rust); }
+    .milestone-title { display: block; margin-top: 0.2rem; font-weight: 850; }
+    .milestone-purpose { margin-top: 0.55rem; color: var(--muted); font-size: 0.92rem; }
+    .node-flags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.6rem; min-width: 0; }
+    .debate-grid { display: grid; grid-template-columns: 18rem minmax(0, 1fr); gap: 16px; align-items: start; }
+    .model-pair { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; padding: 1rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper-2); }
+    .model-badge { display: inline-flex; align-items: center; justify-content: center; width: 3rem; height: 3rem; border-radius: 999px; }
+    .model-badge svg { width: 2.25rem; height: 2.25rem; display: block; }
+    .model-badge.codex { background: var(--black); }
+    .model-badge.gemini { background: var(--blue); }
+    .badge-label { color: var(--muted); font-size: 0.9rem; }
+    .revision-list, .incident-list { display: grid; gap: 10px; }
+    .revision, .incident { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 0.86rem; }
+    .revision-head, .incident-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.48rem; margin-bottom: 0.38rem; }
+    .tradeoff { color: var(--muted); font-size: 0.93rem; }
+    .ops-diagram { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px; align-items: stretch; margin-bottom: 14px; }
+    .ops-box { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 0.9rem; }
+    .ops-box h3 { margin-bottom: 0.4rem; }
+    .ops-arrow { display: flex; align-items: center; color: var(--muted); font-weight: 950; }
+    .decision-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    fieldset.decision { min-inline-size: 0; margin: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 0.95rem; }
+    .decision legend { padding: 0 0.35rem; font-weight: 950; color: var(--ink); overflow-wrap: anywhere; }
+    .choice-list { display: grid; gap: 0.6rem; margin-top: 0.8rem; }
+    .choice { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 0.62rem; min-height: 2.6rem; padding: 0.62rem 0.68rem; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-2); cursor: pointer; }
+    .choice input { margin-top: 0.22rem; accent-color: var(--green); }
+    .choice span { min-width: 0; }
+    .choice-text { display: block; color: var(--ink); font-weight: 850; overflow-wrap: anywhere; }
+    .choice-note { display: block; color: var(--muted); font-size: 0.9rem; overflow-wrap: anywhere; }
+    .qid-comment { margin-top: 0.78rem; }
+    .footer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.7rem; margin: 0.8rem 0; }
+    .primary { background: var(--green); border-color: var(--green); color: #fff; font-weight: 850; }
+    .inline-status { min-height: 1.35rem; color: var(--muted); font-size: 0.9rem; font-weight: 850; }
+    .inline-status.ok { color: var(--green); }
+    .inline-status.error { color: var(--red); }
+    #feedback-json { min-height: 14rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.84rem; white-space: pre; }
+    .note { color: var(--muted); font-size: 0.9rem; }
+    @media (max-width: 980px) {
+      .status-grid, .debate-grid, .decision-grid, .ops-diagram, .branch-wrap { grid-template-columns: 1fr; }
+      .ops-arrow { justify-content: center; transform: rotate(90deg); min-height: 1.8rem; }
+    }
+    @media (max-width: 720px) {
+      .page { padding: 16px; }
+      h1 { font-size: 2rem; }
+      .phase { min-width: 7.7rem; }
+      .milestone { flex-basis: 11.8rem; min-width: 11.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="topline" aria-label="Report metadata">
+      <p class="eyebrow">Recent activity report</p>
+      <p class="head-meta">checkpoint 2026-07-08 16:10 UTC · git b31f8fd · card 5857</p>
+    </div>
+
+    <header>
+      <h1>adversarial-spec recent activity</h1>
+      <div class="status-grid">
+        <div class="status-wrap">
+          <table class="status-table" aria-label="Header status">
+            <tbody>
+              <tr>
+                <th scope="row">Last worked</th>
+                <td>2026-07-08 16:10 UTC (checkpoint)</td>
+              </tr>
+              <tr>
+                <th scope="row">What we did</th>
+                <td>Requirements gate (a rule that must pass before moving on) passed with Jason's G1-F2 amendment: phase docs decomposed into discrete units, <strong><em class="jason-quote">"no more, no less"</em></strong>. Roadmap completed through one 📣 debate round with 4 accepted revisions. Card 5857 → Debate lane.</td>
+              </tr>
+              <tr>
+                <th scope="row">Up next</th>
+                <td>Author spec draft v1 at technical depth, then run debate rounds via pipeline tools (board automation).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <aside class="clock-card" aria-label="Report clock">
+          <p class="clock-title">Clock</p>
+          <pre class="clock">generated  2026-07-08 11:10 CDT
+now        <span id="clock-now">loading</span>
+age        <span id="clock-age">loading</span></pre>
+        </aside>
+      </div>
+    </header>
+
+    <main>
+      <section class="report-section" id="pipeline-position" data-block-id="pipeline-position">
+        <div class="section-head">
+          <h2>Pipeline Position</h2>
+          <span class="section-tag">card 5857 · Debate</span>
+        </div>
+        <div class="flow" aria-label="8-phase flow">
+          <div class="phase done"><span class="phase-mark">✓</span><span class="phase-name">requirements</span></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="phase done"><span class="phase-mark">✓</span><span class="phase-name">roadmap</span></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="phase current"><span class="phase-mark">◉</span><span class="phase-name">debate</span></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">target-architecture</span></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">gauntlet</span></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">finalize</span></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">execution</span></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">implementation</span></div>
+        </div>
+        <p class="caption">Current work: write the first technical spec draft from the roadmap, then send it back through opponents for critique.</p>
+        <div class="comment-panel">
+          <label class="field-label" for="comment-pipeline-position">Comment on pipeline position</label>
+          <textarea id="comment-pipeline-position" data-block="pipeline-position" placeholder="Feedback for this block"></textarea>
+        </div>
+      </section>
+
+      <section class="report-section" id="roadmap-ladder" data-block-id="roadmap-ladder">
+        <div class="section-head">
+          <h2>Roadmap Ladder</h2>
+          <span class="section-tag">9 milestones · 17✓ stories</span>
+        </div>
+        <div class="ladder" aria-label="Roadmap dependency ladder">
+          <div class="ladder-row">
+            <article class="milestone">
+              <div class="milestone-top"><span class="milestone-id">M0</span><span class="chip green">1✓ US</span></div>
+              <span class="milestone-title">Getting Started</span>
+              <p class="milestone-purpose">Prove the local tools and tests can run before real work starts.</p>
+            </article>
+          </div>
+
+          <div class="branch-wrap">
+            <article class="milestone shared">
+              <div class="milestone-top"><span class="milestone-id">M1</span><span class="chip green">4✓ US</span></div>
+              <span class="milestone-title">Gate Inventory &amp; Mechanization</span>
+              <p class="milestone-purpose">Turn hand-checked rules into visible checks or named judgment tests.</p>
+              <div class="node-flags"><span class="mini-chip rust">R1 + US-15 waiver</span><span class="mini-chip">shared root</span></div>
+            </article>
+            <div class="branch-stack">
+              <div class="branch-row" aria-label="G1 branch">
+                <article class="milestone">
+                  <div class="milestone-top"><span class="milestone-id">M2</span><span class="chip green">2✓ US</span></div>
+                  <span class="milestone-title">Phase-Doc Decomposition</span>
+                  <p class="milestone-purpose">Load only the phase instructions needed for the current step.</p>
+                </article>
+                <span class="arrow" aria-hidden="true">→</span>
+                <article class="milestone">
+                  <div class="milestone-top"><span class="milestone-id">M3</span><span class="chip green">1✓ US</span></div>
+                  <span class="milestone-title">Conductor Competence Harness</span>
+                  <p class="milestone-purpose">Measure whether a conductor can choose the next right action.</p>
+                </article>
+              </div>
+              <div class="branch-row" aria-label="G2 branch">
+                <article class="milestone">
+                  <div class="milestone-top"><span class="milestone-id">M4</span><span class="chip green">2✓ US</span></div>
+                  <span class="milestone-title">System-Spine Verification</span>
+                  <p class="milestone-purpose">Make larger checks come from the shared evidence list.</p>
+                  <div class="node-flags"><span class="mini-chip rust">R1 + US-16 boundary</span></div>
+                </article>
+                <span class="arrow" aria-hidden="true">→</span>
+                <article class="milestone">
+                  <div class="milestone-top"><span class="milestone-id">M5</span><span class="chip green">1✓ US</span></div>
+                  <span class="milestone-title">Pseudo→Real Promotion Gate</span>
+                  <p class="milestone-purpose">A session cannot complete while critical tests are unrun.</p>
+                </article>
+                <span class="arrow" aria-hidden="true">→</span>
+                <article class="milestone">
+                  <div class="milestone-top"><span class="milestone-id">M6</span><span class="chip green">2✓ US</span></div>
+                  <span class="milestone-title">ConOps + Durable Artifacts</span>
+                  <p class="milestone-purpose">Walk the happy path and leave proof later agents can inspect.</p>
+                </article>
+              </div>
+            </div>
+          </div>
+
+          <div class="ladder-row" aria-label="G5 branch">
+            <article class="milestone">
+              <div class="milestone-top"><span class="milestone-id">M7</span><span class="chip green">2✓ US</span></div>
+              <span class="milestone-title">Settle/Freeze + Debate Registry</span>
+              <p class="milestone-purpose">Freeze settled decisions so the same points are not reargued.</p>
+            </article>
+            <span class="arrow" aria-hidden="true">→</span>
+            <article class="milestone">
+              <div class="milestone-top"><span class="milestone-id">M8</span><span class="chip green">2✓ US</span></div>
+              <span class="milestone-title">Deterministic Reconciliation</span>
+              <p class="milestone-purpose">Rebuild derived files and catch false agreement before the stress test.</p>
+            </article>
+          </div>
+        </div>
+        <div class="comment-panel">
+          <label class="field-label" for="comment-roadmap-ladder">Comment on roadmap ladder</label>
+          <textarea id="comment-roadmap-ladder" data-block="roadmap-ladder" placeholder="Feedback for this block"></textarea>
+        </div>
+      </section>
+
+      <section class="report-section" id="debate-r1" data-block-id="debate-r1">
+        <div class="section-head">
+          <h2>Debate R1 Outcome</h2>
+          <span class="section-tag">4 accepted · 1 rejected</span>
+        </div>
+        <div class="debate-grid">
+          <div class="model-pair" aria-label="Debate models">
+            <span class="model-badge codex" title="Codex" aria-label="Codex">
+              <svg viewBox="0 0 32 32" role="img" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="#fff" stroke-width="3"/><text x="16" y="21" text-anchor="middle" font-size="15" font-family="Arial, sans-serif" font-weight="900" fill="#fff">C</text></svg>
+            </span>
+            <span class="model-badge gemini" title="Gemini" aria-label="Gemini">
+              <svg viewBox="0 0 32 32" role="img" aria-hidden="true"><path d="M16 3.5 19.5 12.5 28.5 16 19.5 19.5 16 28.5 12.5 19.5 3.5 16 12.5 12.5Z" fill="#fff"/><text x="16" y="20" text-anchor="middle" font-size="12" font-family="Arial, sans-serif" font-weight="900" fill="#1a73e8">G</text></svg>
+            </span>
+            <span class="badge-label">Two-model critique round, one merged roadmap.</span>
+          </div>
+          <div class="revision-list">
+            <article class="revision">
+              <div class="revision-head"><span class="chip green">accepted</span><strong>US-15 waiver mechanism</strong></div>
+              <p class="tradeoff">Authorized exceptions become visible and testable; tradeoff: every exception needs an owner, reason, and audit trail.</p>
+            </article>
+            <article class="revision">
+              <div class="revision-head"><span class="chip green">accepted</span><strong>Expanded personas</strong></div>
+              <p class="tradeoff">More reviewer viewpoints cover more failure modes; tradeoff: broader critique can add noise that reconciliation must filter.</p>
+            </article>
+            <article class="revision">
+              <div class="revision-head"><span class="chip green">accepted</span><strong>Global KPIs</strong></div>
+              <p class="tradeoff">Success now has cross-milestone numbers; tradeoff: metrics must stay tied to behavior, not ceremony.</p>
+            </article>
+            <article class="revision">
+              <div class="revision-head"><span class="chip green">accepted</span><strong>US-16 contract boundary + user journey</strong></div>
+              <p class="tradeoff">The separate Fizzy slice stays outside this spec while its boundary is guarded; tradeoff: extra checks before handoff.</p>
+            </article>
+            <article class="revision">
+              <div class="revision-head"><span class="chip red">rejected</span><strong>Blue-badge ≤15KB context cap</strong></div>
+              <p class="tradeoff">Rejected because a byte cap contradicts Jason's no-size-caps amendment; docs should be split by need, not size.</p>
+            </article>
+          </div>
+        </div>
+        <div class="comment-panel">
+          <label class="field-label" for="comment-debate-r1">Comment on debate R1</label>
+          <textarea id="comment-debate-r1" data-block="debate-r1" placeholder="Feedback for this block"></textarea>
+        </div>
+      </section>
+
+      <section class="report-section" id="ops-incidents" data-block-id="ops-incidents">
+        <div class="section-head">
+          <h2>Ops Incidents</h2>
+          <span class="section-tag">before → after</span>
+        </div>
+        <div class="ops-diagram" aria-label="Ops before and after">
+          <div class="ops-box">
+            <h3>Before</h3>
+            <p class="muted">Fresh model spawns and tiny preflight pings looked like ordinary readiness checks.</p>
+          </div>
+          <div class="ops-arrow" aria-hidden="true">→</div>
+          <div class="ops-box">
+            <h3>After</h3>
+            <p class="muted">Known failures have named workarounds and candidates for mechanized checks.</p>
+          </div>
+        </div>
+        <div class="incident-list">
+          <article class="incident">
+            <div class="incident-head"><span class="chip red">spawn auth</span><strong>gemini-cli fresh spawns fail <code>IneligibleTierError</code></strong></div>
+            <p class="tradeoff">Latest CLI 0.49.0 with <code>oauth-personal</code> fails for new processes; live panes still work. Dispatches switched to API-path <code>gemini/gemini-3.5-flash</code>.</p>
+          </article>
+          <article class="incident">
+            <div class="incident-head"><span class="chip gold">preflight</span><strong><code>debate.py</code> false-fails thinking models</strong></div>
+            <p class="tradeoff">The tiny ping budget is eaten by internal reasoning, so a working model can look broken. Workaround: <code>--skip-preflight</code>. Candidate for M1 mechanization.</p>
+          </article>
+          <article class="incident">
+            <div class="incident-head"><span class="chip green">logger v1.1</span><strong><code>session_activity_logger</code> attribution added</strong></div>
+            <p class="tradeoff"><code>SessionStart</code> now logs invoker ancestry, tty, and env; <code>UserPromptSubmit</code> logs idle gap with <code>cold:true</code> past the 300s cache TTL. Change lives uncommitted in the Brainquarters repo.</p>
+          </article>
+        </div>
+        <div class="comment-panel">
+          <label class="field-label" for="comment-ops-incidents">Comment on ops incidents</label>
+          <textarea id="comment-ops-incidents" data-block="ops-incidents" placeholder="Feedback for this block"></textarea>
+        </div>
+      </section>
+
+      <section class="report-section" id="decision-widgets">
+        <div class="section-head">
+          <h2>Decision Widgets</h2>
+          <span class="section-tag">pending Jason input</span>
+        </div>
+        <div class="decision-grid">
+          <fieldset class="decision" data-qid="q-20260708-branch-commit">
+            <legend>Commit session work to spec branch</legend>
+            <div class="choice-list">
+              <label class="choice"><input type="radio" name="q-20260708-branch-commit" value="a"><span><span class="choice-text">a: create <code>spec/post-fable-hardening</code> branch + commit now</span><span class="choice-note">Goals doc mandates branches; current work sits uncommitted on stale <code>phase7/liveness-gate-test-ladder</code>.</span></span></label>
+              <label class="choice"><input type="radio" name="q-20260708-branch-commit" value="b"><span><span class="choice-text">b: keep accumulating uncommitted until spec finalize</span><span class="choice-note">Fewer commits; more loss risk and harder review boundary.</span></span></label>
+              <label class="choice"><input type="radio" name="q-20260708-branch-commit" value="c"><span><span class="choice-text">c: commit to current branch as-is</span><span class="choice-note">Fastest path; wrong branch name for the spec work.</span></span></label>
+            </div>
+            <div class="qid-comment"><label class="field-label" for="comment-q-20260708-branch-commit">Decision comment</label><textarea id="comment-q-20260708-branch-commit" data-qid-comment="q-20260708-branch-commit" placeholder="Optional comment"></textarea></div>
+          </fieldset>
+
+          <fieldset class="decision" data-qid="q-20260708-wake-cost-concern">
+            <legend>Wake/listener lifecycle cost as spec concern</legend>
+            <div class="choice-list">
+              <label class="choice"><input type="radio" name="q-20260708-wake-cost-concern" value="a"><span><span class="choice-text">a: add as named concern for debate</span><span class="choice-note">Stop-hook demands a listener, harness kills it, each death costs a full-context wake; this is an honor-system boundary in G1 scope.</span></span></label>
+              <label class="choice"><input type="radio" name="q-20260708-wake-cost-concern" value="b"><span><span class="choice-text">b: out of scope; ops annoyance only</span><span class="choice-note">Keeps the spec narrower; leaves listener lifecycle cost outside this hardening pass.</span></span></label>
+            </div>
+            <div class="qid-comment"><label class="field-label" for="comment-q-20260708-wake-cost-concern">Decision comment</label><textarea id="comment-q-20260708-wake-cost-concern" data-qid-comment="q-20260708-wake-cost-concern" placeholder="Optional comment"></textarea></div>
+          </fieldset>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="section-head">
+        <h2>Feedback JSON</h2>
+        <span class="section-tag">report-feedback/1</span>
+      </div>
+      <label class="field-label" for="feedback-json">Encoded feedback</label>
+      <textarea id="feedback-json" readonly aria-live="polite"></textarea>
+      <div class="footer-actions">
+        <button type="button" class="primary" id="copy-json">Copy</button>
+        <button type="button" id="submit-feedback">Submit</button>
+        <span id="feedback-status" class="inline-status" aria-live="polite"></span>
+      </div>
+      <p class="note">Submit needs the reports server. Copy works from file://.</p>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var reportMeta = {
+        schema: "report-feedback/1",
+        project: "adversarial-spec",
+        report_generated_at: "2026-07-08T16:19:34Z"
+      };
+      var generatedAt = new Date("2026-07-08T16:10:43Z");
+      var feedbackOutput = document.getElementById("feedback-json");
+      var statusEl = document.getElementById("feedback-status");
+      var copyButton = document.getElementById("copy-json");
+      var submitButton = document.getElementById("submit-feedback");
+      var clockNow = document.getElementById("clock-now");
+      var clockAge = document.getElementById("clock-age");
+      var statusTimer = null;
+
+      var dateFormatter = new Intl.DateTimeFormat("sv-SE", {
+        timeZone: "America/Chicago",
+        hour12: false,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+      var tzFormatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/Chicago",
+        timeZoneName: "short",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+
+      function trimmedValue(element) {
+        return element && element.value ? element.value.trim() : "";
+      }
+
+      function tzAbbrev(date) {
+        var parts = tzFormatter.formatToParts(date);
+        var tzPart = parts.find(function (part) { return part.type === "timeZoneName"; });
+        return tzPart ? tzPart.value : "CT";
+      }
+
+      function formatChicago(date) {
+        return dateFormatter.format(date).replace("T", " ") + " " + tzAbbrev(date);
+      }
+
+      function formatAge(milliseconds) {
+        var totalMinutes = Math.max(0, Math.floor(milliseconds / 60000));
+        var days = Math.floor(totalMinutes / 1440);
+        var hours = Math.floor((totalMinutes % 1440) / 60);
+        var minutes = totalMinutes % 60;
+        return days + "d " + hours + "h " + minutes + "m";
+      }
+
+      function updateClock() {
+        var now = new Date();
+        clockNow.textContent = formatChicago(now);
+        clockAge.textContent = formatAge(now.getTime() - generatedAt.getTime());
+      }
+
+      function getDecisionPayload(fieldset) {
+        var qid = fieldset.getAttribute("data-qid");
+        var selected = fieldset.querySelector("input[type='radio']:checked");
+        var commentEl = document.querySelector("[data-qid-comment='" + qid + "']");
+        var comment = trimmedValue(commentEl);
+        if (!selected && !comment) {
+          return null;
+        }
+        return {
+          qid: qid,
+          choice: selected ? selected.value : "",
+          comment: comment
+        };
+      }
+
+      function buildPayload() {
+        var payload = {
+          schema: reportMeta.schema,
+          project: reportMeta.project,
+          report_generated_at: reportMeta.report_generated_at,
+          answers: [],
+          comments: []
+        };
+
+        document.querySelectorAll("[data-qid]").forEach(function (fieldset) {
+          var answer = getDecisionPayload(fieldset);
+          if (answer) {
+            payload.answers.push(answer);
+          }
+        });
+
+        document.querySelectorAll("textarea[data-block]").forEach(function (textarea) {
+          var comment = trimmedValue(textarea);
+          if (comment) {
+            payload.comments.push({
+              block: textarea.getAttribute("data-block"),
+              comment: comment
+            });
+          }
+        });
+
+        return payload;
+      }
+
+      function renderPayload() {
+        feedbackOutput.value = JSON.stringify(buildPayload(), null, 2);
+      }
+
+      function setStatus(message, mode) {
+        window.clearTimeout(statusTimer);
+        statusEl.textContent = message;
+        statusEl.classList.remove("ok", "error");
+        if (mode) {
+          statusEl.classList.add(mode);
+        }
+        if (message) {
+          statusTimer = window.setTimeout(function () {
+            statusEl.textContent = "";
+            statusEl.classList.remove("ok", "error");
+          }, 2200);
+        }
+      }
+
+      function fallbackCopy(text) {
+        feedbackOutput.focus();
+        feedbackOutput.select();
+        try {
+          return document.execCommand("copy");
+        } catch (error) {
+          return false;
+        }
+      }
+
+      function copyJson() {
+        var text = feedbackOutput.value;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () {
+            setStatus("copied", "ok");
+          }).catch(function () {
+            var copied = fallbackCopy(text);
+            setStatus(copied ? "copied" : "copy failed", copied ? "ok" : "error");
+          });
+          return;
+        }
+        var copied = fallbackCopy(text);
+        setStatus(copied ? "copied" : "copy failed", copied ? "ok" : "error");
+      }
+
+      function submitFeedback() {
+        setStatus("submitting", "");
+        fetch("/feedback/adversarial-spec", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: feedbackOutput.value
+        }).then(function (response) {
+          if (!response.ok) {
+            throw new Error("submit failed");
+          }
+          setStatus("submitted", "ok");
+        }).catch(function () {
+          setStatus("submit failed", "error");
+        });
+      }
+
+      document.addEventListener("input", renderPayload);
+      document.addEventListener("change", renderPayload);
+      copyButton.addEventListener("click", copyJson);
+      submitButton.addEventListener("click", submitFeedback);
+      updateClock();
+      window.setInterval(updateClock, 30000);
+      renderPayload();
+    })();
+  </script>
+</body>
+</html>

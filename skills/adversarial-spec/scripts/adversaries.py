@@ -1080,6 +1080,8 @@ Check these specific categories:
 
 6. INLINE DOCS vs FORMAL DEFS: Comments, inline descriptions, and field annotations must match the formal definitions they reference. If a field comment says "lowercased" but the normalization function does NFKD + strip diacritics + lowercase, that's a finding.
 
+7. SINGLE OWNER/HOME: Every persisted table, endpoint, mutation, and computation must be attributable to exactly one named runtime (e.g. Convex / gateway / worker / frontend). If the same artifact is homed differently in two sections, that's a finding. The words "server", "server-side", or "server-authoritative" WITHOUT a named runtime in the same sentence are themselves a finding. Placement under a runtime-specific heading (e.g. a table listed under a "Gateway local database migration" section) COUNTS as a home claim.
+
 Output format — for each finding:
   CONTRADICTION: §[A] line/para vs §[B] line/para
   §[A] says: [exact quote or close paraphrase]
@@ -1092,9 +1094,12 @@ Do NOT report:
 - Architectural opinions or design improvements
 - Ambiguity (that's underspecification, not contradiction)
 - Redundant mechanisms that achieve the same goal — if section A uses approach X and section B uses approach Y for the same purpose, that's redundancy, not contradiction. Only report it if the two approaches would produce DIFFERENT outcomes.
-- Underspecification disguised as contradiction — if section A specifies something and section B doesn't mention it at all, that's a gap, not a conflict. A contradiction requires BOTH sections to make claims that cannot simultaneously be true.
+- Underspecification disguised as contradiction — if section A specifies something and section B doesn't mention it at all, that's a gap, not a conflict. A contradiction requires BOTH sections to make claims that cannot simultaneously be true — unless the second section attributes the artifact to an owner via heading, table, or list placement; structural placement is a claim, not silence.
 
-If you find zero contradictions, say "No contradictions found" and nothing else. Do not pad with praise or suggestions.""",
+Your output MUST end with a tabulation line, produced by actually enumerating the document (not estimating):
+  ENTITIES CHECKED: <n> tables, <n> endpoints, <n> constants/bounds, <n> version strings
+
+If you find zero contradictions, say "No contradictions found", then the ENTITIES CHECKED line, and nothing else. Do not pad with praise or suggestions.""",
     valid_dismissal="Section A and section B do not actually conflict — they describe different aspects or scopes.",
     invalid_dismissal="'It's just a style difference' when the two sections would produce different implementation outcomes.",
     rule="If section A says X and section B says not-X about the same thing, it's a finding.",

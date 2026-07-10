@@ -1,0 +1,23 @@
+{
+ "schema": "report-feedback/1",
+ "project": "adversarial-spec",
+ "report_generated_at": "2026-07-08T16:19:34Z",
+ "answers": [
+  {
+   "qid": "q-20260708-branch-commit",
+   "choice": "a",
+   "comment": "lets make it called increased-intelligence-hardening since we're going to be using the now-upgraded codex too"
+  },
+  {
+   "qid": "q-20260708-wake-cost-concern",
+   "choice": "a",
+   "comment": "we also need to see if we are able to do a couple more tricks. one, I know that codex doesn't have this ability, right? we cant wake it in this way because it can only poll, it cant do inotify or run a background task that wakes it, can it? if so, lets do that. if not, I want to be able to create a second shim where we can have a cheap claude agent that dispatches a codex exec with relevant context injected, so we can get a codex opinion when we need it. that way I can give my hermes bot a ask-codex skill where we can still have project-specific access even when we are short on claude usage. However, if you can find a way to communicate with codex directly, that is preferred. note that hermes is in a jail and can't just call codex exec itself because it wouldn't have access to the repos."
+  }
+ ],
+ "comments": [],
+ "_provenance": {
+  "source": "posted",
+  "remote_addr": "100.97.182.122",
+  "received_at": "2026-07-10T15:07:25Z"
+ }
+}

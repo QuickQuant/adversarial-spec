@@ -1,0 +1,23 @@
+{
+ "schema": "report-feedback/1",
+ "project": "adversarial-spec",
+ "report_generated_at": "2026-07-04T22:55:00Z",
+ "answers": [
+  {
+   "qid": "q-20260704-goal-scope",
+   "choice": "a",
+   "comment": "are these questions stale? did I already decide on this? I think we want to do the dogfooded session"
+  },
+  {
+   "qid": "q-20260704-mapcodebase-refresh",
+   "choice": "b",
+   "comment": "we'll do it soon but dont have it now"
+  }
+ ],
+ "comments": [],
+ "_provenance": {
+  "source": "posted",
+  "remote_addr": "100.71.101.88",
+  "received_at": "2026-07-05T23:57:34Z"
+ }
+}

@@ -280,7 +280,7 @@ python3 ~/.claude/skills/adversarial-spec/scripts/debate.py providers
 Then present available models to the user using AskUserQuestion with multiSelect. Build the options list based on which API keys are set:
 
 **If OPENAI_API_KEY is set, include:**
-- `gpt-5.5` - Frontier reasoning
+- `gpt-5.6-sol` - Frontier reasoning for spec development (max effort)
 
 **If ANTHROPIC_API_KEY is set, include:**
 - `claude-sonnet-4-6` - Claude Sonnet 4.6, excellent reasoning
@@ -307,7 +307,7 @@ Then present available models to the user using AskUserQuestion with multiSelect
 - `zhipu/glm-4-plus` - Enhanced GLM model
 
 **If Codex CLI is installed, include:**
-- `codex/gpt-5.5` - OpenAI Codex with extended reasoning
+- `codex/gpt-5.6-sol` - OpenAI Codex Sol with max effort
 
 **If Gemini CLI is installed, include:**
 - `gemini-cli/gemini-3.1-pro-preview` - Google Gemini 3 Pro
@@ -457,7 +457,7 @@ pipeline_begin_debate_round(
     session_id=SESSION_ID,
     card_id=FIZZY_CARD_ID,
     round_number=N,
-    models=["codex/gpt-5.5", "gemini-cli/gemini-3.1-pro-preview"],
+    models=["codex/gpt-5.6-sol", "gemini-cli/gemini-3.1-pro-preview"],
     board_id=BOARD_ID,
     domain_context="Optional project-specific context"
 )
@@ -472,7 +472,7 @@ result = pipeline_dispatch_single_agent_debate(
     card_id=FIZZY_CARD_ID,
     round_number=N,
     round_instance_id=begin_result["round_instance_id"],
-    model="codex/gpt-5.5",
+    model="codex/gpt-5.6-sol",
     spec_content=spec_text,  # full spec read from disk
     board_id=BOARD_ID
 )
@@ -508,7 +508,7 @@ pipeline_register_debate_agent_return(
     card_id=FIZZY_CARD_ID,
     round_instance_id=begin_result["round_instance_id"],
     dispatch_id=result["dispatch_id"],
-    model="codex/gpt-5.5",
+    model="codex/gpt-5.6-sol",
     status=result["status"],
     findings_count=result["findings_count"],
     agreed=result["agreed"],

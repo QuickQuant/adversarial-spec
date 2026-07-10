@@ -451,7 +451,7 @@ def render_grouped_markdown_export(
         > Total: 1092 concerns across 7 adversaries × 2 models
         > NOTE: All concerns share severity=medium; column suppressed.
 
-        ## architect / codex/gpt-5.5  (200 concerns)
+        ## architect / codex/gpt-5.6-sol  (200 concerns)
 
         1. [H] Auth bypass possible.
         2. [M] Missing telemetry on retry path.

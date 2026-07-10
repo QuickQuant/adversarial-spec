@@ -38,7 +38,23 @@ def _parse_json_concerns(
     try:
         data = json.loads(response)
     except (json.JSONDecodeError, ValueError):
-        return None
+        # Retry with markdown code fences stripped — CLI models sometimes wrap
+        # the JSON in ```json ... ``` or leave a stray trailing fence.
+        cleaned = response.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.split("\n", 1)[1] if "\n" in cleaned else ""
+        if cleaned.rstrip().endswith("```"):
+            cleaned = cleaned.rstrip()[:-3]
+        try:
+            data = json.loads(cleaned)
+        except (json.JSONDecodeError, ValueError):
+            # Last resort: take the first valid JSON document — models
+            # sometimes emit the object twice (once bare, once fenced) or
+            # append prose after the JSON ("Extra data" errors).
+            try:
+                data, _ = json.JSONDecoder().raw_decode(cleaned.lstrip())
+            except (json.JSONDecodeError, ValueError):
+                return None
 
     if not isinstance(data, dict):
         return None

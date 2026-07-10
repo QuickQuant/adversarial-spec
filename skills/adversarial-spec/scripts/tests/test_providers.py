@@ -23,13 +23,13 @@ class TestModelCosts:
     def test_model_costs_has_expected_models(self):
         expected = [
             "gpt-4o",
-            "gpt-5.5",
+            "gpt-5.6-sol",
             "gemini/gemini-3-flash",
             "xai/grok-3",
             "mistral/mistral-large",
             "deepseek/deepseek-chat",
             "zhipu/glm-4",
-            "codex/gpt-5.5",
+            "codex/gpt-5.6-sol",
         ]
         for model in expected:
             assert model in MODEL_COSTS
@@ -767,13 +767,14 @@ class TestGetDefaultModel:
 
     def test_returns_none_when_no_keys(self):
         from providers import get_default_model
-
+    
         with patch.dict("os.environ", {}, clear=True):
             with patch("providers.CODEX_AVAILABLE", False):
                 with patch("providers.GEMINI_CLI_AVAILABLE", False):
                     with patch("providers.CLAUDE_CLI_AVAILABLE", False):
-                        default = get_default_model()
-                        assert default is None
+                        with patch("providers.ANTIGRAVITY_AVAILABLE", False):
+                            default = get_default_model()
+                            assert default is None
 
     def test_prefers_bedrock_when_enabled(self):
         from providers import get_default_model

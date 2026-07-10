@@ -1,0 +1,16 @@
+{
+ "schema_version": "1.0",
+ "context_name": "Post-Fable Hardening (skill slice G1+G2+G5)",
+ "session_id": "adv-spec-202607060132-post-fable-hardening-skill",
+ "created_at": "2026-07-06T01:32:38Z",
+ "spec_path": ".adversarial-spec/specs/post-fable-hardening-skill/spec.md",
+ "goals": [
+  "G1",
+  "G2",
+  "G5"
+ ],
+ "goals_source": "docs/improvement-goals-2026-07.md",
+ "milestones": [],
+ "user_stories": [],
+ "test_cases": []
+}

@@ -26,7 +26,7 @@ GLOBAL_CONFIG_PATH = Path.home() / ".claude" / "adversarial-spec" / "config.json
 MODEL_COSTS = {
     # OpenAI API models
     "gpt-4o": {"input": 2.50, "output": 10.00},
-    "gpt-5.5": {"input": 5.00, "output": 30.00},
+    "gpt-5.6-sol": {"input": 5.00, "output": 30.00},
     "o1": {"input": 15.00, "output": 60.00},
     # Anthropic models
     "claude-sonnet-4-6": {"input": 3.00, "output": 15.00},
@@ -48,7 +48,9 @@ MODEL_COSTS = {
     # NVIDIA NIM (build.nvidia.com) — unlimited access via subscription
     "nvidia_nim/minimaxai/minimax-m2.7": {"input": 0.0, "output": 0.0},
     # Codex CLI models (uses ChatGPT subscription, no per-token cost)
-    "codex/gpt-5.5": {"input": 0.0, "output": 0.0},
+    "codex/gpt-5.6-luna": {"input": 0.0, "output": 0.0},
+    "codex/gpt-5.6-terra": {"input": 0.0, "output": 0.0},
+    "codex/gpt-5.6-sol": {"input": 0.0, "output": 0.0},
     "codex/gpt-5.1-codex-mini": {"input": 0.0, "output": 0.0},
     # Gemini CLI models (uses Google account, no per-token cost)
     "gemini-cli/gemini-3.1-pro-preview": {"input": 0.0, "output": 0.0},
@@ -56,6 +58,12 @@ MODEL_COSTS = {
     # Claude CLI models (uses Anthropic subscription via claude command, no per-token cost)
     "claude-cli/claude-sonnet-4-6": {"input": 0.0, "output": 0.0},
     "claude-cli/claude-opus-4-7": {"input": 0.0, "output": 0.0},
+    # Antigravity CLI models (uses Antigravity subscription via `agy`, no per-token cost).
+    # Replaces the retired standalone Gemini CLI (Google migrated Code Assist for
+    # individuals into the Antigravity suite ~2026-06; the old `gemini` binary now
+    # fails auth/tier). This is the current subscription path for the Google family.
+    "antigravity/gemini-3.1-pro": {"input": 0.0, "output": 0.0},
+    "antigravity/gemini-3.5-flash": {"input": 0.0, "output": 0.0},
 }
 
 DEFAULT_COST = {"input": 5.00, "output": 15.00}
@@ -69,8 +77,18 @@ GEMINI_CLI_AVAILABLE = shutil.which("gemini") is not None
 # Check if Claude CLI is available
 CLAUDE_CLI_AVAILABLE = shutil.which("claude") is not None
 
+# Check if Antigravity CLI (`agy`) is available — the Google-family subscription path
+# that replaced the retired standalone `gemini` CLI.
+ANTIGRAVITY_AVAILABLE = shutil.which("agy") is not None
+
 # Default reasoning effort for Codex CLI (minimal, low, medium, high, xhigh)
 DEFAULT_CODEX_REASONING = "xhigh"
+
+# GPT-5.6 routing tiers: Luna for inexpensive high-effort attacks, Terra for
+# Sonnet-level work, and Sol for spec development and final evaluation.
+GPT_56_LUNA = "codex/gpt-5.6-luna"
+GPT_56_TERRA = "codex/gpt-5.6-terra"
+GPT_56_SOL = "codex/gpt-5.6-sol"
 
 # Bedrock model mapping: friendly names -> Bedrock model IDs
 BEDROCK_MODEL_MAP = {
@@ -293,7 +311,7 @@ def list_providers():
         print("-" * 60 + "\n")
 
     providers = [
-        ("OpenAI", "OPENAI_API_KEY", "gpt-5.5"),
+        ("OpenAI", "OPENAI_API_KEY", "gpt-5.6-sol"),
         (
             "Anthropic",
             "ANTHROPIC_API_KEY",
@@ -306,7 +324,7 @@ def list_providers():
         (
             "OpenRouter",
             "OPENROUTER_API_KEY",
-            "openrouter/openai/gpt-5.5, openrouter/anthropic/claude-sonnet-4-6",
+            "openrouter/openai/gpt-5.6-sol, openrouter/anthropic/claude-sonnet-4-6",
         ),
         ("Deepseek", "DEEPSEEK_API_KEY", "deepseek/deepseek-chat"),
         ("Zhipu", "ZHIPUAI_API_KEY", "zhipu/glm-4, zhipu/glm-4-plus"),
@@ -327,7 +345,7 @@ def list_providers():
     # Codex CLI (uses ChatGPT subscription, not API key)
     codex_status = "[installed]" if CODEX_AVAILABLE else "[not installed]"
     print(f"  {'Codex CLI':12} {'(ChatGPT subscription)':24} {codex_status}")
-    print("             Example models: codex/gpt-5.5")
+    print("             Example models: codex/gpt-5.6-luna, codex/gpt-5.6-terra, codex/gpt-5.6-sol")
     print(
         "             Reasoning: --codex-reasoning (minimal, low, medium, high, xhigh)"
     )
@@ -350,6 +368,15 @@ def list_providers():
         "             Example models: claude-cli/claude-opus-4-7, claude-cli/claude-sonnet-4-6"
     )
     print("             Install: npm install -g @anthropic-ai/claude-code && claude setup-token")
+    print()
+
+    # Antigravity CLI (uses Antigravity subscription via `agy`) — Google-family path
+    antigravity_status = "[installed]" if ANTIGRAVITY_AVAILABLE else "[not installed]"
+    print(f"  {'Antigravity':12} {'(Antigravity subscription)':24} {antigravity_status}")
+    print(
+        "             Example models: antigravity/gemini-3.1-pro, antigravity/gemini-3.5-flash"
+    )
+    print("             Replaces the retired standalone Gemini CLI (agy models to list).")
     print()
 
     # Show Bedrock option if not enabled
@@ -410,7 +437,7 @@ def get_available_providers() -> list[tuple[str, Optional[str], str]]:
 
     # Add Codex CLI if available
     if CODEX_AVAILABLE:
-        available.append(("Codex CLI", None, "codex/gpt-5.5"))
+        available.append(("Codex CLI", None, GPT_56_SOL))
 
     # Add Gemini CLI if available
     if GEMINI_CLI_AVAILABLE:
@@ -419,6 +446,10 @@ def get_available_providers() -> list[tuple[str, Optional[str], str]]:
     # Add Claude CLI if available
     if CLAUDE_CLI_AVAILABLE:
         available.append(("Claude CLI", None, "claude-cli/claude-opus-4-7"))
+
+    # Add Antigravity CLI if available (Google-family subscription path)
+    if ANTIGRAVITY_AVAILABLE:
+        available.append(("Antigravity", None, "antigravity/gemini-3.1-pro"))
 
     return available
 
@@ -480,6 +511,7 @@ def validate_model_credentials(models: list[str]) -> tuple[list[str], list[str]]
         "codex/": None,  # Uses ChatGPT subscription, not API key
         "gemini-cli/": None,  # Uses Google account, not API key
         "claude-cli/": None,  # Uses Anthropic subscription via claude command
+        "antigravity/": None,  # Uses Antigravity subscription via `agy`
     }
 
     for model in models:
@@ -502,6 +534,14 @@ def validate_model_credentials(models: list[str]) -> tuple[list[str], list[str]]
         # Check if it's a Claude CLI model
         if model.startswith("claude-cli/"):
             if CLAUDE_CLI_AVAILABLE:
+                valid.append(model)
+            else:
+                invalid.append(model)
+            continue
+
+        # Check if it's an Antigravity CLI model
+        if model.startswith("antigravity/"):
+            if ANTIGRAVITY_AVAILABLE:
                 valid.append(model)
             else:
                 invalid.append(model)

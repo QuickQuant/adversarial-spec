@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=768">
+  <title>adversarial-spec — overview</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #ece7dc;
+      --paper: #fbf9f3;
+      --paper-2: #f4efe4;
+      --paper-3: #e6ded0;
+      --ink: #201e1a;
+      --muted: #5f5a50;
+      --line: #cfc5b4;
+      --line-strong: #aa9d87;
+      --green: #24613b;
+      --green-soft: #dfeadf;
+      --rust: #8c4b28;
+      --rust-soft: #f1ded3;
+      --gold: #80631f;
+      --gold-soft: #f1e5c6;
+      --red: #8a2e25;
+      --red-soft: #ead3ce;
+      --blue: #24586f;
+      --blue-soft: #d8e8ed;
+      --focus: 0 0 0 3px rgba(36, 97, 59, 0.24);
+      --radius: 8px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { min-width: 320px; background: var(--bg); color: var(--ink); }
+    body { margin: 0; background: var(--bg); color: var(--ink); line-height: 1.45; }
+    button, textarea { font: inherit; }
+    button { min-height: 2.35rem; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--paper); color: var(--ink); cursor: pointer; padding: 0.48rem 0.76rem; }
+    button:hover { border-color: var(--green); }
+    button:focus-visible, textarea:focus-visible, a:focus-visible { outline: none; box-shadow: var(--focus); }
+    a { color: var(--green); font-weight: 850; text-decoration-thickness: 0.08em; text-underline-offset: 0.18em; }
+    h1, h2, h3, p { margin: 0; }
+    h1 { margin-bottom: 12px; font-size: 2.45rem; line-height: 1.04; letter-spacing: 0; }
+    h2 { font-size: 1.55rem; line-height: 1.16; letter-spacing: 0; }
+    h3 { font-size: 1rem; line-height: 1.22; letter-spacing: 0; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.94em; }
+    .page { max-width: 1160px; margin: 0 auto; padding: 22px; }
+    .topline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line-strong); }
+    .eyebrow { color: var(--muted); font-size: 0.82rem; font-weight: 900; letter-spacing: 0; text-transform: uppercase; }
+    .top-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem; color: var(--muted); font-size: 0.92rem; }
+    header { padding: 20px 0 18px; }
+    .hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: 16px; align-items: stretch; }
+    .summary-box { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 1rem; }
+    .summary-box p + p { margin-top: 0.65rem; }
+    .stale-banner { margin-top: 14px; border: 1px solid #c28f87; border-radius: var(--radius); background: var(--red-soft); color: var(--red); padding: 0.9rem 1rem; font-weight: 750; }
+    .clock-card { display: grid; align-content: center; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper-2); padding: 1rem; }
+    .clock-title { margin: 0 0 0.55rem; color: var(--muted); font-size: 0.78rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0; }
+    .clock { margin: 0; white-space: pre; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.94rem; line-height: 1.55; color: var(--ink); }
+    main { display: grid; gap: 0; border-top: 1px solid var(--line-strong); }
+    .report-section, footer { padding: 24px 0; border-bottom: 1px solid var(--line-strong); }
+    .section-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+    .head-stack { display: grid; gap: 0.45rem; min-width: 0; }
+    .tag-row, .pill-list, .chips { display: flex; flex-wrap: wrap; gap: 0.45rem; min-width: 0; }
+    .section-tag, .chip, .mini-chip { display: inline-flex; align-items: center; max-width: 100%; min-width: 0; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--paper); color: var(--muted); font-weight: 850; white-space: normal; overflow-wrap: anywhere; }
+    .section-tag { min-height: 1.7rem; padding: 0.16rem 0.52rem; font-size: 0.78rem; }
+    .chip { min-height: 1.65rem; padding: 0.18rem 0.52rem; font-size: 0.78rem; }
+    .mini-chip { min-height: 1.45rem; padding: 0.12rem 0.42rem; font-size: 0.72rem; }
+    .green { border-color: #8eb592; background: var(--green-soft); color: var(--green); }
+    .rust { border-color: #c89476; background: var(--rust-soft); color: var(--rust); }
+    .gold { border-color: #c3aa5f; background: var(--gold-soft); color: var(--gold); }
+    .red { border-color: #c28f87; background: var(--red-soft); color: var(--red); }
+    .blue { border-color: #8db2be; background: var(--blue-soft); color: var(--blue); }
+    .warning-chip { border-color: #c3aa5f; background: var(--gold-soft); color: var(--gold); }
+    .muted { color: var(--muted); }
+    .lead { color: var(--ink); font-size: 1.02rem; }
+    .stack { display: grid; gap: 14px; }
+    .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
+    .three-col { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
+    .panel { min-width: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 0.95rem; }
+    .panel h3 { margin-bottom: 0.42rem; }
+    .panel p + p { margin-top: 0.52rem; }
+    .flow { display: flex; align-items: stretch; gap: 0.5rem; overflow-x: auto; padding: 2px 0 6px; }
+    .phase { display: grid; align-content: center; gap: 0.22rem; min-width: 8.7rem; min-height: 4rem; padding: 0.62rem 0.72rem; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--paper); text-align: center; }
+    .phase.done { background: var(--green-soft); border-color: #8eb592; }
+    .phase.current { background: var(--gold-soft); border-color: #c3aa5f; box-shadow: inset 0 0 0 2px rgba(128, 99, 31, 0.16); }
+    .phase.pending { color: var(--muted); background: var(--paper-2); }
+    .phase-mark { font-size: 1.05rem; font-weight: 900; }
+    .phase-name { font-size: 0.86rem; font-weight: 850; overflow-wrap: anywhere; }
+    .arrow { display: flex; align-items: center; justify-content: center; min-width: 1.2rem; color: var(--muted); font-weight: 900; }
+    .compare-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+    .compare-card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 1rem; }
+    .compare-card h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; margin-bottom: 0.7rem; }
+    .steps { display: flex; flex-wrap: wrap; gap: 0.42rem; margin-top: 0.78rem; }
+    .step-pill { border: 1px solid var(--line); border-radius: 999px; background: var(--paper-2); color: var(--muted); font-size: 0.78rem; font-weight: 850; padding: 0.18rem 0.5rem; overflow-wrap: anywhere; }
+    .problem-map { display: grid; gap: 10px; }
+    .map-row { display: grid; grid-template-columns: minmax(10rem, 0.72fr) auto minmax(13rem, 1fr); gap: 10px; align-items: stretch; }
+    .map-cell { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 0.82rem; min-width: 0; }
+    .map-cell strong { display: block; margin-bottom: 0.28rem; }
+    .map-arrow { display: flex; align-items: center; justify-content: center; color: var(--muted); font-weight: 950; }
+    .component-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .component { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 0.82rem; min-width: 0; }
+    .component h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem; }
+    .component p { color: var(--muted); font-size: 0.92rem; }
+    .files { margin-top: 0.45rem; color: var(--ink); font-size: 0.86rem; overflow-wrap: anywhere; }
+    .decision-list { margin-top: 14px; }
+    .concern-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .concern { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 0.82rem; min-width: 0; }
+    .concern h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem; }
+    .concern p { color: var(--muted); font-size: 0.92rem; }
+    .tail-list { display: grid; gap: 10px; }
+    .tail-entry { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 0.95rem; }
+    .tail-meta { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.55rem; }
+    .comment-panel { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .field-label { display: block; margin: 0 0 0.36rem; color: var(--muted); font-size: 0.82rem; font-weight: 850; }
+    textarea { display: block; width: 100%; min-height: 5rem; resize: vertical; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--paper); color: var(--ink); padding: 0.68rem; }
+    .footer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.7rem; margin: 0.8rem 0; }
+    .primary { background: var(--green); border-color: var(--green); color: #fff; font-weight: 850; }
+    .inline-status { min-height: 1.35rem; color: var(--muted); font-size: 0.9rem; font-weight: 850; }
+    .inline-status.ok { color: var(--green); }
+    .inline-status.error { color: var(--red); }
+    #feedback-json { min-height: 14rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.84rem; white-space: pre; }
+    .note { color: var(--muted); font-size: 0.9rem; }
+    @media (max-width: 980px) {
+      .hero-grid, .two-col, .three-col, .compare-grid, .component-grid, .concern-grid { grid-template-columns: 1fr; }
+      .map-row { grid-template-columns: 1fr; }
+      .map-arrow { min-height: 1.6rem; transform: rotate(90deg); }
+    }
+    @media (max-width: 720px) {
+      .page { padding: 16px; }
+      h1 { font-size: 2rem; }
+      .phase { min-width: 7.7rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="topline" aria-label="Report metadata">
+      <p class="eyebrow">Whole-project overview</p>
+      <div class="top-actions">
+        <a href="recent.html">recent activity</a>
+        <span>git b31f8fd · map f198887</span>
+      </div>
+    </div>
+
+    <header>
+      <h1>adversarial-spec overview</h1>
+      <div class="hero-grid">
+        <div class="summary-box">
+          <p class="lead">A long-lived step-back page for architecture-decision gates. It explains what the program is, how debate differs from gauntlet review, what is actively changing, and which architectural risks should stay visible.</p>
+          <p class="muted">Current program: <code>post-fable-hardening-skill</code> is in the debate phase now. It covers G1 post-Fable operability, G2 system-spine verification, and G5 debate efficiency; G3 lives in the Fizzy task-system slice, and G4 is deferred outside this active skill slice.</p>
+        </div>
+        <aside class="clock-card" aria-label="Report clock">
+          <p class="clock-title">Clock</p>
+          <pre class="clock">generated  <span id="clock-generated">2026-07-08 11:29 CDT</span>
+now        <span id="clock-now">loading</span>
+age        <span id="clock-age">loading</span></pre>
+        </aside>
+      </div>
+      <div class="stale-banner" role="note">Architecture corpus is CAUTION-stale — generated 2026-06-11 at commit f198887, now 50 commits behind b31f8fd; the TMR/F-prime/validation-emission wave is unmapped; refresh deliberately deferred (Jason 2026-07-05). Narrative claims below derive from that corpus and may trail HEAD. Plainly: TMR is the test-maturity evidence registry, F-prime is the freshness gate, and validation-emission is the validation-card output path.</div>
+    </header>
+
+    <main>
+      <section class="report-section" id="narrative-what" data-block-id="narrative-what">
+        <div class="section-head">
+          <div class="head-stack">
+            <h2>What It Is</h2>
+            <div class="tag-row">
+              <span class="section-tag">Claude Code skill</span>
+              <span class="section-tag">multi-model debate</span>
+              <span class="section-tag">Fizzy board coordination</span>
+            </div>
+          </div>
+        </div>
+        <div class="stack">
+          <p class="lead"><code>adversarial-spec</code> is a Claude Code skill for refining specs through multiple language models. It takes a product spec, sends it to critics, reconciles their objections, and moves the work through the project pipeline until the spec is ready for execution and implementation.</p>
+          <div class="flow" aria-label="8-phase pipeline flow">
+            <div class="phase done"><span class="phase-mark">✓</span><span class="phase-name">requirements</span></div>
+            <span class="arrow" aria-hidden="true">→</span>
+            <div class="phase done"><span class="phase-mark">✓</span><span class="phase-name">roadmap</span></div>
+            <span class="arrow" aria-hidden="true">→</span>
+            <div class="phase current"><span class="phase-mark">◉</span><span class="phase-name">debate</span></div>
+            <span class="arrow" aria-hidden="true">→</span>
+            <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">target-architecture</span></div>
+            <span class="arrow" aria-hidden="true">→</span>
+            <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">gauntlet</span></div>
+            <span class="arrow" aria-hidden="true">→</span>
+            <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">finalize</span></div>
+            <span class="arrow" aria-hidden="true">→</span>
+            <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">execution</span></div>
+            <span class="arrow" aria-hidden="true">→</span>
+            <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">implementation</span></div>
+          </div>
+          <div class="two-col">
+            <div class="panel">
+              <h3>Coordination Plane</h3>
+              <p class="muted">Work moves on a Fizzy board, which is the pipeline task board. Hooks inject dispatch messages, keep workers moving after card completion, and log activity without importing the skill code.</p>
+            </div>
+            <div class="panel">
+              <h3>Current In-Flight Spec</h3>
+              <p class="muted"><code>post-fable-hardening-skill</code> is in Debate. Requirements passed with the G1-F2 amendment: phase docs split into exact task-sized units, not arbitrary byte caps. Roadmap is complete: 9 milestones and 17 user stories.</p>
+              <div class="chips"><span class="chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="comment-panel">
+          <label class="field-label" for="comment-narrative-what">Comment on what it is</label>
+          <textarea id="comment-narrative-what" data-block="narrative-what" placeholder="Feedback for this block"></textarea>
+        </div>
+      </section>
+
+      <section class="report-section" id="narrative-how" data-block-id="narrative-how">
+        <div class="section-head">
+          <div class="head-stack">
+            <h2>How It Works</h2>
+            <div class="tag-row"><span class="section-tag">debate vs gauntlet</span><span class="section-tag">single command-line invocation</span></div>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="compare-grid" aria-label="Debate and gauntlet comparison">
+            <article class="compare-card">
+              <h3><span>📣 Debate</span><span class="chip blue">collaborative Opponents</span></h3>
+              <p class="muted">Debate uses collaborating critic models, called Opponents, to improve a draft over numbered rounds. The goal is convergence: objections are answered, accepted, or turned into revisions.</p>
+              <div class="steps" aria-label="Debate steps">
+                <span class="step-pill">draft</span><span class="step-pill">opponent critique</span><span class="step-pill">reconcile</span><span class="step-pill">round checkpoint</span><span class="step-pill">convergence check</span>
+              </div>
+              <div class="chips"><span class="chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span></div>
+            </article>
+            <article class="compare-card">
+              <h3><span>⚔ Gauntlet</span><span class="chip rust">hostile Adversary personas</span></h3>
+              <p class="muted">Gauntlet is a later stress test. Named Adversaries attack the spec, evaluators sort the attacks, and the output is Concerns: specific risks that must be accepted, dismissed, acknowledged, or deferred.</p>
+              <div class="steps" aria-label="Gauntlet internal steps">
+                <span class="step-pill">1 attack</span><span class="step-pill">2 synthesize</span><span class="step-pill">3 filter</span><span class="step-pill">3.5 cluster</span><span class="step-pill">4 evaluate</span><span class="step-pill">5 rebut</span><span class="step-pill">6 adjudicate</span><span class="step-pill">7 final boss</span>
+              </div>
+            </article>
+          </div>
+          <div class="three-col">
+            <div class="panel">
+              <h3>Model Calls</h3>
+              <p class="muted">The models layer routes API-backed calls through LiteLLM and subscription models through command-line subprocesses. A preflight ping catches bad model names and broken auth before long critique runs.</p>
+            </div>
+            <div class="panel">
+              <h3>Checkpointing</h3>
+              <p class="muted">Debate sessions and gauntlet phases write restartable checkpoints. Gauntlet checkpoints use FileLock-guarded integrity envelopes, so resume can reject mismatched or corrupted state.</p>
+            </div>
+            <div class="panel">
+              <h3>Gate Enforcement</h3>
+              <p class="muted">The command line enforces pipeline-card and test-staleness gates before dispatch. The current hardening spec is expanding this pattern so fewer gates depend on conductor memory.</p>
+              <div class="chips"><span class="chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="comment-panel">
+          <label class="field-label" for="comment-narrative-how">Comment on how it works</label>
+          <textarea id="comment-narrative-how" data-block="narrative-how" placeholder="Feedback for this block"></textarea>
+        </div>
+      </section>
+
+      <section class="report-section" id="narrative-why" data-block-id="narrative-why">
+        <div class="section-head">
+          <div class="head-stack">
+            <h2>Why This Wave Exists</h2>
+            <div class="tag-row"><span class="section-tag">G1 · G2 · G5 active</span><span class="section-tag">G3 Fizzy slice</span><span class="section-tag">G4 later</span></div>
+          </div>
+        </div>
+        <div class="problem-map" aria-label="Problem to goal mapping">
+          <div class="map-row">
+            <div class="map-cell"><strong>Seams passed locally, failed end-to-end</strong><span class="muted">Component tests went green while full operator-to-system paths still broke.</span></div>
+            <div class="map-arrow" aria-hidden="true">→</div>
+            <div class="map-cell"><strong>G2 system spine</strong><span class="muted">Add subsystem/system verification phases, a pseudo→real evidence promotion gate, and a ConOps walkthrough before close.</span><div class="chips"><span class="mini-chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span></div></div>
+          </div>
+          <div class="map-row">
+            <div class="map-cell"><strong>Gates attested instead of derived</strong><span class="muted">Some checks relied on a worker saying evidence existed rather than deriving it from artifacts.</span></div>
+            <div class="map-arrow" aria-hidden="true">→</div>
+            <div class="map-cell"><strong>G3 contract reconciliation</strong><span class="muted">Fizzy-side contract work lives in a separate slice; this overview marks it as outside the active skill-side debate.</span></div>
+          </div>
+          <div class="map-row">
+            <div class="map-cell"><strong>Debate re-litigated settled points</strong><span class="muted">Card 5715 took 12 rounds, had two false convergences, and let derived artifacts drift.</span></div>
+            <div class="map-arrow" aria-hidden="true">→</div>
+            <div class="map-cell"><strong>G5 freeze and reconcile</strong><span class="muted">Track settled debate nodes, exclude frozen sections from routine critique, and mechanically reconcile derived artifacts before more rounds.</span><div class="chips"><span class="mini-chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span></div></div>
+          </div>
+          <div class="map-row">
+            <div class="map-cell"><strong>Dispatch was fragile</strong><span class="muted">Timeouts, quota deaths, stale model names, triple LiteLLM pathways, and divergent command surfaces all produced friction.</span></div>
+            <div class="map-arrow" aria-hidden="true">→</div>
+            <div class="map-cell"><strong>G4 dispatch reliability</strong><span class="muted">The July goals name the work, but the current checkpoint excludes G4 from this skill-side spec and leaves it for a later session.</span></div>
+          </div>
+          <div class="map-row">
+            <div class="map-cell"><strong>Honor-system gates and oversized phase docs</strong><span class="muted">Phase instructions assumed a frontier conductor could remember large rule sets and enforce every gate.</span></div>
+            <div class="map-arrow" aria-hidden="true">→</div>
+            <div class="map-cell"><strong>G1 post-Fable operability</strong><span class="muted">Inventory every MUST/gate, mechanize what can be checked, give judgment gates fixtures, split phase docs into exact-use units, and add a conductor competence harness.</span><div class="chips"><span class="mini-chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span></div></div>
+          </div>
+        </div>
+        <div class="comment-panel">
+          <label class="field-label" for="comment-narrative-why">Comment on why/current program</label>
+          <textarea id="comment-narrative-why" data-block="narrative-why" placeholder="Feedback for this block"></textarea>
+        </div>
+      </section>
+
+      <section class="report-section" id="components" data-block-id="components">
+        <div class="section-head">
+          <div class="head-stack">
+            <h2>Components</h2>
+            <div class="tag-row"><span class="section-tag">12 live components from architecture index</span><span class="section-tag">retired modules noted</span></div>
+          </div>
+        </div>
+        <div class="component-grid" aria-label="Component grid">
+          <article class="component"><h3>Debate Engine <span class="mini-chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span></h3><p>Command-line router for critique, gates, preflight, debate rounds, and consensus checks.</p><p class="files"><code>debate.py</code></p></article>
+          <article class="component"><h3>Gauntlet Pipeline</h3><p>Seven-step adversarial stress test that generates, filters, evaluates, rebuts, and adjudicates Concerns.</p><p class="files"><code>gauntlet/orchestrator.py</code>, <code>gauntlet/core_types.py</code>, <code>gauntlet/batch_tiering.py</code>, <code>gauntlet/clustering.py</code></p></article>
+          <article class="component"><h3>Models</h3><p>Shared language-model call layer, including API calls, command-line model subprocesses, and preflight.</p><p class="files"><code>models.py</code></p></article>
+          <article class="component"><h3>Token Tracking</h3><p>Thread-safe token and cost accounting singleton used across parallel model calls.</p><p class="files"><code>token_tracking.py</code></p></article>
+          <article class="component"><h3>Providers</h3><p>Model configuration, cost table, Bedrock routing, and command-line availability checks.</p><p class="files"><code>providers.py</code></p></article>
+          <article class="component"><h3>Adversaries</h3><p>Frozen persona registry, reusable adversary templates, and deterministic Concern IDs.</p><p class="files"><code>adversaries.py</code></p></article>
+          <article class="component"><h3>Prompts</h3><p>Prompt templates for debate and gauntlet-specific prompt wording.</p><p class="files"><code>prompts.py</code>, <code>gauntlet/prompts.py</code></p></article>
+          <article class="component"><h3>Emission Toolchain <span class="mini-chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span></h3><p>Plan emission and self-checks for Fizzy v3 contracts; validation-card emission is the next pattern match.</p><p class="files"><code>mini_spec_emission.py</code></p></article>
+          <article class="component"><h3>Gauntlet Persistence</h3><p>FileLock plus integrity-hashed checkpoint envelopes for gauntlet resume safety.</p><p class="files"><code>gauntlet/persistence.py</code></p></article>
+          <article class="component"><h3>Harness Hooks <span class="mini-chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span></h3><p>Pipeline coordination hooks for dispatch injection, forced continuation, idle retry, notifications, and activity logging.</p><p class="files"><code>.claude/hooks/*.py</code></p></article>
+          <article class="component"><h3>Pre-Gauntlet</h3><p>Collector for git and system context before a gauntlet run.</p><p class="files"><code>pre_gauntlet/orchestrator.py</code></p></article>
+          <article class="component"><h3>Session</h3><p>Persistence for multi-round debate state and resume continuity.</p><p class="files"><code>session.py</code></p></article>
+        </div>
+        <div class="decision-list pill-list" aria-label="Architecture decisions">
+          <span class="chip green">Single-invocation CLI; continuity via checkpoints, not daemons.</span>
+          <span class="chip green">Deterministic code over LLM subagents for clustering, tiering, and extraction.</span>
+          <span class="chip green">FileLock plus integrity-hashed envelopes for gauntlet state; resume validates everything.</span>
+          <span class="chip green">Gates enforced in code: pipeline-card, test staleness, Phase-1 quality, and preflight.</span>
+          <span class="chip green">Hooks are the coordination plane and never import skill code.</span>
+        </div>
+        <p class="muted" style="margin-top: 14px;">Retired June 2026: MCP Tasks, the old task-server path, plus <code>task_manager.py</code>, <code>scope.py</code>, and <code>gauntlet_monolith.py</code>. The deprecated execution-planner remainder is concern parsing only and is not counted in this live component grid.</p>
+        <div class="comment-panel">
+          <label class="field-label" for="comment-components">Comment on components</label>
+          <textarea id="comment-components" data-block="components" placeholder="Feedback for this block"></textarea>
+        </div>
+      </section>
+
+      <section class="report-section" id="concerns" data-block-id="concerns">
+        <div class="section-head">
+          <div class="head-stack">
+            <h2>Top Concerns</h2>
+            <div class="tag-row"><span class="section-tag">from 2026-06-11 architecture rollup</span><span class="section-tag">fix-first summary</span></div>
+          </div>
+        </div>
+        <div class="concern-grid" aria-label="Concern summary grid">
+          <article class="concern"><h3><span class="chip rust">CON-001</span> One model-call wrapper</h3><p>Three LiteLLM call paths carry different defaults. A single low-level wrapper would remove silent drift.</p></article>
+          <article class="concern"><h3><span class="chip rust">CON-002</span> Token tracking still leaks upward</h3><p>The extraction landed, but gauntlet phases still import the global tracker. Model dispatch should own accounting.</p></article>
+          <article class="concern"><h3><span class="chip rust">CON-009</span> Prompt module shadowing</h3><p><code>prompts.py</code> name collision can load the wrong module in standalone paths; packaging or renaming should remove the trap.</p></article>
+          <article class="concern"><h3><span class="chip gold">CON-003</span> Oversized gauntlet orchestrator</h3><p><code>run_gauntlet()</code> mixes phase flow, checkpoints, manifests, medals, and stats. A phase table would narrow blast radius.</p></article>
+          <article class="concern"><h3><span class="chip gold">CON-007</span> Divergent command surfaces</h3><p><code>debate.py</code> and <code>gauntlet/cli.py</code> expose different flag names and timeout defaults for the same backend.</p></article>
+          <article class="concern"><h3><span class="chip gold">CON-008</span> Dispatch race</h3><p>Same-role workers share a baseline file and can miss conductor updates. Baselines need per-worker or per-Codex-session identity.</p></article>
+          <article class="concern"><h3><span class="chip blue">CON-004</span> Remaining dead code</h3><p>Most deleted shims are gone, but a focused cleanup should remove the remaining deprecated commands and stale remnants.</p></article>
+          <article class="concern"><h3><span class="chip blue">CON-005</span> Inline late-phase prompts</h3><p>Gauntlet phases 5 and 7 still carry inline prompt text instead of centralizing it with the gauntlet prompt templates.</p></article>
+          <article class="concern"><h3><span class="chip blue">CON-006</span> <code>sys.path</code> packaging debt</h3><p>Several scripts patch import paths directly. Proper package config and relative imports would remove fragile startup behavior.</p></article>
+        </div>
+        <div class="chips" style="margin-top: 14px;"><span class="chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span><span class="chip">G4 dispatch-reliability concern set is not part of the current skill-slice debate.</span></div>
+        <div class="comment-panel">
+          <label class="field-label" for="comment-concerns">Comment on concerns</label>
+          <textarea id="comment-concerns" data-block="concerns" placeholder="Feedback for this block"></textarea>
+        </div>
+      </section>
+
+      <section class="report-section" id="tail" data-block-id="tail">
+        <div class="section-head">
+          <div class="head-stack">
+            <h2>Appended Tail</h2>
+            <div class="tag-row"><span class="section-tag">newest last</span><span class="section-tag">seed entry</span></div>
+          </div>
+        </div>
+        <div class="tail-list" aria-label="Appended overview tail">
+          <article class="tail-entry">
+            <div class="tail-meta">
+              <span class="chip green">2026-07-08</span>
+              <span class="chip">session 3ba11a17-79e7-4c2b-afa4-6d13b2e22e94</span>
+              <span class="chip">checkpoint-202607081610-roadmap-complete-debate-entered.md</span>
+              <span class="chip">git b31f8fd</span>
+            </div>
+            <p>Requirements gate passed with G1-F2 amendment (discrete phase-doc units, no size caps). Roadmap completed: 9 milestones / 17 user stories through one debate round; card 5857 in Debate lane.</p>
+          </article>
+          <article class="tail-entry">
+            <div class="tail-meta">
+              <span class="chip green">2026-07-09</span>
+              <span class="chip">session adv-spec-202607060132-post-fable-hardening-skill</span>
+              <span class="chip">git 35738f0</span>
+            </div>
+            <p>Phase 8 skill doc (<code>08-implementation.md</code>) now requires a plain-language <code>HUMAN BRIEF:</code> on any card blocked with <code>blocker_type: "human_decision"</code>, plus same-session operator surfacing via the recent.html decision widget or telegram-send — a block that only lives in board state is a silent stall. Deferred questions must be re-blocked as <code>external_dependency</code>, never left sitting on <code>human_decision</code>. Doc-only rule (no runtime code change); origin card 5966.</p>
+          </article>
+        </div>
+        <div class="comment-panel">
+          <label class="field-label" for="comment-tail">Comment on appended tail</label>
+          <textarea id="comment-tail" data-block="tail" placeholder="Feedback for this block"></textarea>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="section-head">
+        <h2>Feedback JSON</h2>
+        <span class="section-tag">report-feedback/1</span>
+      </div>
+      <label class="field-label" for="feedback-json">Encoded feedback</label>
+      <textarea id="feedback-json" readonly aria-live="polite"></textarea>
+      <div class="footer-actions">
+        <button type="button" class="primary" id="copy-json">Copy</button>
+        <button type="button" id="submit-feedback">Submit</button>
+        <span id="feedback-status" class="inline-status" aria-live="polite"></span>
+      </div>
+      <p class="note">Submit needs the reports server. Copy works from file://.</p>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var reportMeta = {
+        schema: "report-feedback/1",
+        project: "adversarial-spec",
+        report: "overview",
+        report_generated_at: "2026-07-08T16:29:25Z"
+      };
+      var generatedAt = new Date("2026-07-08T16:29:25Z");
+      var feedbackOutput = document.getElementById("feedback-json");
+      var statusEl = document.getElementById("feedback-status");
+      var copyButton = document.getElementById("copy-json");
+      var submitButton = document.getElementById("submit-feedback");
+      var clockGenerated = document.getElementById("clock-generated");
+      var clockNow = document.getElementById("clock-now");
+      var clockAge = document.getElementById("clock-age");
+      var statusTimer = null;
+
+      var dateFormatter = new Intl.DateTimeFormat("sv-SE", {
+        timeZone: "America/Chicago",
+        hour12: false,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+      var tzFormatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/Chicago",
+        timeZoneName: "short",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+
+      function trimmedValue(element) {
+        return element && element.value ? element.value.trim() : "";
+      }
+
+      function tzAbbrev(date) {
+        var parts = tzFormatter.formatToParts(date);
+        var tzPart = parts.find(function (part) { return part.type === "timeZoneName"; });
+        return tzPart ? tzPart.value : "CT";
+      }
+
+      function formatChicago(date) {
+        return dateFormatter.format(date).replace("T", " ") + " " + tzAbbrev(date);
+      }
+
+      function formatAge(milliseconds) {
+        var totalMinutes = Math.max(0, Math.floor(milliseconds / 60000));
+        var days = Math.floor(totalMinutes / 1440);
+        var hours = Math.floor((totalMinutes % 1440) / 60);
+        var minutes = totalMinutes % 60;
+        return days + "d " + hours + "h " + minutes + "m";
+      }
+
+      function updateClock() {
+        var now = new Date();
+        clockGenerated.textContent = formatChicago(generatedAt);
+        clockNow.textContent = formatChicago(now);
+        clockAge.textContent = formatAge(now.getTime() - generatedAt.getTime());
+      }
+
+      function buildPayload() {
+        var payload = {
+          schema: reportMeta.schema,
+          project: reportMeta.project,
+          report: reportMeta.report,
+          report_generated_at: reportMeta.report_generated_at,
+          comments: []
+        };
+
+        document.querySelectorAll("textarea[data-block]").forEach(function (textarea) {
+          var comment = trimmedValue(textarea);
+          if (comment) {
+            payload.comments.push({
+              block: textarea.getAttribute("data-block"),
+              comment: comment
+            });
+          }
+        });
+
+        return payload;
+      }
+
+      function renderPayload() {
+        feedbackOutput.value = JSON.stringify(buildPayload(), null, 2);
+      }
+
+      function setStatus(message, mode) {
+        window.clearTimeout(statusTimer);
+        statusEl.textContent = message;
+        statusEl.classList.remove("ok", "error");
+        if (mode) {
+          statusEl.classList.add(mode);
+        }
+        if (message) {
+          statusTimer = window.setTimeout(function () {
+            statusEl.textContent = "";
+            statusEl.classList.remove("ok", "error");
+          }, 2200);
+        }
+      }
+
+      function fallbackCopy(text) {
+        feedbackOutput.focus();
+        feedbackOutput.select();
+        try {
+          return document.execCommand("copy");
+        } catch (error) {
+          return false;
+        }
+      }
+
+      function copyJson() {
+        var text = feedbackOutput.value;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () {
+            setStatus("copied", "ok");
+          }).catch(function () {
+            var copied = fallbackCopy(text);
+            setStatus(copied ? "copied" : "copy failed", copied ? "ok" : "error");
+          });
+          return;
+        }
+        var copied = fallbackCopy(text);
+        setStatus(copied ? "copied" : "copy failed", copied ? "ok" : "error");
+      }
+
+      function submitFeedback() {
+        setStatus("submitting", "");
+        fetch("/feedback/adversarial-spec", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: feedbackOutput.value
+        }).then(function (response) {
+          if (!response.ok) {
+            throw new Error("submit failed");
+          }
+          setStatus("submitted", "ok");
+        }).catch(function () {
+          setStatus("submit failed", "error");
+        });
+      }
+
+      document.addEventListener("input", renderPayload);
+      copyButton.addEventListener("click", copyJson);
+      submitButton.addEventListener("click", submitFeedback);
+      updateClock();
+      window.setInterval(updateClock, 30000);
+      renderPayload();
+    })();
+  </script>
+</body>
+</html>

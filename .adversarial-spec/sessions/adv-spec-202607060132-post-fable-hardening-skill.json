@@ -1,0 +1,135 @@
+{
+  "schema_version": "1.4",
+  "session_id": "adv-spec-202607060132-post-fable-hardening-skill",
+  "context_name": "Increased-Intelligence Hardening (skill slice G1+G2+G5; codex upgrade in scope)",
+  "created_at": "2026-07-06T01:32:38Z",
+  "updated_at": "2026-07-08T16:10:43Z",
+  "current_phase": "debate",
+  "current_step": "Phase 3 (debate) entered; roadmap persisted + confirmed; spec draft v1 not yet authored",
+  "checkpointed_cleanly": true,
+  "session_altitude": "system",
+  "session_altitude_source": "declared",
+  "complexity_tier": "complex",
+  "plan_path": "docs/improvement-goals-2026-07.md",
+  "spec_path": ".adversarial-spec/specs/post-fable-hardening-skill/spec.md",
+  "manifest_path": ".adversarial-spec/specs/post-fable-hardening-skill/manifest.json",
+  "fizzy_card_id": "5857",
+  "context": {
+    "goal": "Design (dogfooded) the skill slice of post-Fable hardening: G1 mechanized gates + slim phase docs + conductor competence harness; G2 V-model ascending arm with pseudo->real promotion gate; G5 debate freeze/settle + deterministic derived-artifact reconciliation."
+  },
+  "constraints": [
+    "Fable access extended to ~2026-07-12 (Jason 2026-07-07): spend on judgment phases; implementation outlives Fable",
+    "Debate Opponents = codex + gemini (never claude-from-claude)",
+    "mapcodebase refresh deferred (Jason 2026-07-05 answer b)",
+    "all work on git branches",
+    "coordinate contract changes with fizzy slice (G3+G4)"
+  ],
+  "do_not_ask": [
+    "whether to dogfood (decided: q-20260704-goal-scope choice a)",
+    "whether to refresh mapcodebase now (deferred: choice b)"
+  ],
+  "todowrite_snapshot": [
+    {
+      "content": "Author spec draft v1 (technical depth) from roadmap manifest",
+      "status": "pending",
+      "activeForm": "Authoring spec draft v1"
+    },
+    {
+      "content": "Run debate rounds via pipeline tools until consensus",
+      "status": "pending",
+      "activeForm": "Running debate rounds"
+    },
+    {
+      "content": "Per round: synthesize critiques, apply revisions, run guardrails",
+      "status": "pending",
+      "activeForm": "Synthesizing round feedback"
+    },
+    {
+      "content": "Check convergence with anti-bare-AGREE press",
+      "status": "pending",
+      "activeForm": "Checking convergence"
+    }
+  ],
+  "doc_type": "spec",
+  "doc_depth": "technical",
+  "requirements_summary": {
+    "problem": "Five failure classes survive the working Phase 8 loop: verification theater at seams (no owned executable system spine), attest-instead-of-derive gates, debate inefficiency (12 rounds, false convergences, derived-artifact drift), dispatch fragility (fizzy slice), honor-system gates + 90K phase docs that assume a frontier conductor \u2014 and Fable access ends ~2026-07-07.",
+    "user_types": [
+      "Jason (operator; remote-first via Telegram; approves gates, redirects phases)",
+      "Conductor LLM (currently Fable; post-Fable = Opus/Sonnet \u2014 must stay competent on slimmer docs + mechanized gates)",
+      "Worker LLMs (codex/gemini/haiku; consume phase docs, cards, TMR registry)",
+      "Candidate conductor models (subjects of the G1 competence harness)"
+    ],
+    "features": [
+      "G1-F1 Mechanized phase gates: every gate fires in code or has a named rubric+fixture",
+      "G1-F2 Phase docs decomposed into discrete, well-organized units: each task/phase loads exactly what it needs \u2014 no more, no less. No arbitrary size caps (Jason amendment 2026-07-07; supersedes the <=25K target).",
+      "G1-F3 Conductor competence harness: golden-eval 'session state -> next action' fixtures, runnable against candidate models",
+      "G2-F1 System-spine verification phases (subsystem + system) after Phase 8 sweep, card set derived from tmr-registry.json",
+      "G2-F2 Pseudo->real promotion gate: finalize/complete blocked while critical-seam TMRs hold declared-only evidence",
+      "G2-F3 ConOps validation step: scripted operator walkthrough of the happy-path spine against the live system before session close",
+      "G2-F4 Durable node-registry / spine artifacts",
+      "G5-F1 Settled/frozen packets: converged sections excluded from re-critique unless a new concern names them",
+      "G5-F2 Debate node registry (settled / volatile / derived)",
+      "G5-F3 Deterministic derived-artifact reconciliation on every spec version bump (tests-pseudo, TMR, invariants re-diffed mechanically)",
+      "G5-F4 False-convergence guard (R3/R7 case study from card-5715)"
+    ],
+    "integrations": [
+      "fizzy-pipeline-mcp (board FSM, lanes, derive-not-attest gates \u2014 G3/G4 slice coordinated separately)",
+      "tmr-registry.json shared contract (skill v12 schema)",
+      "debate.py + gauntlet/ package",
+      "phase docs corpus + reference/",
+      "telegram bridge (operator gates)",
+      "CI (pytest, doclint, golden evals)"
+    ],
+    "unknowns": [
+      "U1 Do subsystem/system-verification live as new canonical phases or steps inside implementation? (canonical order is load-bearing)",
+      "U2 Promotion-gate semantics: critical-seam definition, skip/deferred enum interplay, derived by fizzy or skill?",
+      "U3 ConOps walkthrough form: script format, evidence captured, blocking behavior",
+      "U4 Freeze granularity + unfreeze trigger + enforcement point for settled packets",
+      "U5 False-convergence signal: what mechanically distinguishes real from false convergence",
+      "U6 Competence-harness fixture format, scoring, and where it runs (CI vs on-demand)",
+      "U7 Phase-doc slimming split: what moves to reference/ vs deleted",
+      "U8 Dependency ordering: which contract deltas must land in the fizzy slice first"
+    ],
+    "success_criteria": [
+      "A session structurally cannot reach complete with unrun critical-seam tests (gateway failure replayed -> caught at promotion gate)",
+      "Every phase gate fires in code or has rubric+fixture; phase docs decomposed so each task loads exactly the content it needs (organization judged, not byte-capped); harness green under Sonnet/Opus",
+      "Fewer debate rounds; zero derived-artifact drift reaching the gauntlet"
+    ],
+    "evidence_sources": [
+      "docs/improvement-goals-2026-07.md",
+      "docs/reports/process-retrospectives/2026-06-18-card-5715-process-study.md",
+      "docs/reports/process-retrospectives/2026-06-18-gateway-live-execution-process-study.md"
+    ]
+  },
+  "requirements_confirmed": {
+    "by": "Jason",
+    "at": "2026-07-07T20:45:00Z",
+    "amendments": [
+      "G1-F2: no arbitrary size limits; decompose into discrete tasks with exactly-needed content",
+      "constraint: Fable access extended 5 days to ~2026-07-12"
+    ],
+    "confirmed_as_is": [
+      "G2",
+      "G5"
+    ]
+  },
+  "tests_pseudo_path": ".adversarial-spec/specs/post-fable-hardening-skill/tests-pseudo.md",
+  "roadmap_path": ".adversarial-spec/specs/post-fable-hardening-skill/roadmap/manifest.json",
+  "completed_work": "Requirements gate passed (G1-F2 amended: no size caps; Fable window ~2026-07-12). Roadmap phase complete: complexity 27/complex; draft + R1 debate (codex/gpt-5.5 + gemini/gemini-3.5-flash API path); 4 revisions folded (waiver US-15, personas, global KPIs, boundary US-16); G4 excluded (Jason). Artifacts: roadmap/manifest.json (9 milestones/17 US), roadmap.md, tests-pseudo.md (17 spines), trello-plan.json placeholder, _progress. Card 5857 \u2192 Debate lane. Ops: gemini-cli fresh-spawn IneligibleTierError diagnosed (oauth-personal, latest CLI; live panes unaffected; over-claim corrected in memory/Telegram/card); debate.py preflight breaks on thinking models (--skip-preflight workaround, M1 candidate); session_activity_logger v1.1 adds invoker attribution + cold-gap logging (Brainquarters repo, uncommitted)",
+  "next_action": "Author spec draft v1 (technical depth) from roadmap/manifest.json per phases/03-debate.md, then debate rounds via pipeline tools (opponents: codex/gpt-5.5 + gemini/gemini-3.5-flash; NEVER gemini-cli \u2014 fresh spawns fail auth)",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202607081610-roadmap-complete-debate-entered.md",
+  "status": "active",
+  "journey": [
+    {
+      "time": "2026-07-08T16:10:43Z",
+      "event": "Phase 3 (debate) entered; roadmap persisted + confirmed; spec draft v1 not yet authored",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-07-08T16:10:43Z",
+      "event": "Checkpoint saved: roadmap-complete-debate-entered.",
+      "type": "checkpoint"
+    }
+  ]
+}

@@ -1,21 +1,24 @@
 {
   "schema_version": "1.3",
-  "active_session_id": "adv-spec-202606151042-liveness-gate-test-ladder",
-  "active_session_file": ".adversarial-spec/sessions/adv-spec-202606151042-liveness-gate-test-ladder.json",
-  "context_name": "Liveness Gate + Architecture-Linked Test Ladder (adversarial-spec slice)",
-  "current_phase": "complete",
-  "current_step": "Pipeline advanced Finalization -> Completed-Unmapped",
-  "next_action": "Session pipeline complete; map implementation tasks if needed.",
-  "updated_at": "2026-07-03T19:29:04Z",
-  "written_by": "pipeline_sync_local_session",
-  "pipeline_card_id": "5715",
-  "plan_path": "docs/plans/liveness-gate-and-test-ladder.md",
-  "spec_path": null,
-  "completed_work": "Resumed Phase 8 self-pickup loop as claude on shared board (codex+gemini live). Cleared remaining Review/Untested debt: approved W5-1 glossary/ADR/document-types (codex 9eca94a, 4/4 doclint), W5-2 Getting Started bootstrap (codex 0440c92; AC-1 LIVE full->exit0/pass, missing-spine->exit2/block US-2), W5-3 dogfood F-prime registry (codex 13da866; AC-2 LIVE F'->exit0/pass/0-findings, 15 spine records, CLI _normalize_user_story_ids no W5-2 regression). Tested W5-2 + W2-4 (attested TCs; both benign WRONG_LANE concurrent races, attestation recorded). pipeline_do_next_task=idle; full suite 891 passed; ruff clean. Built interactive session-explainer.html. Wake-listener exited 144 once (dual-session thrash), relaunched + holding.",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202606201549-phase8-sweep-complete-finalization-pending.md",
-  "do_not_ask": [],
-  "active_session": "adv-spec-202606151042-liveness-gate-test-ladder",
+  "active_session_id": "adv-spec-202607060132-post-fable-hardening-skill",
+  "active_session_file": ".adversarial-spec/sessions/adv-spec-202607060132-post-fable-hardening-skill.json",
+  "context_name": "Post-Fable Hardening (skill slice G1+G2+G5)",
+  "current_phase": "debate",
+  "current_step": "Phase 3 (debate) entered; roadmap persisted + confirmed; spec draft v1 not yet authored",
+  "next_action": "Author spec draft v1 (technical depth) from roadmap/manifest.json per phases/03-debate.md, then debate rounds via pipeline tools (opponents: codex/gpt-5.5 + gemini/gemini-3.5-flash; NEVER gemini-cli \u2014 fresh spawns fail auth)",
+  "updated_at": "2026-07-08T16:10:43Z",
+  "written_by": "adversarial-spec skill (roadmap gate passed)",
+  "pipeline_card_id": "5857",
+  "plan_path": "docs/improvement-goals-2026-07.md",
+  "spec_path": ".adversarial-spec/specs/post-fable-hardening-skill/spec.md",
+  "completed_work": "Requirements gate passed (G1-F2 amended: no size caps; Fable window ~2026-07-12). Roadmap phase complete: complexity 27/complex; draft + R1 debate (codex/gpt-5.5 + gemini/gemini-3.5-flash API path); 4 revisions folded (waiver US-15, personas, global KPIs, boundary US-16); G4 excluded (Jason). Artifacts: roadmap/manifest.json (9 milestones/17 US), roadmap.md, tests-pseudo.md (17 spines), trello-plan.json placeholder, _progress. Card 5857 \u2192 Debate lane. Ops: gemini-cli fresh-spawn IneligibleTierError diagnosed (oauth-personal, latest CLI; live panes unaffected; over-claim corrected in memory/Telegram/card); debate.py preflight breaks on thinking models (--skip-preflight workaround, M1 candidate); session_activity_logger v1.1 adds invoker attribution + cold-gap logging (Brainquarters repo, uncommitted)",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202607081610-roadmap-complete-debate-entered.md",
+  "do_not_ask": [
+    "whether to dogfood (decided: q-20260704-goal-scope choice a)",
+    "whether to refresh mapcodebase now (deferred: choice b)"
+  ],
+  "active_session": "adv-spec-202607060132-post-fable-hardening-skill",
   "session_stack": [
-    "adv-spec-202606151042-liveness-gate-test-ladder"
+    "adv-spec-202607060132-post-fable-hardening-skill"
   ]
 }

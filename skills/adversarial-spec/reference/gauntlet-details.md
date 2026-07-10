@@ -40,7 +40,7 @@ cat spec.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntl
 # Run with specific adversaries and multiple attack models
 cat spec.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet \
   --gauntlet-adversaries paranoid_security,burned_oncall \
-  --gauntlet-attack-models "codex/gpt-5.5,gemini-cli/gemini-3.1-pro-preview"
+  --gauntlet-attack-models "codex/gpt-5.6-luna,gemini-cli/gemini-3.1-pro-preview"
 
 # Resume from checkpoint (reuse Phase 1-3 concerns)
 cat spec.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet \
@@ -48,7 +48,7 @@ cat spec.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntl
 
 # Combine with regular critique (gauntlet runs first)
 cat spec.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
-  --models codex/gpt-5.5 --gauntlet --gauntlet-adversaries all
+  --models codex/gpt-5.6-luna --gauntlet --gauntlet-adversaries all
 
 # List available adversaries
 python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet-adversaries
@@ -134,4 +134,3 @@ Each gauntlet run produces a manifest with per-phase `PhaseMetrics`:
 - Duration, input/output tokens, models used, config snapshot
 - Saved to `.adversarial-spec-gauntlet/run-manifest-{hash}-{timestamp}.json`
 - View via `debate.py gauntlet --show-manifest [HASH]` or `cli.py --list-runs`
-

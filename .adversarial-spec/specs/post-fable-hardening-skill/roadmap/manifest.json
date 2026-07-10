@@ -1,0 +1,313 @@
+{
+ "schema_version": "3.0",
+ "slug": "post-fable-hardening-skill",
+ "session_id": "adv-spec-202607060132-post-fable-hardening-skill",
+ "title": "Post-Fable Hardening \u2014 Skill Slice (G1+G2+G5)",
+ "created_at": "2026-07-08T00:55:00Z",
+ "complexity_tier": "complex",
+ "complexity_score": 27,
+ "root_altitude": "system",
+ "doc_type": "spec",
+ "doc_depth": "technical",
+ "goals": [
+  "G1 post-Fable operability",
+  "G2 V-model ascending arm",
+  "G5 debate efficiency"
+ ],
+ "non_goals": [
+  "G3 fizzy-side (separate spec; consumed as contract via US-16)",
+  "G4 excluded entirely (Jason 2026-07-08)",
+  "mapcodebase refresh (deferred)",
+  "byte-count doc targets (amended out)"
+ ],
+ "debate_rounds": [
+  {
+   "round": 1,
+   "models": [
+    "codex/gpt-5.5",
+    "gemini/gemini-3.5-flash"
+   ],
+   "outcome": "4 revisions accepted (waiver US-15, personas, global KPIs, boundary US-16 + user journey); gemini \u226415KB context KPI rejected (contradicts no-size-caps amendment)",
+   "checkpoint": ".adversarial-spec-checkpoints/adv-spec-202607060132-post-fable-hardening-skill-round-1.md"
+  }
+ ],
+ "milestones": [
+  {
+   "id": "M0",
+   "title": "Getting Started (Bootstrap)",
+   "user_stories": [
+    {
+     "id": "US-0",
+     "title": "Toolchain bootstrap verifies environment",
+     "spine_test": "TC-0.0"
+    }
+   ],
+   "test_cases": [
+    "TC-0.0",
+    "TC-0.2"
+   ],
+   "depends_on": []
+  },
+  {
+   "id": "M1",
+   "title": "Gate Inventory & Mechanization (G1-F1)",
+   "user_stories": [
+    {
+     "id": "US-1",
+     "title": "Gate inventory complete + classified",
+     "spine_test": "TC-1.0"
+    },
+    {
+     "id": "US-2",
+     "title": "Mechanizable gates fire in code",
+     "spine_test": "TC-2.0"
+    },
+    {
+     "id": "US-3",
+     "title": "Judgment gates get rubric + fixture",
+     "spine_test": "TC-3.0"
+    },
+    {
+     "id": "US-15",
+     "title": "Authorized waiver mechanism (R1 revision)",
+     "spine_test": "TC-15.0"
+    }
+   ],
+   "test_cases": [
+    "TC-1.0",
+    "TC-1.2",
+    "TC-2.0",
+    "TC-2.2",
+    "TC-3.0",
+    "TC-3.2",
+    "TC-15.0",
+    "TC-15.2"
+   ],
+   "depends_on": []
+  },
+  {
+   "id": "M2",
+   "title": "Phase-Doc Decomposition (G1-F2 amended)",
+   "user_stories": [
+    {
+     "id": "US-4",
+     "title": "Phase spine decomposed, loads exactly what's needed",
+     "spine_test": "TC-4.0"
+    },
+    {
+     "id": "US-5",
+     "title": "Worker context stays lean",
+     "spine_test": "TC-5.0"
+    }
+   ],
+   "test_cases": [
+    "TC-4.0",
+    "TC-4.2",
+    "TC-5.0",
+    "TC-5.2"
+   ],
+   "depends_on": [
+    "M1"
+   ]
+  },
+  {
+   "id": "M3",
+   "title": "Conductor Competence Harness (G1-F3)",
+   "user_stories": [
+    {
+     "id": "US-6",
+     "title": "Competence harness measures candidate conductors",
+     "spine_test": "TC-6.0"
+    }
+   ],
+   "test_cases": [
+    "TC-6.0",
+    "TC-6.2"
+   ],
+   "depends_on": [
+    "M1",
+    "M2"
+   ]
+  },
+  {
+   "id": "M4",
+   "title": "System-Spine Verification Phases (G2-F1)",
+   "user_stories": [
+    {
+     "id": "US-7",
+     "title": "Verification cards derived from TMR registry",
+     "spine_test": "TC-7.0"
+    },
+    {
+     "id": "US-16",
+     "title": "G3 contract-boundary guardrail (R1 revision)",
+     "spine_test": "TC-16.0"
+    }
+   ],
+   "test_cases": [
+    "TC-7.0",
+    "TC-7.2",
+    "TC-16.0",
+    "TC-16.2"
+   ],
+   "depends_on": [
+    "M1"
+   ]
+  },
+  {
+   "id": "M5",
+   "title": "Pseudo\u2192Real Promotion Gate (G2-F2)",
+   "user_stories": [
+    {
+     "id": "US-8",
+     "title": "Promotion gate blocks declared-only evidence",
+     "spine_test": "TC-8.0"
+    }
+   ],
+   "test_cases": [
+    "TC-8.0",
+    "TC-8.2",
+    "TC-8.3"
+   ],
+   "depends_on": [
+    "M4"
+   ]
+  },
+  {
+   "id": "M6",
+   "title": "ConOps Validation + Durable Spine Artifacts (G2-F3/F4)",
+   "user_stories": [
+    {
+     "id": "US-9",
+     "title": "ConOps walkthrough before close",
+     "spine_test": "TC-9.0"
+    },
+    {
+     "id": "US-10",
+     "title": "Durable spine artifacts",
+     "spine_test": "TC-10.0"
+    }
+   ],
+   "test_cases": [
+    "TC-9.0",
+    "TC-9.2",
+    "TC-10.0",
+    "TC-10.2"
+   ],
+   "depends_on": [
+    "M5"
+   ]
+  },
+  {
+   "id": "M7",
+   "title": "Settle/Freeze + Debate Node Registry (G5-F1/F2)",
+   "user_stories": [
+    {
+     "id": "US-11",
+     "title": "Frozen sections excluded from re-critique",
+     "spine_test": "TC-11.0"
+    },
+    {
+     "id": "US-12",
+     "title": "Debate node registry persists",
+     "spine_test": "TC-12.0"
+    }
+   ],
+   "test_cases": [
+    "TC-11.0",
+    "TC-11.2",
+    "TC-12.0",
+    "TC-12.2"
+   ],
+   "depends_on": []
+  },
+  {
+   "id": "M8",
+   "title": "Deterministic Reconciliation + False-Convergence Guard (G5-F3/F4)",
+   "user_stories": [
+    {
+     "id": "US-13",
+     "title": "Deterministic derived-artifact reconciliation",
+     "spine_test": "TC-13.0"
+    },
+    {
+     "id": "US-14",
+     "title": "False-convergence guard",
+     "spine_test": "TC-14.0"
+    }
+   ],
+   "test_cases": [
+    "TC-13.0",
+    "TC-13.2",
+    "TC-14.0",
+    "TC-14.2"
+   ],
+   "depends_on": [
+    "M7"
+   ]
+  }
+ ],
+ "tests_pseudo_path": ".adversarial-spec/specs/post-fable-hardening-skill/tests-pseudo.md",
+ "roadmap_view": "roadmap.md",
+ "kpis": [
+  "100% gates inventoried+classified; 0 honor-system",
+  "100% mech gates failing-case-tested; 100% judgment gates fixtured",
+  "0 completes with unrun critical-seam evidence sans logged waiver",
+  "0 dirty derived diffs reach gauntlet",
+  "card-5715 R3/R7 + gateway replay falsifications pass",
+  "frozen re-litigation only via named concern",
+  "debate-round baseline then target",
+  "harness green Sonnet+Opus with regression threshold"
+ ],
+ "architecture_impact": {
+  "verdict": "new_components",
+  "rationale": "The slice adds new component classes to the skill itself: a conductor-competence harness (golden-eval runner, no existing analog), a debate node registry with freeze/settle semantics consumed by the Debate Engine, a deterministic derived-artifact reconciliation gate, and TMR-derived verification-card emission. M2 restructures the phase-doc corpus (content architecture, not runtime). Existing Debate Engine, Gauntlet, and Emission Toolchain are extended, not replaced.",
+  "new_components": [
+   {
+    "name": "conductor-competence harness",
+    "kind": "cli",
+    "extends": "new layer (golden-eval runner over fixtures/)"
+   },
+   {
+    "name": "debate node registry",
+    "kind": "model",
+    "extends": "new persistent artifact class consumed by debate.py"
+   },
+   {
+    "name": "derived-artifact reconciliation gate",
+    "kind": "cli",
+    "extends": "authoring-lint / gauntlet_check_cli.py family"
+   },
+   {
+    "name": "verification-card derivation",
+    "kind": "cli",
+    "extends": "mini_spec_emission.py emission family, reads tmr-registry.json"
+   },
+   {
+    "name": "gate inventory + mechanized checks",
+    "kind": "cli",
+    "extends": "authoring-lint family + .claude/hooks/"
+   }
+  ],
+  "new_middleware": [],
+  "new_vars_into_existing_middleware": [
+   {
+    "variable": "frozen-section exclusion set",
+    "target_middleware": "debate.py round dispatch payload assembly",
+    "purpose": "Exclude settled packets from re-critique (G5-F1)"
+   },
+   {
+    "variable": "derived-diff clean flag",
+    "target_middleware": "convergence check in debate.py",
+    "purpose": "False-convergence guard requires clean reconciliation (G5-F4)"
+   },
+   {
+    "variable": "promotion-gate verdict",
+    "target_middleware": "finalize/complete advance path (pipeline_advance gates)",
+    "purpose": "Block completion on declared-only critical-seam TMRs (G2-F2)"
+   }
+  ],
+  "assessed_at": "2026-07-08T00:00:00Z",
+  "assessed_against": "f198887 (STALE \u2014 corpus 50 commits behind b31f8fd; TMR/F-prime/validation-emission wave unmapped; refresh deferred per Jason 2026-07-05)"
+ }
+}

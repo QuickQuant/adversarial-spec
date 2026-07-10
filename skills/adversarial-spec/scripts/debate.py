@@ -4,28 +4,28 @@ Adversarial spec debate script.
 Sends specs to multiple LLMs for critique using LiteLLM.
 
 Usage:
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.5
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --doc-type spec --depth product
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --doc-type spec --depth technical
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --doc-type debug
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --focus security
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --persona "security engineer"
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --context ./api.md --context ./schema.sql
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --profile strict-security
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --preserve-intent
-    echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --session my-debate
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.6-sol
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.6-sol --doc-type spec --depth product
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.6-sol --doc-type spec --depth technical
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.6-sol --doc-type debug
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.6-sol --focus security
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.6-sol --persona "security engineer"
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.6-sol --context ./api.md --context ./schema.sql
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.6-sol --profile strict-security
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.6-sol --preserve-intent
+    echo "spec" | python3 debate.py critique --models codex/gpt-5.6-sol --session my-debate
     python3 debate.py critique --resume my-debate
     echo "spec" | python3 debate.py diff --previous prev.md --current current.md
     python3 debate.py providers
     python3 debate.py profiles
     python3 debate.py sessions
 Unsupported providers (use CLI instead):
-    OpenAI:     OPENAI_API_KEY       models: gpt-5.5
+    OpenAI:     OPENAI_API_KEY       models: gpt-5.6-sol
     Anthropic:  ANTHROPIC_API_KEY    models: claude-opus-4-7, claude-sonnet-4-6
     Google:     GEMINI_API_KEY       models: gemini/gemini-3-pro, gemini/gemini-3-flash
 Supported providers (set corresponding API key):
-    OpenRouter: OPENROUTER_API_KEY   models: openrouter/openai/gpt-5.5, openrouter/anthropic/claude-sonnet-4-6
-    Codex CLI:  (ChatGPT subscription) models: codex/gpt-5.5
+    OpenRouter: OPENROUTER_API_KEY   models: openrouter/openai/gpt-5.6-sol, openrouter/anthropic/claude-sonnet-4-6
+    Codex CLI:  (ChatGPT subscription) models: codex/gpt-5.6-luna, codex/gpt-5.6-terra, codex/gpt-5.6-sol
                 Install: npm install -g @openai/codex && codex login
                 Reasoning: --codex-reasoning xhigh (minimal, low, medium, high, xhigh)
     Claude CLI: (Anthropic subscription) models: claude-cli/claude-opus-4-7, claude-cli/claude-sonnet-4-6
@@ -262,7 +262,7 @@ def add_core_arguments(parser: argparse.ArgumentParser) -> None:
         "--models",
         "-m",
         default=None,
-        help="Comma-separated list of models (e.g., codex/gpt-5.5,gemini-cli/gemini-3.1-pro-preview)",
+        help="Comma-separated list of models (e.g., codex/gpt-5.6-sol,gemini-cli/gemini-3.1-pro-preview)",
     )
     parser.add_argument(
         "--doc-type",
@@ -533,17 +533,17 @@ def create_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  echo "spec" | python3 debate.py critique --models codex/gpt-5.5
-  echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --focus security
-  echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --persona "security engineer"
-  echo "spec" | python3 debate.py critique --models codex/gpt-5.5 --context ./api.md
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.6-sol
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.6-sol --focus security
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.6-sol --persona "security engineer"
+  echo "spec" | python3 debate.py critique --models codex/gpt-5.6-sol --context ./api.md
   echo "spec" | python3 debate.py critique --profile my-security-profile
   python3 debate.py diff --previous old.md --current new.md
   python3 debate.py providers
   python3 debate.py focus-areas
   python3 debate.py personas
   python3 debate.py profiles
-  python3 debate.py save-profile myprofile --models codex/gpt-5.5,gemini-cli/gemini-3.1-pro-preview --focus security
+  python3 debate.py save-profile myprofile --models codex/gpt-5.6-sol,gemini-cli/gemini-3.1-pro-preview --focus security
 
 Gauntlet commands (adversarial attack on specs):
   echo "spec" | python3 debate.py gauntlet                   # Run gauntlet with all adversaries
@@ -773,13 +773,13 @@ def parse_models(args: argparse.Namespace) -> list[str]:
             )
             print("\nAvailable providers:", file=sys.stderr)
             print(
-                "  Codex CLI: Install codex CLI for codex/gpt-5.5 (FREE with ChatGPT subscription)", file=sys.stderr
+                "  Codex CLI: Install codex CLI for codex/gpt-5.6-luna (FREE with ChatGPT subscription)", file=sys.stderr
             )
             print(
                 "  Gemini CLI: Install gemini CLI for gemini-cli/gemini-3.1-pro-preview (FREE)", file=sys.stderr
             )
             print(
-                "  OpenAI:    Set OPENAI_API_KEY for gpt-5.5", file=sys.stderr
+                "  OpenAI:    Set OPENAI_API_KEY for gpt-5.6-sol", file=sys.stderr
             )
             print(
                 "  Anthropic: Set ANTHROPIC_API_KEY for claude-opus-4-7, claude-sonnet-4-6",
@@ -806,7 +806,7 @@ def parse_models(args: argparse.Namespace) -> list[str]:
                 "  Zhipu:     Set ZHIPUAI_API_KEY for zhipu/glm-4-plus",
                 file=sys.stderr,
             )
-            print("\nOr specify models explicitly: --models codex/gpt-5.5", file=sys.stderr)
+            print("\nOr specify models explicitly: --models codex/gpt-5.6-sol", file=sys.stderr)
             print(
                 "\nRun 'python3 debate.py providers' to see which keys are set.",
                 file=sys.stderr,

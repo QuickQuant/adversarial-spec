@@ -47,6 +47,11 @@ Apply the **forcing rule** (`reference/altitude.md` §2):
 
 State, in one line, *which item* is the highest-blast item and *why* it sets the root.
 
+**Altitude is DERIVED, never asked.** Do not prompt the user to pick or confirm the
+altitude (immutability is a reason to derive carefully, not to ask). If the blast
+radius is genuinely unknowable, that is a NO-GO *underspecified* — ask for the
+missing facts, not for the altitude.
+
 ### 3. Tree sketch
 
 One block: nodes with their altitudes, honoring the minimum tree shape for the root

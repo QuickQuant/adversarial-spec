@@ -37,6 +37,7 @@ from prompts import (
     get_system_prompt,
 )
 from providers import (
+    ANTIGRAVITY_AVAILABLE,
     CLAUDE_CLI_AVAILABLE,
     CODEX_AVAILABLE,
     DEFAULT_CODEX_REASONING,
@@ -309,7 +310,7 @@ def call_codex_model(
     Args:
         system_prompt: System instructions for the model
         user_message: User prompt to send
-        model: Model name (e.g., "codex/gpt-5.5" -> uses "gpt-5.5")
+        model: Model name (e.g., "codex/gpt-5.6-sol" -> uses "gpt-5.6-sol")
         reasoning_effort: Thinking level (minimal, low, medium, high, xhigh). Default: xhigh
         timeout: Timeout in seconds (default 10 minutes)
         search: Enable web search capability for Codex
@@ -580,6 +581,104 @@ USER REQUEST:
         raise RuntimeError("Claude CLI not found in PATH")
 
 
+# Map short antigravity model tokens to the display names `agy --model` expects.
+# `agy models` lists human-readable names with spaces/parens; the debate model
+# string uses a slug. Keep this in sync with `agy models`.
+ANTIGRAVITY_MODEL_MAP = {
+    "gemini-3.1-pro": "Gemini 3.1 Pro (High)",
+    "gemini-3.1-pro-low": "Gemini 3.1 Pro (Low)",
+    "gemini-3.5-flash": "Gemini 3.5 Flash (High)",
+    "gemini-3.5-flash-medium": "Gemini 3.5 Flash (Medium)",
+    "gemini-3.5-flash-low": "Gemini 3.5 Flash (Low)",
+}
+
+
+def call_antigravity_model(
+    system_prompt: str,
+    user_message: str,
+    model: str,
+    timeout: int = 1800,
+    cwd: str | None = None,
+) -> tuple[str, int, int]:
+    """
+    Call the Antigravity CLI (`agy --print`) using the Antigravity subscription.
+
+    This is the current Google-family path; it replaces the retired standalone
+    `gemini` CLI (Google folded Code Assist for individuals into the Antigravity
+    suite ~2026-06, breaking the old `gemini` binary's auth/tier).
+
+    Args:
+        system_prompt: System instructions for the model
+        user_message: User prompt to send
+        model: Model name (e.g. "antigravity/gemini-3.1-pro" -> agy "Gemini 3.1 Pro (High)")
+        timeout: Timeout in seconds (default 30 minutes)
+
+    Returns:
+        Tuple of (response_text, input_tokens, output_tokens). agy does not report
+        token usage, so tokens are estimated at ~4 chars/token.
+
+    Raises:
+        RuntimeError: If the Antigravity CLI is not available or fails
+    """
+    if not ANTIGRAVITY_AVAILABLE:
+        raise RuntimeError(
+            "Antigravity CLI (`agy`) not found. Install/authenticate the Antigravity suite."
+        )
+
+    # Extract token after the prefix, then map to the agy display name.
+    token = model.split("/", 1)[1] if "/" in model else model
+    agy_model = ANTIGRAVITY_MODEL_MAP.get(token)
+    if agy_model is None:
+        raise RuntimeError(
+            f"Unknown antigravity model '{token}'. Known: {sorted(ANTIGRAVITY_MODEL_MAP)}. "
+            "Run `agy models` and update ANTIGRAVITY_MODEL_MAP."
+        )
+
+    full_prompt = f"""SYSTEM INSTRUCTIONS:
+{CLI_FILE_SAFETY_PREAMBLE}{system_prompt}
+
+USER REQUEST:
+{user_message}"""
+
+    try:
+        # --print: single non-interactive prompt (reads from stdin).
+        # --dangerously-skip-permissions: auto-approve tool prompts (no TUI).
+        # --print-timeout: agy's own wait bound; keep it >= our subprocess timeout.
+        cmd = [
+            "agy",
+            "--print",
+            "--model",
+            agy_model,
+            "--dangerously-skip-permissions",
+            "--print-timeout",
+            f"{timeout}s",
+        ]
+
+        result = subprocess.run(
+            cmd, input=full_prompt, capture_output=True, text=True, timeout=timeout, cwd=cwd
+        )
+
+        if result.returncode != 0:
+            error_msg = (
+                result.stderr.strip()
+                or f"Antigravity CLI exited with code {result.returncode}"
+            )
+            raise RuntimeError(f"Antigravity CLI failed: {error_msg}")
+
+        response_text = result.stdout.strip()
+        if not response_text:
+            raise RuntimeError("No response from Antigravity CLI")
+
+        input_tokens = len(full_prompt) // 4
+        output_tokens = len(response_text) // 4
+        return response_text, input_tokens, output_tokens
+
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(f"Antigravity CLI timed out after {timeout}s")
+    except FileNotFoundError:
+        raise RuntimeError("Antigravity CLI (`agy`) not found in PATH")
+
+
 def call_single_model(
     model: str,
     spec: str,
@@ -791,6 +890,59 @@ def call_single_model(
             model=model, response="", agreed=False, spec=None, error=last_error
         )
 
+    # Route Antigravity CLI models to dedicated handler
+    if model.startswith("antigravity/"):
+        last_error = None
+        for attempt in range(MAX_RETRIES):
+            try:
+                content, input_tokens, output_tokens = call_antigravity_model(
+                    system_prompt=system_prompt,
+                    user_message=user_message,
+                    model=model,
+                    timeout=timeout,
+                    cwd=cwd,
+                )
+                agreed = "[AGREE]" in content
+                extracted = extract_spec(content)
+
+                if not agreed and not extracted:
+                    print(
+                        f"Warning: {model} provided critique but no [SPEC] tags found. Response may be malformed.",
+                        file=sys.stderr,
+                    )
+
+                cost = token_tracking.tracker.record_call(
+                    model, input_tokens, output_tokens
+                )
+
+                return ModelResponse(
+                    model=model,
+                    response=content,
+                    agreed=agreed,
+                    spec=extracted,
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                    cost=cost,
+                )
+            except Exception as e:
+                last_error = str(e)
+                if attempt < MAX_RETRIES - 1:
+                    delay = RETRY_BASE_DELAY * (2**attempt)
+                    print(
+                        f"Warning: {model} failed (attempt {attempt + 1}/{MAX_RETRIES}): {last_error}. Retrying in {delay:.1f}s...",
+                        file=sys.stderr,
+                    )
+                    time.sleep(delay)
+                else:
+                    print(
+                        f"Error: {model} failed after {MAX_RETRIES} attempts: {last_error}",
+                        file=sys.stderr,
+                    )
+
+        return ModelResponse(
+            model=model, response="", agreed=False, spec=None, error=last_error
+        )
+
     # Standard litellm path for all other providers
     last_error = None
     display_model = model
@@ -901,6 +1053,14 @@ def _preflight_single(
             )
         elif model.startswith("claude-cli/"):
             call_claude_cli_model(
+                system_prompt="",
+                user_message=PREFLIGHT_PROMPT,
+                model=model,
+                timeout=timeout,
+                cwd=cwd,
+            )
+        elif model.startswith("antigravity/"):
+            call_antigravity_model(
                 system_prompt="",
                 user_message=PREFLIGHT_PROMPT,
                 model=model,

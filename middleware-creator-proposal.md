@@ -98,7 +98,7 @@ The middleware-creator phase runs AFTER spec finalization but BEFORE card-level 
 
 ```bash
 cat middleware-spec.md | python3 debate.py middleware-create \
-  --models "codex/gpt-5.5,gemini-cli/gemini-3.1-pro-preview,claude-cli/claude-opus-4-7" \
+  --models "codex/gpt-5.6-sol,gemini-cli/gemini-3.1-pro-preview,claude-cli/claude-opus-4-7" \
   --test-consensus-threshold 0.67 \
   --output-dir middlewares/ \
   --benchmark-log .adversarial-spec/middleware-benchmark.jsonl

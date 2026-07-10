@@ -109,7 +109,7 @@ After sizing is agreed, proceed to step 1 below.
    ```
 
    **Recommended lineup (if available):**
-   - `codex/gpt-5.5` — GPT-5.5 via Codex CLI (free, token-efficient)
+   - `codex/gpt-5.6-luna` — GPT-5.6 Luna via Codex CLI (free, xhigh effort)
    - `gemini-cli/gemini-3.1-pro-preview` — Gemini 3 Pro (free via CLI)
    - `claude-cli/claude-sonnet-4-6` — Claude Sonnet 4.6 (free via CLI)
 
@@ -586,7 +586,7 @@ In practice, Claude assembles the briefings in memory and passes them to the gau
   "session_altitude": "system",                       // echo of the card value
   "adversaries": [                                     // one entry per attacker MODEL
     {"model": "gemini-3.1-pro", "family": "gemini"},  // family must match the registry
-    {"model": "gpt-5.5xhigh",  "family": "codex"}
+    {"model": "gpt-5.6-luna",  "family": "codex"}
   ],
   "foci": ["auth", "storage", "rollout"]              // distinct attack foci covered
 }

@@ -29,7 +29,7 @@ $DEBATE gauntlet --gauntlet-adversaries all < spec.md                    # All a
 $DEBATE gauntlet --gauntlet-adversaries paranoid_security,burned_oncall  # Specific ones
 $DEBATE gauntlet --gauntlet-adversaries all --gauntlet-resume            # Resume from checkpoint
 $DEBATE gauntlet --gauntlet-adversaries all \
-  --gauntlet-attack-models "codex/gpt-5.5,gemini-cli/gemini-3.1-pro-preview"  # Multi-model attacks
+  --gauntlet-attack-models "codex/gpt-5.6-luna,gemini-cli/gemini-3.1-pro-preview"  # Multi-model attacks
 $DEBATE gauntlet --show-manifest                                         # Show latest run manifest
 $DEBATE gauntlet --show-manifest abc1234                                 # Show specific run manifest
 $DEBATE gauntlet-adversaries  # List available adversary names
@@ -122,4 +122,3 @@ The `assumption_auditor` adversary specifically challenges domain assumptions an
 - **REFUTED**: Documentation contradicts claim
 - **UNVERIFIABLE**: No documentation found
 - **PENDING**: Documentation found, needs LLM analysis
-

@@ -1,1 +1,1 @@
-checkpoint-202606201549-phase8-sweep-complete-finalization-pending.md
+checkpoint-202607081610-roadmap-complete-debate-entered.md

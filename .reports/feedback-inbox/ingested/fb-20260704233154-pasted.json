@@ -1,0 +1,25 @@
+{
+ "schema": "report-feedback/1",
+ "project": "adversarial-spec",
+ "report_generated_at": "2026-07-04T22:55:00Z",
+ "answers": [],
+ "comments": [
+  {
+   "block": "session-close",
+   "comment": "22/22 cards terminal, I'm not sure what that means. 891 tests green should just be 891 tests and then a green checkmark. debate rounds should have megaphone emoji, claude/codex/gemini should appear by their logo, not their name."
+  },
+  {
+   "block": "failure-classes",
+   "comment": "The pills overlap outside their box oddly. pill fixed-open needs to be reviewed at multiple widths. the cards render a little differently with narrower space and the pills fail in slightly different ways."
+  },
+  {
+   "block": "goals",
+   "comment": "same issue with the pills rendering here."
+  }
+ ],
+ "_provenance": {
+  "source": "pasted",
+  "received_at": "2026-07-04T23:31:54Z",
+  "via": "Brainquarters conductor session dda12ad5/123497df"
+ }
+}

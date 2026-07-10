@@ -51,16 +51,16 @@ def test_select_eval_model_prefers_codex_gpt_5_5(monkeypatch):
     monkeypatch.setattr(MODULE, "GEMINI_CLI_AVAILABLE", True)
     monkeypatch.delenv("ADVERSARIAL_SPEC_UNAVAILABLE_MODELS", raising=False)
 
-    assert select_eval_model() == "codex/gpt-5.5"
+    assert select_eval_model() == "codex/gpt-5.6-sol"
 
 
 def test_select_eval_model_warns_before_falling_back_to_gpt_5_3(monkeypatch, capsys):
     monkeypatch.setattr(MODULE, "CODEX_AVAILABLE", True)
     monkeypatch.setattr(MODULE, "GEMINI_CLI_AVAILABLE", True)
-    monkeypatch.setenv("ADVERSARIAL_SPEC_UNAVAILABLE_MODELS", "codex/gpt-5.5")
+    monkeypatch.setenv("ADVERSARIAL_SPEC_UNAVAILABLE_MODELS", "codex/gpt-5.6-sol")
 
     assert select_eval_model() == "codex/gpt-5.3-codex"
-    assert "codex/gpt-5.5 unavailable" in capsys.readouterr().err
+    assert "codex/gpt-5.6-sol unavailable" in capsys.readouterr().err
 
 
 def test_get_available_eval_models_prefers_codex_gpt_5_5(monkeypatch):
@@ -69,7 +69,7 @@ def test_get_available_eval_models_prefers_codex_gpt_5_5(monkeypatch):
     monkeypatch.delenv("ADVERSARIAL_SPEC_UNAVAILABLE_MODELS", raising=False)
 
     assert get_available_eval_models()[:2] == [
-        "codex/gpt-5.5",
+        "codex/gpt-5.6-sol",
         "gemini-cli/gemini-3.1-pro-preview",
     ]
 

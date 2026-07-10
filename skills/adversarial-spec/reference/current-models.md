@@ -11,7 +11,7 @@ Models that find issues in specs. Diverse perspectives matter more than raw powe
 
 | Provider | Model ID | Notes |
 |----------|----------|-------|
-| Codex CLI | `codex/gpt-5.5` | **Primary.** Free via ChatGPT subscription. Token-efficient. |
+| Codex CLI | `codex/gpt-5.6-luna` | **Primary attack model.** Free via ChatGPT subscription. Use xhigh effort. |
 | Gemini CLI | `gemini-cli/gemini-3.1-pro-preview` | Free. Strong on unique angles. Parser may need sanity check (outputs `### N.` headers). |
 | Claude CLI | `claude-cli/claude-opus-4-7` | Free. Cannot nest inside a Claude session — use only from Codex or standalone. |
 | Gemini CLI | `gemini-cli/gemini-3-flash-preview` | Free. Faster, cheaper, good for quick passes. |
@@ -22,7 +22,7 @@ Models that evaluate whether concerns are valid. The pipeline auto-selects eval 
 
 | Provider | Model ID | Notes |
 |----------|----------|-------|
-| Codex CLI | `codex/gpt-5.5` | Default eval model. Use `--eval-codex-reasoning medium` for gauntlet evals. |
+| Codex CLI | `codex/gpt-5.6-sol` | Default eval model. Use max effort for gauntlet evals. |
 | Gemini CLI | `gemini-cli/gemini-3.1-pro-preview` | Second eval model for multi-model consensus. |
 
 ### Frontier (deep analysis, final boss)
@@ -31,15 +31,15 @@ For tasks requiring maximum reasoning depth.
 | Provider | Model ID | Notes |
 |----------|----------|-------|
 | Claude | Claude Opus 4.7 | The orchestrating model. Best evaluator — has full codebase context. |
-| Codex CLI | `codex/gpt-5.5` | With `--codex-reasoning high` for critique/attack work or `--eval-codex-reasoning xhigh` for gauntlet evaluation. |
+| Codex CLI | `codex/gpt-5.6-terra` | Sonnet-level work with max effort; use Luna xhigh for inexpensive attacks and Sol max for spec development. |
 
 ## Deprecated Models
 
 | Old Model | Replacement | When |
 |-----------|-------------|------|
-| `codex/gpt-5.3-codex` | `codex/gpt-5.5` | 2026-04-29 (GPT-5.5 migration) |
-| `codex/gpt-5.1-codex-max` | `codex/gpt-5.5` | 2026-04-29 |
-| `gpt-5.3` (API) | `gpt-5.5` (if using API) | 2026-04-29 |
+| `codex/gpt-5.3-codex` | `codex/gpt-5.6-sol` | 2026-07-09 (GPT-5.6 migration) |
+| `codex/gpt-5.1-codex-max` | `codex/gpt-5.6-sol` | 2026-07-09 |
+| `gpt-5.3` (API) | `gpt-5.6-sol` (if using API) | 2026-07-09 |
 | `gemini-cli/gemini-3-pro-preview` | `gemini-cli/gemini-3.1-pro-preview` | 2026-03-28 (Gemini 3.1 Pro release) |
 
 > **WARNING:** Do NOT use `gemini-2.5-pro` (API or CLI). It shares the same quota as `gemini-3.1-pro-preview` and will burn through your free-tier allowance. Always use `gemini-3.1-pro-preview` instead — it is strictly better.
@@ -50,8 +50,8 @@ Per user preference: **never use paid APIs for adversarial-spec debates — use 
 
 | Provider | Model ID | Cost | When to use |
 |----------|----------|------|-------------|
-| OpenAI API | `gpt-5.5` | $5/$30 per 1M tok | Only if CLI is unavailable |
-| OpenRouter | `openrouter/openai/gpt-5.5` | Varies | Only if CLI is unavailable |
+| OpenAI API | `gpt-5.6-sol` | $5/$30 per 1M tok | Only if CLI is unavailable |
+| OpenRouter | `openrouter/openai/gpt-5.6-sol` | Varies | Only if CLI is unavailable |
 
 ## Keeping Defaults in Sync
 
