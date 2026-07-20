@@ -1,61 +1,56 @@
 # Architecture Primer: adversarial-spec
 
-> Generated: 2026-06-11 (incremental from 9ca3ccd) | Git: f198887
-> Freshness: fresh | Trust: verified at f198887; worktree carried in-flight skill-doc edits at scan time
+> Generated: 2026-07-19T08:43:13-05:00 | Git: ef18c66
+> Freshness: caution | Trust: source-backed local synthesis; five delegated discovery explorers timed out, and the worktree is dirty. If a derived source file changes after `ef18c66`, trust source over this document.
 
 ## System Summary
 
-adversarial-spec is a Claude Code skill that iteratively refines product specifications through multi-model adversarial debate. It dispatches specs to multiple LLMs (via LiteLLM and CLI subprocess calls), collects critiques, and drives consensus through debate rounds. For stress-testing, a 7-phase gauntlet pipeline sends specs through named adversary personas, evaluates concerns with frontier models (power-law tiered batches), and produces a pass/refine/reconsider verdict. The system is CLI-driven (no daemon), checkpoint-resumable with integrity-hashed envelopes, and uses ThreadPoolExecutor for parallel model calls. Multi-agent work (conductor + workers on the Fizzy pipeline board) is coordinated by harness hooks; the old MCP Tasks server is deleted.
+`adversarial-spec` is a Python-backed Claude Code skill for refining product specifications through multi-model debate, then stress-testing the result through a resumable gauntlet. The runtime is a CLI plus file-backed tooling: model/provider adapters produce typed responses, gauntlet phases transform concerns into a verdict, and the newer TMR/validation/provenance toolchain records test maturity and evidence. Claude Code hooks form a separate stdin/stdout safety and pipeline-coordination plane.
 
 ## Most Important Components
 
 | Component | Role | Runtime | Architecture |
 |-----------|------|---------|--------------|
-| Debate Engine | CLI + gates (pipeline-card, tests-staleness) + debate orchestration (debate.py) | implemented | active_primary |
-| Gauntlet Pipeline | 7-phase stress-test; Phase 3.5 Jaccard clustering; Phase 4 batch tiering | implemented | active_primary |
-| Models | LiteLLM + CLI subprocess routing + NEW parallel preflight ping | implemented | active_primary |
-| Token Tracking | Extracted thread-safe cost/token singleton (`token_tracking.tracker`) | implemented | active_primary |
-| Adversaries | Frozen personas + v2.0 templates + stable concern IDs | implemented | active_primary |
-| Providers | Model config, MODEL_COSTS, CLI availability, Bedrock | implemented | active_primary |
-| Emission Toolchain | mini_spec_emission.py — fizzy v3 plan emission + offline self-check mirror | implemented | active_primary |
-| Harness Hooks | dispatch injection, forced continue, idle backoff, notifications | implemented | active_primary |
-| Gauntlet Persistence | FileLock + integrity-envelope checkpoint/resume | implemented | active_primary |
-| Pre-Gauntlet | Git/system context collection | implemented | active_secondary |
+| Debate CLI | Parse specs, enforce gates, run critique rounds | implemented | active_primary |
+| Model/provider routing | Select providers, run CLI/LiteLLM calls, track cost | implemented | active_primary |
+| Gauntlet pipeline | Generate, cluster, evaluate, rebut, adjudicate, and finalize concerns | implemented | active_primary |
+| Gauntlet persistence | Lock, hash, checkpoint, resume, and report runs | implemented | active_primary |
+| TMR/evidence toolchain | Validate test-maturity records, liveness, promotion, and provenance | implemented | active_primary |
+| Validation emission | Ledger lifecycle, digest/reply parsing, system validation, self-check | implemented | active_primary |
+| Pre-gauntlet | Check repo compatibility before stress testing | implemented | active_secondary |
+| Harness hooks | Enforce shell/Fizzy/pipeline safety and send coordination notices | implemented | active_primary |
+| Plan analysis | Parse gauntlet concerns and inspect task dependency semantics | partial | active_secondary |
+| Telegram/usage helpers | Human notification and local model-headroom routing | implemented | active_secondary |
 
 ## Shared Contracts and Boundaries
 
-- **Concern/Evaluation/Rebuttal chain** (`gauntlet/core_types.py`): the data model flowing through all 7 phases; verdicts normalized to accepted|dismissed|acknowledged|deferred. `GauntletConfig` centralizes all run defaults; `PhaseMetrics` feeds the run manifest.
-- **ADVERSARIES dict** (`adversaries.py`): frozen persona registry; `generate_concern_id(adversary, text)` gives deterministic `PREFIX-hash8` IDs (stable cross-run linking).
-- **Checkpoint envelope** (`gauntlet/persistence.py`): `{_meta:{schema_version, spec_hash, config_hash, phase, data_hash}, data}` — resume rejects any mismatch.
-- **Run manifest**: per-phase metrics + (for v4+ altitude sessions, conductor-written) intensity fields `session_altitude`/`adversaries`/`foci` consumed by fizzy `pipeline_mark_gauntlet_complete`.
-- **mini_spec_emission contract**: `PLAN_SCHEMA_VERSION=3` must match fizzy; `ALTITUDE_OBLIGATIONS` table; `self_check_plan()` mirrors live validation reject codes. Pattern for the incoming `validation_emission.py` (card 5604).
-- **MODEL_COSTS** (`providers.py`): update when adding models; CLI-prefixed models are zero-cost.
-- **Hook I/O**: hooks read stdin JSON / tool results and emit `{decision, systemMessage}`; they never import skill code.
+- **Gauntlet typed chain:** `Concern → Evaluation → Rebuttal → FinalBossResult → GauntletResult` in `gauntlet/core_types.py:83-232`; phase modules and persistence depend on these shapes.
+- **Checkpoint envelope:** `_meta` carries schema/spec/config/data hashes; `gauntlet/persistence.py:79-137,281-333` rejects mismatched resume state.
+- **TMR registry:** `tmr_schema.py:175-377` is strict and authoritative; `tmr_compile_step.py:64-156` derives the prose view.
+- **Validation `Envelope`:** `validation_emission.py:200-220` is the CLI boundary; `status`, `issues`, and command-specific `data` must be interpreted together.
+- **Hook stdio:** `.claude/hooks/codex_pretool_combined.py:18-72` runs configured classifiers and emits tool-protocol decisions. Hook output is transient; notifications are not transition proof.
+- **File locks:** ledger, provenance, and gauntlet checkpoint writes use FileLock/ordered locks; the shared filtering stats append remains a concurrency review point.
 
 ## Non-Obvious Gotchas
 
-- **Two gauntlet CLIs, divergent flags**: `debate.py` (`--codex-reasoning`, `--gauntlet-resume`, timeout 1200s default) vs `gauntlet/cli.py` (`--attack-codex-reasoning`, `--resume`, 1800s). Not aliased.
-- **`prompts.py` shadow collision**: `gauntlet/` on sys.path shadows top-level `prompts.py`. Load `gauntlet/persistence.py` standalone via `importlib.util.spec_from_file_location`, never by appending `gauntlet/` to sys.path.
-- **Phase 1 parse failure is fatal by design**: text-but-zero-concerns aborts the run with raw responses saved; recover by patching the concerns checkpoint (use `generate_concern_id` + `persistence._data_hash`) and `--resume`.
-- **CLI models report 0 tokens / $0** — intentional (subscription).
-- **Unattended mode monkey-patches `builtins.input`** (restored in finally).
-- **Rate limiting is pre-batch sleep**, not in-pool throttling: free Gemini = 1 call per 15s window in Phase 1.
-- **No "Spec" type** — plain strings + sha256 identity.
-- **Intensity manifest fields are written by the skill conductor after the run**, not by the orchestrator.
+- `adversarial_spec` is a root symlink to `skills/adversarial-spec/scripts`; edit the canonical target, and keep both packaging and import paths in mind.
+- There are two active gauntlet CLIs: top-level `debate.py` and `gauntlet/cli.py`; their flags/defaults are not a single contract.
+- `tmr-registry.json` is authoritative once present; `tests-pseudo.md` is a derived prose view and must not be edited as the source of truth.
+- A missing field in the validation `Envelope` is not automatically success; consumers must inspect `status` and `issues`.
+- TMR maturity/liveness is evidence-sensitive: unit-green, mock-only, and live/induced evidence are distinct classifications.
+- Hook modules are intentionally process-boundary code. They should emit safe JSON and avoid importing runtime skill modules.
+- The repository contains large historical specs/checkpoints/reports; `.adversarial-spec/` is excluded from architecture source mapping.
 
 ## Top Actionable Concerns
 
-See [concerns.md](concerns.md) for the full rollup (refreshed this run).
-
-1. **CON-001: Triple litellm completion() pathway** — 3 call sites with silently different defaults; fix with a single low-level wrapper.
-2. **CON-002: cost_tracker coupling** — now partially addressed by the `token_tracking` extraction, but phases still import the global singleton; finish the move into `model_dispatch.call_model()`.
-3. **CON-003: orchestrator complexity** — `run_gauntlet()` remains ~700 lines; extract a phase-table.
-4. **CON-007 (new class): divergent CLI flag surfaces** — `debate.py` vs `gauntlet/cli.py` defaults drift (timeout 1200 vs 1800); alias or unify.
+See [concerns.md](concerns.md) for the fix-first rollup. Current priorities are
+the final-boss failure-as-PASS path, shared gauntlet stats writes, duplicated
+hook role resolution, and the divergent gauntlet CLI timeout contract.
 
 ## Escalation Guidance
 
-- **What should I fix first?** Read [concerns.md](concerns.md).
+- Read [concerns.md](concerns.md) when you need the fix-first architecture debt and next actions.
 - Read [overview.md](overview.md) for the full system narrative.
-- Read [structured/flows.md](structured/flows.md) when the task crosses component boundaries.
+- Read [structured/flows.md](structured/flows.md) when a change crosses CLI, model, gauntlet, evidence, or hook boundaries.
 - Read matched docs in [structured/components/](structured/components/) for a specific blast zone.
 - Read [access-guide.md](access-guide.md) for guided reading paths by task type.

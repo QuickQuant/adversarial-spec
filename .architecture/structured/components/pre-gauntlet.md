@@ -1,68 +1,79 @@
-# Component: Pre-Gauntlet
+# Component: Pre-Gauntlet Compatibility
+
+> Derived from: `skills/adversarial-spec/scripts/pre_gauntlet/orchestrator.py`, `context_builder.py`, `discovery.py`, collectors | Verified at: `ef18c66`
+> If any derived-from file changed since `ef18c66`, trust source over this doc.
 
 ## Quick Reference
 
 | Property | Value |
-|----------|-------|
-| Purpose | Git/system context collection before gauntlet runs |
-| Entry | `run_pre_gauntlet()` at pre_gauntlet/orchestrator.py:207 |
-| Key files | pre_gauntlet/orchestrator.py, pre_gauntlet/models.py, collectors/git_position.py, collectors/system_state.py, pre_gauntlet/context_builder.py |
-| Depends on | integrations/git_cli.py, integrations/process_runner.py |
-| Used by | Gauntlet Pipeline (via gauntlet/cli.py) |
+|---|---|
+| Purpose | Ground a spec in repository/build/schema reality before gauntlet review |
+| Entry | `run_pre_gauntlet()` at `pre_gauntlet/orchestrator.py:207` |
+| Key files | orchestrator, discovery, context builder, collectors |
+| Depends on | pyproject config, git/system commands, optional validation commands |
+| Used by | Debate Engine / gauntlet compatibility path |
 | Runtime status | implemented |
-| Architecture status | active_primary |
+| Architecture status | active_secondary |
 
-## What This Component Does
+## Contracts
 
-Collects environmental context before gauntlet runs: git position (branch, commits, staleness), system state (build status, schemas, directory trees), and spec-affected files. Assembles this into a markdown context document that enhances the spec for adversary evaluation. Includes an interactive alignment mode where users can validate/reject collected context.
+### Boundary Field Contracts
+
+Chain: compatibility config → subprocess checks → `PreGauntletResult`/report.
+
+| Field | Emitted | Adapter forwards | Consumer accepts | Persist | Absent means | Authority | Evidence | Verified |
+|---|---|---|---|---|---|---|---|---|
+| `command` | conditional per configured check | yes | subprocess runner | report | no check configured; status may remain incomplete | pyproject config | `orchestrator.py:254-293` | verified |
+| `environment` | optional per check | yes | report metadata | report | environment unknown; do not infer production/development | config/runner | `orchestrator.py:254-293` | verified |
+| status | always on result | yes | typed PreGauntletStatus | report/exit | failed orchestration if no result | orchestrator | `orchestrator.py:310-327` | verified |
+
+## Invariants
+
+- A blocker enters Alignment Mode rather than being silently ignored (`orchestrator.py:207-253`).
+- Exit codes are stable and distinct for complete/alignment/abort/config/infra (`orchestrator.py:310-327`).
+- Compatibility config is loaded from the project `pyproject.toml` rather than an untracked global default (`orchestrator.py:254`).
 
 ## Data Flow
 
-```
-IN:  Spec text + repo root + config
-     └─> PreGauntletOrchestrator.run() (pre_gauntlet/orchestrator.py:51)
-
-PROCESS:
-     ├─> extract_spec_affected_files() -> file list
-     ├─> GitPositionCollector.collect() -> git position + concerns
-     ├─> SystemStateCollector.collect() -> system state + concerns
-     ├─> build_context() -> assembled markdown (max 200k chars)
-     └─> [optional] run_alignment_mode() -> user validation
-
-OUT: PreGauntletResult (context_markdown, concerns, timings)
-     └─> consumed by gauntlet pipeline
+```text
+IN: spec + repo root + CompatibilityConfig
+PROCESS: git/system collection -> service discovery -> build/schema/validation checks
+OUT: PreGauntletResult + JSON report + exit code
 ```
 
 ## Key Functions
 
 | Function | Purpose | Location |
-|----------|---------|----------|
-| `run_pre_gauntlet()` | Public API entry point | pre_gauntlet/orchestrator.py:207 |
-| `PreGauntletOrchestrator.run()` | Class-based orchestrator | pre_gauntlet/orchestrator.py:51 |
-| `GitPositionCollector.collect()` | Git branch/commit info | collectors/git_position.py |
-| `SystemStateCollector.collect()` | Build status, schemas | collectors/system_state.py |
-| `build_context()` | Assemble markdown context | pre_gauntlet/context_builder.py |
-| `run_alignment_mode()` | Interactive user validation | pre_gauntlet/alignment_mode.py |
-
-## Contracts
-
-### Type Contracts
-
-| Contract | Purpose | Owner | Consumed By |
-|----------|---------|-------|-------------|
-| `PreGauntletResult` | Collection result container | pre_gauntlet/__init__.py | gauntlet/cli.py |
-| `GitPosition` | Git repo state (Pydantic BaseModel) | pre_gauntlet/models.py:178 | context_builder |
-| `SystemState` | System environment state (Pydantic) | pre_gauntlet/models.py:230 | context_builder |
-| `Concern` (pre-gauntlet) | System/build concern | pre_gauntlet/models.py:257 | alignment_mode |
+|---|---|---|
+| `run_pre_gauntlet()` | orchestration | `orchestrator.py:207` |
+| `load_config_from_pyproject()` | typed config loader | `orchestrator.py:254` |
+| `run_discovery()` | service/file discovery | `discovery.py:280` |
+| `build_context()` | context document | `context_builder.py:213` |
+| `save_report()` | report serialization | `orchestrator.py:293` |
 
 ## Error Handling
 
-- **GitCliError**: Caught, returns INFRA_ERROR status. Pipeline continues with empty git context.
-- **SystemState collection failure**: Caught, returns INFRA_ERROR. Pipeline continues with empty system context.
-- **All collectors are read-only**: No modifications to repo or system state.
+- Config, infrastructure, and alignment failures have separate status/exit codes.
+- External command failures are collected into compatibility findings for operator alignment.
+
+## Configuration
+
+| Config | Source | Default | Precedence |
+|---|---|---|---|
+| compatibility enabled/base branch/build | `pyproject.toml` | configured/default typed values | project config overrides defaults |
+| validation environment | per-command config | unknown | explicit environment wins |
+
+## Integration Points
+
+**Calls out to:** git/system/subprocess checks and file discovery.
+
+**Called by:** debate gauntlet route and direct callers.
+
+## Active vs Target
+
+- **Active consumers:** optional pre-gauntlet path.
+- **Target architecture:** keep compatibility checks as a clear precondition layer before adversarial model calls.
 
 ## LLM Notes
 
-- Pre-gauntlet Concern is a different type from gauntlet/core_types.Concern. Don't confuse them.
-- Pydantic is used here but not in pyproject.toml (implicit dependency).
-- knowledge_service.py in integrations/ is implemented but not wired into any flow.
+- “No blocker” means configured checks completed; it does not prove external production data is healthy unless the configured environment/command did that check.

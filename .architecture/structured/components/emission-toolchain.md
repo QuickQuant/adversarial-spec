@@ -1,25 +1,53 @@
-# Component: Emission Toolchain
+# Component: Plan and Validation Emission Toolchain
 
-> Added 2026-06-11 (incremental f198887). Owner file: skills/adversarial-spec/scripts/mini_spec_emission.py
+> Derived from: `skills/adversarial-spec/scripts/mini_spec_emission.py`, `dependency_semantics.py`, `validation_emission.py`, `tmr_compile_step.py` | Verified at: `ef18c66`
+> If any derived-from file changed since `ef18c66`, trust source over this doc.
 
-| | |
+## Quick Reference
+
+| Property | Value |
 |---|---|
-| Entry | `emit_fizzy_plan()` (:355), `self_check_plan()` (:411), `altitude_spec_shape()` (:99) |
-| Purpose | Doc-driven process, code-checked shapes: emit Phase-7 execution plans in the fizzy v3 plan contract and offline-mirror the live altitude validation |
-| Key files | mini_spec_emission.py (stdlib-only) |
-| Depends on | nothing internal (deliberately standalone) |
-| Used by | debate.py Phase-7 flows; conductor LLM during execution planning |
-
-## Data Flow
-IN: altitude tree dict (system→subsystem→component nodes) + session metadata → PROCESS: shape validation per ALTITUDE_OBLIGATIONS, requirement lint (advisory, shall/will/should tiers), artifact writes with 12-char sha256 plan_hash → OUT: fizzy-plan.json (PLAN_SCHEMA_VERSION=3) + spec/verification artifacts + self-check verdict {valid, issues[{code, task_id}]}.
+| Purpose | Emit/validate plan artifacts and bridge prose/registry/evidence formats |
+| Entry | `emit_fizzy_plan()` in `mini_spec_emission.py`; validation CLI `main()` at `validation_emission.py:3423` |
+| Key files | `mini_spec_emission.py`, `validation_emission.py`, `tmr_compile_step.py` |
+| Depends on | JSON schemas, TMR/compiler, Fizzy plan contract |
+| Used by | execution planning and validation-leg workflow |
+| Runtime status | implemented |
+| Architecture status | active_primary |
 
 ## Contracts
-- PLAN_SCHEMA_VERSION=3 must equal fizzy-pipeline-mcp V4_PLAN_SCHEMA_VERSION.
-- ALTITUDE_OBLIGATIONS: component→{component_verification}; subsystem adds subsystem_verification; system adds system_verification. v4 is VERIFICATION-ONLY — no system_validation binding (the validation-leg spec on card 5604 adds validation_emission.py as a sibling following this exact pattern).
-- REQUIREMENT_ID_RE `^[A-Z]+-R?\d+$` for machine-extractable requirement ids.
-- self_check_plan reject codes mirror live pipeline_validate_plan: WRONG_SCHEMA_VERSION, NO_ROOT, MULTIPLE_ROOTS, ROOT_NOT_SYSTEM, INVALID_ALTITUDE, MISSING_LEVEL_VV, VV_ABOVE_ALTITUDE, VV_KIND_MISMATCH, ORPHAN_REALIZATION, UNDECOMPOSED_REQUIREMENT.
 
-## Notes for LLMs
-- Self-check is an offline preflight, not a substitute for the live dry-run.
-- Lint is advisory-by-design (:148) — never blocks emission.
-- Pure functions; no locking needed (writes go through atomic helpers when artifact_root supplied).
+| Contract | Purpose | Owner | Consumed By |
+|---|---|---|---|
+| Fizzy plan schema | card/task emission shape | `mini_spec_emission.py` | pipeline loader/self-check |
+| validation `Envelope` | stable CLI result shape | `validation_emission.py:200-220` | automation |
+| TMR registry | authoritative test records | `tmr_compile_step.py:64-156` | parser/promotion |
+
+## Invariants
+
+- Offline self-check mirrors live plan validation reject codes (`mini_spec_emission.py` functions and constants).
+- Structured registries are authoritative over prose views.
+- Emission must preserve dependency/acceptance fields because downstream pipeline loading validates them.
+
+## Data Flow
+
+```text
+IN: roadmap/prose/candidate records
+PROCESS: normalize -> schema/self-check -> emit plan/registry -> derived views
+OUT: Fizzy plan JSON, TMR registry, validation Envelope
+```
+
+## Integration Points
+
+**Calls out to:** Fizzy pipeline contract and local schema/test fixtures.
+
+**Called by:** planning, validation, and test tooling.
+
+## Active vs Target
+
+- **Active consumers:** mini-spec and validation-leg paths.
+- **Target architecture:** one canonical compilation/validation chain with explicit external schemas.
+
+## LLM Notes
+
+- Emission is a boundary adapter; a locally valid artifact can still fail if Fizzy’s external contract differs. Keep the self-check and contract version synchronized.

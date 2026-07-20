@@ -1,35 +1,20 @@
 {
   "status": "complete",
-  "started_at": "2026-06-11T17:08:28Z",
-  "git_hash": "f198887",
+  "started_at": "2026-07-19T08:43:13-05:00",
+  "git_hash": "ef18c66",
   "mode": "update",
   "target_dir": "/home/jason/PycharmProjects/adversarial-spec",
-  "skill_version": "3.8",
+  "skill_version": "4.0",
   "phases": {
-    "phase_1_discovery": {
-      "status": "complete"
-    },
-    "phase_2_high_level": {
-      "status": "complete"
-    },
-    "phase_3_structured": {
-      "status": "complete"
-    },
-    "phase_4_verification": {
-      "status": "complete"
-    },
-    "phase_5_patterns": {
-      "status": "complete"
-    },
-    "phase_6_findings": {
-      "status": "complete"
-    },
-    "phase_7_manifest": {
-      "status": "complete"
-    },
-    "phase_8_visuals": {
-      "status": "complete"
-    }
+    "phase_1_discovery": { "status": "complete" },
+    "phase_2_high_level": { "status": "complete" },
+    "phase_3_structured": { "status": "complete" },
+    "phase_4_verification": { "status": "complete" },
+    "phase_5_patterns": { "status": "complete" },
+    "phase_6_findings": { "status": "complete" },
+    "phase_6f_verification": { "status": "complete" },
+    "phase_7_manifest": { "status": "complete" },
+    "phase_8_visuals": { "status": "complete" }
   },
   "phase_artifacts": {
     "phase_1_discovery": [
@@ -38,65 +23,57 @@
       ".architecture/.work/discovery/control-flow.md",
       ".architecture/.work/discovery/dependencies.md",
       ".architecture/.work/discovery/contracts.md"
+    ],
+    "phase_8_visuals": [
+      ".architecture/HUMAN_READ_ONLY_visuals/system-overview.html",
+      ".architecture/HUMAN_READ_ONLY_visuals/gauntlet-flow.html",
+      ".architecture/HUMAN_READ_ONLY_visuals/validation-emission-flow.html",
+      ".architecture/HUMAN_READ_ONLY_visuals/harness-hooks-flow.html"
     ]
   },
   "artifacts_written": [
-    ".architecture/.work/discovery/contracts.md",
-    ".architecture/.work/discovery/control-flow.md",
-    ".architecture/.work/discovery/data-flow.md",
-    ".architecture/.work/discovery/dependencies.md",
     ".architecture/.work/discovery/entry-points.md",
-    ".architecture/HUMAN_READ_ONLY_visuals/system-overview.md",
-    ".architecture/INDEX.md",
-    ".architecture/access-guide.md",
-    ".architecture/action-plan.md",
-    ".architecture/concerns.md",
-    ".architecture/filesystem-map.md",
-    ".architecture/findings.md",
-    ".architecture/manifest.json",
-    ".architecture/overview.md",
-    ".architecture/patterns.md",
+    ".architecture/.work/discovery/data-flow.md",
+    ".architecture/.work/discovery/control-flow.md",
+    ".architecture/.work/discovery/dependencies.md",
+    ".architecture/.work/discovery/contracts.md",
     ".architecture/primer.md",
+    ".architecture/access-guide.md",
+    ".architecture/overview.md",
+    ".architecture/filesystem-map.md",
+    ".architecture/INDEX.md",
+    ".architecture/structured/entry-points.md",
+    ".architecture/structured/flows.md",
+    ".architecture/structured/cross-references.md",
     ".architecture/structured/components/adversaries.md",
     ".architecture/structured/components/debate-engine.md",
     ".architecture/structured/components/emission-toolchain.md",
     ".architecture/structured/components/execution-planner.md",
+    ".architecture/structured/components/gauntlet-persistence.md",
     ".architecture/structured/components/gauntlet.md",
     ".architecture/structured/components/harness-hooks.md",
     ".architecture/structured/components/mcp-tasks.md",
     ".architecture/structured/components/models.md",
+    ".architecture/structured/components/plan-analysis.md",
     ".architecture/structured/components/pre-gauntlet.md",
     ".architecture/structured/components/prompts.md",
+    ".architecture/structured/components/provenance-promotion.md",
     ".architecture/structured/components/providers.md",
     ".architecture/structured/components/session.md",
-    ".architecture/structured/cross-references.md",
-    ".architecture/structured/entry-points.md",
-    ".architecture/structured/flows.md"
-  ],
-  "update_scope": {
-    "previous_hash": "9ca3ccd",
-    "changed_source_files": 66,
-    "deleted": [
-      "mcp_tasks/",
-      "skills/adversarial-spec/scripts/task_manager.py",
-      "skills/adversarial-spec/scripts/scope.py",
-      "skills/adversarial-spec/scripts/gauntlet_monolith.py"
-    ],
-    "affected_components": [
-      "debate-engine",
-      "gauntlet",
-      "models",
-      "providers",
-      "adversaries",
-      "mcp-tasks(retire)"
-    ],
-    "new_modules": [
-      "mini_spec_emission.py",
-      "token_tracking.py",
-      "gauntlet/batch_tiering.py",
-      "gauntlet/clustering.py",
-      "migrate-journey-to-log.py"
-    ]
-  },
-  "completed_at": "2026-06-11T17:24:36Z"
+    ".architecture/structured/components/tmr-evidence-toolchain.md",
+    ".architecture/structured/components/token-tracking.md",
+    ".architecture/structured/components/validation-emission.md",
+    ".architecture/patterns.md",
+    ".architecture/.work/diagnosis-scans.md",
+    ".architecture/findings.md",
+    ".architecture/concerns.md",
+    ".architecture/action-plan.md",
+    ".architecture/.work/answerability-check.md",
+    ".architecture/HUMAN_READ_ONLY_visuals/system-overview.md",
+    ".architecture/HUMAN_READ_ONLY_visuals/system-overview.html",
+    ".architecture/HUMAN_READ_ONLY_visuals/gauntlet-flow.html",
+    ".architecture/HUMAN_READ_ONLY_visuals/validation-emission-flow.html",
+    ".architecture/HUMAN_READ_ONLY_visuals/harness-hooks-flow.html",
+    ".architecture/manifest.json"
+  ]
 }

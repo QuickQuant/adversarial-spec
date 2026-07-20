@@ -1,153 +1,104 @@
 # Filesystem Map: adversarial-spec
 
-> Generated: 2026-06-11 (incremental) | Git: f198887
-> Skill version: 3.6 | Model: claude-opus-4-6
+> Generated: 2026-07-19T08:43:13-05:00 | Git: ef18c66
+> Skill version: 4.0 | Model: Codex | Architecture verified at `ef18c66`
 
 ## Root Structure
 
 | Directory/File | Purpose |
 |----------------|---------|
-| `skills/adversarial-spec/` | Skill definition (phases, scripts, reference docs) |
-| `execution_planner/` | Gauntlet concern parsing (mostly deprecated) |
-| ~~`mcp_tasks/`~~ | DELETED June 2026 — MCP Tasks retired; Fizzy pipeline board + harness hooks are the coordination plane |
-| `onboarding/` | Core practices and project practices docs |
-| `.architecture/` | Architecture documentation (this directory) |
-| `.adversarial-spec/` | Spec artifacts, session manifests, resolved concerns |
-| `.adversarial-spec-checkpoints/` | Debate round checkpoints (per-session) |
-| `.adversarial-spec-gauntlet/` | Gauntlet phase checkpoints (hash-keyed JSON + lock files) |
-| `.claude/` | Claude Code hooks, settings, task coordination |
-| `.coordination/` | Multi-agent coordination protocol |
-| `pyproject.toml` | Dependencies, build config, entry points |
+| `skills/` | Installed/deployed Claude Code skill definitions, phases, references, and canonical Python source |
+| `adversarial_spec` | Symlink to `skills/adversarial-spec/scripts`; packaging/import alias |
+| `execution_planner/` | Plan-side gauntlet concern parsing; currently secondary/partial |
+| `scripts/` | Root-level test/support scripts; not the main runtime package |
+| `tests/` | Root test area; currently sparse/legacy compared with `skills/.../scripts/tests` |
+| `golden_cases/` | Test-maturity golden fixtures and manifest inputs |
+| `docs/` | Historical generated bundles plus design/proposal documentation |
+| `orchestration/` | Session/process handoffs and external review artifacts |
+| `onboarding/` | Project practices and alignment notes |
+| `wisdom/` | Project learning/process notes |
+| `.claude/` | Claude Code settings, hooks, hook tests, and conductor dispatch state |
+| `.claude-plugin/` | Plugin and personal marketplace manifests |
+| `.architecture/` | Generated architecture corpus, manifest, discovery workspace, and human visuals |
+| `.adversarial-spec/` | Session/spec/checkpoint state; excluded from source exploration |
+| `.adversarial-spec-checkpoints/` | Historical checkpoint artifacts; excluded from runtime mapping |
+| `.adversarial-spec-gauntlet/` | Generated gauntlet responses/reports; runtime persistence target, not source |
+| `.reports/` | Generated HTML/operator reports and report state |
+| `.conductor/` | Local conductor notifications/coordination state |
+| `.agents/` | Agent metadata/configuration |
+| `.github/` | Repository automation and workflow configuration |
+| `.idea/`, `.vscode/` | IDE/editor metadata |
+| `.venv/`, `venv/`, `skills/adversarial-spec/.venv/` | Python virtual environments; excluded |
+| `adversarial_spec.egg-info/`, `skills/adversarial-spec/adversarial_spec_skill.egg-info/` | Build/install metadata |
+| `.pytest_cache/`, `.ruff_cache/` | Tool caches; excluded |
 
 ## Key Areas
 
-### skills/adversarial-spec/scripts/
-
-The main source code directory. All Python scripts live here.
+### `skills/adversarial-spec/`
 
 | Path | Purpose |
 |------|---------|
-| `debate.py` | Master CLI entrypoint (1562 lines, 18+ actions) |
-| `models.py` | LLM call abstraction, cost tracking, parallel dispatch (1000 lines) |
-| `providers.py` | Model config, cost rates, Bedrock, CLI detection |
-| `adversaries.py` | Named attacker persona definitions (frozen dataclasses) |
-| `prompts.py` | System prompts, focus areas, personas templates |
-| `session.py` | Session state persistence for debate rounds |
-| `mini_spec_emission.py` | Fizzy v3 plan emission + offline self-check (NEW; pattern for incoming validation_emission.py) |
-| `token_tracking.py` | Thread-safe token/cost accounting singleton (NEW, extracted from models.py) |
-| `migrate-journey-to-log.py` | One-shot journey→JSONL migration utility (NEW) |
-| `telegram_bot.py` | Telegram notification bot (send, poll, notify) |
+| `SKILL.md` | Claude Code skill entry and workflow contract |
+| `phases/` | Eight adversarial-spec pipeline phase documents |
+| `reference/` | Model, prompt, document-type, migration, and TMR references |
+| `agents/` | Skill-specific agent prompts/roles |
+| `scripts/` | Canonical Python runtime package and tests |
+| `scripts/gauntlet/` | Gauntlet orchestration, phase modules, persistence, reporting, model dispatch |
+| `scripts/pre_gauntlet/` | Compatibility/discovery/context checks |
+| `scripts/tests/` | Main pytest suite, configured by `pyproject.toml:testpaths` |
 
-### skills/adversarial-spec/scripts/gauntlet/
-
-The 18-module gauntlet package (extracted from original monolith).
+### `skills/adversarial-spec/scripts/`
 
 | Path | Purpose |
 |------|---------|
-| `__init__.py` | Public API exports (run_gauntlet, format_gauntlet_report, etc.) |
-| `__main__.py` | Enables `python -m gauntlet` invocation |
-| `cli.py` | Standalone gauntlet CLI (separate flag names from debate.py) |
-| `orchestrator.py` | 7-phase pipeline sequencing, state management, resume (865 lines) |
-| `core_types.py` | Data models: Concern, Evaluation, Rebuttal, GauntletConfig, Medal, etc. |
-| `model_dispatch.py` | Model selection, rate limiting, name validation |
-| `persistence.py` | FileLock-guarded checkpoint save/load, atomic writes |
-| `prompts.py` | Centralized phase system prompts (NEW — extracted from inline) |
-| `phase_1_attacks.py` | Attack generation (parallel adversary dispatch) |
-| `phase_2_synthesis.py` | Big-picture synthesis across all concerns |
-| `phase_3_filtering.py` | Concern filtering, explanation matching |
-| `clustering.py` | Phase 3.5 deterministic Jaccard clustering (NEW; auto at ≥200 concerns) |
-| `batch_tiering.py` | Phase 4 power-law batch tiering p60/p90 → 75/30/12 (NEW) |
-| `phase_4_evaluation.py` | Frontier model evaluation (verdict assignment, multi-model consensus) |
-| `phase_5_rebuttals.py` | Adversary rebuttal for dismissed concerns |
-| `phase_6_adjudication.py` | Final adjudication and verdict aggregation |
-| `phase_7_final_boss.py` | Final boss review (pass/refine/reconsider) |
-| `medals.py` | Adversary accuracy scoring and medal awards |
-| `reporting.py` | Markdown report generation, leaderboard formatting |
-| `synthesis_extract.py` | Standalone concern parsing/clustering utility |
+| `debate.py` | Top-level CLI, critique loop, gates, session/output routing |
+| `models.py`, `providers.py`, `prompts.py`, `adversaries.py` | model/config/prompt/persona shared layer |
+| `session.py`, `gauntlet/persistence.py` | resumability and file-backed state |
+| `tmr_schema.py`, `tmr_parser.py`, `tmr_compile_step.py` | strict TMR schema and compilation |
+| `validation_emission.py` | validation ledger/evidence/digest CLI |
+| `provenance_journal.py`, `phase8_promotion.py`, `tcov_liveness.py` | lineage, evidence, and close gates |
+| `authoring_lint.py`, `verification_tier_lint.py`, `guardrail_orchestration.py` | document/test/guardrail checks |
+| `dependency_semantics.py`, `execution_planner/` | plan graph and gauntlet concern tooling |
 
-### skills/adversarial-spec/scripts/pre_gauntlet/
-
-Pre-gauntlet context collection pipeline.
+### `.claude/hooks/`
 
 | Path | Purpose |
 |------|---------|
-| `orchestrator.py` | Coordinate git/system/file collectors |
-| `models.py` | Pydantic models: GitPosition, SystemState, Concern |
-| `context_builder.py` | Assemble collected context into markdown |
-| `alignment_mode.py` | Interactive user validation of collected context |
-| `discovery.py` | Discovery result types |
-
-### skills/adversarial-spec/scripts/collectors/
-
-| Path | Purpose |
-|------|---------|
-| `git_position.py` | Git branch, commits, staleness detection |
-| `system_state.py` | Build status, schema contents, directory trees |
-
-### skills/adversarial-spec/scripts/integrations/
-
-| Path | Purpose |
-|------|---------|
-| `git_cli.py` | Git subprocess wrapper (GitCli, GitCliError) |
-| `process_runner.py` | Generic subprocess runner with timeout |
-| `knowledge_service.py` | Knowledge base caching |
-
-### skills/adversarial-spec/scripts/tests/
-
-20 test files covering all components.
-
-| Path | Purpose |
-|------|---------|
-| `test_models.py`, `test_model_calls.py` | Model calling, cost tracking, parallel dispatch |
-| `test_providers.py` | Provider config, Bedrock, CLI detection |
-| `test_session.py` | Session persistence, path traversal protection |
-| `test_adversaries.py` | Adversary registry, scope guidelines, content hash |
-| `test_prompts.py` | Prompt templates and persona validation |
-| `test_cli.py` | debate.py CLI argument parsing |
-| `test_gauntlet_*.py` (12 files) | Gauntlet phases, orchestrator, persistence, types, dispatch, medals |
-| `test_telegram_bot.py` | Telegram bot command tests |
-
-### skills/adversarial-spec/phases/
-
-Skill phase documentation (9 phases, markdown instructions for Claude Code).
-
-| Path | Purpose |
-|------|---------|
-| `01-init-and-requirements.md` | Initialization and requirements gathering |
-| `02-roadmap.md` | Roadmap and milestone planning |
-| `03-debate.md` | Multi-model debate execution |
-| `04-target-architecture.md` | Target architecture definition (rewritten Apr 2026) |
-| `05-gauntlet.md` | Gauntlet stress-test (cardinal rules for synthesis) |
-| `06-finalize.md` | Spec finalization |
-| `07-execution.md` | Execution plan generation (with verification gates) |
-| `08-implementation.md` | Implementation phase |
-| `09-verification.md` | Test mapping and verification |
+| `codex_pretool_combined.py` | Runs configured hook sub-processors |
+| `banned_*`, `bash_command_check.py`, `prod_deployment_guard.py`, `secret_exposure.py`, `force_flag_defense.py`, `pip_install_block.py`, `uv_run_check.py`, `deprecated_models.py` | command/safety checks |
+| `dispatch_check.py`, `pipeline_continue.py`, `pipeline_idle_retry.py`, `pipeline_notifications.py`, `session_activity_logger.py`, `telegram_postcompact.py` | pipeline/session coordination and notification |
+| `fizzy_payload_guard.py` | payload size/shape/override guard |
+| `tests/` | hook unit tests |
 
 ## Entry Points
 
 | File | How It Starts | What It Does |
 |------|---------------|--------------|
-| `scripts/debate.py` | `adversarial-spec <action>` (pyproject.toml) | Master CLI — routes 18 actions |
-| `scripts/gauntlet/cli.py` | `python -m gauntlet` or direct | Standalone gauntlet CLI |
-| `scripts/telegram_bot.py` | Direct script execution | Telegram notification bot |
+| `pyproject.toml:48` → `debate.py:1623` | `adversarial-spec ...` | main debate/gauntlet CLI |
+| `pyproject.toml:49` → `gauntlet_check_cli.py:27` | `gauntlet-check ...` | gate result/check CLI |
+| `gauntlet/__main__.py:3` | `python -m gauntlet` | standalone gauntlet CLI |
+| `validation_emission.py:3423` | direct script/module | validation/evidence subcommands |
+| `dependency_semantics.py:525` | direct script/module | plan dependency report |
+| `telegram_bot.py:404` | direct script/module | Telegram setup/send/poll/notify |
+| `.claude/hooks/codex_pretool_combined.py:57` | Claude Code hook runner | combined safety/coordination decision |
 
 ## Configuration Files
 
 | File | Configures |
 |------|------------|
-| `pyproject.toml` | Dependencies (litellm, filelock, mcp), entry points, ruff, pytest |
-| `~/.claude/adversarial-spec/config.json` | Global Bedrock config (enabled, region, models) |
-| `~/.config/adversarial-spec/sessions/` | Debate session state (per session_id) |
-| `~/.config/adversarial-spec/profiles/` | Reusable model/API key profiles |
-| `~/.adversarial-spec/` | Adversary stats, medals, resolved concerns, runs |
-| `.adversarial-spec-gauntlet/` | Gauntlet phase checkpoints (hash-keyed) |
-| `.claude/hooks/` | Pre/post tool use hooks (deprecated model check, timeout guard) |
-| `.claude/settings.local.json` | Hook registrations |
+| `pyproject.toml` | package metadata, console scripts, dependencies, pytest/ruff/mypy, compatibility config |
+| `uv.lock`, `requirements*.txt` | dependency resolution/legacy install surfaces |
+| `.mcp.json` | local Fizzy MCP server and project board metadata; secret values are not architecture payload |
+| `.claude/hooks/hook_config.json` | hook pattern/config behavior |
+| `.claude/settings.json`, `.claude/settings.local.json` | Claude Code hook/tool settings |
+| `~/.claude/adversarial-spec/config.json` | user-level provider/global config, loaded by `providers.py` |
+| `~/.config/adversarial-spec/profiles/` | named model/provider profiles |
+| `golden_cases/manifest.json` and spec-local `tmr-registry.json` | TMR/golden-case contract inputs |
 
 ## Notable Conventions
 
-- **Scripts live under `skills/adversarial-spec/scripts/`**, not a standard `src/` directory. This matches the Claude Code skill deployment model.
-- **Tests live alongside source** in `scripts/tests/`, not a separate `tests/` directory at root.
-- **Two copies of the skill exist**: source in `skills/adversarial-spec/` and deployed in `~/.claude/skills/adversarial-spec/`. Changes require manual copy.
-- **Checkpoint files use hash-based names**: `{phase}-{spec_hash}.json` prevents overwrite of valid data.
-- **Lock files are sidecar files**: `.adversarial-spec-gauntlet/*.json.lock` next to their data files.
+- Canonical Python source is nested under the skill directory but exposed through a root symlink; do not assume `adversarial_spec/` is a real directory.
+- Runtime tests live under `skills/adversarial-spec/scripts/tests/`, while root `scripts/tests/` holds a separate validation-emission test surface.
+- Generated state is intentionally file-backed and distributed across home config, project `.adversarial-spec-gauntlet`, spec-local ledgers, and Claude hook logs.
+- `.architecture/HUMAN_READ_ONLY_visuals/` is for humans; structured docs are the LLM-facing payload.
+- Historical docs/checkpoints and reports coexist with active code. Check import/entry-point reachability before treating a file as runtime.

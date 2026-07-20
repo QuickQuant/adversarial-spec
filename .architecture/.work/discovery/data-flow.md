@@ -1,53 +1,94 @@
-# Discovery: Data Flow (incremental 9ca3ccd→f198887, 2026-06-11)
+# Phase 1 Discovery: Data Flow
 
-PATH: CLI Spec Input → Critique Debate Cycle
-SOURCE: stdin + CLI args (debate.py main ~:1499)
-TRANSFORMS: log_input_stats (debate.py:116, sha256+line count) → load_context_files (models.py) → load_profile (providers.py:198, ~/.config/adversarial-spec/profiles/) → preflight_models (models.py:922, parallel credential ping, NEW) → call_models_parallel (models.py:948, LiteLLM or CLI subprocess) → token_tracking.tracker.record_call (token_tracking.py:21) → save_critique_responses (session.py:105) → save_checkpoint (session.py:88) → detect_active_session (session.py:17) → SessionState.save (session.py:46)
-SINK: stdout report/JSON; .adversarial-spec-checkpoints/ (round-{N}.md, round-{N}-critiques.json, round-{N}-{model}.json per-model partial saves at models.py:1020); ~/.config/adversarial-spec/sessions/{id}.json; .adversarial-spec/session-state.json
-DATA_SHAPE: spec str + args → ModelResponse(model, response, agreed, spec, error, tokens, cost) → spec str + checkpoints
-NOTES: per-model partial checkpoints survive kills; TokenTracker threadsafe (token_tracking.py:32); preflight failures exit before dispatch; CLI models via subprocess.run, API via litellm.completion.
+> Architecture verified at `ef18c66`. Local fallback after five delegated
+> discovery explorers were shut down for timeout; anchors are from current source.
 
-PATH: Gauntlet Concern Generation → Phase 4 Batch Tiering
-SOURCE: spec + GauntletConfig (orchestrator.py run_gauntlet ~:205)
-TRANSFORMS: get_spec_hash (persistence.py) → _load_approved_prompts (orchestrator.py:125; FM-1 spec-hash gate raises ValueError at ~:145) → Phase1 generate_attacks (phase_1_attacks.py): call_model (model_dispatch.py:62) → _parse_json_concerns (phase_1_attacks.py:30) / parse_numbered_list fallback (:140) / _extract_severity_from_text (:106); Concern.id via generate_concern_id (adversaries.py) → save_checkpoint (concerns-{hash}.json + raw-responses-{hash}.json) → Phase3.5 cluster_concerns (clustering.py:83; _tokenize :56, _jaccard :64 thresh 0.65, _pick_representative :74; clustered-concerns-{hash}.json; auto when ≥200 concerns) → Phase4 tier_concerns_by_length (batch_tiering.py:73; _percentile_threshold :55 p60/p90; easy=75/med=30/hard=12; pick_eval_batch_arg :172; summarize_tiers :142) → evaluate_concerns_multi_model (phase_4_evaluation.py; evaluations-{hash}.json) → save_gauntlet_run (~/.adversarial-spec/runs/{hash}.json) → update_adversary_stats (~/.adversarial-spec/adversary_stats.json, FileLock persistence.py:74)
-DATA_SHAPE: Concern(adversary,text,severity,id,source_model) → BatchTier list → Evaluation(concern_id, verdict accepted|dismissed|deferred, explanation, model); run manifest PhaseMetrics(phase_index,status,duration_s,tokens,models_used,spec_hash)
-NOTES: concern IDs hash-stable (dedup deterministic); clustering deterministic; batch tiering pure function with flat fallback < tier_min_concerns (batch_tiering.py:200-210).
+## Debate and model dispatch
 
-PATH: Execution Planner → Concern Linking; Pre-Gauntlet context
-SOURCE: gauntlet concern JSON + spec (execution_planner/gauntlet_concerns.py:137)
-TRANSFORMS: GauntletConcernParser.parse_file (:172) → _parse_concern (:192) → _extract_section_refs/_extract_title → GauntletConcern dataclass → indexes by_section/by_adversary/by_severity (:154-168). Pre-gauntlet (pre_gauntlet/orchestrator.py:56): extract_spec_affected_files, GitPositionCollector, SystemStateCollector, build_context, run_alignment_mode.
-SINK: GauntletReport.to_json (:97); PreGauntletResult.context_markdown
-NOTES: pre-gauntlet optional per doc_type (CompatibilityConfig, orchestrator.py:74).
+PATH: debate_spec_to_model_results
+SOURCE: CLI arguments/stdin/file loading through `skills/adversarial-spec/scripts/debate.py:525-611`
+TRANSFORMS:
+  1. `create_parser` and argument handlers normalize command/profile/gauntlet options (`debate.py:525`)
+  2. `parse_models` resolves explicit/default provider models (`debate.py:757`)
+  3. `validate_models_before_run` checks credentials/availability (`debate.py:1312`)
+  4. `preflight_models` optionally pings model routes (`models.py:1088`)
+  5. `call_models_parallel` dispatches independent model calls (`models.py:1114`)
+  6. `call_single_model` selects CLI, Bedrock, or LiteLLM adapter (`models.py:688`)
+SINK: `output_results` plus session/checkpoint/Telegram output (`debate.py:1227`, `session.py:45-133`)
+DATA_SHAPE: spec/context text in; `ModelResponse` objects and model-specific text/usage out (`models.py:141-151`)
+NOTES: model calls run in a `ThreadPoolExecutor`; partial results are persisted on failure (`models.py:1170-1197`).
 
-PATH: Token & Cost Tracking
-SOURCE: every model call (models.py call_*; model_dispatch.py call_model)
-TRANSFORMS: tracker.record_call (token_tracking.py:21): MODEL_COSTS lookup (providers.py:21-50); CLI-prefixed models zero-cost; DEFAULT_COST fallback (providers.py:52, $5/$15 per 1M); threadsafe accumulate → tracker.summary (:49)
-SINK: global singleton tracker (token_tracking.py:66); stdout --show-cost; Telegram payloads; run-manifest PhaseMetrics
-NOTES: cost never persisted by token_tracking itself; gauntlet persistence integrates into manifests.
+PATH: gauntlet_spec_to_verdict
+SOURCE: `skills/adversarial-spec/scripts/gauntlet/orchestrator.py:205`
+TRANSFORMS:
+  1. load approved prompts and resolve enabled adversaries (`orchestrator.py:125-200`)
+  2. generate adversarial concerns in parallel (`phase_1_attacks.py:323-363`)
+  3. synthesize/filter concerns (`phase_2_synthesis.py:1`, `phase_3_filtering.py:130`)
+  4. cluster near-duplicates and persist clustering state (`clustering.py:1`, `persistence.py:587`)
+  5. evaluate concerns in tiered parallel batches (`phase_4_evaluation.py:118-245`)
+  6. collect rebuttals, adjudicate, and run final boss (`phase_5_rebuttals.py:1`, `phase_6_adjudication.py:1`, `phase_7_final_boss.py:1`)
+SINK: `GauntletResult`, run manifest, checkpoint/raw-response/spec artifacts (`core_types.py:232`, `persistence.py:469-629`)
+DATA_SHAPE: spec text -> `Concern`/`Evaluation`/`Rebuttal`/verdict dataclasses (`core_types.py:83-232`)
+NOTES: FileLock and integrity hashes protect checkpoint/run writes; retry and partial-resume paths exist.
 
-PATH: Hook session_activity_logger → conductor briefing
-SOURCE: hook events SessionStart/UserPromptSubmit/SessionEnd (stdin JSON)
-TRANSFORMS: find_project_root (:26 git rev-parse) → rotate_if_needed (:43, 1MB → .jsonl.1) → append JSONL {ts, session_id, event, project, source?, model?, reason?}; Stop/SessionEnd → stdout {"continue": true}
-SINK: .claude/session-activity.jsonl (+.1 backup)
-NOTES: never fails (exceptions swallowed :97).
+PATH: pre_gauntlet_compatibility
+SOURCE: `skills/adversarial-spec/scripts/pre_gauntlet/orchestrator.py:207`
+TRANSFORMS:
+  1. load compatibility configuration from `pyproject.toml` (`orchestrator.py:254`)
+  2. collect git/system context (`collectors/git_position.py:30`, `collectors/system_state.py:33`)
+  3. discover services and build context (`pre_gauntlet/discovery.py:44`, `context_builder.py:17`)
+  4. run configured build/schema/validation checks
+SINK: `PreGauntletResult` serialized by `save_report` (`orchestrator.py:293`)
+DATA_SHAPE: spec and repo configuration -> compatibility status plus findings
+NOTES: blocker status enters Alignment Mode; exit code is selected by `get_exit_code` (`orchestrator.py:317`).
 
-PATH: Hook dispatch_check → worker coordination
-SOURCE: PreToolUse on pipeline_do_next_task; .conductor/dispatch/{role}/updates.jsonl
-TRANSFORMS: _detect_role (:54, env vars or .conductor/agents/*.json) → line-count vs baseline /tmp/dispatch-baseline-{project}-{role}.txt → new lines parsed → systemMessage injection
-SINK: baseline file; stdout {decision: allow, systemMessage?}
-NOTES: KNOWN_ROLES {claude, codex, gemini, glm} (:19); JSONL append-only.
+PATH: tmr_prose_to_registry
+SOURCE: candidate records supplied to `tmr_compile_step.compile_tmr_records` (`tmr_compile_step.py:64`)
+TRANSFORMS:
+  1. coerce candidate/accessor shapes and resolve identity (`tmr_compile_step.py:183-222`)
+  2. mint/validate ULID identity where missing (`tmr_compile_step.py:158-170`)
+  3. diff by `tmr_uid` and emit semantic diff events (`tmr_compile_step.py:224-249`)
+  4. validate every record against strict Pydantic schema (`tmr_schema.py:175-377`)
+SINK: confirmed `tmr-registry.json` and regenerated prose view (`tmr_compile_step.py:123-156`)
+DATA_SHAPE: candidate mappings -> `TestMaturityRecord` JSON with schema/identity/lineage fields
+NOTES: registry is authoritative once present; prose view is derived.
 
-PATH: Mini-Spec Emission → fizzy plan v3 contract
-SOURCE: Phase 7 spec + execution plan (mini_spec_emission.py:99-250)
-TRANSFORMS: altitude_spec_shape (:99; ALTITUDE_OBLIGATIONS; _FLOOR_FIELDS + _SUBSYSTEM_EXTRA + _SYSTEM_EXTRA superset chain) → _write_artifact (:123, returns 12-char sha256 plan_hash) → lint_requirement_text (:143, advisory; shall/will/should tiers) → representative_tree (:177) → self_check_plan (offline mirror of fizzy v4 altitude validation)
-SINK: artifact_root files + plan_hash values + self-check dict
-NOTES: v4 VERIFICATION-ONLY (no validation binding yet — the validation-leg spec adds that); REQUIREMENT_ID_RE ^[A-Z]+-R?\d+$; lint advisory-by-design (:148). THIS is the stated pattern for the upcoming validation_emission.py.
+PATH: validation_ledger_lifecycle
+SOURCE: JSON/CLI input to `validation_emission.main` (`validation_emission.py:3423`)
+TRANSFORMS:
+  1. parse subcommand and resolve paths under the spec root (`validation_emission.py:3255`, `312`)
+  2. normalize/lint rows and compute canonical row/story/conops hashes (`validation_emission.py:397-457`, `1093`)
+  3. mutate ledger under FileLock with atomic replacement (`validation_emission.py:1337`, `1048`)
+  4. assemble/send/parse Telegram digest batches or record system-validation evidence (`validation_emission.py:1528`, `1757`, `2348`, `2606`)
+  5. run self-check/status and emit an `Envelope` (`validation_emission.py:2888`, `3102`, `200`)
+SINK: ledger, evidence artifacts, batch state, and one-line stdout envelope
+DATA_SHAPE: bounded JSON objects/Markdown replies -> normalized rows, hashes, evidence records, status envelope
+NOTES: duplicate IDs, stale hashes, lock contention, oversized input, secrets, and stale batches have explicit issue codes.
 
-PATH: Model Dispatch → adversary attack selection (free-first)
-SOURCE: GauntletConfig + env (model_dispatch.py:182-220)
-TRANSFORMS: _get_unavailable_models (:154, ADVERSARIAL_SPEC_UNAVAILABLE_MODELS env) → select_adversary_model (:182, free-first: gemini-cli → groq → deepseek → gemini API) → select_eval_model (codex preferred; _select_codex_eval_model :162) → _validate_model_name (:43, injection prevention) → call_model (:62, CLI subprocess vs litellm, temp 0.7)
-NOTES: o-series models reject custom temperature — wrapper adjusts (models.py:122-136).
+PATH: provenance_transition
+SOURCE: registry/journal inputs to `ProvenanceJournalWriter` (`provenance_journal.py:112`)
+TRANSFORMS:
+  1. validate subject and event types (`provenance_journal.py:19-40`)
+  2. check expected coordinates/lineage and build transition record (`provenance_journal.py:54`, `460`)
+  3. acquire ordered locks for registry, journal, and index (`provenance_journal.py:581-596`)
+  4. atomically write registry/journal/index and restore previous bytes on failure (`provenance_journal.py:522-573`)
+SINK: TMR registry, append-only decision/journey log, and provenance index
+DATA_SHAPE: transition command -> immutable event/receipt (`AppendReceipt` at `provenance_journal.py:105`)
+NOTES: `expected_from` rejects stale writers; tombstone/rename are explicit events.
 
-DELETED MODULES CONFIRMED (no active data paths, grep-verified): mcp_tasks/, scripts/task_manager.py, scripts/scope.py (scope guidance now AdversaryTemplate.scope_guidelines adversaries.py:89), scripts/gauntlet_monolith.py (modularized into gauntlet/).
+PATH: hook_stdio_decision
+SOURCE: Claude hook JSON stdin (`.claude/hooks/codex_pretool_combined.py:57`)
+TRANSFORMS:
+  1. decode input and invoke configured sub-hooks (`codex_pretool_combined.py:26-65`)
+  2. classify command/payload/role via safety and pipeline hook modules
+  3. append local activity/dispatch or send Telegram notifications when configured
+SINK: JSON decision/systemMessage on stdout; optional local logs/Telegram side effects
+DATA_SHAPE: hook event JSON -> allow/deny/warn decision envelope
+NOTES: hook outputs must remain machine-readable; failures should fail closed for safety hooks.
 
-CRITICAL JUNCTIONS: FileLock sidecars on checkpoints + adversary stats (persistence.py:74); session resume via .adversarial-spec/session-state.json; hash-stable concern IDs; threadsafe TokenTracker; tier auto-fallback; approved-prompts spec-hash gate; hook coordination via session-activity.jsonl + dispatch updates.jsonl.
+PATH: plan_to_dependency_report
+SOURCE: plan JSON consumed by `dependency_semantics.main` (`dependency_semantics.py:525-575`)
+TRANSFORMS: parse tasks, normalize edge kinds/waves, topologically profile dependencies (`dependency_semantics.py:35-82`)
+SINK: JSON report to stdout (`dependency_semantics.py:570`)
+DATA_SHAPE: execution-plan task graph -> report schema version 1 with issues and profiles
+NOTES: no persistent write path.

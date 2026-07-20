@@ -1,127 +1,118 @@
 # Component: Gauntlet Pipeline
 
+> Derived from: `skills/adversarial-spec/scripts/gauntlet/*.py`, `adversaries.py`, `models.py` | Verified at: `ef18c66`
+> If any derived-from file changed since `ef18c66`, trust source over this doc.
+
 ## Quick Reference
 
 | Property | Value |
-|----------|-------|
-| Purpose | 7-phase adversarial stress-test pipeline |
-| Entry | `run_gauntlet()` at gauntlet/orchestrator.py:194 |
-| Key files | gauntlet/orchestrator.py, gauntlet/core_types.py, gauntlet/persistence.py, gauntlet/model_dispatch.py, gauntlet/prompts.py, gauntlet/phase_1_attacks.py through phase_7_final_boss.py, gauntlet/medals.py, gauntlet/reporting.py, gauntlet/synthesis_extract.py |
-| Depends on | Models, Adversaries, Providers |
-| Used by | Debate Engine (debate.py), standalone CLI (gauntlet/cli.py) |
+|---|---|
+| Purpose | Turn an agreed spec into adversarial concerns and a final verdict |
+| Entry | `run_gauntlet()` at `gauntlet/orchestrator.py:205` |
+| Key files | `orchestrator.py`, `core_types.py`, phase modules, `model_dispatch.py` |
+| Depends on | Models/providers, adversaries/prompts, persistence |
+| Used by | Debate Engine, standalone gauntlet CLI |
 | Runtime status | implemented |
 | Architecture status | active_primary |
 
 ## What This Component Does
 
-The gauntlet is an 18-module package that stress-tests specifications through 7 sequential phases. Named adversary personas generate concerns, a frontier model evaluates them, dismissed adversaries get rebuttal chances, and a final boss issues a pass/refine/reconsider verdict. Each phase checkpoints to disk via FileLock-guarded atomic writes, enabling resume after crashes or quota exhaustion. Phase prompts are centralized in `gauntlet/prompts.py` (extracted from inline). Phase 3.5 clustering was removed after analysis showed it lost 48% of concerns.
-
-## Data Flow
-
-```
-IN:  Spec text + GauntletConfig + adversary list
-     └─> run_gauntlet() (orchestrator.py:196)
-
-PROCESS:
-     ├─> Phase 1: generate_attacks() -> Concern objects
-     ├─> Phase 2: generate_big_picture_synthesis() -> BigPictureSynthesis
-     ├─> Phase 3: filter concerns (clustering removed) -> filtered concerns
-     ├─> Phase 4: evaluate_concerns() -> Evaluation objects (verdicts)
-     ├─> Phase 5: run_rebuttals() -> Rebuttal objects
-     ├─> Phase 6: final_adjudication() -> medals + report
-     └─> Phase 7: run_final_boss_review() -> FinalBossResult
-
-OUT: GauntletResult (aggregated) + checkpoint files
-     └─> .adversarial-spec-gauntlet/{phase}-{hash}.json
-```
-
-## Key Functions
-
-| Function | Purpose | Location |
-|----------|---------|----------|
-| `run_gauntlet()` | Pipeline orchestration | orchestrator.py:196 |
-| `generate_attacks()` | Phase 1: parallel adversary dispatch | phase_1_attacks.py:24 |
-| `generate_big_picture_synthesis()` | Phase 2: cross-concern synthesis | phase_2_synthesis.py:30 |
-| `filter_concerns_with_explanations()` | Phase 3: resolved concern matching | phase_3_filtering.py |
-| `cluster_concerns_with_provenance()` | Phase 3.5: concern clustering | phase_3_filtering.py:200 |
-| `evaluate_concerns()` | Phase 4: frontier model evaluation | phase_4_evaluation.py:23 |
-| `run_rebuttals()` | Phase 5: adversary rebuttals | phase_5_rebuttals.py |
-| `final_adjudication()` | Phase 6: verdict aggregation + medals | phase_6_adjudication.py:40 |
-| `run_final_boss_review()` | Phase 7: final pass/refine/reconsider | phase_7_final_boss.py:50 |
-| `save_checkpoint()` | Atomic checkpoint write | persistence.py:250 |
-| `load_partial_run()` | Resume from checkpoints | persistence.py:675 |
-| `calculate_medals()` | Adversary accuracy scoring | medals.py:50 |
+The Gauntlet Pipeline executes the adversarial stress-test after a spec has been prepared. It generates concerns from named adversaries, synthesizes and clusters them, evaluates dispositions, allows rebuttals, adjudicates, and asks a final boss for an overall verdict.
 
 ## Contracts
 
 ### Type Contracts
 
 | Contract | Purpose | Owner | Consumed By |
-|----------|---------|-------|-------------|
-| `Concern` | Adversary-raised issue with stable ID | core_types.py:74 | All phases |
-| `Evaluation` | Verdict on a concern | core_types.py:90 | Phases 5,6,7 |
-| `Rebuttal` | Adversary response to dismissal | core_types.py:102 | Phase 7 |
-| `GauntletResult` | All phase outputs aggregated | core_types.py:220 | Reporting, persistence |
-| `GauntletConfig` | CLI parameter bundle | core_types.py:409 | All phases |
-| `FinalBossResult` | Final verdict (PASS/REFINE/RECONSIDER) | core_types.py:195 | Phase 7 output |
-| `CheckpointMeta` | Checkpoint file envelope | core_types.py:440 | persistence.py |
+|---|---|---|---|
+| `Concern` | adversary observation with stable ID | `core_types.py:83-98` | synthesis/filter/evaluation |
+| `Evaluation` | model disposition and confidence | `core_types.py:99-113` | rebuttal/adjudication |
+| `Rebuttal` | adversary response to dismissal | `core_types.py:114-122` | adjudication |
+| `GauntletResult` | complete run output | `core_types.py:232-423` | persistence/reporting/CLI |
+| `GauntletConfig` | run knobs and thresholds | `core_types.py:424-455` | orchestrator/phases |
+
+### Boundary Field Contracts
+
+Chain: spec → phase modules → persistence/reporting.
+
+| Field | Emitted | Adapter forwards | Consumer accepts | Persist | Absent means | Authority | Evidence | Verified |
+|---|---|---|---|---|---|---|---|---|
+| concern ID | generated for each accepted concern | yes across phases | `Concern.id` and downstream maps | required in run artifacts | concern cannot be joined across phases | `generate_concern_id`/Concern | `adversaries.py:1535`, `core_types.py:83-98` | verified |
+| verdict | final-boss/normalized disposition | yes | normalized outcome vocabulary | result/manifest | no overall verdict; run is incomplete | `normalize_verdict`/final boss | `core_types.py:47-81,207-232` | verified |
+| phase metrics | emitted per phase | yes into result/manifest | reporting/persistence | manifest | missing metrics reduces observability, not concern semantics | orchestrator/persistence | `orchestrator.py:84-123`, `core_types.py:482` | verified |
+
+## Invariants
+
+- Every phase consumes typed objects from the previous phase; raw model text is parsed before it enters the typed chain (`phase_1_attacks.py:39-60`, `core_types.py:83-232`).
+- Concern IDs are deterministic from adversary/text and are used for cross-run linking (`adversaries.py:1535`).
+- A text response containing no parseable concerns is a fatal Phase 1 condition by design; raw response artifacts are retained for recovery (`phase_1_attacks.py:39-60`).
+- Resume state must pass checkpoint schema/spec/config/data hash validation before a later phase runs (`persistence.py:281-333`).
+
+## Data Flow
+
+```text
+IN: spec + GauntletConfig
+    └─> orchestrator.run_gauntlet() (orchestrator.py:205)
+PROCESS:
+    ├─> adversary attacks
+    ├─> synthesis/filter/clustering
+    ├─> tiered evaluation/rebuttal/adjudication
+    └─> final-boss verdict
+OUT: GauntletResult + checkpoint/run/medal/report artifacts
+     └─> persistence.py:469-629; reporting.py
+```
+
+## Key Functions
+
+| Function | Purpose | Location |
+|---|---|---|
+| `run_gauntlet()` | phase orchestration/resume path | `orchestrator.py:205` |
+| `generate_attacks()` | parallel adversary calls/parsing | `phase_1_attacks.py:323` |
+| `filter_concerns_with_explanations()` | explanation matching/filter | `phase_3_filtering.py:130` |
+| `evaluate_concerns_multi_model()` | tiered parallel evaluation | `phase_4_evaluation.py:118` |
+| `normalize_verdict()` | canonical disposition normalization | `core_types.py:72` |
+| `call_model()` | gauntlet-specific model selection/dispatch | `model_dispatch.py:64` |
 
 ## Common Patterns
 
-### Phase-Checkpoint Pattern
-Every phase follows: execute → serialize → FileLock → atomic write. On resume, load_partial_run() validates spec_hash + config_hash + data_hash before accepting a checkpoint.
-
-### Provider Rate Limiting
-Phase 1 groups adversary-model pairs by provider and batches requests with provider-specific delays to avoid quota exhaustion.
+- **Phase functions are data-transform stages:** orchestration owns sequencing; phase modules own transformations.
+- **Parallel batches:** attacks, evaluations, and rebuttals use bounded ThreadPoolExecutor pools.
+- **Integrity-aware resume:** persistence helpers are called at phase boundaries and preserve raw failures.
 
 ## Error Handling
 
-- **Phase failure**: Exceptions from model calls are caught and logged, not bubbled. Partial results are acceptable.
-- **KeyboardInterrupt**: Caught at orchestrator level, manifest marked as "interrupted".
-- **Checkpoint corruption**: _load_json_safe() catches JSONDecodeError, returns None. Resume treats it as no checkpoint.
+- Known programming errors are isolated by `PROGRAMMING_BUGS` (`core_types.py:23`).
+- Model parse errors retain raw responses and can abort a phase rather than silently fabricating concerns (`phase_1_attacks.py:39-60`).
+- Checkpoint mismatches raise typed persistence errors (`persistence.py:281-333`).
 
 ## Concurrency Concerns
 
 | Resource | Callers | Synchronization | Risk |
-|----------|---------|-----------------|------|
-| `cost_tracker` | Phase 1 ThreadPoolExecutor workers | `threading.Lock` in CostTracker.add() | Low (guarded) |
-| Checkpoint files | save_checkpoint(), load_partial_run() | `FileLock` per file | Low (guarded) |
+|---|---|---|---|
+| phase worker pools | attack/evaluation/rebuttal functions | executor boundaries; result collection | provider rate limits and partial results must be handled consistently |
+| shared stats files | filtering/orchestrator/medals | persistence FileLock, but filtering append lacks an obvious lock | concurrent runs can lose/update stats inconsistently (`phase_3_filtering.py:217-233`) |
 
 ## Configuration
 
-| Config | Source | Default |
-|--------|--------|---------|
-| `timeout` | CLI `--timeout` | 900 |
-| `attack_codex_reasoning` | CLI `--codex-reasoning` | None |
-| `eval_codex_reasoning` | CLI `--eval-codex-reasoning` | None |
-| `resume` | CLI `--gauntlet-resume` | False |
-| `unattended` | CLI `--unattended` | False |
+| Config | Source | Default | Precedence |
+|---|---|---|---|
+| adversaries/prompts | module registries + approved prompt file | built-in/default | configured approved prompts/adversary selection |
+| model tiers/rate limits | `model_dispatch.py:194-309` and env availability | defaults | explicit config/available model selection |
+| checkpoint/resume | CLI and persistence paths | fresh run | explicit resume path/hash overrides |
 
 ## Integration Points
 
-**Calls out to:**
-- `Models.call_models_parallel()` / `model_dispatch.call_model()` — for LLM dispatch
-- `Adversaries.ADVERSARIES` — for persona definitions
-- `persistence.save_checkpoint()` / `load_partial_run()` — for checkpoint I/O
+**Calls out to:** `models`/provider transports, `persistence`, adversary/prompt registries.
 
-**Called by:**
-- `debate.py:handle_gauntlet()` — via debate CLI
-- `gauntlet/cli.py:main()` — via standalone CLI
+**Called by:** `debate.handle_gauntlet()` and `gauntlet.cli.main()`.
+
+## Active vs Target
+
+- **Active consumers:** Debate CLI and standalone `gauntlet` module.
+- **Legacy consumers:** historical monolith artifacts are not active import targets.
+- **Target architecture:** keep one typed phase pipeline with shared model/persistence boundaries.
+- **Drift note:** two CLI surfaces and separate top-level/gauntlet model selection remain live.
 
 ## LLM Notes
 
-- The gauntlet has two CLI entry points with different flag names. Check which CLI you're modifying.
-- Phase 3.5 has an auto-checkpoint (quota burn safeguard). This is the critical resume point.
-- Unattended mode monkey-patches `builtins.input`. Phase 7 has explicit fallback for no stdin.
-- gauntlet_monolith.py is a 12-line shim. All real code is in the gauntlet/ package.
-
-
-## Update 2026-06-11 (incremental f198887)
-- Phase 3.5 clustering REINSTATED as deterministic code: clustering.py (Jaccard 0.65 single-link, longest-text representatives, auto at ≥200 concerns). Replaces the removed LLM-subagent version (which lost 48% of concerns).
-- Phase 4 batch tiering NEW: batch_tiering.py — tier_concerns_by_length p60/p90 cuts, batch sizes 75/30/12, pick_eval_batch_arg strategy dispatch (power_law_length default, flat fallback <30 concerns). Pure/deterministic.
-- GauntletConfig (core_types.py:424) centralizes all run defaults (was 13 scattered constants); PhaseMetrics (core_types.py:482) feeds an incrementally-updated, crash-surviving run manifest.
-- Phase 1 quality gate: non-empty response with 0 parsed concerns → GauntletExecutionError (FATAL by design; raw responses saved for manual checkpoint patch + --resume). orchestrator.py:400-419.
-- Rate-limited dispatch: per-provider (batch_size, delay) from get_rate_limit_config (model_dispatch.py:274) — free Gemini (1,15s), paid (10,2s); sleep is pre-batch, synchronous.
-- Run manifest gains conductor-written intensity fields for v4+ altitude sessions: session_altitude, adversaries[{model,family}], foci[] — verified by fizzy pipeline_mark_gauntlet_complete.
-- gauntlet_monolith.py shim DELETED. Resume validates schema_version + spec_hash + config_hash + data_hash; P4 additionally re-checks concern-ID alignment.
-- Concurrency note: loading gauntlet/persistence.py standalone must use importlib spec_from_file_location (sys.path gauntlet/ shadows top-level prompts.py).
+- Internal gauntlet phase names (`phase_1_attacks` etc.) are not the eight adversarial-spec pipeline phases; qualify them in prose.

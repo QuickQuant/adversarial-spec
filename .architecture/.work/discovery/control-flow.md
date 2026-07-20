@@ -1,46 +1,103 @@
-# Discovery: Control Flow (incremental 9ca3ccd→f198887, 2026-06-11)
+# Phase 1 Discovery: Control Flow
 
-FLOW: gauntlet_execution_phases | TYPE: lifecycle
-SEQ: run_gauntlet (orchestrator.py:205) → config+unattended (:253-303) → resolve/validate models (:266-294) → adversaries+approved prompts (:308-312) → spec_as_gauntleted + manifest (:321-326) → resume load (:335-349) → P1 generate_attacks (:360-439) → P2 synthesis (:441-472) → P3 filter (:474-508) → P3.5 cluster (:513-564) → P4 evaluate [multi-model if >=2 eval models] (:581-680) → P5 rebuttals (:696-720) → P6 adjudication (:722-748) → P7 final boss optional (:776-885) → result+stats+medals (:887-959) → finally restore input() (:971-975)
-EXITS: KeyboardInterrupt → "interrupted" exit 130 (:965-969); GauntletExecutionError on P1 quality gate (:414-419)
-NOTES: spec hash once (:251); config_hash gates resume; manifest updated per phase; phase status completed|skipped_resume.
+> Architecture verified at `ef18c66`. Delegated explorers timed out; this
+> fallback records current source-backed lifecycle and hazard evidence.
 
-FLOW: rate_limited_batch_dispatch_phase_1 | TYPE: loop
-SEQ: build (adv,model) pairs (phase_1_attacks.py:315) → group by provider (:317-319) → per provider get_rate_limit_config (model_dispatch.py:274): gemini free (1,15s)/paid (10,2); claude free (5,5)/paid (20,1); codex (10,2); default (3,10) → sleep before each batch (:336-342) → ThreadPoolExecutor max_workers=min(32,len) (:328) → collect futures (:348-350)
-NOTES: pause is synchronous BEFORE submission; PROGRAMMING_BUGS re-raised (:306-307); per-pair timing dict (:324); resume runs only missing adversaries (orchestrator.py:364-382).
+## Lifecycle and state flows
 
-FLOW: pipeline_idle_retry_loop | TYPE: loop (hook)
-SEQ: PostToolUse do_next_task → action==idle? → counter file → backoff schedule by hour (active 07-22 [30,60,120,240]; overnight + [480,960]) → time.sleep (blocks) → >=6 idles → dispatch status record → systemMessage forces retry.
+FLOW: debate_round_lifecycle
+TYPE: lifecycle
+SEQUENCE:
+  1. parse CLI/profile/session/gauntlet options (`debate.py:525-611`)
+  2. apply profile and resolve model list (`debate.py:733-824`)
+  3. validate credentials and preflight models (`debate.py:1312`, `models.py:1088`)
+  4. load/resume session or read new spec (`debate.py:1026`)
+  5. dispatch parallel critiques and synthesize own response (`debate.py:1086`)
+  6. persist checkpoints/output and optionally return for another round (`debate.py:1227`, `session.py:45`)
+TRIGGERS:
+  - installed CLI invocation
+EXITS:
+  - consensus/output, user review, error, or checkpoint/resume
+NOTES: pipeline-card and staleness gates can stop execution before model calls (`debate.py:1366`).
 
-FLOW: concern_verdict_state | TYPE: state_machine
-STATES: accepted | dismissed | acknowledged | deferred (normalize_verdict core_types.py:72-74; Evaluation.__post_init__ :107-110)
-TRANSITIONS: dismissed → [P5 rebuttal sustained] → P6 adjudication may overturn → technical_concerns; not sustained → resolved_concerns DB. FinalBossVerdict PASS|REFINE|RECONSIDER (core_types.py:47-51); REFINE/RECONSIDER mint synthetic ux_architect concerns.
+FLOW: gauntlet_pipeline
+TYPE: lifecycle
+SEQUENCE:
+  1. resolve config/prompts/adversaries (`orchestrator.py:125-205`)
+  2. gauntlet-internal phase 1 attacks (`phase_1_attacks.py:323`)
+  3. gauntlet-internal phase 2 synthesis and phase 3 filtering (`phase_2_synthesis.py`, `phase_3_filtering.py:130`)
+  4. gauntlet-internal phase 3.5 clustering (`clustering.py`, `persistence.py:587`)
+  5. gauntlet-internal phase 4 evaluation, phase 5 rebuttals, phase 6 adjudication (`phase_4_evaluation.py:118`, `phase_5_rebuttals.py:1`, `phase_6_adjudication.py:1`)
+  6. gauntlet-internal phase 7 final boss and verdict (`phase_7_final_boss.py:1`)
+  7. persist result/stats/medals/run manifest (`persistence.py:469-629`, `medals.py:220`)
+TRIGGERS:
+  - `debate.handle_gauntlet` or `gauntlet.cli.main`
+EXITS:
+  - `GauntletResult`, resume checkpoint, or typed execution error
+NOTES: phase checkpoints are integrity-checked and can resume from partial runs.
 
-HAZARD: parallel_model_call_partial_result_race
-RESOURCE: round-{N}-{model}.json partials | CALLERS: call_models_parallel threads (models.py:948→1000)
-SYNC: FileLock + tmp+rename + fsync (persistence.py:74-142) | CONSEQUENCE: serialized writes; stale .tmp on kill ignored.
+FLOW: validation_ledger_state_machine
+TYPE: state_machine
+STATES:
+  - assembled -> [send] -> sent
+  - sent -> [parse reply] -> processed or reprompt/error
+  - failed/stale -> [reset/cancel] -> terminal batch state
+  - ledger row -> [evidence/promotion] -> updated TMR/evidence state
+TRIGGERS:
+  - validation_emission subcommands (`validation_emission.py:67`, `3255`)
+EXITS:
+  - one-line `Envelope` and process exit code
+NOTES: allowed statuses and issue exit mapping are constants at `validation_emission.py:51-67`; lock contention is explicit.
 
-HAZARD: gauntlet_checkpoint_resume_validity
-RESOURCE: phase checkpoints | GATES: schema_version (persistence.py:308), spec_hash (:312), config_hash (:316-318), data_hash (:320-323), P4 concern-ID alignment (orchestrator.py:617-633)
-CONSEQUENCE: any mismatch → fresh start (warn); config change forces P4 re-eval.
+FLOW: phase8_promotion_gate
+TYPE: state_machine
+STATES:
+  - non-concrete TMR -> [build request] -> PromotionRequest
+  - PromotionRequest -> [capture run] -> RunExecution/evidence
+  - TMR -> [evaluate close] -> promoted or blocking PromotionIssue
+TRIGGERS:
+  - Phase 8 implementation close checks (`phase8_promotion.py:74-162`)
+EXITS:
+  - `Phase8PromotionReport` with issues and promotion requests
+NOTES: critical/spine real-data records require live or induced evidence, negative oracle, and boundary-mock lint.
 
-FLOW: multi_model_evaluation_dispatch | TYPE: branch (orchestrator.py:625-643)
-use_multi_model && >=2 eval models → evaluate_concerns_multi_model w/ pick_eval_batch_arg (power_law_length tiers vs flat; min_concerns fallback) (:591-613).
+FLOW: hook_decision
+TYPE: branch
+SEQUENCE:
+  1. receive tool event on stdin (`codex_pretool_combined.py:57`)
+  2. run sub-hooks in configured order (`codex_pretool_combined.py:18-26`)
+  3. classify as allow, warn, deny, or system message (`fizzy_payload_guard.py:51-86`, `dispatch_check.py:86`)
+  4. emit JSON decision on stdout
+TRIGGERS:
+  - Claude Code hook lifecycle
+EXITS:
+  - tool proceeds, is blocked, or operator receives a system message
+NOTES: some hooks are safety gates, others are coordination/notification side effects.
 
-FLOW: pipeline_card_gate_and_staleness_check | TYPE: branch (debate.py:1374-1497)
-SEQ: require --pipeline-card (exit 2) → IntentionalOverride needs >=50-char reason → card format validation → session fizzy_card_id match → tests-pseudo staleness (spec mtime > tests mtime → exit 2 unless --accept-tests-stale/override).
+## Concurrency and shared-state evidence
 
-FLOW: phase1_quality_gate_error_handling | TYPE: error_recovery
-check_phase1_quality (phase_1_attacks.py:371): non-empty response + 0 parsed → save raw-responses + raise GauntletExecutionError (orchestrator.py:400-419). FATAL by design (no silent data loss). Recovery: manual extraction → patch concerns checkpoint → --resume.
+HAZARD: parallel model responses share partial-result and token accounting state
+RESOURCE: partial result files and process-wide token tracker
+CALLERS:
+  - `call_models_parallel` worker futures (`models.py:1114`)
+  - `_save_partial_result` (`models.py:1170`)
+  - `TokenTracker` updates from model calls (`token_tracking.py:19`)
+SYNCHRONIZATION: token tracker uses a `threading.Lock` (`token_tracking.py:19`); partial-result filenames are per-model but failure recovery needs targeted review
+CONSEQUENCE: duplicate/overwritten partial artifacts or inconsistent totals if a new caller reuses a result path
 
-FLOW: unattended_mode_enforcement | TYPE: error_recovery
-input() monkey-patched to RuntimeError (orchestrator.py:299-303), restored in finally (:973-975); final boss falls back to skip on EOF/RuntimeError (:796); auto_checkpoint implied (:258).
+HAZARD: validation ledger and provenance writers have competing file writers
+RESOURCE: validation ledger/batches and TMR registry/journal/index
+CALLERS:
+  - `mutate_ledger` (`validation_emission.py:1337`)
+  - `ProvenanceJournalWriter.append` path (`provenance_journal.py:112`, `581`)
+SYNCHRONIZATION: FileLock for ledger (`validation_emission.py:959`, `1337`); ordered multi-file locks for provenance (`provenance_journal.py:581-596`)
+CONSEQUENCE: lock contention is surfaced as a typed issue; stale expected coordinates reject lost updates.
 
-FLOW: pipeline_continue_injection | TYPE: branch (hook)
-PostToolUse complete_task/review/test + ok==true → systemMessage "DO NOT STOP. Call pipeline_do_next_task" with role; failure → no injection.
-
-FLOW: phase_metrics_capture | TYPE: logging
-_start_phase_capture → _build_phase_metrics (elapsed, token delta, models, status, extras) → update_run_manifest (incremental, crash-surviving). Adversary stats incremental update (persistence.py:352-414): signal_score, dismissal_effort, rebuttals.
-
-FLOW: checkpoint_validity_chain | TYPE: validation (persistence.py:688 load_partial_run)
-config_hash includes timeout + attack/eval codex reasoning; excludes auto_checkpoint/resume. Envelope {_meta, data}; legacy list checkpoints recognized not resumable; allow_plain_json for raw-responses.
+HAZARD: gauntlet stats/medals/run artifacts have multiple writers
+RESOURCE: `.adversarial-spec-gauntlet` and home stats/medal files
+CALLERS:
+  - checkpoint/run persistence (`persistence.py:469-629`)
+  - medals writes (`medals.py:220-240`)
+  - filtering stats append (`phase_3_filtering.py:217-233`)
+SYNCHRONIZATION: persistence uses per-file FileLock (`persistence.py:74-137`); filtering stats write path has no shared lock visible in the current source
+CONSEQUENCE: concurrent gauntlet runs may race on stats append; run-specific artifacts are safer than shared stats.

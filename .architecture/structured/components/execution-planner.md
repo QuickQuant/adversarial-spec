@@ -1,39 +1,45 @@
-# Component: Execution Planner
+# Component: Execution Planner Concern Parsing
+
+> Derived from: `execution_planner/gauntlet_concerns.py`, `skills/adversarial-spec/scripts/dependency_semantics.py` | Verified at: `ef18c66`
+> If any derived-from file changed since `ef18c66`, trust source over this doc.
 
 ## Quick Reference
 
 | Property | Value |
-|----------|-------|
-| Purpose | Gauntlet concern parsing (mostly deprecated) |
-| Entry | `execution_planner/gauntlet_concerns.py` |
-| Key files | execution_planner/__init__.py, execution_planner/gauntlet_concerns.py |
-| Depends on | Adversaries |
-| Used by | Execution plan generation |
+|---|---|
+| Purpose | Parse gauntlet concerns for plan linkage and report dependency semantics |
+| Entry | `GauntletConcernParser` at `execution_planner/gauntlet_concerns.py:111` |
+| Key files | `execution_planner/gauntlet_concerns.py`, `dependency_semantics.py` |
+| Depends on | Gauntlet report shapes, plan JSON |
+| Used by | planning/plan evaluation |
 | Runtime status | partial |
-| Architecture status | deprecated |
+| Architecture status | active_secondary |
 
 ## What This Component Does
 
-Originally a full execution planning pipeline, most modules were deleted in Feb 2026 as part of the execution-planner-deprecation spec. Only `gauntlet_concerns.py` remains, providing `GauntletConcernParser` for parsing gauntlet JSON output and linking concerns to spec sections. The `__init__.py` still exports types but Phase 3 cleanup (removing unused exports) is still pending.
-
-## Key Functions
-
-| Function | Purpose | Location |
-|----------|---------|----------|
-| `GauntletConcernParser` | Parse gauntlet JSON, link to spec sections | gauntlet_concerns.py |
-| `load_concerns_for_spec()` | Load concerns for a spec file | gauntlet_concerns.py |
+`GauntletConcernParser` parses gauntlet output into linked concern objects. `dependency_semantics` reads execution plans and reports graph/ordering issues. Neither executes gauntlet phases or advances cards.
 
 ## Contracts
 
-### Type Contracts
-
 | Contract | Purpose | Owner | Consumed By |
-|----------|---------|-------|-------------|
-| `GauntletConcern` | Parsed concern with section refs | gauntlet_concerns.py:30 | Execution plan generation |
-| `LinkedConcern` | Concern linked to spec section | gauntlet_concerns.py:66 | Execution plan generation |
+|---|---|---|---|
+| `GauntletConcern`/`LinkedConcern` | preserve concern identity and task link | `gauntlet_concerns.py:30-78` | plan generation |
+| dependency report | structured graph analysis | `dependency_semantics.py:25-82` | plan review |
+
+## Invariants
+
+- Concern IDs remain source identifiers; parser does not invent unrelated semantic IDs (`gauntlet_concerns.py:111-302`).
+- Dependency analysis is read-only and emits a versioned report (`dependency_semantics.py:25,570`).
+
+## Integration Points
+
+**Called by:** execution/planning workflow; not used by gauntlet execution.
+
+## Active vs Target
+
+- **Active consumers:** secondary plan tooling.
+- **Target architecture:** align plan concern links with the architecture/TMR corpus.
 
 ## LLM Notes
 
-- This component is deprecated. Do not add new features here.
-- Phase 3 of the deprecation spec (cleanup exports in __init__.py) is still pending.
-- `GauntletConcern` is different from `gauntlet/core_types.Concern`. The former has section_refs, title, failure_mode, etc.
+- This component is not the pipeline task system; it only parses/analyzes plan data.

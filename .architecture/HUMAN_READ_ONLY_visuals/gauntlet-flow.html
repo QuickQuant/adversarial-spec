@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>adversarial-spec — gauntlet flow</title>
+  <style>
+    :root{--ink:#17212b;--muted:#64727d;--line:#b8c5cc;--paper:#f7f8f6;--a:#fef3c7;--b:#dbeafe;--c:#dcfce7;--bad:#ffe4e6}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.45 system-ui,sans-serif}main{max-width:1100px;margin:auto;padding:36px 26px}h1{font:700 40px/1.05 Georgia,serif;margin:0 0 8px}p{color:var(--muted);max-width:760px}.meta{font:12px ui-monospace,monospace;color:var(--muted)}.frame{margin-top:24px;background:white;border:1px solid var(--line);border-radius:18px;padding:18px}.box{stroke:var(--line);stroke-width:1.5}.t{font-weight:700;font-size:14px;fill:var(--ink)}.s{font-size:11px;fill:var(--muted)}.edge{fill:none;stroke:#52636e;stroke-width:2;marker-end:url(#arr)}.dash{stroke-dasharray:6 5}.note{font-size:12px;color:var(--muted);margin-top:12px}
+  </style>
+</head>
+<body><main>
+  <div class="meta">structured/components/gauntlet.md · verified at ef18c66</div>
+  <h1>Gauntlet: typed phases with resumable state</h1>
+  <p>Each phase consumes typed records. Checkpoints are written at boundaries; a resume path must match schema, spec, config, and data hashes before continuing.</p>
+  <div class="frame"><svg viewBox="0 0 1040 500" role="img" aria-labelledby="t d">
+    <title id="t">Gauntlet staged flow</title><desc id="d">A staged pipeline from spec to final verdict with a resume branch and failure branch.</desc>
+    <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#52636e"/></marker></defs>
+    <path class="edge" d="M145 100H205"/><path class="edge" d="M350 100H410"/><path class="edge" d="M555 100H615"/><path class="edge" d="M760 100H820"/>
+    <path class="edge" d="M890 150V220H760"/><path class="edge" d="M650 260H480"/><path class="edge" d="M390 300V385H215"/><path class="edge" d="M215 385V150"/>
+    <path class="edge dash" d="M480 140V220"/><path class="edge dash" d="M410 260H250"/>
+    <rect class="box" x="25" y="60" width="120" height="80" rx="12" fill="var(--b)"/><text class="t" x="85" y="92" text-anchor="middle">spec</text><text class="s" x="85" y="113" text-anchor="middle">GauntletConfig</text>
+    <rect class="box" x="205" y="60" width="145" height="80" rx="12" fill="var(--a)"/><text class="t" x="277" y="92" text-anchor="middle">1 · attacks</text><text class="s" x="277" y="113" text-anchor="middle">Concern records</text>
+    <rect class="box" x="410" y="60" width="145" height="80" rx="12" fill="var(--a)"/><text class="t" x="482" y="92" text-anchor="middle">2 · synthesis</text><text class="s" x="482" y="113" text-anchor="middle">big picture</text>
+    <rect class="box" x="615" y="60" width="145" height="80" rx="12" fill="var(--a)"/><text class="t" x="687" y="92" text-anchor="middle">3 · filter/cluster</text><text class="s" x="687" y="113" text-anchor="middle">dedup + provenance</text>
+    <rect class="box" x="820" y="60" width="190" height="80" rx="12" fill="var(--a)"/><text class="t" x="915" y="92" text-anchor="middle">4–6 · decide</text><text class="s" x="915" y="113" text-anchor="middle">evaluate · rebut · adjudicate</text>
+    <rect class="box" x="650" y="220" width="220" height="80" rx="12" fill="var(--c)"/><text class="t" x="760" y="252" text-anchor="middle">7 · final boss</text><text class="s" x="760" y="273" text-anchor="middle">GauntletResult / verdict</text>
+    <rect class="box" x="250" y="220" width="230" height="80" rx="12" fill="#f1f5f9"/><text class="t" x="365" y="252" text-anchor="middle">checkpoint + manifest</text><text class="s" x="365" y="273" text-anchor="middle">lock · schema/spec/data hashes</text>
+    <rect class="box" x="25" y="385" width="190" height="70" rx="12" fill="var(--bad)"/><text class="t" x="120" y="414" text-anchor="middle">resume / failure</text><text class="s" x="120" y="435" text-anchor="middle">reject stale state or preserve raw</text>
+    <text class="s" x="485" y="205" text-anchor="middle">persist after phase</text><text class="s" x="740" y="205" text-anchor="middle">valid checkpoint</text><text class="s" x="145" y="365" text-anchor="middle">hash mismatch</text>
+  </svg><div class="note">Solid arrows show the normal phase chain. Dashed arrows show checkpoint capture and resume validation. The final-boss failure path must not be represented as PASS.</div></div>
+</main></body></html>

@@ -1,39 +1,33 @@
 # Architecture: adversarial-spec
 
-> Generated: 2026-06-11 (incremental from 9ca3ccd) | Git: f198887 | Target: /home/jason/PycharmProjects/adversarial-spec
-> Skill version: 3.8 | Model: claude-fable-5
-> Freshness: fresh | Trust: verified at f198887
+> Generated: 2026-07-19T08:43:13-05:00 | Git: ef18c66 | Target: /home/jason/PycharmProjects/adversarial-spec
+> Skill version: 4.0 | Freshness: caution | Trust: source-backed local synthesis; five delegated explorers timed out. If source files changed after `ef18c66`, trust source over this map.
 
 ## System Summary
 
-adversarial-spec is a Claude Code skill for iterative spec refinement through multi-model adversarial debate. It dispatches specifications to multiple LLMs for critique, drives consensus through debate rounds, and stress-tests specs through a 7-phase gauntlet pipeline with named adversary personas. The system is CLI-driven, checkpoint-resumable, and uses ThreadPoolExecutor for parallel model calls; multi-agent pipeline work is coordinated by harness hooks on a Fizzy board.
+`adversarial-spec` is a Python-backed Claude Code skill for multi-model specification debate and adversarial gauntlet review. Its runtime is a file-backed CLI system with typed model/gauntlet/evidence contracts, resumable checkpoints, and a separate stdin/stdout hook plane for safety and pipeline coordination.
 
 ## Quick Start
 
-- **Primer first:** [primer.md](primer.md) is the default small-context entrypoint for LLMs and humans.
-- **Fix-first:** [concerns.md](concerns.md) answers "what should I fix first?"
-- **Navigation only:** this file helps you choose what to read next — do not pass it to opponent models.
+- **Primer first:** [primer.md](primer.md) is the default small-context entrypoint for humans and LLMs.
+- **Fix first:** [concerns.md](concerns.md) answers what to fix first.
+- **Navigation only:** this file routes readers; it is not opponent-model payload.
 - **Need guided reading?** Start with [access-guide.md](access-guide.md).
 
 ## Components
 
 | Component | Purpose | Runtime | Architecture | Key Files |
 |-----------|---------|---------|--------------|-----------|
-| Debate Engine | CLI routing, pipeline-card + staleness gates, debate orchestration | implemented | active_primary | debate.py |
-| Gauntlet Pipeline | 7-phase adversarial stress-test (clustering + batch tiering) | implemented | active_primary | gauntlet/orchestrator.py, gauntlet/core_types.py, gauntlet/batch_tiering.py, gauntlet/clustering.py |
-| Models | LLM call abstraction (LiteLLM + CLI subprocess) + preflight | implemented | active_primary | models.py |
-| Token Tracking | Thread-safe token/cost accounting singleton | implemented | active_primary | token_tracking.py |
-| Providers | Model config, cost rates, Bedrock, CLI detection | implemented | active_primary | providers.py |
-| Adversaries | Named attacker persona definitions + templates | implemented | active_primary | adversaries.py |
-| Prompts | Debate prompt templates (gauntlet prompts separate) | implemented | active_primary | prompts.py, gauntlet/prompts.py |
-| Emission Toolchain | Fizzy v3 plan emission + offline self-check | implemented | active_primary | mini_spec_emission.py |
-| Gauntlet Persistence | Integrity-envelope checkpoint/resume + stats | implemented | active_primary | gauntlet/persistence.py |
-| Harness Hooks | Multi-agent pipeline coordination + safety | implemented | active_primary | .claude/hooks/*.py |
-| Pre-Gauntlet | Git/system context collection before gauntlet | implemented | active_secondary | pre_gauntlet/orchestrator.py |
-| Session | Debate state persistence (multi-round resume) | implemented | active_secondary | session.py |
-| Execution Planner | Gauntlet concern parsing (deprecated remainder) | partial | deprecated | execution_planner/gauntlet_concerns.py |
-
-Retired June 2026 (deleted, no dangling imports): MCP Tasks (`mcp_tasks/`), `task_manager.py`, `scope.py`, `gauntlet_monolith.py`.
+| Debate CLI | parsing, gates, critique rounds, output | implemented | active_primary | `scripts/debate.py` |
+| Models/providers | model adapters, profiles, credentials, cost | implemented | active_primary | `scripts/models.py`, `providers.py` |
+| Gauntlet pipeline | adversary-to-verdict processing | implemented | active_primary | `scripts/gauntlet/` |
+| Gauntlet persistence | locking, hashes, checkpoint/run artifacts | implemented | active_primary | `scripts/gauntlet/persistence.py` |
+| Pre-gauntlet | compatibility and alignment checks | implemented | active_secondary | `scripts/pre_gauntlet/` |
+| TMR/evidence toolchain | schema, compiler, liveness, provenance, promotion | implemented | active_primary | `tmr_schema.py`, `provenance_journal.py`, `phase8_promotion.py` |
+| Validation emission | ledger, digest, reply, self-check, status | implemented | active_primary | `validation_emission.py` |
+| Plan analysis | concern parser and dependency semantics | partial | active_secondary | `execution_planner/`, `dependency_semantics.py` |
+| Harness hooks | safety and pipeline coordination | implemented | active_primary | `.claude/hooks/` |
+| Telegram/usage | notifications and local routing | implemented | active_secondary | `telegram_bot.py`, `usage_router.py` |
 
 ## Navigation
 
@@ -42,45 +36,56 @@ Retired June 2026 (deleted, no dangling imports): MCP Tasks (`mcp_tasks/`), `tas
 | Question | Read |
 |----------|------|
 | What does this system do? | [primer.md](primer.md) |
-| What should I read next? | [access-guide.md](access-guide.md) |
-| What does this system do in depth? | [overview.md](overview.md) |
-| Where is code located? | [filesystem-map.md](filesystem-map.md) |
-
-**Fix things:**
-
-| Question | Read |
-|----------|------|
 | What should I fix first? | [concerns.md](concerns.md) |
-| What are the architectural hazards? | [concerns.md](concerns.md) → [findings.md](findings.md) → [patterns.md](patterns.md) |
+| What should I read next? | [access-guide.md](access-guide.md) |
+| What does it do in depth? | [overview.md](overview.md) |
+| Where is code located? | [filesystem-map.md](filesystem-map.md) |
 
 **Work on specific tasks:**
 
 | Task | Read |
 |------|------|
-| Evaluate a plan against the codebase | [primer.md](primer.md) → matched [component docs](structured/components/) → [cross-references.md](structured/cross-references.md) |
-| Deep-dive a component | [primer.md](primer.md) → [overview.md](overview.md) → [components/{relevant}.md](structured/components/) |
-| Modify the gauntlet | [components/gauntlet.md](structured/components/gauntlet.md) → [structured/flows.md](structured/flows.md) |
-| Add a model/provider | [components/providers.md](structured/components/providers.md) + [components/models.md](structured/components/models.md) (update MODEL_COSTS) |
+| Evaluate a plan | [primer.md](primer.md) → matched [component docs](structured/components/) → [cross-references.md](structured/cross-references.md) |
+| Modify debate/model routing | [debate-engine.md](structured/components/debate-engine.md) → [models.md](structured/components/models.md) → [providers.md](structured/components/providers.md) → [flows.md](structured/flows.md) |
+| Modify gauntlet behavior | [gauntlet.md](structured/components/gauntlet.md) → [gauntlet-persistence.md](structured/components/gauntlet-persistence.md) → [flows.md](structured/flows.md) |
+| Modify TMR/evidence | `structured/components/tmr-evidence-toolchain.md` → `validation-emission.md` → [cross-references.md](structured/cross-references.md) |
+| Modify a hook | `structured/components/harness-hooks.md` → [cross-references.md](structured/cross-references.md) |
 
 **Deep reference:**
 
 | Need | Read |
 |------|------|
-| Every entry point | [structured/entry-points.md](structured/entry-points.md) |
-| Flow notation | [structured/flows.md](structured/flows.md) |
-| Call graphs / hub files | [structured/cross-references.md](structured/cross-references.md) |
-| Raw discovery (this run) | .work/discovery/*.md |
+| Fix-first concern rollup | [concerns.md](concerns.md) |
+| Current fix-first themes | final-boss gate, shared-state writes, hook role/config drift, CLI timeout divergence |
+| Cross-cutting patterns | [patterns.md](patterns.md) |
+| Architecture findings | [findings.md](findings.md) |
+| All entry points | [structured/entry-points.md](structured/entry-points.md) |
+| Flow-by-flow breakdown | [structured/flows.md](structured/flows.md) |
+| Calls, data paths, and contracts | [structured/cross-references.md](structured/cross-references.md) |
+| Human diagrams | [HUMAN_READ_ONLY_visuals/](HUMAN_READ_ONLY_visuals/) |
+| System overview HTML | [system-overview.html](HUMAN_READ_ONLY_visuals/system-overview.html) |
+| Complex component flows | [gauntlet-flow.html](HUMAN_READ_ONLY_visuals/gauntlet-flow.html), [validation-emission-flow.html](HUMAN_READ_ONLY_visuals/validation-emission-flow.html), [harness-hooks-flow.html](HUMAN_READ_ONLY_visuals/harness-hooks-flow.html) |
 
-## Architecture Decisions (1-liners)
+## Architecture Decisions
 
-- Single-invocation CLI; continuity via checkpoints, not daemons.
-- Deterministic code over LLM subagents for data processing (clustering, tiering, extraction).
-- FileLock + integrity-hashed envelopes for all gauntlet state; resume validates everything.
-- Gates enforced in code (pipeline-card, tests-staleness, Phase-1 quality, preflight), not by convention.
-- Hooks are the multi-agent coordination plane; they never import skill code.
+- **File-backed resumability:** checkpoints, ledgers, journals, and reports are durable artifacts.
+- **Typed boundaries:** dataclasses/Pydantic models carry gauntlet, gate, TMR, and evidence contracts.
+- **Integrity and locking:** hashes, FileLock, atomic replacement, and expected-coordinate checks protect state.
+- **Schema-first TMR:** JSON registry is authoritative; prose is derived.
+- **Separate hooks:** hook safety/coordination uses stdin/stdout and stays outside runtime imports.
+- **Parallel model calls:** ThreadPoolExecutor is used for latency, with explicit token accounting.
 
-## Generation Metadata
+## Generation Info
 
-- Generated: 2026-06-11 | Target: project root | Git: f198887 (from 9ca3ccd, 52 commits)
-- Freshness: fresh | Architecture verified at f198887
-- This file is for navigation only — never pass INDEX.md as `--context` to debate.py; pass the substantive docs it references.
+| Field | Value |
+|-------|-------|
+| Generated by | `/mapcodebase` |
+| Skill version | 4.0 |
+| Schema version | 2.0 |
+| Model | Codex |
+| Generated | 2026-07-19T08:43:13-05:00 |
+| Git hash | ef18c66 |
+| Freshness | caution |
+| Update | incremental; prior map at f198887 |
+
+Use `manifest.json` as the source of truth for freshness, trust notes, component metadata, access paths, verification debt, and diagnosis outputs. This file is navigation-only; do not pass it as opponent-model context.

@@ -1,61 +1,31 @@
-# RETIRED COMPONENT (deleted June 2026)
+# Component: Retired MCP Tasks Surface
 
-> mcp_tasks/ was deleted at commits 55071ba/a3c0d1d/66b45f4. The Fizzy pipeline board + harness hooks (.claude/hooks/) are the coordination plane now. This doc is retained as historical reference only — nothing below reflects current code.
-
-# Component: MCP Tasks
+> Derived from: prior architecture references and current repository deletion evidence | Verified at: `ef18c66`
+> If any derived-from file changed since `ef18c66`, trust source over this doc.
 
 ## Quick Reference
 
 | Property | Value |
-|----------|-------|
-| Purpose | Cross-agent task coordination via MCP protocol |
-| Entry | `mcp.run()` at mcp_tasks/server.py:404 |
-| Key files | mcp_tasks/server.py, skills/adversarial-spec/scripts/task_manager.py |
-| Depends on | mcp (FastMCP), filelock |
-| Used by | Claude Code agents, Codex agents (cross-agent coordination) |
-| Runtime status | implemented |
-| Architecture status | active_primary |
-
-## What This Component Does
-
-Provides a task CRUD API via the MCP (Model Context Protocol). Four tools — TaskCreate, TaskGet, TaskList, TaskUpdate — manage tasks stored in `.claude/tasks.json`. MCP server now uses FileLock (`_mutate_tasks()`) for concurrent access safety. Used for cross-agent coordination between Claude and Codex working on the same project. task_manager.py provides a Python-native TaskManager class with the same storage format.
-
-## Key Functions
-
-| Function | Purpose | Location |
-|----------|---------|----------|
-| `TaskCreate()` | Create task with subject/description | mcp_tasks/server.py:98 |
-| `TaskGet()` | Retrieve task by ID | mcp_tasks/server.py:140 |
-| `TaskList()` | List tasks with filtering | mcp_tasks/server.py:160 |
-| `TaskUpdate()` | Update task status/metadata | mcp_tasks/server.py:261 |
-| `load_tasks()` | Read .claude/tasks.json | mcp_tasks/server.py |
-| `save_tasks()` | Write .claude/tasks.json | mcp_tasks/server.py |
+|---|---|
+| Purpose | Historical record for the removed MCP Tasks server/task-manager surface |
+| Entry | none; `mcp_tasks/`, `task_manager.py`, and `scope.py` are deleted |
+| Runtime status | disabled |
+| Architecture status | deprecated |
 
 ## Contracts
 
-### Type Contracts
+None. The current pipeline board/Fizzy integration is the task system; no active Python import should target this component.
 
-| Contract | Purpose | Owner | Consumed By |
-|----------|---------|-------|-------------|
-| Task | Task object (id, subject, status, owner, blocks/blockedBy) | server.py + task_manager.py | Cross-agent workflows |
+## Invariants
 
-## Error Handling
+- Do not reintroduce a parallel task store without an approved architecture decision.
+- References to this component in old docs are historical unless a live import is reintroduced.
 
-- **No file locking on tasks.json**: Both MCP server and TaskManager read/write without locking. Known risk for concurrent access.
+## Active vs Target
 
-## Concurrency Concerns
-
-| Resource | Callers | Synchronization | Risk |
-|----------|---------|-----------------|------|
-| `.claude/tasks.json` | MCP server, TaskManager | None | Medium — last-write-wins on concurrent access |
-
-## Configuration
-
-| Config | Source | Default |
-|--------|--------|---------|
-| `MCP_WORKING_DIR` | env var | None (falls back to PWD) |
+- **Active consumers:** none found in the current source map.
+- **Target architecture:** Fizzy pipeline cards and phase-owned workflow own task state.
 
 ## LLM Notes
 
-- Task JSON uses `blockedBy` (camelCase) in storage but `blocked_by` (snake_case) in Python. Watch for key name mismatches.
-- task_manager.py has a `__name__ == "__main__"` demo block — don't confuse it with a real entry point.
+- This document exists to prevent stale architecture refs from misleading planners; it is not an implementation target.

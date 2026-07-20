@@ -1,39 +1,136 @@
 {
   "schema_version": "2.0",
   "skill": "mapcodebase",
-  "skill_version": "3.8",
-  "model": "claude-fable-5",
-  "generated_at": "2026-06-11T17:23:43Z",
-  "target_dir": "/home/jason/PycharmProjects/adversarial-spec",
-  "git_hash": "f198887",
-  "head_git_hash": "f198887",
-  "status": "success",
+  "skill_version": "4.0",
+  "model": "Codex",
+  "status": "partial",
   "mode": "update",
-  "focus": null,
-  "commit_distance_from_scan": 0,
+  "target_dir": "/home/jason/PycharmProjects/adversarial-spec",
+  "git_hash": "ef18c66",
+  "head_git_hash": "ef18c66",
+  "generated_at": "2026-07-19T08:43:13-05:00",
+  "previous_run": {
+    "git_hash": "f198887",
+    "generated_at": "2026-06-11T17:23:43Z",
+    "skill_version": "3.8"
+  },
+  "freshness_status": "caution",
+  "freshness": {
+    "map_git_hash": "ef18c66",
+    "map_generated_at": "2026-07-19T08:43:13-05:00",
+    "previous_map_git_hash": "f198887"
+  },
   "dirty_worktree": true,
-  "changed_files_since_scan": [],
-  "changed_components_since_scan": [],
-  "freshness_status": "current",
-  "trust_notes": [
-    "Incremental update from 9ca3ccd (52 commits, 66 source files changed)",
-    "Worktree carried in-flight skill-doc/spec edits at scan time (validation-leg session)",
-    "mcp_tasks/task_manager/scope/gauntlet_monolith deletions verified \u2014 no dangling imports",
-    "freshness_status uses fizzy vocabulary: current (== mapcodebase fresh)"
+  "commit_distance_from_scan": 87,
+  "focus": null,
+  "metrics": {
+    "files_scanned_changed_scope": 101,
+    "source_files_scanned": 98,
+    "components_identified": 18,
+    "flows_documented": 11,
+    "entry_points_documented": 16,
+    "boundary_contracts": 15,
+    "explorer_failures": 5,
+    "hazards_identified": 4,
+    "patterns_detected": 2,
+    "findings_produced": 7,
+    "concerns_identified": 10,
+    "access_artifacts_written": 3,
+    "answerability_tests": 7,
+    "answerability_pass_rate": 1.0,
+    "mode": "incremental"
+  },
+  "changed_files_since_scan": [
+    ".claude/hooks/assumption_detection.py",
+    ".claude/hooks/bash_command_check.py",
+    ".claude/hooks/deprecated_models.py",
+    ".claude/hooks/dispatch_check.py",
+    ".claude/hooks/fizzy_payload_guard.py",
+    ".claude/hooks/tests/test_dispatch_check.py",
+    "pyproject.toml",
+    "skills/adversarial-spec/scripts/__init__.py",
+    "skills/adversarial-spec/scripts/adversaries.py",
+    "skills/adversarial-spec/scripts/altitude_provenance.py",
+    "skills/adversarial-spec/scripts/authoring_lint.py",
+    "skills/adversarial-spec/scripts/conflict_disposition_store.py",
+    "skills/adversarial-spec/scripts/contract_version_resolver.py",
+    "skills/adversarial-spec/scripts/criticality_classifier.py",
+    "skills/adversarial-spec/scripts/debate.py",
+    "skills/adversarial-spec/scripts/gate_result.py",
+    "skills/adversarial-spec/scripts/gauntlet/model_dispatch.py",
+    "skills/adversarial-spec/scripts/gauntlet/phase_1_attacks.py",
+    "skills/adversarial-spec/scripts/gauntlet/reporting.py",
+    "skills/adversarial-spec/scripts/gauntlet_check_cli.py",
+    "skills/adversarial-spec/scripts/guardrail_orchestration.py",
+    "skills/adversarial-spec/scripts/mock_falsification.py",
+    "skills/adversarial-spec/scripts/models.py",
+    "skills/adversarial-spec/scripts/phase8_promotion.py",
+    "skills/adversarial-spec/scripts/provenance_journal.py",
+    "skills/adversarial-spec/scripts/providers.py",
+    "skills/adversarial-spec/scripts/spine_coverage_checker.py",
+    "skills/adversarial-spec/scripts/tcov_liveness.py",
+    "skills/adversarial-spec/scripts/tests/test_altitude_provenance.py",
+    "skills/adversarial-spec/scripts/tests/test_authoring_lint.py",
+    "skills/adversarial-spec/scripts/tests/test_cli.py",
+    "skills/adversarial-spec/scripts/tests/test_conflict_disposition_store.py",
+    "skills/adversarial-spec/scripts/tests/test_contract_version_resolver.py",
+    "skills/adversarial-spec/scripts/tests/test_criticality_classifier.py",
+    "skills/adversarial-spec/scripts/tests/test_dogfood_fprime.py",
+    "skills/adversarial-spec/scripts/tests/test_fprime_gate_integration.py",
+    "skills/adversarial-spec/scripts/tests/test_gate_result.py",
+    "skills/adversarial-spec/scripts/tests/test_gauntlet_check_cli.py",
+    "skills/adversarial-spec/scripts/tests/test_gauntlet_model_dispatch.py",
+    "skills/adversarial-spec/scripts/tests/test_getting_started_doclint.py",
+    "skills/adversarial-spec/scripts/tests/test_glossary_doclint.py",
+    "skills/adversarial-spec/scripts/tests/test_guardrail_orchestration.py",
+    "skills/adversarial-spec/scripts/tests/test_mock_falsification.py",
+    "skills/adversarial-spec/scripts/tests/test_phase8_promotion.py",
+    "skills/adversarial-spec/scripts/tests/test_provenance_journal.py",
+    "skills/adversarial-spec/scripts/tests/test_providers.py",
+    "skills/adversarial-spec/scripts/tests/test_spine_coverage_checker.py",
+    "skills/adversarial-spec/scripts/tests/test_tcov_liveness.py",
+    "skills/adversarial-spec/scripts/tests/test_tmr_compile_step.py",
+    "skills/adversarial-spec/scripts/tests/test_tmr_parser.py",
+    "skills/adversarial-spec/scripts/tests/test_tmr_schema_contract.py",
+    "skills/adversarial-spec/scripts/tests/test_trace_golden.py",
+    "skills/adversarial-spec/scripts/tests/test_validation_emission.py",
+    "skills/adversarial-spec/scripts/tests/test_verification_tier_lint.py",
+    "skills/adversarial-spec/scripts/tmr_compile_step.py",
+    "skills/adversarial-spec/scripts/tmr_parser.py",
+    "skills/adversarial-spec/scripts/tmr_schema.py",
+    "skills/adversarial-spec/scripts/validation_emission.py",
+    "skills/adversarial-spec/scripts/verification_tier_lint.py"
+  ],
+  "changed_components_since_scan": [
+    "debate-engine",
+    "models",
+    "providers",
+    "gauntlet",
+    "gauntlet-persistence",
+    "tmr-evidence-toolchain",
+    "validation-emission",
+    "provenance-promotion",
+    "harness-hooks",
+    "plan-analysis"
+  ],
+  "changed_boundary_contracts_since_scan": [
+    "validation-cli-stdout",
+    "hook-stdio",
+    "model-cli-stdio",
+    "model-litellm",
+    "gauntlet-file-state",
+    "tmr-registry-prose-view",
+    "validation-ledger-files",
+    "provenance-files",
+    "fizzy-mcp-boundary"
   ],
   "access_paths": {
     "general_primer": {
       "entrypoint": "primer.md",
-      "fallback_docs": [
-        "INDEX.md",
-        "overview.md"
-      ]
+      "fallback_docs": ["INDEX.md", "overview.md"]
     },
     "plan_evaluation": {
-      "base_docs": [
-        "primer.md",
-        "INDEX.md"
-      ],
+      "base_docs": ["primer.md", "INDEX.md"],
       "escalation_docs": [
         "structured/cross-references.md",
         "structured/components/{component-slug}.md"
@@ -42,1083 +139,29 @@
     },
     "actionable_concerns": {
       "entrypoint": "concerns.md",
-      "fallback_docs": [
-        "findings.md",
-        "patterns.md"
-      ]
+      "fallback_docs": ["findings.md", "patterns.md", "action-plan.md"]
     },
     "component_deep_dive": {
-      "base_docs": [
-        "primer.md",
-        "overview.md"
-      ],
+      "base_docs": ["primer.md", "overview.md"],
       "component_doc_glob": "structured/components/*.md",
       "flow_doc": "structured/flows.md",
       "selection_rule": "Read the selected component doc first, then flows.md only if the task crosses component boundaries"
     }
   },
-  "components": [
-    {
-      "id": "debate-engine",
-      "name": "Debate Engine",
-      "purpose": "Master CLI entrypoint + multi-round debate orchestration",
-      "entry_file": "skills/adversarial-spec/scripts/debate.py:1520",
-      "key_files": [
-        "skills/adversarial-spec/scripts/debate.py"
-      ],
-      "doc_path": "structured/components/debate-engine.md",
-      "intent_tags": [
-        "cli",
-        "debate",
-        "critique",
-        "consensus",
-        "session"
-      ],
-      "runtime_status": "implemented",
-      "architecture_status": "active_primary",
-      "active_consumers": [
-        "CLI users",
-        "adversarial-spec skill phases"
-      ],
-      "legacy_consumers": [],
-      "component_doc": "structured/components/debate-engine.md"
-    },
-    {
-      "id": "gauntlet",
-      "name": "Gauntlet Pipeline",
-      "purpose": "7-phase adversarial stress-test pipeline (18-module package)",
-      "entry_file": "skills/adversarial-spec/scripts/gauntlet/orchestrator.py:194",
-      "key_files": [
-        "skills/adversarial-spec/scripts/gauntlet/orchestrator.py",
-        "skills/adversarial-spec/scripts/gauntlet/core_types.py",
-        "skills/adversarial-spec/scripts/gauntlet/persistence.py",
-        "skills/adversarial-spec/scripts/gauntlet/model_dispatch.py",
-        "skills/adversarial-spec/scripts/gauntlet/prompts.py",
-        "skills/adversarial-spec/scripts/gauntlet/cli.py",
-        "skills/adversarial-spec/scripts/gauntlet/reporting.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_1_attacks.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_2_synthesis.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_3_filtering.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_4_evaluation.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_5_rebuttals.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_6_adjudication.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_7_final_boss.py",
-        "skills/adversarial-spec/scripts/gauntlet/medals.py",
-        "skills/adversarial-spec/scripts/gauntlet/synthesis_extract.py",
-        "skills/adversarial-spec/scripts/adversaries.py"
-      ],
-      "doc_path": "structured/components/gauntlet.md",
-      "intent_tags": [
-        "gauntlet",
-        "adversary",
-        "stress-test",
-        "concern",
-        "evaluation",
-        "verdict",
-        "checkpoint",
-        "resume"
-      ],
-      "runtime_status": "implemented",
-      "architecture_status": "active_primary",
-      "active_consumers": [
-        "debate.py handle_gauntlet()",
-        "gauntlet/cli.py"
-      ],
-      "legacy_consumers": [
-        "gauntlet_monolith.py (shim, no importers)"
-      ],
-      "component_doc": "structured/components/gauntlet.md"
-    },
-    {
-      "id": "models",
-      "name": "Models",
-      "purpose": "LLM call abstraction via LiteLLM + CLI subprocess routing",
-      "entry_file": "skills/adversarial-spec/scripts/models.py:914",
-      "key_files": [
-        "skills/adversarial-spec/scripts/models.py"
-      ],
-      "doc_path": "structured/components/models.md",
-      "intent_tags": [
-        "llm",
-        "model",
-        "litellm",
-        "codex",
-        "gemini",
-        "claude",
-        "parallel",
-        "cost"
-      ],
-      "runtime_status": "implemented",
-      "architecture_status": "active_primary",
-      "active_consumers": [
-        "debate.py",
-        "gauntlet phases via model_dispatch"
-      ],
-      "legacy_consumers": [],
-      "component_doc": "structured/components/models.md"
-    },
-    {
-      "id": "providers",
-      "name": "Providers",
-      "purpose": "Model config, cost rates, Bedrock support, CLI availability",
-      "entry_file": "skills/adversarial-spec/scripts/providers.py",
-      "key_files": [
-        "skills/adversarial-spec/scripts/providers.py"
-      ],
-      "doc_path": "structured/components/providers.md",
-      "intent_tags": [
-        "provider",
-        "cost",
-        "bedrock",
-        "config",
-        "model-config"
-      ],
-      "runtime_status": "implemented",
-      "architecture_status": "active_primary",
-      "active_consumers": [
-        "models.py",
-        "debate.py",
-        "gauntlet/model_dispatch.py"
-      ],
-      "legacy_consumers": [],
-      "component_doc": "structured/components/providers.md"
-    },
-    {
-      "id": "adversaries",
-      "name": "Adversaries",
-      "purpose": "Named attacker persona definitions with version tracking",
-      "entry_file": "skills/adversarial-spec/scripts/adversaries.py",
-      "key_files": [
-        "skills/adversarial-spec/scripts/adversaries.py"
-      ],
-      "doc_path": "structured/components/adversaries.md",
-      "intent_tags": [
-        "adversary",
-        "persona",
-        "attacker",
-        "concern-id",
-        "scope-guidelines"
-      ],
-      "runtime_status": "implemented",
-      "architecture_status": "active_primary",
-      "active_consumers": [
-        "gauntlet phases",
-        "debate.py",
-        "execution_planner"
-      ],
-      "legacy_consumers": [],
-      "component_doc": "structured/components/adversaries.md"
-    },
-    {
-      "id": "prompts",
-      "name": "Prompts",
-      "purpose": "Centralized prompt templates, focus areas, and personas",
-      "entry_file": "skills/adversarial-spec/scripts/prompts.py",
-      "key_files": [
-        "skills/adversarial-spec/scripts/prompts.py"
-      ],
-      "doc_path": "structured/components/prompts.md",
-      "intent_tags": [
-        "prompt",
-        "system-prompt",
-        "focus-area",
-        "persona"
-      ],
-      "runtime_status": "implemented",
-      "architecture_status": "active_primary",
-      "active_consumers": [
-        "models.py",
-        "debate.py"
-      ],
-      "legacy_consumers": [],
-      "component_doc": "structured/components/prompts.md"
-    },
-    {
-      "id": "pre-gauntlet",
-      "name": "Pre-Gauntlet",
-      "purpose": "Git/system context collection before gauntlet runs",
-      "entry_file": "skills/adversarial-spec/scripts/pre_gauntlet/orchestrator.py:51",
-      "key_files": [
-        "skills/adversarial-spec/scripts/pre_gauntlet/orchestrator.py",
-        "skills/adversarial-spec/scripts/collectors/git_position.py",
-        "skills/adversarial-spec/scripts/collectors/system_state.py",
-        "skills/adversarial-spec/scripts/pre_gauntlet/models.py",
-        "skills/adversarial-spec/scripts/pre_gauntlet/context_builder.py"
-      ],
-      "doc_path": "structured/components/pre-gauntlet.md",
-      "intent_tags": [
-        "pre-gauntlet",
-        "git",
-        "context",
-        "collector",
-        "alignment"
-      ],
-      "runtime_status": "implemented",
-      "architecture_status": "active_primary",
-      "active_consumers": [
-        "gauntlet/cli.py"
-      ],
-      "legacy_consumers": [],
-      "component_doc": "structured/components/pre-gauntlet.md"
-    },
-    {
-      "id": "session",
-      "name": "Session",
-      "purpose": "Debate state persistence for multi-round resume",
-      "entry_file": "skills/adversarial-spec/scripts/session.py:17",
-      "key_files": [
-        "skills/adversarial-spec/scripts/session.py"
-      ],
-      "doc_path": "structured/components/session.md",
-      "intent_tags": [
-        "session",
-        "persistence",
-        "resume",
-        "checkpoint",
-        "debate-state"
-      ],
-      "runtime_status": "implemented",
-      "architecture_status": "active_primary",
-      "active_consumers": [
-        "debate.py"
-      ],
-      "legacy_consumers": [],
-      "component_doc": "structured/components/session.md"
-    },
-    {
-      "id": "mcp-tasks",
-      "name": "MCP Tasks",
-      "purpose": "Cross-agent task coordination via MCP protocol (FileLock-guarded)",
-      "entry_file": "mcp_tasks/server.py:404",
-      "key_files": [
-        "mcp_tasks/server.py",
-        "skills/adversarial-spec/scripts/task_manager.py"
-      ],
-      "doc_path": "structured/components/mcp-tasks.md",
-      "intent_tags": [
-        "mcp",
-        "task",
-        "coordination",
-        "cross-agent",
-        "filelock"
-      ],
-      "runtime_status": "deleted",
-      "architecture_status": "retired",
-      "active_consumers": [
-        "Claude Code agents",
-        "Codex agents"
-      ],
-      "legacy_consumers": [],
-      "component_doc": "structured/components/mcp-tasks.md"
-    },
-    {
-      "id": "execution-planner",
-      "name": "Execution Planner",
-      "purpose": "Gauntlet concern parsing (mostly deprecated)",
-      "entry_file": "execution_planner/gauntlet_concerns.py",
-      "key_files": [
-        "execution_planner/__init__.py",
-        "execution_planner/gauntlet_concerns.py"
-      ],
-      "doc_path": "structured/components/execution-planner.md",
-      "intent_tags": [
-        "execution-plan",
-        "concern-parsing",
-        "deprecated"
-      ],
-      "runtime_status": "partial",
-      "architecture_status": "deprecated",
-      "active_consumers": [
-        "execution plan generation"
-      ],
-      "legacy_consumers": [],
-      "component_doc": "structured/components/execution-planner.md"
-    },
-    {
-      "id": "token-tracking",
-      "name": "Token Tracking",
-      "entry_file": "skills/adversarial-spec/scripts/token_tracking.py:66",
-      "key_files": [
-        "skills/adversarial-spec/scripts/token_tracking.py"
-      ],
-      "component_doc": null,
-      "intent_tags": [
-        "cost",
-        "telemetry"
-      ],
-      "runtime_status": "implemented",
-      "architecture_status": "active_primary"
-    },
-    {
-      "id": "emission-toolchain",
-      "name": "Emission Toolchain",
-      "entry_file": "skills/adversarial-spec/scripts/mini_spec_emission.py:355",
-      "key_files": [
-        "skills/adversarial-spec/scripts/mini_spec_emission.py"
-      ],
-      "component_doc": "structured/components/emission-toolchain.md",
-      "intent_tags": [
-        "fizzy-plan",
-        "altitude",
-        "self-check"
-      ],
-      "runtime_status": "implemented",
-      "architecture_status": "active_primary"
-    },
-    {
-      "id": "harness-hooks",
-      "name": "Harness Hooks",
-      "entry_file": ".claude/hooks/dispatch_check.py:86",
-      "key_files": [
-        ".claude/hooks/dispatch_check.py",
-        ".claude/hooks/pipeline_continue.py",
-        ".claude/hooks/pipeline_idle_retry.py",
-        ".claude/hooks/pipeline_notifications.py",
-        ".claude/hooks/session_activity_logger.py",
-        ".claude/hooks/_resolve_config.py"
-      ],
-      "component_doc": "structured/components/harness-hooks.md",
-      "intent_tags": [
-        "coordination",
-        "safety",
-        "multi-agent"
-      ],
-      "runtime_status": "implemented",
-      "architecture_status": "active_primary"
-    }
-  ],
-  "metrics": {
-    "files_scanned_changed_scope": 66,
-    "components_identified": 13,
-    "explorer_failures": 0,
-    "hazards_identified": 5,
-    "patterns_detected": 14,
-    "findings_produced": 18,
-    "concerns_identified": 9,
-    "access_artifacts_written": 3,
-    "mode": "incremental"
-  },
-  "artifacts": [
-    "INDEX.md",
-    "primer.md",
-    "access-guide.md",
-    "overview.md",
-    "filesystem-map.md",
-    "concerns.md",
-    "patterns.md",
-    "findings.md",
-    "action-plan.md",
-    "structured/entry-points.md",
-    "structured/flows.md",
-    "structured/cross-references.md",
-    "structured/components/debate-engine.md",
-    "structured/components/gauntlet.md",
-    "structured/components/models.md",
-    "structured/components/providers.md",
-    "structured/components/adversaries.md",
-    "structured/components/prompts.md",
-    "structured/components/pre-gauntlet.md",
-    "structured/components/session.md",
-    "structured/components/execution-planner.md",
-    "structured/components/mcp-tasks.md",
-    "structured/components/emission-toolchain.md",
-    "structured/components/harness-hooks.md",
+  "discovery_outputs": [
     ".work/discovery/entry-points.md",
     ".work/discovery/data-flow.md",
     ".work/discovery/control-flow.md",
     ".work/discovery/dependencies.md",
-    ".work/discovery/contracts.md",
-    "HUMAN_READ_ONLY_visuals/system-overview.md",
-    "manifest.json"
-  ],
-  "warnings": [
-    "execution_planner/ deprecation Phase 3 (cleanup exports) still PENDING",
-    "pydantic used in pre_gauntlet/models.py but not declared in pyproject.toml",
-    "scope.py (606 lines) has no importers \u2014 status unclear",
-    "2026-06-11 incremental: docs corrected \u2014 Phase 3.5 clustering is reinstated as deterministic code (prior docs said removed); mcp_tasks retirement reflected throughout."
-  ],
-  "hazards": [
-    {
-      "id": "HAZ-001",
-      "type": "concurrency_race",
-      "resource": "cost_tracker (global CostTracker singleton)",
-      "component": "token-tracking",
-      "callers": [
-        "call_single_model() via ThreadPoolExecutor (models.py:914)",
-        "gauntlet phase modules via model_dispatch"
-      ],
-      "synchronization": "threading.Lock in CostTracker.add() (models.py:163)",
-      "severity": "low",
-      "description": "Multiple threads record cost simultaneously \u2014 now in extracted token_tracking.py TokenTracker; guarded by threading.Lock. Benign."
-    },
-    {
-      "id": "HAZ-002",
-      "type": "unguarded_file_write",
-      "resource": "~/.config/adversarial-spec/sessions/{id}.json",
-      "component": "session",
-      "callers": [
-        "run_critique() saves per round (debate.py)"
-      ],
-      "synchronization": "none",
-      "severity": "low",
-      "description": "Session files written without file locking. Single-user assumption."
-    },
-    {
-      "id": "HAZ-003",
-      "type": "unguarded_file_write",
-      "resource": ".claude/tasks.json",
-      "component": "mcp-tasks",
-      "callers": [
-        "MCP server (mcp_tasks/server.py)",
-        "TaskManager (task_manager.py)"
-      ],
-      "synchronization": "FileLock (both callers)",
-      "severity": "resolved",
-      "description": "RESOLVED by deletion: mcp_tasks/ and task_manager.py removed June 2026; the tasks.json write surface no longer exists."
-    },
-    {
-      "id": "HAZ-004",
-      "type": "deadlock_potential",
-      "resource": ".adversarial-spec-gauntlet/*.json.lock",
-      "component": "gauntlet",
-      "callers": [
-        "save_checkpoint() (persistence.py)",
-        "load_partial_run() (persistence.py)"
-      ],
-      "synchronization": "FileLock with no timeout (blocking indefinitely)",
-      "severity": "low",
-      "description": "FileLock uses default blocking=True with no timeout. If process crashes holding lock, next process blocks forever. Low practical risk."
-    },
-    {
-      "id": "HAZ-005",
-      "type": "concurrency_race",
-      "resource": "dispatch baseline file /tmp/dispatch-baseline-{project}-{role}.txt",
-      "component": "harness-hooks",
-      "callers": [
-        "dispatch_check.py main (PreToolUse pipeline_do_next_task, any worker of a role)"
-      ],
-      "synchronization": "none",
-      "severity": "medium",
-      "description": "Two same-role workers on one host share the baseline line-count file. The first pickup advances the baseline past unread dispatch messages; the second worker never sees them. Single-worker-per-role assumption is implicit and unenforced."
-    }
-  ],
-  "patterns": [
-    {
-      "pattern_id": "json-extraction-with-bounds-search",
-      "files": [
-        "skills/adversarial-spec/scripts/gauntlet/phase_3_filtering.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_4_evaluation.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_6_adjudication.py"
-      ],
-      "description": "Three phase modules use identical JSON extraction logic: find/rfind bounds + json.loads",
-      "concern": "Duplication increases maintenance burden; extraction pattern changes require 3+ updates",
-      "best_practice": "Extract into extract_json_from_response() utility",
-      "severity": "warning",
-      "category": "error-handling"
-    },
-    {
-      "pattern_id": "sys-path-insertion-in-scripts",
-      "files": [
-        "skills/adversarial-spec/scripts/debate.py",
-        "skills/adversarial-spec/scripts/pre_gauntlet/orchestrator.py",
-        "skills/adversarial-spec/scripts/collectors/git_position.py",
-        "skills/adversarial-spec/scripts/collectors/system_state.py",
-        "skills/adversarial-spec/scripts/extractors/spec_affected_files.py"
-      ],
-      "description": "6 source files use sys.path.insert(0, ...) for sibling module resolution",
-      "concern": "Fragile relative path manipulation, prevents proper packaging",
-      "best_practice": "Configure pyproject.toml pythonpath or install package editable",
-      "severity": "warning",
-      "category": "configuration"
-    },
-    {
-      "pattern_id": "call-model-abstraction-inconsistency",
-      "files": [
-        "skills/adversarial-spec/scripts/gauntlet/model_dispatch.py",
-        "skills/adversarial-spec/scripts/models.py"
-      ],
-      "description": "RESOLVED: All gauntlet phases now use unified call_model() from model_dispatch.py",
-      "concern": null,
-      "best_practice": null,
-      "severity": "info",
-      "category": "state-management"
-    },
-    {
-      "pattern_id": "prompt-template-centralization",
-      "files": [
-        "skills/adversarial-spec/scripts/gauntlet/prompts.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_5_rebuttals.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_7_final_boss.py"
-      ],
-      "description": "MOSTLY RESOLVED: gauntlet/prompts.py centralizes major prompts. Phases 5 and 7 still have inline prompts.",
-      "concern": "Phases 5-7 still define some system prompts inline",
-      "best_practice": "Move remaining prompts to gauntlet/prompts.py",
-      "severity": "info",
-      "category": "configuration"
-    },
-    {
-      "pattern_id": "programming-bugs-reraise",
-      "files": [
-        "skills/adversarial-spec/scripts/gauntlet/phase_1_attacks.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_4_evaluation.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_5_rebuttals.py"
-      ],
-      "description": "IMPROVED: All phases now use PROGRAMMING_BUGS tuple to re-raise code defects while catching transient API failures",
-      "concern": null,
-      "best_practice": null,
-      "severity": "info",
-      "category": "error-handling"
-    },
-    {
-      "pattern_id": "cost-tracking-global-state",
-      "files": [
-        "skills/adversarial-spec/scripts/models.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_1_attacks.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_2_synthesis.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_3_filtering.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_4_evaluation.py"
-      ],
-      "description": "Global tracker singleton now lives in extracted token_tracking.py (improvement); gauntlet phases and models.py still import the mutable global rather than receiving it.",
-      "concern": "Layer violation: gauntlet phases reach into models.py internals. 30+ test monkeypatches.",
-      "best_practice": "Finish CON-002: inject tracking via model_dispatch.call_model().",
-      "severity": "warning",
-      "category": "state-management"
-    },
-    {
-      "pattern_id": "missing-integration-tests",
-      "files": [
-        "skills/adversarial-spec/scripts/gauntlet/",
-        "skills/adversarial-spec/scripts/collectors/",
-        "skills/adversarial-spec/scripts/integrations/"
-      ],
-      "description": "Unit tests exist per phase but no end-to-end gauntlet pipeline tests",
-      "concern": "Phase-to-phase integration may break silently",
-      "best_practice": "Add integration tests with mocked models but real data structures",
-      "severity": "warning",
-      "category": "error-handling"
-    },
-    {
-      "pattern_id": "unvalidated-env-var-access",
-      "files": [
-        "skills/adversarial-spec/scripts/gauntlet/phase_7_final_boss.py",
-        "skills/adversarial-spec/scripts/models.py",
-        "skills/adversarial-spec/scripts/providers.py",
-        "skills/adversarial-spec/scripts/integrations/process_runner.py"
-      ],
-      "description": "Multiple files use os.environ.get() without defaults or validation",
-      "concern": "Silent failures if env vars missing",
-      "best_practice": "Centralized config loader with startup validation",
-      "severity": "warning",
-      "category": "configuration"
-    },
-    {
-      "pattern_id": "dataclass-serialization-boilerplate",
-      "files": [
-        "skills/adversarial-spec/scripts/gauntlet/persistence.py",
-        "skills/adversarial-spec/scripts/gauntlet/core_types.py"
-      ],
-      "description": "Custom _serialize_dataclass() handles recursive JSON serialization",
-      "concern": null,
-      "best_practice": null,
-      "severity": "info",
-      "category": "state-management"
-    },
-    {
-      "pattern_id": "implicit-directory-creation",
-      "files": [
-        "skills/adversarial-spec/scripts/session.py",
-        "skills/adversarial-spec/scripts/collectors/git_position.py",
-        "skills/adversarial-spec/scripts/collectors/system_state.py"
-      ],
-      "description": "Multiple modules call .mkdir(parents=True, exist_ok=True) before writes",
-      "concern": null,
-      "best_practice": null,
-      "severity": "info",
-      "category": "configuration"
-    },
-    {
-      "pattern_id": "concern-creation-duplication",
-      "files": [
-        "skills/adversarial-spec/scripts/collectors/git_position.py",
-        "skills/adversarial-spec/scripts/collectors/system_state.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_1_attacks.py"
-      ],
-      "description": "Multiple files construct Concern objects with similar field patterns",
-      "concern": null,
-      "best_practice": null,
-      "severity": "info",
-      "category": "state-management"
-    },
-    {
-      "pattern_id": "test-mocking-of-stdlib-paths",
-      "files": [
-        "scripts/tests/test_gauntlet_persistence.py",
-        "scripts/tests/test_providers.py",
-        "scripts/tests/test_cli.py"
-      ],
-      "description": "Tests monkeypatch module-level PATH constants for isolation",
-      "concern": null,
-      "best_practice": null,
-      "severity": "info",
-      "category": "configuration"
-    },
-    {
-      "pattern_id": "divergent-cli-flag-surfaces",
-      "files": [
-        "skills/adversarial-spec/scripts/debate.py",
-        "skills/adversarial-spec/scripts/gauntlet/cli.py"
-      ],
-      "description": "Two CLIs drive the same run_gauntlet() backend with different flag names (--codex-reasoning/--gauntlet-resume vs --attack-codex-reasoning/--resume) and different timeout defaults (1200s vs 1800s).",
-      "concern": "Operators and docs must remember which surface they are on; defaults drift independently (the 900\u21921200 bump touched only debate.py).",
-      "best_practice": "Shared argparse parent or constants module for shared defaults; alias the flags.",
-      "severity": "warning",
-      "category": "configuration"
-    },
-    {
-      "pattern_id": "hook-systemmessage-coordination",
-      "files": [
-        ".claude/hooks/dispatch_check.py",
-        ".claude/hooks/pipeline_continue.py",
-        ".claude/hooks/pipeline_idle_retry.py"
-      ],
-      "description": "Three pipeline hooks coordinate worker LLMs by injecting systemMessage decisions on Pre/PostToolUse events; baselines/counters in /tmp.",
-      "concern": null,
-      "best_practice": null,
-      "severity": "info",
-      "category": "state-management"
-    }
-  ],
-  "findings": [
-    {
-      "finding_id": "FIND-001",
-      "category": "duplication",
-      "severity": "warning",
-      "component": "model-dispatch",
-      "files": [
-        "skills/adversarial-spec/scripts/models.py",
-        "skills/adversarial-spec/scripts/gauntlet/model_dispatch.py",
-        "skills/adversarial-spec/scripts/debate.py"
-      ],
-      "title": "Triple litellm completion() pathway with divergent defaults",
-      "description": "3 files call litellm.completion() independently with different temperature/max_tokens defaults",
-      "suggestion": "Create single _call_litellm() wrapper",
-      "confidence": "high",
-      "evidence": "debate.py:66, models.py:21, model_dispatch.py:25"
-    },
-    {
-      "finding_id": "FIND-002",
-      "category": "dead-code",
-      "severity": "warning",
-      "component": "gauntlet-pipeline",
-      "files": [
-        "skills/adversarial-spec/scripts/gauntlet/phase_3_filtering.py"
-      ],
-      "title": "Dead clustering code kept for reference (~80 lines)",
-      "description": "Dead clustering code in phase_3_filtering.py flagged at 9ca3ccd; clustering has since been reinstated as gauntlet/clustering.py (deterministic Jaccard). Re-verify whether the old commented remnant in phase_3_filtering.py still exists.",
-      "suggestion": "Delete. In git history.",
-      "confidence": "low",
-      "evidence": "phase_3_filtering.py:242"
-    },
-    {
-      "finding_id": "FIND-003",
-      "category": "dead-code",
-      "severity": "info",
-      "component": "scope-module",
-      "files": [
-        "skills/adversarial-spec/scripts/scope.py"
-      ],
-      "title": "scope.py (606 lines) never imported",
-      "description": "RESOLVED: scope.py deleted June 2026; scope guidance lives in AdversaryTemplate.scope_guidelines.",
-      "suggestion": null,
-      "confidence": "high",
-      "evidence": "0 import matches"
-    },
-    {
-      "finding_id": "FIND-004",
-      "category": "dead-code",
-      "severity": "info",
-      "component": "debate-engine",
-      "files": [
-        "skills/adversarial-spec/scripts/debate.py"
-      ],
-      "title": "Deprecated CLI commands still wired (~80 lines)",
-      "description": "execution-plan and export-tasks print deprecation warnings and exit",
-      "suggestion": "Remove from argparse",
-      "confidence": "medium",
-      "evidence": "debate.py:591,978,787"
-    },
-    {
-      "finding_id": "FIND-005",
-      "category": "missing-abstraction",
-      "severity": "warning",
-      "component": "gauntlet-pipeline",
-      "files": [
-        "skills/adversarial-spec/scripts/gauntlet/phase_5_rebuttals.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_7_final_boss.py"
-      ],
-      "title": "Inline prompts bypass gauntlet/prompts.py",
-      "description": "70-line inline prompt in phase 7, inline persona prompt in phase 5",
-      "suggestion": "Extract to gauntlet/prompts.py",
-      "confidence": "high",
-      "evidence": "phase_5:46, phase_7:127"
-    },
-    {
-      "finding_id": "FIND-006",
-      "category": "layer-violation",
-      "severity": "warning",
-      "component": "gauntlet-pipeline",
-      "files": [
-        "skills/adversarial-spec/scripts/token_tracking.py",
-        "skills/adversarial-spec/scripts/gauntlet/orchestrator.py",
-        "skills/adversarial-spec/scripts/models.py"
-      ],
-      "title": "All 7 phase files import global cost_tracker from models.py",
-      "description": "Cost tracking extracted to token_tracking.py (improvement), but gauntlet phases and orchestrator still import the global tracker singleton directly.",
-      "suggestion": "Move cost tracking into model_dispatch.call_model()",
-      "confidence": "high",
-      "evidence": "7 files each import cost_tracker"
-    },
-    {
-      "finding_id": "FIND-007",
-      "category": "idiomatic",
-      "severity": "warning",
-      "component": "infrastructure",
-      "files": [
-        "skills/adversarial-spec/scripts/debate.py",
-        "skills/adversarial-spec/scripts/pre_gauntlet/orchestrator.py",
-        "skills/adversarial-spec/scripts/collectors/system_state.py",
-        "skills/adversarial-spec/scripts/collectors/git_position.py",
-        "skills/adversarial-spec/scripts/extractors/spec_affected_files.py"
-      ],
-      "title": "sys.path.insert in 6 locations",
-      "description": "Fragile sys.path manipulation instead of proper package structure",
-      "suggestion": "Use pyproject.toml packages + relative imports",
-      "confidence": "high",
-      "evidence": "6 sys.path.insert calls"
-    },
-    {
-      "finding_id": "FIND-008",
-      "category": "security",
-      "severity": "warning",
-      "component": "gauntlet-pipeline",
-      "files": [
-        "skills/adversarial-spec/scripts/gauntlet/orchestrator.py"
-      ],
-      "title": "builtins.input monkey-patching not thread-safe",
-      "description": "Unattended mode replaces builtins.input globally",
-      "suggestion": "Use GauntletConfig flag at call sites",
-      "confidence": "medium",
-      "evidence": "orchestrator.py:278-279"
-    },
-    {
-      "finding_id": "FIND-010",
-      "category": "dead-code",
-      "severity": "info",
-      "component": "gauntlet-pipeline",
-      "files": [
-        "skills/adversarial-spec/scripts/gauntlet_monolith.py"
-      ],
-      "title": "gauntlet_monolith.py shim has no importers",
-      "description": "RESOLVED: gauntlet_monolith.py deleted June 2026.",
-      "suggestion": null,
-      "confidence": "medium",
-      "evidence": "0 import matches"
-    },
-    {
-      "finding_id": "FIND-011",
-      "category": "complexity",
-      "severity": "warning",
-      "component": "gauntlet-pipeline",
-      "files": [
-        "skills/adversarial-spec/scripts/gauntlet/orchestrator.py"
-      ],
-      "title": "run_gauntlet() is ~695 lines",
-      "description": "Single function with 30+ locals, 3-level nesting, mixes orchestration with checkpoint/manifest/medal/stats",
-      "suggestion": "Extract phase-table pattern",
-      "confidence": "high",
-      "evidence": "Lines 170-865"
-    },
-    {
-      "finding_id": "FIND-012",
-      "category": "error-handling",
-      "severity": "warning",
-      "component": "gauntlet-pipeline",
-      "files": [
-        "skills/adversarial-spec/scripts/gauntlet/persistence.py",
-        "skills/adversarial-spec/scripts/session.py"
-      ],
-      "title": "Bare except in I/O boundary modules",
-      "description": "Bare/broad except at I/O boundaries in persistence.py and session.py (task_manager.py instance gone with deletion).",
-      "suggestion": "Log to stderr at minimum",
-      "confidence": "high",
-      "evidence": "persistence.py:143, task_manager.py:167, session.py:83"
-    },
-    {
-      "finding_id": "FIND-013",
-      "category": "doc-accuracy",
-      "severity": "info",
-      "component": "architecture-docs",
-      "files": [],
-      "title": "Numeric claims verified accurate",
-      "description": "9 phases, 18 modules, 1562 debate.py lines, 1000 models.py lines \u2014 all correct",
-      "suggestion": null,
-      "confidence": "high",
-      "evidence": "Direct counts"
-    },
-    {
-      "finding_id": "FIND-014",
-      "category": "duplication",
-      "severity": "info",
-      "component": "debate-engine",
-      "files": [
-        "skills/adversarial-spec/scripts/models.py",
-        "skills/adversarial-spec/scripts/gauntlet/model_dispatch.py"
-      ],
-      "title": "Two parallel call_model abstractions at different layers",
-      "description": "CLI-routing prefix checks duplicated in models.py and model_dispatch.py. Intentional layering.",
-      "suggestion": "Share litellm fallback implementation",
-      "confidence": "medium",
-      "evidence": "models.py:686, model_dispatch.py:81"
-    },
-    {
-      "finding_id": "FIND-015",
-      "category": "idiomatic",
-      "severity": "warning",
-      "component": "providers",
-      "files": [
-        "skills/adversarial-spec/scripts/providers.py"
-      ],
-      "title": "Hardcoded secrets path under $HOME",
-      "description": "providers.py load_dotenv()s $HOME/.config/secrets/llm-providers at import time \u2014 path is hardcoded and the side effect fires on any import of providers.",
-      "suggestion": "Read the path from an env var with the current value as default; consider lazy loading.",
-      "confidence": "high",
-      "evidence": "providers.py:15"
-    },
-    {
-      "finding_id": "FIND-016",
-      "category": "layer-violation",
-      "severity": "warning",
-      "component": "gauntlet",
-      "files": [
-        "skills/adversarial-spec/scripts/prompts.py",
-        "skills/adversarial-spec/scripts/gauntlet/prompts.py"
-      ],
-      "title": "gauntlet/prompts.py shadows top-level prompts.py on sys.path",
-      "description": "Adding gauntlet/ to sys.path makes `import prompts` resolve to gauntlet/prompts.py, breaking providers.py imports (FOCUS_AREAS/PERSONAS missing). Bit a live session 2026-06-11 when loading persistence.py standalone; workaround is importlib.util.spec_from_file_location.",
-      "suggestion": "Rename gauntlet/prompts.py (e.g. gauntlet/phase_prompts.py) or make gauntlet a proper package import everywhere (no sys.path games).",
-      "confidence": "high",
-      "evidence": "import collision observed 2026-06-11; pyproject pytest pythonpath mitigates tests only"
-    },
-    {
-      "finding_id": "FIND-017",
-      "category": "duplication",
-      "severity": "warning",
-      "component": "debate-engine",
-      "files": [
-        "skills/adversarial-spec/scripts/debate.py",
-        "skills/adversarial-spec/scripts/gauntlet/cli.py"
-      ],
-      "title": "Divergent CLI defaults for the same backend",
-      "description": "debate.py --timeout default 1200s vs gauntlet/cli.py 1800s; reasoning-flag names differ. The 2026-06-11 timeout bump touched only debate.py.",
-      "suggestion": "Single shared defaults constant + flag aliases.",
-      "confidence": "high",
-      "evidence": "debate.py:403 default=1200; gauntlet/cli.py timeout default 1800"
-    },
-    {
-      "finding_id": "FIND-018",
-      "category": "error-handling",
-      "severity": "warning",
-      "component": "harness-hooks",
-      "files": [
-        ".claude/hooks/dispatch_check.py"
-      ],
-      "title": "Dispatch baseline race for same-role parallel workers",
-      "description": "Baseline line-count in /tmp is shared per (project, role); two same-role workers can each advance it, dropping conductor messages for the other.",
-      "suggestion": "Per-session baseline (include session id in filename) or per-worker offsets.",
-      "confidence": "medium",
-      "evidence": "dispatch_check.py baseline file naming; see HAZ-005"
-    },
-    {
-      "finding_id": "FIND-019",
-      "category": "dead-code",
-      "severity": "info",
-      "component": "gauntlet",
-      "files": [
-        "skills/adversarial-spec/scripts/gauntlet/persistence.py"
-      ],
-      "title": "pydantic imported in persistence.py but not actively used",
-      "description": "Import remains for legacy compatibility; pre_gauntlet/models.py is the real pydantic consumer (and pydantic IS declared in pyproject).",
-      "suggestion": "Drop the unused import.",
-      "confidence": "medium",
-      "evidence": "dependency explorer 2026-06-11"
-    }
-  ],
-  "concerns": [
-    {
-      "concern_id": "CON-001",
-      "priority": "next",
-      "severity": "warning",
-      "component": "model-dispatch",
-      "title": "Triple litellm completion() pathway",
-      "summary": "3 files call litellm.completion() with silently divergent defaults",
-      "recommended_action": "Create single _call_litellm() wrapper in model_dispatch.py",
-      "files": [
-        "skills/adversarial-spec/scripts/models.py",
-        "skills/adversarial-spec/scripts/gauntlet/model_dispatch.py",
-        "skills/adversarial-spec/scripts/debate.py"
-      ],
-      "source_refs": [
-        "FIND-001",
-        "FIND-014"
-      ],
-      "confidence": "high"
-    },
-    {
-      "concern_id": "CON-002",
-      "priority": "next",
-      "severity": "warning",
-      "component": "gauntlet-pipeline",
-      "title": "cost_tracker coupling forces 30+ test monkeypatches",
-      "summary": "token_tracking extraction landed (half the fix); phases still import the global singleton, keeping the layer coupling and test monkeypatching burden.",
-      "recommended_action": "Move tracking into model_dispatch.call_model(); phases stop importing the singleton.",
-      "files": [
-        "skills/adversarial-spec/scripts/gauntlet/model_dispatch.py",
-        "skills/adversarial-spec/scripts/models.py"
-      ],
-      "source_refs": [
-        "FIND-006"
-      ],
-      "confidence": "high"
-    },
-    {
-      "concern_id": "CON-003",
-      "priority": "next",
-      "severity": "warning",
-      "component": "gauntlet-pipeline",
-      "title": "orchestrator run_gauntlet() is ~695 lines",
-      "summary": "Single function mixes phase orchestration with checkpoint/manifest/medal/stats logic",
-      "recommended_action": "Extract phase-table pattern",
-      "files": [
-        "skills/adversarial-spec/scripts/gauntlet/orchestrator.py"
-      ],
-      "source_refs": [
-        "FIND-011"
-      ],
-      "confidence": "high"
-    },
-    {
-      "concern_id": "CON-004",
-      "priority": "later",
-      "severity": "warning",
-      "component": "infrastructure",
-      "title": "Dead code accumulation (~750 lines)",
-      "summary": "Shrunk by deletions (scope.py, gauntlet_monolith.py gone). Remaining: possible clustering remnant in phase_3_filtering.py (re-verify) and ~80 lines of deprecated CLI commands.",
-      "recommended_action": "Delete in single cleanup commit",
-      "files": [
-        "skills/adversarial-spec/scripts/gauntlet/phase_3_filtering.py",
-        "skills/adversarial-spec/scripts/debate.py"
-      ],
-      "source_refs": [
-        "FIND-002",
-        "FIND-003",
-        "FIND-004",
-        "FIND-010"
-      ],
-      "confidence": "high"
-    },
-    {
-      "concern_id": "CON-005",
-      "priority": "later",
-      "severity": "warning",
-      "component": "gauntlet-pipeline",
-      "title": "Inline prompts in phases 5 and 7 undermine centralization",
-      "summary": "gauntlet/prompts.py was created but phases 5-7 still use inline prompts",
-      "recommended_action": "Extract to gauntlet/prompts.py",
-      "files": [
-        "skills/adversarial-spec/scripts/gauntlet/phase_5_rebuttals.py",
-        "skills/adversarial-spec/scripts/gauntlet/phase_7_final_boss.py",
-        "skills/adversarial-spec/scripts/gauntlet/prompts.py"
-      ],
-      "source_refs": [
-        "FIND-005"
-      ],
-      "confidence": "high"
-    },
-    {
-      "concern_id": "CON-006",
-      "priority": "later",
-      "severity": "warning",
-      "component": "infrastructure",
-      "title": "sys.path manipulation prevents proper packaging",
-      "summary": "6 files use sys.path.insert instead of proper package structure",
-      "recommended_action": "Configure pyproject.toml packages, use relative imports",
-      "files": [
-        "skills/adversarial-spec/scripts/debate.py",
-        "skills/adversarial-spec/scripts/pre_gauntlet/orchestrator.py"
-      ],
-      "source_refs": [
-        "FIND-007"
-      ],
-      "confidence": "high"
-    },
-    {
-      "concern_id": "CON-007",
-      "priority": "next",
-      "severity": "warning",
-      "component": "debate-engine",
-      "title": "Divergent CLI surfaces drift independently",
-      "summary": "Two CLIs drive run_gauntlet with different flag names and timeout defaults; config changes (like the 1200s bump) land on one surface only.",
-      "recommended_action": "Shared defaults constants + flag aliases between debate.py and gauntlet/cli.py.",
-      "files": [
-        "skills/adversarial-spec/scripts/debate.py",
-        "skills/adversarial-spec/scripts/gauntlet/cli.py"
-      ],
-      "source_refs": [
-        "FIND-017",
-        "divergent-cli-flag-surfaces"
-      ],
-      "confidence": "high"
-    },
-    {
-      "concern_id": "CON-008",
-      "priority": "next",
-      "severity": "warning",
-      "component": "harness-hooks",
-      "title": "Same-role workers can drop conductor dispatch messages",
-      "summary": "dispatch_check baselines are shared per (project, role) in /tmp; parallel same-role workers race and one silently misses messages.",
-      "recommended_action": "Key the baseline by session id (or per-worker offset file).",
-      "files": [
-        ".claude/hooks/dispatch_check.py"
-      ],
-      "source_refs": [
-        "HAZ-005",
-        "FIND-018"
-      ],
-      "confidence": "medium"
-    },
-    {
-      "concern_id": "CON-009",
-      "priority": "next",
-      "severity": "warning",
-      "component": "gauntlet",
-      "title": "prompts.py shadow collision bites standalone loaders",
-      "summary": "sys.path-based shadowing of prompts.py by gauntlet/prompts.py forces importlib workarounds (hit live on 2026-06-11) and is a packaging landmine.",
-      "recommended_action": "Rename gauntlet/prompts.py or eliminate sys.path insertion (proper package imports).",
-      "files": [
-        "skills/adversarial-spec/scripts/gauntlet/prompts.py",
-        "skills/adversarial-spec/scripts/prompts.py"
-      ],
-      "source_refs": [
-        "FIND-016",
-        "sys-path-insertion-in-scripts"
-      ],
-      "confidence": "high"
-    }
+    ".work/discovery/contracts.md"
   ],
   "exclusions": [
     ".git/",
     "node_modules/",
     ".venv/",
+    "venv/",
+    ".pytest_cache/",
+    ".ruff_cache/",
     "__pycache__/",
     "dist/",
     "build/",
@@ -1128,16 +171,153 @@
     "adversarial_spec.egg-info/",
     "skills/adversarial-spec/adversarial_spec_skill.egg-info/"
   ],
-  "previous_run": {
-    "git_hash": "9ca3ccd",
-    "generated_at": "2026-04-16T12:00:00Z",
-    "skill_version": "3.6"
-  },
-  "discovery_outputs": [
+  "components": [
+    {"id":"debate-engine","name":"Debate CLI","entry_file":"skills/adversarial-spec/scripts/debate.py","key_files":["skills/adversarial-spec/scripts/debate.py","skills/adversarial-spec/scripts/session.py"],"doc_path":"structured/components/debate-engine.md","intent_tags":["cli","debate","rounds","gates","session"],"runtime_status":"implemented","architecture_status":"active_primary","active_consumers":["adversarial-spec console script","gauntlet option"],"legacy_consumers":[]},
+    {"id":"models","name":"Model adapters","entry_file":"skills/adversarial-spec/scripts/models.py","key_files":["skills/adversarial-spec/scripts/models.py","skills/adversarial-spec/scripts/gauntlet/model_dispatch.py"],"doc_path":"structured/components/models.md","intent_tags":["model","cli-subprocess","litellm","usage","parallel"],"runtime_status":"implemented","architecture_status":"active_primary","active_consumers":["debate","gauntlet","preflight"],"legacy_consumers":[]},
+    {"id":"providers","name":"Providers and profiles","entry_file":"skills/adversarial-spec/scripts/providers.py","key_files":["skills/adversarial-spec/scripts/providers.py","skills/adversarial-spec/scripts/token_tracking.py"],"doc_path":"structured/components/providers.md","intent_tags":["provider","credentials","profile","bedrock","cost"],"runtime_status":"implemented","architecture_status":"active_primary","active_consumers":["debate CLI","model adapters"],"legacy_consumers":[]},
+    {"id":"gauntlet","name":"Gauntlet pipeline","entry_file":"skills/adversarial-spec/scripts/gauntlet/orchestrator.py","key_files":["skills/adversarial-spec/scripts/gauntlet/orchestrator.py","skills/adversarial-spec/scripts/gauntlet/core_types.py","skills/adversarial-spec/scripts/gauntlet/phase_1_attacks.py","skills/adversarial-spec/scripts/gauntlet/model_dispatch.py"],"doc_path":"structured/components/gauntlet.md","intent_tags":["gauntlet","adversary","concern","evaluation","verdict","resume"],"runtime_status":"implemented","architecture_status":"active_primary","active_consumers":["debate.handle_gauntlet","python -m gauntlet"],"legacy_consumers":[]},
+    {"id":"gauntlet-persistence","name":"Gauntlet persistence","entry_file":"skills/adversarial-spec/scripts/gauntlet/persistence.py","key_files":["skills/adversarial-spec/scripts/gauntlet/persistence.py","skills/adversarial-spec/scripts/gauntlet/phase_3_filtering.py"],"doc_path":"structured/components/gauntlet-persistence.md","intent_tags":["checkpoint","hash","lock","manifest","stats","medals"],"runtime_status":"implemented","architecture_status":"active_primary","active_consumers":["gauntlet orchestrator","gauntlet CLI"],"legacy_consumers":[]},
+    {"id":"tmr-evidence-toolchain","name":"TMR and evidence toolchain","entry_file":"skills/adversarial-spec/scripts/tmr_schema.py","key_files":["skills/adversarial-spec/scripts/tmr_schema.py","skills/adversarial-spec/scripts/tmr_compile_step.py","skills/adversarial-spec/scripts/tmr_parser.py","skills/adversarial-spec/scripts/tcov_liveness.py"],"doc_path":"structured/components/tmr-evidence-toolchain.md","intent_tags":["tmr","schema","registry","liveness","coverage","evidence"],"runtime_status":"implemented","architecture_status":"active_primary","active_consumers":["validation workflow","Phase 8 promotion","guardrails"],"legacy_consumers":[]},
+    {"id":"validation-emission","name":"Validation emission","entry_file":"skills/adversarial-spec/scripts/validation_emission.py","key_files":["skills/adversarial-spec/scripts/validation_emission.py","skills/adversarial-spec/scripts/tests/test_validation_emission.py"],"doc_path":"structured/components/validation-emission.md","intent_tags":["validation","ledger","digest","reply","envelope","self-check"],"runtime_status":"implemented","architecture_status":"active_primary","active_consumers":["validation CLI","evidence workflow","Phase 8"],"legacy_consumers":[]},
+    {"id":"provenance-promotion","name":"Provenance and Phase 8 promotion","entry_file":"skills/adversarial-spec/scripts/provenance_journal.py","key_files":["skills/adversarial-spec/scripts/provenance_journal.py","skills/adversarial-spec/scripts/phase8_promotion.py","skills/adversarial-spec/scripts/criticality_classifier.py"],"doc_path":"structured/components/provenance-promotion.md","intent_tags":["provenance","lineage","criticality","promotion","close","spine"],"runtime_status":"implemented","architecture_status":"active_primary","active_consumers":["Phase 8 implementation","validation evidence"],"legacy_consumers":[]},
+    {"id":"pre-gauntlet","name":"Pre-gauntlet checks","entry_file":"skills/adversarial-spec/scripts/pre_gauntlet/orchestrator.py","key_files":["skills/adversarial-spec/scripts/pre_gauntlet/orchestrator.py","skills/adversarial-spec/scripts/pre_gauntlet/discovery.py","skills/adversarial-spec/scripts/pre_gauntlet/models.py"],"doc_path":"structured/components/pre-gauntlet.md","intent_tags":["compatibility","alignment","discovery","subprocess","report"],"runtime_status":"implemented","architecture_status":"active_secondary","active_consumers":["gauntlet compatibility check"],"legacy_consumers":[]},
+    {"id":"harness-hooks","name":"Harness hooks","entry_file":".claude/hooks/codex_pretool_combined.py","key_files":[".claude/hooks/codex_pretool_combined.py",".claude/hooks/fizzy_payload_guard.py",".claude/hooks/dispatch_check.py",".claude/settings.json"],"doc_path":"structured/components/harness-hooks.md","intent_tags":["hook","stdio","safety","pipeline","fizzy","dispatch"],"runtime_status":"implemented","architecture_status":"active_primary","active_consumers":["Claude Code hook registration","Fizzy MCP pre-tool boundary"],"legacy_consumers":["Trello matcher compatibility in settings"]},
+    {"id":"plan-analysis","name":"Plan analysis","entry_file":"skills/adversarial-spec/scripts/dependency_semantics.py","key_files":["skills/adversarial-spec/scripts/dependency_semantics.py","execution_planner/gauntlet_concerns.py"],"doc_path":"structured/components/plan-analysis.md","intent_tags":["plan","dependency","semantics","concern-parser","json"],"runtime_status":"implemented","architecture_status":"active_secondary","active_consumers":["plan dependency report","execution planner"],"legacy_consumers":[]},
+    {"id":"execution-planner","name":"Execution planner integration","entry_file":"execution_planner/gauntlet_concerns.py","key_files":["execution_planner/gauntlet_concerns.py"],"doc_path":"structured/components/execution-planner.md","intent_tags":["execution-plan","concerns","task graph","partial integration"],"runtime_status":"partial","architecture_status":"active_secondary","active_consumers":["dependency/concern analysis"],"legacy_consumers":["retired Tasks MCP emission path"]},
+    {"id":"session","name":"Debate session state","entry_file":"skills/adversarial-spec/scripts/session.py","key_files":["skills/adversarial-spec/scripts/session.py","skills/adversarial-spec/scripts/debate.py"],"doc_path":"structured/components/session.md","intent_tags":["session","resume","checkpoint","history"],"runtime_status":"implemented","architecture_status":"active_primary","active_consumers":["debate CLI"],"legacy_consumers":[]},
+    {"id":"adversaries","name":"Adversary catalog","entry_file":"skills/adversarial-spec/scripts/adversaries.py","key_files":["skills/adversarial-spec/scripts/adversaries.py","skills/adversarial-spec/scripts/gauntlet/core_types.py"],"doc_path":"structured/components/adversaries.md","intent_tags":["adversary","persona","guardrail","registry"],"runtime_status":"implemented","architecture_status":"active_primary","active_consumers":["gauntlet attacks","debate selection"],"legacy_consumers":[]},
+    {"id":"prompts","name":"Prompt catalogs","entry_file":"skills/adversarial-spec/scripts/prompts.py","key_files":["skills/adversarial-spec/scripts/prompts.py","skills/adversarial-spec/scripts/gauntlet/prompts.py"],"doc_path":"structured/components/prompts.md","intent_tags":["prompt","persona","template","gauntlet"],"runtime_status":"implemented","architecture_status":"active_primary","active_consumers":["debate","gauntlet phases"],"legacy_consumers":[]},
+    {"id":"token-tracking","name":"Token tracking","entry_file":"skills/adversarial-spec/scripts/token_tracking.py","key_files":["skills/adversarial-spec/scripts/token_tracking.py","skills/adversarial-spec/scripts/providers.py"],"doc_path":"structured/components/token-tracking.md","intent_tags":["token","cost","usage","tracker"],"runtime_status":"implemented","architecture_status":"active_primary","active_consumers":["models","gauntlet model dispatch"],"legacy_consumers":[]},
+    {"id":"emission-toolchain","name":"Spec and plan emission","entry_file":"skills/adversarial-spec/scripts/mini_spec_emission.py","key_files":["skills/adversarial-spec/scripts/mini_spec_emission.py","skills/adversarial-spec/scripts/validation_emission.py","skills/adversarial-spec/scripts/tmr_compile_step.py"],"doc_path":"structured/components/emission-toolchain.md","intent_tags":["emission","spec","plan","fizzy","prose"],"runtime_status":"implemented","architecture_status":"active_secondary","active_consumers":["debate output","validation/evidence bridge"],"legacy_consumers":[]},
+    {"id":"mcp-tasks","name":"Tasks MCP integration","entry_file":"skills/adversarial-spec/scripts/gauntlet_check_cli.py","key_files":[".architecture/structured/components/mcp-tasks.md"],"doc_path":"structured/components/mcp-tasks.md","intent_tags":["tasks","mcp","retired","deprecation"],"runtime_status":"retired","architecture_status":"legacy_retired","active_consumers":[],"legacy_consumers":["historical task_manager/Tasks MCP path"]}
+  ],
+  "hazards": [
+    {"id":"HAZ-001","type":"concurrency_race","resource":".adversarial-spec-gauntlet/dedup-stats.json","component":"gauntlet-persistence","callers":["debate.handle_gauntlet -> run_gauntlet","gauntlet.cli.main -> run_gauntlet"],"synchronization":"none; direct read-modify-write in phase_3_filtering.py:217-233","severity":"medium","description":"Concurrent gauntlet runs can read the same history and overwrite one another's appended dedup statistics."},
+    {"id":"HAZ-002","type":"shared_state_write","resource":"session JSON and debate checkpoints","component":"session","callers":["debate.run_critique -> SessionState.save","debate.run_critique -> save_checkpoint","debate.run_critique -> save_critique_responses"],"synchronization":"none visible in session.py:42-133","severity":"medium","description":"Concurrent or interrupted writers can expose partial JSON or replace another invocation's state."},
+    {"id":"HAZ-003","type":"shared_state_write","resource":"global provider config and profile JSON","component":"providers","callers":["providers CLI config commands","debate save-profile","provider/model reads"],"synchronization":"none visible in providers.py:125-250","severity":"medium","description":"Direct writes can race with reads or another save and expose partial configuration."},
+    {"id":"HAZ-004","type":"process_global_state","resource":"builtins.input","component":"gauntlet","callers":["run_gauntlet unattended mode","independent gauntlet invocations in one process"],"synchronization":"none; temporary monkey patch restored in finally","severity":"low","description":"Concurrent in-process gauntlet runs can observe or restore each other's process-global input function."}
+  ],
+  "patterns": [
+    {"pattern_id":"duplicated-worker-role-resolution","files":[".claude/hooks/dispatch_check.py",".claude/hooks/pipeline_continue.py",".claude/hooks/pipeline_idle_retry.py"],"description":"Three pipeline hooks independently define role constants, registration scans, environment precedence, and fallbacks.","concern":"Role precedence and fallback behavior can drift; dispatch has additional Codex-specific logic.","best_practice":"Centralize role constants and resolution in one shared hook helper.","severity":"warning","category":"configuration"},
+    {"pattern_id":"duplicated-gauntlet-model-error-fallbacks","files":["skills/adversarial-spec/scripts/gauntlet/phase_1_attacks.py","skills/adversarial-spec/scripts/gauntlet/phase_2_synthesis.py","skills/adversarial-spec/scripts/gauntlet/phase_3_filtering.py","skills/adversarial-spec/scripts/gauntlet/phase_4_evaluation.py","skills/adversarial-spec/scripts/gauntlet/phase_5_rebuttals.py","skills/adversarial-spec/scripts/gauntlet/phase_6_adjudication.py","skills/adversarial-spec/scripts/gauntlet/phase_7_final_boss.py"],"description":"Each phase wraps model calls and chooses its own fallback result; failure semantics differ by phase.","concern":"The final-boss exception path returns a PASS-shaped result after a failed review.","best_practice":"Use a typed failure result and never represent final-review failure as PASS.","severity":"error","category":"error-handling"}
+  ],
+  "findings": [
+    {"finding_id":"FIND-001","category":"idiomatic","severity":"warning","component":"debate-engine / models / pre-gauntlet","files":["pyproject.toml:42-50","skills/adversarial-spec/scripts/__init__.py:8-10","skills/adversarial-spec/scripts/debate.py:148-150,224-226","skills/adversarial-spec/scripts/pre_gauntlet/orchestrator.py:14-18","skills/adversarial-spec/scripts/collectors/system_state.py:13-17","skills/adversarial-spec/scripts/collectors/git_position.py:12-16","skills/adversarial-spec/scripts/extractors/spec_affected_files.py:12-16"],"title":"Runtime package loading depends on path mutation and duplicate module names","description":"The declared package, root symlink, sys.path bootstraps, and two same-named prompt modules make import behavior sensitive to layout and execution context.","suggestion":"Make package layout authoritative and convert path-sensitive imports to package-relative imports.","confidence":"high","evidence":"Six source locations use sys.path.insert; scripts/prompts.py and gauntlet/prompts.py share a basename."},
+    {"finding_id":"FIND-002","category":"duplication","severity":"warning","component":"debate-engine / gauntlet","files":["skills/adversarial-spec/scripts/debate.py:401-404","skills/adversarial-spec/scripts/gauntlet/cli.py:64-69","skills/adversarial-spec/scripts/gauntlet/orchestrator.py:205-224"],"title":"Top-level and standalone gauntlet CLIs use divergent timeout defaults","description":"The debate parser defaults to 1200 seconds while the standalone gauntlet parser defaults to 1800 seconds.","suggestion":"Define one timeout default and shared argument helper or document an explicit difference.","confidence":"high","evidence":"debate.py:401-404 and gauntlet/cli.py:64-69 pass different defaults into the gauntlet workflow."},
+    {"finding_id":"FIND-003","category":"doc-accuracy","severity":"warning","component":"gauntlet","files":["skills/adversarial-spec/scripts/gauntlet/phase_3_filtering.py:1-5","skills/adversarial-spec/scripts/gauntlet/orchestrator.py:520-566","skills/adversarial-spec/scripts/gauntlet/core_types.py:454-485"],"title":"Phase 3 source comment contradicts the active clustering path","description":"The module says clustering was removed and PhaseMetrics replaces dedup stats, but the orchestrator still clusters and writes dedup-stats.json.","suggestion":"Update comments or remove the legacy telemetry path and add a source-level authority check.","confidence":"high","evidence":"orchestrator.py:520-566 calls clustering and _track_dedup_stats()."},
+    {"finding_id":"FIND-004","category":"doc-accuracy","severity":"warning","component":"validation-emission","files":["skills/adversarial-spec/scripts/validation_emission.py:24-25,83-84,1419-1432,3236-3252"],"title":"Validation-emission source still advertises a completed skeleton","description":"All declared subcommands have concrete handler assignments, but module comments still describe transitional NOT_IMPLEMENTED skeleton behavior.","suggestion":"Retire or label the defensive fallback and update comments/tests to describe active command behavior.","confidence":"high","evidence":"HANDLERS assigns concrete functions for every SUBCOMMANDS name at 3238-3252."},
+    {"finding_id":"FIND-005","category":"error-handling","severity":"warning","component":"session","files":["skills/adversarial-spec/scripts/session.py:72-85"],"title":"Session listing hides malformed or unreadable state","description":"list_sessions catches Exception and silently skips malformed, incomplete, or unexpectedly unreadable session records.","suggestion":"Separate expected corruption/OS handling from programming errors and report or quarantine skipped records.","confidence":"high","evidence":"session.py:72-85 uses except Exception: pass around parsing and field extraction."},
+    {"finding_id":"FIND-006","category":"duplication","severity":"warning","component":"models / gauntlet","files":["skills/adversarial-spec/scripts/models.py:298-688,972-1077","skills/adversarial-spec/scripts/gauntlet/model_dispatch.py:64-143"],"title":"Debate and gauntlet model adapters evolve independently","description":"The general model layer and gauntlet call_model independently branch between CLI providers and LiteLLM while both update token tracking.","suggestion":"Establish one transport adapter contract and keep routing/prompt policy in orchestration callers.","confidence":"medium","evidence":"models.py:972 and model_dispatch.py:138 independently call LiteLLM; both contain provider dispatch logic."},
+    {"finding_id":"FIND-007","category":"complexity","severity":"warning","component":"gauntlet","files":["skills/adversarial-spec/scripts/gauntlet/orchestrator.py:205-980"],"title":"Gauntlet orchestration concentrates unrelated responsibilities","description":"run_gauntlet coordinates phases, resume, checkpoints, metrics, stats, medals, manifests, unattended input, and final assembly.","suggestion":"Extract a phase coordinator and isolate persistence/metrics policy.","confidence":"high","evidence":"The function spans 205-980 and restores process-global input near 975."}
+  ],
+  "concerns": [
+    {"id":"CON-001","title":"A failed final-boss review can be emitted as PASS","severity":"error","component":"gauntlet","source_refs":["duplicated-gauntlet-model-error-fallbacks","phase_7_final_boss.py:239-249"],"action":"Introduce a typed failed-review outcome and block promotion on it."},
+    {"id":"CON-002","title":"Dedup history is a read-modify-write race","severity":"medium","component":"gauntlet-persistence","source_refs":["HAZ-001","phase_3_filtering.py:197-233"],"action":"Use the locked atomic persistence writer or a locked merge protocol."},
+    {"id":"CON-003","title":"Role detection has three independently drifting policies","severity":"warning","component":"harness-hooks","source_refs":["duplicated-worker-role-resolution"],"action":"Centralize role resolution and add precedence contract tests."},
+    {"id":"CON-004","title":"Two gauntlet CLIs silently choose different deadlines","severity":"warning","component":"debate-engine / gauntlet","source_refs":["FIND-002"],"action":"Share one timeout contract or make the difference explicit."},
+    {"id":"CON-005","title":"Source imports depend on a symlink and mutable import order","severity":"warning","component":"infrastructure / models","source_refs":["FIND-001"],"action":"Normalize package layout and package-qualified imports."},
+    {"id":"CON-006","title":"Runtime comments disagree with active telemetry and validation paths","severity":"warning","component":"gauntlet / validation-emission","source_refs":["FIND-003","FIND-004"],"action":"Correct source comments and add authority checks."},
+    {"id":"CON-007","title":"Session and provider files bypass shared persistence guarantees","severity":"medium","component":"session / providers","source_refs":["HAZ-002","HAZ-003"],"action":"Adopt locked atomic writes or enforce single-writer ownership."},
+    {"id":"CON-008","title":"Session discovery silently hides corrupt records","severity":"warning","component":"session","source_refs":["FIND-005"],"action":"Report or quarantine skipped records and re-raise programming errors."},
+    {"id":"CON-009","title":"Model transport plumbing is duplicated across layers","severity":"warning","component":"models / gauntlet","source_refs":["FIND-006"],"action":"Share transport adapters while keeping caller policy separate."},
+    {"id":"CON-010","title":"run_gauntlet is the coupling hub for phase and persistence policy","severity":"warning","component":"gauntlet","source_refs":["FIND-007"],"action":"Split phase coordination from persistence, metrics, and result assembly."}
+  ],
+  "boundary_contracts": [
+    {"slug":"validation-cli-stdout","chain_anchors":["validation_emission.py:688-3102","validation_emission.py:3418","CLI/MCP caller"],"doc_path":"structured/cross-references.md","field_count":4,"defect_candidates":[],"verified_at_git":"ef18c66"},
+    {"slug":"hook-stdio","chain_anchors":["codex_pretool_combined.py:26-72","individual hook stdout/exit","Claude Code"],"doc_path":"structured/cross-references.md","field_count":3,"defect_candidates":[],"verified_at_git":"ef18c66"},
+    {"slug":"tmr-registry-prose-view","chain_anchors":["tmr_compile_step.py:64-156","tmr-registry.json","tmr_schema.py:377"],"doc_path":"structured/cross-references.md","field_count":3,"defect_candidates":[],"verified_at_git":"ef18c66"},
+    {"slug":"gauntlet-check-gate","chain_anchors":["gauntlet_check_cli.py:27-264","GateResult.to_envelope","CLI/MCP caller"],"doc_path":"structured/cross-references.md","field_count":3,"defect_candidates":[],"verified_at_git":"ef18c66"},
+    {"slug":"model-cli-stdio","chain_anchors":["models.py:688","models.py:298-688","subprocess stdout/stderr"],"doc_path":"structured/cross-references.md","field_count":2,"defect_candidates":[],"verified_at_git":"ef18c66"},
+    {"slug":"telegram-http","chain_anchors":["telegram_bot.py:47","telegram_bot.py:69-75","Telegram API"],"doc_path":"structured/cross-references.md","field_count":2,"defect_candidates":[],"verified_at_git":"ef18c66"},
+    {"slug":"gauntlet-file-state","chain_anchors":["persistence.py:74-137","persistence.py:560-688","run artifacts"],"doc_path":"structured/cross-references.md","field_count":3,"defect_candidates":[],"verified_at_git":"ef18c66"},
+    {"slug":"provenance-files","chain_anchors":["provenance_journal.py:112","provenance_journal.py:581-596","atomic writes"],"doc_path":"structured/cross-references.md","field_count":2,"defect_candidates":[],"verified_at_git":"ef18c66"},
+    {"slug":"pre-gauntlet-subprocess","chain_anchors":["pre_gauntlet/orchestrator.py:207-254","configured command","captured result"],"doc_path":"structured/cross-references.md","field_count":2,"defect_candidates":[],"verified_at_git":"ef18c66"},
+    {"slug":"plan-json-stdio","chain_anchors":["dependency_semantics.py:525-575","analyze_plan:82","JSON stdout"],"doc_path":"structured/cross-references.md","field_count":2,"defect_candidates":[],"verified_at_git":"ef18c66"},
+    {"slug":"model-litellm","chain_anchors":["models.py:688","LiteLLM/provider transport","ModelResponse"],"doc_path":"structured/cross-references.md","field_count":3,"defect_candidates":[],"verified_at_git":"ef18c66"},
+    {"slug":"session-files","chain_anchors":["session.py:42","session JSON","SessionState.load"],"doc_path":"structured/cross-references.md","field_count":2,"defect_candidates":["HAZ-002"],"verified_at_git":"ef18c66"},
+    {"slug":"validation-ledger-files","chain_anchors":["validation_emission.py:1337","ledger/batches/evidence files","evidence handlers"],"doc_path":"structured/cross-references.md","field_count":3,"defect_candidates":[],"verified_at_git":"ef18c66"},
+    {"slug":"pre-gauntlet-report","chain_anchors":["pre_gauntlet/orchestrator.py:207","save_report:293","caller"],"doc_path":"structured/cross-references.md","field_count":2,"defect_candidates":[],"verified_at_git":"ef18c66"},
+    {"slug":"fizzy-mcp-boundary","chain_anchors":["fizzy_payload_guard.py:86","Fizzy MCP tool call"],"doc_path":"structured/cross-references.md","field_count":3,"defect_candidates":[],"verified_at_git":"ef18c66"}
+  ],
+  "verification_items": [],
+  "answerability_tests": [
+    {"id":"ANS-001","question":"What does absence of status mean at the validation CLI boundary?","answer":"Malformed/non-envelope output; do not infer success.","expected_docs":["structured/components/validation-emission.md","structured/cross-references.md"],"source_spot_check":"validation_emission.py:200-220,3418-3460","result":"pass"},
+    {"id":"ANS-002","question":"Which file implements the gauntlet entry point?","answer":"gauntlet/orchestrator.py, run_gauntlet() at line 205.","expected_docs":["primer.md","structured/entry-points.md","structured/components/gauntlet.md"],"source_spot_check":"gauntlet/orchestrator.py:205","result":"pass"},
+    {"id":"ANS-003","question":"What breaks if a TMR tmr_uid changes?","answer":"Stable registry identity and compiler/provenance/promotion joins no longer match the prior record.","expected_docs":["structured/components/tmr-evidence-toolchain.md","structured/components/provenance-promotion.md"],"source_spot_check":"tmr_compile_step.py:139-249; phase8_promotion.py:162-243","result":"pass"},
+    {"id":"ANS-004","question":"How does gauntlet resume avoid accepting stale state?","answer":"Locked checkpoint metadata and schema/spec/config/data hash validation guard resume.","expected_docs":["structured/components/gauntlet-persistence.md","structured/cross-references.md"],"source_spot_check":"gauntlet/persistence.py:74-137,281-333","result":"pass"},
+    {"id":"ANS-005","question":"Which mechanism owns a hook allow/deny decision?","answer":"The configured hook/sub-hook stdin/stdout protocol; notifications are side effects, not transition proof.","expected_docs":["structured/components/harness-hooks.md","structured/cross-references.md","overview.md"],"source_spot_check":".claude/hooks/codex_pretool_combined.py:26-72; .claude/settings.json","result":"pass"},
+    {"id":"ANS-006","question":"Where is a critical or happy-path-spine record blocked from closing on mock-only evidence?","answer":"phase8_promotion.py evaluates liveness, criticality, negative-oracle, and boundary-mock rules.","expected_docs":["structured/components/tmr-evidence-toolchain.md","structured/components/provenance-promotion.md"],"source_spot_check":"phase8_promotion.py:162-271","result":"pass"},
+    {"id":"ANS-007","question":"Why can the same gauntlet request have different timeout behavior?","answer":"debate.py defaults to 1200 seconds while gauntlet/cli.py defaults to 1800 seconds.","expected_docs":["primer.md","findings.md","concerns.md"],"source_spot_check":"debate.py:401-404; gauntlet/cli.py:64-69","result":"pass"}
+  ],
+  "artifacts": [
+    "INDEX.md",
+    "primer.md",
+    "access-guide.md",
+    "overview.md",
+    "filesystem-map.md",
+    "patterns.md",
+    "findings.md",
+    "concerns.md",
+    "action-plan.md",
+    "structured/entry-points.md",
+    "structured/flows.md",
+    "structured/cross-references.md",
+    "structured/components/adversaries.md",
+    "structured/components/debate-engine.md",
+    "structured/components/emission-toolchain.md",
+    "structured/components/execution-planner.md",
+    "structured/components/gauntlet-persistence.md",
+    "structured/components/gauntlet.md",
+    "structured/components/harness-hooks.md",
+    "structured/components/mcp-tasks.md",
+    "structured/components/models.md",
+    "structured/components/plan-analysis.md",
+    "structured/components/pre-gauntlet.md",
+    "structured/components/prompts.md",
+    "structured/components/provenance-promotion.md",
+    "structured/components/providers.md",
+    "structured/components/session.md",
+    "structured/components/tmr-evidence-toolchain.md",
+    "structured/components/token-tracking.md",
+    "structured/components/validation-emission.md",
     ".work/discovery/entry-points.md",
     ".work/discovery/data-flow.md",
     ".work/discovery/control-flow.md",
     ".work/discovery/dependencies.md",
-    ".work/discovery/contracts.md"
+    ".work/discovery/contracts.md",
+    ".work/diagnosis-scans.md",
+    ".work/answerability-check.md",
+    "HUMAN_READ_ONLY_visuals/system-overview.md",
+    "HUMAN_READ_ONLY_visuals/system-overview.html",
+    "HUMAN_READ_ONLY_visuals/gauntlet-flow.html",
+    "HUMAN_READ_ONLY_visuals/validation-emission-flow.html",
+    "HUMAN_READ_ONLY_visuals/harness-hooks-flow.html",
+    "manifest.json"
+  ],
+  "warnings": [
+    "EXPLORER_FAILED: entry-points discovery explorer timed out before returning a final report; local source fallback persisted.",
+    "EXPLORER_FAILED: data-flow discovery explorer timed out before returning a final report; local source fallback persisted.",
+    "EXPLORER_FAILED: control-flow discovery explorer timed out before returning a final report; local source fallback persisted.",
+    "EXPLORER_FAILED: dependencies discovery explorer timed out before returning a final report; local source fallback persisted.",
+    "EXPLORER_FAILED: contracts discovery explorer timed out before returning a final report; local source fallback persisted.",
+    "REALITY_CONTRADICTION: phase_3_filtering.py and validation_emission.py contain stale skeleton/retirement comments; see FIND-003 and FIND-004.",
+    "DIRTY_WORKTREE: 100 files were modified or untracked at scan time; source precedence is documented in primer.md.",
+    "PARTIAL_RUN: status is partial/caution because all delegated discovery explorers failed, even though local fallback docs, mandatory scans, and answerability checks completed.",
+    "QUALITY_RUFF_FAILED: uvx ruff check reported 363 findings across the dirty repository; no source fixes were requested or applied by mapcodebase."
+  ],
+  "quality_checks": {
+    "manifest_json": {"command":"jq empty .architecture/manifest.json","status":"passed"},
+    "progress_json": {"command":"jq empty .architecture/.mapcodebase-progress.json","status":"passed"},
+    "pytest": {"command":"uv run pytest","status":"passed","summary":"913 passed, 3 warnings in 22.33s"},
+    "ruff": {"command":"uvx ruff check","status":"failed","summary":"363 findings; no fixes applied"},
+    "artifact_existence": {"status":"passed","verified_count":43},
+    "answerability": {"status":"passed","passed":7,"total":7}
+  },
+  "trust_notes": [
+    "Source-backed local fallback was used for all five discovery slices because delegated explorers timed out.",
+    "Architecture documents are verified at ef18c66; if source changes after this run, trust source over this map.",
+    "The root adversarial_spec symlink points to skills/adversarial-spec/scripts; edit the canonical target.",
+    "Worktree contains in-flight specs, reports, session state, and architecture edits outside this map's source scope.",
+    "No secret values are included; provider locations and variable names are documented without credentials."
   ]
 }

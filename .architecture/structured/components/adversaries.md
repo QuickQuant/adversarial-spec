@@ -1,58 +1,70 @@
-# Component: Adversaries
+# Component: Adversary Registry
+
+> Derived from: `skills/adversarial-spec/scripts/adversaries.py`, gauntlet phase modules | Verified at: `ef18c66`
+> If any derived-from file changed since `ef18c66`, trust source over this doc.
 
 ## Quick Reference
 
 | Property | Value |
-|----------|-------|
-| Purpose | Named attacker persona definitions with version tracking |
-| Entry | `adversaries.py` (module-level ADVERSARIES dict) |
-| Key files | adversaries.py |
-| Depends on | None (leaf module) |
-| Used by | Gauntlet Pipeline (all phases), Debate Engine, Execution Planner |
+|---|---|
+| Purpose | Define named gauntlet personas, templates, scope rules, and stable concern IDs |
+| Entry | `resolve_adversary_name()` at `adversaries.py:1357` |
+| Key files | `adversaries.py`, gauntlet phases |
+| Depends on | dataclasses/regex/hashlib |
+| Used by | Gauntlet attack generation, core types, medals, planning |
 | Runtime status | implemented |
 | Architecture status | active_primary |
 
 ## What This Component Does
 
-Defines 9+ named adversary personas as frozen dataclasses. Each persona has a name, prefix, detailed persona prompt, and structured evaluation protocols (valid/invalid dismissal rules, valid acceptance criteria). The ADVERSARIES dict is the canonical source consumed by the gauntlet pipeline for attack generation and concern evaluation. AdversaryTemplate provides a v2.0 format with scope guidelines for dynamic prompt generation.
+It defines frozen attacker personas and prompt templates consumed by the gauntlet. It also provides deterministic concern IDs so a concern can be linked across phases, checkpoints, and planning.
+
+## Contracts
+
+| Contract | Purpose | Owner | Consumed By |
+|---|---|---|---|
+| `Adversary` | frozen persona metadata/scope | `adversaries.py:18` | phase 1/prompts |
+| `AdversaryTemplate` | prompt/template shape | `adversaries.py:74` | attack generation |
+| concern ID | deterministic cross-phase identity | `adversaries.py:1535` | core types/persistence |
+
+## Invariants
+
+- Persona scope guidelines are validated at construction (`adversaries.py:48`).
+- Concern IDs are deterministic from adversary and concern text (`adversaries.py:1535`); do not replace them with random IDs.
+- Version manifest tracks persona/template changes (`adversaries.py:1560`).
+
+## Data Flow
+
+```text
+IN: configured adversary name + spec
+PROCESS: resolve -> template -> model attack -> stable ID
+OUT: Concern records
+```
 
 ## Key Functions
 
 | Function | Purpose | Location |
-|----------|---------|----------|
-| `ADVERSARIES` | Dict of Adversary frozen dataclasses | adversaries.py (module-level) |
-| `generate_concern_id()` | Stable hash-based ID for concerns | adversaries.py:~250 |
-| `resolve_adversary_name()` | Canonicalize aliases to official keys | adversaries.py |
-| `Adversary.content_hash()` | Detect persona changes for cache invalidation | adversaries.py:18 |
+|---|---|---|
+| `resolve_adversary_name()` | alias/name resolution | `adversaries.py:1357` |
+| `generate_concern_id()` | stable ID | `adversaries.py:1535` |
+| `get_adversary()` | lookup | `adversaries.py:1550` |
+| `get_version_manifest()` | version metadata | `adversaries.py:1560` |
 
-## Contracts
+## Error Handling
 
-### Type Contracts
-
-| Contract | Purpose | Owner | Consumed By |
-|----------|---------|-------|-------------|
-| `Adversary` | Frozen persona with evaluation protocols | adversaries.py:18 | All gauntlet phases, debate.py |
-| `AdversaryTemplate` | v2.0 format with scope guidelines | adversaries.py:74 | Dynamic prompt generation |
+- Invalid persona scope/config fails validation before attack generation.
 
 ## Integration Points
 
-**Calls out to:**
-- None (leaf module, no external dependencies)
+**Calls out to:** no external service.
 
-**Called by:**
-- `gauntlet/orchestrator.py` — resolve adversaries for pipeline
-- `gauntlet/phase_1_attacks.py` — load persona for attack generation
-- `gauntlet/phase_4_evaluation.py` — load evaluation protocols
-- `execution_planner/gauntlet_concerns.py` — ADVERSARY_PREFIXES for ID generation
+**Called by:** gauntlet phase 1, core types, medals, planning.
+
+## Active vs Target
+
+- **Active consumers:** gauntlet package.
+- **Target architecture:** one immutable persona registry used by all attack/report paths.
 
 ## LLM Notes
 
-- This is a hub file (imported by 9+ others). Changes here affect the entire gauntlet pipeline.
-- `content_hash()` enables detecting when a persona prompt changes, which should invalidate cached evaluations.
-- AdversaryTemplate validates `scope_guidelines` keys against `VALID_SCOPE_KEYS`. Invalid keys raise at construction time.
-
-
-## Update 2026-06-11 (incremental f198887)
-- scope.py DELETED — scope guidance lives solely in AdversaryTemplate.scope_guidelines (frozen mapping, keys "{category}:{value}" validated against VALID_SCOPE_KEYS). The old "scope.py has no importers" mystery is resolved by deletion.
-- AdversaryTemplate v2.0 (adversaries.py:73-105): tone, focus_areas, scope_guidelines; 9 templates populated (dynamic prompt generation available; static ADVERSARIES dict remains the fallback).
-- generate_concern_id(adversary, text) → "{PREFIX}-{hash8}": deterministic, used by core_types.Concern and execution_planner; safe for manual checkpoint patching.
+- “Adversary” means a hostile gauntlet persona; debate participants are opponents and should not be conflated with this registry.

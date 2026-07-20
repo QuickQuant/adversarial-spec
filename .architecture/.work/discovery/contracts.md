@@ -1,41 +1,133 @@
-# Discovery: Contracts (incremental 9ca3ccd→f198887, 2026-06-11)
+# Phase 1 Discovery: Contracts
 
-TYPE_CONTRACTS:
-- Concern (gauntlet/core_types.py:83-95): adversary, text, severity, id (auto via generate_concern_id → PREFIX-hash8, deterministic), source_model. Consumers: phases 1/4, persistence, reporting, execution_planner.
-- Evaluation (core_types.py:99-110): concern, verdict normalized dismissed|accepted|acknowledged|deferred (normalize_verdict :72-74), reasoning, severity (falls back to concern.severity).
-- Rebuttal (core_types.py:114-119): evaluation, response, sustained bool.
-- GauntletResult (core_types.py:232-253): concerns, evaluations, rebuttals, final_concerns, models, total_time/cost, final_boss_result?, spec_hash, adversary_timing. signal_score = acceptance_rate - (1-acceptance_rate)*norm_effort*0.5.
-- GauntletConfig (core_types.py:424-453): timeout (default 1800), attack/eval codex reasoning, auto_checkpoint, resume, unattended, eval_tier_strategy power_law_length|flat, eval_flat_batch_size, eval_tier_min_concerns. Replaces 13 scattered defaults (QUOTA BURN FIX 1).
-- PhaseMetrics (core_types.py:482-497): phase, index, status completed|failed|skipped_resume, duration, tokens, models_used, config_snapshot, error?, spec_hash.
-- FinalBossResult (core_types.py:207-229): verdict enum PASS|REFINE|RECONSIDER, concerns, alternate_approaches, dismissal_review_stats, approved property (compat).
-- BigPictureSynthesis (core_types.py:123-137): real_issues, hidden_connections, whats_missing, meta_concern, high_signal.
-- Medal (core_types.py:140-168): gold|silver|bronze, adversary(+version), concern, report, run_id, spec_hash.
-- Adversary (adversaries.py:17-34): name, prefix, persona, dismissal/acceptance rules, version, content_hash() 12-char.
-- AdversaryTemplate (adversaries.py:73-105): v2.0, tone, focus_areas, scope_guidelines frozen mapping keyed "{category}:{value}" vs VALID_SCOPE_KEYS.
-- TokenTracker (token_tracking.py:11-47): threadsafe record_call/summary; CLI-prefixed models zero-cost.
+> Architecture verified at `ef18c66`. This is a source-backed local fallback;
+> delegated contract exploration timed out. Secret values are intentionally absent.
 
-API_CONTRACTS:
-- debate.py CLI: actions critique|gauntlet|...; flags incl. --timeout default 1200 (CHANGED 2026-06-11 from 900), --codex-reasoning default xhigh (attack default low set per-call), --pipeline-card gate (card id | IntentionalOverride + >=50-char reason), --accept-tests-stale, --show-manifest [HASH].
-- gauntlet/cli.py: DIVERGENT flags (--attack-codex-reasoning, --resume, --timeout default 1800).
-- preflight_models(models, codex_reasoning, timeout, cwd) → dict[model, error|None]; PREFLIGHT_PROMPT "Reply with exactly: OK"; PREFLIGHT_TIMEOUT=120 (models.py:869-945).
-- ModelResponse (models.py:140-150): model, response, agreed, spec?, error?, tokens, cost.
+## Type contracts
 
-DATA_MODEL_SURFACES:
-- Checkpoint envelope (persistence.py): {_meta:{schema_version=2, spec_hash, config_hash, phase, created_at, data_hash}, data:[...]}; data_hash = sha256(canonical_json sort_keys); files concerns-/raw-responses-/clustered-concerns-/evaluations-/final-boss-{hash8}.json under .adversarial-spec-gauntlet/.
-- Run manifest (persistence.py:598-626): run-manifest-{hash8}-{ts}.json {spec_hash full, spec_as_gauntleted_path, status running|completed|failed|interrupted, created/updated_at, phases:[PhaseMetrics]}. NEW intensity fields (v4+ altitude sessions, written by skill conductor): session_altitude, adversaries:[{model,family}], foci[] — consumed by fizzy pipeline_mark_gauntlet_complete.
-- Resolved concerns registry: {concern_id: {adversary, text, resolution, resolved_at, resolved_by_model}} — cross-run dismissal filter.
-- Adversary stats ~/.adversarial-spec/adversary_stats.json (FileLock): per-adversary concerns_raised/accepted/dismissed/deferred/signal_score/dismissal_effort/rebuttals.
-- Medals ~/.adversarial-spec/medals/ file-per-award.
-- ADVERSARIES dict: frozen MappingProxyType, read-only public.
-- MODEL_COSTS (providers.py:21-50) + DEFAULT_COST {input:5, output:15} per-1M.
+- `ModelResponse` (`skills/adversarial-spec/scripts/models.py:141-151`): model name, text, token counts, cost, raw response/error metadata. Consumers are debate output and token accounting.
+- Gauntlet chain (`gauntlet/core_types.py:83-232`): `Concern` -> `Evaluation` -> `Rebuttal` -> `FinalBossResult` -> `GauntletResult`; `normalize_verdict` centralizes accepted/dismissed/acknowledged/deferred normalization (`core_types.py:72`).
+- `GauntletConfig`, `CheckpointMeta`, and `PhaseMetrics` (`core_types.py:424-482`) carry run defaults, integrity metadata, and phase telemetry.
+- `TestMaturityRecord` (`tmr_schema.py:175-345`) is strict (`extra=forbid` through `StrictSchemaModel:88`) and carries TMR identity, maturity, data/liveness, binding, criticality, and run evidence.
+- `GateResult`/`GateFinding` (`gate_result.py:54-123`) normalize gate outcomes and exit/MCP mappings; non-overridable outcomes are `schema_error`, `setup_error`, `orch_error` (`gate_result.py:40`).
+- `Envelope` (`validation_emission.py:200-220`) is the validation CLI wire format; statuses are `ok`, `issues`, `reprompt`, `error` and process exit mapping is at `validation_emission.py:186-198`.
+- `Phase8PromotionReport`/`PromotionRequest`/`RunExecution` (`phase8_promotion.py:15-72`) define the Phase 8 promotion gate and evidence payload.
 
-REUSABLE INTERFACES:
-- generate_concern_id(adversary, text) → "{PREFIX}-{hash8}" deterministic (adversaries.py).
-- resolve_adversary_name(name_or_prefix) → Adversary|None, case-insensitive.
-- mini_spec_emission.py: PLAN_SCHEMA_VERSION=3 (must match fizzy V4_PLAN_SCHEMA_VERSION); ALTITUDE_OBLIGATIONS {component:{component_verification}, subsystem:+subsystem, system:+system}; REQUIREMENT_ID_RE ^[A-Z]+-R?\d+$; emit_fizzy_plan(tree, session_id, slug, with_artifact_manifest, artifact_root) → v3 fizzy-plan.json (+12-char plan_hash artifacts); self_check_plan(plan) → {valid, issues[{code, task_id}]} mirroring live pipeline_validate_plan altitude branch; reject codes WRONG_SCHEMA_VERSION/NO_ROOT/MULTIPLE_ROOTS/ROOT_NOT_SYSTEM/INVALID_ALTITUDE/MISSING_LEVEL_VV/VV_ABOVE_ALTITUDE/VV_KIND_MISMATCH/ORPHAN_REALIZATION/UNDECOMPOSED_REQUIREMENT. VERIFICATION-ONLY in v4 (validation leg arrives with validation_emission.py — spec in flight on card 5604).
-- batch_tiering.py: BatchTier(name, concerns, batch_size); tier_concerns_by_length(cuts p60/p90, sizes 75/30/12) pure/deterministic; pick_eval_batch_arg(strategy, ...) → int | list[BatchTier], min_concerns 30 fallback.
-- clustering.py: cluster_concerns (Jaccard 0.65 single-link, deterministic), should_auto_cluster (>=200).
+## Boundary field contracts
 
-HOOK I/O: bash_command_check (stdin none, stderr message, exit 0/1/2 by mode); pipeline_notifications (fire-and-forget, exit 0 always, config .conductor/notifications.json); dispatch_check/pipeline_continue/pipeline_idle_retry emit {decision/systemMessage} JSON on stdout.
+BOUNDARY_FIELD_CONTRACTS:
+  - boundary: validation-cli-stdout
+    producer: skills/adversarial-spec/scripts/validation_emission.py:200-220,3423-3428
+    adapters: none (direct stdout)
+    consumer: shell/MCP/automation caller
+    sink: process exit code and caller-owned artifact handling
+    fields:
+      - field: status
+        emitted: always for successful command dispatch and handled validation errors
+        adapter_forwards: n/a
+        consumer_accepts: yes; status is one of ok/issues/reprompt/error
+        persistence: not persisted by the CLI itself
+        absent_means: malformed/non-envelope stdout; caller must treat as execution failure
+        authority: validation_emission handler
+        evidence: [validation_emission.py:51-67,186-220,3418-3428]
+        verification: verified
+      - field: issues
+        emitted: conditional when validation finds defects or command fails
+        adapter_forwards: n/a
+        consumer_accepts: yes; list of issue objects
+        persistence: caller decides whether to retain; ledger changes are separate
+        absent_means: no reported issue list; not equivalent to a successful ledger mutation unless status=ok
+        authority: validation handler
+        evidence: [validation_emission.py:194-220]
+        verification: verified
+      - field: data
+        emitted: conditional command-specific payload
+        adapter_forwards: n/a
+        consumer_accepts: command-specific
+        persistence: may identify written artifact, ledger, digest, or report
+        absent_means: command has no data payload; inspect status/issues
+        authority: command handler
+        evidence: [validation_emission.py:200-220,688-715,1528-1550,2888-2908]
+        verification: verified
 
-RETIRED CONTRACTS: mcp_tasks MCP task protocol (GONE — Fizzy pipeline is the task system); task_manager.py scheduling interface; scope.py (scope guidance lives in AdversaryTemplate.scope_guidelines); gauntlet_monolith.py (modularized).
+  - boundary: hook-stdio
+    producer: Claude Code hook runner
+    adapters: codex_pretool_combined.py:18-65 and configured sub-hooks
+    consumer: Claude Code hook protocol
+    sink: tool allow/deny/warn decision and optional systemMessage
+    fields:
+      - field: decision
+        emitted: conditional; deny-capable sub-hooks print a JSON decision, while the combined adapter uses process exit 0 as allow/no-output
+        adapter_forwards: yes for deny JSON; allow is represented by exit code rather than a field
+        consumer_accepts: yes through Claude Code hook protocol
+        persistence: not durable; notification/activity hooks may write side logs
+        absent_means: allow/no-op for the combined safety hook when process exit is 0; it must not be inferred as a pipeline transition
+        authority: Claude Code hook contract plus sub-hook exit/JSON behavior
+        evidence: [codex_pretool_combined.py:26-72, fizzy_payload_guard.py:51-86, dispatch_check.py:86-158]
+        verification: verified
+      - field: systemMessage
+        emitted: conditional by pipeline/coordination hooks
+        adapter_forwards: yes when generated
+        consumer_accepts: yes if hook protocol accepts message
+        persistence: transient; notifications may also append dispatch logs
+        absent_means: no operator-facing message, not necessarily no hook action
+        authority: hook implementation
+        evidence: [pipeline_continue.py:70-121, pipeline_idle_retry.py:73-159, pipeline_notifications.py:392-440]
+        verification: verified
+
+  - boundary: tmr-registry-prose-view
+    producer: `tmr_compile_step.compile_tmr_records` and `write_confirmed_registry` (`tmr_compile_step.py:64-156`)
+    adapters: `render_prose_view` (`tmr_compile_step.py:139`)
+    consumer: `TmrParser`/`validate_tmr_record` (`tmr_parser.py:21`, `tmr_schema.py:377`)
+    sink: local `tmr-registry.json` and derived `tests-pseudo.md`
+    fields:
+      - field: tmr_uid
+        emitted: always for confirmed registry records; minted when candidate omits it
+        adapter_forwards: yes
+        consumer_accepts: required identity field
+        persistence: authoritative in registry; prose is derived
+        absent_means: candidate needs ULID allocation; absence in a confirmed record is schema-invalid
+        authority: registry/compiler
+        evidence: [tmr_compile_step.py:158-170,224-249, tmr_schema.py:175-345]
+        verification: verified
+      - field: maturity/data_strategy/live_or_induced/run_evidence
+        emitted: based on candidate and evidence fields
+        adapter_forwards: yes through JSON registry; prose view may summarize rather than retain all fields
+        consumer_accepts: strict schema validation
+        persistence: registry preserves structured values; prose view is non-authoritative
+        absent_means: field-specific schema/default semantics; validation rejects required omissions
+        authority: TMR schema/registry
+        evidence: [tmr_schema.py:175-345, tmr_compile_step.py:64-156]
+        verification: verified
+
+  - boundary: gauntlet-check-gate
+    producer: `gauntlet_check_cli.main` (`gauntlet_check_cli.py:27`)
+    adapters: stdout JSON or MCP caller
+    consumer: pipeline gate/CLI caller
+    sink: process exit code and `GateResult` envelope
+    fields:
+      - field: outcome
+        emitted: always on handled gate result
+        adapter_forwards: yes via `to_envelope`
+        consumer_accepts: normalized gate outcome vocabulary
+        persistence: caller-owned logs/evidence
+        absent_means: invalid gate response; no pass should be inferred
+        authority: gate_result model
+        evidence: [gate_result.py:54-123, gauntlet_check_cli.py:264-295]
+        verification: verified
+      - field: findings
+        emitted: conditional when gate detects issues
+        adapter_forwards: yes
+        consumer_accepts: list of structured GateFinding objects
+        persistence: caller-owned
+        absent_means: no findings only when outcome itself is pass/warn with no details; inspect outcome
+        authority: gate implementation
+        evidence: [gate_result.py:43-85, gauntlet_check_cli.py:264-295]
+        verification: verified
+
+## File and configuration contracts
+
+- Gauntlet checkpoint envelope: `_meta` schema/spec/config/data hashes plus `data`; serialization and validation are centralized in `persistence.py:79-137` and `281-333`.
+- Provider config precedence: environment availability/model constants, global config path, then named profile path (`providers.py:22-25`, `125-250`).
+- Hook configuration is resolved from project root/user config by `_resolve_config.resolve_config` (`.claude/hooks/_resolve_config.py:39`).
+- File writes in validation/provenance are atomic and lock-protected; absence of a lock is a defect candidate only where the current source demonstrates concurrent shared writes (filtering stats append at `phase_3_filtering.py:217-233`).

@@ -1,36 +1,61 @@
-# Component: Prompts
+# Component: Prompt Registry
+
+> Derived from: `skills/adversarial-spec/scripts/prompts.py`, `gauntlet/prompts.py`, `debate.py` | Verified at: `ef18c66`
+> If any derived-from file changed since `ef18c66`, trust source over this doc.
 
 ## Quick Reference
 
 | Property | Value |
-|----------|-------|
-| Purpose | Centralized prompt templates, focus areas, and persona definitions |
-| Entry | `prompts.py` (module-level dicts and functions) |
-| Key files | prompts.py |
-| Depends on | None (leaf module) |
-| Used by | Models, Debate Engine |
+|---|---|
+| Purpose | Centralize debate prompt templates, focus areas, and gauntlet prompt text |
+| Entry | prompt constants consumed by model callers |
+| Key files | `prompts.py`, `gauntlet/prompts.py` |
+| Depends on | no runtime service |
+| Used by | Debate Engine, Gauntlet Pipeline, model adapters |
 | Runtime status | implemented |
 | Architecture status | active_primary |
 
 ## What This Component Does
 
-Centralized repository of system prompts, focus area definitions, and persona templates. `get_system_prompt()` assembles the system message sent to models, combining the base prompt with optional focus area and persona overlays. Also provides `PRESERVE_INTENT_PROMPT` for intent-preservation mode and various info-listing functions.
+Top-level prompts build debate system messages and overlays; package-local gauntlet prompts define attack, evaluation, rebuttal, and final-boss formats. The modules are separate despite similar names.
+
+## Contracts
+
+| Contract | Purpose | Owner | Consumed By |
+|---|---|---|---|
+| debate prompt templates | critique/synthesis instructions | `prompts.py` | `debate.py`, `models.py` |
+| gauntlet prompt templates | attack/evaluation/rebuttal/final-boss instructions | `gauntlet/prompts.py` | phase modules |
+
+## Invariants
+
+- Top-level `prompts.py` and package-local `gauntlet/prompts.py` have distinct roles; sys.path shadowing can select the wrong module.
+- Prompt changes affect model output contracts and should be reviewed as behavior changes.
+
+## Data Flow
+
+```text
+IN: spec, persona, phase context
+PROCESS: template interpolation -> model adapter
+OUT: model prompt text
+```
 
 ## Key Functions
 
 | Function | Purpose | Location |
-|----------|---------|----------|
-| `get_system_prompt()` | Assemble system prompt from focus + persona | prompts.py |
-| `FOCUS_AREAS` | Dict of focus area definitions | prompts.py |
-| `PERSONAS` | Dict of persona definitions | prompts.py |
-| `PRESERVE_INTENT_PROMPT` | Intent preservation overlay | prompts.py |
+|---|---|---|
+| `get_system_prompt()` | assemble debate system prompt | `prompts.py` |
+| `FOCUS_AREAS`/`PERSONAS` | reusable prompt inputs | `prompts.py` |
+| gauntlet prompt constants | phase-specific prompt contracts | `gauntlet/prompts.py` |
 
 ## Integration Points
 
-**Called by:**
-- `models.py` — system prompt assembly before completion() calls
-- `debate.py` — focus area and persona listing commands
+**Called by:** Debate Engine, Gauntlet phase modules, model dispatch.
+
+## Active vs Target
+
+- **Active consumers:** both debate and gauntlet routes.
+- **Target architecture:** explicit qualified imports for top-level versus gauntlet prompt modules.
 
 ## LLM Notes
 
-- This is a data module. No complex logic. Changes here affect prompt quality across the system.
+- A prompt template is a behavior contract; changing required output fields can break downstream parsers.
