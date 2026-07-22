@@ -90,6 +90,17 @@ Canonical order: `requirements → roadmap → debate → target-architecture �
 
 **Required exclusion:** `pre-gauntlet`, `reconciliation`, and other Fizzy-FSM-internal lanes that are not in the skill's canonical order should be treated as part of the `gauntlet` macro-phase, not as separate phases. Map them to their canonical equivalent before comparing.
 
+**`verification` is a Phase 8 subflow, not a phase (CON-002, 2026-07-21).** It never
+appeared in the canonical order above. Sessions track verification progress as
+`current_step: verification` while `current_phase` stays `implementation`; a new write of
+`current_phase: verification` is rejected. Historical journeys that recorded
+`implementation → verification` are **legacy subflow events** — normalize them to
+`implementation` before comparing, exactly like the FSM-internal lanes, so they raise no
+anomaly. `scripts/phase8_subflow_migration.py` owns both the one-time state migration
+(idempotent, appending exactly one `phase8_subflow_migration` journey event) and the
+`canonical_order_anomalies()` check this section describes — prefer calling it over
+re-implementing the comparison by hand.
+
 **On detected skip:**
 ```
 Canonical-Order Anomaly Detected
