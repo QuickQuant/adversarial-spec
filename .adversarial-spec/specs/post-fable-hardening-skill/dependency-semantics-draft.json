@@ -1,0 +1,1212 @@
+{
+ "plan_schema_version": 2,
+ "session_id": "adv-spec-202607060132-post-fable-hardening-skill",
+ "tasks": [
+  {
+   "task_id": "W0-1",
+   "workstream": "W0",
+   "depends_on": [],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "W0-2",
+   "workstream": "W0",
+   "depends_on": [
+    "W0-1"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-002",
+    "INV-005",
+    "INV-023"
+   ],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "W0-3",
+   "workstream": "W0",
+   "depends_on": [
+    "W0-1"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-004",
+    "INV-016"
+   ],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "W0-4",
+   "workstream": "W0",
+   "depends_on": [
+    "W0-1",
+    "W0-2"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-008",
+    "INV-012"
+   ],
+   "safety_consumes": [
+    "INV-005"
+   ]
+  },
+  {
+   "task_id": "W0-5",
+   "workstream": "W0",
+   "depends_on": [
+    "W0-1"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-012"
+   ],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "W0-6",
+   "workstream": "W0",
+   "depends_on": [
+    "W0-2",
+    "W0-4"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-009"
+   ],
+   "safety_consumes": [
+    "INV-008"
+   ]
+  },
+  {
+   "task_id": "W0-7",
+   "workstream": "W0",
+   "depends_on": [
+    "W0-2"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-006",
+    "INV-024"
+   ],
+   "safety_consumes": [
+    "INV-005"
+   ]
+  },
+  {
+   "task_id": "W0-8",
+   "workstream": "W0",
+   "depends_on": [
+    "B-1",
+    "W0-1"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-021"
+   ],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "W0-9",
+   "workstream": "W0",
+   "depends_on": [
+    "W0-4",
+    "W0-7"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-020"
+   ],
+   "safety_consumes": [
+    "INV-006",
+    "INV-024"
+   ]
+  },
+  {
+   "task_id": "W0-10",
+   "workstream": "W0",
+   "depends_on": [
+    "W0-4",
+    "W0-6"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-017"
+   ],
+   "safety_consumes": [
+    "INV-008",
+    "INV-009"
+   ]
+  },
+  {
+   "task_id": "W0-11",
+   "workstream": "W0",
+   "depends_on": [
+    "W0-7"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-014"
+   ],
+   "safety_consumes": [
+    "INV-006"
+   ]
+  },
+  {
+   "task_id": "W0-12",
+   "workstream": "W0",
+   "depends_on": [
+    "W0-10",
+    "W0-2",
+    "W0-7"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-004",
+    "INV-007",
+    "INV-019"
+   ],
+   "safety_consumes": [
+    "INV-017"
+   ]
+  },
+  {
+   "task_id": "W0-13",
+   "workstream": "W0",
+   "depends_on": [
+    "B-1",
+    "W0-4",
+    "W0-6"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-003"
+   ],
+   "safety_consumes": [
+    "INV-008"
+   ]
+  },
+  {
+   "task_id": "W0-14",
+   "workstream": "W0",
+   "depends_on": [
+    "W0-2"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "W0-15",
+   "workstream": "W0",
+   "depends_on": [
+    "W0-10",
+    "W0-12",
+    "W0-4",
+    "W0-5",
+    "W0-8",
+    "W0-9"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-008",
+    "INV-017",
+    "INV-020",
+    "INV-021"
+   ]
+  },
+  {
+   "task_id": "A-1",
+   "workstream": "A",
+   "depends_on": [
+    "W0-2",
+    "W0-3"
+   ],
+   "scope_refs": [
+    "A"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-001"
+   ],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "A-2",
+   "workstream": "A",
+   "depends_on": [
+    "W0-1"
+   ],
+   "scope_refs": [
+    "A"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-011"
+   ],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "A-3",
+   "workstream": "A",
+   "depends_on": [
+    "A-1"
+   ],
+   "scope_refs": [
+    "A"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-001"
+   ]
+  },
+  {
+   "task_id": "A-4",
+   "workstream": "A",
+   "depends_on": [
+    "A-3",
+    "W0-3"
+   ],
+   "scope_refs": [
+    "A"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "A-5",
+   "workstream": "A",
+   "depends_on": [
+    "A-1"
+   ],
+   "scope_refs": [
+    "A"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-001"
+   ]
+  },
+  {
+   "task_id": "A-6",
+   "workstream": "A",
+   "depends_on": [
+    "W0-10",
+    "W0-7",
+    "W0-9"
+   ],
+   "scope_refs": [
+    "A"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-006"
+   ]
+  },
+  {
+   "task_id": "A-7",
+   "workstream": "A",
+   "depends_on": [
+    "A-1",
+    "A-4",
+    "B-8",
+    "C-1",
+    "W0-11"
+   ],
+   "scope_refs": [
+    "A"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-001",
+    "INV-014"
+   ]
+  },
+  {
+   "task_id": "B-1",
+   "workstream": "B",
+   "depends_on": [],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "B-2",
+   "workstream": "B",
+   "depends_on": [
+    "B-1",
+    "W0-13",
+    "W0-8"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-003"
+   ]
+  },
+  {
+   "task_id": "B-3",
+   "workstream": "B",
+   "depends_on": [
+    "B-1",
+    "W0-13"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-003",
+    "INV-009"
+   ]
+  },
+  {
+   "task_id": "B-4",
+   "workstream": "B",
+   "depends_on": [
+    "B-1",
+    "W0-13"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-003"
+   ]
+  },
+  {
+   "task_id": "B-5",
+   "workstream": "B",
+   "depends_on": [
+    "B-2",
+    "B-3",
+    "B-7",
+    "B-8",
+    "W0-8",
+    "W0-9"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-018",
+    "INV-020",
+    "INV-021"
+   ]
+  },
+  {
+   "task_id": "B-6",
+   "workstream": "B",
+   "depends_on": [
+    "B-5",
+    "W0-10",
+    "W0-12"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-017",
+    "INV-019",
+    "INV-020"
+   ]
+  },
+  {
+   "task_id": "B-7",
+   "workstream": "B",
+   "depends_on": [
+    "W0-2",
+    "W0-8"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "B-8",
+   "workstream": "B",
+   "depends_on": [
+    "W0-2",
+    "W0-6"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-018"
+   ],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "B-9",
+   "workstream": "B",
+   "depends_on": [
+    "W0-11",
+    "W0-12"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-007"
+   ],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "B-10",
+   "workstream": "B",
+   "depends_on": [
+    "W0-11",
+    "W0-12"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-014"
+   ]
+  },
+  {
+   "task_id": "B-11",
+   "workstream": "B",
+   "depends_on": [],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "C-1",
+   "workstream": "C",
+   "depends_on": [
+    "W0-2",
+    "W0-4"
+   ],
+   "scope_refs": [
+    "C"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-013"
+   ],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "C-2",
+   "workstream": "C",
+   "depends_on": [
+    "W0-4",
+    "W0-6"
+   ],
+   "scope_refs": [
+    "C"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-008",
+    "INV-009"
+   ]
+  },
+  {
+   "task_id": "C-3",
+   "workstream": "C",
+   "depends_on": [
+    "C-2"
+   ],
+   "scope_refs": [
+    "C"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "C-4",
+   "workstream": "C",
+   "depends_on": [
+    "C-1",
+    "C-2"
+   ],
+   "scope_refs": [
+    "C"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-013"
+   ]
+  },
+  {
+   "task_id": "C-5",
+   "workstream": "C",
+   "depends_on": [
+    "W0-2",
+    "W0-4"
+   ],
+   "scope_refs": [
+    "C"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-015"
+   ],
+   "safety_consumes": [
+    "INV-008"
+   ]
+  }
+ ],
+ "dependency_semantics": {
+  "edge_ledger": [
+   {
+    "dependent": "W0-2",
+    "prerequisite": "W0-1",
+    "kind": "interface_ready",
+    "reason": "Module lands inside the hardening package skeleton and its 3.14 toolchain.",
+    "source_ref": "target-architecture.md \u00a7Package and Component Boundaries"
+   },
+   {
+    "dependent": "W0-3",
+    "prerequisite": "W0-1",
+    "kind": "interface_ready",
+    "reason": "Module lands inside the hardening package skeleton and its 3.14 toolchain.",
+    "source_ref": "target-architecture.md \u00a7Package and Component Boundaries"
+   },
+   {
+    "dependent": "W0-4",
+    "prerequisite": "W0-1",
+    "kind": "interface_ready",
+    "reason": "Module lands inside the hardening package skeleton and its 3.14 toolchain.",
+    "source_ref": "target-architecture.md \u00a7Package and Component Boundaries"
+   },
+   {
+    "dependent": "W0-4",
+    "prerequisite": "W0-2",
+    "kind": "interface_ready",
+    "reason": "Consumes the frozen StrictArtifactCodec envelope/canonical_set API.",
+    "source_ref": "target-architecture.md \u00a7Artifact Validation"
+   },
+   {
+    "dependent": "W0-5",
+    "prerequisite": "W0-1",
+    "kind": "interface_ready",
+    "reason": "Module lands inside the hardening package skeleton and its 3.14 toolchain.",
+    "source_ref": "target-architecture.md \u00a7Package and Component Boundaries"
+   },
+   {
+    "dependent": "W0-6",
+    "prerequisite": "W0-2",
+    "kind": "interface_ready",
+    "reason": "Consumes the frozen StrictArtifactCodec envelope/canonical_set API.",
+    "source_ref": "target-architecture.md \u00a7Artifact Validation"
+   },
+   {
+    "dependent": "W0-6",
+    "prerequisite": "W0-4",
+    "kind": "interface_ready",
+    "reason": "Consumes DurableStateStore locks/CAS/StateTransaction API.",
+    "source_ref": "target-architecture.md \u00a7Durable State and Concurrency"
+   },
+   {
+    "dependent": "W0-7",
+    "prerequisite": "W0-2",
+    "kind": "interface_ready",
+    "reason": "Consumes the frozen StrictArtifactCodec envelope/canonical_set API.",
+    "source_ref": "target-architecture.md \u00a7Artifact Validation"
+   },
+   {
+    "dependent": "W0-8",
+    "prerequisite": "W0-1",
+    "kind": "interface_ready",
+    "reason": "Module lands inside the hardening package skeleton and its 3.14 toolchain.",
+    "source_ref": "target-architecture.md \u00a7Package and Component Boundaries"
+   },
+   {
+    "dependent": "W0-8",
+    "prerequisite": "B-1",
+    "kind": "interface_ready",
+    "reason": "Requires the three TMR obligation fields from the keystone-first schema.",
+    "source_ref": "spec-final.md \u00a75.4/\u00a79; keystone test-maturity-record-schema.md"
+   },
+   {
+    "dependent": "W0-9",
+    "prerequisite": "W0-4",
+    "kind": "interface_ready",
+    "reason": "Consumes DurableStateStore locks/CAS/StateTransaction API.",
+    "source_ref": "target-architecture.md \u00a7Durable State and Concurrency"
+   },
+   {
+    "dependent": "W0-9",
+    "prerequisite": "W0-7",
+    "kind": "interface_ready",
+    "reason": "Verifies receipts/attestations via ReceiptVerifier+TrustPolicy API.",
+    "source_ref": "target-architecture.md \u00a7Middleware Candidates MW-004"
+   },
+   {
+    "dependent": "W0-10",
+    "prerequisite": "W0-4",
+    "kind": "interface_ready",
+    "reason": "Consumes DurableStateStore locks/CAS/StateTransaction API.",
+    "source_ref": "target-architecture.md \u00a7Durable State and Concurrency"
+   },
+   {
+    "dependent": "W0-10",
+    "prerequisite": "W0-6",
+    "kind": "interface_ready",
+    "reason": "Journals operation intents via HashChainedJournal primitives.",
+    "source_ref": "target-architecture.md \u00a7Middleware Candidates MW-011"
+   },
+   {
+    "dependent": "W0-11",
+    "prerequisite": "W0-7",
+    "kind": "interface_ready",
+    "reason": "Verifies receipts/attestations via ReceiptVerifier+TrustPolicy API.",
+    "source_ref": "target-architecture.md \u00a7Middleware Candidates MW-004"
+   },
+   {
+    "dependent": "W0-12",
+    "prerequisite": "W0-2",
+    "kind": "interface_ready",
+    "reason": "Consumes the frozen StrictArtifactCodec envelope/canonical_set API.",
+    "source_ref": "target-architecture.md \u00a7Artifact Validation"
+   },
+   {
+    "dependent": "W0-12",
+    "prerequisite": "W0-7",
+    "kind": "interface_ready",
+    "reason": "Verifies receipts/attestations via ReceiptVerifier+TrustPolicy API.",
+    "source_ref": "target-architecture.md \u00a7Middleware Candidates MW-004"
+   },
+   {
+    "dependent": "W0-12",
+    "prerequisite": "W0-10",
+    "kind": "safety_ready",
+    "reason": "Never dispatches a recoverable mutation without a durable MW-011 intent.",
+    "source_ref": "target-architecture.md \u00a7Middleware Candidates MW-007"
+   },
+   {
+    "dependent": "W0-13",
+    "prerequisite": "W0-4",
+    "kind": "interface_ready",
+    "reason": "Consumes DurableStateStore locks/CAS/StateTransaction API.",
+    "source_ref": "target-architecture.md \u00a7Durable State and Concurrency"
+   },
+   {
+    "dependent": "W0-13",
+    "prerequisite": "W0-6",
+    "kind": "interface_ready",
+    "reason": "Couples registry writes to journal records.",
+    "source_ref": "spec-final.md \u00a78.1 registry transaction API"
+   },
+   {
+    "dependent": "W0-13",
+    "prerequisite": "B-1",
+    "kind": "interface_ready",
+    "reason": "Requires the three TMR obligation fields from the keystone-first schema.",
+    "source_ref": "spec-final.md \u00a75.4/\u00a79; keystone test-maturity-record-schema.md"
+   },
+   {
+    "dependent": "W0-14",
+    "prerequisite": "W0-2",
+    "kind": "interface_ready",
+    "reason": "Consumes the frozen StrictArtifactCodec envelope/canonical_set API.",
+    "source_ref": "target-architecture.md \u00a7Artifact Validation"
+   },
+   {
+    "dependent": "W0-15",
+    "prerequisite": "W0-4",
+    "kind": "integration_ready",
+    "reason": "Adverse cases crash-inject the real StateTransaction protocol.",
+    "source_ref": "target-architecture.md \u00a7Dry-run Summary"
+   },
+   {
+    "dependent": "W0-15",
+    "prerequisite": "W0-5",
+    "kind": "integration_ready",
+    "reason": "Adverse cases include symlink/mount traversal attacks.",
+    "source_ref": "target-architecture.md \u00a7Dry-run R5 (10)(11)"
+   },
+   {
+    "dependent": "W0-15",
+    "prerequisite": "W0-8",
+    "kind": "integration_ready",
+    "reason": "Adverse case 13 exercises the real predicates.",
+    "source_ref": "target-architecture.md \u00a7Dry-run R5 (13)"
+   },
+   {
+    "dependent": "W0-15",
+    "prerequisite": "W0-9",
+    "kind": "integration_ready",
+    "reason": "Adverse case 7 shuffles/duplicates facts via the real builder.",
+    "source_ref": "target-architecture.md \u00a7Dry-run R5 (7)"
+   },
+   {
+    "dependent": "W0-15",
+    "prerequisite": "W0-10",
+    "kind": "integration_ready",
+    "reason": "Adverse cases 3-5 exercise the real operation journal across restart.",
+    "source_ref": "target-architecture.md \u00a7Dry-run R5 (3)-(5)"
+   },
+   {
+    "dependent": "W0-15",
+    "prerequisite": "W0-12",
+    "kind": "integration_ready",
+    "reason": "Lost-response cases replay against the real authority client.",
+    "source_ref": "target-architecture.md \u00a7Dry-run R5 (5)"
+   },
+   {
+    "dependent": "A-1",
+    "prerequisite": "W0-2",
+    "kind": "interface_ready",
+    "reason": "Consumes the frozen StrictArtifactCodec envelope/canonical_set API.",
+    "source_ref": "target-architecture.md \u00a7Artifact Validation"
+   },
+   {
+    "dependent": "A-1",
+    "prerequisite": "W0-3",
+    "kind": "interface_ready",
+    "reason": "Emits its CLI results through the shared CliBoundary envelope.",
+    "source_ref": "target-architecture.md \u00a7CLI Boundary"
+   },
+   {
+    "dependent": "A-2",
+    "prerequisite": "W0-1",
+    "kind": "interface_ready",
+    "reason": "Repo layout/settings versioning only; hooks import no hardening code (INV-011).",
+    "source_ref": "target-architecture.md \u00a7Hook Plane"
+   },
+   {
+    "dependent": "A-3",
+    "prerequisite": "A-1",
+    "kind": "data_ready",
+    "reason": "Rubric/fixture rows derive from the classified gates.json judgment rows.",
+    "source_ref": "spec-final.md \u00a75.3"
+   },
+   {
+    "dependent": "A-4",
+    "prerequisite": "W0-3",
+    "kind": "interface_ready",
+    "reason": "Emits its CLI results through the shared CliBoundary envelope.",
+    "source_ref": "target-architecture.md \u00a7CLI Boundary"
+   },
+   {
+    "dependent": "A-4",
+    "prerequisite": "A-3",
+    "kind": "data_ready",
+    "reason": "Harness items are the judgment-gate fixtures; coverage manifest maps them.",
+    "source_ref": "spec-final.md \u00a77"
+   },
+   {
+    "dependent": "A-5",
+    "prerequisite": "A-1",
+    "kind": "integration_ready",
+    "reason": "Pointer-closure doclint enforcing the restructure ships in gate_inventory.",
+    "source_ref": "spec-final.md \u00a76.2"
+   },
+   {
+    "dependent": "A-6",
+    "prerequisite": "W0-7",
+    "kind": "interface_ready",
+    "reason": "Verifies receipts/attestations via ReceiptVerifier+TrustPolicy API.",
+    "source_ref": "target-architecture.md \u00a7Middleware Candidates MW-004"
+   },
+   {
+    "dependent": "A-6",
+    "prerequisite": "W0-9",
+    "kind": "interface_ready",
+    "reason": "Waiver receipts enter predicates only via ValidatedAuthorizationSet.",
+    "source_ref": "spec-final.md \u00a71.1"
+   },
+   {
+    "dependent": "A-6",
+    "prerequisite": "W0-10",
+    "kind": "safety_ready",
+    "reason": "Issuance idempotency journals operation_id pre-dispatch.",
+    "source_ref": "spec-final.md \u00a75.4"
+   },
+   {
+    "dependent": "A-7",
+    "prerequisite": "W0-11",
+    "kind": "interface_ready",
+    "reason": "BOOT-REGISTRY/policy checks validate cached attestations via MW-006.",
+    "source_ref": "spec-final.md \u00a73"
+   },
+   {
+    "dependent": "A-7",
+    "prerequisite": "A-1",
+    "kind": "integration_ready",
+    "reason": "BOOT-GATES runs gate_inventory check --all.",
+    "source_ref": "spec-final.md \u00a73"
+   },
+   {
+    "dependent": "A-7",
+    "prerequisite": "A-4",
+    "kind": "integration_ready",
+    "reason": "BOOT-HARNESS validates the coverage manifest and fixtures.",
+    "source_ref": "spec-final.md \u00a73"
+   },
+   {
+    "dependent": "A-7",
+    "prerequisite": "B-8",
+    "kind": "integration_ready",
+    "reason": "BOOT-SPINE validates the spine-manifest chain.",
+    "source_ref": "spec-final.md \u00a73"
+   },
+   {
+    "dependent": "A-7",
+    "prerequisite": "C-1",
+    "kind": "integration_ready",
+    "reason": "BOOT-RECON runs reconcile_derived --self-check.",
+    "source_ref": "spec-final.md \u00a73"
+   },
+   {
+    "dependent": "B-2",
+    "prerequisite": "B-1",
+    "kind": "interface_ready",
+    "reason": "Requires the three TMR obligation fields from the keystone-first schema.",
+    "source_ref": "spec-final.md \u00a75.4/\u00a79; keystone test-maturity-record-schema.md"
+   },
+   {
+    "dependent": "B-2",
+    "prerequisite": "W0-8",
+    "kind": "interface_ready",
+    "reason": "Card selection uses select_for_verification.",
+    "source_ref": "spec-final.md \u00a78.1"
+   },
+   {
+    "dependent": "B-2",
+    "prerequisite": "W0-13",
+    "kind": "safety_ready",
+    "reason": "Registry reads/provenance snapshots go through the sole-writer API.",
+    "source_ref": "spec-final.md \u00a78.1"
+   },
+   {
+    "dependent": "B-3",
+    "prerequisite": "W0-13",
+    "kind": "safety_ready",
+    "reason": "Evidence write-back mutates the registry only via TmrRegistryWriter.",
+    "source_ref": "spec-final.md \u00a78.1"
+   },
+   {
+    "dependent": "B-3",
+    "prerequisite": "B-1",
+    "kind": "interface_ready",
+    "reason": "Requires the three TMR obligation fields from the keystone-first schema.",
+    "source_ref": "spec-final.md \u00a75.4/\u00a79; keystone test-maturity-record-schema.md"
+   },
+   {
+    "dependent": "B-4",
+    "prerequisite": "W0-13",
+    "kind": "safety_ready",
+    "reason": "Criticality resolution writes only via TmrRegistryWriter.",
+    "source_ref": "spec-final.md \u00a78.1"
+   },
+   {
+    "dependent": "B-4",
+    "prerequisite": "B-1",
+    "kind": "interface_ready",
+    "reason": "Requires the three TMR obligation fields from the keystone-first schema.",
+    "source_ref": "spec-final.md \u00a75.4/\u00a79; keystone test-maturity-record-schema.md"
+   },
+   {
+    "dependent": "B-5",
+    "prerequisite": "W0-8",
+    "kind": "interface_ready",
+    "reason": "Completion gate evaluates is_obligation_satisfied by name.",
+    "source_ref": "spec-final.md \u00a79"
+   },
+   {
+    "dependent": "B-5",
+    "prerequisite": "W0-9",
+    "kind": "safety_ready",
+    "reason": "Intent binds authorization_set_hash from the validated snapshot.",
+    "source_ref": "spec-final.md \u00a79"
+   },
+   {
+    "dependent": "B-5",
+    "prerequisite": "B-2",
+    "kind": "integration_ready",
+    "reason": "Intent binds the active verification-card set.",
+    "source_ref": "spec-final.md \u00a79"
+   },
+   {
+    "dependent": "B-5",
+    "prerequisite": "B-3",
+    "kind": "data_ready",
+    "reason": "Evidence branch derives verdicts from written-back run_evidence.",
+    "source_ref": "spec-final.md \u00a79"
+   },
+   {
+    "dependent": "B-5",
+    "prerequisite": "B-7",
+    "kind": "data_ready",
+    "reason": "Intent binds the ConOps evidence hash.",
+    "source_ref": "spec-final.md \u00a79"
+   },
+   {
+    "dependent": "B-5",
+    "prerequisite": "B-8",
+    "kind": "data_ready",
+    "reason": "Intent binds spine_manifest_hash (close-binding DAG edge).",
+    "source_ref": "spec-final.md \u00a711.2"
+   },
+   {
+    "dependent": "B-6",
+    "prerequisite": "B-5",
+    "kind": "integration_ready",
+    "reason": "Remote sequence dispatches the intent B-5 constructs.",
+    "source_ref": "spec-final.md \u00a79"
+   },
+   {
+    "dependent": "B-6",
+    "prerequisite": "W0-12",
+    "kind": "interface_ready",
+    "reason": "Snapshot/prepare/commit/status run through RemoteAuthorityClient.",
+    "source_ref": "spec-final.md \u00a75.2/\u00a79"
+   },
+   {
+    "dependent": "B-6",
+    "prerequisite": "W0-10",
+    "kind": "safety_ready",
+    "reason": "Every remote mutation is journaled pre-dispatch.",
+    "source_ref": "spec-final.md \u00a79"
+   },
+   {
+    "dependent": "B-7",
+    "prerequisite": "W0-2",
+    "kind": "interface_ready",
+    "reason": "Consumes the frozen StrictArtifactCodec envelope/canonical_set API.",
+    "source_ref": "target-architecture.md \u00a7Artifact Validation"
+   },
+   {
+    "dependent": "B-7",
+    "prerequisite": "W0-8",
+    "kind": "data_ready",
+    "reason": "Walkthrough rows derive from happy-path spine tests the predicates classify.",
+    "source_ref": "spec-final.md \u00a711.1"
+   },
+   {
+    "dependent": "B-8",
+    "prerequisite": "W0-2",
+    "kind": "interface_ready",
+    "reason": "Consumes the frozen StrictArtifactCodec envelope/canonical_set API.",
+    "source_ref": "target-architecture.md \u00a7Artifact Validation"
+   },
+   {
+    "dependent": "B-8",
+    "prerequisite": "W0-6",
+    "kind": "interface_ready",
+    "reason": "Manifest binds the node-registry event-head hash.",
+    "source_ref": "spec-final.md \u00a711.2"
+   },
+   {
+    "dependent": "B-9",
+    "prerequisite": "W0-11",
+    "kind": "interface_ready",
+    "reason": "Local attestation freshness for probes via MW-006.",
+    "source_ref": "spec-final.md \u00a78.2"
+   },
+   {
+    "dependent": "B-9",
+    "prerequisite": "W0-12",
+    "kind": "interface_ready",
+    "reason": "Signed challenge-response probes via MW-007.",
+    "source_ref": "spec-final.md \u00a78.2"
+   },
+   {
+    "dependent": "B-10",
+    "prerequisite": "W0-11",
+    "kind": "interface_ready",
+    "reason": "Regime materialization validates cached policy/creation attestations.",
+    "source_ref": "spec-final.md \u00a718"
+   },
+   {
+    "dependent": "B-10",
+    "prerequisite": "W0-12",
+    "kind": "interface_ready",
+    "reason": "Historical lookup + obligation-transfer-v1 are consumed remote contracts.",
+    "source_ref": "spec-final.md \u00a718"
+   },
+   {
+    "dependent": "C-1",
+    "prerequisite": "W0-2",
+    "kind": "interface_ready",
+    "reason": "Consumes the frozen StrictArtifactCodec envelope/canonical_set API.",
+    "source_ref": "target-architecture.md \u00a7Artifact Validation"
+   },
+   {
+    "dependent": "C-1",
+    "prerequisite": "W0-4",
+    "kind": "safety_ready",
+    "reason": "Report/lineage writes use atomic single-file protocol.",
+    "source_ref": "spec-final.md \u00a712.1"
+   },
+   {
+    "dependent": "C-2",
+    "prerequisite": "W0-4",
+    "kind": "safety_ready",
+    "reason": "Snapshot+event-log pair commits under one StateTransaction.",
+    "source_ref": "spec-final.md \u00a710.2"
+   },
+   {
+    "dependent": "C-2",
+    "prerequisite": "W0-6",
+    "kind": "interface_ready",
+    "reason": "Event log is a HashChainedJournal instance.",
+    "source_ref": "spec-final.md \u00a710.2"
+   },
+   {
+    "dependent": "C-3",
+    "prerequisite": "C-2",
+    "kind": "data_ready",
+    "reason": "Payload assembly reads the settled/volatile split and node hashes.",
+    "source_ref": "spec-final.md \u00a710.1"
+   },
+   {
+    "dependent": "C-4",
+    "prerequisite": "C-1",
+    "kind": "integration_ready",
+    "reason": "Convergence requires a clean reconciliation report for the agreed hash.",
+    "source_ref": "spec-final.md \u00a712.2"
+   },
+   {
+    "dependent": "C-4",
+    "prerequisite": "C-2",
+    "kind": "data_ready",
+    "reason": "Quorum/press events append to the node-registry event log.",
+    "source_ref": "spec-final.md \u00a712.2"
+   },
+   {
+    "dependent": "C-5",
+    "prerequisite": "W0-2",
+    "kind": "interface_ready",
+    "reason": "Consumes the frozen StrictArtifactCodec envelope/canonical_set API.",
+    "source_ref": "target-architecture.md \u00a7Artifact Validation"
+   },
+   {
+    "dependent": "C-5",
+    "prerequisite": "W0-4",
+    "kind": "safety_ready",
+    "reason": "Salvage copy + provenance record publish through one StateTransaction.",
+    "source_ref": "spec-final.md \u00a712.3"
+   }
+  ],
+  "fanout_contracts": [
+   {
+    "gate_task_id": "W0-2",
+    "workstreams": [
+     {
+      "name": "A",
+      "first_runnable_task": "A-1",
+      "required_artifacts": [
+       "StrictArtifactCodec API",
+       "CliBoundary envelope"
+      ]
+     },
+     {
+      "name": "C",
+      "first_runnable_task": "C-1",
+      "required_artifacts": [
+       "StrictArtifactCodec API",
+       "DurableStateStore single-file writes"
+      ]
+     }
+    ]
+   }
+  ],
+  "scope_closure": {
+   "active": [
+    "W0",
+    "A",
+    "B",
+    "C"
+   ],
+   "deferred": [
+    "usage-router-own-session",
+    "perf-envelope-measurement-pass",
+    "g3-leaf-blob-registration",
+    "rollout-policy-issuance"
+   ],
+   "excluded": [
+    "G4-dispatch-reliability",
+    "fizzy-repo-files"
+   ],
+   "operator_approved_exceptions": []
+  }
+ }
+}

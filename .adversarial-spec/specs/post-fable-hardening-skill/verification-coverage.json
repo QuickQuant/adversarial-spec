@@ -1,0 +1,31 @@
+{
+ "report_schema_version": 1,
+ "total_tasks": 38,
+ "behavior_changing_count": 37,
+ "non_behavior_changing_count": 1,
+ "counts_by_mode": {
+  "automated-unit": 34,
+  "automated-integration": 2,
+  "test-producer": 2,
+  "automated-contract": 0,
+  "automated-component": 0,
+  "static-check": 0,
+  "artifact-sync": 0,
+  "manual-ux": 0
+ },
+ "exempt_tasks": [],
+ "unmapped_behavior_tasks": [],
+ "unmapped_non_behavior_tasks": [],
+ "validation_errors": [],
+ "notes": {
+  "automated-integration": [
+   "A-7 hardening_bootstrap (multi-check CLI integration)",
+   "B-6 promotion remote sequence (contract-fixture integration)"
+  ],
+  "test-producer": [
+   "W0-14 authority-matrix consumer tests",
+   "W0-15 executable adverse suite (behavior_change: false, test-only)"
+  ],
+  "df_register": "all 20 DF families mapped (see execution-plan.md \u00a7DF register mapping)"
+ }
+}

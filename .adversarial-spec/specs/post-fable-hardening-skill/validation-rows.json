@@ -1,0 +1,198 @@
+{
+  "rows": [
+    {
+      "row_id": "r-US0-1",
+      "conops_ref": "US-0",
+      "scenario": "A new maintainer clones the repo on a fresh machine, runs hardening_bootstrap.py once, reads the per-check table it prints, deliberately breaks one artifact (renames gates.json), and reruns to see the failure output.",
+      "oracle": "Jason passes this row iff a fresh-clone run prints ready with every blocking check named, and the broken rerun prints the check id, missing artifact path, and a one-line remediation within five minutes end to end, which demonstrates the named-remediation bootstrap intent from US-0.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "bootstrap is a CLI workflow; the transcript shows both runs and their envelopes",
+      "row_hash": "3de8d0215df992eca26aa544718736c6bc9415aff70a170febc8d3c4011a023f",
+      "story_hash": "e794a8c27df6a765dbe3ece0336632cbb43c80fe8ce632762cd512289fb7ab6f"
+    },
+    {
+      "row_id": "r-US1-1",
+      "conops_ref": "US-1",
+      "scenario": "An integrator opens gates.json after running gate_inventory.py check --all, picks three gates of different classifications, and traces each back to its phase-doc marker; then adds an unmapped MUST marker to a phase doc and reruns lint.",
+      "oracle": "Jason passes this row iff every inventoried gate shows exactly one of the three classifications with its enforcement pointer, and the added unmapped marker is reported by doclint with its file and line, which demonstrates the complete-classified-inventory intent from US-1.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "inventory and lint are CLI runs; the transcript shows the real rows and the lint rejection",
+      "row_hash": "e3d1aa6bbd45a7358cfa002d3f8d2d82f345dde68a900d32cb925e76a819558e",
+      "story_hash": "13f7931bd1251d69683dfd0d932a957e9ce8ffff60c83d3057f449cb7562ef44"
+    },
+    {
+      "row_id": "r-US2-1",
+      "conops_ref": "US-2",
+      "scenario": "A conductor induces one violation per sampled mechanized gate (e.g. a dangling spine pointer) at the real enforcement boundary and observes the block, then repairs it and proceeds.",
+      "oracle": "Jason passes this row iff each induced violation prints its blocking gate_id plus fix guidance at the moment of enforcement and the repaired rerun proceeds, which demonstrates the fires-in-code intent from US-2.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "the observable is the live block behavior at the boundary, best shown as a session transcript",
+      "row_hash": "e15873dd7591fc3ecec0a279a064888a0af6280207f5c47af407cc1a3bc97887",
+      "story_hash": "dca35a5d1004bcefa3190ea02b522d1e453173169d9982528c64acf6ce72871b"
+    },
+    {
+      "row_id": "r-US3-1",
+      "conops_ref": "US-3",
+      "scenario": "A reviewer opens a blocked judgment gate, reads its rubric, scores the shipped golden fixture against the rubric's criteria, and records a verdict without consulting any other document.",
+      "oracle": "Jason passes this row iff the rubric alone (decision question plus checkable criteria plus fail examples) lets the reviewer reach and justify the fixture's expected verdict, which demonstrates the rubric-plus-fixture intent from US-3.",
+      "evidence_type": "narrative",
+      "evidence_rationale": "the observable is a human judgment experience; a short narrative naming the gate, criteria used, and verdict fits",
+      "row_hash": "8a7ce898ea370e95a569c16fd3b874eb9a51bd1cd5cc3f10244c65f0367cad9a",
+      "story_hash": "fccb99d40f991b6608bf16eb6b5fdd6cce4eb24cfc859a342cecdfdcc2114b5b"
+    },
+    {
+      "row_id": "r-US4-1",
+      "conops_ref": "US-4",
+      "scenario": "A conductor entering a phase opens its spine.md, follows its ordered steps and gate pointers for one real phase activity, and never needs to open a document no pointer named.",
+      "oracle": "Jason passes this row iff the spine unit's steps plus its pointed reference units were sufficient for the activity and every pointer resolved to exactly one owned unit, which demonstrates the load-exactly-what-you-need intent from US-4.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "a real phase activity transcript shows which units were opened and that none were dangling",
+      "row_hash": "fa2e551cb9b58153a2a4050c040802d2e8ca093aa65f213d571b1331c0566d22",
+      "story_hash": "7dc9dff45887a824c1b5b6ebc91168be07df588ed6a9896d79eb09137e69d46b"
+    },
+    {
+      "row_id": "r-US5-1",
+      "conops_ref": "US-5",
+      "scenario": "A worker LLM picks up a card, loads context through the architecture_refs resolver, and the per-step context-load-manifest is inspected afterward.",
+      "oracle": "Jason passes this row iff the manifest lists exactly the card's resolved units with their hashes and the worker's declared workflow context loaded nothing outside it, which demonstrates the lean-auditable-context intent from US-5.",
+      "evidence_type": "artifact-demo",
+      "evidence_rationale": "the context-load-manifest file is itself the observable artifact",
+      "row_hash": "6c9772adc9f94ed6c84056e9dc731fb41587d1d5cc79d081bdaef903f9e2033a",
+      "story_hash": "3c2c069a9cdb8b2d6e89e1651deb8eacc4c2707c798b122caadd952fec6804ab"
+    },
+    {
+      "row_id": "r-US6-1",
+      "conops_ref": "US-6",
+      "scenario": "The operator runs the competence harness against a candidate conductor (e.g. Sonnet), reads the scored report, then reruns after deleting the baseline to see the blocked outcome.",
+      "oracle": "Jason passes this row iff the report names the candidate, harness version, fixture-set hash and per-phase 0-100 scores, and the missing-baseline rerun blocks the pre-session outcome with a named reason instead of comparing silently, which demonstrates the measured-competence intent from US-6.",
+      "evidence_type": "artifact-demo",
+      "evidence_rationale": "the scored report plus the blocked rerun output are concrete artifacts Jason can read",
+      "row_hash": "36109718ebedc61970f7be7bacbcf1b478c23aa74307b5ace84c31c3f37de577",
+      "story_hash": "14bfe4dd00df9d47d050dfd6eb8aeb2f8e7af818448a65a16c7b3687f34ca9d4"
+    },
+    {
+      "row_id": "r-US7-1",
+      "conops_ref": "US-7",
+      "scenario": "The conductor compiles the Session TMR registry, emits verification cards twice in a row, completes one card with evidence, and inspects the registry afterward.",
+      "oracle": "Jason passes this row iff the second emission creates zero duplicate cards, the completed card's evidence appears in the registry bound to its tmr_uid and artifact hash, and no other write path touched the registry, which demonstrates the deterministic-derivation-and-sole-writeback intent from US-7.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "emission and write-back are CLI operations whose transcript shows card keys and registry diffs",
+      "row_hash": "265cd78f39c55bc7882a12b9a61e4e22c748834bf171f7cc0f76a8f45469e322",
+      "story_hash": "829c7fd5d46382d12859dbe22dbfdd5619b67723acecfc8b9f13dc056b9ec0a7"
+    },
+    {
+      "row_id": "r-US8-1",
+      "conops_ref": "US-8",
+      "scenario": "The operator watches a hardened dry-run session attempt completion with one critical-seam TMR lacking evidence, then with a valid receipt covering it, observing both outcomes.",
+      "oracle": "Jason passes this row iff the first attempt blocks naming the unsatisfied obligation and the receipted attempt reaches the authority prepare/commit sequence with terminal completion visible only after commit, which demonstrates the no-unproven-critical-seam intent from US-8.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "the two contrasted completion attempts are the observable; a transcript captures both verdict paths",
+      "row_hash": "cc6bdb775a1e206a51a83bce296692a9ded63e86fd03cafa1c70ee8808cc08ac",
+      "story_hash": "332c18927d1a19fd5fc76e22fd6be5b048a22609c9111628894b5a4a8e2608db"
+    },
+    {
+      "row_id": "r-US9-1",
+      "conops_ref": "US-9",
+      "scenario": "The operator receives the generated ConOps walkthrough, performs one row's action, submits matching evidence, then submits deliberately swapped-row evidence for a second row.",
+      "oracle": "Jason passes this row iff the matching evidence is accepted with its typed observation recorded and the swapped evidence is rejected naming the mismatched row, which demonstrates the typed-evidence-walkthrough intent from US-9.",
+      "evidence_type": "artifact-demo",
+      "evidence_rationale": "the accepted and rejected evidence records are inspectable artifacts",
+      "row_hash": "4706747acd7c785da3bc73ab8a66f5ea19624646ddd53ce39b467cd7171dcb7d",
+      "story_hash": "b1c46161931de3320563372bb967f963c8033058a7e54a2d98608f955a55f954"
+    },
+    {
+      "row_id": "r-US10-1",
+      "conops_ref": "US-10",
+      "scenario": "A successor session bootstraps against the parent's spine artifacts, then the parent's evidence-index byte is flipped and bootstrap is rerun.",
+      "oracle": "Jason passes this row iff the clean run validates the spine-core to evidence-index to spine-manifest chain transitively and the tampered rerun reports the broken hash link by name without falling back to transcript reads, which demonstrates the durable-spine intent from US-10.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "BOOT-SPINE output in both runs is the observable",
+      "row_hash": "6770b4191b5ebcb098f5fa2a6c15cc0196862d3d257306aea5a43122ececc3cc",
+      "story_hash": "ae5241e22fa61f2b2bd8fe73e336bc9ec46a2890ad30900939e36a7b8f05c79b"
+    },
+    {
+      "row_id": "r-US11-1",
+      "conops_ref": "US-11",
+      "scenario": "A debate round is dispatched after two nodes freeze; the payload is diffed against the freeze list; one frozen section is then edited on disk and dispatch is retried.",
+      "oracle": "Jason passes this row iff the dispatched payload contains one-line stubs for the frozen nodes and the tampered retry refuses dispatch citing the changed frozen-node hash, which demonstrates the freeze-under-hash-pins intent from US-11.",
+      "evidence_type": "artifact-demo",
+      "evidence_rationale": "the payload diff and the refusal message are concrete artifacts",
+      "row_hash": "815c3c9717e78a75767bf4099f2aedefa8bae04d5bdd96fe83da59c2bd5da639",
+      "story_hash": "f9ae7975205a1cbb87d5514792f8b655e33edf820e5aa2e6bec94df7e22d654c"
+    },
+    {
+      "row_id": "r-US12-1",
+      "conops_ref": "US-12",
+      "scenario": "The conductor freezes a node, reopens it via a named concern, checkpoints, resumes, and inspects the node registry and its event log.",
+      "oracle": "Jason passes this row iff the snapshot shows the settled/volatile/derived split surviving resume and the event log replays the freeze and reopen events in a verifiable hash chain, which demonstrates the tracked-node-lifecycle intent from US-12.",
+      "evidence_type": "artifact-demo",
+      "evidence_rationale": "debate-nodes.json and its event log are the observables",
+      "row_hash": "021b1ff83ee32f381e5972d660cf174aa5c32049a9c55553264b1dbcf2f98a2f",
+      "story_hash": "ec81359cd1c095fcd140831d2fa5374dffcd56551c4fefac0c9e3ba84499cbd1"
+    },
+    {
+      "row_id": "r-US13-1",
+      "conops_ref": "US-13",
+      "scenario": "The conductor bumps the spec version with one TC renamed without lineage, runs reconciliation, then adds the lineage mapping and reruns.",
+      "oracle": "Jason passes this row iff the first run reports the rename as dirty for the tests-pseudo adapter despite its anchor resolving, and the lineage-mapped rerun reports clean with the mapping recorded in the report, which demonstrates the deterministic-reconciliation intent from US-13.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "the two reconciliation reports in sequence are the observable",
+      "row_hash": "dee06b7d9c5610acab0bbf33cf35212895621a6e7dd05100ca1db13893d98023",
+      "story_hash": "354451c5b0661eeda7322d63edb6a38d459865ff43d1b4f0889878babb50a4be"
+    },
+    {
+      "row_id": "r-US14-1",
+      "conops_ref": "US-14",
+      "scenario": "A round ends with one critic returning a bare AGREE while reconciliation is dirty; the conductor attempts to declare convergence.",
+      "oracle": "Jason passes this row iff the convergence claim is rejected as false convergence naming both the failed press and the dirty report for the agreed spec hash, and the registry records the rejection event, which demonstrates the guarded-convergence intent from US-14.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "the rejection path is a live workflow behavior best captured in transcript",
+      "row_hash": "2cb288fd783fb18656f73e52aa2ea54b91650ebedcbd6e989c008abeddf14135",
+      "story_hash": "77313202b3075ad008343c7d78ceef2dda4735859678f09b8aa8ef977056175b"
+    },
+    {
+      "row_id": "r-US15-1",
+      "conops_ref": "US-15",
+      "scenario": "The operator receives a waiver challenge on Telegram for a real blocked gate, signs and returns it, then the same receipt is presented a second time.",
+      "oracle": "Jason passes this row iff the first presentation unblocks exactly the named block with the receipt listed in the close report, and the second presentation is rejected as replayed, which demonstrates the receipt-bound-waiver intent from US-15.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "the end-to-end waiver round trip including Telegram is a workflow; the transcript shows challenge, receipt, and replay rejection",
+      "row_hash": "fb2c5cd12bf94ec64832c796b03c6d4990c4402ef88944950a24a5645d3c4069",
+      "story_hash": "abb46cf5838edf7d4eb66346e98db373d3d9b57b2feaf9cd24424b9b7a5d2334"
+    },
+    {
+      "row_id": "r-US16-1",
+      "conops_ref": "US-16",
+      "scenario": "The conductor runs the live-contract preflight against the board, then repeats with one contract pinned to an incompatible version range.",
+      "oracle": "Jason passes this row iff the clean preflight reports each consumed contract with its probe outcome and the incompatible rerun blocks the protected transition naming the contract id, which demonstrates the probed-consumed-contract intent from US-16.",
+      "evidence_type": "agent-walkthrough-transcript",
+      "evidence_rationale": "preflight output across the two configurations is the observable",
+      "row_hash": "f9f20dcfb69dd604ee6b070b41f9219e0d691807f1d27e49bf9c0c29230ccbe1",
+      "story_hash": "64d294eb267f9d3ab4f94b7256b427eebcf4004fba3390d4207cd0669decd355"
+    }
+  ],
+  "kind": "validation-rows-ledger",
+  "conops_hash": "592ad2dd62d3e0c57ada9b976c3136cc253f34027b50ef58723fd46f156cbe88",
+  "story_hashes": {
+    "US-0": "e794a8c27df6a765dbe3ece0336632cbb43c80fe8ce632762cd512289fb7ab6f",
+    "US-1": "13f7931bd1251d69683dfd0d932a957e9ce8ffff60c83d3057f449cb7562ef44",
+    "US-2": "dca35a5d1004bcefa3190ea02b522d1e453173169d9982528c64acf6ce72871b",
+    "US-3": "fccb99d40f991b6608bf16eb6b5fdd6cce4eb24cfc859a342cecdfdcc2114b5b",
+    "US-15": "abb46cf5838edf7d4eb66346e98db373d3d9b57b2feaf9cd24424b9b7a5d2334",
+    "US-4": "7dc9dff45887a824c1b5b6ebc91168be07df588ed6a9896d79eb09137e69d46b",
+    "US-5": "3c2c069a9cdb8b2d6e89e1651deb8eacc4c2707c798b122caadd952fec6804ab",
+    "US-6": "14bfe4dd00df9d47d050dfd6eb8aeb2f8e7af818448a65a16c7b3687f34ca9d4",
+    "US-7": "829c7fd5d46382d12859dbe22dbfdd5619b67723acecfc8b9f13dc056b9ec0a7",
+    "US-16": "64d294eb267f9d3ab4f94b7256b427eebcf4004fba3390d4207cd0669decd355",
+    "US-8": "332c18927d1a19fd5fc76e22fd6be5b048a22609c9111628894b5a4a8e2608db",
+    "US-9": "b1c46161931de3320563372bb967f963c8033058a7e54a2d98608f955a55f954",
+    "US-10": "ae5241e22fa61f2b2bd8fe73e336bc9ec46a2890ad30900939e36a7b8f05c79b",
+    "US-11": "f9ae7975205a1cbb87d5514792f8b655e33edf820e5aa2e6bec94df7e22d654c",
+    "US-12": "ec81359cd1c095fcd140831d2fa5374dffcd56551c4fefac0c9e3ba84499cbd1",
+    "US-13": "354451c5b0661eeda7322d63edb6a38d459865ff43d1b4f0889878babb50a4be",
+    "US-14": "77313202b3075ad008343c7d78ceef2dda4735859678f09b8aa8ef977056175b"
+  },
+  "schema_version": 1,
+  "module_version": "0.1.0+2433efa",
+  "generated_at": "2026-07-22T13:14:15Z"
+}

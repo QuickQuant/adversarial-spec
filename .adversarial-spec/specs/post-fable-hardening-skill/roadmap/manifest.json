@@ -309,5 +309,92 @@
   ],
   "assessed_at": "2026-07-08T00:00:00Z",
   "assessed_against": "f198887 (STALE \u2014 corpus 50 commits behind b31f8fd; TMR/F-prime/validation-emission wave unmapped; refresh deferred per Jason 2026-07-05)"
- }
+ },
+ "user_stories": [
+  {
+   "id": "US-0",
+   "title": "Toolchain bootstrap verifies environment",
+   "story": "As a new maintainer, I run one bootstrap command that verifies the toolchain hermetically and reports ready/degraded/broken with named per-check remediation."
+  },
+  {
+   "id": "US-1",
+   "title": "Gate inventory complete and classified",
+   "story": "As an integrator, every gate is inventoried in gates.json and classified code_enforced/mechanized/judgment, and any unmapped phase-doc gate marker fails doclint."
+  },
+  {
+   "id": "US-2",
+   "title": "Mechanized gates fire in code",
+   "story": "As an operator, mechanized gates fire at their real enforcement boundary, each with a named executable negative test proving the gate_id blocks."
+  },
+  {
+   "id": "US-3",
+   "title": "Judgment gates have rubric plus fixture",
+   "story": "As a reviewer, every judgment gate carries a rubric and at least one golden fixture so blocked-gate decisions are judged from evidence, not vibes."
+  },
+  {
+   "id": "US-15",
+   "title": "Waivers are verified authorization receipts",
+   "story": "As the operator, blocking gates are waived only through challenge-bound, bridge-signed receipts that I authorize via Telegram; a conductor can never mint or replay one."
+  },
+  {
+   "id": "US-4",
+   "title": "Phase docs decompose into spine units",
+   "story": "As a conductor, each phase decomposes into a spine unit plus reference units with single-owner pointer closure, so I load exactly what the current step needs."
+  },
+  {
+   "id": "US-5",
+   "title": "Lean worker context via resolved manifest",
+   "story": "As a worker LLM, my card's architecture_refs resolve through one mechanized loader that writes a per-step context-load manifest, keeping my context lean and auditable."
+  },
+  {
+   "id": "US-6",
+   "title": "Conductor competence measured by harness",
+   "story": "As the operator, a candidate conductor model is scored by the competence harness against immutable identity-keyed baselines before it runs a live session."
+  },
+  {
+   "id": "US-7",
+   "title": "Verification cards derive from TMR registry",
+   "story": "As the conductor, verification cards derive deterministically from the Session TMR registry, and evidence write-back through the sole writer is the only path to promotion-eligible state."
+  },
+  {
+   "id": "US-16",
+   "title": "Fizzy deltas consumed as probed contracts",
+   "story": "As the conductor, every fizzy delta is a consumed contract with a capability probe and behavior fingerprint; a failed or absent probe blocks the protected transition with no local fallback."
+  },
+  {
+   "id": "US-8",
+   "title": "Promotion gate blocks unproven critical seams",
+   "story": "As the operator, a hardened session cannot reach complete unless every critical-seam TMR satisfies the receipt-aware promotion predicate through the authority-committed prepare/commit sequence."
+  },
+  {
+   "id": "US-9",
+   "title": "ConOps walkthrough judged with typed evidence",
+   "story": "As the operator, I judge a ConOps walkthrough whose rows carry typed expected-observation predicates and bound evidence before the session closes."
+  },
+  {
+   "id": "US-10",
+   "title": "Durable spine artifacts for successors",
+   "story": "As a successor session, I validate the durable spine artifact chain (spine-core, evidence-index, spine-manifest) at bootstrap instead of reading transcripts."
+  },
+  {
+   "id": "US-11",
+   "title": "Converged sections freeze under hash pins",
+   "story": "As a debate conductor, converged sections freeze under content-hash pins and are excluded from dispatch payloads until reopened by a named concern."
+  },
+  {
+   "id": "US-12",
+   "title": "Node registry tracks settled and volatile",
+   "story": "As a debate conductor, the node registry tracks settled/volatile/derived nodes in an envelope snapshot plus a hash-chained event log that survives checkpoint and resume."
+  },
+  {
+   "id": "US-13",
+   "title": "Deterministic reconciliation on every bump",
+   "story": "As a conductor, every spec version bump runs deterministic reconciliation with per-adapter dirty contracts, semantic fingerprints, and lineage-mapped renames before the next round dispatches."
+  },
+  {
+   "id": "US-14",
+   "title": "False convergence is structurally rejected",
+   "story": "As the operator, convergence claims require computed quorum, a passed anti-bare-AGREE press, and a clean reconciliation report for the exact agreed spec hash."
+  }
+ ]
 }
