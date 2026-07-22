@@ -1,5 +1,5 @@
 {
-  "$comment": "generated-from:sha256:aa8fe8f16de468037d6001f6176c6a13ed39c21ec00bff819b19df66bc4f33bf",
+  "$comment": "generated-from:sha256:995538a2f187b38c0b4b6db32a8f0658a4c35360a4f51652626160c7bc16e005",
   "$defs": {
     "CodeRunEvidence": {
       "additionalProperties": false,
@@ -374,6 +374,87 @@
       "title": "Maturity",
       "type": "string"
     },
+    "obligation_policy_version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Obligation Policy Version"
+    },
+    "obligation_revision": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Obligation Revision"
+    },
+    "required_environment": {
+      "anyOf": [
+        {
+          "enum": [
+            "live",
+            "dev",
+            "ci"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Required Environment"
+    },
+    "required_liveness_class": {
+      "anyOf": [
+        {
+          "enum": [
+            "natural-wait",
+            "toxiproxy:corrupt",
+            "toxiproxy:drop",
+            "tc-netem:latency",
+            "tc-netem:partition",
+            "external-kill",
+            "clock-stub",
+            "state-injection",
+            "other"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Required Liveness Class"
+    },
+    "required_tier": {
+      "anyOf": [
+        {
+          "enum": [
+            "code",
+            "system-validation",
+            "judgment"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Required Tier"
+    },
     "run_evidence": {
       "anyOf": [
         {
@@ -485,6 +566,18 @@
     "title": {
       "title": "Title",
       "type": "string"
+    },
+    "tmr_record_hash": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Tmr Record Hash"
     },
     "tmr_uid": {
       "title": "Tmr Uid",

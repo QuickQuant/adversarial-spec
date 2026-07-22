@@ -36,7 +36,13 @@
     "user_story": "US-15",
     "verification_mode": "automated-contract",
     "verification_scope": "targeted",
-    "why_impossible_to_reproduce_live": null
+    "why_impossible_to_reproduce_live": null,
+    "obligation_revision": null,
+    "obligation_policy_version": null,
+    "required_liveness_class": null,
+    "required_environment": null,
+    "required_tier": null,
+    "tmr_record_hash": null
   },
   {
     "accessors": [
@@ -75,7 +81,13 @@
     "user_story": "US-1",
     "verification_mode": "automated-contract",
     "verification_scope": "targeted",
-    "why_impossible_to_reproduce_live": null
+    "why_impossible_to_reproduce_live": null,
+    "obligation_revision": null,
+    "obligation_policy_version": null,
+    "required_liveness_class": null,
+    "required_environment": null,
+    "required_tier": null,
+    "tmr_record_hash": null
   },
   {
     "accessors": [
@@ -114,7 +126,13 @@
     "user_story": "US-2",
     "verification_mode": "automated-contract",
     "verification_scope": "targeted",
-    "why_impossible_to_reproduce_live": null
+    "why_impossible_to_reproduce_live": null,
+    "obligation_revision": null,
+    "obligation_policy_version": null,
+    "required_liveness_class": null,
+    "required_environment": null,
+    "required_tier": null,
+    "tmr_record_hash": null
   },
   {
     "accessors": [
@@ -153,7 +171,13 @@
     "user_story": "US-3",
     "verification_mode": "automated-contract",
     "verification_scope": "targeted",
-    "why_impossible_to_reproduce_live": null
+    "why_impossible_to_reproduce_live": null,
+    "obligation_revision": null,
+    "obligation_policy_version": null,
+    "required_liveness_class": null,
+    "required_environment": null,
+    "required_tier": null,
+    "tmr_record_hash": null
   },
   {
     "accessors": [
@@ -192,7 +216,13 @@
     "user_story": "US-4",
     "verification_mode": "automated-contract",
     "verification_scope": "targeted",
-    "why_impossible_to_reproduce_live": null
+    "why_impossible_to_reproduce_live": null,
+    "obligation_revision": null,
+    "obligation_policy_version": null,
+    "required_liveness_class": null,
+    "required_environment": null,
+    "required_tier": null,
+    "tmr_record_hash": null
   },
   {
     "accessors": [
@@ -231,7 +261,13 @@
     "user_story": "US-5",
     "verification_mode": "automated-contract",
     "verification_scope": "targeted",
-    "why_impossible_to_reproduce_live": null
+    "why_impossible_to_reproduce_live": null,
+    "obligation_revision": null,
+    "obligation_policy_version": null,
+    "required_liveness_class": null,
+    "required_environment": null,
+    "required_tier": null,
+    "tmr_record_hash": null
   },
   {
     "accessors": [
@@ -270,7 +306,13 @@
     "user_story": "US-6",
     "verification_mode": "automated-contract",
     "verification_scope": "targeted",
-    "why_impossible_to_reproduce_live": null
+    "why_impossible_to_reproduce_live": null,
+    "obligation_revision": null,
+    "obligation_policy_version": null,
+    "required_liveness_class": null,
+    "required_environment": null,
+    "required_tier": null,
+    "tmr_record_hash": null
   },
   {
     "accessors": [
@@ -309,7 +351,13 @@
     "user_story": "US-7",
     "verification_mode": "automated-contract",
     "verification_scope": "targeted",
-    "why_impossible_to_reproduce_live": null
+    "why_impossible_to_reproduce_live": null,
+    "obligation_revision": null,
+    "obligation_policy_version": null,
+    "required_liveness_class": null,
+    "required_environment": null,
+    "required_tier": null,
+    "tmr_record_hash": null
   },
   {
     "accessors": [
@@ -348,7 +396,13 @@
     "user_story": "US-8",
     "verification_mode": "automated-contract",
     "verification_scope": "targeted",
-    "why_impossible_to_reproduce_live": null
+    "why_impossible_to_reproduce_live": null,
+    "obligation_revision": null,
+    "obligation_policy_version": null,
+    "required_liveness_class": null,
+    "required_environment": null,
+    "required_tier": null,
+    "tmr_record_hash": null
   },
   {
     "accessors": [
@@ -387,7 +441,13 @@
     "user_story": "US-9",
     "verification_mode": "automated-contract",
     "verification_scope": "targeted",
-    "why_impossible_to_reproduce_live": null
+    "why_impossible_to_reproduce_live": null,
+    "obligation_revision": null,
+    "obligation_policy_version": null,
+    "required_liveness_class": null,
+    "required_environment": null,
+    "required_tier": null,
+    "tmr_record_hash": null
   },
   {
     "accessors": [
@@ -426,7 +486,13 @@
     "user_story": "US-10",
     "verification_mode": "automated-contract",
     "verification_scope": "targeted",
-    "why_impossible_to_reproduce_live": null
+    "why_impossible_to_reproduce_live": null,
+    "obligation_revision": null,
+    "obligation_policy_version": null,
+    "required_liveness_class": null,
+    "required_environment": null,
+    "required_tier": null,
+    "tmr_record_hash": null
   },
   {
     "accessors": [
@@ -465,7 +531,13 @@
     "user_story": "US-11",
     "verification_mode": "automated-contract",
     "verification_scope": "targeted",
-    "why_impossible_to_reproduce_live": null
+    "why_impossible_to_reproduce_live": null,
+    "obligation_revision": null,
+    "obligation_policy_version": null,
+    "required_liveness_class": null,
+    "required_environment": null,
+    "required_tier": null,
+    "tmr_record_hash": null
   },
   {
     "accessors": [
@@ -504,7 +576,13 @@
     "user_story": "US-12",
     "verification_mode": "automated-contract",
     "verification_scope": "targeted",
-    "why_impossible_to_reproduce_live": null
+    "why_impossible_to_reproduce_live": null,
+    "obligation_revision": null,
+    "obligation_policy_version": null,
+    "required_liveness_class": null,
+    "required_environment": null,
+    "required_tier": null,
+    "tmr_record_hash": null
   },
   {
     "accessors": [
@@ -543,7 +621,13 @@
     "user_story": "US-13",
     "verification_mode": "automated-contract",
     "verification_scope": "targeted",
-    "why_impossible_to_reproduce_live": null
+    "why_impossible_to_reproduce_live": null,
+    "obligation_revision": null,
+    "obligation_policy_version": null,
+    "required_liveness_class": null,
+    "required_environment": null,
+    "required_tier": null,
+    "tmr_record_hash": null
   },
   {
     "accessors": [
@@ -582,6 +666,12 @@
     "user_story": "US-14",
     "verification_mode": "automated-contract",
     "verification_scope": "targeted",
-    "why_impossible_to_reproduce_live": null
+    "why_impossible_to_reproduce_live": null,
+    "obligation_revision": null,
+    "obligation_policy_version": null,
+    "required_liveness_class": null,
+    "required_environment": null,
+    "required_tier": null,
+    "tmr_record_hash": null
   }
 ]

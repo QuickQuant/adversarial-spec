@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated, Any, Literal, Union
 
+import rfc8785
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -76,6 +77,46 @@ RUN_ENVS = ("live", "dev", "ci")
 
 REAL_DATA_STRATEGIES = frozenset({"REAL-DATA", "REAL-DATA + PROPERTY"})
 DETAIL_REQUIRED_LIVENESS = frozenset({"other", "state-injection"})
+
+# ── obligation identity (B-1) ────────────────────────────────────────────────
+# The requirement fields reuse enums this contract already owns rather than
+# introducing parallel vocabularies: a required liveness class is compared
+# directly against ``live_or_induced.kind``, and the environment/tier
+# requirements against the matching ``run_evidence`` members. ``null`` means
+# UNSET and fails the promotion condition -- it never reads as "no requirement".
+REQUIRED_LIVENESS_CLASSES = LIVENESS_TECHNIQUES
+REQUIRED_ENVIRONMENTS = RUN_ENVS
+REQUIRED_TIERS = ("code", "system-validation", "judgment")
+
+# The projection hashed into ``tmr_record_hash``. Evidence fields are
+# deliberately absent: recording evidence must not invalidate a standing waiver,
+# while any change to what is being waived must. Keystone section 2b.
+OBLIGATION_IDENTITY_FIELDS = frozenset(
+    {
+        "tmr_uid",
+        "test_id",
+        "user_story",
+        "critical_seam",
+        "criticality_source",
+        "obligation_revision",
+        "obligation_policy_version",
+        "required_liveness_class",
+        "required_environment",
+        "required_tier",
+    }
+)
+
+# Static mirror of the cross-repo keystone. The keystone is authoritative; this
+# constant is the tripwire that makes divergence mechanical instead of silent.
+KEYSTONE_RELATIVE_PATH = Path("shared-context") / "test-maturity-record-schema.md"
+KEYSTONE_SCHEMA_SHA256 = (
+    "sha256:995538a2f187b38c0b4b6db32a8f0658a4c35360a4f51652626160c7bc16e005"
+)
+KEYSTONE_PROVENANCE = {
+    "commit": "c9d3c12ef5f3001baa75a1ab1dd83ab05bbe3391",
+    "committed_at": "2026-07-22T08:57:31-05:00",
+    "repo": "Brainquarters",
+}
 
 SCHEMA_HASH_RE = re.compile(r"schema_sha256:\s*(sha256:[0-9a-f]{64})")
 GENERATED_FROM_RE = re.compile(r"generated-from:\s*(sha256:[0-9a-f]{64})")
@@ -214,6 +255,33 @@ class TestMaturityRecord(StrictSchemaModel):
 
     live_or_induced: LiveOrInducedTechnique | None
     run_evidence: RunEvidence | None
+
+    # Obligation identity -- what this obligation DEMANDS, kept separate from
+    # the evidence fields above, which record what was OBSERVED. Optional with
+    # null defaults per keystone decision 5 (optional + warn first) so
+    # in-flight sessions are not retroactively failed.
+    obligation_revision: str | None = None
+    obligation_policy_version: str | None = None
+    # Literals are spelled out because typing requires it; the tuples above stay
+    # the single source of truth and ``test_tmr_obligation_fields.py`` asserts
+    # the two never drift.
+    required_liveness_class: (
+        Literal[
+            "natural-wait",
+            "toxiproxy:corrupt",
+            "toxiproxy:drop",
+            "tc-netem:latency",
+            "tc-netem:partition",
+            "external-kill",
+            "clock-stub",
+            "state-injection",
+            "other",
+        ]
+        | None
+    ) = None
+    required_environment: Literal["live", "dev", "ci"] | None = None
+    required_tier: Literal["code", "system-validation", "judgment"] | None = None
+    tmr_record_hash: str | None = None
 
     why_impossible_to_reproduce_live: str | None = None
     technical_constraint: str | None = None
@@ -390,6 +458,76 @@ def dump_tmr_record(record: TestMaturityRecord) -> dict[str, Any]:
     """Field-preserving JSON dump used by contract round-trip tests."""
 
     return record.model_dump(mode="json", exclude_none=False)
+
+
+def obligation_identity_projection(record: TestMaturityRecord) -> dict[str, Any]:
+    """The ten obligation-identity fields, and nothing else (keystone 2b)."""
+
+    return {
+        field: getattr(record, field) for field in sorted(OBLIGATION_IDENTITY_FIELDS)
+    }
+
+
+def compute_tmr_record_hash(record: TestMaturityRecord) -> str:
+    """SHA-256 over the RFC 8785 JCS serialization of the obligation projection.
+
+    Evidence fields are excluded by construction, so recording evidence leaves a
+    standing waiver intact while any change to the obligation invalidates it.
+    """
+
+    canonical = rfc8785.dumps(obligation_identity_projection(record))
+    return f"sha256:{hashlib.sha256(canonical).hexdigest()}"
+
+
+def verify_tmr_record_hash(record: TestMaturityRecord) -> None:
+    """Reject a stored hash that disagrees with the recomputed projection.
+
+    A stored ``tmr_record_hash`` is never trusted as a newer truth; a mismatch
+    is a schema violation. ``None`` means unstamped, which is not a mismatch.
+    """
+
+    stored = record.tmr_record_hash
+    if stored is None:
+        return
+    computed = compute_tmr_record_hash(record)
+    if stored != computed:
+        raise SchemaValidationError(
+            "tmr_record_hash",
+            f"stored hash {stored} does not match the projection {computed}",
+        )
+
+
+def keystone_path() -> Path | None:
+    """Locate the cross-repo keystone, or None when it is not checked out.
+
+    Honours ``TMR_KEYSTONE_PATH`` so a consumer can point at a checkout that is
+    not a sibling of this repo.
+    """
+
+    override = os.environ.get("TMR_KEYSTONE_PATH")
+    if override:
+        return Path(override)
+    repo_root = Path(__file__).resolve().parents[3]
+    candidate = repo_root.parent / "Brainquarters" / KEYSTONE_RELATIVE_PATH
+    return candidate if candidate.is_file() else None
+
+
+def assert_keystone_mirror_current() -> None:
+    """Fail when the keystone's pinned hash and this mirror have diverged.
+
+    Divergence of this contract is the exact failure the keystone exists to
+    prevent, so it is surfaced as an error naming both values -- never repaired
+    automatically, and never in the keystone's direction.
+    """
+
+    path = keystone_path()
+    if path is None:
+        raise SchemaValidationError(
+            "keystone", "keystone contract not found; set TMR_KEYSTONE_PATH"
+        )
+    pinned = schema_snapshot_hash(path.read_text(encoding="utf-8"))
+    if pinned != KEYSTONE_SCHEMA_SHA256:
+        raise SchemaSnapshotDriftError(KEYSTONE_SCHEMA_SHA256, pinned)
 
 
 def tmr_json_schema(*, include_generated_comment: bool = False) -> dict[str, Any]:

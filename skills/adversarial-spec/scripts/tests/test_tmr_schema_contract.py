@@ -62,6 +62,14 @@ def valid_tmr(**overrides):
         "source_spec": "liveness-gate-test-ladder",
         "live_or_induced": {"kind": "natural-wait"},
         "run_evidence": valid_code_evidence(),
+        # Obligation identity (B-1) -- optional with null defaults, but spelled
+        # out here because this round-trip is field-for-field.
+        "obligation_revision": "1",
+        "obligation_policy_version": "tmr-obligation.v1",
+        "required_liveness_class": "natural-wait",
+        "required_environment": "live",
+        "required_tier": "code",
+        "tmr_record_hash": None,
         "why_impossible_to_reproduce_live": None,
         "technical_constraint": None,
         "also_covers": [],
