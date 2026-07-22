@@ -314,7 +314,27 @@ No active session.
 
 ### Creating a New Session
 
-When the user selects **[New session]** or **[Start new]**, create BOTH tracking artifacts:
+**Step 0 — BRANCH FIRST (required, 2026-07-22).** Every adversarial-spec session
+that will touch code starts on its own git branch in every repo it modifies:
+
+```bash
+git checkout -b adv-spec/<slug>     # or a plainly named branch for the session
+```
+
+- The default branch is protected: session work — pipeline changes, skill
+  changes, spec-driven implementation — never lands on it directly. Merge is a
+  deliberate operator act at session end, not a side effect of working.
+- If a target repo is already on someone's in-flight branch with a dirty
+  worktree, branch from where you are and **commit only your own files** —
+  never sweep another session's uncommitted work into your commits.
+- Commit as you land verified waves (tests green), not only at checkpoint. An
+  uncommitted live change to a shared server or skill is exactly the mutation
+  class the agy revert-guard exists to catch — don't create it.
+- Rationale: 2026-07-22 bounded-pipeline dogfood — waves 0-2 of live pipeline
+  edits accumulated on `master` uncommitted while the board and MCP server
+  already ran them; operator caught it mid-flight.
+
+Then create BOTH tracking artifacts:
 
 1. Create session file (`sessions/<id>.json`) and update pointer (`session-state.json`) — the local session state
 2. **Call `pipeline_create_session(board_id, session_id, title, plan_path)`** — the Fizzy pipeline card in Evaluated Plans
@@ -360,9 +380,26 @@ Step 3 is REQUIRED. Without the stored card ID, phase transitions and debate rou
 ### Session State Rules (CRITICAL):
 
 - If `do_not_ask` exists, DO NOT ask those questions
-- If `next_action` exists, DO that action
+- If `next_action` exists, DO that action — **subject to the build-verb guard below**
 - The session state tells you exactly what to do - follow it
 - `do_not_ask` is ALWAYS a list - if you see a string, it's legacy format
+
+**`next_action` build-verb guard (REQUIRED):** `next_action` is an instruction
+channel, not an authorization channel. Before executing a `next_action` (or a
+carried-over checkpoint `next_action`) whose text implies **code or system
+changes** — verbs like *build, implement, create `<file>`, write `<script>`, add
+code, enable/install `<service>`, migrate* — STOP unless one of these holds:
+(1) this session has reached Phase 7 and the work maps to an existing pipeline
+**task card**, or (2) the user has just given **plan-mode approval** for this
+change. Otherwise surface it: report the intended change, name the missing gate
+(no Phase 7 task card / no fresh approval), and ask whether to (a) route it
+through Phase 7 execution planning, (b) approve it via plan mode, or (c) drop it.
+Never build inline off a `next_action` alone. Read-only actions (investigate,
+verify, draft spec text, run a gate, dispatch a debate round) are exempt.
+*Rationale: incident 2026-07-18 — a checkpoint `next_action` = "build minimal
+router loop" produced an entire untracked subsystem during a debate-phase
+session with no Phase 7 ever run. See
+`specs/post-fable-hardening-skill/process-failures/2026-07-18-next-action-unguarded-build-channel.md`.*
 
 ---
 
@@ -438,6 +475,34 @@ Card IDs and commit hashes belong in the live transcript, not the persisted snap
 triage → requirements → roadmap → debate → target-architecture → gauntlet → finalize → execution → middleware-creator? → implementation → complete
 ```
 
+**v6 bounded-pipeline sessions (fizzy `pipeline_version >= 6`, 2026-07-22):** a
+`decomposition` phase sits between roadmap and debate, and debate is a FAN-OUT,
+not one artifact. Board reality for these sessions:
+
+```
+Evaluated Plans → Pre-Roadmap →(g1) Decomposition →(d0_closed) Debate → Pre-Gauntlet → Gauntlet → Reconciliation → Finalization
+```
+
+- **Decomposition** runs D0: component tree (system root, strict parent>child
+  descent), responsibility edges CUT/NO_CUT with evidence, interface records
+  for exactly the CUT edges, seam probes for every boundary unknown, and one
+  independent seam challenge. Exit is `pipeline_mark_decomposition_complete`
+  (verify-on-disk; `d0_closed` is patch_state-protected) — or the operator
+  NO_GO_UNRESOLVED_SEAM backtrack. Never assert D0 adequate in prose.
+- **Debate (redefined for v6):** `pipeline_load` runs HERE (after `d0_closed`),
+  creating leaf component cards in the `Specifying` task lane; each leaf runs
+  its own bounded A→S cycle. The session card holds in Debate until every leaf
+  is `Synthesized` or carries a legal operator `DEFERRED`/`NO_GO` exception.
+- **Pre-Gauntlet (redefined):** the fan-in barrier — one system-altitude
+  gauntlet over the grouped result, never per-component gauntlets.
+- Pre-v6 sessions are untouched: no Decomposition lane, load at Finalization,
+  the classic order above. Canonical-order checks must treat `decomposition`
+  as legal (not an anomaly) exactly when the session is v6+.
+- Governing artifacts live in the consuming project:
+  `orchestration/RULESET-bounded-pipeline-v1.md`,
+  `orchestration/BRAINSTORM-2-lanes-and-flow.md` (§8, §10),
+  `orchestration/DECISIONS-brainstorm-2-open.md` (D-1..D-4).
+
 **Triage (Phase 0) is the additive front door.** New work enters triage first; it
 runs with zero session machinery and, on GO, creates the session with the chosen
 `session_altitude` before any conductor/Fizzy/listener bootstrap. It is
@@ -508,7 +573,7 @@ Do NOT run `debate.py critique` when the user wants the gauntlet, and vice versa
    - Set `current_phase`, `current_step`, `next_action`, `updated_at`.
 
 3. **Fizzy card** (if `fizzy_card_id` present) — third:
-   - Add comment: `"Phase: <old> → <new>. <1-line accomplishment>."`
+   - Add a human-readable phase comment using the card-comment convention below.
    - Advance the card with `pipeline_advance` (gate-enforcing) — NEVER `pipeline_patch_state` for a phase transition. `patch_state` is for intra-phase state only (`debate_round`, `last_agent` after debate rounds) or gate-recovery with an on-disk process-failure note; the tool rejects transition misuse.
    - Use a **haiku subagent** to keep MCP payload out of main context.
 
@@ -533,6 +598,32 @@ Do NOT run `debate.py critique` when the user wants the gauntlet, and vice versa
 **Non-artifact transitions** (debate → gauntlet, etc.) still MUST dual-write `current_phase` and `current_step` to both files. Every phase change syncs both — no exceptions. Both writes use atomic tmp+rename.
 
 **Backward compatibility:** legacy detail files missing `current_phase` → add it, don't error.
+
+### Fizzy Card Comment Convention (REQUIRED)
+
+Every `add_comment` write is an operator-visible event, not an MCP transcript.
+Write the visible text for a person who opens only this card; keep machine detail
+in card metadata, checklist attestations, and the owning pipeline tool result.
+
+Use a short heading and only the sections that add information:
+
+```markdown
+## <Outcome>
+
+**Why it matters:** <plain-language problem or decision>
+**Evidence:** <one concrete artifact, test result, concern ID, or card link>
+**Next:** <who or what moves the work forward>
+```
+
+- Lead with what changed. Keep normal comments under 180 words.
+- Include stable IDs and paths only when they help a reader retrieve evidence.
+- Do not paste raw JSON, tool payloads, model transcripts, or opaque
+  `pipeline:key=value` lines into a comment.
+- Never duplicate full checklists or a spec section. The card description and
+  structured metadata already own that detail.
+- A phase transition normally needs only `Outcome`, one evidence line, and `Next`.
+  Example: `## Phase: debate → target-architecture` followed by the accepted
+  design decision and the artifact path.
 
 ### Major Milestone Notifications (Telegram)
 
