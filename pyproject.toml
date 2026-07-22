@@ -7,7 +7,7 @@ name = "adversarial-spec"
 version = "1.0.0"
 description = "Multi-model adversarial debate for spec refinement"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.14"
 license = {text = "MIT"}
 authors = [
     {name = "Zak Cole", email = "zcole@linux.com"}
@@ -18,17 +18,17 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = [
+    "cryptography==49.0.0",
     "filelock==3.16.1",
     "litellm==1.80.13",
     "mcp>=1.0.0",
     "pydantic>=2.0",
     "python-dotenv>=1.0.0",
+    "rfc8785==0.1.4",
 ]
 
 [project.optional-dependencies]
@@ -59,7 +59,7 @@ include = ["adversarial_spec*", "execution_planner*"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py310"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N"]
@@ -69,7 +69,7 @@ ignore = [
 ]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.14"
 warn_return_any = false
 warn_unused_configs = true
 disallow_untyped_defs = false

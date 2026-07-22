@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "adversarial-spec-skill"
 version = "1.0.0"
 description = "Adversarial spec skill for Claude Code"
-requires-python = ">=3.10"
+requires-python = ">=3.14"
 dependencies = [
     "filelock==3.16.1",
     "litellm>=1.50.0",
