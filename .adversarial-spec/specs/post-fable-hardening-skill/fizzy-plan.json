@@ -1,0 +1,4065 @@
+{
+ "plan_schema_version": 3,
+ "session_id": "adv-spec-202607060132-post-fable-hardening-skill",
+ "tasks": [
+  {
+   "task_id": "SYS",
+   "altitude": "system",
+   "parent": null,
+   "decomposes_into": [
+    "SS-W0",
+    "SS-A",
+    "SS-B",
+    "SS-C"
+   ],
+   "title": "Post-Fable Hardening skill slice (G1+G2+G5)",
+   "description": "Harden the adversarial-spec skill for post-Fable conductors: mechanized gates, competence harness, V-model ascending arm with authority-committed promotion, debate freeze/reconciliation/convergence guards, over a shared hardening substrate.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [],
+   "acceptance_criteria": [
+    "all subsystems verified; system verification report passes; Phase 8 sweep succeeds"
+   ],
+   "architecture_refs": [
+    ".architecture/primer.md",
+    ".architecture/overview.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-integration",
+   "verification_scope": "full-suite",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/SYS/system-spec.md",
+    "definition_hash": "0df63409ec71"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/SYS/component-verification-procedure.md",
+     "plan_hash": "8fecce6bafb3",
+     "artifact": "skills/adversarial-spec/scripts/tests",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests -q"
+     ]
+    },
+    "subsystem_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/SYS/subsystem-verification-plan.md",
+     "plan_hash": "dbcb39e83cbb",
+     "artifact": "skills/adversarial-spec/scripts/tests",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests -q"
+     ]
+    },
+    "system_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/SYS/system-verification-plan.md",
+     "plan_hash": "f32852b412fb",
+     "artifact": "skills/adversarial-spec/scripts/tests",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-1",
+    "rationale": "spec-final.md v9.1 root system node",
+    "traced_from": null,
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "system"
+   },
+   "system_spec_path": ".adversarial-spec/specs/post-fable-hardening-skill/SYS/system-spec.md",
+   "conops_refs": [
+    "US-0",
+    "US-1",
+    "US-2",
+    "US-3",
+    "US-4",
+    "US-5",
+    "US-6",
+    "US-7",
+    "US-8",
+    "US-9",
+    "US-10",
+    "US-11",
+    "US-12",
+    "US-13",
+    "US-14",
+    "US-15",
+    "US-16"
+   ],
+   "user_story_refs": [
+    "US-0",
+    "US-1",
+    "US-2",
+    "US-3",
+    "US-4",
+    "US-5",
+    "US-6",
+    "US-7",
+    "US-8",
+    "US-9",
+    "US-10",
+    "US-11",
+    "US-12",
+    "US-13",
+    "US-14",
+    "US-15",
+    "US-16"
+   ],
+   "implementation_evidence": "system root; see subsystems",
+   "test_refs": [],
+   "test_files": [],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests -q"
+   ],
+   "concern_refs": [],
+   "invariant_refs": [],
+   "surface_scope": [],
+   "wave": 0,
+   "workstream": "SYS",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests"
+   ]
+  },
+  {
+   "task_id": "SS-W0",
+   "altitude": "subsystem",
+   "parent": "SYS",
+   "decomposes_into": [
+    "W0-1",
+    "W0-2",
+    "W0-3",
+    "W0-4",
+    "W0-5",
+    "W0-6",
+    "W0-7",
+    "W0-8",
+    "W0-9",
+    "W0-10",
+    "W0-11",
+    "W0-12",
+    "W0-13",
+    "W0-14",
+    "W0-15"
+   ],
+   "title": "Shared hardening substrate",
+   "description": "adversarial_spec.hardening package: MW-001..MW-011 plus scaffold, safe paths, authority-matrix suite, and the executable adverse suite.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [],
+   "acceptance_criteria": [
+    "every MW candidate lands as its own verified component",
+    "adverse suite green over the real substrate"
+   ],
+   "architecture_refs": [
+    ".architecture/primer.md",
+    ".architecture/overview.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-integration",
+   "verification_scope": "full-suite",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/SS-W0/subsystem-spec.md",
+    "definition_hash": "654a04cf7c6f"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/SS-W0/component-verification-procedure.md",
+     "plan_hash": "cdc78f4c9512",
+     "artifact": "skills/adversarial-spec/scripts/tests",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests -q"
+     ]
+    },
+    "subsystem_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/SS-W0/subsystem-verification-plan.md",
+     "plan_hash": "d2eb3baef053",
+     "artifact": "skills/adversarial-spec/scripts/tests",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-2",
+    "rationale": "adversarial_spec",
+    "traced_from": "SYS",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "subsystem"
+   },
+   "subsystem_spec_path": ".adversarial-spec/specs/post-fable-hardening-skill/SS-W0/subsystem-spec.md",
+   "realizes_refs": [
+    "US-0",
+    "US-7",
+    "US-8",
+    "US-12",
+    "US-15",
+    "US-16"
+   ],
+   "implementation_evidence": "aggregation node; see child components",
+   "test_refs": [],
+   "test_files": [],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests -q"
+   ],
+   "concern_refs": [],
+   "invariant_refs": [],
+   "surface_scope": [],
+   "wave": 0,
+   "workstream": "W0",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests"
+   ]
+  },
+  {
+   "task_id": "W0-1",
+   "altitude": "component",
+   "parent": "SS-W0",
+   "decomposes_into": [],
+   "title": "Scaffold hardening package + Python 3.14 floor",
+   "description": "Create skills/adversarial-spec/scripts/hardening/ per the target-architecture component tree; bump requires-python to >=3.14; pin rfc8785==0.1.4 + cryptography==49.0.0; clean-env wheel-install test. No upward import from gauntlet.",
+   "effort": "M",
+   "strategy": "test-after",
+   "depends_on": [],
+   "acceptance_criteria": [
+    "hardening package imports cleanly on 3.14",
+    "uv run adversarial-spec --help still works (symlink bridge preserved)",
+    "clean-env wheel-install test green"
+   ],
+   "architecture_refs": [
+    ".architecture/filesystem-map.md",
+    ".architecture/primer.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-1/normative.md",
+    "definition_hash": "78fa3a7c53a6"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-1/component-verification-procedure.md",
+     "plan_hash": "1252cd85feee",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_hardening_package.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_hardening_package.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-3",
+    "rationale": "Create skills/adversarial-spec/scripts/hardening/ per the target-architecture component tree; bump requires-python to >=3",
+    "traced_from": "SS-W0",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-0"
+   ],
+   "implementation_evidence": "no hardening/ dir exists (ls -> ENOENT, verified 2026-07-21)",
+   "test_refs": [
+    "TC-0.0"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_hardening_package.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_hardening_package.py -q"
+   ],
+   "concern_refs": [],
+   "invariant_refs": [],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 0,
+   "workstream": "W0",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_hardening_package.py"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "W0-2",
+   "altitude": "component",
+   "parent": "SS-W0",
+   "decomposes_into": [],
+   "title": "MW-001 StrictArtifactCodec + canonical_sets",
+   "description": "artifacts.py + canonical_sets.py: bounded strict decode (dup-member/NaN/BOM/surrogate/negative-zero rejection), schema validation, RFC 8785 JCS, content-hash verify with spec-exact exclusions, domain-prefix signature bytes, authority-signed/local-derived profiles, canonical_set() with bytewise order + duplicate REJECTION, discriminated authorization-fact variants (OR-1, structural absence).",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-1"
+   ],
+   "acceptance_criteria": [
+    "byte-level conformance suite (DF-1) green incl. signed-bytes and profile cases",
+    "provisional vs committed deferral facts hash differently",
+    "duplicate set members rejected, never deduplicated"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/gauntlet-persistence.md",
+    ".architecture/primer.md",
+    ".architecture/patterns.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-2/normative.md",
+    "definition_hash": "57c60f3cb4d4"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-2/component-verification-procedure.md",
+     "plan_hash": "c6905be32a24",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_strict_artifact_codec.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_strict_artifact_codec.py skills/adversarial-spec/scripts/tests/test_canonical_sets.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-4",
+    "rationale": "artifacts",
+    "traced_from": "SS-W0",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-8",
+    "US-15"
+   ],
+   "implementation_evidence": "no codec exists; nearest prior art gauntlet/persistence.py:560-583 stays untouched",
+   "test_refs": [
+    "TC-INV-005",
+    "TC-INV-020",
+    "TC-INV-023"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_strict_artifact_codec.py",
+    "skills/adversarial-spec/scripts/tests/test_canonical_sets.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_strict_artifact_codec.py skills/adversarial-spec/scripts/tests/test_canonical_sets.py -q"
+   ],
+   "concern_refs": [
+    "CB-2",
+    "SEC-1"
+   ],
+   "invariant_refs": [
+    "INV-002",
+    "INV-005",
+    "INV-020",
+    "INV-023"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 0,
+   "workstream": "W0",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_strict_artifact_codec.py",
+    "skills/adversarial-spec/scripts/tests/test_canonical_sets.py"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-002",
+    "INV-005",
+    "INV-023"
+   ],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "W0-3",
+   "altitude": "component",
+   "parent": "SS-W0",
+   "decomposes_into": [],
+   "title": "MW-008 CliBoundary",
+   "description": "cli_boundary.py: shared strict argparse (allow_abbrev=False, unknown-arg rejection), one structured result envelope per invocation, exit mapping 0/1/2 with blocking precedence, no env-var gate inputs.",
+   "effort": "M",
+   "strategy": "test-after",
+   "depends_on": [
+    "W0-1"
+   ],
+   "acceptance_criteria": [
+    "abbreviation and unknown args rejected with envelope output",
+    "every invocation emits exactly one result envelope",
+    "--help is a successful help result"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/validation-emission.md",
+    ".architecture/patterns.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-3/normative.md",
+    "definition_hash": "56493a8d6984"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-3/component-verification-procedure.md",
+     "plan_hash": "59b03fb3c94e",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_cli_boundary.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_cli_boundary.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-5",
+    "rationale": "cli_boundary",
+    "traced_from": "SS-W0",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-0"
+   ],
+   "implementation_evidence": "no shared CLI adapter; validation_emission.py:3423 has its own _Parser (stays)",
+   "test_refs": [
+    "TC-INV-016",
+    "TC-INV-004"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_cli_boundary.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_cli_boundary.py -q"
+   ],
+   "concern_refs": [
+    "CB-1",
+    "FM-3"
+   ],
+   "invariant_refs": [
+    "INV-004",
+    "INV-010",
+    "INV-016"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 0,
+   "workstream": "W0",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_cli_boundary.py"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-004",
+    "INV-016"
+   ],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "W0-4",
+   "altitude": "component",
+   "parent": "SS-W0",
+   "decomposes_into": [],
+   "title": "MW-002 DurableStateStore + StateTransaction",
+   "description": "state_store.py: persistent-identity fcntl sidecar locks, expected-hash CAS, atomic single-file writes, repo-scoped .txn/ coordinator with leases, canonical bytewise lock order, PREPARED/PUBLISHING/COMMITTED roll-forward recovery, reader release-recover-retry, transaction-corrupt terminal quarantine (non-waivable), reachability-only GC.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-1",
+    "W0-2"
+   ],
+   "acceptance_criteria": [
+    "DF-6 completeness matrix green (reversed-lock-order, held-lock timeout, sidecar attacks, GC-vs-lease)",
+    "crash at every protocol boundary recovers or quarantines, never mixed state",
+    "readers never observe two generations"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/gauntlet-persistence.md",
+    ".architecture/concerns.md",
+    ".architecture/structured/flows.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-4/normative.md",
+    "definition_hash": "0944c50b3004"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-4/component-verification-procedure.md",
+     "plan_hash": "d9978cd71e1a",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_durable_state_store.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_durable_state_store.py skills/adversarial-spec/scripts/tests/test_state_transaction.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-6",
+    "rationale": "state_store",
+    "traced_from": "SS-W0",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-8",
+    "US-12"
+   ],
+   "implementation_evidence": "gauntlet/persistence.py:74-152 protects single files only; no coordinator exists",
+   "test_refs": [
+    "TC-1.4",
+    "TC-INV-008",
+    "TC-INV-012"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_durable_state_store.py",
+    "skills/adversarial-spec/scripts/tests/test_state_transaction.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_durable_state_store.py skills/adversarial-spec/scripts/tests/test_state_transaction.py -q"
+   ],
+   "concern_refs": [
+    "RC-3",
+    "CB-2"
+   ],
+   "invariant_refs": [
+    "INV-008",
+    "INV-012"
+   ],
+   "surface_scope": [
+    "cli_command",
+    "startup_migration"
+   ],
+   "wave": 0,
+   "workstream": "W0",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_durable_state_store.py",
+    "skills/adversarial-spec/scripts/tests/test_state_transaction.py"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-008",
+    "INV-012"
+   ],
+   "safety_consumes": [
+    "INV-005"
+   ]
+  },
+  {
+   "task_id": "W0-5",
+   "altitude": "component",
+   "parent": "SS-W0",
+   "decomposes_into": [],
+   "title": "Safe-path resolver + filesystem capability probes",
+   "description": "Per-component dir_fd walk with O_NOFOLLOW + fstat device/mount validation (normative); ..-, absolute-, cross-session targets fail closed; bootstrap lock-capability probe proving cross-process shared/exclusive semantics; filesystem-capability-unsupported named failure.",
+   "effort": "M",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-1"
+   ],
+   "acceptance_criteria": [
+    "intermediate-symlink substitution blocked (TC-1.5)",
+    "induced submount rejected (DF-8)",
+    "unsupported filesystem is a named capability failure, never silent"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/gauntlet-persistence.md",
+    ".architecture/primer.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-5/normative.md",
+    "definition_hash": "fd6a2b189742"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-5/component-verification-procedure.md",
+     "plan_hash": "0151e23d7113",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_safe_paths.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_safe_paths.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-7",
+    "rationale": "Per-component dir_fd walk with O_NOFOLLOW + fstat device/mount validation (normative); ",
+    "traced_from": "SS-W0",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-0"
+   ],
+   "implementation_evidence": "no descriptor-relative walker in repo; spec notes final-component checks insufficient",
+   "test_refs": [
+    "TC-1.5",
+    "TC-INV-012"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_safe_paths.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_safe_paths.py -q"
+   ],
+   "concern_refs": [
+    "US-1-theme"
+   ],
+   "invariant_refs": [
+    "INV-006",
+    "INV-012"
+   ],
+   "surface_scope": [
+    "cli_command",
+    "startup_migration"
+   ],
+   "wave": 0,
+   "workstream": "W0",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_safe_paths.py"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-012"
+   ],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "W0-6",
+   "altitude": "component",
+   "parent": "SS-W0",
+   "decomposes_into": [],
+   "title": "MW-003 HashChainedJournal",
+   "description": "journal.py: logical append (each event hashes predecessor), chain verification, event-head projection, external-anchor record emission for authority-side anchoring.",
+   "effort": "M",
+   "strategy": "test-after",
+   "depends_on": [
+    "W0-2",
+    "W0-4"
+   ],
+   "acceptance_criteria": [
+    "chain break detected at unit level",
+    "anchored-head verification round-trips"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/tmr-provenance.md",
+    ".architecture/structured/components/gauntlet-persistence.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-6/normative.md",
+    "definition_hash": "6120261ec2f0"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-6/component-verification-procedure.md",
+     "plan_hash": "d664d68f48fc",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_hash_chained_journal.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_hash_chained_journal.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-8",
+    "rationale": "journal",
+    "traced_from": "SS-W0",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-12"
+   ],
+   "implementation_evidence": "provenance_journal.py:77-362 is TMR-specific; generic substrate absent",
+   "test_refs": [
+    "TC-12.3",
+    "TC-INV-009"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_hash_chained_journal.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_hash_chained_journal.py -q"
+   ],
+   "concern_refs": [
+    "SEC-3",
+    "RC-3"
+   ],
+   "invariant_refs": [
+    "INV-009",
+    "INV-013"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 0,
+   "workstream": "W0",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_hash_chained_journal.py"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-009"
+   ],
+   "safety_consumes": [
+    "INV-008"
+   ]
+  },
+  {
+   "task_id": "W0-7",
+   "altitude": "component",
+   "parent": "SS-W0",
+   "decomposes_into": [],
+   "title": "MW-004 ReceiptVerifier + TrustPolicy",
+   "description": "receipts.py + trust_policy.py: trusted-key lookup from launcher config, exact-byte ed25519 verification (domain prefix || JCS minus signature), THEN purpose-scoped TrustPolicy authorization under immutable policy identity + hash; purpose-preserving chained keyset rotation; full 5.4 rejection-set semantics.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-2"
+   ],
+   "acceptance_criteria": [
+    "wrong-purpose key rejected across all receipt kinds (TC-15.8)",
+    "DF-2 rotation/wrong-root/epoch-chain cases green",
+    "signature validity without purpose authorization never authorizes"
+   ],
+   "architecture_refs": [
+    ".architecture/primer.md",
+    ".architecture/structured/components/telegram-usage.md",
+    ".architecture/patterns.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-7/normative.md",
+    "definition_hash": "2133dc655dcb"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-7/component-verification-procedure.md",
+     "plan_hash": "a72f4afaafa9",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_receipt_verifier.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_receipt_verifier.py skills/adversarial-spec/scripts/tests/test_trust_policy.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-9",
+    "rationale": "receipts",
+    "traced_from": "SS-W0",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-15"
+   ],
+   "implementation_evidence": "no signature verification exists in skill runtime (cryptography: packaging only)",
+   "test_refs": [
+    "TC-15.3",
+    "TC-15.8",
+    "TC-INV-006"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_receipt_verifier.py",
+    "skills/adversarial-spec/scripts/tests/test_trust_policy.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_receipt_verifier.py skills/adversarial-spec/scripts/tests/test_trust_policy.py -q"
+   ],
+   "concern_refs": [
+    "SEC-1",
+    "SEC-2",
+    "SEC-4"
+   ],
+   "invariant_refs": [
+    "INV-006",
+    "INV-010",
+    "INV-024"
+   ],
+   "surface_scope": [
+    "cli_command",
+    "outbound_integration"
+   ],
+   "wave": 0,
+   "workstream": "W0",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_receipt_verifier.py",
+    "skills/adversarial-spec/scripts/tests/test_trust_policy.py"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-006",
+    "INV-024"
+   ],
+   "safety_consumes": [
+    "INV-005"
+   ]
+  },
+  {
+   "task_id": "W0-8",
+   "altitude": "component",
+   "parent": "SS-W0",
+   "decomposes_into": [],
+   "title": "MW-005 PromotionPredicates (pure)",
+   "description": "predicates.py: pure functions over validated types. is_concrete exact enum equality; is_promotion_ready six typed conditions incl. provenance condition 6; is_obligation_satisfied with critical_seam != null precondition and independent skip/deferred disjuncts (provisional pre-commit / committed post-commit, parent-scoped); select_for_verification.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "B-1",
+    "W0-1"
+   ],
+   "acceptance_criteria": [
+    "DF-5 mutation matrix green (closed-enum rejection, null-seam override)",
+    "TC-8.9 identity mutants rejected",
+    "TC-7.3 selection-predicate mutants detected"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/tmr-provenance.md",
+    ".architecture/primer.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-8/normative.md",
+    "definition_hash": "ea50a324348a"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-8/component-verification-procedure.md",
+     "plan_hash": "a7c48fb03a8a",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_promotion_predicates.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_promotion_predicates.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-10",
+    "rationale": "predicates",
+    "traced_from": "SS-W0",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-8"
+   ],
+   "implementation_evidence": "predicates exist only as spec prose; no predicates.py",
+   "test_refs": [
+    "TC-7.2",
+    "TC-7.3",
+    "TC-8.9",
+    "TC-INV-021"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_promotion_predicates.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_promotion_predicates.py -q"
+   ],
+   "concern_refs": [
+    "CB-4",
+    "RC-1"
+   ],
+   "invariant_refs": [
+    "INV-021"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 0,
+   "workstream": "W0",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_promotion_predicates.py"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-021"
+   ],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "W0-9",
+   "altitude": "component",
+   "parent": "SS-W0",
+   "decomposes_into": [],
+   "title": "MW-009 AuthorizationSetBuilder",
+   "description": "authorization_set.py: validates receipts + successor inherited-obligation records against ONE registry generation into immutable ValidatedAuthorizationSet with authorization_set_hash per the exact spec formula; consumes TrustPolicySnapshot; emits canonical provisional transfer plan; obligation policy vs trust policy separation.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-4",
+    "W0-7"
+   ],
+   "acceptance_criteria": [
+    "mixed-generation/caller-curated sets structurally impossible",
+    "shuffled/duplicated facts rejected",
+    "provisional vs committed sets hash differently (OR-1)"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/tmr-provenance.md",
+    ".architecture/primer.md",
+    ".architecture/patterns.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-9/normative.md",
+    "definition_hash": "6e7d25510845"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-9/component-verification-procedure.md",
+     "plan_hash": "307e32c6c431",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_authorization_set_builder.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_authorization_set_builder.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-11",
+    "rationale": "authorization_set",
+    "traced_from": "SS-W0",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-8",
+    "US-15"
+   ],
+   "implementation_evidence": "no builder exists",
+   "test_refs": [
+    "TC-8.9",
+    "TC-15.8",
+    "TC-INV-020",
+    "TC-INV-024"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_authorization_set_builder.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_authorization_set_builder.py -q"
+   ],
+   "concern_refs": [
+    "SEC-1",
+    "CB-2"
+   ],
+   "invariant_refs": [
+    "INV-020",
+    "INV-024"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 0,
+   "workstream": "W0",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_authorization_set_builder.py"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-020"
+   ],
+   "safety_consumes": [
+    "INV-006",
+    "INV-024"
+   ]
+  },
+  {
+   "task_id": "W0-10",
+   "altitude": "component",
+   "parent": "SS-W0",
+   "decomposes_into": [],
+   "title": "MW-011 DurableOperationJournal",
+   "description": "operation_journal.py (imports no transport): operation_id + contract id + behavior fingerprint + canonical request hash journaled + fsynced BEFORE dispatch; intent-durable/in-flight/uncertain/resolved state machine; PromotionSequenceResult derivation from record absence; restart recovery.",
+   "effort": "M",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-4",
+    "W0-6"
+   ],
+   "acceptance_criteria": [
+    "crash before vs after dispatch distinguished by record presence (TC-8.12)",
+    "same-id different-bytes retry = intent-mismatch",
+    "DF-11 failure-injection table asserts owner/action/state"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/gauntlet-persistence.md",
+    ".architecture/structured/flows.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-10/normative.md",
+    "definition_hash": "696a0db0d8d1"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-10/component-verification-procedure.md",
+     "plan_hash": "2e730e9e3d07",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_operation_journal.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_operation_journal.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-12",
+    "rationale": "operation_journal",
+    "traced_from": "SS-W0",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-8"
+   ],
+   "implementation_evidence": "no operation journal exists",
+   "test_refs": [
+    "TC-8.12",
+    "TC-INV-017"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_operation_journal.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_operation_journal.py -q"
+   ],
+   "concern_refs": [
+    "RC-2",
+    "FM-3",
+    "CB-1"
+   ],
+   "invariant_refs": [
+    "INV-009",
+    "INV-017"
+   ],
+   "surface_scope": [
+    "cli_command",
+    "outbound_integration"
+   ],
+   "wave": 0,
+   "workstream": "W0",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_operation_journal.py"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-017"
+   ],
+   "safety_consumes": [
+    "INV-008",
+    "INV-009"
+   ]
+  },
+  {
+   "task_id": "W0-11",
+   "altitude": "component",
+   "parent": "SS-W0",
+   "decomposes_into": [],
+   "title": "MW-006 LocalCapabilityVerifier + trusted-time watermark",
+   "description": "local_capabilities.py: offline signature/version/freshness verification of cached capability attestations; persisted monotonic authority-time watermark; max(local clock, watermark) expiry; every capability-state maps to exactly one deterministic token; release-signature validation.",
+   "effort": "M",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-7"
+   ],
+   "acceptance_criteria": [
+    "wall-clock rollback cannot extend authorization, incl. across restarts",
+    "DF-2 skew + missing-release cases green",
+    "TC-3.3 local deferred-for-live-preflight distinguished from remote tokens"
+   ],
+   "architecture_refs": [
+    ".architecture/primer.md",
+    ".architecture/structured/components/validation-emission.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-11/normative.md",
+    "definition_hash": "453fadadb80d"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-11/component-verification-procedure.md",
+     "plan_hash": "cbefae7b70ff",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_local_capability_verifier.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_local_capability_verifier.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-13",
+    "rationale": "local_capabilities",
+    "traced_from": "SS-W0",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-0",
+    "US-16"
+   ],
+   "implementation_evidence": "no local capability verifier exists",
+   "test_refs": [
+    "TC-3.3",
+    "TC-0.10"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_local_capability_verifier.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_local_capability_verifier.py -q"
+   ],
+   "concern_refs": [
+    "SEC-2",
+    "FM-1",
+    "CB-1"
+   ],
+   "invariant_refs": [
+    "INV-013",
+    "INV-014"
+   ],
+   "surface_scope": [
+    "cli_command",
+    "startup_migration"
+   ],
+   "wave": 0,
+   "workstream": "W0",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_local_capability_verifier.py"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-014"
+   ],
+   "safety_consumes": [
+    "INV-006"
+   ]
+  },
+  {
+   "task_id": "W0-12",
+   "altitude": "component",
+   "parent": "SS-W0",
+   "decomposes_into": [],
+   "title": "MW-007 RemoteAuthorityClient",
+   "description": "remote_authority.py: snapshot upload/finalize, prepare, commit, status reconciliation, signed challenge-response probes (+ negative probes), behavior-fingerprint pinning, over injected transports; never dispatches a recoverable mutation without a durable MW-011 intent; OR-4 recovery split (uncertain prepare replays prepare; uncertain commit uses commit-status keyed by operation_id + receipt hash).",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-10",
+    "W0-2",
+    "W0-7"
+   ],
+   "acceptance_criteria": [
+    "success tokens are real values, never exception-shaped (TC-8.11)",
+    "fingerprint drift detected as state-stale (DF-3)",
+    "recorded-fixture probes for all 9 consumed contracts (hermetic)"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/models-providers.md",
+    ".architecture/concerns.md",
+    ".architecture/structured/flows.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-12/normative.md",
+    "definition_hash": "a084d648adbe"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-12/component-verification-procedure.md",
+     "plan_hash": "78c39bda7a2d",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_remote_authority_client.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_remote_authority_client.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-14",
+    "rationale": "remote_authority",
+    "traced_from": "SS-W0",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-8",
+    "US-16"
+   ],
+   "implementation_evidence": "models.py / gauntlet model_dispatch are LLM transports, not authority contracts (CON-009 counter-pattern)",
+   "test_refs": [
+    "TC-8.10",
+    "TC-8.11",
+    "TC-16.4",
+    "TC-INV-004",
+    "TC-INV-017",
+    "TC-INV-019"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_remote_authority_client.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_remote_authority_client.py -q"
+   ],
+   "concern_refs": [
+    "CB-1",
+    "SEC-5",
+    "RC-1",
+    "FM-3"
+   ],
+   "invariant_refs": [
+    "INV-004",
+    "INV-007",
+    "INV-017",
+    "INV-019"
+   ],
+   "surface_scope": [
+    "outbound_integration"
+   ],
+   "wave": 0,
+   "workstream": "W0",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_remote_authority_client.py"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-004",
+    "INV-007",
+    "INV-019"
+   ],
+   "safety_consumes": [
+    "INV-017"
+   ]
+  },
+  {
+   "task_id": "W0-13",
+   "altitude": "component",
+   "parent": "SS-W0",
+   "decomposes_into": [],
+   "title": "MW-010 TmrRegistryWriter + sole-writer lint",
+   "description": "tmr_registry_writer.py: the single Session-TMR-registry persistence path (read revision, validate preconditions, write under canonical lock order, bump revision); stale expected-revision rejected; classifier-relevant change invalidates dependent evidence in the same transaction; authoring-lint fails any outside write-open call site.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "B-1",
+    "W0-4",
+    "W0-6"
+   ],
+   "acceptance_criteria": [
+    "DF-7 stale-revision + same-txn invalidation green",
+    "sole-writer lint catches a violating fixture module",
+    "serves both mutation-kind owners"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/tmr-provenance.md",
+    ".architecture/structured/components/gauntlet-persistence.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-13/normative.md",
+    "definition_hash": "982a09262987"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-13/component-verification-procedure.md",
+     "plan_hash": "45b3e22ec49c",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_tmr_registry_writer.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_tmr_registry_writer.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-15",
+    "rationale": "tmr_registry_writer",
+    "traced_from": "SS-W0",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-7"
+   ],
+   "implementation_evidence": "tmr_compile_step/provenance_journal write the roadmap-level registry; Session-TMR writer absent",
+   "test_refs": [
+    "TC-7.5",
+    "TC-INV-003"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_tmr_registry_writer.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_tmr_registry_writer.py -q"
+   ],
+   "concern_refs": [
+    "RC-3",
+    "DD-3"
+   ],
+   "invariant_refs": [
+    "INV-003",
+    "INV-008"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 0,
+   "workstream": "W0",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_tmr_registry_writer.py"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-003"
+   ],
+   "safety_consumes": [
+    "INV-008"
+   ]
+  },
+  {
+   "task_id": "W0-14",
+   "altitude": "component",
+   "parent": "SS-W0",
+   "decomposes_into": [],
+   "title": "Authority-matrix lint + consumer tests",
+   "description": "Matrix-driven consumer tests: for every spec 1.2 row, consumers branch only on validated authority state and fail closed with the named result on stale/missing/invalid mirror; undeclared-authority lint for security-fact reads with no declared row.",
+   "effort": "M",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-2"
+   ],
+   "acceptance_criteria": [
+    "DF-9 complete row coverage",
+    "lint catches a fixture module reading a mirror directly"
+   ],
+   "architecture_refs": [
+    ".architecture/primer.md",
+    ".architecture/patterns.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "test-producer",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-14/normative.md",
+    "definition_hash": "38dbb238f928"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-14/component-verification-procedure.md",
+     "plan_hash": "e7eb5d6838d9",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_authority_matrix.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_authority_matrix.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-16",
+    "rationale": "Matrix-driven consumer tests: for every spec 1",
+    "traced_from": "SS-W0",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-8"
+   ],
+   "implementation_evidence": "no authority-matrix suite exists",
+   "test_refs": [
+    "TC-INV-003"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_authority_matrix.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_authority_matrix.py -q"
+   ],
+   "concern_refs": [
+    "US-4-theme"
+   ],
+   "invariant_refs": [
+    "INV-003"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 0,
+   "workstream": "W0",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_authority_matrix.py"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "W0-15",
+   "altitude": "component",
+   "parent": "SS-W0",
+   "decomposes_into": [],
+   "title": "Executable adverse suite (Phase 4 residual obligation)",
+   "description": "The executable end-to-end adverse suite deferred by Phase 4 publication: every R4 mandatory adverse case + all 13 R5 additions as executable tests over the real substrate. No design-walkthrough evidence claims.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-10",
+    "W0-12",
+    "W0-4",
+    "W0-5",
+    "W0-8",
+    "W0-9"
+   ],
+   "acceptance_criteria": [
+    "all 13 R5 cases red-green against real modules",
+    "R4 canonical-sequence traversal incl. snapshot registration",
+    "suite runs under the standard runner"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/flows.md",
+    ".architecture/structured/components/gauntlet-persistence.md"
+   ],
+   "behavior_change": false,
+   "verification_mode": "test-producer",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-15/normative.md",
+    "definition_hash": "1675ed72c724"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/W0-15/component-verification-procedure.md",
+     "plan_hash": "cafff20de468",
+     "artifact": "skills/adversarial-spec/scripts/tests/adverse/test_adverse_suite.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/adverse/test_adverse_suite.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-17",
+    "rationale": "The executable end-to-end adverse suite deferred by Phase 4 publication: every R4 mandatory adverse case + all 13 R5 additions as executable tests over the real substrate",
+    "traced_from": "SS-W0",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-8"
+   ],
+   "implementation_evidence": "dry-run-results.json is design-level only (its own text disclaims executed-boundary evidence)",
+   "test_refs": [
+    "TC-1.4",
+    "TC-1.5",
+    "TC-8.10"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/adverse/test_adverse_suite.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/adverse/test_adverse_suite.py -q"
+   ],
+   "concern_refs": [
+    "RC-1",
+    "RC-2",
+    "RC-3",
+    "SEC-3",
+    "SEC-4"
+   ],
+   "invariant_refs": [
+    "INV-008",
+    "INV-017",
+    "INV-020",
+    "INV-021"
+   ],
+   "surface_scope": [
+    "cli_command",
+    "outbound_integration"
+   ],
+   "wave": 0,
+   "workstream": "W0",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/adverse/test_adverse_suite.py"
+   ],
+   "scope_refs": [
+    "W0"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-008",
+    "INV-017",
+    "INV-020",
+    "INV-021"
+   ]
+  },
+  {
+   "task_id": "SS-A",
+   "altitude": "subsystem",
+   "parent": "SYS",
+   "decomposes_into": [
+    "A-1",
+    "A-2",
+    "A-3",
+    "A-4",
+    "A-5",
+    "A-6",
+    "A-7"
+   ],
+   "title": "G1 operability",
+   "description": "Gate inventory + doclint, hook dispatcher, judgment corpus, competence harness, spine units, waiver flow, bootstrap.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [],
+   "acceptance_criteria": [
+    "all G1 components verified; bootstrap integrates them under 5 minutes"
+   ],
+   "architecture_refs": [
+    ".architecture/primer.md",
+    ".architecture/overview.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-integration",
+   "verification_scope": "full-suite",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/SS-A/subsystem-spec.md",
+    "definition_hash": "d9e8f8b48344"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/SS-A/component-verification-procedure.md",
+     "plan_hash": "87b6d38dce92",
+     "artifact": "skills/adversarial-spec/scripts/tests",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests -q"
+     ]
+    },
+    "subsystem_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/SS-A/subsystem-verification-plan.md",
+     "plan_hash": "0aeba203a087",
+     "artifact": "skills/adversarial-spec/scripts/tests",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-18",
+    "rationale": "Gate inventory + doclint, hook dispatcher, judgment corpus, competence harness, spine units, waiver flow, bootstrap",
+    "traced_from": "SYS",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "subsystem"
+   },
+   "subsystem_spec_path": ".adversarial-spec/specs/post-fable-hardening-skill/SS-A/subsystem-spec.md",
+   "realizes_refs": [
+    "US-0",
+    "US-1",
+    "US-2",
+    "US-3",
+    "US-4",
+    "US-5",
+    "US-6",
+    "US-15"
+   ],
+   "implementation_evidence": "aggregation node; see child components",
+   "test_refs": [],
+   "test_files": [],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests -q"
+   ],
+   "concern_refs": [],
+   "invariant_refs": [],
+   "surface_scope": [],
+   "wave": 1,
+   "workstream": "A",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests"
+   ]
+  },
+  {
+   "task_id": "A-1",
+   "altitude": "component",
+   "parent": "SS-A",
+   "decomposes_into": [],
+   "title": "gate_inventory.py + gates.json + doclint",
+   "description": "Maintain gates.json (classification enum, enforcement, owner, contract_id, violation_modes); normalized semantic form; doclint mapping phase-doc markers to gate_id; phase_docs_hash staleness; negative-test execution harness; hosts the authoring-lint family.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-2",
+    "W0-3"
+   ],
+   "acceptance_criteria": [
+    "TC-1.0 inventory completeness incl. canonical Phases 1-8 + owned subflow units",
+    "unmapped MUST marker fails doclint with file+line (TC-1.2)",
+    "unclassified gate fails check"
+   ],
+   "architecture_refs": [
+    ".architecture/INDEX.md",
+    ".architecture/structured/components/harness-hooks.md",
+    ".architecture/patterns.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/A-1/normative.md",
+    "definition_hash": "77ba1f74dbeb"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/A-1/component-verification-procedure.md",
+     "plan_hash": "346cd3ff2121",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_gate_inventory.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_gate_inventory.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-19",
+    "rationale": "Maintain gates",
+    "traced_from": "SS-A",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-1"
+   ],
+   "implementation_evidence": "gate_inventory.py absent (verified)",
+   "test_refs": [
+    "TC-1.0",
+    "TC-1.2",
+    "TC-INV-001"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_gate_inventory.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_gate_inventory.py -q"
+   ],
+   "concern_refs": [
+    "DD-3",
+    "US-3-theme"
+   ],
+   "invariant_refs": [
+    "INV-001",
+    "INV-010",
+    "INV-013"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 1,
+   "workstream": "A",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_gate_inventory.py"
+   ],
+   "scope_refs": [
+    "A"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-001"
+   ],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "A-2",
+   "altitude": "component",
+   "parent": "SS-A",
+   "decomposes_into": [],
+   "title": "Hook-plane dispatcher + conformance fixtures",
+   "description": "One slice-owned dispatcher per event type in .claude/hooks/ (hook-local codec, NO skill imports); declarative versioned registration; duplicate/third-party handler detection at bootstrap; typed ALLOW/DENY/DIAGNOSTIC verdicts; blocking mode for preventive gates; shared conformance fixtures against both hook-local and skill validators; consolidate the three drifting role resolvers (CON-005).",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-1"
+   ],
+   "acceptance_criteria": [
+    "duplicate handler detected + cross-surface fixture agreement (TC-2.4)",
+    "internal failure becomes DENY for safety dispatchers",
+    "async/exit-1/raise/malformed classifier cases never skip later blockers"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/harness-hooks.md",
+    ".architecture/patterns.md",
+    ".architecture/concerns.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "partial",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/A-2/normative.md",
+    "definition_hash": "b3b6f1a90686"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/A-2/component-verification-procedure.md",
+     "plan_hash": "ed602d4b22e9",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_hook_dispatcher_conformance.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_hook_dispatcher_conformance.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-20",
+    "rationale": "One slice-owned dispatcher per event type in ",
+    "traced_from": "SS-A",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-2"
+   ],
+   "implementation_evidence": "hook plane exists (fizzy_payload_guard.py:86-147; three role resolvers dispatch_check.py:18-83, pipeline_continue.py:21-67, pipeline_idle_retry.py:24-70); dispatcher layer is new",
+   "test_refs": [
+    "TC-2.0",
+    "TC-2.2",
+    "TC-2.3",
+    "TC-2.4",
+    "TC-INV-011"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_hook_dispatcher_conformance.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_hook_dispatcher_conformance.py -q"
+   ],
+   "concern_refs": [
+    "DD-2"
+   ],
+   "invariant_refs": [
+    "INV-011"
+   ],
+   "surface_scope": [
+    "hook-plane:cli_command"
+   ],
+   "wave": 1,
+   "workstream": "A",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_hook_dispatcher_conformance.py"
+   ],
+   "scope_refs": [
+    "A"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-011"
+   ],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "A-3",
+   "altitude": "component",
+   "parent": "SS-A",
+   "decomposes_into": [],
+   "title": "Judgment-gate corpus (rubrics + fixtures)",
+   "description": "rubrics/<gate_id>.md (<=~40 lines) + >=1 golden fixture per judgment gate under fixtures/conductor-competence/<gate_id>/; fixture schema validator consumed by BOOT-HARNESS.",
+   "effort": "M",
+   "strategy": "test-after",
+   "depends_on": [
+    "A-1"
+   ],
+   "acceptance_criteria": [
+    "every judgment row in gates.json has rubric + fixture",
+    "fixtures schema-valid (TC-3.2)"
+   ],
+   "architecture_refs": [
+    ".architecture/INDEX.md",
+    ".architecture/access-guide.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/A-3/normative.md",
+    "definition_hash": "2034f4e49641"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/A-3/component-verification-procedure.md",
+     "plan_hash": "ae40cc459b2f",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_judgment_corpus.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_judgment_corpus.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-21",
+    "rationale": "rubrics/<gate_id>",
+    "traced_from": "SS-A",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-3"
+   ],
+   "implementation_evidence": "no rubrics/ or fixtures/ dirs exist (verified)",
+   "test_refs": [
+    "TC-3.0",
+    "TC-3.2"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_judgment_corpus.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_judgment_corpus.py -q"
+   ],
+   "concern_refs": [],
+   "invariant_refs": [
+    "INV-001"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 1,
+   "workstream": "A",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_judgment_corpus.py"
+   ],
+   "scope_refs": [
+    "A"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-001"
+   ]
+  },
+  {
+   "task_id": "A-4",
+   "altitude": "component",
+   "parent": "SS-A",
+   "decomposes_into": [],
+   "title": "competence_harness.py + baselines + coverage manifest",
+   "description": "Harness runner: strict-JSON answer scoring (required subset next subset allowed; forbidden empty; exact citation equality; critical => >=1 required); exact arithmetic; bounded retry with attempt evidence + not-comparable threshold; coverage manifest; immutable identity-keyed baselines incl. environment fingerprint; waivable pre-session gate with MAX_PHASE_REGRESSION_POINTS=10.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "A-3",
+    "W0-3"
+   ],
+   "acceptance_criteria": [
+    "vacuous [] fails critical fixtures (TC-6.4)",
+    "missing/incompatible baseline blocks (TC-6.5)",
+    "2-pass/2-fail scores exactly 50",
+    "fingerprint drift => not-comparable (DF-12)"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/models-providers.md",
+    ".architecture/structured/components/telegram-usage.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/A-4/normative.md",
+    "definition_hash": "8899736ebe34"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/A-4/component-verification-procedure.md",
+     "plan_hash": "7b4ab90b7575",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_competence_harness.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_competence_harness.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-22",
+    "rationale": "Harness runner: strict-JSON answer scoring (required subset next subset allowed; forbidden empty; exact citation equality; critical => >=1 required); exact arithmetic; bounded retry with attempt evidence + not-comparable threshold; coverage manifest; immutable identity-keyed baselines incl",
+    "traced_from": "SS-A",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-6"
+   ],
+   "implementation_evidence": "competence_harness.py absent (verified)",
+   "test_refs": [
+    "TC-6.0",
+    "TC-6.1",
+    "TC-6.3",
+    "TC-6.4",
+    "TC-6.5",
+    "TC-6.6"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_competence_harness.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_competence_harness.py -q"
+   ],
+   "concern_refs": [
+    "OP-1"
+   ],
+   "invariant_refs": [
+    "INV-010"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 1,
+   "workstream": "A",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_competence_harness.py"
+   ],
+   "scope_refs": [
+    "A"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "A-5",
+   "altitude": "component",
+   "parent": "SS-A",
+   "decomposes_into": [],
+   "title": "Phase-doc spine units + 09-verification relocation",
+   "description": "Decompose phase docs into phases/<NN>-<phase>/spine.md + reference/*.md with single-owner pointers; relocate phases/09-verification.md under the Phase 8 tree with spine-step ownership + SKILL.md router update + decisions-log entries; architecture_refs resolver writing per-step context-load-manifest.",
+   "effort": "L",
+   "strategy": "test-after",
+   "depends_on": [
+    "A-1"
+   ],
+   "acceptance_criteria": [
+    "doclint pointer closure: zero dangling, exactly one owner",
+    "09-verification.md gone from old path; router resolves (TC-4.x/5.x)",
+    "context-load-manifest records resolved unit identities + hashes"
+   ],
+   "architecture_refs": [
+    ".architecture/INDEX.md",
+    ".architecture/filesystem-map.md",
+    ".architecture/concerns.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "partial",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/A-5/normative.md",
+    "definition_hash": "379f98a4c3cf"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/A-5/component-verification-procedure.md",
+     "plan_hash": "286f3299cf99",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_spine_units_closure.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_spine_units_closure.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-23",
+    "rationale": "Decompose phase docs into phases/<NN>-<phase>/spine",
+    "traced_from": "SS-A",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-4",
+    "US-5"
+   ],
+   "implementation_evidence": "flat phase docs exist; 0 spine files (verified); restructure + resolver new",
+   "test_refs": [
+    "TC-4.0",
+    "TC-4.2",
+    "TC-5.0",
+    "TC-5.2",
+    "TC-5.3"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_spine_units_closure.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_spine_units_closure.py -q"
+   ],
+   "concern_refs": [
+    "US-3-theme"
+   ],
+   "invariant_refs": [
+    "INV-001",
+    "INV-013"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 1,
+   "workstream": "A",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_spine_units_closure.py"
+   ],
+   "scope_refs": [
+    "A"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-001"
+   ]
+  },
+  {
+   "task_id": "A-6",
+   "altitude": "component",
+   "parent": "SS-A",
+   "decomposes_into": [],
+   "title": "Waiver flow: challenge, receipt acceptance, audit cache",
+   "description": "Blocking-checker challenge creation (immutable block_id, one-time nonce request, local-derived challenge envelope); receipt acceptance via MW-004 (challenge-byte binding, nonce-consumption receipt, authorization_kind precedence, non-waivable class rejection, consumption at protected transitions); nonces.jsonl audit cache; issuance idempotency by operation_id; surfacing in close report/checkpoint/card.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-10",
+    "W0-7",
+    "W0-9"
+   ],
+   "acceptance_criteria": [
+    "full 5.4 rejection set green (TC-15.x)",
+    "wrong-block/reused-nonce replay rejected (TC-15.4)",
+    "lost response returns original receipt by operation_id (TC-15.7)"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/telegram-usage.md",
+    ".architecture/structured/flows.md",
+    ".architecture/primer.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/A-6/normative.md",
+    "definition_hash": "dec65e289614"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/A-6/component-verification-procedure.md",
+     "plan_hash": "0411b1b10879",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_waiver_flow.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_waiver_flow.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-24",
+    "rationale": "Blocking-checker challenge creation (immutable block_id, one-time nonce request, local-derived challenge envelope); receipt acceptance via MW-004 (challenge-byte binding, nonce-consumption receipt, authorization_kind precedence, non-waivable class rejection, consumption at protected transitions); nonces",
+    "traced_from": "SS-A",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-15"
+   ],
+   "implementation_evidence": "no waiver machinery exists (telegram_bot.py is transport only)",
+   "test_refs": [
+    "TC-15.0",
+    "TC-15.2",
+    "TC-15.4",
+    "TC-15.7"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_waiver_flow.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_waiver_flow.py -q"
+   ],
+   "concern_refs": [
+    "SEC-4"
+   ],
+   "invariant_refs": [
+    "INV-002",
+    "INV-006"
+   ],
+   "surface_scope": [
+    "cli_command",
+    "outbound_integration"
+   ],
+   "wave": 1,
+   "workstream": "A",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_waiver_flow.py"
+   ],
+   "scope_refs": [
+    "A"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-006"
+   ]
+  },
+  {
+   "task_id": "A-7",
+   "altitude": "component",
+   "parent": "SS-A",
+   "decomposes_into": [],
+   "title": "hardening_bootstrap.py (BOOT-* checks + live preflight)",
+   "description": "Bootstrap CLI: BOOT-GATES/HARNESS/RECON/REGISTRY/SPINE blocking + BOOT-ROUTER advisory; hermetic blocking path (no transport instantiation); --live-preflight REMOTE path via MW-007; deferred-state exit mapping by pending regime-sensitive transition; five-minute fresh-clone target; failure output contract.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "A-1",
+    "A-4",
+    "B-8",
+    "C-1",
+    "W0-11"
+   ],
+   "acceptance_criteria": [
+    "fresh-clone clean run under 5 minutes with named checks (TC-0.0)",
+    "regime branch distinguishes legacy/hardened/corrupt (TC-0.4)",
+    "every blocking check passes under denied socket/DNS (TC-2.3)",
+    "blocking precedence: advisory+blocking => exit 2"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/validation-emission.md",
+    ".architecture/structured/components/harness-hooks.md",
+    ".architecture/filesystem-map.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-integration",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/A-7/normative.md",
+    "definition_hash": "0b00be454489"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/A-7/component-verification-procedure.md",
+     "plan_hash": "5118b1c0c037",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_hardening_bootstrap.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_hardening_bootstrap.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-25",
+    "rationale": "Bootstrap CLI: BOOT-GATES/HARNESS/RECON/REGISTRY/SPINE blocking + BOOT-ROUTER advisory; hermetic blocking path (no transport instantiation); --live-preflight REMOTE path via MW-007; deferred-state exit mapping by pending regime-sensitive transition; five-minute fresh-clone target; failure output contract",
+    "traced_from": "SS-A",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-0"
+   ],
+   "implementation_evidence": "hardening_bootstrap.py absent (verified)",
+   "test_refs": [
+    "TC-0.0",
+    "TC-0.2",
+    "TC-0.4",
+    "TC-0.5",
+    "TC-0.6",
+    "TC-2.3",
+    "TC-INV-014"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_hardening_bootstrap.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_hardening_bootstrap.py -q"
+   ],
+   "concern_refs": [
+    "FM-1",
+    "CB-1",
+    "US-3-theme"
+   ],
+   "invariant_refs": [
+    "INV-002",
+    "INV-014"
+   ],
+   "surface_scope": [
+    "cli_command",
+    "startup_migration"
+   ],
+   "wave": 1,
+   "workstream": "A",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_hardening_bootstrap.py"
+   ],
+   "scope_refs": [
+    "A"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-001",
+    "INV-014"
+   ]
+  },
+  {
+   "task_id": "SS-B",
+   "altitude": "subsystem",
+   "parent": "SYS",
+   "decomposes_into": [
+    "B-1",
+    "B-2",
+    "B-3",
+    "B-4",
+    "B-5",
+    "B-6",
+    "B-7",
+    "B-8",
+    "B-9",
+    "B-10",
+    "B-11"
+   ],
+   "title": "G2 ascending arm",
+   "description": "TMR keystone fields, verification cards, evidence write-back, criticality resolution, promotion local+remote, ConOps walkthrough, spine DAG, contract probes, regime lifecycle, subflow migration.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [],
+   "acceptance_criteria": [
+    "promotion path proven end-to-end against contract fixtures",
+    "all G2 components verified"
+   ],
+   "architecture_refs": [
+    ".architecture/primer.md",
+    ".architecture/overview.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-integration",
+   "verification_scope": "full-suite",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/SS-B/subsystem-spec.md",
+    "definition_hash": "fc91298f9457"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/SS-B/component-verification-procedure.md",
+     "plan_hash": "17c0eebd69a2",
+     "artifact": "skills/adversarial-spec/scripts/tests",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests -q"
+     ]
+    },
+    "subsystem_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/SS-B/subsystem-verification-plan.md",
+     "plan_hash": "9e875931e764",
+     "artifact": "skills/adversarial-spec/scripts/tests",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-26",
+    "rationale": "TMR keystone fields, verification cards, evidence write-back, criticality resolution, promotion local+remote, ConOps walkthrough, spine DAG, contract probes, regime lifecycle, subflow migration",
+    "traced_from": "SYS",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "subsystem"
+   },
+   "subsystem_spec_path": ".adversarial-spec/specs/post-fable-hardening-skill/SS-B/subsystem-spec.md",
+   "realizes_refs": [
+    "US-0",
+    "US-1",
+    "US-7",
+    "US-8",
+    "US-9",
+    "US-10",
+    "US-16"
+   ],
+   "implementation_evidence": "aggregation node; see child components",
+   "test_refs": [],
+   "test_files": [],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests -q"
+   ],
+   "concern_refs": [],
+   "invariant_refs": [],
+   "surface_scope": [],
+   "wave": 1,
+   "workstream": "B",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests"
+   ]
+  },
+  {
+   "task_id": "B-1",
+   "altitude": "component",
+   "parent": "SS-B",
+   "decomposes_into": [],
+   "title": "TMR keystone-first schema extension (obligation fields)",
+   "description": "KEYSTONE-FIRST: add obligation_revision, obligation_policy_version, tmr_record_hash (+ required_liveness_class/required_environment/required_tier if absent) to Brainquarters/shared-context/test-maturity-record-schema.md FIRST, then mirror into tmr_schema.py with schema_sha256 drift tripwire. Resolves the 11 tests-spec SCHEMA GAP carries.",
+   "effort": "M",
+   "strategy": "test-first",
+   "depends_on": [],
+   "acceptance_criteria": [
+    "keystone edited before mirror (provable commit order)",
+    "strict schema round-trip green",
+    "obligation-identity projection hash stable under evidence-field changes"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/tmr-provenance.md",
+    ".architecture/primer.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-1/normative.md",
+    "definition_hash": "991972e0c470"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-1/component-verification-procedure.md",
+     "plan_hash": "7c83dc30fb54",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_tmr_obligation_fields.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_tmr_obligation_fields.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-27",
+    "rationale": "KEYSTONE-FIRST: add obligation_revision, obligation_policy_version, tmr_record_hash (+ required_liveness_class/required_environment/required_tier if absent) to Brainquarters/shared-context/test-maturity-record-schema",
+    "traced_from": "SS-B",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-7",
+    "US-8"
+   ],
+   "implementation_evidence": "grep for all three fields = 0 in keystone AND tmr_schema.py (verified 2026-07-21)",
+   "test_refs": [
+    "TC-8.4"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_tmr_obligation_fields.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_tmr_obligation_fields.py -q"
+   ],
+   "concern_refs": [
+    "CB-2",
+    "DD-3"
+   ],
+   "invariant_refs": [
+    "INV-024"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 0,
+   "workstream": "B",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_tmr_obligation_fields.py"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "B-2",
+   "altitude": "component",
+   "parent": "SS-B",
+   "decomposes_into": [],
+   "title": "verification_cards.py deterministic emitter + board upsert",
+   "description": "One card per qualifying TMR keyed (session_id, tmr_uid, obligation_revision, obligation_policy_version); registry_hash as provenance snapshot never key; supersede obsolete cards; pipeline_load upsert with stable local key + expected board revision; lost response resolved by authority query; board-ahead = local-mirror-stale.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "B-1",
+    "W0-13",
+    "W0-8"
+   ],
+   "acceptance_criteria": [
+    "identity stable across registry churn, zero duplicates (TC-7.4)",
+    "empty selection emits no-op artifact with registry path+hash",
+    "DF-7 stateful board fixture green"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/tmr-provenance.md",
+    ".architecture/structured/flows.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-2/normative.md",
+    "definition_hash": "6a5a5eb08767"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-2/component-verification-procedure.md",
+     "plan_hash": "416d70d612f8",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_verification_cards.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_verification_cards.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-28",
+    "rationale": "One card per qualifying TMR keyed (session_id, tmr_uid, obligation_revision, obligation_policy_version); registry_hash as provenance snapshot never key; supersede obsolete cards; pipeline_load upsert with stable local key + expected board revision; lost response resolved by authority query; board-ahead = local-mirror-stale",
+    "traced_from": "SS-B",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-7"
+   ],
+   "implementation_evidence": "verification_cards.py absent (verified)",
+   "test_refs": [
+    "TC-7.0",
+    "TC-7.4",
+    "TC-7.6",
+    "TC-7.7",
+    "TC-7.8"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_verification_cards.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_verification_cards.py -q"
+   ],
+   "concern_refs": [
+    "DD-3",
+    "RC-3"
+   ],
+   "invariant_refs": [
+    "INV-003",
+    "INV-013"
+   ],
+   "surface_scope": [
+    "cli_command",
+    "outbound_integration"
+   ],
+   "wave": 1,
+   "workstream": "B",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_verification_cards.py"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-003"
+   ]
+  },
+  {
+   "task_id": "B-3",
+   "altitude": "component",
+   "parent": "SS-B",
+   "decomposes_into": [],
+   "title": "record_verification_evidence.py write-back + maturity authority",
+   "description": "The ONLY path from completed card to promotion-eligible evidence: validates card binding, evidence class, artifact hash, tmr_uid before registry update via TmrRegistryWriter; sole authorized writer of nl|acceptance -> concrete atomically with write-back.",
+   "effort": "M",
+   "strategy": "test-first",
+   "depends_on": [
+    "B-1",
+    "W0-13"
+   ],
+   "acceptance_criteria": [
+    "card completion without registry update cannot count promotion-ready",
+    "concurrency conflict retries from fresh read",
+    "green-but-wrong evidence rejected (TC-8.4)"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/tmr-provenance.md",
+    ".architecture/primer.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-3/normative.md",
+    "definition_hash": "9e9a8d33b4a9"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-3/component-verification-procedure.md",
+     "plan_hash": "0c201c7266fd",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_record_verification_evidence.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_record_verification_evidence.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-29",
+    "rationale": "The ONLY path from completed card to promotion-eligible evidence: validates card binding, evidence class, artifact hash, tmr_uid before registry update via TmrRegistryWriter; sole authorized writer of nl|acceptance -> concrete atomically with write-back",
+    "traced_from": "SS-B",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-7"
+   ],
+   "implementation_evidence": "script absent (verified); spec names it as new sole writer",
+   "test_refs": [
+    "TC-7.2",
+    "TC-8.4"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_record_verification_evidence.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_record_verification_evidence.py -q"
+   ],
+   "concern_refs": [
+    "RC-3",
+    "DD-3"
+   ],
+   "invariant_refs": [
+    "INV-003",
+    "INV-009"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 1,
+   "workstream": "B",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_record_verification_evidence.py"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-003",
+    "INV-009"
+   ]
+  },
+  {
+   "task_id": "B-4",
+   "altitude": "component",
+   "parent": "SS-B",
+   "decomposes_into": [],
+   "title": "criticality_classifier.py resolution extension",
+   "description": "Extend existing classifier: resolution action recording rule version + source-artifact hash + architecture link for any false resolution; null preserved or resolved true otherwise; operator receipt-bound resolution decisions recorded by this sole writer; writes via TmrRegistryWriter.",
+   "effort": "M",
+   "strategy": "test-first",
+   "depends_on": [
+    "B-1",
+    "W0-13"
+   ],
+   "acceptance_criteria": [
+    "sole-writer enforced by lint + runtime (TC-7.5)",
+    "never defaults to false",
+    "resolution records carry rule version + source hash"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/tmr-provenance.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "partial",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-4/normative.md",
+    "definition_hash": "9d63401a0ca0"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-4/component-verification-procedure.md",
+     "plan_hash": "42ce280df09b",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_criticality_resolution.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_criticality_resolution.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-30",
+    "rationale": "Extend existing classifier: resolution action recording rule version + source-artifact hash + architecture link for any false resolution; null preserved or resolved true otherwise; operator receipt-bound resolution decisions recorded by this sole writer; writes via TmrRegistryWriter",
+    "traced_from": "SS-B",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-7"
+   ],
+   "implementation_evidence": "criticality_classifier.py EXISTS (60 lines; spec: already the sole writer today); resolution-record path new",
+   "test_refs": [
+    "TC-7.5"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_criticality_resolution.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_criticality_resolution.py -q"
+   ],
+   "concern_refs": [
+    "CB-4",
+    "DD-3"
+   ],
+   "invariant_refs": [
+    "INV-003"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 1,
+   "workstream": "B",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_criticality_resolution.py"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-003"
+   ]
+  },
+  {
+   "task_id": "B-5",
+   "altitude": "component",
+   "parent": "SS-B",
+   "decomposes_into": [],
+   "title": "promotion_gate.py local evaluation + intent construction",
+   "description": "Local promotion evaluation over MW-005/MW-009; finalize-transition check (registry validity + plan, NO run evidence - deadlock rule); completion-gate quantifier over critical_seam != false; JCS promotion intent binding the complete spec-9 field list; pre-dispatch local generation re-read.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "B-2",
+    "B-3",
+    "B-7",
+    "B-8",
+    "W0-8",
+    "W0-9"
+   ],
+   "acceptance_criteria": [
+    "end-to-end local/remote split proven (TC-8.2)",
+    "gateway replay blocked (TC-8.3)",
+    "null-seam records cannot escape the quantifier",
+    "successor_transfer_set byte-identical to provisional plan or intent-mismatch"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/tmr-provenance.md",
+    ".architecture/structured/flows.md",
+    ".architecture/primer.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-5/normative.md",
+    "definition_hash": "1d085c6cc0e6"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-5/component-verification-procedure.md",
+     "plan_hash": "43a2bd7cc903",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_promotion_gate.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_promotion_gate.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-31",
+    "rationale": "Local promotion evaluation over MW-005/MW-009; finalize-transition check (registry validity + plan, NO run evidence - deadlock rule); completion-gate quantifier over critical_seam != false; JCS promotion intent binding the complete spec-9 field list; pre-dispatch local generation re-read",
+    "traced_from": "SS-B",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-8"
+   ],
+   "implementation_evidence": "promotion_gate.py absent (verified)",
+   "test_refs": [
+    "TC-8.0",
+    "TC-8.2",
+    "TC-8.3",
+    "TC-8.4",
+    "TC-8.5",
+    "TC-8.6",
+    "TC-8.9",
+    "TC-INV-018"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_promotion_gate.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_promotion_gate.py -q"
+   ],
+   "concern_refs": [
+    "RC-1",
+    "CB-4",
+    "SEC-1"
+   ],
+   "invariant_refs": [
+    "INV-018",
+    "INV-020",
+    "INV-021"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 1,
+   "workstream": "B",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_promotion_gate.py"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-018",
+    "INV-020",
+    "INV-021"
+   ]
+  },
+  {
+   "task_id": "B-6",
+   "altitude": "component",
+   "parent": "SS-B",
+   "decomposes_into": [],
+   "title": "Promotion remote sequence + authority-committed inheritance",
+   "description": "Wire the canonical runtime sequence (local eval -> REMOTE snapshot registration -> intent -> prepare -> commit) via MW-007/MW-011; successor derivation from authority commit record at required read-version; startup reconciliation gate; mirror materialization under StateTransaction with LocalReconciliationResult states; local-mirror-stale blocking + idempotent rematerialization; failure-ownership table.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "B-5",
+    "W0-10",
+    "W0-12"
+   ],
+   "acceptance_criteria": [
+    "prepare without registered snapshot rejected (TC-8.10)",
+    "parent completion never observable without transfer facts (TC-8.13)",
+    "rematerialization path green (TC-8.14)",
+    "retention/GC protection (TC-8.15)"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/flows.md",
+    ".architecture/structured/components/gauntlet-persistence.md",
+    ".architecture/structured/components/tmr-provenance.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-integration",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-6/normative.md",
+    "definition_hash": "63b951267060"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-6/component-verification-procedure.md",
+     "plan_hash": "472d7b5a1e97",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_promotion_sequence.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_promotion_sequence.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-32",
+    "rationale": "Wire the canonical runtime sequence (local eval -> REMOTE snapshot registration -> intent -> prepare -> commit) via MW-007/MW-011; successor derivation from authority commit record at required read-version; startup reconciliation gate; mirror materialization under StateTransaction with LocalReconciliationResult states; local-mirror-stale blocking + idempotent rematerialization; failure-ownership table",
+    "traced_from": "SS-B",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-8"
+   ],
+   "implementation_evidence": "no remote promotion sequence exists",
+   "test_refs": [
+    "TC-8.10",
+    "TC-8.11",
+    "TC-8.12",
+    "TC-8.13",
+    "TC-8.14",
+    "TC-8.15",
+    "TC-8.16",
+    "TC-8.17",
+    "TC-8.18"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_promotion_sequence.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_promotion_sequence.py -q"
+   ],
+   "concern_refs": [
+    "RC-1",
+    "SEC-3",
+    "FM-3"
+   ],
+   "invariant_refs": [
+    "INV-017",
+    "INV-019",
+    "INV-020"
+   ],
+   "surface_scope": [
+    "outbound_integration",
+    "cli_command"
+   ],
+   "wave": 1,
+   "workstream": "B",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_promotion_sequence.py"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-017",
+    "INV-019",
+    "INV-020"
+   ]
+  },
+  {
+   "task_id": "B-7",
+   "altitude": "component",
+   "parent": "SS-B",
+   "decomposes_into": [],
+   "title": "ConOps walkthrough: script gen + typed predicates + evidence binding",
+   "description": "conops-walkthrough.md generated from happy-path spine tests deriving rows SOLELY from roadmap/conops.md; typed expected-observation predicates per class (API/CLI/GUI/human-judgment routes to rubric); evidence binding (row_id, script hash, operator identity, timestamp, artifact hash, provenance class); close-verifier rejection of stale/swapped/wrong-script evidence; canonical hash-regeneration order.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-2",
+    "W0-8"
+   ],
+   "acceptance_criteria": [
+    "swapped/stale evidence rejected (TC-9.3)",
+    "typed-predicate mismatch + human-judgment routing (TC-9.4)",
+    "worked-fine prose fails",
+    "conductor-only critical evidence insufficient"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/validation-emission.md",
+    ".architecture/structured/flows.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "partial",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-7/normative.md",
+    "definition_hash": "b8863358eef2"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-7/component-verification-procedure.md",
+     "plan_hash": "f73b3d64d014",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_conops_walkthrough.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_conops_walkthrough.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-33",
+    "rationale": "conops-walkthrough",
+    "traced_from": "SS-B",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-9"
+   ],
+   "implementation_evidence": "Phase 7 ConOps derive exists (validation_emission.py:688 handle_derive_conops); walkthrough layer new, EXTENDS it",
+   "test_refs": [
+    "TC-9.0",
+    "TC-9.2",
+    "TC-9.3",
+    "TC-9.4",
+    "TC-9.5",
+    "TC-9.6"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_conops_walkthrough.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_conops_walkthrough.py -q"
+   ],
+   "concern_refs": [
+    "SEC-3",
+    "DD-3"
+   ],
+   "invariant_refs": [
+    "INV-013",
+    "INV-021"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 1,
+   "workstream": "B",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_conops_walkthrough.py"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "B-8",
+   "altitude": "component",
+   "parent": "SS-B",
+   "decomposes_into": [],
+   "title": "Spine artifacts: close-binding DAG + BOOT-SPINE",
+   "description": "spine-core.json -> evidence-index.json -> spine-manifest.json with schema-enforced acyclic references and exact hash projections; BOOT-SPINE transitive validation (schema + spine_core_hash + evidence_index_hash + node-registry hash).",
+   "effort": "M",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-2",
+    "W0-6"
+   ],
+   "acceptance_criteria": [
+    "reverse edge rejected (TC-10.3)",
+    "DF-18 envelope-field mutations under real generators",
+    "missing-with-predecessor blocks"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/validation-emission.md",
+    ".architecture/primer.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-8/normative.md",
+    "definition_hash": "9555490b5c16"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-8/component-verification-procedure.md",
+     "plan_hash": "4ccbc1079dc0",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_spine_artifacts.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_spine_artifacts.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-34",
+    "rationale": "spine-core",
+    "traced_from": "SS-B",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-10"
+   ],
+   "implementation_evidence": "no spine artifacts exist",
+   "test_refs": [
+    "TC-10.0",
+    "TC-10.2",
+    "TC-10.3",
+    "TC-INV-018"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_spine_artifacts.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_spine_artifacts.py -q"
+   ],
+   "concern_refs": [
+    "CB-3"
+   ],
+   "invariant_refs": [
+    "INV-018"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 1,
+   "workstream": "B",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_spine_artifacts.py"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-018"
+   ],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "B-9",
+   "altitude": "component",
+   "parent": "SS-B",
+   "decomposes_into": [],
+   "title": "Contract boundary: registry, capability probes, plan lint",
+   "description": "Probe implementation for all 9 consumed contracts (signed challenge-response + negative probes + schema_sha256 behavior-fingerprint pinning + prepare/commit revalidation); registry-vs-contract-boundary.md drift check; execution-plan lint failing fizzy-repo-scoped tasks; per-delta G3 tracking pointers.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-11",
+    "W0-12"
+   ],
+   "acceptance_criteria": [
+    "incompatible contract blocks advance (TC-16.3)",
+    "live-preflight-unavailable vs local deferred distinguished (TC-3.3)",
+    "fingerprint drift = state-stale (DF-3)",
+    "contract-list drift fails reconciliation (DF-16)"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/harness-hooks.md",
+    ".architecture/structured/flows.md",
+    ".architecture/concerns.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "partial",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-9/normative.md",
+    "definition_hash": "959bcd3f1b9d"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-9/component-verification-procedure.md",
+     "plan_hash": "8b613ed5f56f",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_contract_boundary.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_contract_boundary.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-35",
+    "rationale": "Probe implementation for all 9 consumed contracts (signed challenge-response + negative probes + schema_sha256 behavior-fingerprint pinning + prepare/commit revalidation); registry-vs-contract-boundary",
+    "traced_from": "SS-B",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-16"
+   ],
+   "implementation_evidence": "contract-boundary.md EXISTS (Phase 4 artifact, hash-bound); probe CODE + lint new",
+   "test_refs": [
+    "TC-16.0",
+    "TC-16.2",
+    "TC-16.3",
+    "TC-16.4",
+    "TC-3.3"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_contract_boundary.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_contract_boundary.py -q"
+   ],
+   "concern_refs": [
+    "SEC-5",
+    "CB-1",
+    "DD-3"
+   ],
+   "invariant_refs": [
+    "INV-007",
+    "INV-010"
+   ],
+   "surface_scope": [
+    "outbound_integration",
+    "cli_command"
+   ],
+   "wave": 1,
+   "workstream": "B",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_contract_boundary.py"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-007"
+   ],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "B-10",
+   "altitude": "component",
+   "parent": "SS-B",
+   "decomposes_into": [],
+   "title": "Regime lifecycle (spec 18): attestation, backfill, cross-regime transfer",
+   "description": "Regime materialization comparing authority-attested creation time against validated hardening-rollout-policy-v1 (binding policy identity+hash+keyset epoch); mirror validation against signed attestation; epoch-zero pre-rollout immutability; legacy materialization only for pre-contract sessions via historical lookup; creation-unprovable operator disposition; cross-regime deferral solely via obligation-transfer-v1 with conductor-produced provenance cap.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-11",
+    "W0-12"
+   ],
+   "acceptance_criteria": [
+    "regime branch distinguishes by attestation never absence (TC-0.4)",
+    "epoch-zero provisioning + immutable pre-rollout (TC-0.10)",
+    "DF-10 regime-pair transfer matrix green",
+    "local timestamp/manifest rewrite cannot decide regime"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/debate-session.md",
+    ".architecture/primer.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-10/normative.md",
+    "definition_hash": "f28769f155cf"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-10/component-verification-procedure.md",
+     "plan_hash": "b97e052401a4",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_regime_lifecycle.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_regime_lifecycle.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-36",
+    "rationale": "Regime materialization comparing authority-attested creation time against validated hardening-rollout-policy-v1 (binding policy identity+hash+keyset epoch); mirror validation against signed attestation; epoch-zero pre-rollout immutability; legacy materialization only for pre-contract sessions via historical lookup; creation-unprovable operator disposition; cross-regime deferral solely via obligation-transfer-v1 with conductor-produced provenance cap",
+    "traced_from": "SS-B",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-0"
+   ],
+   "implementation_evidence": "no regime machinery exists",
+   "test_refs": [
+    "TC-0.4",
+    "TC-0.10"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_regime_lifecycle.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_regime_lifecycle.py -q"
+   ],
+   "concern_refs": [
+    "FM-1",
+    "FM-2",
+    "US-2-theme"
+   ],
+   "invariant_refs": [
+    "INV-002",
+    "INV-003",
+    "INV-014"
+   ],
+   "surface_scope": [
+    "startup_migration",
+    "outbound_integration"
+   ],
+   "wave": 1,
+   "workstream": "B",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_regime_lifecycle.py"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-014"
+   ]
+  },
+  {
+   "task_id": "B-11",
+   "altitude": "component",
+   "parent": "SS-B",
+   "decomposes_into": [],
+   "title": "Phase 8 verification-subflow migration (OR-3 / DF-20)",
+   "description": "Atomic migration current_phase: verification -> {current_phase: implementation, current_step: verification} preserving artifacts + board state; idempotent single phase8_subflow_migration journey event; post-migration rejection of new current_phase: verification writes; canonical-order validator normalizes historical implementation -> verification transitions as legacy subflow events; SKILL.md canonical order updated.",
+   "effort": "M",
+   "strategy": "test-first",
+   "depends_on": [],
+   "acceptance_criteria": [
+    "all four DF-20 guarantees red-green",
+    "resume checker passes implementation -> (subflow) -> complete journey",
+    "migrated session resumes cleanly"
+   ],
+   "architecture_refs": [
+    ".architecture/concerns.md",
+    ".architecture/structured/components/debate-session.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-11/normative.md",
+    "definition_hash": "d28f34763d86"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/B-11/component-verification-procedure.md",
+     "plan_hash": "b3be9969c9d8",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_phase8_subflow_migration.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_phase8_subflow_migration.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-37",
+    "rationale": "Atomic migration current_phase: verification -> {current_phase: implementation, current_step: verification} preserving artifacts + board state; idempotent single phase8_subflow_migration journey event; post-migration rejection of new current_phase: verification writes; canonical-order validator normalizes historical implementation -> verification transitions as legacy subflow events; SKILL",
+    "traced_from": "SS-B",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-1"
+   ],
+   "implementation_evidence": "the mismatch exists today (SKILL.md:75-108 vs phases/09-verification.md:184-198; .architecture FIND-002)",
+   "test_refs": [
+    "TC-1.0"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_phase8_subflow_migration.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_phase8_subflow_migration.py -q"
+   ],
+   "concern_refs": [],
+   "invariant_refs": [
+    "INV-002"
+   ],
+   "surface_scope": [
+    "startup_migration"
+   ],
+   "wave": 1,
+   "workstream": "B",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_phase8_subflow_migration.py"
+   ],
+   "scope_refs": [
+    "B"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "SS-C",
+   "altitude": "subsystem",
+   "parent": "SYS",
+   "decomposes_into": [
+    "C-1",
+    "C-2",
+    "C-3",
+    "C-4",
+    "C-5"
+   ],
+   "title": "G5 debate efficiency",
+   "description": "Reconciliation gate, node registry, freeze seam, false-convergence guard, critic output contract.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [],
+   "acceptance_criteria": [
+    "a full debate round exercises freeze, reconciliation, and the convergence guard"
+   ],
+   "architecture_refs": [
+    ".architecture/primer.md",
+    ".architecture/overview.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-integration",
+   "verification_scope": "full-suite",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/SS-C/subsystem-spec.md",
+    "definition_hash": "83cbf9e2d83f"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/SS-C/component-verification-procedure.md",
+     "plan_hash": "249a99f0fec2",
+     "artifact": "skills/adversarial-spec/scripts/tests",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests -q"
+     ]
+    },
+    "subsystem_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/SS-C/subsystem-verification-plan.md",
+     "plan_hash": "3dbf00fb40f9",
+     "artifact": "skills/adversarial-spec/scripts/tests",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-38",
+    "rationale": "Reconciliation gate, node registry, freeze seam, false-convergence guard, critic output contract",
+    "traced_from": "SYS",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "subsystem"
+   },
+   "subsystem_spec_path": ".adversarial-spec/specs/post-fable-hardening-skill/SS-C/subsystem-spec.md",
+   "realizes_refs": [
+    "US-11",
+    "US-12",
+    "US-13",
+    "US-14"
+   ],
+   "implementation_evidence": "aggregation node; see child components",
+   "test_refs": [],
+   "test_files": [],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests -q"
+   ],
+   "concern_refs": [],
+   "invariant_refs": [],
+   "surface_scope": [],
+   "wave": 1,
+   "workstream": "C",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests"
+   ]
+  },
+  {
+   "task_id": "C-1",
+   "altitude": "component",
+   "parent": "SS-C",
+   "decomposes_into": [],
+   "title": "reconcile_derived.py: 4 adapters + lineage + snapshot consistency",
+   "description": "In-process adapter registry (tests-pseudo, tmr-registry, architecture-invariants, node-registry) with per-adapter dirty contracts + semantic_binding_fingerprint; reconciliation/lineage-map.json authored at refactor time, both-fingerprints-resolve validation; ONE immutable source snapshot per run with mixed-generation invalidation; envelope report bound to exact spec hash; --self-check for BOOT-RECON; hosts contract-list drift check.",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-2",
+    "W0-4"
+   ],
+   "acceptance_criteria": [
+    "rename without lineage dirty despite resolving anchor (TC-13.3/13.5)",
+    "snapshot consistency + lineage artifact (TC-13.7)",
+    "unavailable adapter blocks dispatch and convergence"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/tmr-provenance.md",
+    ".architecture/structured/components/plan-analysis.md",
+    ".architecture/patterns.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/C-1/normative.md",
+    "definition_hash": "31f712fa4059"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/C-1/component-verification-procedure.md",
+     "plan_hash": "677208f0ceeb",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_reconcile_derived.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_reconcile_derived.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-39",
+    "rationale": "In-process adapter registry (tests-pseudo, tmr-registry, architecture-invariants, node-registry) with per-adapter dirty contracts + semantic_binding_fingerprint; reconciliation/lineage-map",
+    "traced_from": "SS-C",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-13"
+   ],
+   "implementation_evidence": "reconcile_derived.py absent (verified)",
+   "test_refs": [
+    "TC-13.0",
+    "TC-13.2",
+    "TC-13.3",
+    "TC-13.4",
+    "TC-13.5",
+    "TC-13.6",
+    "TC-13.7"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_reconcile_derived.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_reconcile_derived.py -q"
+   ],
+   "concern_refs": [
+    "US-3-theme",
+    "DD-3"
+   ],
+   "invariant_refs": [
+    "INV-013",
+    "INV-022"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 1,
+   "workstream": "C",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_reconcile_derived.py"
+   ],
+   "scope_refs": [
+    "C"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-013"
+   ],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "C-2",
+   "altitude": "component",
+   "parent": "SS-C",
+   "decomposes_into": [],
+   "title": "Debate node registry: snapshot + hash-chained event log",
+   "description": "Versioned envelope snapshot (payload.nodes[] settled/volatile/derived) + hash-chained debate-nodes.events.jsonl under one StateTransaction; canonical leaf-heading extraction; checkpoint/resume lifecycle with durable manifest reference + fail-closed chain validation; round-metrics accumulation (KPI-7 baseline).",
+   "effort": "M",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-4",
+    "W0-6"
+   ],
+   "acceptance_criteria": [
+    "chain break detected (TC-12.3)",
+    "corrupt artifacts preserved in place with named quarantine status",
+    "resume restores the settled/volatile/derived split exactly"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/debate-session.md",
+    ".architecture/structured/components/gauntlet-persistence.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/C-2/normative.md",
+    "definition_hash": "0bd9b9225746"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/C-2/component-verification-procedure.md",
+     "plan_hash": "6a2a43544d9c",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_node_registry.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_node_registry.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-40",
+    "rationale": "Versioned envelope snapshot (payload",
+    "traced_from": "SS-C",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-12"
+   ],
+   "implementation_evidence": "no node registry exists",
+   "test_refs": [
+    "TC-12.0",
+    "TC-12.2",
+    "TC-12.3"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_node_registry.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_node_registry.py -q"
+   ],
+   "concern_refs": [
+    "RC-3"
+   ],
+   "invariant_refs": [
+    "INV-008",
+    "INV-013"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 1,
+   "workstream": "C",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_node_registry.py"
+   ],
+   "scope_refs": [
+    "C"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-008",
+    "INV-009"
+   ]
+  },
+  {
+   "task_id": "C-3",
+   "altitude": "component",
+   "parent": "SS-C",
+   "decomposes_into": [],
+   "title": "Freeze enforcement: debate.py payload assembly seam",
+   "description": "debate.py payload assembly excludes frozen nodes (one-line stub: node_id + settled round + hash); payload diffable against freeze list; changed frozen-node hash blocks dispatch until reopened by named concern; unresolvable critique anchors block freezing.",
+   "effort": "M",
+   "strategy": "test-first",
+   "depends_on": [
+    "C-2"
+   ],
+   "acceptance_criteria": [
+    "frozen-bytes mutation blocks dispatch (TC-11.3)",
+    "real parser on induced fragments (TC-11.4)",
+    "round N+1 carries exactly the volatile surface"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/debate-session.md",
+    ".architecture/structured/flows.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "partial",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/C-3/normative.md",
+    "definition_hash": "c7269f5b65eb"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/C-3/component-verification-procedure.md",
+     "plan_hash": "ebef30f2ca9c",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_freeze_payload_assembly.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_freeze_payload_assembly.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-41",
+    "rationale": "debate",
+    "traced_from": "SS-C",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-11"
+   ],
+   "implementation_evidence": "debate.py exists (payload assembly debate.py:1086-1227); zero freeze logic (grep frozen|freeze = 0, verified)",
+   "test_refs": [
+    "TC-11.0",
+    "TC-11.2",
+    "TC-11.3",
+    "TC-11.4"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_freeze_payload_assembly.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_freeze_payload_assembly.py -q"
+   ],
+   "concern_refs": [],
+   "invariant_refs": [
+    "INV-013"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 1,
+   "workstream": "C",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_freeze_payload_assembly.py"
+   ],
+   "scope_refs": [
+    "C"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": []
+  },
+  {
+   "task_id": "C-4",
+   "altitude": "component",
+   "parent": "SS-C",
+   "decomposes_into": [],
+   "title": "False-convergence guard: quorum, press, Phase 4 exit gate",
+   "description": "Computed quorum (distinct identities x registry-validated families; content-derived verdicts override contradicting agreed flags -> registry event); convergence requires clean reconciliation report for the EXACT agreed spec hash; Phase 4 exit gate binding claimed rounds to authority round records; press mechanization (MIN_PRESS_JUSTIFICATION_CHARS=280 NFC, structured verdict rules).",
+   "effort": "L",
+   "strategy": "test-first",
+   "depends_on": [
+    "C-1",
+    "C-2"
+   ],
+   "acceptance_criteria": [
+    "card-5715 R3/R7 replays flagged (TC-14.2)",
+    "failed press excludes AGREE from quorum (TC-14.4)",
+    "DF-15 induced round registries green"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/debate-session.md",
+    ".architecture/structured/components/models-providers.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "greenfield",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/C-4/normative.md",
+    "definition_hash": "e42c9839a7d7"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/C-4/component-verification-procedure.md",
+     "plan_hash": "72af0bca8ab8",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_convergence_guard.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_convergence_guard.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-42",
+    "rationale": "Computed quorum (distinct identities x registry-validated families; content-derived verdicts override contradicting agreed flags -> registry event); convergence requires clean reconciliation report for the EXACT agreed spec hash; Phase 4 exit gate binding claimed rounds to authority round records; press mechanization (MIN_PRESS_JUSTIFICATION_CHARS=280 NFC, structured verdict rules)",
+    "traced_from": "SS-C",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-14"
+   ],
+   "implementation_evidence": "convergence today is prose-checked; this session's 4 live false-convergence instances are the fixture corpus",
+   "test_refs": [
+    "TC-14.0",
+    "TC-14.2",
+    "TC-14.3",
+    "TC-14.4",
+    "TC-14.5",
+    "TC-14.6"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_convergence_guard.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_convergence_guard.py -q"
+   ],
+   "concern_refs": [
+    "DD-1"
+   ],
+   "invariant_refs": [
+    "INV-013"
+   ],
+   "surface_scope": [
+    "cli_command",
+    "outbound_integration"
+   ],
+   "wave": 1,
+   "workstream": "C",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_convergence_guard.py"
+   ],
+   "scope_refs": [
+    "C"
+   ],
+   "active_path": true,
+   "safety_implements": [],
+   "safety_consumes": [
+    "INV-013"
+   ]
+  },
+  {
+   "task_id": "C-5",
+   "altitude": "component",
+   "parent": "SS-C",
+   "decomposes_into": [],
+   "title": "Critic-runner stdout contract + provenance-coupled salvage",
+   "description": "One shared parser ([AGREE] xor critique+[SPEC], line-start markers, first-wins, duplicate-conflict invalid, size cap, escape rule) with fixture tests; debate_return_quality invalid marking; salvage flow (original path + SHA-256 at discovery + timestamp + dispatch id, copy + decisions-log entry through ONE StateTransaction); agentic-CLI prompts demand stdout-only.",
+   "effort": "M",
+   "strategy": "test-first",
+   "depends_on": [
+    "W0-2",
+    "W0-4"
+   ],
+   "acceptance_criteria": [
+    "DF-17 parser edge fixtures green",
+    "crash-injected salvage never exposes artifact without provenance record",
+    "salvaged report recorded as violation evidence, never raw return"
+   ],
+   "architecture_refs": [
+    ".architecture/structured/components/models-providers.md",
+    ".architecture/structured/components/debate-session.md"
+   ],
+   "behavior_change": true,
+   "verification_mode": "automated-unit",
+   "verification_scope": "targeted",
+   "implementation_status": "partial",
+   "spec_refs": {
+    "definition_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/C-5/normative.md",
+    "definition_hash": "9dafe3656f11"
+   },
+   "verification_binding": {
+    "component_verification": {
+     "plan_artifact": ".adversarial-spec/specs/post-fable-hardening-skill/C-5/component-verification-procedure.md",
+     "plan_hash": "0f6492939cdd",
+     "artifact": "skills/adversarial-spec/scripts/tests/test_critic_output_contract.py",
+     "kind": "verification",
+     "verify_commands": [
+      "uv run pytest skills/adversarial-spec/scripts/tests/test_critic_output_contract.py -q"
+     ]
+    }
+   },
+   "requirement_metadata": {
+    "requirement_id": "REQ-43",
+    "rationale": "One shared parser ([AGREE] xor critique+[SPEC], line-start markers, first-wins, duplicate-conflict invalid, size cap, escape rule) with fixture tests; debate_return_quality invalid marking; salvage flow (original path + SHA-256 at discovery + timestamp + dispatch id, copy + decisions-log entry through ONE StateTransaction); agentic-CLI prompts demand stdout-only",
+    "traced_from": "SS-C",
+    "owner": "adv-spec conductor",
+    "verification_method": "test",
+    "verification_level": "component"
+   },
+   "realizes_refs": [
+    "US-14"
+   ],
+   "implementation_evidence": "dispatch/return handling exists in models.py + fizzy round machinery (R3 gemini salvage was manual - the live incident this mechanizes); shared parser + transactional salvage new",
+   "test_refs": [
+    "TC-INV-015"
+   ],
+   "test_files": [
+    "skills/adversarial-spec/scripts/tests/test_critic_output_contract.py"
+   ],
+   "verify_commands": [
+    "uv run pytest skills/adversarial-spec/scripts/tests/test_critic_output_contract.py -q"
+   ],
+   "concern_refs": [
+    "DD-4"
+   ],
+   "invariant_refs": [
+    "INV-015"
+   ],
+   "surface_scope": [
+    "cli_command"
+   ],
+   "wave": 1,
+   "workstream": "C",
+   "tested_by": "llm",
+   "exemption_reason": null,
+   "verification_notes": null,
+   "test_targets": [
+    "skills/adversarial-spec/scripts/tests/test_critic_output_contract.py"
+   ],
+   "scope_refs": [
+    "C"
+   ],
+   "active_path": true,
+   "safety_implements": [
+    "INV-015"
+   ],
+   "safety_consumes": [
+    "INV-008"
+   ]
+  }
+ ]
+}
