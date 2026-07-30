@@ -30,7 +30,7 @@ Supported providers (set corresponding API key):
                 Reasoning: --codex-reasoning xhigh (minimal, low, medium, high, xhigh)
     Claude CLI: (Anthropic subscription) models: claude-cli/claude-opus-4-7, claude-cli/claude-sonnet-4-6
                 Install: npm install -g @anthropic-ai/claude-code && claude setup-token
-    Gemini CLI:  (Google account) models: gemini-cli/gemini-3.1-pro-preview, gemini-cli/gemini-3-flash-preview
+    Gemini CLI:  (Google account) models: gemini-cli/gemini-3.6-flash-high, gemini-cli/gemini-3-flash-preview
 
 Document types:
     spec  - Specification (default). Use --depth to control focus:
@@ -74,6 +74,7 @@ import token_tracking  # noqa: E402
 from adversaries import (  # noqa: E402
     FINAL_BOSS,
     PRE_GAUNTLET,
+    SCOUT_GAUNTLET,
 )
 from gauntlet import (  # noqa: E402
     ADVERSARIES,
@@ -262,7 +263,7 @@ def add_core_arguments(parser: argparse.ArgumentParser) -> None:
         "--models",
         "-m",
         default=None,
-        help="Comma-separated list of models (e.g., codex/gpt-5.6-sol,gemini-cli/gemini-3.1-pro-preview)",
+        help="Comma-separated list of models (e.g., codex/gpt-5.6-sol,gemini-cli/gemini-3.6-flash-high)",
     )
     parser.add_argument(
         "--doc-type",
@@ -543,7 +544,7 @@ Examples:
   python3 debate.py focus-areas
   python3 debate.py personas
   python3 debate.py profiles
-  python3 debate.py save-profile myprofile --models codex/gpt-5.6-sol,gemini-cli/gemini-3.1-pro-preview --focus security
+  python3 debate.py save-profile myprofile --models codex/gpt-5.6-sol,gemini-cli/gemini-3.6-flash-high --focus security
 
 Gauntlet commands (adversarial attack on specs):
   echo "spec" | python3 debate.py gauntlet                   # Run gauntlet with all adversaries
@@ -655,10 +656,20 @@ def handle_info_command(args: argparse.Namespace) -> bool:
         print("Available Gauntlet Adversaries:\n")
         print(f"  {'NAME':<30} {'PREFIX':<8} DESCRIPTION")
         print(f"  {'─' * 28}  {'─' * 6}  {'─' * 50}")
-        all_advs = list(PRE_GAUNTLET.items()) + list(ADVERSARIES.items()) + list(FINAL_BOSS.items())
+        all_advs = (
+            list(PRE_GAUNTLET.items())
+            + list(SCOUT_GAUNTLET.items())
+            + list(ADVERSARIES.items())
+            + list(FINAL_BOSS.items())
+        )
         for name, adv in all_advs:
             first_line = adv.persona.strip().split("\n")[0][:50]
-            category = "(pre-gauntlet)" if name in PRE_GAUNTLET else "(final boss)" if name in FINAL_BOSS else ""
+            category = (
+                "(pre-gauntlet)" if name in PRE_GAUNTLET
+                else "(scout)" if name in SCOUT_GAUNTLET
+                else "(final boss)" if name in FINAL_BOSS
+                else ""
+            )
             print(f"  {name:<30} {adv.prefix:<8} {first_line}... {category}")
         print()
         print("Use with: --gauntlet-adversaries paranoid_security,burned_oncall")
@@ -776,7 +787,7 @@ def parse_models(args: argparse.Namespace) -> list[str]:
                 "  Codex CLI: Install codex CLI for codex/gpt-5.6-luna (FREE with ChatGPT subscription)", file=sys.stderr
             )
             print(
-                "  Gemini CLI: Install gemini CLI for gemini-cli/gemini-3.1-pro-preview (FREE)", file=sys.stderr
+                "  Gemini CLI: Install gemini CLI for gemini-cli/gemini-3.6-flash-high (FREE)", file=sys.stderr
             )
             print(
                 "  OpenAI:    Set OPENAI_API_KEY for gpt-5.6-sol", file=sys.stderr

@@ -753,7 +753,7 @@ class TestGetAvailableProviders:
                     # Verify the default model for Gemini CLI
                     for name, key, model in available:
                         if name == "Gemini CLI":
-                            assert model == "gemini-cli/gemini-3.1-pro-preview"
+                            assert model == "gemini-cli/gemini-3.6-flash-high"
                             assert key is None  # No API key required
 
 
@@ -828,31 +828,31 @@ class TestValidateModelCredentials:
         from providers import validate_model_credentials
 
         with patch("providers.CODEX_AVAILABLE", True):
-            valid, invalid = validate_model_credentials(["codex/gpt-5.5"])
-            assert valid == ["codex/gpt-5.5"]
+            valid, invalid = validate_model_credentials(["codex/gpt-5.6-sol"])
+            assert valid == ["codex/gpt-5.6-sol"]
             assert invalid == []
 
         with patch("providers.CODEX_AVAILABLE", False):
-            valid, invalid = validate_model_credentials(["codex/gpt-5.5"])
+            valid, invalid = validate_model_credentials(["codex/gpt-5.6-sol"])
             assert valid == []
-            assert invalid == ["codex/gpt-5.5"]
+            assert invalid == ["codex/gpt-5.6-sol"]
 
     def test_validates_gemini_cli_availability(self):
         from providers import validate_model_credentials
 
         with patch("providers.GEMINI_CLI_AVAILABLE", True):
             valid, invalid = validate_model_credentials(
-                ["gemini-cli/gemini-3.1-pro-preview"]
+                ["gemini-cli/gemini-3.6-flash-high"]
             )
-            assert valid == ["gemini-cli/gemini-3.1-pro-preview"]
+            assert valid == ["gemini-cli/gemini-3.6-flash-high"]
             assert invalid == []
 
         with patch("providers.GEMINI_CLI_AVAILABLE", False):
             valid, invalid = validate_model_credentials(
-                ["gemini-cli/gemini-3.1-pro-preview"]
+                ["gemini-cli/gemini-3.6-flash-high"]
             )
             assert valid == []
-            assert invalid == ["gemini-cli/gemini-3.1-pro-preview"]
+            assert invalid == ["gemini-cli/gemini-3.6-flash-high"]
 
     def test_defers_to_bedrock_validation_when_enabled(self):
         from providers import validate_model_credentials

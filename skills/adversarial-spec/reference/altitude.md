@@ -118,7 +118,7 @@ CROSS-CHECKS every claimed family against the model registry
 (`GAUNTLET_ADVERSARY_FAMILY_MISMATCH` — the manifest cannot forge diversity).
 `tier` is advisory dispatcher metadata: `fast` is legal for component
 (e.g. `gemini-3-flash`); `frontier` is advised for subsystem/system
-(`gemini-3.1-pro-preview`, `codex/gpt-5.4 xhigh`). Persona guidance rides the same
+(`gemini-3.6-flash-high`, `codex/gpt-5.6-sol max`). Persona guidance rides the same
 scale: low-blast / local / reversible change → light roster (assumption_auditor +
 architect + SDK pass); irreversible external effects, concurrency, hot path, or
 shared infrastructure → full slate (all 9 personas).

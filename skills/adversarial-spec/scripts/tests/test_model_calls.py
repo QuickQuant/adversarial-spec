@@ -286,7 +286,7 @@ class TestCodexModelPath:
     @patch("token_tracking.tracker", TokenTracker())
     def test_codex_unavailable_returns_error(self):
         result = call_single_model(
-            model="codex/gpt-5.5",
+            model="codex/gpt-5.6-sol",
             spec="# Spec",
             round_num=1,
             doc_type="tech",

@@ -21,24 +21,24 @@ def test_empty_concern_list_renders_safely():
 
 def test_grouping_by_adversary_and_model():
     concerns = [
-        _make("architect", "codex/gpt-5.5", "Concern A1"),
-        _make("architect", "codex/gpt-5.5", "Concern A2"),
+        _make("architect", "codex/gpt-5.6-luna", "Concern A1"),
+        _make("architect", "codex/gpt-5.6-luna", "Concern A2"),
         _make("architect", "gemini-cli/gemini-3-flash-preview", "Concern B1"),
-        _make("paranoid_security", "codex/gpt-5.5", "Concern C1"),
+        _make("paranoid_security", "codex/gpt-5.6-luna", "Concern C1"),
     ]
     out = render_grouped_markdown_export(concerns, spec_hash="abc12345")
 
     # Three section headers, one per (adversary, model) pair.
-    assert "## architect / codex/gpt-5.5  (2 concerns)" in out
+    assert "## architect / codex/gpt-5.6-luna  (2 concerns)" in out
     assert "## architect / gemini-cli/gemini-3-flash-preview  (1 concerns)" in out
-    assert "## paranoid_security / codex/gpt-5.5  (1 concerns)" in out
+    assert "## paranoid_security / codex/gpt-5.6-luna  (1 concerns)" in out
 
     # Header line includes the spec hash and counts.
     assert "Spec: abc12345" in out
     assert "Total: 4 concerns across 2 adversaries × 2 models" in out
 
     # Concerns are numbered 1..N within each group.
-    arch_section_start = out.index("## architect / codex/gpt-5.5")
+    arch_section_start = out.index("## architect / codex/gpt-5.6-luna")
     arch_section_end = out.index("## architect / gemini-cli")
     arch_section = out[arch_section_start:arch_section_end]
     assert "1." in arch_section and "2." in arch_section
@@ -50,8 +50,8 @@ def test_grouping_by_adversary_and_model():
 def test_constant_severity_suppresses_column():
     """Layer A.4: every concern is medium → drop [M] from each line."""
     concerns = [
-        _make("architect", "codex/gpt-5.5", "Concern A", severity="medium"),
-        _make("architect", "codex/gpt-5.5", "Concern B", severity="medium"),
+        _make("architect", "codex/gpt-5.6-luna", "Concern A", severity="medium"),
+        _make("architect", "codex/gpt-5.6-luna", "Concern B", severity="medium"),
     ]
     out = render_grouped_markdown_export(concerns)
 
@@ -67,9 +67,9 @@ def test_constant_severity_suppresses_column():
 def test_varied_severity_emits_per_row_tag():
     """When severities vary, every row gets its [H]/[M]/[L] tag."""
     concerns = [
-        _make("architect", "codex/gpt-5.5", "High concern", severity="high"),
-        _make("architect", "codex/gpt-5.5", "Medium concern", severity="medium"),
-        _make("architect", "codex/gpt-5.5", "Low concern", severity="low"),
+        _make("architect", "codex/gpt-5.6-luna", "High concern", severity="high"),
+        _make("architect", "codex/gpt-5.6-luna", "Medium concern", severity="medium"),
+        _make("architect", "codex/gpt-5.6-luna", "Low concern", severity="low"),
     ]
     out = render_grouped_markdown_export(concerns)
 
@@ -82,9 +82,9 @@ def test_varied_severity_emits_per_row_tag():
 
 
 def test_unknown_severity_falls_back_to_bracketed_label():
-    concerns = [_make("architect", "codex/gpt-5.5", "Weird", severity="unknown")]
+    concerns = [_make("architect", "codex/gpt-5.6-luna", "Weird", severity="unknown")]
     # Add a second concern with a different severity so the column is shown.
-    concerns.append(_make("architect", "codex/gpt-5.5", "Normal", severity="medium"))
+    concerns.append(_make("architect", "codex/gpt-5.6-luna", "Normal", severity="medium"))
     out = render_grouped_markdown_export(concerns)
     assert "[unknown]" in out
     assert "[M]" in out
@@ -98,7 +98,7 @@ def test_missing_source_model_is_labeled():
 
 def test_generated_at_appears_in_header_when_provided():
     out = render_grouped_markdown_export(
-        [_make("architect", "codex/gpt-5.5", "Concern")],
+        [_make("architect", "codex/gpt-5.6-luna", "Concern")],
         generated_at="2026-05-04T17:50:00Z",
         spec_hash="9ee43569",
     )
@@ -109,7 +109,7 @@ def test_generated_at_appears_in_header_when_provided():
 def test_output_is_a_single_string():
     """Sanity: the function returns one string suitable for direct write to disk."""
     out = render_grouped_markdown_export(
-        [_make("architect", "codex/gpt-5.5", "Concern")]
+        [_make("architect", "codex/gpt-5.6-luna", "Concern")]
     )
     assert isinstance(out, str)
     assert out.endswith("\n") or "\n" in out

@@ -27,7 +27,7 @@ def test_phase_2_uses_attack_codex_reasoning(monkeypatch):
 
     generate_big_picture_synthesis(
         [_concern()],
-        "codex/gpt-5.5",
+        "codex/gpt-5.6-luna",
         GauntletConfig(timeout=123, attack_codex_reasoning="minimal"),
     )
 
@@ -46,7 +46,7 @@ def test_phase_4_uses_eval_codex_reasoning(monkeypatch):
     evaluate_concerns(
         "spec",
         [_concern()],
-        "codex/gpt-5.5",
+        "codex/gpt-5.6-luna",
         GauntletConfig(timeout=321, eval_codex_reasoning="medium"),
     )
 
@@ -67,7 +67,7 @@ def test_phase_5_uses_attack_codex_reasoning(monkeypatch):
 
     run_rebuttals(
         [evaluation],
-        "codex/gpt-5.5",
+        "codex/gpt-5.6-luna",
         GauntletConfig(timeout=222, attack_codex_reasoning="low"),
     )
 
@@ -90,7 +90,7 @@ def test_phase_6_uses_eval_codex_reasoning(monkeypatch):
     final_adjudication(
         "spec",
         [rebuttal],
-        "codex/gpt-5.5",
+        "codex/gpt-5.6-luna",
         GauntletConfig(timeout=444, eval_codex_reasoning="high"),
     )
 

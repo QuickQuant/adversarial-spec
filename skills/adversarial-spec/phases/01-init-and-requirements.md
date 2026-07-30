@@ -417,7 +417,7 @@ Round 3 - Proportional Fix:
 
 **Example invocation:**
 ```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.6-sol,gemini-cli/gemini-3.1-pro-preview --doc-type debug <<'SPEC_EOF'
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.6-sol,gemini-cli/gemini-3.6-flash-high --doc-type debug <<'SPEC_EOF'
 # Debug Investigation: Orders Page 60s Load Time
 
 ## Symptoms

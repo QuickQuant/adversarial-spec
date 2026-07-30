@@ -286,9 +286,11 @@ Then present available models to the user using AskUserQuestion with multiSelect
 - `claude-sonnet-4-6` - Claude Sonnet 4.6, excellent reasoning
 - `claude-opus-4-7` - Claude Opus 4.7, highest capability
 
-**If GEMINI_API_KEY is set, include:**
+**If GEMINI_API_KEY is set, include (PREFERRED gemini path — litellm API, NOT the OAuth CLI tier):**
+- `gemini/gemini-3.5-flash` - **the working gemini critic** — GA flash, API-only, verified live 2026-07-18. Use this as the default gemini critic.
 - `gemini/gemini-3-pro` - Top LMArena score (1501 Elo)
-- `gemini/gemini-3-flash` - Fast, pro-level quality
+
+> **The recurring "gemini is dead" trap:** gemini is NOT dead — it gets *called the wrong way*. The `gemini-cli/…` prefix routes to the retired Google-account OAuth/Code-Assist tier, which fails deterministically (see the Gemini CLI note below). Always prefer the `gemini/…` API path here (key loads from the secrets file) or the `antigravity/…` CLI replacement. `models.py` routes by prefix: `gemini/…` → litellm API; `gemini-cli/…` → dead OAuth CLI; `antigravity/…` → the `agy` replacement.
 
 **If XAI_API_KEY is set, include:**
 - `xai/grok-3` - Alternative perspective
@@ -309,9 +311,12 @@ Then present available models to the user using AskUserQuestion with multiSelect
 **If Codex CLI is installed, include:**
 - `codex/gpt-5.6-sol` - OpenAI Codex Sol with max effort
 
-**If Gemini CLI is installed, include:**
-- `gemini-cli/gemini-3.1-pro-preview` - Google Gemini 3 Pro
-- `gemini-cli/gemini-3-flash-preview` - Google Gemini 3 Flash
+**Gemini CLI (`gemini-cli/…`) — AVOID: retired OAuth/Code-Assist tier.** This is the source of the recurring "gemini died" failure. It fails three ways, all wrong-path (not a dead model):
+- flash names → `ModelNotFoundError 404` (not exposed on this tier — `providers.py:38`)
+- pro names → `429 QUOTA_EXHAUSTED` (shared free CLI quota)
+- fresh headless spawn → `IneligibleTierError` at `_doSetupUser` ("migrate to Antigravity")
+
+Use `gemini/gemini-3.5-flash` (API, above) or the Antigravity replacement `antigravity/gemini-3.5-flash` / `antigravity/gemini-3.6-flash-high`. Only pass a `gemini-cli/…` string if you have separately confirmed that OAuth tier is live for the exact model this run.
 
 Use AskUserQuestion like this:
 ```
@@ -457,7 +462,7 @@ pipeline_begin_debate_round(
     session_id=SESSION_ID,
     card_id=FIZZY_CARD_ID,
     round_number=N,
-    models=["codex/gpt-5.6-sol", "gemini-cli/gemini-3.1-pro-preview"],
+    models=["codex/gpt-5.6-sol", "gemini/gemini-3.5-flash"],  # gemini/ = API path; NEVER gemini-cli/ (dead OAuth tier)
     board_id=BOARD_ID,
     domain_context="Optional project-specific context"
 )

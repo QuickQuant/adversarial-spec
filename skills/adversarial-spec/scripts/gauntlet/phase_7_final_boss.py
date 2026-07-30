@@ -45,16 +45,11 @@ def run_final_boss_review(
 
     Timeout: max(config.timeout, 1800) — Opus 4.7 with large context needs a floor.
     """
-    import os
-
     timeout = max(config.timeout, 1800)
 
-    # Final boss uses Opus 4.7 - expensive but thorough
-    if os.environ.get("ANTHROPIC_API_KEY"):
-        model = "claude-opus-4-7"
-    else:
-        print("  Warning: Opus 4.7 not available, using best alternative", file=sys.stderr)
-        model = select_eval_model()
+    # Final boss uses the shared policy-routed evaluator selection; ambient API
+    # keys must not change which model sits on a decision gate (CON-001).
+    model = select_eval_model()
 
     system_prompt = FINAL_BOSS["ux_architect"].persona
 
@@ -238,10 +233,13 @@ def run_final_boss_review(
 
     except Exception as e:
         print(f"  Warning: Final boss review failed: {e}", file=sys.stderr)
+        # Operational failure must not satisfy the decision gate (CON-001):
+        # REFINE blocks silent promotion until the review is retried or overridden.
         return FinalBossResult(
-            verdict=FinalBossVerdict.PASS,
-            response=f"Review failed: {e}. Proceeding with caution.",
-            concerns=[],
+            verdict=FinalBossVerdict.REFINE,
+            response=f"OPERATIONAL FAILURE: final boss review did not complete: {e}. "
+            "Retry the review or record an explicit operator override.",
+            concerns=["Final Boss review failed operationally — retry required before promotion."],
             alternate_approaches=[],
             reconsider_reason="",
             model=model,

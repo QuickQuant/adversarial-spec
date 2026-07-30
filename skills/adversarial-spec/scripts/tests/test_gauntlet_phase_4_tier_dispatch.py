@@ -21,7 +21,7 @@ from gauntlet.phase_4_evaluation import evaluate_concerns_multi_model
 def _make_concern(idx: int, adversary: str = "architect", text_len: int = 100) -> Concern:
     """Build a concern with a deterministic id-by-text and length-controlled text."""
     text = f"Concern {idx}: " + ("x " * (text_len // 2))
-    return Concern(adversary=adversary, text=text, source_model="codex/gpt-5.5")
+    return Concern(adversary=adversary, text=text, source_model="codex/gpt-5.6-luna")
 
 
 def _fake_call_model_factory(per_call_batch_sizes: list[int]):

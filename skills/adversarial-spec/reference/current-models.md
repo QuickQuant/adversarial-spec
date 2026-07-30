@@ -1,6 +1,6 @@
 # Current Model Recommendations
 
-> **Last updated: 2026-04-29**
+> **Last updated: 2026-07-30**
 > Review this file when a new model is released. Update models here, then sync hardcoded
 > defaults in `scripts/` (search for the old model name).
 
@@ -12,7 +12,7 @@ Models that find issues in specs. Diverse perspectives matter more than raw powe
 | Provider | Model ID | Notes |
 |----------|----------|-------|
 | Codex CLI | `codex/gpt-5.6-luna` | **Primary attack model.** Free via ChatGPT subscription. Use xhigh effort. |
-| Gemini CLI | `gemini-cli/gemini-3.1-pro-preview` | Free. Strong on unique angles. Parser may need sanity check (outputs `### N.` headers). |
+| Gemini CLI | `gemini-cli/gemini-3.6-flash-high` | Free. Strong on unique angles. Parser may need sanity check (outputs `### N.` headers). |
 | Claude CLI | `claude-cli/claude-opus-4-7` | Free. Cannot nest inside a Claude session — use only from Codex or standalone. |
 | Gemini CLI | `gemini-cli/gemini-3-flash-preview` | Free. Faster, cheaper, good for quick passes. |
 
@@ -23,7 +23,7 @@ Models that evaluate whether concerns are valid. The pipeline auto-selects eval 
 | Provider | Model ID | Notes |
 |----------|----------|-------|
 | Codex CLI | `codex/gpt-5.6-sol` | Default eval model. Use max effort for gauntlet evals. |
-| Gemini CLI | `gemini-cli/gemini-3.1-pro-preview` | Second eval model for multi-model consensus. |
+| Gemini CLI | `gemini-cli/gemini-3.6-flash-high` | Second eval model for multi-model consensus. |
 
 ### Frontier (deep analysis, final boss)
 For tasks requiring maximum reasoning depth.
@@ -31,18 +31,17 @@ For tasks requiring maximum reasoning depth.
 | Provider | Model ID | Notes |
 |----------|----------|-------|
 | Claude | Claude Opus 4.7 | The orchestrating model. Best evaluator — has full codebase context. |
-| Codex CLI | `codex/gpt-5.6-terra` | Sonnet-level work with max effort; use Luna xhigh for inexpensive attacks and Sol max for spec development. |
+| Codex CLI | `codex/gpt-5.6-sol` | Max-intelligence work with max effort; use Terra max for single-issue work and Luna xhigh for gauntlet attacks. |
 
 ## Deprecated Models
 
 | Old Model | Replacement | When |
 |-----------|-------------|------|
-| `codex/gpt-5.3-codex` | `codex/gpt-5.6-sol` | 2026-07-09 (GPT-5.6 migration) |
-| `codex/gpt-5.1-codex-max` | `codex/gpt-5.6-sol` | 2026-07-09 |
-| `gpt-5.3` (API) | `gpt-5.6-sol` (if using API) | 2026-07-09 |
-| `gemini-cli/gemini-3-pro-preview` | `gemini-cli/gemini-3.1-pro-preview` | 2026-03-28 (Gemini 3.1 Pro release) |
+| Retired pre-5.6 Codex CLI tokens | Role-specific GPT-5.6 token | 2026-07-09 |
+| Retired pre-5.6 OpenAI API tokens | `gpt-5.6-sol` (if using API) | 2026-07-09 |
+| Retired Gemini Pro preview tokens | `gemini-cli/gemini-3.6-flash-high` | 2026-07-30 |
 
-> **WARNING:** Do NOT use `gemini-2.5-pro` (API or CLI). It shares the same quota as `gemini-3.1-pro-preview` and will burn through your free-tier allowance. Always use `gemini-3.1-pro-preview` instead — it is strictly better.
+> **WARNING:** Do not use retired Gemini Pro-generation tokens (API or CLI). Use `gemini-3.6-flash-high` for Gemini critic, adversary, and evaluation seats.
 
 ## Paid API Models (avoid for adversarial-spec debates)
 

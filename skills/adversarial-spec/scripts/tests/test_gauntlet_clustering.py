@@ -14,7 +14,7 @@ from gauntlet.clustering import (
 from gauntlet.core_types import Concern
 
 
-def _c(adv: str, text: str, model: str = "codex/gpt-5.5") -> Concern:
+def _c(adv: str, text: str, model: str = "codex/gpt-5.6-luna") -> Concern:
     return Concern(adversary=adv, text=text, source_model=model)
 
 

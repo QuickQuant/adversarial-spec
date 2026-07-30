@@ -4,7 +4,9 @@
 
 ```
 TodoWrite([
-  {content: "Review adversary leaderboard + versions, select personas and attack models", status: "in_progress", activeForm: "Reviewing adversary stats and selecting personas"},
+  {content: "Drift gate: diff spec vs target-architecture [GATE]", status: "in_progress", activeForm: "Running spec vs target-architecture drift gate"},
+  {content: "SCOUT solo pass: arm + dispatch spec_coroner, triage verdict [GATE]", status: "pending", activeForm: "Running SCOUT solo pass and triaging verdict"},
+  {content: "Review adversary leaderboard + versions, select personas and attack models", status: "pending", activeForm: "Reviewing adversary stats and selecting personas"},
   {content: "Present cost estimate to user", status: "pending", activeForm: "Presenting cost estimate"},
   {content: "Arm Adversaries — scope classification + briefings [GATE]", status: "pending", activeForm: "Arming adversaries with scope briefings"},
   {content: "Run gauntlet (respect Gemini rate limits)", status: "pending", activeForm: "Running gauntlet attacks"},
@@ -19,6 +21,91 @@ TodoWrite([
 ```
 
 Mark each step `completed` as you finish it. Mark the current step `in_progress`.
+
+---
+
+### Gauntlet Entry Gate 1 — Spec ↔ Target-Architecture Drift Gate (REQUIRED, deterministic)
+
+**Why this gate exists (incident 2026-07-21, agent-presence-emitters):** spec-v7 was
+finalized at debate convergence; Phase 4 then materially revised the architecture
+(three real debate rounds reversed the delivery model), and the canonical order defers
+the spec rewrite to finalize — AFTER the gauntlet. The fleet was dispatched against a
+known-stale spec, and ~60% of 558 concerns were seven adversaries independently
+re-deriving the drift we had already decided. Phase 4 is designed as formalization
+("introduces no new architecture"); when it behaves like a debate phase instead, the
+spec must be reconciled BEFORE the fleet buys attention.
+
+**Mechanics (run before anything else in this phase):**
+
+1. If no `target-architecture.md` exists (skip-mode stub only), the gate passes
+   trivially — record that and continue.
+2. Compare freshness and cross-references:
+   ```bash
+   SPEC=$(jq -r '.spec_path' .adversarial-spec/sessions/<id>.json)
+   TA=.adversarial-spec/specs/<slug>/target-architecture.md
+   # (a) Which is newer?
+   [ "$TA" -nt "$SPEC" ] && echo "TA is NEWER than spec"
+   # (b) Does the TA demand a spec revision the spec doesn't have?
+   grep -niE "must produce spec-v[0-9]+|supersede|removed for the pilot|Required spec-.* Changes" "$TA"
+   # (c) Do the TA's revision notes name spec sections that still exist unchanged?
+   #     Spot-check each "Required spec Changes" item against the spec text.
+   ```
+3. **Decision rule:** if the TA is newer than the spec AND contains revision-demand
+   language (a "Required spec Changes" section, "must produce spec-vN", superseded
+   delivery/auth/locking contracts), the gate FAILS.
+4. **On failure — STOP. Do not arm anything.** Present to the operator:
+   ```
+   Drift Gate FAILED
+   ───────────────────────────────────────
+   Spec: <spec_path> (vN, mtime ...)
+   Target architecture: newer, demands: <quoted revision-demand lines>
+
+   Options:
+   [Reconcile first] — produce spec-vN+1 folding the TA deltas, then re-enter the gauntlet
+   [Waiver] — proceed anyway; waiver + rationale recorded in decisions.log (the fleet
+              WILL spend most of its attention re-deriving the drift)
+   ```
+   Never proceed silently. A waiver is an operator decision, logged with rationale.
+
+### Gauntlet Entry Gate 2 — SCOUT Solo Pass (REQUIRED, staged dispatch)
+
+After the drift gate passes (or is waived), dispatch ONE scout adversary —
+`spec_coroner` (prefix SCOUT, registry `SCOUT_GAUNTLET` in `adversaries.py`) — BEFORE
+arming or dispatching the fleet.
+
+**The SCOUT dispatch is a real gauntlet dispatch, not a debate round.** The full-context
+debate rounds are already done; what the scout tests is exactly the fleet's condition:
+*adversary context only, plus the two artifacts.* It therefore doubles as a dry run of
+the briefing itself — if the scout can't tell which document wins, neither can the fleet.
+
+- **Arming:** assemble the SCOUT briefing with the SAME Part A/Part B machinery as any
+  fleet adversary (base context, architecture primer, target-architecture in full,
+  lookup log, blast-zone files, git activity, known gaps) plus the spec — the identical
+  `## ADVERSARY BRIEFING` + `## SPECIFICATION TO REVIEW` document structure. Respect the
+  same argv-size guard as fleet briefings.
+- **Dispatch:** through the SAME channel as fleet attacks (the Fizzy pipeline gauntlet
+  dispatch tools when the session has a card — the pipeline-card fence applies to the
+  scout too). Model: **codex, max effort** (e.g., `codex/gpt-5.6-sol` at max/xhigh) —
+  the scout is one call; buy the best judgment available.
+- **Extraction:** same code-based (jq/Python) concern extraction as the fleet. The scout
+  outputs ≤12 ranked concerns in standard format plus a mandatory `VERDICT:` block.
+- **Stats:** SCOUT results are tracked under its own prefix; never merged into fleet
+  adversary leaderboards.
+
+**Triage (main-context agent decides, informed by — not bound by — the scout's verdict):**
+
+| Outcome | When | Then |
+|---------|------|------|
+| **Major rewrite / synthesis** | Structural contradiction between artifacts, superseded delivery/auth/locking model, fictional load-bearing components (the 2026-07-21 case) | Produce the reconciled spec revision first; re-run the drift gate; then return here |
+| **Minor rewrite** | A few sections stale/self-contradictory, cascade bounded | Patch those sections in place, note in decisions.log, then arm the fleet |
+| **Continue with notes** | Faults real but bounded; fleet attention still worth buying now | Fold the scout's findings into every fleet briefing as pre-identified terrain ("do not re-derive; attack past these"), then dispatch |
+| **Continue as-is** (rare) | Scout finds nothing structural | Dispatch the fleet |
+
+Record the triage decision + one-line rationale in `sessions/<id>.decisions.log`
+(`[gauntlet-scout]` tag). The scout's concerns are carried into the final synthesis
+regardless of outcome — they are gauntlet concerns like any other.
+
+**[GATE] TodoWrite: Mark both entry-gate items completed (drift gate + SCOUT triage) before proceeding to Step 5.5.**
 
 ---
 
@@ -93,6 +180,7 @@ After sizing is agreed, proceed to step 1 below.
    | Prefix | CLI Name | Role | How to invoke |
    |--------|----------|------|---------------|
    | COMP | `existing_system_compatibility` | Codebase compatibility | Pre-gauntlet only (Step 4) |
+   | SCOUT | `spec_coroner` | Artifact-pair fitness triage | Entry Gate 2 only (solo, before the fleet — never in fleet selections) |
    | UXAR | `ux_architect` | User story coherence | Final boss only (Step 8) |
 
    **Legacy aliases:** `lazy_developer` → `minimalist`, `prior_art_scout` → `minimalist`
@@ -110,7 +198,7 @@ After sizing is agreed, proceed to step 1 below.
 
    **Recommended lineup (if available):**
    - `codex/gpt-5.6-luna` — GPT-5.6 Luna via Codex CLI (free, xhigh effort)
-   - `gemini-cli/gemini-3.1-pro-preview` — Gemini 3 Pro (free via CLI)
+   - `gemini-cli/gemini-3.6-flash-high` — Gemini 3.6 Flash High (free via CLI)
    - `claude-cli/claude-sonnet-4-6` — Claude Sonnet 4.6 (free via CLI)
 
    These become `--gauntlet-attack-models` (comma-separated). The frontier evaluation model is selected automatically.
@@ -365,8 +453,8 @@ run (fail-closed, full cost wasted):
 Adversary = distinct attacker model; family diversity is registry-checked
 (claimed families must match `agents.validate_debate_model(model).family` — the
 manifest cannot forge diversity). `tier` guides model choice only: `fast` legal
-for component (`gemini-3-flash`); `frontier` advised above (`gemini-3.1-pro-preview`,
-`codex/gpt-5.4 xhigh`). `None` altitude (grandfathered) ⇒ legacy behavior, no
+for component (`gemini-3-flash`); `frontier` advised above (`gemini-3.6-flash-high`,
+`codex/gpt-5.6-sol max`). `None` altitude (grandfathered) ⇒ legacy behavior, no
 intensity gate.
 
 **Part A: Scope Classification + Dynamic Prompt Generation**
@@ -585,7 +673,7 @@ In practice, Claude assembles the briefings in memory and passes them to the gau
   "spec_hash": "<sha256-12>",
   "session_altitude": "system",                       // echo of the card value
   "adversaries": [                                     // one entry per attacker MODEL
-    {"model": "gemini-3.1-pro", "family": "gemini"},  // family must match the registry
+    {"model": "gemini-3.6-flash-high", "family": "gemini"},  // family must match the registry
     {"model": "gpt-5.6-luna",  "family": "codex"}
   ],
   "foci": ["auth", "storage", "rollout"]              // distinct attack foci covered

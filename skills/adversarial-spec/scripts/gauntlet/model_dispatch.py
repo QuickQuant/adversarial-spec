@@ -20,8 +20,10 @@ from models import (
 from providers import (
     CODEX_AVAILABLE,
     DEFAULT_CODEX_REASONING,
+    GEMINI_CLI_36_FLASH_HIGH,
     GEMINI_CLI_AVAILABLE,
     GPT_56_SOL,
+    GPT_56_TERRA,
 )
 
 try:
@@ -149,7 +151,7 @@ def call_model(
 # =============================================================================
 
 _PREFERRED_CODEX_EVAL_MODEL = GPT_56_SOL
-_FALLBACK_CODEX_EVAL_MODEL = "codex/gpt-5.3-codex"
+_FALLBACK_CODEX_EVAL_MODEL = GPT_56_TERRA
 
 
 def running_in_claude_code() -> bool:
@@ -198,7 +200,7 @@ def select_adversary_model() -> str:
     Adversaries don't need to be smart - they need to be aggressive.
     """
     if GEMINI_CLI_AVAILABLE:
-        return "gemini-cli/gemini-3-flash-preview"
+        return GEMINI_CLI_36_FLASH_HIGH
 
     import os
 
@@ -225,17 +227,10 @@ def select_eval_model() -> str:
         return codex_model
 
     if GEMINI_CLI_AVAILABLE:
-        return "gemini-cli/gemini-3.1-pro-preview"
-
-    import os
-
-    if os.environ.get("ANTHROPIC_API_KEY"):
-        return "claude-opus-4-7"
-    if os.environ.get("GEMINI_API_KEY"):
-        return "gemini/gemini-3-pro"
+        return GEMINI_CLI_36_FLASH_HIGH
 
     raise RuntimeError(
-        "No model available for evaluation. Install Codex CLI (free) or set an API key."
+        "No model available for evaluation. Install Codex CLI (free) or Gemini CLI."
     )
 
 
@@ -259,7 +254,6 @@ def get_available_eval_models() -> list[str]:
     Returns up to 3 models for multi-model consensus evaluation.
     Prefers free CLI tools over paid APIs.
     """
-    import os
 
     models = []
 
@@ -267,13 +261,7 @@ def get_available_eval_models() -> list[str]:
     if codex_model:
         models.append(codex_model)
     if GEMINI_CLI_AVAILABLE:
-        models.append("gemini-cli/gemini-3.1-pro-preview")
-
-    if len(models) < 2:
-        if os.environ.get("ANTHROPIC_API_KEY"):
-            models.append("claude-opus-4-7")
-        if len(models) < 2 and os.environ.get("GEMINI_API_KEY"):
-            models.append("gemini/gemini-3-pro")
+        models.append(GEMINI_CLI_36_FLASH_HIGH)
 
     return models
 

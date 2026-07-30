@@ -9,6 +9,7 @@ import os
 import subprocess
 import sys
 import time
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -41,6 +42,7 @@ from providers import (
     CLAUDE_CLI_AVAILABLE,
     CODEX_AVAILABLE,
     DEFAULT_CODEX_REASONING,
+    GEMINI_36_FLASH_HIGH,
     GEMINI_CLI_AVAILABLE,
 )
 
@@ -415,7 +417,7 @@ def call_gemini_cli_model(
     Args:
         system_prompt: System instructions for the model
         user_message: User prompt to send
-        model: Model name (e.g., "gemini-cli/gemini-3.1-pro-preview" -> uses "gemini-3.1-pro-preview")
+        model: Model name (e.g., "gemini-cli/gemini-3.6-flash-high" -> uses "gemini-3.6-flash-high")
         timeout: Timeout in seconds (default 10 minutes)
 
     Returns:
@@ -581,16 +583,190 @@ USER REQUEST:
         raise RuntimeError("Claude CLI not found in PATH")
 
 
+def _agy_git(root: str, *args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(["git", "-C", root, *args], capture_output=True)
+
+
+def _agy_git_root(cwd: str | None) -> str | None:
+    result = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        capture_output=True,
+        text=True,
+        cwd=cwd,
+    )
+    return result.stdout.strip() if result.returncode == 0 else None
+
+
+def _agy_porcelain_paths(root: str) -> set[str]:
+    out = _agy_git(
+        root, "status", "--porcelain=v1", "-z", "--untracked-files=all"
+    ).stdout.decode()
+    paths: set[str] = set()
+    fields = out.split("\0")
+    i = 0
+    while i < len(fields):
+        field = fields[i]
+        if not field:
+            i += 1
+            continue
+        paths.add(field[3:])
+        if field[0] == "R":  # rename entry: next NUL field is the source path
+            i += 1
+            paths.add(fields[i])
+        i += 1
+    return paths
+
+
+def _agy_worktree_snapshot(root: str) -> dict[str, bytes | None]:
+    """Content snapshot of every dirty/untracked path (None = absent on disk)."""
+    snap: dict[str, bytes | None] = {}
+    for p in _agy_porcelain_paths(root):
+        fp = Path(root) / p
+        snap[p] = fp.read_bytes() if fp.is_file() else None
+    return snap
+
+
+def _agy_tripwire_check(
+    root: str,
+    pre_snap: dict[str, bytes | None],
+    model: str,
+    agy_result: subprocess.CompletedProcess | None,
+) -> None:
+    """Detect worktree changes made during an agy dispatch; capture, revert, raise.
+
+    Operator decision (Jason, 2026-07-20): agy gemini critics are re-enabled for
+    debate rounds. Any mutation is evidence-captured, reverted, and halts the
+    round loudly — the first occurrence must be reviewed by Jason before any
+    further agy dispatch.
+    """
+    post_paths = _agy_porcelain_paths(root)
+    mutated: list[str] = []
+    for p in post_paths:
+        fp = Path(root) / p
+        cur = fp.read_bytes() if fp.is_file() else None
+        if p not in pre_snap:
+            mutated.append(p)  # was clean (or nonexistent) before dispatch
+        elif cur != pre_snap[p]:
+            mutated.append(p)
+    for p in pre_snap:
+        if p not in post_paths:
+            # Dropped off porcelain: file deleted, or a dirty file git-restored
+            # (the PaddleBlaster incident included a git restore).
+            fp = Path(root) / p
+            cur = fp.read_bytes() if fp.is_file() else None
+            if cur != pre_snap[p]:
+                mutated.append(p)
+    if not mutated:
+        return
+
+    # 1. Preserve evidence BEFORE reverting so Jason can see exactly what changed.
+    incident_dir = (
+        Path(root)
+        / ".adversarial-spec"
+        / "incidents"
+        / f"agy-mutation-{time.strftime('%Y%m%d-%H%M%S')}"
+    )
+    incident_dir.mkdir(parents=True, exist_ok=True)
+    (incident_dir / "mutated-paths.txt").write_text("\n".join(sorted(mutated)) + "\n")
+    (incident_dir / "model.txt").write_text(model + "\n")
+    diff = _agy_git(root, "diff").stdout
+    (incident_dir / "worktree.diff").write_bytes(diff)
+    post_dir = incident_dir / "post-state"
+    for p in mutated:
+        fp = Path(root) / p
+        if fp.is_file():
+            dest = post_dir / p
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(fp.read_bytes())
+    if agy_result is not None:
+        for name, stream in (("agy-stdout.txt", agy_result.stdout), ("agy-stderr.txt", agy_result.stderr)):
+            data = stream or ""
+            if isinstance(data, str):
+                data = data.encode()
+            (incident_dir / name).write_bytes(data)
+
+    # 2. Revert the delta (and only the delta).
+    for p in mutated:
+        fp = Path(root) / p
+        if p in pre_snap:
+            if pre_snap[p] is None:
+                fp.unlink(missing_ok=True)
+            else:
+                fp.parent.mkdir(parents=True, exist_ok=True)
+                fp.write_bytes(pre_snap[p])
+        else:
+            checkout = _agy_git(root, "checkout", "--", p)
+            if checkout.returncode != 0:  # new untracked file: nothing to check out
+                fp.unlink(missing_ok=True)
+
+    # 3. Halt loudly.
+    raise RuntimeError(
+        f"AGY_MUTATION_DETECTED: the agy critic modified {len(mutated)} path(s) "
+        f"during dispatch. Evidence captured in {incident_dir}; the delta has "
+        "been reverted. STOP EVERYTHING: per operator decision (2026-07-20) the "
+        "first mutation must be reviewed by Jason before any further agy "
+        "dispatch — notify him via Telegram with the incident dir and halt the "
+        "debate round. Do not substitute a claude critic."
+    )
+
+
 # Map short antigravity model tokens to the display names `agy --model` expects.
 # `agy models` lists human-readable names with spaces/parens; the debate model
 # string uses a slug. Keep this in sync with `agy models`.
 ANTIGRAVITY_MODEL_MAP = {
-    "gemini-3.1-pro": "Gemini 3.1 Pro (High)",
-    "gemini-3.1-pro-low": "Gemini 3.1 Pro (Low)",
+    GEMINI_36_FLASH_HIGH: "Gemini 3.6 Flash (High)",
     "gemini-3.5-flash": "Gemini 3.5 Flash (High)",
     "gemini-3.5-flash-medium": "Gemini 3.5 Flash (Medium)",
     "gemini-3.5-flash-low": "Gemini 3.5 Flash (Low)",
 }
+
+# --- Oversized-prompt transport ------------------------------------------
+# This agy build cannot read stdin, so the prompt travels as an argv VALUE and
+# Linux caps a single argv string at MAX_ARG_STRLEN. Real gauntlet briefings
+# exceed it: 2026-07-21 (fizzy agent-presence-emitters Phase 5) measured
+# 134,058-140,740 bytes per briefing and every one of the 7 adversaries died on
+# `[Errno 7] Argument list too long: 'agy'`, so the gemini family contributed
+# zero concerns while the run manifest still declared two-family coverage.
+#
+# Oversized payloads therefore travel via a file and agy receives a short
+# pointer. This mirrors the already-proven fizzy-pipeline-mcp runner
+# (`pipeline.py::_GEMINI_POINTER_PROMPT_TMPL`), including two details learned
+# the hard way there: the path must be ABSOLUTE (agy headless neither inherits
+# nor exposes the process cwd, so a relative path sends the model crawling
+# $HOME until print-timeout), and the prompt must demand agy's BUILT-IN file
+# viewer (a terminal `cat` is in the "command" permission class, auto-denied
+# headless).
+_AGY_ARGV_LIMIT = 131072  # MAX_ARG_STRLEN: cap on ONE argv string
+_AGY_INLINE_MAX = 100_000  # leave headroom for the rest of argv + environ
+_AGY_PROMPT_DIR = Path(".adversarial-spec") / "agy-prompts"
+
+_AGY_POINTER_PROMPT_TMPL = (
+    "Using your built-in file viewing tool (never a terminal command), read "
+    "the file at the absolute path {prompt_path} and follow the instructions "
+    "embedded in it exactly. It contains your full system instructions and "
+    "task. Write your ENTIRE response to stdout as your final response text; "
+    "do not write any files and do not read anything else."
+)
+
+
+def _agy_write_prompt_file(root: str, full_prompt: str) -> Path:
+    """Spill an oversized prompt to a self-ignored scratch dir inside the repo.
+
+    Inside the repo because agy runs sandboxed against its workspace, which is
+    where the fizzy-pipeline-mcp runner proved the read works. The directory
+    carries a `.gitignore` of `*`, so scratch files never appear in
+    `git status --porcelain -uall` and therefore can never read as a critic
+    mutation. That matters for concurrency as much as for this dispatch: the
+    gauntlet runs several agy calls against one worktree at once, and an
+    unignored scratch file would surface as a delta inside a *sibling*
+    dispatch's tripwire window and be reverted mid-run.
+    """
+    directory = Path(root) / _AGY_PROMPT_DIR
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / ".gitignore").write_text("*\n", encoding="utf-8")
+    path = directory / f"prompt-{uuid.uuid4().hex}.md"
+    path.write_text(full_prompt, encoding="utf-8")
+    return path.resolve()
 
 
 def call_antigravity_model(
@@ -610,7 +786,7 @@ def call_antigravity_model(
     Args:
         system_prompt: System instructions for the model
         user_message: User prompt to send
-        model: Model name (e.g. "antigravity/gemini-3.1-pro" -> agy "Gemini 3.1 Pro (High)")
+        model: Model name (e.g. "antigravity/gemini-3.6-flash-high" -> agy "Gemini 3.6 Flash (High)")
         timeout: Timeout in seconds (default 30 minutes)
 
     Returns:
@@ -620,6 +796,13 @@ def call_antigravity_model(
     Raises:
         RuntimeError: If the Antigravity CLI is not available or fails
     """
+    # Mutation tripwire (operator decision, Jason 2026-07-20): agy plan/sandbox
+    # flags are NOT an isolation boundary — headless auto-deny covers only the
+    # "command" permission class; replace_file_content is not behind it (locally
+    # reproduced 2026-07-20; PaddleBlaster incident 2026-07-19). Dispatch is
+    # allowed anyway because the gemini seat is quorum-critical: every dispatch
+    # snapshots the worktree, and any delta is evidence-captured, reverted, and
+    # halts the round via AGY_MUTATION_DETECTED for Jason's review.
     if not ANTIGRAVITY_AVAILABLE:
         raise RuntimeError(
             "Antigravity CLI (`agy`) not found. Install/authenticate the Antigravity suite."
@@ -640,23 +823,57 @@ def call_antigravity_model(
 USER REQUEST:
 {user_message}"""
 
+    # Arm the mutation tripwire: snapshot the enclosing repo's worktree so any
+    # change the critic makes can be shown to Jason and reverted exactly.
+    git_root = _agy_git_root(cwd)
+    if git_root is None:
+        raise RuntimeError(
+            "AGY_TRIPWIRE_UNAVAILABLE: agy critics may only be dispatched with "
+            "cwd inside a git repository — the mutation tripwire needs a "
+            "worktree to snapshot and revert."
+        )
+    # Pick the transport before snapshotting. An oversized prompt spills to a
+    # self-ignored file so the spawn cannot die on MAX_ARG_STRLEN; small prompts
+    # stay inline, keeping today's byte-for-byte behaviour where argv has room.
+    prompt_file: Path | None = None
+    if len(full_prompt.encode("utf-8")) > _AGY_INLINE_MAX:
+        prompt_file = _agy_write_prompt_file(git_root, full_prompt)
+        prompt_arg = _AGY_POINTER_PROMPT_TMPL.format(prompt_path=prompt_file)
+    else:
+        prompt_arg = full_prompt
+
+    pre_snap = _agy_worktree_snapshot(git_root)
+
     try:
-        # --print: single non-interactive prompt (reads from stdin).
-        # --dangerously-skip-permissions: auto-approve tool prompts (no TUI).
+        # --print/--prompt: single non-interactive prompt passed as the ARGUMENT
+        #   VALUE. This agy build does NOT read the prompt from stdin — piping to a
+        #   bare `--print` yields an empty prompt, so agy opens a default session and
+        #   returns a greeting instead of executing the task (observed 2026-07-18:
+        #   "I am currently using Gemini 3.5 Flash / let me know if you'd like to run
+        #   a task"). Pass the prompt as `--prompt <text>` and send no stdin.
         # --print-timeout: agy's own wait bound; keep it >= our subprocess timeout.
+        # NOTE: --dangerously-skip-permissions is FORBIDDEN in any dispatch
+        # (2026-07-19 incident); do not re-add it when this path is re-enabled.
+        # --mode plan --sandbox: NOT an isolation boundary (proven 2026-07-19/20)
+        # but still blocks the shell/"command" tool class — keep as depth.
         cmd = [
             "agy",
-            "--print",
             "--model",
             agy_model,
-            "--dangerously-skip-permissions",
+            "--mode",
+            "plan",
+            "--sandbox",
             "--print-timeout",
             f"{timeout}s",
+            "--prompt",
+            prompt_arg,
         ]
 
         result = subprocess.run(
-            cmd, input=full_prompt, capture_output=True, text=True, timeout=timeout, cwd=cwd
+            cmd, capture_output=True, text=True, timeout=timeout, cwd=cwd
         )
+
+        _agy_tripwire_check(git_root, pre_snap, model, result)
 
         if result.returncode != 0:
             error_msg = (
@@ -674,9 +891,15 @@ USER REQUEST:
         return response_text, input_tokens, output_tokens
 
     except subprocess.TimeoutExpired:
+        _agy_tripwire_check(git_root, pre_snap, model, None)
         raise RuntimeError(f"Antigravity CLI timed out after {timeout}s")
     except FileNotFoundError:
         raise RuntimeError("Antigravity CLI (`agy`) not found in PATH")
+    finally:
+        # After the tripwire check on every path, so the scratch file is never
+        # mistaken for a critic deletion.
+        if prompt_file is not None:
+            prompt_file.unlink(missing_ok=True)
 
 
 def call_single_model(

@@ -18,9 +18,9 @@ get_rate_limit_config = MODULE.get_rate_limit_config
 
 
 def test_validate_model_name_accepts_expected_values():
-    _validate_model_name("codex/gpt-5.5")
+    _validate_model_name("codex/gpt-5.6-luna")
     _validate_model_name("claude-opus-4-7")
-    _validate_model_name("gemini-cli/gemini-3.1-pro-preview")
+    _validate_model_name("gemini-cli/gemini-3.6-flash-high")
     _validate_model_name("gemini/gemini-3-flash")
     _validate_model_name("deepseek/deepseek-v4")
 
@@ -46,7 +46,7 @@ def test_validate_model_name_rejects_forbidden_patterns(model_name: str):
         _validate_model_name(model_name)
 
 
-def test_select_eval_model_prefers_codex_gpt_5_5(monkeypatch):
+def test_select_eval_model_prefers_codex_sol(monkeypatch):
     monkeypatch.setattr(MODULE, "CODEX_AVAILABLE", True)
     monkeypatch.setattr(MODULE, "GEMINI_CLI_AVAILABLE", True)
     monkeypatch.delenv("ADVERSARIAL_SPEC_UNAVAILABLE_MODELS", raising=False)
@@ -54,37 +54,37 @@ def test_select_eval_model_prefers_codex_gpt_5_5(monkeypatch):
     assert select_eval_model() == "codex/gpt-5.6-sol"
 
 
-def test_select_eval_model_warns_before_falling_back_to_gpt_5_3(monkeypatch, capsys):
+def test_select_eval_model_warns_before_falling_back_to_terra(monkeypatch, capsys):
     monkeypatch.setattr(MODULE, "CODEX_AVAILABLE", True)
     monkeypatch.setattr(MODULE, "GEMINI_CLI_AVAILABLE", True)
     monkeypatch.setenv("ADVERSARIAL_SPEC_UNAVAILABLE_MODELS", "codex/gpt-5.6-sol")
 
-    assert select_eval_model() == "codex/gpt-5.3-codex"
+    assert select_eval_model() == "codex/gpt-5.6-terra"
     assert "codex/gpt-5.6-sol unavailable" in capsys.readouterr().err
 
 
-def test_get_available_eval_models_prefers_codex_gpt_5_5(monkeypatch):
+def test_get_available_eval_models_prefers_codex_sol(monkeypatch):
     monkeypatch.setattr(MODULE, "CODEX_AVAILABLE", True)
     monkeypatch.setattr(MODULE, "GEMINI_CLI_AVAILABLE", True)
     monkeypatch.delenv("ADVERSARIAL_SPEC_UNAVAILABLE_MODELS", raising=False)
 
     assert get_available_eval_models()[:2] == [
         "codex/gpt-5.6-sol",
-        "gemini-cli/gemini-3.1-pro-preview",
+        "gemini-cli/gemini-3.6-flash-high",
     ]
 
 
 def test_gemini_free_tier_rate_limit_staggers_single_launches(monkeypatch):
     monkeypatch.delenv("GEMINI_PAID_TIER", raising=False)
 
-    assert get_rate_limit_config("gemini-cli/gemini-3-flash-preview") == (1, 15)
+    assert get_rate_limit_config("gemini-cli/gemini-3.6-flash-high") == (1, 15)
 
 
 @pytest.mark.parametrize(
     ("model_name", "handler_name"),
     [
-        ("codex/gpt-5.5", "call_codex_model"),
-        ("gemini-cli/gemini-3.1-pro-preview", "call_gemini_cli_model"),
+        ("codex/gpt-5.6-luna", "call_codex_model"),
+        ("gemini-cli/gemini-3.6-flash-high", "call_gemini_cli_model"),
         ("claude-cli/claude-opus-4-7", "call_claude_cli_model"),
     ],
 )
@@ -134,3 +134,23 @@ def test_call_model_records_litellm_usage_once(monkeypatch):
 
     assert call_model("gpt-4o", "system", "user") == ("ok", 13, 5)
     assert calls == [("gpt-4o", 13, 5)]
+
+def test_select_eval_model_never_routes_to_retired_opus(monkeypatch):
+    """CON-001: ambient ANTHROPIC_API_KEY must not route eval to retired Opus."""
+    monkeypatch.setattr(MODULE, "CODEX_AVAILABLE", False)
+    monkeypatch.setattr(MODULE, "GEMINI_CLI_AVAILABLE", False)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("ADVERSARIAL_SPEC_UNAVAILABLE_MODELS", raising=False)
+
+    with pytest.raises(RuntimeError):
+        select_eval_model()
+
+
+def test_get_available_eval_models_excludes_retired_opus(monkeypatch):
+    monkeypatch.setattr(MODULE, "CODEX_AVAILABLE", False)
+    monkeypatch.setattr(MODULE, "GEMINI_CLI_AVAILABLE", False)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+
+    assert "claude-opus-4-7" not in get_available_eval_models()

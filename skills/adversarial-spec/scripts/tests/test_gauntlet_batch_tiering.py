@@ -21,7 +21,7 @@ from gauntlet.core_types import Concern
 
 
 def _c(text: str, adversary: str = "architect") -> Concern:
-    return Concern(adversary=adversary, text=text, source_model="codex/gpt-5.5")
+    return Concern(adversary=adversary, text=text, source_model="codex/gpt-5.6-luna")
 
 
 # -----------------------------------------------------------------------------

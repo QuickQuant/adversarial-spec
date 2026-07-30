@@ -478,7 +478,7 @@ class TestJsonFallbackChain:
 
         generate_attacks(
             spec="spec", adversaries=["paranoid_security"],
-            models=["codex/gpt-5.5"], config=GauntletConfig(),
+            models=["codex/gpt-5.6-luna"], config=GauntletConfig(),
         )
         assert captured["json_mode"] is False
 
@@ -492,7 +492,7 @@ class TestJsonFallbackChain:
 
         monkeypatch.setattr("gauntlet.phase_1_attacks.call_model", fake_call_model)
 
-        for cli_model in ["codex/gpt-5.5", "gemini-cli/gemini-3.1-pro-preview", "claude-cli/opus"]:
+        for cli_model in ["codex/gpt-5.6-luna", "gemini-cli/gemini-3.6-flash-high", "claude-cli/opus"]:
             generate_attacks(
                 spec="spec", adversaries=["paranoid_security"],
                 models=[cli_model], config=GauntletConfig(),

@@ -553,11 +553,11 @@ class TestCallCodexModel:
             stdout='{"type":"item.completed","item":{"type":"agent_message","text":"Response"}}\n{"type":"turn.completed","usage":{"input_tokens":100,"output_tokens":50}}',
             stderr="",
         )
-        response, inp, out = call_codex_model("sys", "user", "codex/gpt-5.5")
+        response, inp, out = call_codex_model("sys", "user", "codex/gpt-5.6-sol")
         # Verify model name was extracted and passed to command
         cmd = mock_run.call_args[0][0]
-        assert "gpt-5.5" in cmd
-        assert "codex/gpt-5.5" not in cmd
+        assert "gpt-5.6-sol" in cmd
+        assert "codex/gpt-5.6-sol" not in cmd
 
     @patch("models.CODEX_AVAILABLE", True)
     @patch("models.subprocess.run")
@@ -696,7 +696,7 @@ class TestCallGeminiCliModel:
         import pytest
 
         with pytest.raises(RuntimeError, match="Gemini CLI not found"):
-            call_gemini_cli_model("system", "user", "gemini-cli/gemini-3.1-pro-preview")
+            call_gemini_cli_model("system", "user", "gemini-cli/gemini-3.6-flash-high")
 
     @patch("models.GEMINI_CLI_AVAILABLE", True)
     @patch("models.subprocess.run")
@@ -707,11 +707,11 @@ class TestCallGeminiCliModel:
             stderr="",
         )
         response, inp, out = call_gemini_cli_model(
-            "sys", "user", "gemini-cli/gemini-3.1-pro-preview"
+            "sys", "user", "gemini-cli/gemini-3.6-flash-high"
         )
         cmd = mock_run.call_args[0][0]
-        assert "gemini-3.1-pro-preview" in cmd
-        assert "gemini-cli/gemini-3.1-pro-preview" not in " ".join(cmd)
+        assert "gemini-3.6-flash-high" in cmd
+        assert "gemini-cli/gemini-3.6-flash-high" not in " ".join(cmd)
 
     @patch("models.GEMINI_CLI_AVAILABLE", True)
     @patch("models.subprocess.run")
@@ -1097,9 +1097,9 @@ class TestCallSingleModel:
     def test_routes_gemini_cli_model_to_handler(self, mock_gemini):
         mock_gemini.return_value = ("[AGREE]\n[SPEC]spec[/SPEC]", 100, 50)
 
-        result = call_single_model("gemini-cli/gemini-3.1-pro-preview", "spec", 1, "prd")
+        result = call_single_model("gemini-cli/gemini-3.6-flash-high", "spec", 1, "prd")
         mock_gemini.assert_called_once()
-        assert result.model == "gemini-cli/gemini-3.1-pro-preview"
+        assert result.model == "gemini-cli/gemini-3.6-flash-high"
 
     @patch("models.call_gemini_cli_model")
     @patch("models.GEMINI_CLI_AVAILABLE", True)
@@ -1107,7 +1107,7 @@ class TestCallSingleModel:
     def test_gemini_cli_retries_on_failure(self, mock_sleep, mock_gemini):
         mock_gemini.side_effect = [Exception("First fail"), ("[AGREE]", 10, 5)]
 
-        result = call_single_model("gemini-cli/gemini-3.1-pro-preview", "spec", 1, "prd")
+        result = call_single_model("gemini-cli/gemini-3.6-flash-high", "spec", 1, "prd")
         assert mock_gemini.call_count == 2
         assert result.agreed is True
 
@@ -1116,7 +1116,7 @@ class TestCallSingleModel:
     def test_gemini_cli_extracts_spec_from_response(self, mock_gemini):
         mock_gemini.return_value = ("Critique\n[SPEC]Extracted spec[/SPEC]", 100, 50)
 
-        result = call_single_model("gemini-cli/gemini-3.1-pro-preview", "spec", 1, "prd")
+        result = call_single_model("gemini-cli/gemini-3.6-flash-high", "spec", 1, "prd")
         assert result.spec == "Extracted spec"
 
     @patch("models.call_gemini_cli_model")
@@ -1129,7 +1129,7 @@ class TestCallSingleModel:
             ("[AGREE]", 10, 5),
         ]
 
-        call_single_model("gemini-cli/gemini-3.1-pro-preview", "spec", 1, "prd")
+        call_single_model("gemini-cli/gemini-3.6-flash-high", "spec", 1, "prd")
         calls = mock_sleep.call_args_list
         assert calls[0][0][0] == 1.0  # First delay
         assert calls[1][0][0] == 2.0  # Second delay
@@ -1235,7 +1235,7 @@ class TestCallModelsParallel:
 class TestSavePartialResult:
     def test_writes_partial_result_to_checkpoint_dir(self):
         result = ModelResponse(
-            model="codex/gpt-5.5",
+            model="codex/gpt-5.6-sol",
             response="[AGREE]\n[SPEC]spec[/SPEC]",
             agreed=True,
             spec="spec",
@@ -1247,11 +1247,11 @@ class TestSavePartialResult:
             with patch("session.CHECKPOINTS_DIR", checkpoint_dir):
                 _save_partial_result(result, 2, session_id="active-session")
 
-            output_path = checkpoint_dir / "active-session-round-2-codex_gpt-5.5.json"
+            output_path = checkpoint_dir / "active-session-round-2-codex_gpt-5.6-sol.json"
             assert output_path.exists()
 
             saved = json.loads(output_path.read_text())
-            assert saved["model"] == "codex/gpt-5.5"
+            assert saved["model"] == "codex/gpt-5.6-sol"
             assert saved["agreed"] is True
             assert saved["spec"] == "spec"
             assert saved["error"] is None

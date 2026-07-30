@@ -1351,7 +1351,7 @@ cat .adversarial-spec/specs/<slug>/target-architecture.md | \
 
 **Input:**
 - **stdin:** Full text of `target-architecture.md` (the document being critiqued)
-- **`--models`:** Comma-separated model identifiers (e.g., `codex/gpt-5.6-sol,gemini-cli/gemini-3.1-pro-preview`)
+- **`--models`:** Comma-separated model identifiers (e.g., `codex/gpt-5.6-sol,gemini-cli/gemini-3.6-flash-high`)
 - **`--doc-type`:** Always `architecture` for Phase 4
 - **`--round`:** Integer round number (1-indexed)
 - **`--context`:** Path to the converged spec for background context
