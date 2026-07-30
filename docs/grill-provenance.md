@@ -13,3 +13,5 @@ f-p-mcp mirror); every term enrolled in vocab-rules.json under both project keys
 Transcript: ~/.claude/projects/-home-jason-PycharmProjects-fizzy-pipeline-mcp/971833fb-c243-4a24-b789-53341bbbb45d.jsonl
 (Session ran in fizzy-pipeline-mcp; this repo holds the canonical vocab copies.)
 
+Appended same day: v6 mechanics — seam (+ seam-defect reconciliation), gate vs barrier, leaf / X-node / Task disambiguation, altitude vs model effort, oracle stable-core family (oracle / oracle suite / declared oracle / acceptance criterion). Oracle production semantics remain with the gauntlet deferral.
+

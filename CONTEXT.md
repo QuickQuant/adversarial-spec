@@ -289,3 +289,70 @@ _Avoid_: "watchlisted" for anything with an actual obligation attached.
 
 Rule of thumb: exemption weakens a gate once; deferral schedules debt; residue labels
 the product; watchlist just remembers.
+
+### v6 mechanics (MIRRORED VOCAB — canonical copy)
+
+**Seam**:
+An interface edge between decomposed components (D0's E1…En) whose correctness must
+be proven by composed execution of both real sides — closed via seam closure (pair
+runs ×3 + violating-writer control FAIL_AT the declared oracle) or postponed via seam
+deferral with named residue.
+_Avoid_: "seam" for a generic code boundary. "Seam defect" (process-report term)
+never shortens to "seam"; unqualified "seam" = the D0 interface edge.
+
+**Gate**:
+A single-transition precondition check at one door (e.g. d0_closed, g1–g3,
+mapcodebase_fresh, gauntlet_complete): one condition set, one lane transition.
+_Avoid_: "gate" for the Barrier (an all-of accumulation point); "barrier" for a
+single-condition gate.
+
+**Barrier**:
+The Debate→Pre-Gauntlet accumulation point: an all-of check over many artifacts
+(every seam closed or deferred, closure manifest hashed, zero exceptions) before the
+lane advances. Gates check one thing at one door; the barrier requires the whole set.
+
+**Leaf**:
+A terminal INTERNAL component of the D0 decomposition: it gets its own card and full
+A→S cycle (specify → A/B candidates → synthesis).
+_Avoid_: "leaf" for a work unit in an execution plan (that is a Task / Task Card);
+"leaf" for an external component (that is an X-node).
+
+**X-node** (external component):
+A D0 component that is external machinery (browser-localStorage, Clerk, an existing
+server): context-only, no work surface, no card, no A→S cycle. Its failure modes are
+pinned by contract tests on the leaves that touch it.
+_Avoid_: "leaf" for these; "external" unqualified when D0 context isn't obvious.
+
+**Altitude**:
+The declared scope tier of a session or V&V activity (`system` / `subsystem` /
+`component`), driving gauntlet intensity floors and V&V obligations. Lowercase in
+machine fields (TMR keystone owns the enum).
+_Avoid_: uppercase in machine fields; "altitude" for Model effort.
+
+**Model effort**:
+The reasoning-effort tier of a model invocation: codex `minimal…ultra` via
+`model_reasoning_effort`; gemini bakes it into the slug (`-high`/`-low`).
+Routed by role via the model registry.
+_Avoid_: "altitude" for this; bare "effort" where session-vs-model ambiguity exists.
+
+**Oracle**:
+An executable acceptance authority: the check that decides PASS/FAIL for a specific
+obligation. Stable-core definition; oracle PRODUCTION semantics (authoring for
+gauntlet concerns, ORACLE-track probes) ride with the deferred Gauntlet definition.
+_Avoid_: "oracle" for any test (a test case is a scenario that CONSULTS an oracle);
+"oracle" for a prose condition (that is an Acceptance criterion).
+
+**Oracle suite**:
+A leaf's authoritative oracle set, pinned by `oracle_suite_hash`; the thing control
+runs are validated against and gates cross-check.
+_Avoid_: "test suite" when the authority role matters.
+
+**Declared oracle** (`oracle_id`):
+The specific oracle a violating control run must FAIL_AT for the failure to count as
+proof. A control that fails elsewhere proves nothing.
+
+**Acceptance criterion**:
+A prose condition of satisfaction — not executable. It becomes enforceable only when
+an Oracle exists for it.
+_Avoid_: "oracle" for the prose form; attesting a criterion when only its oracle was
+authored (known checklist misread, watchlisted 2026-07-29).
