@@ -1,0 +1,616 @@
+{
+  "$comment": "status: RATIFIED spec.v1 (G3, Jason, 2026-07-30) — candidate profile.v1 accessor-profile schema; not operator-ratified",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://brainquarters.local/schemas/spec-accessor-profile.schema.json",
+  "title": "Spec Accessor Profile",
+  "description": "Hash-pinned profile instance defining deterministic roots, graph traversal, mandatory spine, budgets, and fail-closed full promotion.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "spec_contract",
+    "profile_schema_sha256",
+    "registry_id",
+    "registry_sha256",
+    "role_registry_sha256",
+    "slice_tag_registry_sha256",
+    "profile_id",
+    "profile_revision",
+    "profile_sha256",
+    "mode",
+    "consumer_contracts",
+    "root_selectors",
+    "traversal",
+    "mandatory_spine_selectors",
+    "budgets",
+    "full_promotion"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "profile.v1"
+    },
+    "spec_contract": {
+      "const": "spec.v1"
+    },
+    "profile_schema_sha256": {
+      "$ref": "spec-record.schema.json#/$defs/Sha256"
+    },
+    "registry_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$"
+    },
+    "registry_sha256": {
+      "$ref": "spec-record.schema.json#/$defs/Sha256"
+    },
+    "role_registry_sha256": {
+      "$ref": "spec-record.schema.json#/$defs/Sha256"
+    },
+    "slice_tag_registry_sha256": {
+      "$ref": "spec-record.schema.json#/$defs/Sha256"
+    },
+    "profile_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$"
+    },
+    "profile_revision": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+    },
+    "profile_sha256": {
+      "$ref": "spec-record.schema.json#/$defs/Sha256",
+      "description": "SHA-256 over RFC 8785 JCS of this profile with only profile_sha256 omitted."
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "graph_closed",
+        "full"
+      ]
+    },
+    "consumer_contracts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ConsumerContract"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "root_selectors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/RootSelector"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "traversal": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/TraversalRule"
+      },
+      "uniqueItems": true
+    },
+    "mandatory_spine_selectors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/MandatorySpineSelector"
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "x-status": "provisional-until-G3",
+      "x-freezing-prerequisite": "Operator-reviewed kind/spine mapping and ambiguity report over at least two independent additional corpora."
+    },
+    "budgets": {
+      "$ref": "#/$defs/Budgets"
+    },
+    "full_promotion": {
+      "$ref": "#/$defs/FullPromotionPolicy"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "full"
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "then": {
+        "properties": {
+          "root_selectors": {
+            "contains": {
+              "properties": {
+                "selector": {
+                  "const": "all_claims"
+                }
+              },
+              "required": [
+                "selector"
+              ]
+            }
+          },
+          "budgets": {
+            "properties": {
+              "max_claims": {
+                "type": "null"
+              },
+              "max_render_bytes": {
+                "type": "null"
+              },
+              "max_import_bytes": {
+                "type": "null"
+              }
+            }
+          },
+          "full_promotion": {
+            "properties": {
+              "full_profile_id": {
+                "type": "null"
+              },
+              "full_profile_sha256": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "full_promotion": {
+            "properties": {
+              "full_profile_id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,127}$"
+              },
+              "full_profile_sha256": {
+                "$ref": "spec-record.schema.json#/$defs/Sha256"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false,
+  "x-selection-algorithm": [
+    "Resolve root_selectors against the pinned index and invocation inputs.",
+    "Add every mandatory_spine_selectors match.",
+    "Traverse rules in array order; within a rule visit targets in ascending qualified-ID order and maintain a visited set.",
+    "Add imported excerpts and replay-required target sets needed by selected claims.",
+    "On any promotion reason or budget excess, use the pinned full profile; never truncate.",
+    "A full profile selects 100 percent of the source/import closure."
+  ],
+  "x-profile-registry-rules": [
+    "The registry maps profile_id and profile_revision to exactly one profile_sha256 and path.",
+    "Every consumer pins the registry_sha256 and selected profile_sha256.",
+    "Changing roots, traversal, spine, budgets, or promotion rules changes profile_sha256.",
+    "G3 freezes the mandatory-spine policy after the required multi-corpus sweep; later semantic changes bump the profile contract version."
+  ],
+  "$defs": {
+    "ConsumerContract": {
+      "type": "object",
+      "required": [
+        "consumer_id",
+        "scope_kinds"
+      ],
+      "properties": {
+        "consumer_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope_kinds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "seat",
+              "task",
+              "component",
+              "full"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "ClaimIdSelector": {
+      "type": "object",
+      "required": [
+        "selector",
+        "values"
+      ],
+      "properties": {
+        "selector": {
+          "const": "claim_ids"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "$ref": "spec-record.schema.json#/$defs/QualifiedId"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "KindSelector": {
+      "type": "object",
+      "required": [
+        "selector",
+        "values"
+      ],
+      "properties": {
+        "selector": {
+          "const": "kinds"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "$ref": "spec-record.schema.json#/$defs/ClaimKind"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "RoleSelector": {
+      "type": "object",
+      "required": [
+        "selector",
+        "match",
+        "values"
+      ],
+      "properties": {
+        "selector": {
+          "const": "roles"
+        },
+        "match": {
+          "type": "string",
+          "enum": [
+            "any",
+            "all"
+          ]
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "$ref": "spec-record.schema.json#/$defs/RegistryToken"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "SliceTagSelector": {
+      "type": "object",
+      "required": [
+        "selector",
+        "match",
+        "values"
+      ],
+      "properties": {
+        "selector": {
+          "const": "slice_tags"
+        },
+        "match": {
+          "type": "string",
+          "enum": [
+            "any",
+            "all"
+          ]
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "$ref": "spec-record.schema.json#/$defs/RegistryToken"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "LifecycleSelector": {
+      "type": "object",
+      "required": [
+        "selector",
+        "values"
+      ],
+      "properties": {
+        "selector": {
+          "const": "lifecycle_states"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "$ref": "spec-record.schema.json#/$defs/Lifecycle/properties/state"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "NormativitySelector": {
+      "type": "object",
+      "required": [
+        "selector",
+        "values"
+      ],
+      "properties": {
+        "selector": {
+          "const": "normativity"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "$ref": "spec-record.schema.json#/$defs/ClaimMeta/properties/normativity"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "InvocationBindingSelector": {
+      "type": "object",
+      "required": [
+        "selector",
+        "input_field"
+      ],
+      "properties": {
+        "selector": {
+          "const": "invocation_binding"
+        },
+        "input_field": {
+          "type": "string",
+          "enum": [
+            "focus_claim_ids",
+            "component_ids",
+            "task_ids",
+            "seat_focus_ids"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "AllClaimsSelector": {
+      "type": "object",
+      "required": [
+        "selector"
+      ],
+      "properties": {
+        "selector": {
+          "const": "all_claims"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RootSelector": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ClaimIdSelector"
+        },
+        {
+          "$ref": "#/$defs/KindSelector"
+        },
+        {
+          "$ref": "#/$defs/RoleSelector"
+        },
+        {
+          "$ref": "#/$defs/SliceTagSelector"
+        },
+        {
+          "$ref": "#/$defs/LifecycleSelector"
+        },
+        {
+          "$ref": "#/$defs/NormativitySelector"
+        },
+        {
+          "$ref": "#/$defs/InvocationBindingSelector"
+        },
+        {
+          "$ref": "#/$defs/AllClaimsSelector"
+        }
+      ]
+    },
+    "MandatorySpineSelector": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ClaimIdSelector"
+        },
+        {
+          "$ref": "#/$defs/KindSelector"
+        },
+        {
+          "$ref": "#/$defs/RoleSelector"
+        },
+        {
+          "$ref": "#/$defs/SliceTagSelector"
+        },
+        {
+          "$ref": "#/$defs/LifecycleSelector"
+        },
+        {
+          "$ref": "#/$defs/NormativitySelector"
+        },
+        {
+          "$ref": "#/$defs/AllClaimsSelector"
+        }
+      ]
+    },
+    "TraversalRule": {
+      "type": "object",
+      "required": [
+        "relation",
+        "direction",
+        "max_depth",
+        "include_relation_record",
+        "include_endpoint"
+      ],
+      "properties": {
+        "relation": {
+          "$ref": "spec-record.schema.json#/$defs/Relation/properties/type"
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "outgoing",
+            "incoming",
+            "both"
+          ]
+        },
+        "max_depth": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 64
+            },
+            {
+              "const": "unbounded"
+            }
+          ]
+        },
+        "include_relation_record": {
+          "const": true
+        },
+        "include_endpoint": {
+          "const": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "NullableBudget": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "Budgets": {
+      "type": "object",
+      "required": [
+        "max_claims",
+        "max_render_bytes",
+        "max_import_bytes",
+        "on_exceed"
+      ],
+      "properties": {
+        "max_claims": {
+          "$ref": "#/$defs/NullableBudget"
+        },
+        "max_render_bytes": {
+          "$ref": "#/$defs/NullableBudget"
+        },
+        "max_import_bytes": {
+          "$ref": "#/$defs/NullableBudget"
+        },
+        "on_exceed": {
+          "const": "promote_full"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PromotionReason": {
+      "type": "string",
+      "enum": [
+        "unresolved_root",
+        "dangling_relation",
+        "closure_budget_exceeded",
+        "replay_target_split",
+        "import_hash_mismatch",
+        "profile_error"
+      ]
+    },
+    "FullPromotionPolicy": {
+      "type": "object",
+      "required": [
+        "promote_on_any",
+        "reason_codes",
+        "full_profile_id",
+        "full_profile_sha256"
+      ],
+      "properties": {
+        "promote_on_any": {
+          "const": true
+        },
+        "reason_codes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PromotionReason"
+          },
+          "minItems": 6,
+          "maxItems": 6,
+          "uniqueItems": true,
+          "allOf": [
+            {
+              "contains": {
+                "const": "unresolved_root"
+              }
+            },
+            {
+              "contains": {
+                "const": "dangling_relation"
+              }
+            },
+            {
+              "contains": {
+                "const": "closure_budget_exceeded"
+              }
+            },
+            {
+              "contains": {
+                "const": "replay_target_split"
+              }
+            },
+            {
+              "contains": {
+                "const": "import_hash_mismatch"
+              }
+            },
+            {
+              "contains": {
+                "const": "profile_error"
+              }
+            }
+          ]
+        },
+        "full_profile_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_.-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "full_profile_sha256": {
+          "anyOf": [
+            {
+              "$ref": "spec-record.schema.json#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

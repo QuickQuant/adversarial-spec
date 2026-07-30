@@ -1,0 +1,387 @@
+{
+  "$comment": "status: RATIFIED spec.v1 (G3, Jason, 2026-07-30) — candidate bundle.v1 manifest and bundle-compose.v1 composition schema; not operator-ratified",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://brainquarters.local/schemas/spec-bundle-manifest.schema.json",
+  "title": "Spec Consumer Bundle Manifest",
+  "description": "Attests the exact ordered spec and non-spec bytes delivered to one consumer seat invocation.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "spec_contract",
+    "composition_version",
+    "bundle_schema_sha256",
+    "slice_schema_sha256",
+    "shared_library",
+    "artifact_root",
+    "bundle_id",
+    "consumer",
+    "seat",
+    "invocation",
+    "separator_utf8",
+    "component_count",
+    "components",
+    "visible_target_ids",
+    "bundle_path",
+    "bundle_byte_length",
+    "bundle_sha256",
+    "manifest_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "bundle.v1"
+    },
+    "spec_contract": {
+      "const": "spec.v1"
+    },
+    "composition_version": {
+      "const": "bundle-compose.v1"
+    },
+    "bundle_schema_sha256": {
+      "$ref": "spec-record.schema.json#/$defs/Sha256"
+    },
+    "slice_schema_sha256": {
+      "$ref": "spec-record.schema.json#/$defs/Sha256"
+    },
+    "shared_library": {
+      "$ref": "spec-slice-manifest.schema.json#/$defs/SharedLibraryPin"
+    },
+    "artifact_root": {
+      "$ref": "spec-record.schema.json#/$defs/RelativePath"
+    },
+    "bundle_id": {
+      "type": "string",
+      "pattern": "^bundle:[A-Za-z0-9][A-Za-z0-9._/-]*$"
+    },
+    "consumer": {
+      "$ref": "#/$defs/ConsumerIdentity"
+    },
+    "seat": {
+      "$ref": "#/$defs/SeatIdentity"
+    },
+    "invocation": {
+      "$ref": "#/$defs/InvocationIdentity"
+    },
+    "separator_utf8": {
+      "const": "<!-- SPEC-BUNDLE-BOUNDARY -->\n"
+    },
+    "component_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Component"
+      },
+      "minItems": 1
+    },
+    "visible_target_ids": {
+      "$ref": "#/$defs/OrderedIdSet",
+      "description": "Re-derived union of target IDs from direct verified spec_slice components and recursively verified spec_slice descendants of child bundles. Non-spec components contribute no target IDs."
+    },
+    "bundle_path": {
+      "$ref": "spec-record.schema.json#/$defs/RelativePath"
+    },
+    "bundle_byte_length": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "bundle_sha256": {
+      "$ref": "spec-record.schema.json#/$defs/Sha256",
+      "description": "SHA-256 over the exact canonical recomposition bytes."
+    },
+    "manifest_sha256": {
+      "$ref": "spec-record.schema.json#/$defs/Sha256",
+      "description": "SHA-256 over RFC 8785 JCS of this manifest with only manifest_sha256 omitted."
+    }
+  },
+  "additionalProperties": false,
+  "x-canonical-recomposition-rules": [
+    "components array order is the sole component order; no filesystem enumeration or sort may replace it.",
+    "Every component is valid UTF-8 without BOM, uses LF only, contains no CR or NUL, and ends in exactly one LF.",
+    "Bundle bytes equal components joined by the exact separator_utf8 bytes, with no prefix, suffix, interpolation, indentation, transcoding, or injected identity.",
+    "A one-component bundle is byte-identical to that component; an empty bundle is invalid.",
+    "All paths resolve relative to artifact_root, remain beneath it, and reject symlinks at every component.",
+    "Spec-slice manifests/renders and child-bundle manifests/bundle artifacts are verified recursively before their bytes are admitted.",
+    "Child-bundle recursion uses a visited manifest-hash set; a repeated ancestor hash is a cycle and fails.",
+    "visible_target_ids contains only target IDs re-derived from verified spec_slice components, including recursively nested spec_slice descendants; child bundles propagate only that union.",
+    "Non-spec components contribute bytes only, declare no visible_target_ids or target map, and can never satisfy Gate 5.",
+    "component_count, every component byte length/hash, visible_target_ids, bundle_byte_length, bundle_sha256, and manifest_sha256 are re-derived.",
+    "Timestamps, process IDs, filesystem metadata, absolute paths, and map iteration order never enter composition."
+  ],
+  "x-gate-5-rule": "For one Concern, required_target_ids must be a subset of this one verified bundle's visible_target_ids derived exclusively from verified spec_slice components (direct or recursive descendants). Non-spec components are ineligible; union across bundles or slices is forbidden.",
+  "x-verify-bundle-command": "spec verify-bundle <bundle.bin> <bundle.json> recursively verifies children and recomposes exact bytes; any mismatch exits non-zero.",
+  "$defs": {
+    "OrderedIdSet": {
+      "type": "array",
+      "items": {
+        "$ref": "spec-record.schema.json#/$defs/QualifiedId"
+      },
+      "uniqueItems": true,
+      "x-order": "ascending Unicode code-point order"
+    },
+    "ConsumerIdentity": {
+      "type": "object",
+      "required": [
+        "application_id",
+        "application_version",
+        "consumer_contract_id"
+      ],
+      "properties": {
+        "application_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "application_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consumer_contract_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "SeatIdentity": {
+      "type": "object",
+      "required": [
+        "seat_id",
+        "seat_role",
+        "profile_id",
+        "profile_sha256",
+        "full_context"
+      ],
+      "properties": {
+        "seat_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "seat_role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "profile_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$"
+        },
+        "profile_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        },
+        "full_context": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "InvocationIdentity": {
+      "type": "object",
+      "required": [
+        "invocation_id",
+        "pipeline_session_id",
+        "pipeline_phase",
+        "task_card_id",
+        "attempt",
+        "provider",
+        "model_id"
+      ],
+      "properties": {
+        "invocation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pipeline_session_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pipeline_phase": {
+          "type": "string",
+          "enum": [
+            "requirements",
+            "roadmap",
+            "debate",
+            "target-architecture",
+            "gauntlet",
+            "finalize",
+            "execution",
+            "implementation"
+          ]
+        },
+        "task_card_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "provider": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "SpecSliceComponent": {
+      "type": "object",
+      "required": [
+        "kind",
+        "component_id",
+        "manifest_path",
+        "manifest_sha256",
+        "render_path",
+        "render_sha256",
+        "byte_length",
+        "visible_target_ids"
+      ],
+      "properties": {
+        "kind": {
+          "const": "spec_slice"
+        },
+        "component_id": {
+          "$ref": "spec-record.schema.json#/$defs/QualifiedId"
+        },
+        "manifest_path": {
+          "$ref": "spec-record.schema.json#/$defs/RelativePath"
+        },
+        "manifest_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        },
+        "render_path": {
+          "$ref": "spec-record.schema.json#/$defs/RelativePath",
+          "description": "Must equal render_path in the recursively verified slice manifest."
+        },
+        "render_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256",
+          "description": "Must equal the re-derived render_sha256 in the recursively verified slice manifest."
+        },
+        "byte_length": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "visible_target_ids": {
+          "$ref": "#/$defs/OrderedIdSet",
+          "description": "Must equal the recursively re-derived slice manifest visible_target_ids."
+        }
+      },
+      "additionalProperties": false
+    },
+    "ChildBundleComponent": {
+      "type": "object",
+      "required": [
+        "kind",
+        "component_id",
+        "manifest_path",
+        "manifest_sha256",
+        "bundle_path",
+        "bundle_sha256",
+        "byte_length",
+        "visible_target_ids"
+      ],
+      "properties": {
+        "kind": {
+          "const": "child_bundle"
+        },
+        "component_id": {
+          "$ref": "spec-record.schema.json#/$defs/QualifiedId"
+        },
+        "manifest_path": {
+          "$ref": "spec-record.schema.json#/$defs/RelativePath"
+        },
+        "manifest_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        },
+        "bundle_path": {
+          "$ref": "spec-record.schema.json#/$defs/RelativePath",
+          "description": "Must equal bundle_path in the recursively verified child bundle manifest."
+        },
+        "bundle_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256",
+          "description": "Must equal the re-derived bundle_sha256 in the recursively verified child bundle manifest."
+        },
+        "byte_length": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "visible_target_ids": {
+          "$ref": "#/$defs/OrderedIdSet",
+          "description": "Must equal the child bundle's recursively re-derived union of verified spec_slice descendant targets."
+        }
+      },
+      "additionalProperties": false
+    },
+    "NonSpecComponent": {
+      "type": "object",
+      "required": [
+        "kind",
+        "component_id",
+        "role",
+        "content_path",
+        "content_sha256",
+        "byte_length"
+      ],
+      "properties": {
+        "kind": {
+          "const": "non_spec"
+        },
+        "component_id": {
+          "$ref": "spec-record.schema.json#/$defs/QualifiedId"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "briefing",
+            "import",
+            "architecture",
+            "context",
+            "prompt",
+            "tool_contract",
+            "other"
+          ]
+        },
+        "content_path": {
+          "$ref": "spec-record.schema.json#/$defs/RelativePath"
+        },
+        "content_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        },
+        "byte_length": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "Component": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SpecSliceComponent"
+        },
+        {
+          "$ref": "#/$defs/ChildBundleComponent"
+        },
+        {
+          "$ref": "#/$defs/NonSpecComponent"
+        }
+      ]
+    }
+  }
+}

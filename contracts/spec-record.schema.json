@@ -1,0 +1,1431 @@
+{
+  "$comment": "status: RATIFIED spec.v1 (G3, Jason, 2026-07-30) — candidate spec.v1 source-metadata schema; not operator-ratified",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://brainquarters.local/schemas/spec-record.schema.json",
+  "title": "Spec Record Source Metadata",
+  "description": "Validation envelope for one SPEC-DOC front matter object and its ordered SPEC-CLAIM metadata objects. Markdown bodies remain the authored authority.",
+  "type": "object",
+  "required": [
+    "front_matter",
+    "claims"
+  ],
+  "properties": {
+    "front_matter": {
+      "$ref": "#/$defs/DocumentFrontMatter"
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ClaimMeta"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "x-identity-rules": {
+    "claim_id_uniqueness": "ClaimMeta.id must be unique within a source; duplicates fail even when byte-identical.",
+    "import_alias_uniqueness": "Import.id must be unique and must not equal the reserved alias 'claim'.",
+    "expanded_endpoint_uniqueness": "Exactly one definition may resolve for every qualified endpoint.",
+    "implementation": "Uniqueness by object property and cross-import resolution are spec-lint rules because JSON Schema uniqueItems cannot enforce them."
+  },
+  "x-relation-direction-endpoint-cardinality-table": [
+    {
+      "type": "realizes",
+      "direction": "source_to_target",
+      "source_kinds": [
+        "requirement",
+        "decision",
+        "invariant",
+        "remediation",
+        "test_obligation",
+        "config"
+      ],
+      "target_kinds": [
+        "goal"
+      ],
+      "per_source": "0..*; normative requirement is 1..* unless owned exception",
+      "per_target": "0..*"
+    },
+    {
+      "type": "depends_on",
+      "direction": "source_to_prerequisite",
+      "source_kinds": [
+        "context",
+        "goal",
+        "requirement",
+        "decision",
+        "model",
+        "invariant",
+        "non_goal",
+        "open_item",
+        "remediation",
+        "test_obligation",
+        "config"
+      ],
+      "target_kinds": [
+        "context",
+        "goal",
+        "requirement",
+        "decision",
+        "model",
+        "invariant",
+        "non_goal",
+        "open_item",
+        "remediation",
+        "test_obligation",
+        "config",
+        "external_requirement",
+        "interface",
+        "component",
+        "task"
+      ],
+      "per_source": "0..*",
+      "per_target": "0..*"
+    },
+    {
+      "type": "blocks",
+      "direction": "blocker_to_blocked",
+      "source_kinds": [
+        "requirement",
+        "decision",
+        "open_item",
+        "remediation"
+      ],
+      "target_kinds": [
+        "requirement",
+        "decision",
+        "open_item",
+        "remediation",
+        "test_obligation",
+        "task"
+      ],
+      "per_source": "0..*",
+      "per_target": "0..*"
+    },
+    {
+      "type": "conflicts_with",
+      "direction": "symmetric_semantics_store_once_on_lexicographically_smaller_endpoint",
+      "source_kinds": [
+        "context",
+        "goal",
+        "requirement",
+        "decision",
+        "model",
+        "invariant",
+        "non_goal",
+        "open_item",
+        "remediation",
+        "test_obligation",
+        "config"
+      ],
+      "target_kinds": [
+        "context",
+        "goal",
+        "requirement",
+        "decision",
+        "model",
+        "invariant",
+        "non_goal",
+        "open_item",
+        "remediation",
+        "test_obligation",
+        "config",
+        "external_requirement",
+        "interface",
+        "decision_record"
+      ],
+      "per_source": "0..*",
+      "per_target": "0..*"
+    },
+    {
+      "type": "amends",
+      "direction": "amending_claim_to_amended_endpoint",
+      "source_kinds": [
+        "requirement",
+        "decision",
+        "model",
+        "invariant",
+        "remediation",
+        "config"
+      ],
+      "target_kinds": [
+        "requirement",
+        "decision",
+        "model",
+        "invariant",
+        "remediation",
+        "config",
+        "external_requirement",
+        "interface"
+      ],
+      "per_source": "0..*",
+      "per_target": "0..*"
+    },
+    {
+      "type": "supersedes",
+      "direction": "replacement_to_predecessor",
+      "source_kinds": [
+        "context",
+        "goal",
+        "requirement",
+        "decision",
+        "model",
+        "invariant",
+        "non_goal",
+        "open_item",
+        "remediation",
+        "test_obligation",
+        "config"
+      ],
+      "target_kinds": [
+        "context",
+        "goal",
+        "requirement",
+        "decision",
+        "model",
+        "invariant",
+        "non_goal",
+        "open_item",
+        "remediation",
+        "test_obligation",
+        "config"
+      ],
+      "per_source": "0..*",
+      "per_target": "0..*",
+      "condition": "Source and target kinds must match unless an operator-signed kind-migration record is referenced."
+    },
+    {
+      "type": "verified_by",
+      "direction": "obligation_to_witness",
+      "source_kinds": [
+        "goal",
+        "requirement",
+        "decision",
+        "invariant",
+        "remediation",
+        "test_obligation"
+      ],
+      "target_kinds": [
+        "test_obligation",
+        "oracle",
+        "probe",
+        "test"
+      ],
+      "per_source": "0..*; live normative obligation is 1..* unless owned residue",
+      "per_target": "0..*"
+    },
+    {
+      "type": "allocated_to",
+      "direction": "obligation_to_implementation_owner",
+      "source_kinds": [
+        "requirement",
+        "open_item",
+        "remediation",
+        "test_obligation"
+      ],
+      "target_kinds": [
+        "component",
+        "task"
+      ],
+      "per_source": "0..*",
+      "per_target": "0..*"
+    },
+    {
+      "type": "crosses_interface",
+      "direction": "claim_to_crossed_interface",
+      "source_kinds": [
+        "requirement",
+        "decision",
+        "model",
+        "invariant",
+        "remediation"
+      ],
+      "target_kinds": [
+        "interface"
+      ],
+      "per_source": "0..*",
+      "per_target": "0..*"
+    }
+  ],
+  "x-lifecycle-transition-table": {
+    "absent": [
+      "draft",
+      "live",
+      "open"
+    ],
+    "draft": [
+      "draft",
+      "live",
+      "open",
+      "withdrawn"
+    ],
+    "live": [
+      "live",
+      "residue",
+      "superseded",
+      "withdrawn"
+    ],
+    "open": [
+      "open",
+      "live",
+      "residue",
+      "withdrawn"
+    ],
+    "residue": [
+      "residue",
+      "live",
+      "superseded",
+      "withdrawn"
+    ],
+    "superseded": [
+      "superseded"
+    ],
+    "withdrawn": [
+      "withdrawn"
+    ]
+  },
+  "x-lifecycle-transition-rules": [
+    "A non-initial document must resolve parent_revision and parent_index_sha256 and compare predecessor records.",
+    "Entering live requires lifecycle.authority.",
+    "Entering residue requires ClaimMeta.residue with owner, disposition, reason, and ref.",
+    "Entering superseded requires an incoming supersedes edge from a non-terminal replacement.",
+    "Entering withdrawn requires operator authority and a non-empty lifecycle.reason.",
+    "A superseded or withdrawn ID cannot be resurrected; replacement uses a new ID and supersedes.",
+    "A live body, kind, normativity, or relation-set change requires an authored amendment driver."
+  ],
+  "$defs": {
+    "Sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "QualifiedId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*:[A-Za-z0-9][A-Za-z0-9._/-]*$"
+    },
+    "ClaimId": {
+      "type": "string",
+      "pattern": "^claim:[A-Za-z0-9][A-Za-z0-9._/-]*$"
+    },
+    "RegistryToken": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+    },
+    "RelativePath": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*//)(?!.*\\\\)[A-Za-z0-9._@+/-]*[A-Za-z0-9._@+-]$"
+    },
+    "FullCommit": {
+      "type": "string",
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+    },
+    "ClaimKind": {
+      "type": "string",
+      "enum": [
+        "context",
+        "goal",
+        "requirement",
+        "decision",
+        "model",
+        "invariant",
+        "non_goal",
+        "open_item",
+        "remediation",
+        "test_obligation",
+        "config"
+      ],
+      "x-status": "provisional-until-G3",
+      "x-freezing-prerequisite": "Operator-reviewed kind/spine mapping and ambiguity report over at least two independent additional corpora."
+    },
+    "EndpointKind": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ClaimKind"
+        },
+        {
+          "type": "string",
+          "enum": [
+            "external_requirement",
+            "interface",
+            "oracle",
+            "probe",
+            "test",
+            "component",
+            "task",
+            "concern",
+            "finding",
+            "decision_record"
+          ]
+        }
+      ]
+    },
+    "AuthorityRef": {
+      "type": "object",
+      "required": [
+        "kind",
+        "ref"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "operator",
+            "spec_revision",
+            "imported_authority"
+          ]
+        },
+        "ref": {
+          "$ref": "#/$defs/QualifiedId"
+        },
+        "record_sha256": {
+          "$ref": "#/$defs/Sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Import": {
+      "type": "object",
+      "required": [
+        "id",
+        "authority_id",
+        "repository",
+        "commit",
+        "path",
+        "sha256",
+        "precedence",
+        "on_conflict"
+      ],
+      "properties": {
+        "id": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/RegistryToken"
+            },
+            {
+              "not": {
+                "const": "claim"
+              }
+            }
+          ]
+        },
+        "authority_id": {
+          "$ref": "#/$defs/QualifiedId"
+        },
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "commit": {
+          "$ref": "#/$defs/FullCommit"
+        },
+        "path": {
+          "$ref": "#/$defs/RelativePath"
+        },
+        "sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "precedence": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "on_conflict": {
+          "type": "string",
+          "enum": [
+            "fail",
+            "current_wins",
+            "import_wins",
+            "operator_resolution"
+          ]
+        },
+        "resolution_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QualifiedId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "alias_of": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RegistryToken"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "on_conflict": {
+                "const": "operator_resolution"
+              }
+            },
+            "required": [
+              "on_conflict"
+            ]
+          },
+          "then": {
+            "required": [
+              "resolution_ref"
+            ],
+            "properties": {
+              "resolution_ref": {
+                "$ref": "#/$defs/QualifiedId"
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "DeclaredConflict": {
+      "type": "object",
+      "required": [
+        "conflict_id",
+        "left",
+        "right",
+        "status",
+        "resolution",
+        "operator_decision_ref"
+      ],
+      "properties": {
+        "conflict_id": {
+          "$ref": "#/$defs/QualifiedId"
+        },
+        "left": {
+          "$ref": "#/$defs/QualifiedId"
+        },
+        "right": {
+          "$ref": "#/$defs/QualifiedId"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "resolved",
+            "unresolved"
+          ]
+        },
+        "resolution": {
+          "type": "string",
+          "enum": [
+            "left_wins",
+            "right_wins",
+            "merge",
+            "no_semantic_conflict",
+            "unresolved"
+          ]
+        },
+        "operator_decision_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QualifiedId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "x-lint-rule": "status=unresolved or resolution=unresolved fails spec lint; schema permits the intermediate draft so it can be reviewed."
+    },
+    "RegistryPins": {
+      "type": "object",
+      "required": [
+        "roles_sha256",
+        "slice_tags_sha256",
+        "accessor_profiles_sha256"
+      ],
+      "properties": {
+        "roles_sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "slice_tags_sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "accessor_profiles_sha256": {
+          "$ref": "#/$defs/Sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "DocumentFrontMatter": {
+      "type": "object",
+      "required": [
+        "spec_contract",
+        "schema_sha256",
+        "spec_id",
+        "revision",
+        "parent_revision",
+        "parent_index_sha256",
+        "registries",
+        "imports",
+        "declared_conflicts",
+        "conflict_rule"
+      ],
+      "properties": {
+        "spec_contract": {
+          "const": "spec.v1"
+        },
+        "schema_sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "spec_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{1,127}$"
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "parent_revision": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "parent_index_sha256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "registries": {
+          "$ref": "#/$defs/RegistryPins"
+        },
+        "imports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Import"
+          },
+          "uniqueItems": true
+        },
+        "declared_conflicts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DeclaredConflict"
+          },
+          "uniqueItems": true
+        },
+        "conflict_rule": {
+          "const": "reject-undeclared-or-unresolved"
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "parent_revision": {
+              "type": "null"
+            },
+            "parent_index_sha256": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "parent_revision": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+            },
+            "parent_index_sha256": {
+              "$ref": "#/$defs/Sha256"
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "Lifecycle": {
+      "type": "object",
+      "required": [
+        "state",
+        "introduced_in",
+        "authority",
+        "reason"
+      ],
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "live",
+            "open",
+            "residue",
+            "superseded",
+            "withdrawn"
+          ]
+        },
+        "introduced_in": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "authority": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AuthorityRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "live",
+                  "residue",
+                  "superseded",
+                  "withdrawn"
+                ]
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "authority": {
+                "$ref": "#/$defs/AuthorityRef"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "withdrawn"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "authority": {
+                "allOf": [
+                  {
+                    "$ref": "#/$defs/AuthorityRef"
+                  },
+                  {
+                    "properties": {
+                      "kind": {
+                        "const": "operator"
+                      }
+                    }
+                  }
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "GauntletDisposition": {
+      "type": "object",
+      "required": [
+        "state",
+        "concern_refs",
+        "decision_ref"
+      ],
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "not_applicable",
+            "unreviewed",
+            "accepted",
+            "acknowledged",
+            "dismissed"
+          ]
+        },
+        "concern_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/QualifiedId"
+          },
+          "uniqueItems": true
+        },
+        "decision_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QualifiedId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "accepted",
+                  "acknowledged",
+                  "dismissed"
+                ]
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "concern_refs": {
+                "minItems": 1
+              },
+              "decision_ref": {
+                "$ref": "#/$defs/QualifiedId"
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "Relation": {
+      "type": "object",
+      "required": [
+        "type",
+        "target",
+        "target_kind",
+        "authority_ref"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "realizes",
+            "depends_on",
+            "blocks",
+            "conflicts_with",
+            "amends",
+            "supersedes",
+            "verified_by",
+            "allocated_to",
+            "crosses_interface"
+          ]
+        },
+        "target": {
+          "$ref": "#/$defs/QualifiedId"
+        },
+        "target_kind": {
+          "$ref": "#/$defs/EndpointKind"
+        },
+        "authority_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QualifiedId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "realizes"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "target_kind": {
+                "const": "goal"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "verified_by"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "target_kind": {
+                "enum": [
+                  "test_obligation",
+                  "oracle",
+                  "probe",
+                  "test"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "allocated_to"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "target_kind": {
+                "enum": [
+                  "component",
+                  "task"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "crosses_interface"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "target_kind": {
+                "const": "interface"
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "LineSpan": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "integer",
+          "minimum": 1
+        },
+        {
+          "type": "integer",
+          "minimum": 1
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 2,
+      "items": false,
+      "x-lint-rule": "The second line number must be greater than or equal to the first."
+    },
+    "CodeEvidence": {
+      "type": "object",
+      "required": [
+        "type",
+        "repository",
+        "commit",
+        "path",
+        "sha256",
+        "line_spans"
+      ],
+      "properties": {
+        "type": {
+          "const": "code"
+        },
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "commit": {
+          "$ref": "#/$defs/FullCommit"
+        },
+        "path": {
+          "$ref": "#/$defs/RelativePath"
+        },
+        "sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "line_spans": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LineSpan"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "ProbeEvidence": {
+      "type": "object",
+      "required": [
+        "type",
+        "probe_id",
+        "manifest_sha256"
+      ],
+      "properties": {
+        "type": {
+          "const": "probe"
+        },
+        "probe_id": {
+          "$ref": "#/$defs/QualifiedId"
+        },
+        "manifest_sha256": {
+          "$ref": "#/$defs/Sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TestRunEvidence": {
+      "type": "object",
+      "required": [
+        "type",
+        "run_id",
+        "receipt_sha256"
+      ],
+      "properties": {
+        "type": {
+          "const": "test_run"
+        },
+        "run_id": {
+          "$ref": "#/$defs/QualifiedId"
+        },
+        "receipt_sha256": {
+          "$ref": "#/$defs/Sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "OperatorDecisionEvidence": {
+      "type": "object",
+      "required": [
+        "type",
+        "decision_id",
+        "signer_id",
+        "record_sha256"
+      ],
+      "properties": {
+        "type": {
+          "const": "operator_decision"
+        },
+        "decision_id": {
+          "$ref": "#/$defs/QualifiedId"
+        },
+        "signer_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "record_sha256": {
+          "$ref": "#/$defs/Sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ExternalContractEvidence": {
+      "type": "object",
+      "required": [
+        "type",
+        "contract_id",
+        "repository",
+        "commit",
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "type": {
+          "const": "external_contract"
+        },
+        "contract_id": {
+          "$ref": "#/$defs/QualifiedId"
+        },
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "commit": {
+          "$ref": "#/$defs/FullCommit"
+        },
+        "path": {
+          "$ref": "#/$defs/RelativePath"
+        },
+        "sha256": {
+          "$ref": "#/$defs/Sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Evidence": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CodeEvidence"
+        },
+        {
+          "$ref": "#/$defs/ProbeEvidence"
+        },
+        {
+          "$ref": "#/$defs/TestRunEvidence"
+        },
+        {
+          "$ref": "#/$defs/OperatorDecisionEvidence"
+        },
+        {
+          "$ref": "#/$defs/ExternalContractEvidence"
+        }
+      ]
+    },
+    "Exception": {
+      "type": "object",
+      "required": [
+        "owner",
+        "decision_ref",
+        "reason"
+      ],
+      "properties": {
+        "owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision_ref": {
+          "$ref": "#/$defs/QualifiedId"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expires_on_revision": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "Residue": {
+      "type": "object",
+      "required": [
+        "owner",
+        "ref",
+        "disposition",
+        "reason"
+      ],
+      "properties": {
+        "owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ref": {
+          "$ref": "#/$defs/QualifiedId"
+        },
+        "disposition": {
+          "type": "string",
+          "enum": [
+            "accepted",
+            "deferred",
+            "unresolved"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "ClaimMeta": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "roles",
+        "normativity",
+        "lifecycle",
+        "gauntlet_disposition",
+        "drivers",
+        "goal_refs",
+        "relations",
+        "evidence",
+        "slice_tags",
+        "exception",
+        "residue"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ClaimId"
+        },
+        "kind": {
+          "$ref": "#/$defs/ClaimKind"
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RegistryToken"
+          },
+          "uniqueItems": true
+        },
+        "normativity": {
+          "type": "string",
+          "enum": [
+            "normative",
+            "descriptive",
+            "observation",
+            "decision"
+          ]
+        },
+        "lifecycle": {
+          "$ref": "#/$defs/Lifecycle"
+        },
+        "gauntlet_disposition": {
+          "$ref": "#/$defs/GauntletDisposition"
+        },
+        "drivers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/QualifiedId"
+          },
+          "uniqueItems": true
+        },
+        "goal_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/QualifiedId"
+          },
+          "uniqueItems": true
+        },
+        "relations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Relation"
+          },
+          "uniqueItems": true
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "uniqueItems": true
+        },
+        "slice_tags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RegistryToken"
+          },
+          "uniqueItems": true
+        },
+        "exception": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Exception"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "residue": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Residue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "requirement"
+              },
+              "normativity": {
+                "const": "normative"
+              }
+            },
+            "required": [
+              "kind",
+              "normativity"
+            ]
+          },
+          "then": {
+            "anyOf": [
+              {
+                "properties": {
+                  "relations": {
+                    "contains": {
+                      "properties": {
+                        "type": {
+                          "const": "realizes"
+                        }
+                      },
+                      "required": [
+                        "type"
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "exception": {
+                    "$ref": "#/$defs/Exception"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "lifecycle": {
+                "properties": {
+                  "state": {
+                    "const": "residue"
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              }
+            },
+            "required": [
+              "lifecycle"
+            ]
+          },
+          "then": {
+            "properties": {
+              "residue": {
+                "$ref": "#/$defs/Residue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "lifecycle": {
+                "properties": {
+                  "state": {
+                    "const": "live"
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              "normativity": {
+                "const": "normative"
+              },
+              "kind": {
+                "enum": [
+                  "requirement",
+                  "invariant",
+                  "remediation",
+                  "test_obligation"
+                ]
+              }
+            },
+            "required": [
+              "lifecycle",
+              "normativity",
+              "kind"
+            ]
+          },
+          "then": {
+            "anyOf": [
+              {
+                "properties": {
+                  "relations": {
+                    "contains": {
+                      "properties": {
+                        "type": {
+                          "const": "verified_by"
+                        }
+                      },
+                      "required": [
+                        "type"
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "residue": {
+                    "$ref": "#/$defs/Residue"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "additionalProperties": false,
+      "x-cross-field-rules": [
+        "goal_refs must equal the accepted realizes targets after canonical ordering.",
+        "No Relation.target may equal this ClaimMeta.id.",
+        "Relation source-kind legality and cardinality follow the top-level relation table.",
+        "A conflicts_with edge is stored only on the lexicographically smaller endpoint.",
+        "Entering superseded requires an incoming supersedes relation in the current graph."
+      ]
+    }
+  }
+}

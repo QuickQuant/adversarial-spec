@@ -1,0 +1,2039 @@
+{
+  "$comment": "status: RATIFIED spec.v1 (G3, Jason, 2026-07-30) — candidate replay.v1 corpus replay, acceptance-gate, and backstop-parity schema; not operator-ratified",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://brainquarters.local/schemas/spec-corpus-replay.schema.json",
+  "title": "Spec Corpus Replay Contract",
+  "description": "Operator-signed semantic replay maps, revised gates 1–7, real-consumer probe fixtures, and two-layer full-context-backstop parity records.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "spec_contract",
+    "replay_schema_sha256",
+    "bundle_schema_sha256",
+    "corpus_id",
+    "corpus_revision",
+    "corpus_class",
+    "source_pins",
+    "signing_policy",
+    "inventory",
+    "replay_maps",
+    "guardrail_targets",
+    "authority_expectations",
+    "bundle_manifests",
+    "bundle_visibility_checks",
+    "bundle_determinism",
+    "probe_fixtures",
+    "consumer_contract_test",
+    "acceptance_gates",
+    "backstop_parity",
+    "manifest_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "replay.v1"
+    },
+    "spec_contract": {
+      "const": "spec.v1"
+    },
+    "replay_schema_sha256": {
+      "$ref": "spec-record.schema.json#/$defs/Sha256"
+    },
+    "bundle_schema_sha256": {
+      "$ref": "spec-record.schema.json#/$defs/Sha256"
+    },
+    "corpus_id": {
+      "type": "string",
+      "pattern": "^corpus:[A-Za-z0-9][A-Za-z0-9._/-]*$"
+    },
+    "corpus_revision": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+    },
+    "corpus_class": {
+      "type": "string",
+      "enum": [
+        "baseline_71_63",
+        "independent"
+      ]
+    },
+    "source_pins": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SourcePin"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "signing_policy": {
+      "$ref": "#/$defs/SigningPolicy"
+    },
+    "inventory": {
+      "$ref": "#/$defs/Inventory"
+    },
+    "replay_maps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ConcernReplayMap"
+      }
+    },
+    "guardrail_targets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/GuardrailTargetMap"
+      },
+      "uniqueItems": true
+    },
+    "authority_expectations": {
+      "$ref": "#/$defs/AuthorityExpectations"
+    },
+    "bundle_manifests": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/BundleManifestRef"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "bundle_visibility_checks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/BundleVisibilityCheck"
+      }
+    },
+    "bundle_determinism": {
+      "$ref": "#/$defs/BundleDeterminism"
+    },
+    "probe_fixtures": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ProbeFixture"
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "allOf": [
+        {
+          "contains": {
+            "properties": {
+              "variant": {
+                "const": "valid"
+              }
+            },
+            "required": [
+              "variant"
+            ]
+          }
+        },
+        {
+          "$ref": "#/$defs/FixtureCoverageMissingProbeId"
+        },
+        {
+          "$ref": "#/$defs/FixtureCoverageDirtyControl"
+        },
+        {
+          "$ref": "#/$defs/FixtureCoverageWrongReason"
+        },
+        {
+          "$ref": "#/$defs/FixtureCoverageDuplicateKey"
+        },
+        {
+          "$ref": "#/$defs/FixtureCoverageStaleSuite"
+        },
+        {
+          "$ref": "#/$defs/FixtureCoverageUnvalidatedResidue"
+        }
+      ]
+    },
+    "consumer_contract_test": {
+      "$ref": "#/$defs/ConsumerContractTest"
+    },
+    "acceptance_gates": {
+      "$ref": "#/$defs/AcceptanceGates"
+    },
+    "backstop_parity": {
+      "$ref": "#/$defs/BackstopParity"
+    },
+    "manifest_sha256": {
+      "$ref": "spec-record.schema.json#/$defs/Sha256",
+      "description": "SHA-256 over RFC 8785 JCS of this replay artifact with only manifest_sha256 omitted."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "corpus_class": {
+            "const": "baseline_71_63"
+          }
+        },
+        "required": [
+          "corpus_class"
+        ]
+      },
+      "then": {
+        "properties": {
+          "inventory": {
+            "properties": {
+              "concern_total": {
+                "const": 71
+              },
+              "verdict_counts": {
+                "properties": {
+                  "accept": {
+                    "const": 62
+                  },
+                  "acknowledge": {
+                    "const": 8
+                  },
+                  "dismiss": {
+                    "const": 1
+                  }
+                }
+              },
+              "guardrail_counts": {
+                "properties": {
+                  "CONS": {
+                    "const": 16
+                  },
+                  "CANON": {
+                    "const": 11
+                  },
+                  "TCOV": {
+                    "const": 36
+                  }
+                }
+              }
+            }
+          },
+          "replay_maps": {
+            "minItems": 71,
+            "maxItems": 71
+          },
+          "guardrail_targets": {
+            "minItems": 63,
+            "maxItems": 63,
+            "allOf": [
+              {
+                "contains": {
+                  "properties": {
+                    "guardrail": {
+                      "const": "CONS"
+                    }
+                  },
+                  "required": [
+                    "guardrail"
+                  ]
+                },
+                "minContains": 16,
+                "maxContains": 16
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "guardrail": {
+                      "const": "CANON"
+                    }
+                  },
+                  "required": [
+                    "guardrail"
+                  ]
+                },
+                "minContains": 11,
+                "maxContains": 11
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "guardrail": {
+                      "const": "TCOV"
+                    }
+                  },
+                  "required": [
+                    "guardrail"
+                  ]
+                },
+                "minContains": 36,
+                "maxContains": 36
+              }
+            ]
+          },
+          "bundle_visibility_checks": {
+            "minItems": 71
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "acceptance_gates": {
+            "properties": {
+              "gate_7": {
+                "properties": {
+                  "status": {
+                    "const": "pass"
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              }
+            },
+            "required": [
+              "gate_7"
+            ]
+          }
+        },
+        "required": [
+          "acceptance_gates"
+        ]
+      },
+      "then": {
+        "properties": {
+          "consumer_contract_test": {
+            "properties": {
+              "result": {
+                "const": "pass"
+              }
+            },
+            "required": [
+              "result"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false,
+  "x-acceptance-gates": [
+    {
+      "gate": 1,
+      "name": "baseline_inventory",
+      "pass": "Exactly 71 unique Concerns; verdict counts are 62 accept, 8 acknowledge, 1 dismiss."
+    },
+    {
+      "gate": 2,
+      "name": "signed_mapping_completeness",
+      "pass": "Every Concern has an operator-signed mapped record or explicit signed acknowledged/dismissed out-of-scope disposition; silent_drops=0."
+    },
+    {
+      "gate": 3,
+      "name": "guardrail_preservation",
+      "pass": "All 16 CONS, 11 CANON, and 36 TCOV targets are represented."
+    },
+    {
+      "gate": 4,
+      "name": "authority_preservation",
+      "pass": "Exact normative body hashes and all import precedence, amendment, and supersession edges are preserved."
+    },
+    {
+      "gate": 5,
+      "name": "per_bundle_co_visibility",
+      "pass": "For every Concern, one designated verified seat bundle records required_set subset-of visible_set and missing_set is empty; visible_set is derived exclusively from verified spec_slice components, including recursive descendants, and non-spec components are ineligible. The declared full bundle satisfies all 71 target sets. Union across bundles or slices is forbidden."
+    },
+    {
+      "gate": 6,
+      "name": "verify_bundle_determinism",
+      "pass": "spec verify-bundle passes and exact component, manifest, and final bundle hashes are identical across at least three independent runs."
+    },
+    {
+      "gate": 7,
+      "name": "real_fizzy_consumer_contract",
+      "pass": "The named consumer test imports and executes fizzy_pipeline_mcp.pipeline.validate_gauntlet_probes over valid/mutant fixtures and matches expected violation codes; replay-corpus does not mirror the validator."
+    }
+  ],
+  "x-replay-authority-rules": [
+    "Concern-to-target/evidence mapping and acknowledged/dismissed correctness require operator signatures.",
+    "Signatures cover RFC 8785 JCS of each record with only signature omitted.",
+    "All counts, set differences, hashes, and signature payloads are re-derived.",
+    "required_target_ids is the canonical union of mapped claim IDs, re-derived synthetic relation IDs, and evidence IDs; arbitrary or non-spec target additions are invalid.",
+    "Each synthetic relation target ID is relation: plus lowercase hexadecimal SHA-256 of UTF-8 RFC 8785 JCS for the exact [source,type,target] string array.",
+    "Gate 5 is evaluated against one verified bundle per check using only target IDs re-derived from verified spec_slice components (direct or recursive descendants); non-spec components and set union across bundle IDs are invalid.",
+    "Gate 7 evidence is produced by the Fizzy consumer repository using the real callable; this replay artifact only pins and checks its receipt."
+  ],
+  "$defs": {
+    "OrderedIdSet": {
+      "type": "array",
+      "items": {
+        "$ref": "spec-record.schema.json#/$defs/QualifiedId"
+      },
+      "uniqueItems": true,
+      "x-order": "ascending Unicode code-point order"
+    },
+    "SourcePin": {
+      "type": "object",
+      "required": [
+        "source_id",
+        "repository",
+        "commit",
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "source_id": {
+          "$ref": "spec-record.schema.json#/$defs/QualifiedId"
+        },
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "commit": {
+          "$ref": "spec-record.schema.json#/$defs/FullCommit"
+        },
+        "path": {
+          "$ref": "spec-record.schema.json#/$defs/RelativePath"
+        },
+        "sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SigningPolicy": {
+      "type": "object",
+      "required": [
+        "policy_id",
+        "policy_sha256",
+        "trusted_operator_ids",
+        "key_registry_sha256"
+      ],
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "policy_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        },
+        "trusted_operator_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "key_registry_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "OperatorSignature": {
+      "type": "object",
+      "required": [
+        "signer_id",
+        "key_id",
+        "algorithm",
+        "signed_at",
+        "payload_sha256",
+        "signature"
+      ],
+      "properties": {
+        "signer_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "key_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "algorithm": {
+          "type": "string",
+          "enum": [
+            "ed25519",
+            "sigstore",
+            "operator-record"
+          ]
+        },
+        "signed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "payload_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        },
+        "signature": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "VerdictCounts": {
+      "type": "object",
+      "required": [
+        "accept",
+        "acknowledge",
+        "dismiss"
+      ],
+      "properties": {
+        "accept": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "acknowledge": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dismiss": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "GuardrailCounts": {
+      "type": "object",
+      "required": [
+        "CONS",
+        "CANON",
+        "TCOV"
+      ],
+      "properties": {
+        "CONS": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "CANON": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "TCOV": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "Inventory": {
+      "type": "object",
+      "required": [
+        "concern_total",
+        "verdict_counts",
+        "guardrail_counts"
+      ],
+      "properties": {
+        "concern_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "verdict_counts": {
+          "$ref": "#/$defs/VerdictCounts"
+        },
+        "guardrail_counts": {
+          "$ref": "#/$defs/GuardrailCounts"
+        }
+      },
+      "additionalProperties": false,
+      "x-derived-rules": [
+        "concern_total equals replay_maps length and unique concern_id count.",
+        "verdict_counts is re-derived from replay_maps.",
+        "guardrail_counts is re-derived from guardrail_targets."
+      ]
+    },
+    "RequiredRelation": {
+      "type": "object",
+      "required": [
+        "source",
+        "type",
+        "target",
+        "relation_target_id"
+      ],
+      "properties": {
+        "source": {
+          "$ref": "spec-record.schema.json#/$defs/QualifiedId"
+        },
+        "type": {
+          "$ref": "spec-record.schema.json#/$defs/Relation/properties/type"
+        },
+        "target": {
+          "$ref": "spec-record.schema.json#/$defs/QualifiedId"
+        },
+        "relation_target_id": {
+          "type": "string",
+          "pattern": "^relation:[0-9a-f]{64}$",
+          "description": "Exactly relation: plus lowercase hexadecimal SHA-256 of UTF-8 RFC 8785 JCS for the exact [source,type,target] string array, with no bytes outside the JCS value."
+        }
+      },
+      "additionalProperties": false
+    },
+    "ConcernReplayMap": {
+      "type": "object",
+      "required": [
+        "record_type",
+        "concern_id",
+        "verdict",
+        "baseline_record_sha256",
+        "mapping_disposition",
+        "disposition_reason",
+        "required_claim_ids",
+        "required_relations",
+        "required_evidence_refs",
+        "required_target_ids",
+        "designated_bundle_ids",
+        "signature"
+      ],
+      "properties": {
+        "record_type": {
+          "const": "concern_replay_map"
+        },
+        "concern_id": {
+          "type": "string",
+          "pattern": "^concern:[A-Za-z0-9][A-Za-z0-9._/-]*$"
+        },
+        "verdict": {
+          "type": "string",
+          "enum": [
+            "accept",
+            "acknowledge",
+            "dismiss"
+          ]
+        },
+        "baseline_record_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        },
+        "mapping_disposition": {
+          "type": "string",
+          "enum": [
+            "mapped",
+            "acknowledged_out_of_scope",
+            "dismissed_out_of_scope"
+          ]
+        },
+        "disposition_reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "required_claim_ids": {
+          "$ref": "#/$defs/OrderedIdSet"
+        },
+        "required_relations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RequiredRelation"
+          },
+          "uniqueItems": true
+        },
+        "required_evidence_refs": {
+          "$ref": "#/$defs/OrderedIdSet"
+        },
+        "required_target_ids": {
+          "$ref": "#/$defs/OrderedIdSet",
+          "description": "Re-derived canonical union of required_claim_ids, every required_relations[*].relation_target_id, and required_evidence_refs. Arbitrary and non-spec additions are forbidden."
+        },
+        "designated_bundle_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^bundle:[A-Za-z0-9][A-Za-z0-9._/-]*$"
+          },
+          "uniqueItems": true
+        },
+        "signature": {
+          "$ref": "#/$defs/OperatorSignature"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mapping_disposition": {
+                "const": "mapped"
+              }
+            },
+            "required": [
+              "mapping_disposition"
+            ]
+          },
+          "then": {
+            "properties": {
+              "required_target_ids": {
+                "minItems": 1
+              },
+              "designated_bundle_ids": {
+                "minItems": 1
+              },
+              "disposition_reason": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "mapping_disposition": {
+                "const": "acknowledged_out_of_scope"
+              }
+            },
+            "required": [
+              "mapping_disposition"
+            ]
+          },
+          "then": {
+            "properties": {
+              "verdict": {
+                "const": "acknowledge"
+              },
+              "disposition_reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "mapping_disposition": {
+                "const": "dismissed_out_of_scope"
+              }
+            },
+            "required": [
+              "mapping_disposition"
+            ]
+          },
+          "then": {
+            "properties": {
+              "verdict": {
+                "const": "dismiss"
+              },
+              "disposition_reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false,
+      "x-signed-payload": "RFC 8785 JCS of this object with only signature omitted",
+      "x-derived-target-rule": "required_target_ids equals the canonical set union of required_claim_ids, re-derived required_relations[*].relation_target_id, and required_evidence_refs."
+    },
+    "GuardrailTargetMap": {
+      "type": "object",
+      "required": [
+        "record_type",
+        "guardrail",
+        "target_id",
+        "baseline_record_sha256",
+        "mapped_target_ids",
+        "signature"
+      ],
+      "properties": {
+        "record_type": {
+          "const": "guardrail_target_map"
+        },
+        "guardrail": {
+          "type": "string",
+          "enum": [
+            "CONS",
+            "CANON",
+            "TCOV"
+          ]
+        },
+        "target_id": {
+          "$ref": "spec-record.schema.json#/$defs/QualifiedId"
+        },
+        "baseline_record_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        },
+        "mapped_target_ids": {
+          "$ref": "#/$defs/OrderedIdSet"
+        },
+        "signature": {
+          "$ref": "#/$defs/OperatorSignature"
+        }
+      },
+      "additionalProperties": false,
+      "x-signed-payload": "RFC 8785 JCS of this object with only signature omitted"
+    },
+    "AuthorityBodyExpectation": {
+      "type": "object",
+      "required": [
+        "claim_id",
+        "body_sha256"
+      ],
+      "properties": {
+        "claim_id": {
+          "$ref": "spec-record.schema.json#/$defs/QualifiedId"
+        },
+        "body_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ImportExpectation": {
+      "type": "object",
+      "required": [
+        "import_id",
+        "sha256",
+        "precedence"
+      ],
+      "properties": {
+        "import_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+        },
+        "sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        },
+        "precedence": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "AuthorityExpectations": {
+      "type": "object",
+      "required": [
+        "normative_bodies",
+        "imports",
+        "amendment_edges",
+        "supersession_edges"
+      ],
+      "properties": {
+        "normative_bodies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AuthorityBodyExpectation"
+          },
+          "uniqueItems": true
+        },
+        "imports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ImportExpectation"
+          },
+          "uniqueItems": true
+        },
+        "amendment_edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RequiredRelation"
+          },
+          "uniqueItems": true
+        },
+        "supersession_edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RequiredRelation"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false,
+      "x-lint-rule": "Every amendment_edges item has type=amends and every supersession_edges item has type=supersedes."
+    },
+    "BundleManifestRef": {
+      "type": "object",
+      "required": [
+        "bundle_id",
+        "manifest_path",
+        "manifest_sha256",
+        "bundle_sha256",
+        "seat_id",
+        "full_context",
+        "verification_receipt_sha256"
+      ],
+      "properties": {
+        "bundle_id": {
+          "type": "string",
+          "pattern": "^bundle:[A-Za-z0-9][A-Za-z0-9._/-]*$"
+        },
+        "manifest_path": {
+          "$ref": "spec-record.schema.json#/$defs/RelativePath"
+        },
+        "manifest_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        },
+        "bundle_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        },
+        "seat_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "full_context": {
+          "type": "boolean"
+        },
+        "verification_receipt_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "BundleVisibilityCheck": {
+      "type": "object",
+      "required": [
+        "check_id",
+        "concern_id",
+        "seat_bundle_id",
+        "visibility_basis",
+        "required_target_ids",
+        "visible_target_ids",
+        "missing_target_ids",
+        "passed"
+      ],
+      "properties": {
+        "check_id": {
+          "type": "string",
+          "pattern": "^visibility:[A-Za-z0-9][A-Za-z0-9._/-]*$"
+        },
+        "concern_id": {
+          "type": "string",
+          "pattern": "^concern:[A-Za-z0-9][A-Za-z0-9._/-]*$"
+        },
+        "seat_bundle_id": {
+          "type": "string",
+          "pattern": "^bundle:[A-Za-z0-9][A-Za-z0-9._/-]*$"
+        },
+        "visibility_basis": {
+          "const": "verified_spec_slice_components_only",
+          "description": "The visible set is re-derived exclusively from direct or recursively nested verified spec_slice components of seat_bundle_id; non-spec components are ineligible."
+        },
+        "required_target_ids": {
+          "$ref": "#/$defs/OrderedIdSet"
+        },
+        "visible_target_ids": {
+          "$ref": "#/$defs/OrderedIdSet",
+          "description": "Must equal the designated verified bundle manifest's spec-slice-only visible_target_ids; never copied from non-spec metadata or unioned across bundles."
+        },
+        "missing_target_ids": {
+          "$ref": "#/$defs/OrderedIdSet"
+        },
+        "passed": {
+          "type": "boolean"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "passed": {
+                "const": true
+              }
+            },
+            "required": [
+              "passed"
+            ]
+          },
+          "then": {
+            "properties": {
+              "missing_target_ids": {
+                "maxItems": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "missing_target_ids": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false,
+      "x-derived-rule": "visible_target_ids equals the verified spec-slice-only visible set for this one seat_bundle_id, and missing_target_ids equals required_target_ids minus that visible_target_ids set."
+    },
+    "DeterminismRun": {
+      "type": "object",
+      "required": [
+        "run_id",
+        "verify_bundle_passed",
+        "manifest_sha256",
+        "component_sha256s",
+        "bundle_sha256",
+        "bundle_byte_length"
+      ],
+      "properties": {
+        "run_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "verify_bundle_passed": {
+          "type": "boolean"
+        },
+        "manifest_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        },
+        "component_sha256s": {
+          "type": "array",
+          "items": {
+            "$ref": "spec-record.schema.json#/$defs/Sha256"
+          },
+          "minItems": 1
+        },
+        "bundle_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        },
+        "bundle_byte_length": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "BundleDeterminism": {
+      "type": "object",
+      "required": [
+        "record_id",
+        "bundle_id",
+        "runs",
+        "all_hashes_identical"
+      ],
+      "properties": {
+        "record_id": {
+          "type": "string",
+          "pattern": "^determinism:[A-Za-z0-9][A-Za-z0-9._/-]*$"
+        },
+        "bundle_id": {
+          "type": "string",
+          "pattern": "^bundle:[A-Za-z0-9][A-Za-z0-9._/-]*$"
+        },
+        "runs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DeterminismRun"
+          },
+          "minItems": 3
+        },
+        "all_hashes_identical": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "x-pass-rule": "At least three independent runs, every verify_bundle_passed=true, and manifest/component/bundle hashes plus byte length are identical."
+    },
+    "ProbeViolationCode": {
+      "type": "string",
+      "enum": [
+        "PROBES_MISSING",
+        "PROBE_ID_MISSING",
+        "PROBE_TRACK_INVALID",
+        "ORACLE_LOCAL_CHALLENGE_WITNESS",
+        "CONTROL_FROZEN_HASH_MISSING",
+        "CONTROL_RUN_COUNT",
+        "CONTROL_RUN_MALFORMED",
+        "CONTROL_DIRTY_OUTCOME",
+        "CONTROL_OUTCOME_MISMATCH",
+        "CONTROL_WRONG_ORACLE",
+        "CONTROL_SEED_MISSING",
+        "CLAIMED_STATUS_MISMATCH",
+        "UNVALIDATED_ORACLE_NOT_RESIDUE",
+        "DUPLICATE_DEDUPE_KEY",
+        "SYSTEM_ORACLE_TRACK_OPEN",
+        "SYSTEM_STALE_SUITE_HASH",
+        "CARD_SUITE_HASH_MISMATCH",
+        "ORACLE_BOUND_SUITE_ATTESTATION_MISSING",
+        "CONCERN_PROBE_ID_MISSING",
+        "CONCERN_UNKNOWN_PROBE",
+        "CONCERN_NONQUALIFYING_PROBE"
+      ],
+      "description": "Stable fixture expectation labels. Fizzy owns validator behavior; the consumer contract test maps real returned violations to these fixture labels without reimplementing validity logic."
+    },
+    "ExpectedViolation": {
+      "type": "object",
+      "required": [
+        "code",
+        "required_message_fragments"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/ProbeViolationCode"
+        },
+        "required_message_fragments": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "ProbeFixture": {
+      "type": "object",
+      "required": [
+        "fixture_id",
+        "variant",
+        "manifest_path",
+        "manifest_sha256",
+        "concerns_path",
+        "concerns_sha256",
+        "expected_violations"
+      ],
+      "properties": {
+        "fixture_id": {
+          "type": "string",
+          "pattern": "^fixture:[A-Za-z0-9][A-Za-z0-9._/-]*$"
+        },
+        "variant": {
+          "type": "string",
+          "enum": [
+            "valid",
+            "mutant"
+          ]
+        },
+        "manifest_path": {
+          "$ref": "spec-record.schema.json#/$defs/RelativePath"
+        },
+        "manifest_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        },
+        "concerns_path": {
+          "$ref": "spec-record.schema.json#/$defs/RelativePath"
+        },
+        "concerns_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        },
+        "expected_violations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ExpectedViolation"
+          },
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "variant": {
+                "const": "valid"
+              }
+            },
+            "required": [
+              "variant"
+            ]
+          },
+          "then": {
+            "properties": {
+              "expected_violations": {
+                "maxItems": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "expected_violations": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "FixtureCoverageMissingProbeId": {
+      "contains": {
+        "properties": {
+          "expected_violations": {
+            "contains": {
+              "properties": {
+                "code": {
+                  "const": "CONCERN_PROBE_ID_MISSING"
+                }
+              },
+              "required": [
+                "code"
+              ]
+            }
+          }
+        },
+        "required": [
+          "expected_violations"
+        ]
+      }
+    },
+    "FixtureCoverageDirtyControl": {
+      "contains": {
+        "properties": {
+          "expected_violations": {
+            "contains": {
+              "properties": {
+                "code": {
+                  "const": "CONTROL_DIRTY_OUTCOME"
+                }
+              },
+              "required": [
+                "code"
+              ]
+            }
+          }
+        },
+        "required": [
+          "expected_violations"
+        ]
+      }
+    },
+    "FixtureCoverageWrongReason": {
+      "contains": {
+        "properties": {
+          "expected_violations": {
+            "contains": {
+              "properties": {
+                "code": {
+                  "const": "CONTROL_WRONG_ORACLE"
+                }
+              },
+              "required": [
+                "code"
+              ]
+            }
+          }
+        },
+        "required": [
+          "expected_violations"
+        ]
+      }
+    },
+    "FixtureCoverageDuplicateKey": {
+      "contains": {
+        "properties": {
+          "expected_violations": {
+            "contains": {
+              "properties": {
+                "code": {
+                  "const": "DUPLICATE_DEDUPE_KEY"
+                }
+              },
+              "required": [
+                "code"
+              ]
+            }
+          }
+        },
+        "required": [
+          "expected_violations"
+        ]
+      }
+    },
+    "FixtureCoverageStaleSuite": {
+      "contains": {
+        "properties": {
+          "expected_violations": {
+            "contains": {
+              "properties": {
+                "code": {
+                  "const": "SYSTEM_STALE_SUITE_HASH"
+                }
+              },
+              "required": [
+                "code"
+              ]
+            }
+          }
+        },
+        "required": [
+          "expected_violations"
+        ]
+      }
+    },
+    "FixtureCoverageUnvalidatedResidue": {
+      "contains": {
+        "properties": {
+          "expected_violations": {
+            "contains": {
+              "properties": {
+                "code": {
+                  "const": "UNVALIDATED_ORACLE_NOT_RESIDUE"
+                }
+              },
+              "required": [
+                "code"
+              ]
+            }
+          }
+        },
+        "required": [
+          "expected_violations"
+        ]
+      }
+    },
+    "FixtureResult": {
+      "type": "object",
+      "required": [
+        "fixture_id",
+        "actual_violation_codes",
+        "actual_messages_sha256",
+        "passed"
+      ],
+      "properties": {
+        "fixture_id": {
+          "type": "string",
+          "pattern": "^fixture:[A-Za-z0-9][A-Za-z0-9._/-]*$"
+        },
+        "actual_violation_codes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ProbeViolationCode"
+          },
+          "uniqueItems": true
+        },
+        "actual_messages_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        },
+        "passed": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ConsumerContractTest": {
+      "type": "object",
+      "required": [
+        "test_id",
+        "consumer_repository",
+        "consumer_commit",
+        "callable",
+        "execution_mode",
+        "fixture_results",
+        "result",
+        "receipt_path",
+        "receipt_sha256"
+      ],
+      "properties": {
+        "test_id": {
+          "const": "fizzy.validate_gauntlet_probes.contract"
+        },
+        "consumer_repository": {
+          "const": "fizzy-pipeline-mcp"
+        },
+        "consumer_commit": {
+          "$ref": "spec-record.schema.json#/$defs/FullCommit"
+        },
+        "callable": {
+          "const": "fizzy_pipeline_mcp.pipeline.validate_gauntlet_probes"
+        },
+        "execution_mode": {
+          "const": "import-real-consumer-callable"
+        },
+        "fixture_results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FixtureResult"
+          },
+          "uniqueItems": true
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "fail",
+            "not_run"
+          ]
+        },
+        "receipt_path": {
+          "anyOf": [
+            {
+              "$ref": "spec-record.schema.json#/$defs/RelativePath"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "receipt_sha256": {
+          "anyOf": [
+            {
+              "$ref": "spec-record.schema.json#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "enum": [
+                  "pass",
+                  "fail"
+                ]
+              }
+            },
+            "required": [
+              "result"
+            ]
+          },
+          "then": {
+            "properties": {
+              "fixture_results": {
+                "minItems": 1
+              },
+              "receipt_path": {
+                "$ref": "spec-record.schema.json#/$defs/RelativePath"
+              },
+              "receipt_sha256": {
+                "$ref": "spec-record.schema.json#/$defs/Sha256"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "fixture_results": {
+                "maxItems": 0
+              },
+              "receipt_path": {
+                "type": "null"
+              },
+              "receipt_sha256": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "const": "pass"
+              }
+            },
+            "required": [
+              "result"
+            ]
+          },
+          "then": {
+            "properties": {
+              "fixture_results": {
+                "items": {
+                  "properties": {
+                    "passed": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "passed"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "const": "fail"
+              }
+            },
+            "required": [
+              "result"
+            ]
+          },
+          "then": {
+            "properties": {
+              "fixture_results": {
+                "contains": {
+                  "properties": {
+                    "passed": {
+                      "const": false
+                    }
+                  },
+                  "required": [
+                    "passed"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false,
+      "x-boundary": "This test must import and run the real Fizzy callable. A shared-library or adversarial-spec mirror of validator logic is forbidden."
+    },
+    "GateStatus": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail",
+        "not_run"
+      ]
+    },
+    "GateEvidence": {
+      "type": "array",
+      "items": {
+        "$ref": "spec-record.schema.json#/$defs/QualifiedId"
+      },
+      "uniqueItems": true
+    },
+    "Gate1": {
+      "type": "object",
+      "required": [
+        "status",
+        "unique_concerns",
+        "verdict_counts",
+        "evidence_refs"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/GateStatus"
+        },
+        "unique_concerns": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "verdict_counts": {
+          "$ref": "#/$defs/VerdictCounts"
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/GateEvidence"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Gate2": {
+      "type": "object",
+      "required": [
+        "status",
+        "mapped",
+        "explicit_out_of_scope",
+        "silent_drops",
+        "evidence_refs"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/GateStatus"
+        },
+        "mapped": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "explicit_out_of_scope": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "silent_drops": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/GateEvidence"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Gate3": {
+      "type": "object",
+      "required": [
+        "status",
+        "preserved_counts",
+        "evidence_refs"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/GateStatus"
+        },
+        "preserved_counts": {
+          "$ref": "#/$defs/GuardrailCounts"
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/GateEvidence"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Gate4": {
+      "type": "object",
+      "required": [
+        "status",
+        "normative_body_mismatches",
+        "import_mismatches",
+        "amendment_edge_mismatches",
+        "supersession_edge_mismatches",
+        "evidence_refs"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/GateStatus"
+        },
+        "normative_body_mismatches": {
+          "$ref": "#/$defs/OrderedIdSet"
+        },
+        "import_mismatches": {
+          "$ref": "#/$defs/OrderedIdSet"
+        },
+        "amendment_edge_mismatches": {
+          "$ref": "#/$defs/OrderedIdSet"
+        },
+        "supersession_edge_mismatches": {
+          "$ref": "#/$defs/OrderedIdSet"
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/GateEvidence"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Gate5": {
+      "type": "object",
+      "required": [
+        "status",
+        "visibility_check_ids",
+        "passed_checks",
+        "failed_checks",
+        "full_bundle_ids",
+        "full_bundle_target_sets_satisfied",
+        "visibility_basis",
+        "cross_bundle_union_forbidden",
+        "evidence_refs"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/GateStatus"
+        },
+        "visibility_check_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^visibility:[A-Za-z0-9][A-Za-z0-9._/-]*$"
+          },
+          "uniqueItems": true
+        },
+        "passed_checks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed_checks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "full_bundle_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^bundle:[A-Za-z0-9][A-Za-z0-9._/-]*$"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "full_bundle_target_sets_satisfied": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "visibility_basis": {
+          "const": "verified_spec_slice_components_only"
+        },
+        "cross_bundle_union_forbidden": {
+          "const": true
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/GateEvidence"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Gate6": {
+      "type": "object",
+      "required": [
+        "status",
+        "determinism_record_id",
+        "independent_run_count",
+        "all_verify_bundle_passed",
+        "all_hashes_identical",
+        "evidence_refs"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/GateStatus"
+        },
+        "determinism_record_id": {
+          "type": "string",
+          "pattern": "^determinism:[A-Za-z0-9][A-Za-z0-9._/-]*$"
+        },
+        "independent_run_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "all_verify_bundle_passed": {
+          "type": "boolean"
+        },
+        "all_hashes_identical": {
+          "type": "boolean"
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/GateEvidence"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Gate7": {
+      "type": "object",
+      "required": [
+        "status",
+        "consumer_test_id",
+        "callable",
+        "consumer_result",
+        "evidence_refs"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/GateStatus"
+        },
+        "consumer_test_id": {
+          "const": "fizzy.validate_gauntlet_probes.contract"
+        },
+        "callable": {
+          "const": "fizzy_pipeline_mcp.pipeline.validate_gauntlet_probes"
+        },
+        "consumer_result": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "fail",
+            "not_run"
+          ]
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/GateEvidence"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "pass"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "consumer_result": {
+                "const": "pass"
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "AcceptanceGates": {
+      "type": "object",
+      "required": [
+        "gate_1",
+        "gate_2",
+        "gate_3",
+        "gate_4",
+        "gate_5",
+        "gate_6",
+        "gate_7"
+      ],
+      "properties": {
+        "gate_1": {
+          "$ref": "#/$defs/Gate1"
+        },
+        "gate_2": {
+          "$ref": "#/$defs/Gate2"
+        },
+        "gate_3": {
+          "$ref": "#/$defs/Gate3"
+        },
+        "gate_4": {
+          "$ref": "#/$defs/Gate4"
+        },
+        "gate_5": {
+          "$ref": "#/$defs/Gate5"
+        },
+        "gate_6": {
+          "$ref": "#/$defs/Gate6"
+        },
+        "gate_7": {
+          "$ref": "#/$defs/Gate7"
+        }
+      },
+      "additionalProperties": false,
+      "x-pass-rules": [
+        "Gate 1 pass requires baseline constants and unique IDs.",
+        "Gate 2 pass requires mapped + explicit_out_of_scope = inventory concern_total and silent_drops = 0.",
+        "Gate 3 pass requires preserved counts equal inventory guardrail counts.",
+        "Gate 4 pass requires every mismatch array empty.",
+        "Gate 5 pass requires visibility_basis=verified_spec_slice_components_only, every check passed, failed_checks = 0, and each declared full bundle satisfies every required target set.",
+        "Gate 6 pass requires at least three runs, all real verify-bundle executions passing, and all exact hashes identical.",
+        "Gate 7 pass requires consumer_contract_test.result=pass from the named real Fizzy callable."
+      ]
+    },
+    "MechanicalRecall": {
+      "type": "object",
+      "required": [
+        "signed_target_sets",
+        "co_visible_target_sets",
+        "missing_target_sets",
+        "recall",
+        "passed"
+      ],
+      "properties": {
+        "signed_target_sets": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "co_visible_target_sets": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "missing_target_sets": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "recall": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "passed": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "x-derived-pass-rule": "co_visible_target_sets / signed_target_sets = recall; pass requires recall=1 and missing_target_sets=0."
+    },
+    "AdjudicationOutcomeCounts": {
+      "type": "object",
+      "required": [
+        "re_found",
+        "stronger",
+        "accounted",
+        "degraded",
+        "unadjudicated"
+      ],
+      "properties": {
+        "re_found": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "stronger": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "accounted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "degraded": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unadjudicated": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "SignedAdjudicationCoverage": {
+      "type": "object",
+      "required": [
+        "baseline_concerns",
+        "signed_adjudications",
+        "outcomes",
+        "coverage",
+        "passed"
+      ],
+      "properties": {
+        "baseline_concerns": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "signed_adjudications": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "outcomes": {
+          "$ref": "#/$defs/AdjudicationOutcomeCounts"
+        },
+        "coverage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "passed": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "x-derived-pass-rule": "signed_adjudications / baseline_concerns = coverage; pass requires coverage=1, degraded=0, and unadjudicated=0. Operators decide re_found/stronger/accounted semantics."
+    },
+    "ParityCorpusResult": {
+      "type": "object",
+      "required": [
+        "corpus_id",
+        "independent",
+        "mechanical_input_recall",
+        "signed_adjudication_coverage",
+        "operator_signature"
+      ],
+      "properties": {
+        "corpus_id": {
+          "type": "string",
+          "pattern": "^corpus:[A-Za-z0-9][A-Za-z0-9._/-]*$"
+        },
+        "independent": {
+          "const": true
+        },
+        "mechanical_input_recall": {
+          "$ref": "#/$defs/MechanicalRecall"
+        },
+        "signed_adjudication_coverage": {
+          "$ref": "#/$defs/SignedAdjudicationCoverage"
+        },
+        "operator_signature": {
+          "$ref": "#/$defs/OperatorSignature"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RetirementDecision": {
+      "type": "object",
+      "required": [
+        "status",
+        "rationale",
+        "operator_signature"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "retained",
+            "approved_to_retire"
+          ]
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operator_signature": {
+          "$ref": "#/$defs/OperatorSignature"
+        }
+      },
+      "additionalProperties": false
+    },
+    "BackstopParity": {
+      "type": "object",
+      "required": [
+        "full_context_seat_required",
+        "corpus_results",
+        "retirement_decision"
+      ],
+      "properties": {
+        "full_context_seat_required": {
+          "type": "boolean"
+        },
+        "corpus_results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ParityCorpusResult"
+          },
+          "uniqueItems": true
+        },
+        "retirement_decision": {
+          "$ref": "#/$defs/RetirementDecision"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "retirement_decision": {
+                "properties": {
+                  "status": {
+                    "const": "approved_to_retire"
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              }
+            },
+            "required": [
+              "retirement_decision"
+            ]
+          },
+          "then": {
+            "properties": {
+              "full_context_seat_required": {
+                "const": false
+              },
+              "corpus_results": {
+                "minItems": 2,
+                "items": {
+                  "allOf": [
+                    {
+                      "$ref": "#/$defs/ParityCorpusResult"
+                    },
+                    {
+                      "properties": {
+                        "mechanical_input_recall": {
+                          "properties": {
+                            "missing_target_sets": {
+                              "const": 0
+                            },
+                            "recall": {
+                              "const": 1
+                            },
+                            "passed": {
+                              "const": true
+                            }
+                          }
+                        },
+                        "signed_adjudication_coverage": {
+                          "properties": {
+                            "outcomes": {
+                              "properties": {
+                                "degraded": {
+                                  "const": 0
+                                },
+                                "unadjudicated": {
+                                  "const": 0
+                                }
+                              }
+                            },
+                            "coverage": {
+                              "const": 1
+                            },
+                            "passed": {
+                              "const": true
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "full_context_seat_required": {
+                "const": true
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false,
+      "x-retirement-rule": "Approval requires at least two distinct independent corpora, both metric layers passing on each, and an explicit operator decision. Schema cannot judge corpus representativeness or semantic equivalence."
+    }
+  }
+}

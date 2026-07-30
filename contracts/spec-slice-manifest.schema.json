@@ -1,0 +1,380 @@
+{
+  "$comment": "status: RATIFIED spec.v1 (G3, Jason, 2026-07-30) — candidate slice.v1 manifest schema; not operator-ratified",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://brainquarters.local/schemas/spec-slice-manifest.schema.json",
+  "title": "Spec Slice Manifest",
+  "description": "Attests one deterministic graph-closed projection of a pinned spec source/index under one exact accessor-profile instance.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "spec_contract",
+    "slice_schema_sha256",
+    "record_schema_sha256",
+    "shared_library",
+    "source_path",
+    "source_sha256",
+    "index_path",
+    "index_sha256",
+    "spec_id",
+    "revision",
+    "profile_path",
+    "profile_id",
+    "profile_sha256",
+    "invocation",
+    "resolved_roots",
+    "resolved_traversal",
+    "mandatory_spine_claim_ids",
+    "replay_required_target_ids",
+    "included_claim_ids",
+    "included_imports",
+    "omitted_claim_ids",
+    "visible_target_ids",
+    "full_promotion",
+    "render_path",
+    "render_sha256",
+    "render_byte_length",
+    "manifest_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "slice.v1"
+    },
+    "spec_contract": {
+      "const": "spec.v1"
+    },
+    "slice_schema_sha256": {
+      "$ref": "spec-record.schema.json#/$defs/Sha256"
+    },
+    "record_schema_sha256": {
+      "$ref": "spec-record.schema.json#/$defs/Sha256"
+    },
+    "shared_library": {
+      "$ref": "#/$defs/SharedLibraryPin"
+    },
+    "source_path": {
+      "$ref": "spec-record.schema.json#/$defs/RelativePath"
+    },
+    "source_sha256": {
+      "$ref": "spec-record.schema.json#/$defs/Sha256"
+    },
+    "index_path": {
+      "$ref": "spec-record.schema.json#/$defs/RelativePath"
+    },
+    "index_sha256": {
+      "$ref": "spec-record.schema.json#/$defs/Sha256"
+    },
+    "spec_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,127}$"
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+    },
+    "profile_path": {
+      "$ref": "spec-record.schema.json#/$defs/RelativePath"
+    },
+    "profile_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$"
+    },
+    "profile_sha256": {
+      "$ref": "spec-record.schema.json#/$defs/Sha256",
+      "description": "Required identity of the complete profile instance; a profile name or accessor version alone is insufficient."
+    },
+    "invocation": {
+      "$ref": "#/$defs/Invocation"
+    },
+    "resolved_roots": {
+      "$ref": "#/$defs/OrderedIdSet"
+    },
+    "resolved_traversal": {
+      "type": "array",
+      "items": {
+        "$ref": "spec-accessor-profile.schema.json#/$defs/TraversalRule"
+      },
+      "uniqueItems": true
+    },
+    "mandatory_spine_claim_ids": {
+      "$ref": "#/$defs/OrderedIdSet"
+    },
+    "replay_required_target_ids": {
+      "$ref": "#/$defs/OrderedIdSet"
+    },
+    "included_claim_ids": {
+      "$ref": "#/$defs/OrderedIdSet"
+    },
+    "included_imports": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/IncludedImport"
+      },
+      "uniqueItems": true
+    },
+    "omitted_claim_ids": {
+      "$ref": "#/$defs/OrderedIdSet"
+    },
+    "visible_target_ids": {
+      "$ref": "#/$defs/OrderedIdSet",
+      "description": "Derived union of visible claim, relation, evidence, import, and other registered target IDs; verifiers recompute it."
+    },
+    "full_promotion": {
+      "$ref": "#/$defs/FullPromotion"
+    },
+    "render_path": {
+      "$ref": "spec-record.schema.json#/$defs/RelativePath"
+    },
+    "render_sha256": {
+      "$ref": "spec-record.schema.json#/$defs/Sha256"
+    },
+    "render_byte_length": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "manifest_sha256": {
+      "$ref": "spec-record.schema.json#/$defs/Sha256",
+      "description": "SHA-256 over RFC 8785 JCS of this object with only manifest_sha256 omitted."
+    }
+  },
+  "additionalProperties": false,
+  "x-canonical-ordering": [
+    "resolved_roots and all ID-set arrays are ascending Unicode code-point order with no duplicates.",
+    "Render order is derived independently of included_claim_ids set order: local claim blocks by opening-marker byte offset, then imported claim blocks by descending precedence, import alias, and imported opening-marker byte offset.",
+    "included_imports is descending precedence then import_id.",
+    "resolved_traversal preserves the exact profile order, which is relation schema order then target ID during execution."
+  ],
+  "x-canonical-render-layout": [
+    "slice-render.v1 units are complete validated SPEC-CLAIM blocks, including opening marker, one-line JCS ClaimMeta, exact BODY bytes, closing marker, and the closing marker LF.",
+    "SPEC-DOC front matter, editorial bytes, wrapper markers, headings, labels, and other injected metadata are excluded.",
+    "Units follow the canonical render order and are joined by exactly one additional LF byte (0x0a), with no prefix or suffix.",
+    "The final unit's closing-marker LF is the terminal byte; no additional terminal LF is appended.",
+    "render_byte_length is the sum of unit byte lengths plus unit_count minus one; render_sha256 covers exactly those bytes.",
+    "Each IncludedImport render hash and length covers only that import's ordered unit subsequence with the same one-LF join rule, excluding cross-source separators."
+  ],
+  "x-verification-rules": [
+    "Recompute source, index, record-schema, slice-schema, profile, render, and manifest hashes.",
+    "Resolve the profile by profile_path and require its derived profile_sha256 to equal this required profile_sha256.",
+    "Re-derive roots, mandatory spine, relation closure, replay-required targets, imports, full promotion, included/omitted sets, render bytes, and visible_target_ids.",
+    "Re-derive each synthetic relation target ID as relation: plus lowercase hexadecimal SHA-256 of UTF-8 RFC 8785 JCS for the exact [source,type,target] string array.",
+    "Reject any unresolved root, dangling relation, out-of-root path, symlink, duplicate ID, non-canonical order, or silent budget truncation.",
+    "A promoted slice uses the declared full profile and contains the entire source/import closure."
+  ],
+  "$defs": {
+    "SharedLibraryPin": {
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "package_sha256"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "package_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "InvocationInputs": {
+      "type": "object",
+      "required": [
+        "focus_claim_ids",
+        "component_ids",
+        "task_ids",
+        "seat_focus_ids"
+      ],
+      "properties": {
+        "focus_claim_ids": {
+          "$ref": "#/$defs/OrderedIdSet"
+        },
+        "component_ids": {
+          "$ref": "#/$defs/OrderedIdSet"
+        },
+        "task_ids": {
+          "$ref": "#/$defs/OrderedIdSet"
+        },
+        "seat_focus_ids": {
+          "$ref": "#/$defs/OrderedIdSet"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Invocation": {
+      "type": "object",
+      "required": [
+        "invocation_id",
+        "scope_kind",
+        "scope_id",
+        "inputs"
+      ],
+      "properties": {
+        "invocation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope_kind": {
+          "type": "string",
+          "enum": [
+            "seat",
+            "task",
+            "component",
+            "full"
+          ]
+        },
+        "scope_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "inputs": {
+          "$ref": "#/$defs/InvocationInputs"
+        }
+      },
+      "additionalProperties": false
+    },
+    "OrderedIdSet": {
+      "type": "array",
+      "items": {
+        "$ref": "spec-record.schema.json#/$defs/QualifiedId"
+      },
+      "uniqueItems": true
+    },
+    "IncludedImport": {
+      "type": "object",
+      "required": [
+        "import_id",
+        "precedence",
+        "source_path",
+        "source_sha256",
+        "included_target_ids",
+        "render_sha256",
+        "render_byte_length"
+      ],
+      "properties": {
+        "import_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+        },
+        "precedence": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_path": {
+          "$ref": "spec-record.schema.json#/$defs/RelativePath"
+        },
+        "source_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        },
+        "included_target_ids": {
+          "$ref": "#/$defs/OrderedIdSet"
+        },
+        "render_sha256": {
+          "$ref": "spec-record.schema.json#/$defs/Sha256"
+        },
+        "render_byte_length": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "FullPromotion": {
+      "type": "object",
+      "required": [
+        "triggered",
+        "reason_codes",
+        "promoted_profile_id",
+        "promoted_profile_sha256"
+      ],
+      "properties": {
+        "triggered": {
+          "type": "boolean"
+        },
+        "reason_codes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "unresolved_root",
+              "dangling_relation",
+              "closure_budget_exceeded",
+              "replay_target_split",
+              "import_hash_mismatch",
+              "profile_error"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "promoted_profile_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_.-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "promoted_profile_sha256": {
+          "anyOf": [
+            {
+              "$ref": "spec-record.schema.json#/$defs/Sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "triggered": {
+                "const": true
+              }
+            },
+            "required": [
+              "triggered"
+            ]
+          },
+          "then": {
+            "properties": {
+              "reason_codes": {
+                "minItems": 1
+              },
+              "promoted_profile_id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,127}$"
+              },
+              "promoted_profile_sha256": {
+                "$ref": "spec-record.schema.json#/$defs/Sha256"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "reason_codes": {
+                "maxItems": 0
+              },
+              "promoted_profile_id": {
+                "type": "null"
+              },
+              "promoted_profile_sha256": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    }
+  }
+}
