@@ -203,3 +203,89 @@ A parallel task grouping *inside one execution plan*: independent streams of tas
 within Phase 7/8.
 _Avoid_: "workstream" for a Context — a workstream is intra-plan, a Context is the
 work identity itself.
+
+### Projects & infrastructure (MIRRORED VOCAB — canonical copy)
+
+<!-- MIRRORED VOCAB: adversarial-spec ⟷ fizzy-pipeline-mcp. This section is
+duplicated verbatim in fizzy-pipeline-mcp/CONTEXT.md. Conflicts resolve
+definitively, never fork. Edits land HERE first (ownership ruling 2026-07-30:
+adversarial-spec owns spec-system contracts; f-p-mcp mirrors). -->
+
+**Fizzy** (`fizzy`):
+The Rails board application itself — the browser-rendered UI at localhost:3001:
+boards, cards, lanes, columns, and its REST API.
+_Avoid_: bare "fizzy" for gates, MCP tools, sessions, or pipeline machinery (that is
+fizzy-pipeline-mcp). "Fizzy board" stays legal for the board a pipeline runs on.
+
+**fizzy-pipeline-mcp** (`f-p-mcp`):
+The MCP server + pipeline FSM + v6 gates layered on Fizzy's REST API — the
+enforcement arm of the adversarial-spec workflow.
+_Avoid_: "fizzy's gates" / "fizzy tools" — the gates and tools belong to
+fizzy-pipeline-mcp, not the board app.
+
+### The "spec" family (MIRRORED VOCAB — canonical copy)
+
+<!-- MIRRORED VOCAB: adversarial-spec ⟷ fizzy-pipeline-mcp; duplicated verbatim in
+fizzy-pipeline-mcp/CONTEXT.md; edits land here first. -->
+
+**Spec** (unqualified):
+The session's normative specification — the artifact the pipeline is refining. Safe
+unqualified only when context names the session.
+_Avoid_: "the spec" for the gauntlet bundle, the target-architecture doc, or
+requirements docs when more than one is in play.
+
+**System spec** (`system-spec.md`):
+The SYSTEM-altitude specification (numbered sections, completion contract,
+supersession ledger); becomes a spec.v1 claims-registry document once the
+spec-record format ships.
+
+**Spec-as-gauntleted**:
+The byte-pinned bundle a gauntlet fleet actually consumed — briefing + spec +
+imports, hash-named (e.g. `spec-as-gauntleted-5d86227c.md`). Findings attribute to
+the bundle, not the spec file.
+_Avoid_: "the spec" for this bundle.
+
+**Spec draft vN** (`spec-draft-v3.md`):
+Debate-phase iteration artifacts, pre-finalize.
+
+**Spec record** (`SPEC-CLAIM`):
+One normative unit under the spec.v1 keystone contract: strict JSON metadata header
++ exact prose body. Post-adoption vocabulary.
+
+### Work modes (MIRRORED VOCAB — canonical copy)
+
+**Brainstorm**:
+The out-of-pipeline hard-think mode: free-form written argument between models —
+position, critique, and synthesis files exchanged on disk in the invoking project
+(e.g. `orchestration/brainstorm-spec-structure/`) until convergence. No session
+machinery, no protocol, no personas; "adversarial" is an attitude, not a structure.
+Stays open until the work it governs ships, or closes at pipeline-entry when its
+output becomes a session's requirements input.
+_Avoid_: "debate" for a brainstorm (implies Phase-3 session machinery); "brainstorm"
+for Phase 3 (undersells its gates and rounds).
+
+### Postponement family (MIRRORED VOCAB — canonical copy)
+
+**Exemption** (operator exemption):
+An attested gate bypass: operator ruling + incident ref, recorded loudly in the gate
+payload and card metadata; the gate's check is acknowledged-but-overridden this once.
+Every use is an incident by convention.
+_Avoid_: "exemption" for a deferral — a deferral bypasses nothing.
+
+**Deferral**:
+A recorded postponement with a named owner-phase: the obligation stays live and lands
+somewhere specific later (e.g. seam deferral to Phase 8).
+_Avoid_: "deferred" for watch-only items that carry no obligation.
+
+**Residue**:
+An explicitly carried unproven item riding forward INSIDE an artifact (e.g.
+UNVALIDATED_ORACLE residue, RESIDUE-1), visible to every downstream consumer.
+_Avoid_: "residue" for items parked outside the artifact.
+
+**Watchlist**:
+Watch-only: an observed gap recorded for pattern-forming, carrying NO obligation;
+promoted to real work only on accumulated evidence or operator ruling.
+_Avoid_: "watchlisted" for anything with an actual obligation attached.
+
+Rule of thumb: exemption weakens a gate once; deferral schedules debt; residue labels
+the product; watchlist just remembers.
