@@ -592,12 +592,33 @@ Each adversary's context is prepended to the spec in a structured block:
 - No monitoring data — this is a CLI tool, no production metrics exist
 - Test coverage report not generated — tests exist but no pytest-cov configured
 
+### How to word every concern
+
+Describe where data goes in this system, not what an adversary gets — state
+provenance and reachability, not intent and payoff. Write "input that arrives
+from outside the trusted list," not "attacker-controlled"; "reaches the code path
+that builds the token-carrying request," not "flows into credential-bearing
+construction"; "is copied beyond request-local scope," not "exposes/leaks."
+Verbs that work: reaches, is copied into, is retained by, is constructed with,
+returns, is not evaluated.
+
+This is framing, not softening — keep the violated obligation, the oracle, and
+the mechanism exactly as sharp as they are.
+
 ---
 
 ## SPECIFICATION TO REVIEW
 
 [spec text]
 ```
+
+**Why the wording rule is in the briefing** (incident 2026-07-31, fizzy-pipeline-mcp):
+concern records are fragments — dense noun phrases with no surrounding sentences
+establishing that this is test planning for the operator's own system. Surface
+features carry all the weight, so a few intent-assuming lines clustered together
+read as an offensive-security document and a model asked to author or process
+them can refuse. Process vocabulary (gauntlet, adversary, attack) is unaffected;
+this governs the text inside the concern fields.
 
 #### 6. Report Token Counts
 
