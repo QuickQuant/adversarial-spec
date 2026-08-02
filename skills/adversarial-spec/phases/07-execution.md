@@ -16,6 +16,7 @@ TodoWrite([
   {content: "Assign test strategies (test-first/test-after)", status: "pending", activeForm: "Assigning test strategies"},
   {content: "Attach test_refs, test_files, or exemption_reason for every task [GATE]", status: "pending", activeForm: "Completing verification mapping"},
   {content: "Over-decomposition guard check", status: "pending", activeForm: "Checking for over-decomposition"},
+  {content: "Prove dependency semantics: edge ledger, fanout, scope closure, and safety order [GATE]", status: "pending", activeForm: "Proving dependency semantics"},
   {content: "Persist decomposition draft to execution-plan.md + record execution_plan_path [GATE] — pre-approval, checkpoint-safe (Step 3.5)", status: "pending", activeForm: "Persisting decomposition draft to disk"},
   {content: "Present plan to user for approval [GATE]", status: "pending", activeForm: "Presenting execution plan for approval"},
   {content: "Review verification coverage report before pipeline_load [GATE]", status: "pending", activeForm: "Reviewing verification coverage"},
@@ -386,6 +387,8 @@ Create implementation tasks from the spec. For each major spec section or featur
 - **Dependencies**: Which tasks must complete before this one
 - **Effort estimate**: S (< 1hr), M (1-4hr), L (4-8hr)
 
+**Decompose at readiness boundaries:** Split a proposed task whenever its earliest safe start differs from its production-integration acceptance gate. A build-only decoder or adapter that consumes a frozen public contract is a separate task from the production integration that also consumes the EventStore, confidence model, or another later implementation. Do not delete a legitimate integration dependency merely to make a graph look more parallel; create the narrower producer card so that interface-ready work can start when its contract is ready.
+
 **Link gauntlet concerns to tasks:**
 For each concern in the gauntlet JSON, match its `section_refs` to your tasks. When a concern maps to a task:
 - Add the concern's `failure_mode` as an acceptance criterion
@@ -567,13 +570,56 @@ Apply consolidations? [Y/n/customize]
 
 ### Step 6: Parallelization Analysis
 
-For medium/large plans, identify independent workstreams:
+For medium/large plans, identify independent workstreams and their earliest safe start. A workstream is not parallel merely because its cards have different titles: its first runnable card must be ready after the contract gate the spec promises.
 
-**Guidelines:**
-- Tasks with no dependency relationship can run in parallel
-- Group into workstreams by component (backend, frontend, infra)
-- Identify merge points where workstreams must synchronize
-- Order merge sequence by risk (merge highest-risk stream first for early feedback)
+**Present the Contract/Fanout Matrix for every statement such as “workstreams fan out after X”:**
+
+| Workstream | First runnable task | Required artifacts | Direct dependencies | Ready after X? |
+| --- | --- | --- | --- | --- |
+| SWC | M2-SWC-decode | `TableEventProposal v1` | W0-contract | Yes |
+| Bovada | M2-Bovada-decode | `TableEventProposal v1` | W0-contract | Yes |
+
+Every additional dependency after the named contract gate needs a concrete edge-ledger reason. If all first runnable tasks wait on a later unrelated implementation, report a plan contradiction and return to Step 3; do not claim fanout.
+
+Also identify merge points where workstreams must synchronize and order them by risk (merge the highest-risk stream first for early feedback).
+
+**Record these plan-visible semantic fields in an unloaded `dependency-semantics-draft.json` beside the execution-plan draft.** It contains the proposed task objects and semantic block. After approval, preserve that block in `dependency-semantics.json` beside the final `fizzy-plan.json`; do not add an undocumented field to the Fizzy wire payload.
+
+```json
+{
+  "dependency_semantics": {
+    "edge_ledger": [
+      {
+        "dependent": "M2-SWC-decode",
+        "prerequisite": "W0-contract",
+        "kind": "interface_ready",
+        "reason": "Decoder emits the frozen TableEventProposal contract.",
+        "source_ref": "target-architecture.md §7.2"
+      }
+    ],
+    "fanout_contracts": [
+      {
+        "gate_task_id": "W0-contract",
+        "workstreams": [
+          {
+            "name": "SWC",
+            "first_runnable_task": "M2-SWC-decode",
+            "required_artifacts": ["TableEventProposal v1"]
+          }
+        ]
+      }
+    ],
+    "scope_closure": {
+      "active": ["SWC", "Bovada"],
+      "deferred": ["TP", "P2"],
+      "excluded": [],
+      "operator_approved_exceptions": []
+    }
+  }
+}
+```
+
+For each task, record `workstream`; use `scope_refs` plus `active_path:true` for active-path work. For every target-architecture safety invariant, put its implementing card's IDs in `safety_implements` and every consuming task's IDs in `safety_consumes`. The plan analyzer verifies that an implementer precedes each consumer.
 
 **Present workstreams:**
 ```
@@ -589,6 +635,50 @@ Merge points:
 
 Branch pattern: feature/<stream>-<task> → develop → main
 ```
+
+---
+
+### Gate D1: Dependency Semantics
+
+**Position:** After Step 6, before Step 7 approval and before `fizzy-plan.json` emission.
+
+Build `depends_on` from the reviewed edge ledger. A milestone label such as “M2 depends on M1” is never an acceptable edge reason by itself. Every non-empty `depends_on` requires exactly one ledger record with `kind` (`interface_ready`, `integration_ready`, `safety_ready`, or `data_ready`), a concrete reason, and a source reference.
+
+Run the repository-owned, non-mutating report against the unloaded draft:
+
+```bash
+uv run python skills/adversarial-spec/scripts/dependency_semantics.py \
+  --plan .adversarial-spec/specs/<slug>/dependency-semantics-draft.json
+```
+
+Do not approve or load a plan until the report is clean. Review its edge-ledger coverage, ready nodes after every declared contract gate, critical path, and maximum immediate concurrency. It rejects:
+
+- an unexplained edge or a ledger entry that does not correspond to `depends_on`;
+- a declared fanout whose first cards share a later dependency instead of becoming ready after its gate;
+- an active-path card transitively depending on deferred or excluded scope without a named, operator-approved exception;
+- a safety consumer that does not transitively depend on an implementing card;
+- a `data_ready` edge that does not name an existing evidence receipt, a receipt whose producer is not the edge prerequisite or transitively upstream of it, a listed consumer with no matching `data_ready` reachability path, or a declared wave that contradicts the derived dependency order;
+- with `--decomposition`: a D0 `acceptance_oracle` with no `acceptance_obligations[]` record, an obligation with no D1 closure by `obligation_id`, or a closure missing one of the obligation's `missing_evidence_classes`.
+
+**Evidence receipts (acceptance-spine hardening).** When any test is `REAL-DATA` **and** LIVE **and** the sole discharge of a goal-level requirement, D0 must carry a topology-free `acceptance_obligations[]` record (`obligation_id`, `root_goal`, `discharge_test`, `route_prose`, `missing_evidence_classes[]`, `downstream_owner_phase`) — an `acceptance-only` scope ruling narrows code responsibility but never deletes a triggered obligation. D1 closes it: the sidecar gains an `evidence_receipts` register (`receipt_id`, `spine`, `class` — e.g. `no_order_readiness` vs `post_order_fill` —, `producer_task`, `location_accessor`, `pass_condition`, `consumers[]`, `binding.hash_or_freshness`) plus `acceptance_obligation_closures` mapping each `obligation_id` to its `receipt_ids`. Each receipt has exactly one real producing task — a multi-card "role" is not a valid `data_ready` target. Every `data_ready` edge carries `receipt_id`. Fixtures/live claims: a fixture proves fixture-scoped assertions only; no card may claim hosted/required-auth/real-profile/live behavior until its stated receipt producer exists.
+
+**Semantic-report binding (load contract).** Emit the hash-bound report and declare it in the plan so `pipeline_load` can verify it:
+
+```bash
+uv run python skills/adversarial-spec/scripts/dependency_semantics.py \
+  --plan .adversarial-spec/specs/<slug>/fizzy-plan.json \
+  --semantics .adversarial-spec/specs/<slug>/dependency-semantics.json \
+  --decomposition .adversarial-spec/specs/<slug>/decomposition/d0-decomposition.json \
+  --emit-report .adversarial-spec/specs/<slug>/dependency-semantics-report.json
+```
+
+The plan gains two versioned ROOT fields (never task fields): `"semantic_contract_version": 1` and `"semantic_report_path": "dependency-semantics-report.json"` (resolved relative to the plan file). `pipeline_load` then rejects only: a missing/red/hash-mismatched report, an `analyzer_version` below the loader's documented floor, or a task the report names in `live_spine_owners` that carries an exempt/manual verification mode. Staleness is hash mismatch only — no clocks. Everything else stays in this gate, where diagnostics are richer.
+
+**Operator-procedure template (required for every `tested_by: user|both` task).** The task description must state: `actor; preconditions; ordered actions; evidence location; pass condition; stop conditions; escalation path` — and the card is assigned and pinned to the named operator using existing Fizzy capabilities (Telegram human-gate remains the attention channel). A `manual-ux` exemption alone is not an action specification. This is a plan-authoring template, not a schema; promote it to schema only if a second documented unintelligible-human-task incident occurs.
+
+The analyzer is a semantic preflight only. Run `pipeline_validate_plan` afterwards: Fizzy remains authoritative for wire-schema, ID, and cycle validation.
+
+**[GATE] TodoWrite: Mark “Prove dependency semantics: edge ledger, fanout, scope closure, and safety order” completed only after a clean report.**
 
 ---
 
@@ -628,6 +718,13 @@ Output the execution plan in this format:
 Task 1 → Task 3 → Task 5
 Task 2 → Task 4
 Task 8 → Task 5 (merge point)
+
+## Dependency Semantics
+- Edge ledger: N of N `depends_on` edges explained
+- Contract/Fanout Matrix: [show every declared fanout]
+- Scope closure: active [..]; deferred [..]; excluded [..]; exceptions [none / approved ref]
+- Safety-predecessor proof: [invariant → implementing task → consuming tasks]
+- Readiness profile: critical path [..]; maximum immediate concurrency N
 
 ## Uncovered Concerns
 [List any gauntlet concerns that don't map to tasks - these need attention]
@@ -957,7 +1054,7 @@ artifacts committed with the execution plan — before proceeding to Step 9.**
 
 **This step connects the execution plan to the self-pickup loop.** Without it, cards are just text on disk — no agent can pick them up via `pipeline_do_next_task`.
 
-**Prerequisites:** Gates V3 (Coverage Report) and V4 (Exception Review) must be completed. Do not invoke `pipeline_load` while `unmapped_behavior_tasks` in `verification-coverage.json` is non-empty.
+**Prerequisites:** Gates D1 (Dependency Semantics), V3 (Coverage Report), and V4 (Exception Review) must be completed. Do not invoke `pipeline_load` while `unmapped_behavior_tasks` in `verification-coverage.json` is non-empty.
 
 **Generate `fizzy-plan.json`:**
 
@@ -1063,6 +1160,16 @@ Verification block fields (v2, see Verification Schema reference above for full 
 **Plan-level version marker:** include `plan_schema_version: 2` at the root. fizzy-pipeline-mcp uses this to select the strict validation path at `pipeline_load`. Plans missing this marker (or with version `1`) load with warnings during the migration window.
 
 **Emit verification-coverage.json:** If Gate V3 did not already write it, write the coverage report to `.adversarial-spec/specs/<slug>/verification-coverage.json` now using the `report_schema_version: 1` shape documented in Gate V3. Keep it alongside `fizzy-plan.json` so reviewers can inspect both artifacts from the same session directory.
+
+**Re-run Dependency Semantics on the exact emitted file:** The draft report proves the proposed graph; this second read-only pass proves approval-time edits survived into `fizzy-plan.json`. Write the reviewed semantic block to `dependency-semantics.json` beside the plan, then run:
+
+```bash
+uv run python skills/adversarial-spec/scripts/dependency_semantics.py \
+  --plan .adversarial-spec/specs/<slug>/fizzy-plan.json \
+  --semantics .adversarial-spec/specs/<slug>/dependency-semantics.json
+```
+
+Do not continue if it reports an issue. This does not replace the authoritative Fizzy validation below.
 
 **Validate before loading (authoritative pre-load gate):** Run the **real** fizzy
 validator and loop until clean — do NOT call `pipeline_load` on an unvalidated
@@ -1245,9 +1352,10 @@ pipeline actually blocks premature pickup. Without them every node loads `ready_
 before its foundations exist, silently bypassing the spec's own ordering gate.
 
 Rules:
-- Translate every edge from the execution plan's dependency graph into node `depends_on` (a node depends
-  on the foundational nodes whose output it consumes — typically the prior wave's subsystem/component
-  nodes, not merely its tree parent).
+- Translate every reviewed edge-ledger record into node `depends_on` (a node depends on the foundational
+  node whose output it consumes — typically a prior-wave subsystem/component, not merely its tree parent).
+  Reject both a missing execution-order edge and an unexplained extra edge; a milestone label is not an
+  edge reason.
 - After emission, before `pipeline_load`, assert the readiness profile MATCHES the wave structure: a
   multi-wave plan whose `pipeline_validate_plan`/`pipeline_lane_state` shows **every** node `ready_now`
   with `blocked: 0` is a red flag that the spine wasn't encoded — fix `depends_on` and re-emit. Do not
@@ -1296,25 +1404,24 @@ later meta-analysis queries.
 
 **This step makes each card self-contained for human readers.** Without it, a person opening a single Fizzy card sees acceptance criteria but has no idea WHY the task exists, what production problem it prevents, or which gauntlet concerns shaped the approach. They'd have to read the full spec to orient — defeating the purpose of card-level task breakdown.
 
-**For each card created in Step 9, add a comment that includes:**
+**For each card created in Step 9, add one short, structured context comment:**
 
-1. **Which concern(s) it addresses** — e.g., "CON-001: Gateway token refresh has no mutex"
-2. **The problem in plain language** — what's broken, what happened (production incidents, data corruption, etc.)
-3. **Why the fix takes this shape** — key gauntlet concerns that constrained the approach (e.g., "gauntlet FM-2: can't cross-package import because gateway tsconfig restricts rootDir")
-4. **How it connects to other cards** — dependencies, fallback relationships (e.g., "if this task's transition fails, T8's stuck detector catches it as the safe fallback")
+```markdown
+## Why this card exists
 
-**Format:**
-```
-**Context: CON-XXX — [short problem description]**
-
-[1-3 paragraphs: what's broken, what the fix does, which gauntlet concerns matter]
+**Problem:** <plain-language failure or downstream need>
+**Decision:** <what this card changes and the constraint that shaped it>
+**Evidence:** <concern IDs, spec refs, or one concrete dependency>
+**Next:** <what becomes possible when this card closes>
 ```
 
 **Guidelines:**
 - Write for a human who will read ONE card, not the full spec
 - Include gauntlet concern IDs (e.g., RC-1, FM-2) so they can trace back to the gauntlet concerns doc
 - For prerequisite/audit tasks (no concern), explain what downstream tasks need from this one
-- Keep each comment under 200 words — enough to orient, not a spec restatement
+- Keep each comment under 180 words — enough to orient, not a spec restatement
+- Do not paste plan JSON, checklist payloads, model output, or raw metadata. Those
+  remain in the card description, checklists, and pipeline metadata for agents.
 
 **Efficiency:** All card comments are independent — make all `add_comment` calls in parallel.
 

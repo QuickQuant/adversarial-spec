@@ -489,6 +489,16 @@ Evaluated Plans → Pre-Roadmap →(g1) Decomposition →(d0_closed) Debate → 
   independent seam challenge. Exit is `pipeline_mark_decomposition_complete`
   (verify-on-disk; `d0_closed` is patch_state-protected) — or the operator
   NO_GO_UNRESOLVED_SEAM backtrack. Never assert D0 adequate in prose.
+- **Acceptance obligations (D0, including Phase-4 skip-mode):** when a test is
+  `REAL-DATA` AND LIVE AND the sole discharge of a goal-level requirement, an
+  `acceptance-only` ruling may narrow code responsibility but must record a
+  topology-free `acceptance_obligations[]` entry (`obligation_id`, `root_goal`,
+  `discharge_test`, `route_prose`, `missing_evidence_classes[]`,
+  `downstream_owner_phase`) — no task edges, no card IDs; Phase 7's D1 gate
+  closes it by `obligation_id` via the evidence-receipt register (see
+  07-execution.md Gate D1). The analyzer (`--decomposition`) rejects an
+  `acceptance_oracle` with no obligation record. Ordinary real-data smoke
+  probes trigger nothing.
 - **Debate (redefined for v6):** `pipeline_load` runs HERE (after `d0_closed`),
   creating leaf component cards in the `Specifying` task lane; each leaf runs
   its own bounded A→S cycle. The session card holds in Debate until every leaf
@@ -499,9 +509,9 @@ Evaluated Plans → Pre-Roadmap →(g1) Decomposition →(d0_closed) Debate → 
   the classic order above. Canonical-order checks must treat `decomposition`
   as legal (not an anomaly) exactly when the session is v6+.
 - Governing artifacts live in the consuming project:
-  `orchestration/RULESET-bounded-pipeline-v1.md`,
-  `orchestration/BRAINSTORM-2-lanes-and-flow.md` (§8, §10),
-  `orchestration/DECISIONS-brainstorm-2-open.md` (D-1..D-4).
+  `orchestration/governing/RULESET-bounded-pipeline-v1.md`,
+  `orchestration/governing/BRAINSTORM-2-lanes-and-flow.md` (§8, §10),
+  `orchestration/governing/DECISIONS-brainstorm-2-open.md` (D-1..D-4).
 
 **Triage (Phase 0) is the additive front door.** New work enters triage first; it
 runs with zero session machinery and, on GO, creates the session with the chosen
@@ -532,6 +542,14 @@ Users don't always use exact phase names. Map their intent:
 **The debate and gauntlet are fundamentally different processes:**
 - **Debate** = collaborative improvement via `debate.py critique` (round-based model feedback)
 - **Gauntlet** = adversarial stress testing via adversary personas (PARA, BURN, LAZY, etc.) with per-adversary briefings and a multi-phase attack pipeline
+
+The gauntlet's evidence boundary is permanent: seats are read-only and file
+`GT-REQUEST` records; a neutral broker supplies observed answers, including
+explicit `BLOCKED` responses and fixture/claim ceilings. Unrequested broker
+observations (`BYCATCH`) are the primary observed value; cross-seat answers are
+secondary and measured separately for reach, yield, noise, follow-up, and cost.
+Mocked logic must not be reported as browser, wire, permission, or credential
+ground truth. See `phases/05-gauntlet.md` and `reference/gauntlet-details.md`.
 
 Do NOT run `debate.py critique` when the user wants the gauntlet, and vice versa.
 
