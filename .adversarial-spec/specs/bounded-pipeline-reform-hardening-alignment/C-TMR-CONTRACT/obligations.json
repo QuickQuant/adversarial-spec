@@ -1,0 +1,163 @@
+{
+  "leaf": "C-TMR-CONTRACT",
+  "card_id": "21545",
+  "session_id": "adv-spec-202609150549-bounded-reform-hardening-align",
+  "authored_at": "2026-09-15T06:56:12Z",
+  "operator": "Master Conductor fizzy-gemini (Jason's delegate) \u2014 option (b) probe go 2026-09-15; authored by claude conductor",
+  "component_inputs": {
+    "goal_refs": [
+      "G-1",
+      "G-4"
+    ],
+    "surface_refs": [
+      "Brainquarters/shared-context/test-maturity-record-schema.md",
+      "skills/adversarial-spec/reference/contract-ownership.json",
+      "skills/adversarial-spec/reference/test-maturity-record.schema.json",
+      "tmr_schema.CodeRunEvidence",
+      "tmr_schema.KEYSTONE_SCHEMA_SHA256",
+      "tmr_schema.OBLIGATION_IDENTITY_FIELDS",
+      "tmr_schema.TargetObservation",
+      "tmr_schema.TargetProofBinding",
+      "tmr_schema.TestMaturityRecord",
+      "tmr_schema.compute_tmr_record_hash"
+    ]
+  },
+  "guarantee_doc": "guarantee-obligations.md",
+  "guarantee_doc_sha256": "sha256:59e57b6857e7bc76980d9df8ff3312b6d5f2b69037caf135a7e5fb3b688b4d77",
+  "guarantees": [
+    {
+      "guarantee_id": "GU-1",
+      "statement": "target_binding is a strict, progressively populated, round-trippable part of the TMR contract; legacy records stay valid and visibly unbound",
+      "goal_refs": [
+        "G-1"
+      ],
+      "surface_refs": [
+        "tmr_schema.TestMaturityRecord",
+        "tmr_schema.TargetProofBinding"
+      ]
+    },
+    {
+      "guarantee_id": "GU-2",
+      "statement": "expected target fields are obligation identity; observed run data is not",
+      "goal_refs": [
+        "G-1"
+      ],
+      "surface_refs": [
+        "tmr_schema.compute_tmr_record_hash",
+        "tmr_schema.OBLIGATION_IDENTITY_FIELDS"
+      ]
+    },
+    {
+      "guarantee_id": "GU-3",
+      "statement": "code run evidence can carry a strict runner-owned target_observation",
+      "goal_refs": [
+        "G-1"
+      ],
+      "surface_refs": [
+        "tmr_schema.CodeRunEvidence",
+        "tmr_schema.TargetObservation"
+      ]
+    },
+    {
+      "guarantee_id": "GU-4",
+      "statement": "machine schema, pinned sha, and canonical keystone agree; the change lands keystone-first via a shipped patch",
+      "goal_refs": [
+        "G-4"
+      ],
+      "surface_refs": [
+        "skills/adversarial-spec/reference/test-maturity-record.schema.json",
+        "Brainquarters/shared-context/test-maturity-record-schema.md",
+        "tmr_schema.KEYSTONE_SCHEMA_SHA256"
+      ]
+    },
+    {
+      "guarantee_id": "GU-5",
+      "statement": "every shared contract names one owner and each consumer's validation scope",
+      "goal_refs": [
+        "G-4"
+      ],
+      "surface_refs": [
+        "skills/adversarial-spec/reference/contract-ownership.json"
+      ]
+    }
+  ],
+  "obligations": [
+    {
+      "obligation_id": "O-1",
+      "guarantee_id": "GU-1",
+      "claim": "TargetProofBinding validates strictly, rejects extra keys and bad stable ids, and validate\u2192dump\u2192reload is byte-equal"
+    },
+    {
+      "obligation_id": "O-2",
+      "guarantee_id": "GU-1",
+      "claim": "nl/acceptance need the identity core with [] list defaults; concrete requires the full set naming the missing field; target_binding_status is derived, accepted on input, and legacy records dump legacy-unbound"
+    },
+    {
+      "obligation_id": "O-3",
+      "guarantee_id": "GU-2",
+      "claim": "OBLIGATION_IDENTITY_FIELDS includes target_binding; hash changes on expected-field mutation, unchanged on run_evidence/target_observation mutation"
+    },
+    {
+      "obligation_id": "O-4",
+      "guarantee_id": "GU-3",
+      "claim": "CodeRunEvidence.target_observation is optional, strict, typed (pid int), rejects owner-added keys, round-trips"
+    },
+    {
+      "obligation_id": "O-5",
+      "guarantee_id": "GU-4",
+      "claim": "KEYSTONE_SCHEMA_SHA256 == schema_sha256(); published machine schema equals the model; keystone-patch.diff applies to the canonical keystone and pins that sha and documents both fields"
+    },
+    {
+      "obligation_id": "O-6",
+      "guarantee_id": "GU-5",
+      "claim": "contract-ownership.json loads; keystone\u2192Brainquarters, plan/metadata\u2192fizzy-pipeline-mcp; consumers carry scopes; Fizzy's TMR scope is plan/metadata only"
+    }
+  ],
+  "primary_map": [
+    {
+      "obligation_id": "O-1",
+      "test_selector": "test_o1_target_binding_round_trip",
+      "red_fingerprint": "04b6bae789503860"
+    },
+    {
+      "obligation_id": "O-2",
+      "test_selector": "test_o2_progressive_population_and_legacy_unbound",
+      "red_fingerprint": "00e3b8fe84bc93c8"
+    },
+    {
+      "obligation_id": "O-3",
+      "test_selector": "test_o3_hash_projection_expected_in_observed_out",
+      "red_fingerprint": "274331d5cf9ec4ef"
+    },
+    {
+      "obligation_id": "O-4",
+      "test_selector": "test_o4_code_run_evidence_target_observation",
+      "red_fingerprint": "d1cdc1e03c392aef"
+    },
+    {
+      "obligation_id": "O-5",
+      "test_selector": "test_o5_keystone_first_packaging",
+      "red_fingerprint": "54255355f5973ec1"
+    },
+    {
+      "obligation_id": "O-6",
+      "test_selector": "test_o6_contract_ownership_record",
+      "red_fingerprint": "40331e2e467844d2"
+    }
+  ],
+  "suite_path": "ab_suite/test_c_tmr_contract.py",
+  "suite_sha256": "sha256:6ea0aa5fd8ce4eb02c0c26f1adcfea0fddcc153be828c79b29b408358536561b",
+  "controls": {
+    "known_good": "ab_suite/ab_controls/good_contract.py",
+    "known_bad": "ab_suite/ab_controls/bad_contract.py (frozen b544a00)",
+    "known_good_passes": true,
+    "known_bad_fails": true
+  },
+  "red_runs": {
+    "count": 3,
+    "identical_fingerprints": true,
+    "suite_fingerprint": "4aa5bdf57b38c0c2",
+    "red_for_right_reason": true
+  },
+  "safety_kernel": "suite performs no writes outside temp dirs; no live systems touched"
+}

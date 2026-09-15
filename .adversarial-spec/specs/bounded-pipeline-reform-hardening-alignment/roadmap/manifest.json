@@ -1,0 +1,499 @@
+{
+  "schema_version": "3.0",
+  "session_id": "adv-spec-202609150549-bounded-reform-hardening-align",
+  "slug": "bounded-pipeline-reform-hardening-alignment",
+  "title": "Bounded Pipeline Reform & Hardening Alignment",
+  "created_at": "2026-09-15T06:05:00Z",
+  "doc_type": "spec",
+  "doc_depth": "full",
+  "complexity_score": 33,
+  "complexity_tier": "complex",
+  "complexity_inputs": {
+    "user_types": 5,
+    "feature_groups": 12,
+    "external_integrations": 5,
+    "unknowns": 6,
+    "formula": "user_types + feature_groups + 2*integrations + unknowns"
+  },
+  "root_altitude": "system",
+  "requirements_path": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/requirements.md",
+  "tests_pseudo_path": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/tests-pseudo.md",
+  "roadmap_view": "roadmap.md",
+  "goals": [
+    "G-1 Add proof-target identity as an orthogonal axis to REAL-DATA without weakening it",
+    "G-2 Surface authority divergence structurally and close cutovers as chains",
+    "G-3 Make temporary custody itemized and never destructive by inference",
+    "G-4 Land every change through the bounded pipeline itself, post-finalize, with grandfathering"
+  ],
+  "non_goals": [
+    "No automatic product deployment or live-money action",
+    "No general-purpose process supervisor",
+    "No replacement for mapcodebase architecture surfaces",
+    "No requirement that every unit test start services",
+    "No ban on fixtures for narrow unit/BVA work",
+    "No auto-deletion of branches, worktrees, or releases",
+    "No universal ledger for unrelated user-owned checkouts",
+    "No claim that these gates would certainly have prevented history"
+  ],
+  "operator_decisions": {
+    "OQ-1": "expected target fields join tmr_record_hash (keystone 2b projection changes)",
+    "OQ-2": "transient tool-turn subagent workspaces exempt from custody rows",
+    "OQ-3": "D-2 guardrail alignment (TCOV -> ORACLE with executable witness) in scope",
+    "OQ-4": "Fizzy validates plan schema + metadata contracts only; TMR execution logic stays in skill/runner",
+    "OQ-5": "enforcement fence: pipeline_version 5 warning mode, pipeline_version 6 hard reject",
+    "OQ-6": "debate quorum: codex seat + gemini seat (cross-vendor)",
+    "RB-1": "Enforcement anchored on card created_at >= cutover_timestamp AND pipeline_version >= 6; cards created before cutover are grandfathered",
+    "OQ-7": "24-hour receipt freshness window; invalidated immediately if the underlying target ref/hash changes",
+    "OQ-8": "100% quorum consensus: both critic families must flag the seeded wrong-route violation"
+  },
+  "user_stories": [
+    {
+      "id": "US-0",
+      "title": "Bootstrap verifies the hardening toolchain",
+      "story": "As a new maintainer, I want documented prerequisites, one readiness command reporting ready/degraded/broken with named remediation, and a worked non-money example, so that I complete my first useful obligation without reconstructing the toolchain."
+    },
+    {
+      "id": "US-1",
+      "title": "Target-bound test obligations",
+      "story": "As a conductor, I want a triggered TMR to carry a target_binding so that a passing test cannot discharge an obligation via a sibling route, harness caller, or predecessor authority."
+    },
+    {
+      "id": "US-2",
+      "title": "Progressive binding population",
+      "story": "As a conductor, I want binding fields to populate across the maturity ladder so that Phase 2 authoring is not blocked by fifteen mandatory fields."
+    },
+    {
+      "id": "US-3",
+      "title": "Triggered authority census",
+      "story": "As a conductor in Phase 4, I want the structural trigger to demand authority-paths.json with every outcome-equivalent path so that a failing-path-plus-one-sibling review cannot leave live routes unverified."
+    },
+    {
+      "id": "US-4",
+      "title": "Cutover chains in execution planning",
+      "story": "As a conductor in Phase 7, I want every role-changing path expanded into a cutover chain with not_applicable(reason) allowed so that source commits and process launches cannot close independently."
+    },
+    {
+      "id": "US-5",
+      "title": "Observed target at promotion",
+      "story": "As the Phase 8 skill-runner, I want run evidence to carry a runner-produced target_observation compared against the binding with typed rejects so that a real run of the wrong thing is a reject, not a pass."
+    },
+    {
+      "id": "US-6",
+      "title": "Typed fixture provenance",
+      "story": "As a conductor, I want boundary substitutions declared by type and the lexical mock scan demoted to advisory so that makeEnvelope cannot pass and 'no mocks' prose cannot halt."
+    },
+    {
+      "id": "US-7",
+      "title": "Custody ledger",
+      "story": "As an operator, I want every durable pipeline-owned temporary authority to have one ledger row, a budget that blocks creation but never authorizes cleanup, and an itemized preview before any removal so that a worktree contraction can never be closed by count."
+    },
+    {
+      "id": "US-8",
+      "title": "Critic and adversary prompts",
+      "story": "As a conductor, I want debate guardrails and gauntlet seats asked about retired/emergency/non-product paths, shared contracts, identity contradictions, and callable predecessors so that existing seats attack route identity with no new model launch."
+    },
+    {
+      "id": "US-9",
+      "title": "Finalize binding and ORACLE alignment",
+      "story": "As a conductor in Phase 6, I want TCOV repointed to ORACLE with an executable witness, failing a triggered test without binding and refusing concern closure without a named enforcing test plus proof target."
+    },
+    {
+      "id": "US-10",
+      "title": "Golden replay and mutation proof",
+      "story": "As a worker, I want the 18 golden cases to replay with their expected codes, the three controls to stay accepted, and every binding field to have a mutation test producing its specific code."
+    },
+    {
+      "id": "US-11",
+      "title": "Rollout and grandfathering",
+      "story": "As an operator, I want warning mode on pipeline_version 5, hard rejects on version 6, legacy TMRs visibly legacy-unbound, and skill edits shipped as Phase 7 W-tasks post-finalize."
+    },
+    {
+      "id": "US-12",
+      "title": "Dogfood on the v6 bounded pipeline",
+      "story": "As the conductor of this session, I want the session to run D0 decomposition, per-leaf A->S, and fan-in gauntlet, recording every process failure it hits."
+    },
+    {
+      "id": "US-13",
+      "title": "Recovery after a rejected proof",
+      "story": "As a blocked worker, I want every rejection to name the failed expectation, expected vs observed, whether evidence is missing or mismatched, and the next actor and permitted recovery, so that I can recover without discarding unrelated completed work."
+    },
+    {
+      "id": "US-14",
+      "title": "Reconciliation after interruption",
+      "story": "As an operator returning after an interrupted run or custody operation, I want incomplete runs and surviving temporary resources reconciled before dependent work proceeds, so that interruption can never imply completion or exemption."
+    },
+    {
+      "id": "US-15",
+      "title": "Integration ownership",
+      "story": "As an integration maintainer of the keystone, the skill, or the Fizzy consumer, I want explicit compatibility and validation ownership per contract, so that producers and consumers agree without duplicating each other's responsibilities."
+    },
+    {
+      "id": "US-16",
+      "title": "Downstream adoption",
+      "story": "As a downstream maintainer (prediction-prime first), I want an adoption guide, a v5 to v6 migration path, and an ordinary-work control example, so that I can introduce the reform without new requirements on unaffected work."
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M0",
+      "title": "Getting Started (Bootstrap)",
+      "user_stories": [
+        {
+          "id": "US-0",
+          "title": "Bootstrap verifies the hardening toolchain",
+          "spine_test": "TC-0.0"
+        }
+      ],
+      "test_cases": [
+        "TC-0.0",
+        "TC-0.1"
+      ],
+      "depends_on": []
+    },
+    {
+      "id": "M1",
+      "title": "Contract foundation: target_binding keystone step 2",
+      "user_stories": [
+        {
+          "id": "US-1",
+          "title": "Target-bound test obligations",
+          "spine_test": "TC-1.0"
+        },
+        {
+          "id": "US-2",
+          "title": "Progressive binding population",
+          "spine_test": "TC-2.0"
+        },
+        {
+          "id": "US-15",
+          "title": "Integration ownership",
+          "spine_test": "TC-15.0"
+        }
+      ],
+      "test_cases": [
+        "TC-1.0",
+        "TC-1.1",
+        "TC-1.2",
+        "TC-1.3",
+        "TC-1.4",
+        "TC-2.0",
+        "TC-2.1",
+        "TC-2.2",
+        "TC-15.0",
+        "TC-15.1"
+      ],
+      "depends_on": [
+        "M0"
+      ]
+    },
+    {
+      "id": "M2",
+      "title": "Phase 8 observation, promotion, typed provenance",
+      "user_stories": [
+        {
+          "id": "US-5",
+          "title": "Observed target at promotion",
+          "spine_test": "TC-5.0"
+        },
+        {
+          "id": "US-6",
+          "title": "Typed fixture provenance",
+          "spine_test": "TC-6.0"
+        },
+        {
+          "id": "US-13",
+          "title": "Recovery after a rejected proof",
+          "spine_test": "TC-13.0"
+        }
+      ],
+      "test_cases": [
+        "TC-5.0",
+        "TC-5.1",
+        "TC-5.2",
+        "TC-5.3",
+        "TC-5.4",
+        "TC-5.5",
+        "TC-6.0",
+        "TC-6.1",
+        "TC-6.2",
+        "TC-13.0",
+        "TC-13.1",
+        "TC-13.2"
+      ],
+      "depends_on": [
+        "M1"
+      ]
+    },
+    {
+      "id": "M3",
+      "title": "Authority census (D0/Phase-4 obligations) and cutover chains (Phase 7)",
+      "user_stories": [
+        {
+          "id": "US-3",
+          "title": "Triggered authority census",
+          "spine_test": "TC-3.0"
+        },
+        {
+          "id": "US-4",
+          "title": "Cutover chains in execution planning",
+          "spine_test": "TC-4.0"
+        }
+      ],
+      "test_cases": [
+        "TC-3.0",
+        "TC-3.1",
+        "TC-3.2",
+        "TC-3.3",
+        "TC-4.0",
+        "TC-4.1",
+        "TC-4.2",
+        "TC-4.3",
+        "TC-4.4"
+      ],
+      "depends_on": [
+        "M1"
+      ]
+    },
+    {
+      "id": "M4",
+      "title": "Custody ledger lifecycle",
+      "user_stories": [
+        {
+          "id": "US-7",
+          "title": "Custody ledger",
+          "spine_test": "TC-7.0"
+        },
+        {
+          "id": "US-14",
+          "title": "Reconciliation after interruption",
+          "spine_test": "TC-14.0"
+        }
+      ],
+      "test_cases": [
+        "TC-7.0",
+        "TC-7.1",
+        "TC-7.2",
+        "TC-7.3",
+        "TC-7.4",
+        "TC-7.5",
+        "TC-7.6",
+        "TC-7.7",
+        "TC-14.0",
+        "TC-14.1"
+      ],
+      "depends_on": [
+        "M0"
+      ]
+    },
+    {
+      "id": "M5",
+      "title": "Prompt plane and finalize binding (Phases 3, 5, 6) \u2014 delivered here, exercised next cycle",
+      "user_stories": [
+        {
+          "id": "US-8",
+          "title": "Critic and adversary prompts",
+          "spine_test": "TC-8.0"
+        },
+        {
+          "id": "US-9",
+          "title": "Finalize binding and ORACLE alignment",
+          "spine_test": "TC-9.0"
+        }
+      ],
+      "test_cases": [
+        "TC-8.0",
+        "TC-8.1",
+        "TC-8.2",
+        "TC-9.0",
+        "TC-9.1",
+        "TC-9.2",
+        "TC-9.3"
+      ],
+      "depends_on": [
+        "M1",
+        "M2"
+      ]
+    },
+    {
+      "id": "M6",
+      "title": "Golden replay, mutation proof, rollout fence",
+      "user_stories": [
+        {
+          "id": "US-10",
+          "title": "Golden replay and mutation proof",
+          "spine_test": "TC-10.0"
+        },
+        {
+          "id": "US-11",
+          "title": "Rollout and grandfathering",
+          "spine_test": "TC-11.0"
+        }
+      ],
+      "test_cases": [
+        "TC-10.0",
+        "TC-10.1",
+        "TC-10.2",
+        "TC-11.0",
+        "TC-11.1",
+        "TC-11.2",
+        "TC-11.3",
+        "TC-11.4"
+      ],
+      "depends_on": [
+        "M1",
+        "M2",
+        "M3",
+        "M4",
+        "M5"
+      ]
+    },
+    {
+      "id": "M7",
+      "title": "Dogfood, downstream adoption, process record",
+      "user_stories": [
+        {
+          "id": "US-12",
+          "title": "Dogfood on the v6 bounded pipeline",
+          "spine_test": "TC-12.0"
+        },
+        {
+          "id": "US-16",
+          "title": "Downstream adoption",
+          "spine_test": "TC-16.0"
+        }
+      ],
+      "test_cases": [
+        "TC-12.0",
+        "TC-12.1",
+        "TC-12.2",
+        "TC-16.0",
+        "TC-16.1"
+      ],
+      "depends_on": [
+        "M6"
+      ]
+    }
+  ],
+  "kpis": [
+    "15/15 incident cases replay at their intended gate; 3/3 controls accepted",
+    "100% of expected target, observation, and custody dimensions have a mutation case producing their specific reject code (denominator = the field list in the spec)",
+    "22/22 contract section-5 codes exercised by a golden or mutation case",
+    "No new failures relative to the recorded baseline; skip set unchanged; the 2 known provider failures stay attributed",
+    "CTRL-002 class work costs one applicability rationale line and zero model launches",
+    "Recovery usability: a worker given a wrong-target rejection identifies and performs the next action from the rejection alone (evaluated on 3 seeded rejections)",
+    "0 pipeline_patch_state invocations on card 21537; a nonzero tally is a missed target, never cured by a note",
+    "Released-workflow proof: a subsequent v6 session exercises every delivered gate from authoring through closure"
+  ],
+  "architecture_impact": {
+    "verdict": "new_middleware",
+    "rationale": "Adds a shared typed reject-code catalog and a runner-owned target-observation collector consumed across promotion, plan self-check, finalize ORACLE, and custody close; adds two new durable artifacts (authority-paths.json, custody-ledger.jsonl) and extends the TMR keystone. Validators are pure functions inside existing component classes; the cross-cutting catalog and collector are the new shared surfaces, so Phase 4 runs in full mode.",
+    "new_components": [
+      {
+        "name": "authority_paths validator + structural trigger",
+        "kind": "validator",
+        "extends": "Plan analysis (dependency_semantics.py neighborhood)"
+      },
+      {
+        "name": "custody ledger (custody-ledger.jsonl) + validate_custody_close",
+        "kind": "ledger",
+        "extends": "TMR and provenance (append-only journal pattern)"
+      },
+      {
+        "name": "compare_target_observation + runtime identity freshness",
+        "kind": "validator",
+        "extends": "Phase 8 promotion (phase8_promotion.py)"
+      },
+      {
+        "name": "fixture provenance classifier (replaces _lint_boundary_mock as authority)",
+        "kind": "validator",
+        "extends": "Phase 8 promotion"
+      },
+      {
+        "name": "golden replay + mutation harness",
+        "kind": "test-harness",
+        "extends": "scripts/tests"
+      }
+    ],
+    "new_middleware": [
+      {
+        "name": "typed reject-code catalog (contract section 5, 22 codes)",
+        "purpose": "one enum shared by every gate so mutation tests and golden replay can name the exact reject",
+        "consumed_by": [
+          "phase8_promotion",
+          "mini_spec_emission.self_check_plan",
+          "finalize ORACLE/TCOV",
+          "validate_custody_close",
+          "validate_authority_paths"
+        ]
+      },
+      {
+        "name": "target_observation collector (runner-owned)",
+        "purpose": "capture caller/path/authority/contract hashes/PID+start time at run time; owner cannot author it",
+        "consumed_by": [
+          "phase8_promotion",
+          "Phase 9 package parity"
+        ]
+      }
+    ],
+    "new_vars_into_existing_middleware": [
+      {
+        "variable": "target_binding (TargetProofBinding | None)",
+        "target_middleware": "tmr_schema.TestMaturityRecord + keystone",
+        "purpose": "declare the subject an obligation discharges; expected fields join tmr_record_hash (OQ-1)"
+      },
+      {
+        "variable": "target_observation block",
+        "target_middleware": "tmr_schema.CodeRunEvidence",
+        "purpose": "observed identity compared against binding at promotion"
+      },
+      {
+        "variable": "fixture_provenance (typed enum per replaced boundary)",
+        "target_middleware": "tmr_schema + phase8_promotion",
+        "purpose": "typed ceiling replaces lexical mock scan"
+      },
+      {
+        "variable": "enforcement fence (pipeline_version 5 warn / 6 reject)",
+        "target_middleware": "phase8_promotion, finalize gates, plan self-check",
+        "purpose": "grandfather in-flight sessions (OQ-5)"
+      },
+      {
+        "variable": "plan_schema_version strict-int check",
+        "target_middleware": "mini_spec_emission.self_check_plan",
+        "purpose": "landed abe2040; mirrors Fizzy PLAN_SCHEMA_VERSION_TYPE_INVALID"
+      }
+    ],
+    "assessed_at": "2026-09-15T06:05:00Z",
+    "assessed_against": "2433efa (architecture corpus; HEAD b544a00 \u2014 corpus is stale by design, source trusted over docs)"
+  },
+  "debate_rounds": [
+    {
+      "round": 1,
+      "models": [
+        "codex/gpt-6-astra@xhigh",
+        "antigravity/gemini-3.8-flash-high"
+      ],
+      "all_agreed": false,
+      "outcome": "11 findings: 9 accepted (custody boundary, self-hosting split + RB-1, evidence classes/waiver, US-13..16, acceptance ambiguities, recovery journey, KPI restatement, absent-vs-malformed version), 1 already covered, 1 deferred to Phase 3 (PRD separation); 2 NFR numbers rejected as unevidenced",
+      "checkpoint": ".adversarial-spec-checkpoints/adv-spec-202609150549-bounded-reform-hardening-align-round-1.md",
+      "synthesis": "roadmap/debate-r1/synthesis.md",
+      "incident": ".adversarial-spec/incidents/agy-mutation-20260915-010558 (tripwire false positive on hook-owned log; process-failure note written)"
+    }
+  ],
+  "self_hosting_rule": "This session finalizes using only gates that exist today. Every new gate (ORACLE alignment, target-binding checks, census, custody) is delivered by this session's Phase 7/8 W-tasks and exercised end-to-end by the next v6 session (US-12/US-16). No closed phase is reopened to manufacture compliance.",
+  "release_blockers": [
+    {
+      "id": "RB-1",
+      "text": "OQ-5 (version-only fence: v5 warn, v6 reject) conflicts with US-11 (in-flight work never retroactively failed) for cards already at pipeline_version 6 when enforcement lands. Operator must approve a rollout schedule or amend the policy before enforcement is exposed. No silent downgrade or hidden selector.",
+      "status": "resolved 2026-09-15: Enforcement anchored on card created_at >= cutover_timestamp AND pipeline_version >= 6; cards created before cutover are grandfathered"
+    }
+  ],
+  "open_decisions": {},
+  "updated_at": "2026-09-15T06:37:19Z",
+  "roadmap_version": 2,
+  "roadmap_confirmed": {
+    "by": "Master Conductor fizzy-gemini (Jason's delegate)",
+    "at": "2026-09-15T06:19:45Z",
+    "version": 2
+  },
+  "d0_revision_note": "TC-7.7 added and TC-8.1 amended by the D0 seam challenge (C-18, C-20)"
+}

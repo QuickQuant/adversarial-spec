@@ -1,0 +1,1412 @@
+{
+  "schema_version": "1.0",
+  "session_id": "adv-spec-202609150549-bounded-reform-hardening-align",
+  "context_name": "Bounded Pipeline Reform & Hardening Alignment",
+  "altitude": "system",
+  "created_at": "2026-09-15T06:26:05Z",
+  "provenance": {
+    "goal_set": "goal-set.json",
+    "goal_set_sha256": "sha256:79f90094c44a7e14fee9c70b56e6293e9389984562c3ec6c63df7b450a006726",
+    "ruleset": "fizzy-pipeline-mcp/orchestration/governing/RULESET-bounded-pipeline-v1.md (D0.1-D0.7)",
+    "authored_by": "claude conductor (Fable 5.1)",
+    "roadmap": "roadmap/manifest.json v2"
+  },
+  "d0": {
+    "status": "challenged_resolved_pending_gate",
+    "components": [
+      {
+        "node_id": "SYS-HARD",
+        "parent_id": null,
+        "kind": "system",
+        "title": "Hardening alignment: proof-target identity, authority cutover, custody (packet \u2192 skill + Fizzy contract)",
+        "is_leaf": false
+      },
+      {
+        "node_id": "SS-CONTRACT",
+        "parent_id": "SYS-HARD",
+        "kind": "subsystem",
+        "title": "TMR contract and obligation identity",
+        "is_leaf": false
+      },
+      {
+        "node_id": "C-TMR-CONTRACT",
+        "parent_id": "SS-CONTRACT",
+        "kind": "component",
+        "title": "Keystone mirror: target_binding + target_observation schema, machine-schema regen, sha re-pin, keystone-first order tripwire",
+        "is_leaf": true
+      },
+      {
+        "node_id": "C-BINDING-COMPILE",
+        "parent_id": "SS-CONTRACT",
+        "kind": "component",
+        "title": "Annotation \u2192 target_binding compile: progressive ladder, duplicate stable-id rejection, obligation-hash projection incl. expected target fields",
+        "is_leaf": true
+      },
+      {
+        "node_id": "C-GATE-POLICY",
+        "parent_id": "SS-CONTRACT",
+        "kind": "component",
+        "title": "Shared gate policy: typed reject-code catalog (22), enforcement fence resolver (created_at \u2265 cutover AND pipeline_version \u2265 6), freshness constants (24h)",
+        "is_leaf": true
+      },
+      {
+        "node_id": "SS-PROMOTION",
+        "parent_id": "SYS-HARD",
+        "kind": "subsystem",
+        "title": "Phase 8 observation and promotion",
+        "is_leaf": false
+      },
+      {
+        "node_id": "C-OBS-CAPTURE",
+        "parent_id": "SS-PROMOTION",
+        "kind": "component",
+        "title": "Runner-owned target_observation capture: caller/path/authority/contract hashes, runtime receipt, PID + start time",
+        "is_leaf": true
+      },
+      {
+        "node_id": "C-PROMOTION-COMPARE",
+        "parent_id": "SS-PROMOTION",
+        "kind": "component",
+        "title": "compare_target_observation, fixture-provenance classifier (lexical scan advisory), terminal-enum coverage, rejection diagnostics payload",
+        "is_leaf": true
+      },
+      {
+        "node_id": "SS-AUTHORITY",
+        "parent_id": "SYS-HARD",
+        "kind": "subsystem",
+        "title": "Authority census and cutover planning",
+        "is_leaf": false
+      },
+      {
+        "node_id": "C-CENSUS",
+        "parent_id": "SS-AUTHORITY",
+        "kind": "component",
+        "title": "Structural trigger evaluation, authority-paths.json authoring/validation, discovery scope, fingerprint hash",
+        "is_leaf": true
+      },
+      {
+        "node_id": "C-CUTOVER-OBLIGATIONS",
+        "parent_id": "SS-AUTHORITY",
+        "kind": "component",
+        "title": "build_cutover_obligations from the census delta, consumer task per censused caller, schedule postcondition; state authority dependency-semantics.json",
+        "is_leaf": true
+      },
+      {
+        "node_id": "SS-CUSTODY",
+        "parent_id": "SYS-HARD",
+        "kind": "subsystem",
+        "title": "Custody lifecycle",
+        "is_leaf": false
+      },
+      {
+        "node_id": "C-CUSTODY-LEDGER",
+        "parent_id": "SS-CUSTODY",
+        "kind": "component",
+        "title": "custody-ledger.jsonl rows, projected-total budget admission, dispositions, validate_custody_close, missing-row detection",
+        "is_leaf": true
+      },
+      {
+        "node_id": "C-CUSTODY-RECONCILE",
+        "parent_id": "SS-CUSTODY",
+        "kind": "component",
+        "title": "Removal-preview validation (inventory, runtime dependency, recovery ref, exact authorization) and interruption reconciliation at session start",
+        "is_leaf": true
+      },
+      {
+        "node_id": "SS-REVIEW",
+        "parent_id": "SYS-HARD",
+        "kind": "subsystem",
+        "title": "Review plane: critic prompts and finalize ORACLE",
+        "is_leaf": false
+      },
+      {
+        "node_id": "C-CRITIC-PROMPTS",
+        "parent_id": "SS-REVIEW",
+        "kind": "component",
+        "title": "Debate guardrail + gauntlet seat prompt additions (route identity, shared contract, identity contradiction, callable predecessor); broker cross-path BLOCKED rule",
+        "is_leaf": true
+      },
+      {
+        "node_id": "C-FINALIZE-ORACLE",
+        "parent_id": "SS-REVIEW",
+        "kind": "component",
+        "title": "ORACLE: obligation\u2194test bijection, executable witness with G/M controls, binding-required check, concern-closure rule, declared-assertion-shape check",
+        "is_leaf": true
+      },
+      {
+        "node_id": "SS-PROOF",
+        "parent_id": "SYS-HARD",
+        "kind": "subsystem",
+        "title": "Proof and adoption",
+        "is_leaf": false
+      },
+      {
+        "node_id": "C-GOLDEN-HARNESS",
+        "parent_id": "SS-PROOF",
+        "kind": "component",
+        "title": "Golden replay (15 + 3), one-field mutation matrix, reject-code coverage check",
+        "is_leaf": true
+      },
+      {
+        "node_id": "C-BOOTSTRAP-ADOPT",
+        "parent_id": "SS-PROOF",
+        "kind": "component",
+        "title": "Readiness command (ready/degraded/broken), adoption guide, v5\u2192v6 migration doc, worked non-money example",
+        "is_leaf": true
+      },
+      {
+        "node_id": "C-PLAN-EMIT",
+        "parent_id": "SS-AUTHORITY",
+        "kind": "component",
+        "title": "Strict-int schema-3 fizzy-plan.json emission + self_check_plan (mirrors Fizzy codes); state authority fizzy-plan.json",
+        "is_leaf": true
+      }
+    ],
+    "responsibility_rows": [
+      {
+        "responsibility_id": "R-1",
+        "stimulus": "tests-pseudo annotations (Outcome/Caller/Proof target)",
+        "input": "annotated test prose",
+        "output": "TMR target_binding at the record's maturity",
+        "state_authority": "tmr-registry.json (skill)",
+        "effect_authority": "none",
+        "failure_authority": "compile diagnostic (missing-target, duplicate id)",
+        "evidence_refs": [
+          "packet 03 \u00a72",
+          "tests-pseudo TC-1.0, TC-2.0-2.2"
+        ]
+      },
+      {
+        "responsibility_id": "R-2",
+        "stimulus": "keystone edit",
+        "input": "canonical keystone .md",
+        "output": "machine schema + pinned sha + provenance order",
+        "state_authority": "Brainquarters keystone file (external) mirrored by tmr_schema.py",
+        "effect_authority": "none",
+        "failure_authority": "SchemaSnapshotDriftError / AC-1 order test",
+        "evidence_refs": [
+          "tmr_schema.py KEYSTONE_SCHEMA_SHA256",
+          "TC-1.4"
+        ]
+      },
+      {
+        "responsibility_id": "R-3",
+        "stimulus": "record validated",
+        "input": "TMR record",
+        "output": "tmr_record_hash over 2b projection incl. expected target fields (OQ-1)",
+        "state_authority": "computed, never trusted from input",
+        "effect_authority": "none",
+        "failure_authority": "verify_tmr_record_hash",
+        "evidence_refs": [
+          "keystone \u00a72b",
+          "TC-1.3"
+        ]
+      },
+      {
+        "responsibility_id": "R-4",
+        "stimulus": "promotion request",
+        "input": "fixture_provenance declarations per replaced boundary",
+        "output": "ceiling verdict FIXTURE_PROVENANCE_CEILING or none; lexical scan advisory",
+        "state_authority": "none",
+        "effect_authority": "none",
+        "failure_authority": "promotion verdict",
+        "evidence_refs": [
+          "TC-6.0-6.2",
+          "packet 05 ASP-HARDEN-012"
+        ]
+      },
+      {
+        "responsibility_id": "R-5",
+        "stimulus": "runner executes the bound command",
+        "input": "command, cwd, env",
+        "output": "target_observation + runtime receipt (PID, start time, hashes)",
+        "state_authority": "run_evidence receipt (runner)",
+        "effect_authority": "executes real commands on the proof host",
+        "failure_authority": "runner exit/timeout",
+        "evidence_refs": [
+          "phase8_promotion.capture_run_evidence",
+          "TC-5.0, TC-5.3"
+        ]
+      },
+      {
+        "responsibility_id": "R-6",
+        "stimulus": "receipt presented",
+        "input": "binding + observation",
+        "output": "PROOF_*/RUNTIME_IDENTITY_INCOMPLETE/TERMINAL_ENUM_UNCOVERED or match; freshness 24h + ref/hash-change invalidation",
+        "state_authority": "none",
+        "effect_authority": "none",
+        "failure_authority": "promotion verdict",
+        "evidence_refs": [
+          "TC-5.1-5.5",
+          "OQ-7"
+        ]
+      },
+      {
+        "responsibility_id": "R-7",
+        "stimulus": "Phase 4 / D0 structural facts",
+        "input": "component change description, callers, runtimes",
+        "output": "authority-paths.json (or triggered:false + rationale) with discovery scope; fingerprint hash",
+        "state_authority": "authority-paths.json",
+        "effect_authority": "none",
+        "failure_authority": "validate_authority_paths (PROOF_PATH_UNCENSUSED, PREDECESSOR_NEGATIVE_PROOF_MISSING)",
+        "evidence_refs": [
+          "schemas/authority-paths.schema.json",
+          "TC-3.0-3.3"
+        ]
+      },
+      {
+        "responsibility_id": "R-8",
+        "stimulus": "census current\u2192target delta",
+        "input": "authority-paths.json",
+        "output": "cutover obligation nodes (8 kinds) with reviewed not_applicable; consumer task per caller; schedule postcondition",
+        "state_authority": "dependency-semantics.json",
+        "effect_authority": "none",
+        "failure_authority": "SCHEDULE_POSTCONDITION_FAILED / D1 gate",
+        "evidence_refs": [
+          "dependency_semantics.py",
+          "TC-4.0-4.4"
+        ]
+      },
+      {
+        "responsibility_id": "R-9",
+        "stimulus": "plan assembled",
+        "input": "tasks + obligations",
+        "output": "fizzy-plan.json schema 3 with int discriminator; self-check codes",
+        "state_authority": "fizzy-plan.json",
+        "effect_authority": "none",
+        "failure_authority": "self_check_plan (PLAN_SCHEMA_VERSION_TYPE_INVALID, WRONG_SCHEMA_VERSION)",
+        "evidence_refs": [
+          "mini_spec_emission.py (abe2040)",
+          "TC-4.2"
+        ]
+      },
+      {
+        "responsibility_id": "R-10",
+        "stimulus": "creation of a worktree/branch/clone/release/pointer/override REQUESTED by the pipeline; admission verdict precedes the host effect (C-16)",
+        "input": "custody event",
+        "output": "ledger row; budget admission by projected total; dispositions; close report",
+        "state_authority": "custody-ledger.jsonl",
+        "effect_authority": "none (never deletes)",
+        "failure_authority": "validate_custody_close (CUSTODY_* codes)",
+        "evidence_refs": [
+          "schemas/custody-ledger-entry.schema.json",
+          "TC-7.0-7.6"
+        ]
+      },
+      {
+        "responsibility_id": "R-11",
+        "stimulus": "removal requested",
+        "input": "row + inventory + runtime dependency + recovery ref + authorization",
+        "output": "preview verdict (never an action)",
+        "state_authority": "none",
+        "effect_authority": "none (execution is out of scope)",
+        "failure_authority": "CUSTODY_DESTRUCTIVE_PREVIEW_INCOMPLETE",
+        "evidence_refs": [
+          "TC-7.5",
+          "packet 04 \u00a72.4"
+        ]
+      },
+      {
+        "responsibility_id": "R-12",
+        "stimulus": "session start after interruption",
+        "input": "surviving workspaces, partial receipts",
+        "output": "unreconciled list; dependent work blocked until dispositioned",
+        "state_authority": "none",
+        "effect_authority": "none",
+        "failure_authority": "reconciliation report",
+        "evidence_refs": [
+          "TC-14.0-14.1"
+        ]
+      },
+      {
+        "responsibility_id": "R-13",
+        "stimulus": "debate round / gauntlet dispatch",
+        "input": "spec + census + bound tests",
+        "output": "prompt text with route-identity questions; broker answers BLOCKED for cross-path requests",
+        "state_authority": "prompt files",
+        "effect_authority": "external model launches (existing seats only)",
+        "failure_authority": "critic return parse",
+        "evidence_refs": [
+          "03-debate.md guardrails",
+          "05-gauntlet.md broker",
+          "TC-8.0-8.2"
+        ]
+      },
+      {
+        "responsibility_id": "R-14",
+        "stimulus": "finalize",
+        "input": "obligations, bound suite, controls, synthesized diff, concern dispositions",
+        "output": "ORACLE verdict; TMR_TARGET_BINDING_REQUIRED; closure rejects; UNVALIDATED_ORACLE residue",
+        "state_authority": "finalize gate outputs",
+        "effect_authority": "none",
+        "failure_authority": "finalize gate",
+        "evidence_refs": [
+          "DECISIONS D-2/D-3",
+          "TC-9.0-9.3"
+        ]
+      },
+      {
+        "responsibility_id": "R-15",
+        "stimulus": "any gate evaluation",
+        "input": "session card metadata (created_at, pipeline_version)",
+        "output": "mode warn|reject|legacy; malformed \u2192 reject",
+        "state_authority": "none (reads Fizzy metadata)",
+        "effect_authority": "none",
+        "failure_authority": "fence resolver",
+        "evidence_refs": [
+          "RB-1 ruling",
+          "TC-11.0"
+        ]
+      },
+      {
+        "responsibility_id": "R-16",
+        "stimulus": "test run",
+        "input": "golden catalog + mutation matrix",
+        "output": "per-case observed codes; coverage of 22 codes",
+        "state_authority": "none",
+        "effect_authority": "none",
+        "failure_authority": "harness assertions",
+        "evidence_refs": [
+          "packet 05",
+          "TC-10.0-10.2"
+        ]
+      },
+      {
+        "responsibility_id": "R-17",
+        "stimulus": "any reject",
+        "input": "code + context",
+        "output": "the single typed catalog every gate imports",
+        "state_authority": "reject-code module",
+        "effect_authority": "none",
+        "failure_authority": "import-time enum check",
+        "evidence_refs": [
+          "packet 03 \u00a75 (22 codes)",
+          "TC-10.2"
+        ]
+      },
+      {
+        "responsibility_id": "R-18",
+        "stimulus": "reject emitted",
+        "input": "code, expected, observed, evidence class",
+        "output": "recovery payload: obligation, expected vs observed, missing vs mismatch, next actor, permitted recovery",
+        "state_authority": "none",
+        "effect_authority": "none",
+        "failure_authority": "payload schema",
+        "evidence_refs": [
+          "TC-13.0-13.2"
+        ]
+      },
+      {
+        "responsibility_id": "R-19",
+        "stimulus": "new maintainer",
+        "input": "checkout + sibling keystone",
+        "output": "ready/degraded/broken with named remediation; never repairs",
+        "state_authority": "none",
+        "effect_authority": "none",
+        "failure_authority": "probe report",
+        "evidence_refs": [
+          "TC-0.0-0.1"
+        ]
+      },
+      {
+        "responsibility_id": "R-20",
+        "stimulus": "downstream adoption",
+        "input": "v5 project",
+        "output": "adoption guide, migration path, CTRL-002 example",
+        "state_authority": "docs",
+        "effect_authority": "none",
+        "failure_authority": "TC-16.x in the next v6 session",
+        "evidence_refs": [
+          "TC-16.0-16.1"
+        ]
+      },
+      {
+        "responsibility_id": "R-21",
+        "stimulus": "observation captured",
+        "input": "target_observation block",
+        "output": "CodeRunEvidence schema extension carried in the keystone",
+        "state_authority": "keystone mirror",
+        "effect_authority": "none",
+        "failure_authority": "schema validation",
+        "evidence_refs": [
+          "packet 03 \u00a74",
+          "TC-5.0"
+        ]
+      }
+    ],
+    "allocation": [
+      {
+        "responsibility_id": "R-1",
+        "node_id": "C-BINDING-COMPILE"
+      },
+      {
+        "responsibility_id": "R-2",
+        "node_id": "C-TMR-CONTRACT"
+      },
+      {
+        "responsibility_id": "R-3",
+        "node_id": "C-TMR-CONTRACT"
+      },
+      {
+        "responsibility_id": "R-4",
+        "node_id": "C-PROMOTION-COMPARE"
+      },
+      {
+        "responsibility_id": "R-5",
+        "node_id": "C-OBS-CAPTURE"
+      },
+      {
+        "responsibility_id": "R-6",
+        "node_id": "C-PROMOTION-COMPARE"
+      },
+      {
+        "responsibility_id": "R-7",
+        "node_id": "C-CENSUS"
+      },
+      {
+        "responsibility_id": "R-8",
+        "node_id": "C-CUTOVER-OBLIGATIONS"
+      },
+      {
+        "responsibility_id": "R-9",
+        "node_id": "C-PLAN-EMIT"
+      },
+      {
+        "responsibility_id": "R-10",
+        "node_id": "C-CUSTODY-LEDGER"
+      },
+      {
+        "responsibility_id": "R-11",
+        "node_id": "C-CUSTODY-RECONCILE"
+      },
+      {
+        "responsibility_id": "R-12",
+        "node_id": "C-CUSTODY-RECONCILE"
+      },
+      {
+        "responsibility_id": "R-13",
+        "node_id": "C-CRITIC-PROMPTS"
+      },
+      {
+        "responsibility_id": "R-14",
+        "node_id": "C-FINALIZE-ORACLE"
+      },
+      {
+        "responsibility_id": "R-15",
+        "node_id": "C-GATE-POLICY"
+      },
+      {
+        "responsibility_id": "R-16",
+        "node_id": "C-GOLDEN-HARNESS"
+      },
+      {
+        "responsibility_id": "R-17",
+        "node_id": "C-GATE-POLICY"
+      },
+      {
+        "responsibility_id": "R-18",
+        "node_id": "C-PROMOTION-COMPARE"
+      },
+      {
+        "responsibility_id": "R-19",
+        "node_id": "C-BOOTSTRAP-ADOPT"
+      },
+      {
+        "responsibility_id": "R-20",
+        "node_id": "C-BOOTSTRAP-ADOPT"
+      },
+      {
+        "responsibility_id": "R-21",
+        "node_id": "C-TMR-CONTRACT"
+      }
+    ],
+    "responsibility_edges": [
+      {
+        "edge_id": "E-1",
+        "from_node": "C-TMR-CONTRACT",
+        "to_node": "C-BINDING-COMPILE",
+        "classification": "CUT",
+        "boundary_kind": "protocol",
+        "evidence": "TargetProofBinding is an independently versioned, sha-pinned cross-repo contract (keystone header; binding_version const 1); compile consumes it, never defines it."
+      },
+      {
+        "edge_id": "E-2",
+        "from_node": "C-TMR-CONTRACT",
+        "to_node": "C-PROMOTION-COMPARE",
+        "classification": "CUT",
+        "boundary_kind": "protocol",
+        "evidence": "target_observation block rides CodeRunEvidence, versioned with the keystone (packet 03 \u00a74); promotion parses, never authors the shape."
+      },
+      {
+        "edge_id": "E-3",
+        "from_node": "C-GATE-POLICY",
+        "to_node": "C-PROMOTION-COMPARE",
+        "classification": "CUT",
+        "boundary_kind": "none",
+        "evidence": "Parnas cut: the reject-code catalog, fence, and freshness constants change independently of comparison logic (RB-1, OQ-7 rulings changed them without touching validators)."
+      },
+      {
+        "edge_id": "E-4",
+        "from_node": "C-GATE-POLICY",
+        "to_node": "C-FINALIZE-ORACLE",
+        "classification": "CUT",
+        "boundary_kind": "none",
+        "evidence": "Same catalog/fence dependency as E-3; finalize imports codes and mode, defines neither."
+      },
+      {
+        "edge_id": "E-5",
+        "from_node": "C-GATE-POLICY",
+        "to_node": "C-CUSTODY-LEDGER",
+        "classification": "CUT",
+        "boundary_kind": "none",
+        "evidence": "Custody codes and budget constants are catalog entries; CUSTODY_BUDGET_BREACH was added 2026-09-14 without ledger logic changing."
+      },
+      {
+        "edge_id": "E-6",
+        "from_node": "C-GATE-POLICY",
+        "to_node": "C-PLAN-EMIT",
+        "classification": "CUT",
+        "boundary_kind": "none",
+        "evidence": "self_check_plan mirrors Fizzy's PLAN_SCHEMA_VERSION_TYPE_INVALID from the catalog (abe2040). Consumer is the emitter's self-check (C-1 split)."
+      },
+      {
+        "edge_id": "E-7",
+        "from_node": "C-OBS-CAPTURE",
+        "to_node": "C-PROMOTION-COMPARE",
+        "classification": "CUT",
+        "boundary_kind": "trust",
+        "evidence": "The owner cannot author observations; runner receipts are the trusted side (packet 03 \u00a74 'produced by the runner'; TC-5.3 owner-authored rejected)."
+      },
+      {
+        "edge_id": "E-8",
+        "from_node": "C-BINDING-COMPILE",
+        "to_node": "C-PROMOTION-COMPARE",
+        "classification": "CUT",
+        "boundary_kind": "state",
+        "evidence": "tmr-registry.json is compile's state authority; promotion reads validated records and never writes bindings (tmr_compile_step.py owns the registry)."
+      },
+      {
+        "edge_id": "E-9",
+        "from_node": "C-CENSUS",
+        "to_node": "C-CUTOVER-OBLIGATIONS",
+        "classification": "CUT",
+        "boundary_kind": "state",
+        "evidence": "authority-paths.json is census state hashed into the architecture fingerprint; cutover planning consumes the current\u2192target delta (packet 04 \u00a72.2-2.3)."
+      },
+      {
+        "edge_id": "E-10",
+        "from_node": "C-CUTOVER-OBLIGATIONS",
+        "to_node": "C-CUSTODY-LEDGER",
+        "classification": "CUT",
+        "boundary_kind": "state",
+        "evidence": "Phase 7 creates the custody budget and expected rows (packet 04 \u00a73 Phase 7); the ledger is the state authority for rows."
+      },
+      {
+        "edge_id": "E-11",
+        "from_node": "C-CUSTODY-LEDGER",
+        "to_node": "C-CUSTODY-RECONCILE",
+        "classification": "CUT",
+        "boundary_kind": "failure-authority",
+        "evidence": "Removal-preview validation is a distinct FAILURE authority (verdict only; execution out of scope per R-11) from ledger accounting; C-3 corrected the kind from effect to failure-authority."
+      },
+      {
+        "edge_id": "E-12",
+        "from_node": "C-OBS-CAPTURE",
+        "to_node": "C-CUSTODY-RECONCILE",
+        "classification": "CUT",
+        "boundary_kind": "state",
+        "evidence": "Receipt authority is the runner (R-5); reconciliation reads partial/absent receipts at session start and must not infer a result (TC-14.1). Direction corrected per C-4."
+      },
+      {
+        "edge_id": "E-13",
+        "from_node": "C-BINDING-COMPILE",
+        "to_node": "C-FINALIZE-ORACLE",
+        "classification": "CUT",
+        "boundary_kind": "state",
+        "evidence": "ORACLE consumes bound obligations from the registry; it never edits bindings (DECISIONS D-2)."
+      },
+      {
+        "edge_id": "E-14",
+        "from_node": "C-CRITIC-PROMPTS",
+        "to_node": "C-FINALIZE-ORACLE",
+        "classification": "CUT",
+        "boundary_kind": "none",
+        "evidence": "Parnas cut: prompt text changes per model generation; oracle logic is code (D-2 table: guardrail prompts vs mechanical predicates)."
+      },
+      {
+        "edge_id": "E-15",
+        "from_node": "C-CENSUS",
+        "to_node": "C-CRITIC-PROMPTS",
+        "classification": "CUT",
+        "boundary_kind": "state",
+        "evidence": "Census is supplied read-only to seats (packet 04 \u00a73 Phase 5); seats cannot mutate it; the broker answers per path."
+      },
+      {
+        "edge_id": "E-16",
+        "from_node": "C-GATE-POLICY",
+        "to_node": "C-GOLDEN-HARNESS",
+        "classification": "CUT",
+        "boundary_kind": "none",
+        "evidence": "The harness consumes the policy-owned enum to measure catalog coverage (TC-10.2); direction corrected per C-5."
+      },
+      {
+        "edge_id": "E-17",
+        "from_node": "C-GOLDEN-HARNESS",
+        "to_node": "C-PROMOTION-COMPARE",
+        "classification": "CUT",
+        "boundary_kind": "protocol",
+        "evidence": "Harness calls the validator's public surface (fixture \u2192 codes) only; E.4 rule: every test runs against every candidate unmodified."
+      },
+      {
+        "edge_id": "E-18",
+        "from_node": "C-GOLDEN-HARNESS",
+        "to_node": "C-CENSUS",
+        "classification": "CUT",
+        "boundary_kind": "protocol",
+        "evidence": "Same public-surface contract as E-17 for validate_authority_paths."
+      },
+      {
+        "edge_id": "E-19",
+        "from_node": "C-GOLDEN-HARNESS",
+        "to_node": "C-CUTOVER-OBLIGATIONS",
+        "classification": "CUT",
+        "boundary_kind": "protocol",
+        "evidence": "Same for build_cutover_obligations / self_check_plan."
+      },
+      {
+        "edge_id": "E-20",
+        "from_node": "C-GOLDEN-HARNESS",
+        "to_node": "C-CUSTODY-LEDGER",
+        "classification": "CUT",
+        "boundary_kind": "protocol",
+        "evidence": "Same for validate_custody_close."
+      },
+      {
+        "edge_id": "E-21",
+        "from_node": "C-BOOTSTRAP-ADOPT",
+        "to_node": "C-TMR-CONTRACT",
+        "classification": "CUT",
+        "boundary_kind": "none",
+        "evidence": "Readiness probes the sha tripwire read-only and never repairs (TC-0.1); docs/CLI change independently of the contract."
+      },
+      {
+        "edge_id": "E-22",
+        "from_node": "C-BOOTSTRAP-ADOPT",
+        "to_node": "C-GOLDEN-HARNESS",
+        "classification": "CUT",
+        "boundary_kind": "none",
+        "evidence": "Readiness runs the targeted suites as a control edge; harness content changes independently."
+      },
+      {
+        "edge_id": "E-23",
+        "from_node": "C-PROMOTION-COMPARE",
+        "to_node": "C-PROMOTION-COMPARE",
+        "classification": "NO_CUT",
+        "boundary_kind": "none",
+        "evidence": "R-4 provenance, R-6 comparison, R-18 diagnostics share one failure authority (the promotion verdict) and one input (the receipt); no state/effect/trust boundary between them."
+      },
+      {
+        "edge_id": "E-24",
+        "from_node": "C-CUSTODY-LEDGER",
+        "to_node": "C-CUSTODY-LEDGER",
+        "classification": "NO_CUT",
+        "boundary_kind": "none",
+        "evidence": "R-10 rows, budget, dispositions, close all write the same ledger under one lock; splitting would create two state authorities for one file."
+      },
+      {
+        "edge_id": "E-25",
+        "from_node": "C-CUTOVER-OBLIGATIONS",
+        "to_node": "C-PLAN-EMIT",
+        "classification": "CUT",
+        "boundary_kind": "state",
+        "evidence": "C-1: dependency-semantics.json (R-8) and fizzy-plan.json (R-9) are two state authorities; D0.2 split rule. Obligations are produced first and consumed by emission."
+      },
+      {
+        "edge_id": "E-26",
+        "from_node": "C-CENSUS",
+        "to_node": "C-CENSUS",
+        "classification": "NO_CUT",
+        "boundary_kind": "none",
+        "evidence": "R-7 trigger evaluation and census authoring/validation are one artifact's lifecycle."
+      },
+      {
+        "edge_id": "E-27",
+        "from_node": "C-CUSTODY-RECONCILE",
+        "to_node": "C-CUSTODY-RECONCILE",
+        "classification": "NO_CUT",
+        "boundary_kind": "none",
+        "evidence": "R-11 preview and R-12 reconciliation both decide 'may dependent work proceed' over the same rows; one effect authority."
+      },
+      {
+        "edge_id": "E-28",
+        "from_node": "C-BINDING-COMPILE",
+        "to_node": "C-CUTOVER-OBLIGATIONS",
+        "classification": "CUT",
+        "boundary_kind": "state",
+        "evidence": "C-6: Phase 7 projects TMR target bindings into task verification metadata (packet 04 section 3 Phase 7); registry is compile's state."
+      },
+      {
+        "edge_id": "E-29",
+        "from_node": "C-BINDING-COMPILE",
+        "to_node": "C-CRITIC-PROMPTS",
+        "classification": "CUT",
+        "boundary_kind": "state",
+        "evidence": "C-7: seats receive target-bound tests (packet 04 section 3 Phase 5, line 145); registry state supplied read-only."
+      },
+      {
+        "edge_id": "E-30",
+        "from_node": "C-CENSUS",
+        "to_node": "C-FINALIZE-ORACLE",
+        "classification": "CUT",
+        "boundary_kind": "state",
+        "evidence": "C-8: active-vs-legacy classification must link to the census path role (packet 04 section 3 Phase 6)."
+      },
+      {
+        "edge_id": "E-31",
+        "from_node": "C-TMR-CONTRACT",
+        "to_node": "C-OBS-CAPTURE",
+        "classification": "CUT",
+        "boundary_kind": "protocol",
+        "evidence": "C-9: the runner emits the versioned CodeRunEvidence.target_observation payload (tmr_schema.py CodeRunEvidence); the contract must reach the producer, not only the consumer."
+      },
+      {
+        "edge_id": "E-32",
+        "from_node": "C-GATE-POLICY",
+        "to_node": "C-CENSUS",
+        "classification": "CUT",
+        "boundary_kind": "none",
+        "evidence": "C-10: validate_authority_paths emits catalog codes (roadmap architecture_impact.consumed_by)."
+      },
+      {
+        "edge_id": "E-33",
+        "from_node": "C-GATE-POLICY",
+        "to_node": "C-CUSTODY-RECONCILE",
+        "classification": "CUT",
+        "boundary_kind": "none",
+        "evidence": "C-11: preview validation emits CUSTODY_DESTRUCTIVE_PREVIEW_INCOMPLETE from the catalog."
+      },
+      {
+        "edge_id": "E-34",
+        "from_node": "C-GOLDEN-HARNESS",
+        "to_node": "C-FINALIZE-ORACLE",
+        "classification": "CUT",
+        "boundary_kind": "protocol",
+        "evidence": "C-12: ASP-HARDEN-002 replays against the finalize-owned assertion-vs-schema validator (packet 04 section 5.3)."
+      },
+      {
+        "edge_id": "E-35",
+        "from_node": "C-GOLDEN-HARNESS",
+        "to_node": "C-PLAN-EMIT",
+        "classification": "CUT",
+        "boundary_kind": "protocol",
+        "evidence": "C-1 follow-on: self_check_plan corpus (ASP-HARDEN-009/010) runs against the emitter's public surface."
+      }
+    ],
+    "interface_records": [
+      {
+        "edge_id": "E-1",
+        "producer_node": "C-TMR-CONTRACT",
+        "consumer_node": "C-BINDING-COMPILE",
+        "interface_type": "data",
+        "interface_hash": "sha256:5551333d63b96525",
+        "contract": "TargetProofBinding v1 (15 fields, progressive by maturity); consumer rejects unknown keys",
+        "contract_test_id": "TC-1.0",
+        "owner": "C-TMR-CONTRACT",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-2",
+        "producer_node": "C-TMR-CONTRACT",
+        "consumer_node": "C-PROMOTION-COMPARE",
+        "interface_type": "data",
+        "interface_hash": "sha256:18319cb533d7209c",
+        "contract": "CodeRunEvidence.target_observation block; runner-only provenance fields",
+        "contract_test_id": "TC-5.0",
+        "owner": "C-TMR-CONTRACT",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-3",
+        "producer_node": "C-GATE-POLICY",
+        "consumer_node": "C-PROMOTION-COMPARE",
+        "interface_type": "data",
+        "interface_hash": "sha256:0159c2cd0d87c30b",
+        "contract": "reject-code enum (22) + fence mode + FRESHNESS_WINDOW=24h",
+        "contract_test_id": "TC-11.0,TC-5.4",
+        "owner": "C-GATE-POLICY",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-4",
+        "producer_node": "C-GATE-POLICY",
+        "consumer_node": "C-FINALIZE-ORACLE",
+        "interface_type": "data",
+        "interface_hash": "sha256:e563eb627fc2a789",
+        "contract": "reject-code enum + fence mode",
+        "contract_test_id": "TC-9.1",
+        "owner": "C-GATE-POLICY",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-5",
+        "producer_node": "C-GATE-POLICY",
+        "consumer_node": "C-CUSTODY-LEDGER",
+        "interface_type": "data",
+        "interface_hash": "sha256:77ea153b259eba35",
+        "contract": "custody codes + budget constants",
+        "contract_test_id": "TC-7.2",
+        "owner": "C-GATE-POLICY",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-6",
+        "producer_node": "C-GATE-POLICY",
+        "consumer_node": "C-PLAN-EMIT",
+        "interface_type": "data",
+        "interface_hash": "sha256:bae14e9d97434223",
+        "contract": "PLAN_SCHEMA_VERSION_TYPE_INVALID / WRONG_SCHEMA_VERSION semantics",
+        "contract_test_id": "TC-4.2",
+        "owner": "C-GATE-POLICY",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-7",
+        "producer_node": "C-OBS-CAPTURE",
+        "consumer_node": "C-PROMOTION-COMPARE",
+        "interface_type": "data",
+        "interface_hash": "sha256:89c79bcfd46ac7cf",
+        "contract": "runner receipt: runtime_receipt_id, pid, pid_start_time, observed caller/path/authority/hashes; owner fields ignored",
+        "contract_test_id": "TC-5.3",
+        "owner": "C-OBS-CAPTURE",
+        "retry": "none",
+        "timeout": "1800s runner"
+      },
+      {
+        "edge_id": "E-8",
+        "producer_node": "C-BINDING-COMPILE",
+        "consumer_node": "C-PROMOTION-COMPARE",
+        "interface_type": "data",
+        "interface_hash": "sha256:f271d65df7a00df4",
+        "contract": "validated TMR records with target_binding_status",
+        "contract_test_id": "TC-1.2",
+        "owner": "C-BINDING-COMPILE",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-9",
+        "producer_node": "C-CENSUS",
+        "consumer_node": "C-CUTOVER-OBLIGATIONS",
+        "interface_type": "data",
+        "interface_hash": "sha256:83522fadb037afd0",
+        "contract": "authority-paths.json current\u2192target delta with disposition per path",
+        "contract_test_id": "TC-4.0",
+        "owner": "C-CENSUS",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-10",
+        "producer_node": "C-CUTOVER-OBLIGATIONS",
+        "consumer_node": "C-CUSTODY-LEDGER",
+        "interface_type": "data",
+        "interface_hash": "sha256:5343de544b3283cb",
+        "contract": "custody budget + expected rows produced by planning and consumed by the ledger; dropped/corrupted plan budget is a reject",
+        "contract_test_id": "TC-7.7",
+        "owner": "C-CUTOVER-OBLIGATIONS",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-11",
+        "producer_node": "C-CUSTODY-LEDGER",
+        "consumer_node": "C-CUSTODY-RECONCILE",
+        "interface_type": "control",
+        "interface_hash": "sha256:3abb3c88829ff618",
+        "contract": "rows \u2192 preview verdict; verdict never executes",
+        "contract_test_id": "TC-7.5",
+        "owner": "C-CUSTODY-LEDGER",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-12",
+        "producer_node": "C-OBS-CAPTURE",
+        "consumer_node": "C-CUSTODY-RECONCILE",
+        "interface_type": "data",
+        "interface_hash": "sha256:116c7e1b609fd9df",
+        "contract": "runner receipts (present, partial, absent) read at session start; absent/partial carry no result",
+        "contract_test_id": "TC-14.1",
+        "owner": "C-OBS-CAPTURE",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-13",
+        "producer_node": "C-BINDING-COMPILE",
+        "consumer_node": "C-FINALIZE-ORACLE",
+        "interface_type": "data",
+        "interface_hash": "sha256:2eb6081352d30d14",
+        "contract": "obligation\u2194test bijection input",
+        "contract_test_id": "TC-9.1",
+        "owner": "C-BINDING-COMPILE",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-14",
+        "producer_node": "C-CRITIC-PROMPTS",
+        "consumer_node": "C-FINALIZE-ORACLE",
+        "interface_type": "data",
+        "interface_hash": "sha256:1b247638942746f9",
+        "contract": "critic findings + concern dispositions reaching finalize; closure requires enforcing test + proof target",
+        "contract_test_id": "TC-9.2",
+        "owner": "C-CRITIC-PROMPTS",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-15",
+        "producer_node": "C-CENSUS",
+        "consumer_node": "C-CRITIC-PROMPTS",
+        "interface_type": "data",
+        "interface_hash": "sha256:7e46533c2540b3e3",
+        "contract": "census supplied read-only to seats; missing/corrupted census -> broker BLOCKED with reason",
+        "contract_test_id": "TC-8.1",
+        "owner": "C-CENSUS",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-16",
+        "producer_node": "C-GATE-POLICY",
+        "consumer_node": "C-GOLDEN-HARNESS",
+        "interface_type": "data",
+        "interface_hash": "sha256:7c42ac9c161e5429",
+        "contract": "policy-owned reject-code enum consumed for catalog coverage",
+        "contract_test_id": "TC-10.2",
+        "owner": "C-GATE-POLICY",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-17",
+        "producer_node": "C-GOLDEN-HARNESS",
+        "consumer_node": "C-PROMOTION-COMPARE",
+        "interface_type": "control",
+        "interface_hash": "sha256:e9b12b36ac02ffad",
+        "contract": "validator(fixture) \u2192 codes, pure",
+        "contract_test_id": "TC-10.0",
+        "owner": "C-GOLDEN-HARNESS",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-18",
+        "producer_node": "C-GOLDEN-HARNESS",
+        "consumer_node": "C-CENSUS",
+        "interface_type": "control",
+        "interface_hash": "sha256:3d0cca44efb8d9bb",
+        "contract": "validate_authority_paths(fixture) \u2192 codes, pure",
+        "contract_test_id": "TC-3.2",
+        "owner": "C-GOLDEN-HARNESS",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-19",
+        "producer_node": "C-GOLDEN-HARNESS",
+        "consumer_node": "C-CUTOVER-OBLIGATIONS",
+        "interface_type": "control",
+        "interface_hash": "sha256:6241b3c8564bf8e3",
+        "contract": "build_cutover_obligations(fixture) -> codes, pure",
+        "contract_test_id": "TC-4.3",
+        "owner": "C-GOLDEN-HARNESS",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-20",
+        "producer_node": "C-GOLDEN-HARNESS",
+        "consumer_node": "C-CUSTODY-LEDGER",
+        "interface_type": "control",
+        "interface_hash": "sha256:93764e3c38756ab4",
+        "contract": "validate_custody_close(rows) \u2192 unresolved rows, pure, no fs writes",
+        "contract_test_id": "TC-7.1",
+        "owner": "C-GOLDEN-HARNESS",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-21",
+        "producer_node": "C-BOOTSTRAP-ADOPT",
+        "consumer_node": "C-TMR-CONTRACT",
+        "interface_type": "control",
+        "interface_hash": "sha256:185d3c395343f510",
+        "contract": "assert_keystone_mirror_current read-only probe",
+        "contract_test_id": "TC-0.1",
+        "owner": "C-BOOTSTRAP-ADOPT",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-22",
+        "producer_node": "C-BOOTSTRAP-ADOPT",
+        "consumer_node": "C-GOLDEN-HARNESS",
+        "interface_type": "temporal",
+        "interface_hash": "sha256:81e65ce74a364505",
+        "contract": "readiness runs targeted suites; bounded 5 min",
+        "contract_test_id": "TC-0.0",
+        "owner": "C-BOOTSTRAP-ADOPT",
+        "retry": "1 (re-run once)",
+        "timeout": "300s"
+      },
+      {
+        "edge_id": "E-25",
+        "producer_node": "C-CUTOVER-OBLIGATIONS",
+        "consumer_node": "C-PLAN-EMIT",
+        "interface_type": "data",
+        "interface_hash": "sha256:00e514a82b40b266",
+        "contract": "cutover obligations (dependency-semantics.json) -> plan tasks; every node a task or reviewed not_applicable",
+        "contract_test_id": "TC-4.0",
+        "owner": "C-CUTOVER-OBLIGATIONS",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-28",
+        "producer_node": "C-BINDING-COMPILE",
+        "consumer_node": "C-CUTOVER-OBLIGATIONS",
+        "interface_type": "data",
+        "interface_hash": "sha256:7b67385a760ca364",
+        "contract": "TMR target bindings projected into task verification metadata",
+        "contract_test_id": "TC-4.0",
+        "owner": "C-BINDING-COMPILE",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-29",
+        "producer_node": "C-BINDING-COMPILE",
+        "consumer_node": "C-CRITIC-PROMPTS",
+        "interface_type": "data",
+        "interface_hash": "sha256:2d1d76b1dc307c7e",
+        "contract": "target-bound tests supplied to critic seats",
+        "contract_test_id": "TC-8.0",
+        "owner": "C-BINDING-COMPILE",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-30",
+        "producer_node": "C-CENSUS",
+        "consumer_node": "C-FINALIZE-ORACLE",
+        "interface_type": "data",
+        "interface_hash": "sha256:7c1881d1e398156c",
+        "contract": "census path roles for active-vs-legacy classification",
+        "contract_test_id": "TC-9.2",
+        "owner": "C-CENSUS",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-31",
+        "producer_node": "C-TMR-CONTRACT",
+        "consumer_node": "C-OBS-CAPTURE",
+        "interface_type": "data",
+        "interface_hash": "sha256:d917e099ec373952",
+        "contract": "CodeRunEvidence.target_observation producer contract (runner side)",
+        "contract_test_id": "TC-5.0",
+        "owner": "C-TMR-CONTRACT",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-32",
+        "producer_node": "C-GATE-POLICY",
+        "consumer_node": "C-CENSUS",
+        "interface_type": "data",
+        "interface_hash": "sha256:0a4dcfaf99fc65c1",
+        "contract": "reject-code enum for census validation",
+        "contract_test_id": "TC-3.2",
+        "owner": "C-GATE-POLICY",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-33",
+        "producer_node": "C-GATE-POLICY",
+        "consumer_node": "C-CUSTODY-RECONCILE",
+        "interface_type": "data",
+        "interface_hash": "sha256:3d34ff2b9dbdb411",
+        "contract": "reject-code enum for preview validation",
+        "contract_test_id": "TC-7.5",
+        "owner": "C-GATE-POLICY",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-34",
+        "producer_node": "C-GOLDEN-HARNESS",
+        "consumer_node": "C-FINALIZE-ORACLE",
+        "interface_type": "control",
+        "interface_hash": "sha256:2d36ce5450636f2c",
+        "contract": "assertion-vs-schema validator(fixture) -> codes, pure",
+        "contract_test_id": "TC-9.3",
+        "owner": "C-GOLDEN-HARNESS",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      },
+      {
+        "edge_id": "E-35",
+        "producer_node": "C-GOLDEN-HARNESS",
+        "consumer_node": "C-PLAN-EMIT",
+        "interface_type": "control",
+        "interface_hash": "sha256:53b1de50fc98fe90",
+        "contract": "self_check_plan(fixture) -> codes, pure",
+        "contract_test_id": "TC-4.2",
+        "owner": "C-GOLDEN-HARNESS",
+        "retry": "none",
+        "timeout": "n/a (in-process)"
+      }
+    ],
+    "boundary_unknowns": [
+      {
+        "unknown_id": "U-1",
+        "question": "Does Fizzy carry a TMR code mirror the keystone step-2 change must sync?",
+        "blocking_edges": [
+          "E-1",
+          "E-2"
+        ]
+      },
+      {
+        "unknown_id": "U-2",
+        "question": "Can the runner read process start time on the proof host for stale-receipt detection?",
+        "blocking_edges": [
+          "E-7"
+        ]
+      },
+      {
+        "unknown_id": "U-3",
+        "question": "Do Fizzy validate and load share one discriminator parser (parity by construction) or two expressions?",
+        "blocking_edges": [
+          "E-6"
+        ]
+      },
+      {
+        "unknown_id": "U-4",
+        "question": "Does adding expected target fields to the tmr_record_hash projection (OQ-1) invalidate any stamped hash on disk?",
+        "blocking_edges": [
+          "E-8",
+          "E-13"
+        ]
+      },
+      {
+        "unknown_id": "U-5",
+        "question": "Does the agy tripwire snapshot scope include hook-owned logs, making critic dispatch flaky?",
+        "blocking_edges": [
+          "E-15"
+        ]
+      }
+    ],
+    "seam_probes": [
+      {
+        "probe_id": "P-1",
+        "unknown_id": "U-1",
+        "status": "RESOLVED",
+        "budget": "10m",
+        "observation": "grep -rln 'tmr_uid|TestMaturityRecord|negative_oracle' fizzy-pipeline-mcp/src",
+        "evidence": "0 hits (2026-09-14). No code mirror; OQ-4 rules Fizzy validates plan/metadata contracts only. Constraint on E-1/E-2: 'field-for-field' is prose-only on the Fizzy side; TC-15.0 owns the ownership table."
+      },
+      {
+        "probe_id": "P-2",
+        "unknown_id": "U-2",
+        "status": "RESOLVED",
+        "budget": "5m",
+        "observation": "awk '{print $22}' /proc/self/stat; getconf CLK_TCK; uname -r",
+        "evidence": "starttime_ticks=13459509, CLK_TCK=100, Linux 5.15.0-191 (2026-09-15). Start time is available via procfs; constraint on E-7: v1 receipts are Linux-only, non-Linux hosts record pid_start_time null and fail RUNTIME_IDENTITY_INCOMPLETE rather than pass."
+      },
+      {
+        "probe_id": "P-3",
+        "unknown_id": "U-3",
+        "status": "RESOLVED",
+        "budget": "15m",
+        "observation": "git show 622bdec -- src/fizzy_pipeline_mcp/pipeline.py; pipeline.py:8636-8654",
+        "evidence": "validate rejects non-int with PLAN_SCHEMA_VERSION_TYPE_INVALID (type(raw) is not int); a second site classifies is_v2 with a duplicated 'type(...) is int and >= 2' expression (diff line 221). No shared parser: parity holds by duplication today. Constraint on E-6: TC-15.1 must exercise the corpus at both entry points; a shared parser is a Fizzy-owned follow-up."
+      },
+      {
+        "probe_id": "P-4",
+        "unknown_id": "U-4",
+        "status": "RESOLVED",
+        "budget": "5m",
+        "observation": "grep -rl '\"tmr_record_hash\": \"sha256' over every tmr-registry.json / registry.json in adversarial-spec, prediction-prime, fizzy-pipeline-mcp",
+        "evidence": "0 files (2026-09-15). No stamped hash exists on disk; the projection change needs no migration, only the keystone 2b edit and TC-1.3."
+      },
+      {
+        "probe_id": "P-5",
+        "unknown_id": "U-5",
+        "status": "RESOLVED",
+        "budget": "observed in-flight",
+        "observation": "incident .adversarial-spec/incidents/agy-mutation-20260915-010558, mutated-paths.txt",
+        "evidence": "Yes: the snapshot caught .claude/session-activity.jsonl appended by this session's hook. Constraint on E-15: no conductor tool calls during an agy dispatch window until the allowlist W-task lands (process-failures/2026-09-15-agy-tripwire-self-hook-false-positive.md)."
+      }
+    ],
+    "challenge": {
+      "status": "complete",
+      "challenger": "codex/gpt-6-astra@xhigh",
+      "dispatched_at": "2026-09-15T06:37:19Z",
+      "returned_at": "2026-09-15T06:37:19Z",
+      "report": "decomposition/challenge-codex-gpt-6-astra.json",
+      "candidates_returned": 20,
+      "accepted": [
+        "C-1 (leaf_spans_authority: E-25)",
+        "C-2 (wrong_allocation: E-1)",
+        "C-3 (misclassified_edge: E-11)",
+        "C-4 (interface_direction: E-12)",
+        "C-5 (interface_direction: E-16)",
+        "C-6 (omitted_edge: E-C6)",
+        "C-7 (omitted_edge: E-C7)",
+        "C-8 (omitted_edge: E-C8)",
+        "C-9 (omitted_edge: E-C9)",
+        "C-10 (omitted_edge: E-C10)",
+        "C-11 (omitted_edge: E-C11)",
+        "C-12 (omitted_edge: E-C12)",
+        "C-13 (omitted_edge: E-C13)",
+        "C-14 (omitted_edge: E-C14)",
+        "C-15 (omitted_edge: E-C15)",
+        "C-16 (omitted_edge: E-C16)",
+        "C-17 (missing_contract_test: E-3)",
+        "C-18 (missing_contract_test: E-10)",
+        "C-19 (missing_contract_test: E-14)",
+        "C-20 (missing_contract_test: E-15)"
+      ],
+      "refuted": [],
+      "unresolved_candidates": [],
+      "resolution_map": {
+        "C-1": "split C-CUTOVER-PLAN -> C-CUTOVER-OBLIGATIONS + C-PLAN-EMIT; E-25 reclassified CUT/state",
+        "C-2": "R-3 reallocated to C-TMR-CONTRACT",
+        "C-3": "E-11 boundary_kind effect -> failure-authority",
+        "C-4": "E-12 producer -> C-OBS-CAPTURE",
+        "C-5": "E-16 direction flipped",
+        "C-6": "E-28",
+        "C-7": "E-29",
+        "C-8": "E-30",
+        "C-9": "E-31",
+        "C-10": "E-32",
+        "C-11": "E-33",
+        "C-12": "E-34 (+E-35 for the split emitter)",
+        "C-13": "X-FIZZY-META",
+        "C-14": "X-FIZZY-SCHEDULE",
+        "C-15": "X-HOST-WORKTREES",
+        "C-16": "X-HOST-CREATE + R-10 stimulus",
+        "C-17": "E-3 contract test TC-11.0,TC-5.4",
+        "C-18": "E-10 contract test TC-7.7 (new)",
+        "C-19": "E-14 contract test TC-9.2",
+        "C-20": "E-15 contract test TC-8.1 (amended)"
+      }
+    },
+    "external_boundaries": [
+      {
+        "id": "X-KEYSTONE",
+        "kind": "repo",
+        "system": "Brainquarters/shared-context/test-maturity-record-schema.md",
+        "owner_component": "C-TMR-CONTRACT",
+        "contract_test_id": "TC-1.4",
+        "note": "canonical file edited keystone-first; mirrors refreshed, never edited in place"
+      },
+      {
+        "id": "X-FIZZY",
+        "kind": "repo",
+        "system": "fizzy-pipeline-mcp pipeline_validate_plan / pipeline_load / card metadata",
+        "owner_component": "C-PLAN-EMIT",
+        "contract_test_id": "TC-15.1",
+        "note": "plan/metadata contracts only (OQ-4); fence reads card created_at + pipeline_version (RB-1)"
+      },
+      {
+        "id": "X-SEATS",
+        "kind": "trust",
+        "system": "codex / antigravity model CLIs",
+        "owner_component": "C-CRITIC-PROMPTS",
+        "contract_test_id": "TC-8.0",
+        "note": "cross-vendor quorum (OQ-6, OQ-8 100%); agy tripwire constraint P-5"
+      },
+      {
+        "id": "X-HOST",
+        "kind": "process",
+        "system": "proof-host processes and git worktrees",
+        "owner_component": "C-OBS-CAPTURE",
+        "contract_test_id": "TC-5.4",
+        "note": "procfs start time (P-2); worktrees are real (TC-7.x)"
+      },
+      {
+        "id": "X-FIZZY-META",
+        "kind": "repo",
+        "system": "fizzy-pipeline-mcp session card metadata (created_at, pipeline_version)",
+        "owner_component": "C-GATE-POLICY",
+        "contract_test_id": "TC-11.0",
+        "note": "C-13: fence input; malformed/unreadable -> reject, absent -> legacy"
+      },
+      {
+        "id": "X-FIZZY-SCHEDULE",
+        "kind": "repo",
+        "system": "fizzy-pipeline-mcp materialized schedule / readiness after load",
+        "owner_component": "C-CUTOVER-OBLIGATIONS",
+        "contract_test_id": "TC-4.3",
+        "note": "C-14: schedule postcondition compares emitted graph to materialized readiness"
+      },
+      {
+        "id": "X-HOST-WORKTREES",
+        "kind": "state",
+        "system": "surviving git worktrees/branches on the host with no ledger row",
+        "owner_component": "C-CUSTODY-RECONCILE",
+        "contract_test_id": "TC-14.0",
+        "note": "C-15: reconciliation discovers host state, never only ledger rows"
+      },
+      {
+        "id": "X-HOST-CREATE",
+        "kind": "effect",
+        "system": "creation of a pipeline-owned resource on the host",
+        "owner_component": "C-CUSTODY-LEDGER",
+        "contract_test_id": "TC-7.2",
+        "note": "C-16: projected-total admission gates creation before the host effect; concurrent requests admit at most the remaining capacity; the ledger never deletes (INV-2)"
+      }
+    ],
+    "acceptance_obligations": [
+      {
+        "obligation_id": "AO-1",
+        "root_goal": "G-4",
+        "discharge_test": "TC-16.0",
+        "route_prose": "A subsequent v6 session in prediction-prime exercises every delivered gate from authoring through closure; this session cannot discharge it because the gates do not exist until its own W-tasks land.",
+        "missing_evidence_classes": [
+          "released-workflow receipt from the next v6 session",
+          "downstream card created_at \u2265 cutover"
+        ],
+        "downstream_owner_phase": "execution"
+      },
+      {
+        "obligation_id": "AO-2",
+        "root_goal": "G-1",
+        "discharge_test": "TC-8.0",
+        "route_prose": "A real debate round with both critic families on a spec seeded with a wrong-route REAL-DATA test; discharge requires 100% quorum (OQ-8) and is judged against a golden manifest.",
+        "missing_evidence_classes": [
+          "system-validation tier receipt from live seats"
+        ],
+        "downstream_owner_phase": "execution"
+      }
+    ],
+    "revisions": [
+      {
+        "at": "2026-09-15T06:37:19Z",
+        "trigger": "independent seam challenge (20 candidates, all accepted)",
+        "change": "leaf split C-CUTOVER-PLAN->{C-CUTOVER-OBLIGATIONS, C-PLAN-EMIT}; +8 CUT edges; 2 direction fixes; 1 reclassification; R-3 reallocation; 4 external-boundary owners; 4 contract-test rebindings"
+      }
+    ]
+  },
+  "updated_at": "2026-09-15T06:37:19Z"
+}

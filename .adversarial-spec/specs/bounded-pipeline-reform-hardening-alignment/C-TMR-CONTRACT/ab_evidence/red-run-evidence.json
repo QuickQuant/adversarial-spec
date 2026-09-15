@@ -1,0 +1,178 @@
+{
+  "suite": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-TMR-CONTRACT/ab_suite/test_c_tmr_contract.py",
+  "suite_sha256": "sha256:6ea0aa5fd8ce4eb02c0c26f1adcfea0fddcc153be828c79b29b408358536561b",
+  "target_root": "/home/jason/PycharmProjects/adversarial-spec",
+  "generated_at": "2026-09-15T06:54:33Z",
+  "red_runs": [
+    {
+      "label": "red-run-1",
+      "returncode": 1,
+      "seconds": 0.57,
+      "fingerprint": "4aa5bdf57b38c0c2",
+      "tests": {
+        "test_o1_target_binding_round_trip": {
+          "status": "FAILED",
+          "why": ""
+        },
+        "test_o2_progressive_population_and_legacy_unbound": {
+          "status": "FAILED",
+          "why": ""
+        },
+        "test_o3_hash_projection_expected_in_observed_out": {
+          "status": "FAILED",
+          "why": ""
+        },
+        "test_o4_code_run_evidence_target_observation": {
+          "status": "FAILED",
+          "why": ""
+        },
+        "test_o5_keystone_first_packaging": {
+          "status": "FAILED",
+          "why": ""
+        },
+        "test_o6_contract_ownership_record": {
+          "status": "FAILED",
+          "why": ""
+        }
+      },
+      "collection_error": false
+    },
+    {
+      "label": "red-run-2",
+      "returncode": 1,
+      "seconds": 0.53,
+      "fingerprint": "4aa5bdf57b38c0c2",
+      "tests": {
+        "test_o1_target_binding_round_trip": {
+          "status": "FAILED",
+          "why": ""
+        },
+        "test_o2_progressive_population_and_legacy_unbound": {
+          "status": "FAILED",
+          "why": ""
+        },
+        "test_o3_hash_projection_expected_in_observed_out": {
+          "status": "FAILED",
+          "why": ""
+        },
+        "test_o4_code_run_evidence_target_observation": {
+          "status": "FAILED",
+          "why": ""
+        },
+        "test_o5_keystone_first_packaging": {
+          "status": "FAILED",
+          "why": ""
+        },
+        "test_o6_contract_ownership_record": {
+          "status": "FAILED",
+          "why": ""
+        }
+      },
+      "collection_error": false
+    },
+    {
+      "label": "red-run-3",
+      "returncode": 1,
+      "seconds": 0.5,
+      "fingerprint": "4aa5bdf57b38c0c2",
+      "tests": {
+        "test_o1_target_binding_round_trip": {
+          "status": "FAILED",
+          "why": ""
+        },
+        "test_o2_progressive_population_and_legacy_unbound": {
+          "status": "FAILED",
+          "why": ""
+        },
+        "test_o3_hash_projection_expected_in_observed_out": {
+          "status": "FAILED",
+          "why": ""
+        },
+        "test_o4_code_run_evidence_target_observation": {
+          "status": "FAILED",
+          "why": ""
+        },
+        "test_o5_keystone_first_packaging": {
+          "status": "FAILED",
+          "why": ""
+        },
+        "test_o6_contract_ownership_record": {
+          "status": "FAILED",
+          "why": ""
+        }
+      },
+      "collection_error": false
+    }
+  ],
+  "identical_fingerprints": true,
+  "red_for_right_reason": true,
+  "control_bad": {
+    "label": "control-bad",
+    "returncode": 1,
+    "seconds": 0.56,
+    "fingerprint": "4aa5bdf57b38c0c2",
+    "tests": {
+      "test_o1_target_binding_round_trip": {
+        "status": "FAILED",
+        "why": ""
+      },
+      "test_o2_progressive_population_and_legacy_unbound": {
+        "status": "FAILED",
+        "why": ""
+      },
+      "test_o3_hash_projection_expected_in_observed_out": {
+        "status": "FAILED",
+        "why": ""
+      },
+      "test_o4_code_run_evidence_target_observation": {
+        "status": "FAILED",
+        "why": ""
+      },
+      "test_o5_keystone_first_packaging": {
+        "status": "FAILED",
+        "why": ""
+      },
+      "test_o6_contract_ownership_record": {
+        "status": "FAILED",
+        "why": ""
+      }
+    },
+    "collection_error": false
+  },
+  "control_good": {
+    "label": "control-good",
+    "returncode": 0,
+    "seconds": 0.62,
+    "fingerprint": "65432c9ae2045162",
+    "tests": {
+      "test_o1_target_binding_round_trip": {
+        "status": "PASSED",
+        "why": ""
+      },
+      "test_o2_progressive_population_and_legacy_unbound": {
+        "status": "PASSED",
+        "why": ""
+      },
+      "test_o3_hash_projection_expected_in_observed_out": {
+        "status": "PASSED",
+        "why": ""
+      },
+      "test_o4_code_run_evidence_target_observation": {
+        "status": "PASSED",
+        "why": ""
+      },
+      "test_o5_keystone_first_packaging": {
+        "status": "PASSED",
+        "why": ""
+      },
+      "test_o6_contract_ownership_record": {
+        "status": "PASSED",
+        "why": ""
+      }
+    },
+    "collection_error": false
+  },
+  "known_bad_fails": true,
+  "known_good_passes": true,
+  "test_count": 6
+}

@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "session_id": "adv-spec-202609150549-bounded-reform-hardening-align",
+  "signed_by": "Master Conductor fizzy-gemini (Jason's delegate), roadmap v2 approval 2026-09-15",
+  "goals": [
+    {
+      "goal_id": "G-1",
+      "kind": "new",
+      "scenario": "A REAL-DATA spine test bound to /flatten is run through a harness on /exit; promotion rejects PROOF_PATH_MISMATCH and the obligation stays open until a run on /flatten closes it.",
+      "actors": [
+        "conductor",
+        "worker seat",
+        "skill-runner"
+      ],
+      "constraints": [
+        "REAL-DATA policy unchanged",
+        "untriggered work pays one rationale line"
+      ],
+      "irreversible_effects": []
+    },
+    {
+      "goal_id": "G-2",
+      "kind": "new",
+      "scenario": "A change that adds a second callable path for one external effect triggers a census listing every path; the role change expands into a cutover chain whose plan Fizzy validates and loads identically; the predecessor path's retirement is a plan node, not an assumption.",
+      "actors": [
+        "conductor",
+        "Fizzy validator",
+        "independent reviewer"
+      ],
+      "constraints": [
+        "structural trigger only",
+        "not_applicable needs reviewer acceptance"
+      ],
+      "irreversible_effects": [
+        "retirement of a live route is planned, never executed by the pipeline"
+      ]
+    },
+    {
+      "goal_id": "G-3",
+      "kind": "new",
+      "scenario": "A session creates worktrees under a budget of 4; the fifth creation is refused, nothing is deleted, every row gets a disposition, and the session cannot close on a count.",
+      "actors": [
+        "operator",
+        "conductor"
+      ],
+      "constraints": [
+        "no mechanism deletes",
+        "tool-turn workspaces exempt only if their lifecycle ends in the turn"
+      ],
+      "irreversible_effects": [
+        "removal is a separately authorized operator act outside this scope"
+      ]
+    },
+    {
+      "goal_id": "G-4",
+      "kind": "both",
+      "scenario": "This session finalizes on today's gates, ships every new gate as W-tasks with a created_at + pipeline_version fence, and the next v6 session exercises them end to end.",
+      "actors": [
+        "conductor",
+        "operator",
+        "downstream maintainer"
+      ],
+      "constraints": [
+        "no skill hot-edits before finalize",
+        "nothing reopens a closed phase"
+      ],
+      "irreversible_effects": [
+        "live skill symlink: an edit is live in every session instantly"
+      ]
+    }
+  ]
+}

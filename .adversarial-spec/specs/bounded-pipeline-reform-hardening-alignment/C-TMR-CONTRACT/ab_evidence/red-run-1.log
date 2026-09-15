@@ -1,0 +1,25 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.0, pytest-8.4.2, pluggy-1.6.0
+rootdir: /home/jason/PycharmProjects/adversarial-spec
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0
+collected 6 items
+
+.adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-TMR-CONTRACT/ab_suite/test_c_tmr_contract.py F [ 16%]
+FFFFF                                                                    [100%]
+
+=================================== FAILURES ===================================
+/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/tmr_schema.py:462: tmr_schema.SchemaValidationError: schema_error: target_binding: Extra inputs are not permitted
+/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/tmr_schema.py:462: tmr_schema.SchemaValidationError: schema_error: target_binding: Extra inputs are not permitted
+/home/jason/PycharmProjects/adversarial-spec/.adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-TMR-CONTRACT/ab_suite/test_c_tmr_contract.py:140: AssertionError: O-3: target_binding joins the projection
+/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/tmr_schema.py:462: tmr_schema.SchemaValidationError: schema_error: run_evidence.code.target_observation: Extra inputs are not permitted
+/home/jason/PycharmProjects/adversarial-spec/.adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-TMR-CONTRACT/ab_suite/test_c_tmr_contract.py:168: AssertionError: O-5: keystone-patch.diff shipped beside the leaf
+/home/jason/PycharmProjects/adversarial-spec/.adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-TMR-CONTRACT/ab_suite/test_c_tmr_contract.py:182: AssertionError: O-6: contract-ownership.json exists
+=========================== short test summary info ============================
+FAILED .adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-TMR-CONTRACT/ab_suite/test_c_tmr_contract.py::test_o1_target_binding_round_trip
+FAILED .adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-TMR-CONTRACT/ab_suite/test_c_tmr_contract.py::test_o2_progressive_population_and_legacy_unbound
+FAILED .adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-TMR-CONTRACT/ab_suite/test_c_tmr_contract.py::test_o3_hash_projection_expected_in_observed_out
+FAILED .adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-TMR-CONTRACT/ab_suite/test_c_tmr_contract.py::test_o4_code_run_evidence_target_observation
+FAILED .adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-TMR-CONTRACT/ab_suite/test_c_tmr_contract.py::test_o5_keystone_first_packaging
+FAILED .adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-TMR-CONTRACT/ab_suite/test_c_tmr_contract.py::test_o6_contract_ownership_record
+============================== 6 failed in 0.14s ===============================

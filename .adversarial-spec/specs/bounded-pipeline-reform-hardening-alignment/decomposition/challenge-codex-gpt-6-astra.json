@@ -1,0 +1,221 @@
+{
+  "challenger": "codex/gpt-6-astra@xhigh",
+  "candidates": [
+    {
+      "candidate_id": "C-1",
+      "kind": "leaf_spans_authority",
+      "edge_id": "E-25",
+      "from_node": "C-CUTOVER-PLAN",
+      "to_node": "C-CUTOVER-PLAN",
+      "boundary_kind": "state",
+      "evidence_ref": "manifest.json:d0.responsibility_rows[R-8,R-9], d0.allocation[R-8,R-9], d0.responsibility_edges[E-25]; RULESET-bounded-pipeline-v1 D0.2,D0.5",
+      "one_line_claim": "R-8 declares dependency-semantics.json as its state authority and R-9 declares fizzy-plan.json, but E-25 places both authorities inside one leaf because they run in the same planning pass."
+    },
+    {
+      "candidate_id": "C-2",
+      "kind": "wrong_allocation",
+      "edge_id": "E-1",
+      "from_node": "C-BINDING-COMPILE",
+      "to_node": "C-TMR-CONTRACT",
+      "boundary_kind": "protocol",
+      "evidence_ref": "manifest.json:d0.allocation[R-3], d0.responsibility_edges[E-1]; skills/adversarial-spec/scripts/tmr_schema.py:94,471,479,490; packet 04 \u00a72.1",
+      "one_line_claim": "R-3 assigns the canonical obligation-hash projection and verification to the compiler, although these are keystone \u00a72b contract semantics implemented by tmr_schema and E-1 explicitly makes compilation a contract consumer."
+    },
+    {
+      "candidate_id": "C-3",
+      "kind": "misclassified_edge",
+      "edge_id": "E-11",
+      "from_node": "C-CUSTODY-LEDGER",
+      "to_node": "C-CUSTODY-RECONCILE",
+      "boundary_kind": "failure-authority",
+      "evidence_ref": "manifest.json:d0.responsibility_rows[R-10,R-11], d0.responsibility_edges[E-11], d0.interface_records[E-11]; requirements.md:55",
+      "one_line_claim": "E-11 separates accounting failures from removal-preview failures, but incorrectly calls the preview an effect authority even though R-11 explicitly produces only a verdict and destructive execution is outside scope."
+    },
+    {
+      "candidate_id": "C-4",
+      "kind": "interface_direction",
+      "edge_id": "E-12",
+      "from_node": "C-OBS-CAPTURE",
+      "to_node": "C-CUSTODY-RECONCILE",
+      "boundary_kind": "state",
+      "evidence_ref": "manifest.json:d0.responsibility_rows[R-5,R-6,R-12], d0.interface_records[E-12]; skills/adversarial-spec/scripts/phase8_promotion.py:128,142,162; tests-pseudo.md:587",
+      "one_line_claim": "E-12 names the stateless comparator as producer and owner of partial receipts, although R-5 assigns receipt authority to the runner and TC-14.1 requires reconciliation after that runner dies before writing a receipt."
+    },
+    {
+      "candidate_id": "C-5",
+      "kind": "interface_direction",
+      "edge_id": "E-16",
+      "from_node": "C-GATE-POLICY",
+      "to_node": "C-GOLDEN-HARNESS",
+      "boundary_kind": "none",
+      "evidence_ref": "manifest.json:d0.responsibility_rows[R-16,R-17], d0.interface_records[E-16]; tests-pseudo.md:453",
+      "one_line_claim": "The harness consumes the policy-owned reject-code enum to measure catalog coverage; E-16 reverses that data flow by making the policy consume harness data."
+    },
+    {
+      "candidate_id": "C-6",
+      "kind": "omitted_edge",
+      "edge_id": "E-C6",
+      "from_node": "C-BINDING-COMPILE",
+      "to_node": "C-CUTOVER-PLAN",
+      "boundary_kind": "state",
+      "evidence_ref": "packet 04 \u00a73/Phase 7, line 164: project TMR target bindings into task verification metadata; manifest.json:d0.responsibility_rows[R-1,R-9], d0.responsibility_edges",
+      "one_line_claim": "Planning must consume compiled target bindings to populate task verification metadata, but no edge connects the registry-owning compiler to the plan producer."
+    },
+    {
+      "candidate_id": "C-7",
+      "kind": "omitted_edge",
+      "edge_id": "E-C7",
+      "from_node": "C-BINDING-COMPILE",
+      "to_node": "C-CRITIC-PROMPTS",
+      "boundary_kind": "state",
+      "evidence_ref": "packet 04 \u00a73/Phase 5, line 145; manifest.json:d0.responsibility_rows[R-1,R-13], d0.responsibility_edges",
+      "one_line_claim": "R-13 requires bound tests and the blueprint supplies target-bound tests to seats, but the graph supplies critics only the census and omits the compiled-test input."
+    },
+    {
+      "candidate_id": "C-8",
+      "kind": "omitted_edge",
+      "edge_id": "E-C8",
+      "from_node": "C-CENSUS",
+      "to_node": "C-FINALIZE-ORACLE",
+      "boundary_kind": "state",
+      "evidence_ref": "packet 04 \u00a73/Phase 6, line 156: active-vs-legacy classification must link to authority path role; manifest.json:d0.responsibility_rows[R-7,R-14], d0.responsibility_edges",
+      "one_line_claim": "Finalize must consult census-owned authority roles for active-versus-legacy classification, but no census-to-finalize edge or interface exists."
+    },
+    {
+      "candidate_id": "C-9",
+      "kind": "omitted_edge",
+      "edge_id": "E-C9",
+      "from_node": "C-TMR-CONTRACT",
+      "to_node": "C-OBS-CAPTURE",
+      "boundary_kind": "protocol",
+      "evidence_ref": "manifest.json:d0.responsibility_rows[R-5,R-21], d0.interface_records[E-2]; skills/adversarial-spec/scripts/tmr_schema.py:165; skills/adversarial-spec/scripts/phase8_promotion.py:128; packet 04 \u00a72.1",
+      "one_line_claim": "The runner produces the versioned CodeRunEvidence observation payload, but the schema contract reaches only its promotion consumer and omits the runner that must emit it."
+    },
+    {
+      "candidate_id": "C-10",
+      "kind": "omitted_edge",
+      "edge_id": "E-C10",
+      "from_node": "C-GATE-POLICY",
+      "to_node": "C-CENSUS",
+      "boundary_kind": "none",
+      "evidence_ref": "roadmap/manifest.json:architecture_impact.new_middleware[typed reject-code catalog].consumed_by; manifest.json:d0.responsibility_rows[R-7,R-17], d0.responsibility_edges[E-3]",
+      "one_line_claim": "The roadmap explicitly makes validate_authority_paths consume the shared reject catalog, but its independently owned catalog dependency is absent from the graph."
+    },
+    {
+      "candidate_id": "C-11",
+      "kind": "omitted_edge",
+      "edge_id": "E-C11",
+      "from_node": "C-GATE-POLICY",
+      "to_node": "C-CUSTODY-RECONCILE",
+      "boundary_kind": "none",
+      "evidence_ref": "manifest.json:d0.responsibility_rows[R-11,R-17], d0.interface_records[E-5,E-11]",
+      "one_line_claim": "R-11 emits the shared CUSTODY_DESTRUCTIVE_PREVIEW_INCOMPLETE code, but only the ledger receives the catalog and its interface to reconciliation carries rows rather than policy definitions."
+    },
+    {
+      "candidate_id": "C-12",
+      "kind": "omitted_edge",
+      "edge_id": "E-C12",
+      "from_node": "C-GOLDEN-HARNESS",
+      "to_node": "C-FINALIZE-ORACLE",
+      "boundary_kind": "protocol",
+      "evidence_ref": "manifest.json:d0.components[C-FINALIZE-ORACLE], d0.responsibility_rows[R-16], d0.responsibility_edges[E-17,E-18,E-19,E-20]; tests-pseudo.md:423,434; packet 04 \u00a75.3",
+      "one_line_claim": "Golden replay must execute ASP-HARDEN-002 against the finalize-owned assertion-versus-schema validator, but the harness has no interface to that leaf."
+    },
+    {
+      "candidate_id": "C-13",
+      "kind": "omitted_edge",
+      "edge_id": "E-C13",
+      "from_node": "X-FIZZY",
+      "to_node": "C-GATE-POLICY",
+      "boundary_kind": "repo",
+      "evidence_ref": "manifest.json:d0.responsibility_rows[R-15], d0.external_boundaries[X-FIZZY]; roadmap/manifest.json:operator_decisions.RB-1; tests-pseudo.md:464,608",
+      "one_line_claim": "The fence consumes Fizzy card created_at and pipeline_version, but X-FIZZY names only the plan leaf as owner and attaches a discriminator-parity test that never checks this metadata transfer."
+    },
+    {
+      "candidate_id": "C-14",
+      "kind": "omitted_edge",
+      "edge_id": "E-C14",
+      "from_node": "X-FIZZY",
+      "to_node": "C-CUTOVER-PLAN",
+      "boundary_kind": "state",
+      "evidence_ref": "packet 04 \u00a74, line 228: validate_schedule_postcondition consumes materialized schedule/readiness; manifest.json:d0.responsibility_rows[R-8], d0.external_boundaries[X-FIZZY]; tests-pseudo.md:192",
+      "one_line_claim": "R-8's schedule postcondition needs actual materialized readiness from Fizzy, but the external contract provides no return interface for that scheduler-owned state."
+    },
+    {
+      "candidate_id": "C-15",
+      "kind": "omitted_edge",
+      "edge_id": "E-C15",
+      "from_node": "X-HOST",
+      "to_node": "C-CUSTODY-RECONCILE",
+      "boundary_kind": "state",
+      "evidence_ref": "manifest.json:d0.responsibility_rows[R-12], d0.external_boundaries[X-HOST], d0.interface_records[E-11,E-12]; tests-pseudo.md:577",
+      "one_line_claim": "Reconciliation must discover surviving host workspaces that have no ledger row, but its interfaces supply only ledger rows and receipts while X-HOST is assigned solely to observation capture."
+    },
+    {
+      "candidate_id": "C-16",
+      "kind": "omitted_edge",
+      "edge_id": "E-C16",
+      "from_node": "C-CUSTODY-LEDGER",
+      "to_node": "X-HOST",
+      "boundary_kind": "effect",
+      "evidence_ref": "goal-set.json:41; requirements.md:64; manifest.json:d0.responsibility_rows[R-10], d0.external_boundaries[X-HOST]; tests-pseudo.md:318",
+      "one_line_claim": "Projected-budget admission must gate resource creation before the host effect, including concurrent requests, but R-10 starts with an already-created resource and no admission-to-creation control interface exists."
+    },
+    {
+      "candidate_id": "C-17",
+      "kind": "missing_contract_test",
+      "edge_id": "E-3",
+      "from_node": "C-GATE-POLICY",
+      "to_node": "C-PROMOTION-COMPARE",
+      "boundary_kind": "none",
+      "evidence_ref": "manifest.json:d0.interface_records[E-3]; tests-pseudo.md:453",
+      "one_line_claim": "TC-10.2 checks code-name coverage in the catalog without exercising promotion, so it remains green if promotion ignores the policy-provided fence or freshness window."
+    },
+    {
+      "candidate_id": "C-18",
+      "kind": "missing_contract_test",
+      "edge_id": "E-10",
+      "from_node": "C-CUTOVER-PLAN",
+      "to_node": "C-CUSTODY-LEDGER",
+      "boundary_kind": "state",
+      "evidence_ref": "manifest.json:d0.interface_records[E-10]; tests-pseudo.md:299; packet 04 \u00a73/Phase 7, line 170",
+      "one_line_claim": "TC-7.0 supplies a budget directly and tests worktree dispositions without consuming planning output, so it cannot detect dropped or corrupted plan-produced budgets and expected custody rows."
+    },
+    {
+      "candidate_id": "C-19",
+      "kind": "missing_contract_test",
+      "edge_id": "E-14",
+      "from_node": "C-CRITIC-PROMPTS",
+      "to_node": "C-FINALIZE-ORACLE",
+      "boundary_kind": "none",
+      "evidence_ref": "manifest.json:d0.interface_records[E-14]; tests-pseudo.md:384,414",
+      "one_line_claim": "TC-8.2 tests critic output and the next debate round without invoking finalize, so it cannot fail when concern findings or dispositions are lost at the finalize interface."
+    },
+    {
+      "candidate_id": "C-20",
+      "kind": "missing_contract_test",
+      "edge_id": "E-15",
+      "from_node": "C-CENSUS",
+      "to_node": "C-CRITIC-PROMPTS",
+      "boundary_kind": "state",
+      "evidence_ref": "manifest.json:d0.interface_records[E-15]; tests-pseudo.md:375; packet 04 \u00a73/Phase 5, line 145",
+      "one_line_claim": "TC-8.1 supplies an observation and a cross-path request without producing or consuming a census, so it cannot detect a missing census or corrupted census delivery to seats."
+    }
+  ],
+  "checked": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+  ],
+  "no_findings_for": [
+    "Check 1, declared-edge bookkeeping: the read-only Python JSON audit found 22 cross-leaf edges, all CUT with exactly one interface record; evidence: manifest.json:d0.responsibility_edges and d0.interface_records. Missing crossings are listed separately.",
+    "Check 3: E-23 through E-27 are all intra-leaf NO_CUT edges; evidence: manifest.json:d0.responsibility_edges[E-23,E-24,E-25,E-26,E-27]. E-25's authority violation is C-1.",
+    "Allocation cardinality: all 21 responsibility rows are allocated exactly once to existing leaves; evidence: manifest.json:d0.responsibility_rows and d0.allocation.",
+    "Check 4, X-KEYSTONE: C-TMR-CONTRACT owns the boundary and TC-1.4 exercises cross-repo ordering and hash agreement; evidence: manifest.json:d0.external_boundaries[X-KEYSTONE], tests-pseudo.md:78.",
+    "Check 4, X-SEATS: C-CRITIC-PROMPTS owns the boundary and TC-8.0 exercises an actual dispatched critique; evidence: manifest.json:d0.external_boundaries[X-SEATS], tests-pseudo.md:365.",
+    "Check 4, X-HOST process-receipt portion: C-OBS-CAPTURE owns capture and TC-5.4 exercises real process identity and receipt invalidation; evidence: manifest.json:d0.external_boundaries[X-HOST], tests-pseudo.md:249. Custody crossings are listed separately."
+  ]
+}

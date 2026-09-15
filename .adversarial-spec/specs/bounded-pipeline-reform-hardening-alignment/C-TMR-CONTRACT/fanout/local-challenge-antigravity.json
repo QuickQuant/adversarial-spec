@@ -1,0 +1,24 @@
+{
+  "verdict": "PASS",
+  "critic_model": "antigravity/gemini-3.8-flash-high",
+  "concerns": [],
+  "checked": [
+    {
+      "check": "1",
+      "evidence": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-TMR-CONTRACT/ab_suite/test_c_tmr_contract.py:116-192. Tests test_o1 through test_o6 non-vacuously execute the required validation surfaces: test_o1 (lines 116-125) validates round-trip byte equality and verifies extra-key rejection and StableId format rejection via SchemaValidationError; test_o2 (lines 127-136) validates list defaults at maturity='nl' and proves failure at maturity='concrete' correctly fails in TargetProofBinding.require_concrete_fields (tmr_schema.py:214-240) naming the missing fields; test_o3 (lines 139-149) tests 5 distinct target_binding field mutations proving each changes compute_tmr_record_hash while target_observation/artifact_uri mutations leave the hash unchanged; test_o4 (lines 151-161) tests strict integer typing (rejecting string pid) and extra-key rejection on TargetObservation; test_o5 (lines 163-178) runs git apply to test that keystone-patch.diff applies cleanly to the canonical keystone and matches schema_sha256(); test_o6 (lines 180-192) validates contract-ownership.json ownership boundaries and Fizzy's scope restriction."
+    },
+    {
+      "check": "2",
+      "evidence": "tmr_schema.py:433-448 (derive_target_binding_status), tmr_schema.py:95-109 (OBLIGATION_IDENTITY_FIELDS), tmr_schema.py:241-255 (TargetObservation), tmr_schema.py:617-637 (obligation_identity_projection / compute_tmr_record_hash). Neither field can be trusted where it must not: (a) derive_target_binding_status strictly re-derives status from target_binding and rejects any payload whose target_binding_status disagrees with expected ('bound' iff target_binding is not None, else 'legacy-unbound'); it is also excluded from OBLIGATION_IDENTITY_FIELDS so it cannot affect obligation hashes. (b) TargetObservation is runner-owned and strictly excluded from OBLIGATION_IDENTITY_FIELDS, ensuring hand-written run observations cannot alter or forge the RFC 8785 obligation hash. Furthermore, TestMaturityRecord (lines 505-536) never uses target_observation to satisfy target_binding or maturity requirements, leaving comparison strictly to downstream runners as specified in keystone \u00a72a."
+    },
+    {
+      "check": "3",
+      "evidence": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-TMR-CONTRACT/keystone-patch.diff:1-145. The patch documents the exact code implementation: lines 7-14 re-pin schema_sha256 to sha256:824449bb26c8f9ace09966cf366a50afc0f8eed9deaf2881bb8791c7bc17e361 (matching tmr_schema.py:115 and schema_sha256()); lines 21-24 and 51-85 document target_binding (TargetProofBinding), target_binding_status, fields, enums, stable ID regex, and progressive population rules implemented in tmr_schema.py:172-240; lines 86-99 document CodeRunEvidence.target_observation with strictly integer pid; lines 105-127 document the 11-field obligation identity projection (\u00a72b) including target_binding and excluding target_binding_status and target_observation; lines 138-145 document Decision line 8."
+    },
+    {
+      "check": "4",
+      "evidence": "tmr_schema.py:382-384, tmr_schema.py:433-448 (derive_target_binding_status), tmr_schema.py:506-507 (enforce_conditional_contract), tmr_schema.py:617-626 (obligation_identity_projection). Legacy records without target_binding remain valid across all validators: derive_target_binding_status sets target_binding_status to 'legacy-unbound' when target_binding is None; target_binding defaults to None; in enforce_conditional_contract, require_concrete_fields is gated by 'if self.maturity == \"concrete\" and self.target_binding is not None:', so legacy records without target_binding never fail this check; CodeRunEvidence.target_observation defaults to None; and obligation_identity_projection assigns projection['target_binding'] = None (serialized as null under RFC 8785), allowing legacy records to compute and verify stable hashes without error. This is also directly exercised and passing in test_c_tmr_contract.py:135-136 and 159-160."
+    }
+  ],
+  "_first_run_note": "first run returned a bare PASS with no evidence (132 bytes) and was rejected by the conductor; this is the evidence-bearing re-run"
+}

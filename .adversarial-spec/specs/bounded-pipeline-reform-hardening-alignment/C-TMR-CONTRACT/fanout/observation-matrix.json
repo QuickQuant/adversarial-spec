@@ -1,0 +1,81 @@
+{
+  "leaf": "C-TMR-CONTRACT",
+  "fanout_id": "c-tmr-contract-fanout-1",
+  "suite_sha256": "sha256:6ea0aa5fd8ce4eb02c0c26f1adcfea0fddcc153be828c79b29b408358536561b",
+  "observed_at": "2026-09-15T07:17:17Z",
+  "candidates": {
+    "codex/gpt-6-astra": {
+      "card": "21559",
+      "commit": "7a29ceccc5feee9fe0af4ff2f20800dbaf9b8953",
+      "impl_sha256": "sha256:ada3644c6e245f143d4504d04e7445e5d27568d89cbf1a9d7faf2e49e09e4a6c"
+    },
+    "antigravity/gemini-3.8-flash-high": {
+      "card": "21560",
+      "commit": "687b42936faaf98b5add163f7d8b8a9a455c417e",
+      "impl_sha256": "sha256:f67ccd6f5a714d3762d8049114f4580ae23fc94b51395a1840e44eba4d5892f7",
+      "note": "amended from f2d16f1 to drop swept-in build/ and logs; content hash unchanged"
+    }
+  },
+  "rows": [
+    {
+      "obligation": "O-1",
+      "test": "test_o1_target_binding_round_trip",
+      "codex/gpt-6-astra": "PASS",
+      "antigravity/gemini-3.8-flash-high": "PASS"
+    },
+    {
+      "obligation": "O-2",
+      "test": "test_o2_progressive_population_and_legacy_unbound",
+      "codex/gpt-6-astra": "PASS",
+      "antigravity/gemini-3.8-flash-high": "PASS"
+    },
+    {
+      "obligation": "O-3",
+      "test": "test_o3_hash_projection_expected_in_observed_out",
+      "codex/gpt-6-astra": "PASS",
+      "antigravity/gemini-3.8-flash-high": "PASS"
+    },
+    {
+      "obligation": "O-4",
+      "test": "test_o4_code_run_evidence_target_observation",
+      "codex/gpt-6-astra": "PASS",
+      "antigravity/gemini-3.8-flash-high": "PASS"
+    },
+    {
+      "obligation": "O-5",
+      "test": "test_o5_keystone_first_packaging",
+      "codex/gpt-6-astra": "PASS",
+      "antigravity/gemini-3.8-flash-high": "FAIL"
+    },
+    {
+      "obligation": "O-6",
+      "test": "test_o6_contract_ownership_record",
+      "codex/gpt-6-astra": "PASS",
+      "antigravity/gemini-3.8-flash-high": "PASS"
+    }
+  ],
+  "full_suite": {
+    "codex/gpt-6-astra": "================ 1032 passed, 2 skipped, 33 warnings in 25.73s =================",
+    "antigravity/gemini-3.8-flash-high": "================ 1032 passed, 2 skipped, 33 warnings in 28.70s ================="
+  },
+  "status": "complete",
+  "convergence": [
+    "O-1",
+    "O-2",
+    "O-3",
+    "O-4",
+    "O-6"
+  ],
+  "divergence": [
+    {
+      "obligation": "O-5",
+      "codex/gpt-6-astra": "PASS",
+      "antigravity/gemini-3.8-flash-high": "FAIL",
+      "cause": "agy keystone-patch.diff has wrong hunk counts (corrupt patch at line 14): packaging defect in an LLM-emitted diff, not a design defect"
+    }
+  ],
+  "risk_discoveries": [
+    "R-1: LLM-emitted unified diffs need generation from real file states or a --recount step; the O-5 contract (git apply clean) is stricter than a print-only seat can guarantee",
+    "R-2: headless agy cannot write or run without a permissions.allow rule; print-only seats cannot self-verify (process-failure note filed)"
+  ]
+}

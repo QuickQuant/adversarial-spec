@@ -1,0 +1,23 @@
+# Roadmap debate R1 — synthesis (2026-09-15)
+
+Seats: `codex/gpt-6-astra` @ xhigh (openai), `antigravity/gemini-3.8-flash-high` (google). Both returned `agreed: false`. Conductor (claude) is the third participant. Artifacts: `codex-gpt-6-astra.md`, `antigravity-gemini-3.8-flash-high.md`, `round-1.json`.
+
+Framing note: both seats critiqued at PRD depth (`--depth product`) and rewrote the roadmap as a PRD. The roadmap is the Phase 2 artifact by the phase doc's format; the PRD candidates are kept as inputs for the Phase 3 spec draft v1, not adopted as the roadmap. Substantive findings below are dispositioned regardless of framing.
+
+| # | Finding | Source | Disposition |
+|---|---|---|---|
+| 1 | TC-7.2 accepts a creation at 4/4 against budget 4; boundary must be the projected total | codex CRIT-5 | **Accepted.** TC-7.2 rewritten: 3 active → 4th accepted (at boundary), 4 active → 5th rejected. FR wording in requirements US-7. |
+| 2 | Self-hosting conflict: US-9 needs ORACLE during this session's own finalize while G-4 forbids shipping before finalize; OQ-5 fence vs protected in-flight v6 cards; Phase 4 ownership under v6 unclear | codex CRIT-4 | **Accepted.** Split: this session finalizes with capabilities that exist today; ORACLE alignment and every new gate are delivered here and *exercised* by the next v6 session (US-12 reworded, US-16 added). Fence conflict recorded as release blocker RB-1 for Jason. Under v6 the Phase-4 obligations (census) ride the D0 decomposition artifact (skill router note); TC-12.0 and M3 wording fixed. |
+| 3 | "Real data" header folds synthetic incident fixtures into REAL-DATA; TC-11.1 lets a waiver/process-failure note discharge a bound obligation | codex CRIT-3, gemini §4 | **Accepted.** Header reworded (fixtures prove validator behavior, never boundary reality). TC-11.1 + new INV-10: a waiver records accepted risk; a process-failure note attributes; neither converts evidence to proof. |
+| 4 | Missing journeys: recovery after rejection, reconciliation after interruption, integration ownership, downstream adoption; roles for Fizzy/downstream are categories not users | both | **Accepted.** US-13 recovery, US-14 interruption reconciliation, US-15 integration ownership, US-16 downstream adoption; user table gains integration maintainer + downstream maintainer roles. |
+| 5 | Ambiguities: gate-specific binding requirements (TC-1.2), full identity field set (TC-1.3), any non-blank not_applicable suffices (TC-4.1), census completeness needs discovery scope + independent review (TC-3.0), freshness window and critic threshold unspecified | codex MAJ-6 | **Accepted.** TC-1.2 states per-gate behavior; TC-1.3 names the full expected set as the amended 2b projection (spec fixes the list); TC-4.1 requires reviewer acceptance of inapplicability; TC-3.0 adds discovery-scope declaration + independent seam-style review; freshness window and critic threshold become named parameters with an operator decision (OQ-7, OQ-8). |
+| 6 | Rejections lack a recovery journey (next actor, expected vs observed, missing vs mismatched) | both | **Accepted** via US-13 + TC-13.x; missing evidence must be distinguishable from observed mismatch. |
+| 7 | KPIs measure inventory; count is 15 incidents + 3 controls not 18 + 3; "suites green" vs known baseline failures; zero patch_state proves little | both | **Accepted.** KPIs restated: 15/15 + 3/3; "no new failures vs recorded baseline, skip set unchanged, known failures attributed"; add recovery-usability and false-blocking KPIs; patch_state target stays but a nonzero is a missed target, never cured by a note. |
+| 8 | PRD vs engineering separation; module names in stories | both MAJ | **Deferred to Phase 3.** The roadmap stays a roadmap; spec draft v1 separates product behavior from engineering appendices. Both PRD candidates are cited as inputs. |
+| 9 | Custody deadlock needs a non-destructive break-glass; BVA fixtures must pay nothing | gemini §3, §4 | **Already covered** (TC-7.5 operator exception raises the budget only; TC-6.2 CTRL-001). Promoted into US-7 success criteria for visibility. |
+| 10 | v5→v6 migration path for a downstream project undefined at user level | gemini §1 | **Accepted** via US-16 + TC-16.x. |
+| 11 | Missing version metadata vs malformed/unavailable must differ | codex CRIT-4 | **Accepted.** TC-11.0 row 4 split: absent = grandfathered legacy; malformed/unreadable = reject, never legacy. |
+
+Not accepted: gemini's "<500 ms gate latency" and "<60 s replay" NFRs (no evidence basis at roadmap stage; revisit in Phase 3 with measurements). Gemini's renumbering of stories is not adopted (ids are stable anchors).
+
+Questions for the operator before the roadmap gate: see the card comment and Telegram of 2026-09-15.

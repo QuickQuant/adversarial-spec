@@ -1,0 +1,1895 @@
+{
+  "plan_schema_version": 3,
+  "session_id": "adv-spec-202609150549-bounded-reform-hardening-align",
+  "tasks": [
+    {
+      "task_id": "SYS-HARD",
+      "altitude": "system",
+      "parent": null,
+      "decomposes_into": [
+        "SS-CONTRACT",
+        "SS-PROMOTION",
+        "SS-AUTHORITY",
+        "SS-CUSTODY",
+        "SS-REVIEW",
+        "SS-PROOF"
+      ],
+      "title": "Hardening alignment: proof-target identity, authority cutover, custody (packet \u2192",
+      "description": "The system shall add proof-target identity, structural authority cutover, and itemized custody to the pipeline without weakening REAL-DATA, delivered post-finalize with grandfathering.",
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "The system shall add proof-target identity, structural authority cutover, and itemized custody to the pipeline without weakening REAL-DATA, delivered post-finalize with grandfathering."
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "full-suite",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SYS-HARD/system-spec.md",
+        "definition_hash": "20f460944af4"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SYS-HARD/component-verification-procedure.md",
+          "plan_hash": "79f22e438e00",
+          "artifact": "tests/test_sys-hard.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_sys-hard.py -q"
+          ]
+        },
+        "subsystem_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SYS-HARD/subsystem-verification-plan.md",
+          "plan_hash": "53dc327b88fc",
+          "artifact": "tests/test_sys-hard.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_sys-hard.py -q"
+          ]
+        },
+        "system_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SYS-HARD/system-verification-plan.md",
+          "plan_hash": "c8e21599114c",
+          "artifact": "tests/test_sys-hard.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_sys-hard.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "SYS-1",
+        "rationale": "derived from parent decomposition",
+        "traced_from": null,
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "system"
+      },
+      "system_spec_path": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SYS-HARD/system-spec.md",
+      "conops_refs": [
+        "US-0",
+        "US-1",
+        "US-2",
+        "US-3",
+        "US-4",
+        "US-5",
+        "US-6",
+        "US-7",
+        "US-8",
+        "US-9",
+        "US-10",
+        "US-11",
+        "US-12",
+        "US-13",
+        "US-14",
+        "US-15",
+        "US-16"
+      ],
+      "user_story_refs": [
+        "US-0",
+        "US-1",
+        "US-2",
+        "US-3",
+        "US-4",
+        "US-5",
+        "US-6",
+        "US-7",
+        "US-8",
+        "US-9",
+        "US-10",
+        "US-11",
+        "US-12",
+        "US-13",
+        "US-14",
+        "US-15",
+        "US-16"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-12.0",
+        "TC-12.1",
+        "TC-12.2"
+      ],
+      "test_refs": [
+        "TC-12.0",
+        "TC-12.1",
+        "TC-12.2"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_sys_hard.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_sys_hard.py"
+      ]
+    },
+    {
+      "task_id": "SS-CONTRACT",
+      "altitude": "subsystem",
+      "parent": "SYS-HARD",
+      "decomposes_into": [
+        "C-TMR-CONTRACT",
+        "C-BINDING-COMPILE",
+        "C-GATE-POLICY"
+      ],
+      "title": "TMR contract and obligation identity",
+      "description": "The subsystem shall integrate: TMR contract and obligation identity.",
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "The subsystem shall integrate: TMR contract and obligation identity."
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "full-suite",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-CONTRACT/subsystem-spec.md",
+        "definition_hash": "1ed110ef71aa"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-CONTRACT/component-verification-procedure.md",
+          "plan_hash": "dd5890e30137",
+          "artifact": "tests/test_ss-contract.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_ss-contract.py -q"
+          ]
+        },
+        "subsystem_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-CONTRACT/subsystem-verification-plan.md",
+          "plan_hash": "faa5708ce428",
+          "artifact": "tests/test_ss-contract.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_ss-contract.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "SS-1",
+        "rationale": "derived from parent decomposition",
+        "traced_from": "SYS-HARD",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "subsystem"
+      },
+      "subsystem_spec_path": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-CONTRACT/subsystem-spec.md",
+      "realizes_refs": [
+        "US-1",
+        "US-2",
+        "US-10",
+        "US-11",
+        "US-15"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-1.0",
+        "TC-1.1",
+        "TC-1.2",
+        "TC-1.3",
+        "TC-1.4",
+        "TC-10.0",
+        "TC-10.1",
+        "TC-10.2",
+        "TC-11.0",
+        "TC-11.1",
+        "TC-11.2",
+        "TC-11.3",
+        "TC-11.4",
+        "TC-15.0",
+        "TC-15.1",
+        "TC-2.0",
+        "TC-2.1",
+        "TC-2.2"
+      ],
+      "test_refs": [
+        "TC-1.0",
+        "TC-1.1",
+        "TC-1.2",
+        "TC-1.3",
+        "TC-1.4",
+        "TC-10.0",
+        "TC-10.1",
+        "TC-10.2",
+        "TC-11.0",
+        "TC-11.1",
+        "TC-11.2",
+        "TC-11.3",
+        "TC-11.4",
+        "TC-15.0",
+        "TC-15.1",
+        "TC-2.0",
+        "TC-2.1",
+        "TC-2.2"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_ss_contract.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_ss_contract.py"
+      ]
+    },
+    {
+      "task_id": "C-TMR-CONTRACT",
+      "altitude": "component",
+      "parent": "SS-CONTRACT",
+      "decomposes_into": [],
+      "title": "Keystone mirror",
+      "description": "The component shall provide: Keystone mirror: target_binding + target_observation schema, machine-schema regen, sha re-pin, keystone-first order tripwire.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "TC-1.0 green (see tests-pseudo.md)",
+        "TC-1.1 green (see tests-pseudo.md)",
+        "TC-1.2 green (see tests-pseudo.md)",
+        "TC-1.3 green (see tests-pseudo.md)",
+        "TC-1.4 green (see tests-pseudo.md)",
+        "TC-15.0 green (see tests-pseudo.md)",
+        "TC-15.1 green (see tests-pseudo.md)"
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md",
+        ".architecture/primer.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-TMR-CONTRACT/normative.md",
+        "definition_hash": "7d1270544c7d"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-TMR-CONTRACT/component-verification-procedure.md",
+          "plan_hash": "7ab17f528f01",
+          "artifact": "tests/test_c-tmr-contract.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_c-tmr-contract.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-1",
+        "rationale": "D0 leaf derived by cut edges; interfaces: E-1, E-2, E-21, E-31",
+        "traced_from": "SS-CONTRACT",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-1",
+        "US-15"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-1.0",
+        "TC-1.1",
+        "TC-1.2",
+        "TC-1.3",
+        "TC-1.4",
+        "TC-15.0",
+        "TC-15.1"
+      ],
+      "test_refs": [
+        "TC-1.0",
+        "TC-1.1",
+        "TC-1.2",
+        "TC-1.3",
+        "TC-1.4",
+        "TC-15.0",
+        "TC-15.1"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_c_tmr_contract.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_c_tmr_contract.py"
+      ]
+    },
+    {
+      "task_id": "C-BINDING-COMPILE",
+      "altitude": "component",
+      "parent": "SS-CONTRACT",
+      "decomposes_into": [],
+      "title": "Annotation \u2192 target_binding compile",
+      "description": "The component shall provide: Annotation \u2192 target_binding compile: progressive ladder, duplicate stable-id rejection, obligation-hash projection incl. expected target fields.",
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-TMR-CONTRACT"
+      ],
+      "acceptance_criteria": [
+        "TC-1.0 green (see tests-pseudo.md)",
+        "TC-1.1 green (see tests-pseudo.md)",
+        "TC-1.2 green (see tests-pseudo.md)",
+        "TC-1.3 green (see tests-pseudo.md)",
+        "TC-1.4 green (see tests-pseudo.md)",
+        "TC-2.0 green (see tests-pseudo.md)",
+        "TC-2.1 green (see tests-pseudo.md)",
+        "TC-2.2 green (see tests-pseudo.md)"
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md",
+        ".architecture/primer.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-BINDING-COMPILE/normative.md",
+        "definition_hash": "d2eb55cb3888"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-BINDING-COMPILE/component-verification-procedure.md",
+          "plan_hash": "c203627b01db",
+          "artifact": "tests/test_c-binding-compile.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_c-binding-compile.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-1",
+        "rationale": "D0 leaf derived by cut edges; interfaces: E-1, E-8, E-13, E-28, E-29",
+        "traced_from": "SS-CONTRACT",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-1",
+        "US-2"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-1.0",
+        "TC-1.1",
+        "TC-1.2",
+        "TC-1.3",
+        "TC-1.4",
+        "TC-2.0",
+        "TC-2.1",
+        "TC-2.2"
+      ],
+      "test_refs": [
+        "TC-1.0",
+        "TC-1.1",
+        "TC-1.2",
+        "TC-1.3",
+        "TC-1.4",
+        "TC-2.0",
+        "TC-2.1",
+        "TC-2.2"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_c_binding_compile.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_c_binding_compile.py"
+      ]
+    },
+    {
+      "task_id": "C-GATE-POLICY",
+      "altitude": "component",
+      "parent": "SS-CONTRACT",
+      "decomposes_into": [],
+      "title": "Shared gate policy",
+      "description": "The component shall provide: Shared gate policy: typed reject-code catalog (22), enforcement fence resolver (created_at \u2265 cutover AND pipeline_version \u2265 6), freshness constants (24h).",
+      "effort": "S",
+      "strategy": "test-first",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "TC-10.0 green (see tests-pseudo.md)",
+        "TC-10.1 green (see tests-pseudo.md)",
+        "TC-10.2 green (see tests-pseudo.md)",
+        "TC-11.0 green (see tests-pseudo.md)",
+        "TC-11.1 green (see tests-pseudo.md)",
+        "TC-11.2 green (see tests-pseudo.md)",
+        "TC-11.3 green (see tests-pseudo.md)",
+        "TC-11.4 green (see tests-pseudo.md)"
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md",
+        ".architecture/primer.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-GATE-POLICY/normative.md",
+        "definition_hash": "7b5de74cc1df"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-GATE-POLICY/component-verification-procedure.md",
+          "plan_hash": "1a81e5591492",
+          "artifact": "tests/test_c-gate-policy.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_c-gate-policy.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-1",
+        "rationale": "D0 leaf derived by cut edges; interfaces: E-3, E-4, E-5, E-6, E-16, E-32, E-33",
+        "traced_from": "SS-CONTRACT",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-10",
+        "US-11"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-10.0",
+        "TC-10.1",
+        "TC-10.2",
+        "TC-11.0",
+        "TC-11.1",
+        "TC-11.2",
+        "TC-11.3",
+        "TC-11.4"
+      ],
+      "test_refs": [
+        "TC-10.0",
+        "TC-10.1",
+        "TC-10.2",
+        "TC-11.0",
+        "TC-11.1",
+        "TC-11.2",
+        "TC-11.3",
+        "TC-11.4"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_c_gate_policy.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_c_gate_policy.py"
+      ]
+    },
+    {
+      "task_id": "SS-PROMOTION",
+      "altitude": "subsystem",
+      "parent": "SYS-HARD",
+      "decomposes_into": [
+        "C-OBS-CAPTURE",
+        "C-PROMOTION-COMPARE"
+      ],
+      "title": "Phase 8 observation and promotion",
+      "description": "The subsystem shall integrate: Phase 8 observation and promotion.",
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "The subsystem shall integrate: Phase 8 observation and promotion."
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "full-suite",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-PROMOTION/subsystem-spec.md",
+        "definition_hash": "0cde5a44292a"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-PROMOTION/component-verification-procedure.md",
+          "plan_hash": "5e53b2f69cfa",
+          "artifact": "tests/test_ss-promotion.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_ss-promotion.py -q"
+          ]
+        },
+        "subsystem_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-PROMOTION/subsystem-verification-plan.md",
+          "plan_hash": "eb5ded461fbb",
+          "artifact": "tests/test_ss-promotion.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_ss-promotion.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "SS-1",
+        "rationale": "derived from parent decomposition",
+        "traced_from": "SYS-HARD",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "subsystem"
+      },
+      "subsystem_spec_path": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-PROMOTION/subsystem-spec.md",
+      "realizes_refs": [
+        "US-5",
+        "US-6",
+        "US-13"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-13.0",
+        "TC-13.1",
+        "TC-13.2",
+        "TC-5.0",
+        "TC-5.1",
+        "TC-5.2",
+        "TC-5.3",
+        "TC-5.4",
+        "TC-5.5",
+        "TC-6.0",
+        "TC-6.1",
+        "TC-6.2"
+      ],
+      "test_refs": [
+        "TC-13.0",
+        "TC-13.1",
+        "TC-13.2",
+        "TC-5.0",
+        "TC-5.1",
+        "TC-5.2",
+        "TC-5.3",
+        "TC-5.4",
+        "TC-5.5",
+        "TC-6.0",
+        "TC-6.1",
+        "TC-6.2"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_ss_promotion.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_ss_promotion.py"
+      ]
+    },
+    {
+      "task_id": "C-OBS-CAPTURE",
+      "altitude": "component",
+      "parent": "SS-PROMOTION",
+      "decomposes_into": [],
+      "title": "Runner-owned target_observation capture",
+      "description": "The component shall provide: Runner-owned target_observation capture: caller/path/authority/contract hashes, runtime receipt, PID + start time.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-TMR-CONTRACT"
+      ],
+      "acceptance_criteria": [
+        "TC-5.0 green (see tests-pseudo.md)",
+        "TC-5.1 green (see tests-pseudo.md)",
+        "TC-5.2 green (see tests-pseudo.md)",
+        "TC-5.3 green (see tests-pseudo.md)",
+        "TC-5.4 green (see tests-pseudo.md)",
+        "TC-5.5 green (see tests-pseudo.md)"
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md",
+        ".architecture/primer.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-OBS-CAPTURE/normative.md",
+        "definition_hash": "191d5a302a33"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-OBS-CAPTURE/component-verification-procedure.md",
+          "plan_hash": "f02cf523ba64",
+          "artifact": "tests/test_c-obs-capture.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_c-obs-capture.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-1",
+        "rationale": "D0 leaf derived by cut edges; interfaces: E-7, E-12, E-31",
+        "traced_from": "SS-PROMOTION",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-5"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-5.0",
+        "TC-5.1",
+        "TC-5.2",
+        "TC-5.3",
+        "TC-5.4",
+        "TC-5.5"
+      ],
+      "test_refs": [
+        "TC-5.0",
+        "TC-5.1",
+        "TC-5.2",
+        "TC-5.3",
+        "TC-5.4",
+        "TC-5.5"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_c_obs_capture.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_c_obs_capture.py"
+      ]
+    },
+    {
+      "task_id": "C-PROMOTION-COMPARE",
+      "altitude": "component",
+      "parent": "SS-PROMOTION",
+      "decomposes_into": [],
+      "title": "compare_target_observation, fixture-provenance classifier (lexical scan advisory",
+      "description": "The component shall provide: compare_target_observation, fixture-provenance classifier (lexical scan advisory), terminal-enum coverage, rejection diagnostics payload.",
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-TMR-CONTRACT",
+        "C-GATE-POLICY",
+        "C-OBS-CAPTURE",
+        "C-BINDING-COMPILE"
+      ],
+      "acceptance_criteria": [
+        "TC-13.0 green (see tests-pseudo.md)",
+        "TC-13.1 green (see tests-pseudo.md)",
+        "TC-13.2 green (see tests-pseudo.md)",
+        "TC-5.0 green (see tests-pseudo.md)",
+        "TC-5.1 green (see tests-pseudo.md)",
+        "TC-5.2 green (see tests-pseudo.md)",
+        "TC-5.3 green (see tests-pseudo.md)",
+        "TC-5.4 green (see tests-pseudo.md)",
+        "TC-5.5 green (see tests-pseudo.md)",
+        "TC-6.0 green (see tests-pseudo.md)",
+        "TC-6.1 green (see tests-pseudo.md)",
+        "TC-6.2 green (see tests-pseudo.md)"
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md",
+        ".architecture/primer.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-PROMOTION-COMPARE/normative.md",
+        "definition_hash": "608baf387930"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-PROMOTION-COMPARE/component-verification-procedure.md",
+          "plan_hash": "c05022092774",
+          "artifact": "tests/test_c-promotion-compare.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_c-promotion-compare.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-1",
+        "rationale": "D0 leaf derived by cut edges; interfaces: E-2, E-3, E-7, E-8, E-17",
+        "traced_from": "SS-PROMOTION",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-5",
+        "US-6",
+        "US-13"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-13.0",
+        "TC-13.1",
+        "TC-13.2",
+        "TC-5.0",
+        "TC-5.1",
+        "TC-5.2",
+        "TC-5.3",
+        "TC-5.4",
+        "TC-5.5",
+        "TC-6.0",
+        "TC-6.1",
+        "TC-6.2"
+      ],
+      "test_refs": [
+        "TC-13.0",
+        "TC-13.1",
+        "TC-13.2",
+        "TC-5.0",
+        "TC-5.1",
+        "TC-5.2",
+        "TC-5.3",
+        "TC-5.4",
+        "TC-5.5",
+        "TC-6.0",
+        "TC-6.1",
+        "TC-6.2"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_c_promotion_compare.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_c_promotion_compare.py"
+      ]
+    },
+    {
+      "task_id": "SS-AUTHORITY",
+      "altitude": "subsystem",
+      "parent": "SYS-HARD",
+      "decomposes_into": [
+        "C-CENSUS",
+        "C-CUTOVER-OBLIGATIONS",
+        "C-PLAN-EMIT"
+      ],
+      "title": "Authority census and cutover planning",
+      "description": "The subsystem shall integrate: Authority census and cutover planning.",
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "The subsystem shall integrate: Authority census and cutover planning."
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "full-suite",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-AUTHORITY/subsystem-spec.md",
+        "definition_hash": "65b444a8063c"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-AUTHORITY/component-verification-procedure.md",
+          "plan_hash": "12580264da3e",
+          "artifact": "tests/test_ss-authority.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_ss-authority.py -q"
+          ]
+        },
+        "subsystem_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-AUTHORITY/subsystem-verification-plan.md",
+          "plan_hash": "3255fa7a10c7",
+          "artifact": "tests/test_ss-authority.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_ss-authority.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "SS-1",
+        "rationale": "derived from parent decomposition",
+        "traced_from": "SYS-HARD",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "subsystem"
+      },
+      "subsystem_spec_path": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-AUTHORITY/subsystem-spec.md",
+      "realizes_refs": [
+        "US-3",
+        "US-4"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-3.0",
+        "TC-3.1",
+        "TC-3.2",
+        "TC-3.3",
+        "TC-4.0",
+        "TC-4.1",
+        "TC-4.2",
+        "TC-4.3",
+        "TC-4.4"
+      ],
+      "test_refs": [
+        "TC-3.0",
+        "TC-3.1",
+        "TC-3.2",
+        "TC-3.3",
+        "TC-4.0",
+        "TC-4.1",
+        "TC-4.2",
+        "TC-4.3",
+        "TC-4.4"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_ss_authority.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_ss_authority.py"
+      ]
+    },
+    {
+      "task_id": "C-CENSUS",
+      "altitude": "component",
+      "parent": "SS-AUTHORITY",
+      "decomposes_into": [],
+      "title": "Structural trigger evaluation, authority-paths.json authoring/validation, discov",
+      "description": "The component shall provide: Structural trigger evaluation, authority-paths.json authoring/validation, discovery scope, fingerprint hash.",
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-GATE-POLICY"
+      ],
+      "acceptance_criteria": [
+        "TC-3.0 green (see tests-pseudo.md)",
+        "TC-3.1 green (see tests-pseudo.md)",
+        "TC-3.2 green (see tests-pseudo.md)",
+        "TC-3.3 green (see tests-pseudo.md)"
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md",
+        ".architecture/primer.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CENSUS/normative.md",
+        "definition_hash": "286aa650e6ba"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CENSUS/component-verification-procedure.md",
+          "plan_hash": "d2de48e2690c",
+          "artifact": "tests/test_c-census.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_c-census.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-1",
+        "rationale": "D0 leaf derived by cut edges; interfaces: E-9, E-15, E-18, E-30, E-32",
+        "traced_from": "SS-AUTHORITY",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-3"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-3.0",
+        "TC-3.1",
+        "TC-3.2",
+        "TC-3.3"
+      ],
+      "test_refs": [
+        "TC-3.0",
+        "TC-3.1",
+        "TC-3.2",
+        "TC-3.3"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_c_census.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_c_census.py"
+      ]
+    },
+    {
+      "task_id": "C-CUTOVER-OBLIGATIONS",
+      "altitude": "component",
+      "parent": "SS-AUTHORITY",
+      "decomposes_into": [],
+      "title": "build_cutover_obligations from the census delta, consumer task per censused call",
+      "description": "The component shall provide: build_cutover_obligations from the census delta, consumer task per censused caller, schedule postcondition; state authority dependency-semantics.json.",
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-CENSUS",
+        "C-BINDING-COMPILE"
+      ],
+      "acceptance_criteria": [
+        "TC-4.0 green (see tests-pseudo.md)",
+        "TC-4.1 green (see tests-pseudo.md)",
+        "TC-4.2 green (see tests-pseudo.md)",
+        "TC-4.3 green (see tests-pseudo.md)",
+        "TC-4.4 green (see tests-pseudo.md)"
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md",
+        ".architecture/primer.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CUTOVER-OBLIGATIONS/normative.md",
+        "definition_hash": "66146206bda0"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CUTOVER-OBLIGATIONS/component-verification-procedure.md",
+          "plan_hash": "1011adbbc74e",
+          "artifact": "tests/test_c-cutover-obligations.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_c-cutover-obligations.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-1",
+        "rationale": "D0 leaf derived by cut edges; interfaces: E-9, E-10, E-19, E-25, E-28",
+        "traced_from": "SS-AUTHORITY",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-4"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-4.0",
+        "TC-4.1",
+        "TC-4.2",
+        "TC-4.3",
+        "TC-4.4"
+      ],
+      "test_refs": [
+        "TC-4.0",
+        "TC-4.1",
+        "TC-4.2",
+        "TC-4.3",
+        "TC-4.4"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_c_cutover_obligations.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_c_cutover_obligations.py"
+      ]
+    },
+    {
+      "task_id": "C-PLAN-EMIT",
+      "altitude": "component",
+      "parent": "SS-AUTHORITY",
+      "decomposes_into": [],
+      "title": "Strict-int schema-3 fizzy-plan.json emission + self_check_plan (mirrors Fizzy co",
+      "description": "The component shall provide: Strict-int schema-3 fizzy-plan.json emission + self_check_plan (mirrors Fizzy codes); state authority fizzy-plan.json.",
+      "effort": "S",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-CUTOVER-OBLIGATIONS",
+        "C-GATE-POLICY"
+      ],
+      "acceptance_criteria": [
+        "TC-4.0 green (see tests-pseudo.md)",
+        "TC-4.1 green (see tests-pseudo.md)",
+        "TC-4.2 green (see tests-pseudo.md)",
+        "TC-4.3 green (see tests-pseudo.md)",
+        "TC-4.4 green (see tests-pseudo.md)"
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md",
+        ".architecture/primer.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-PLAN-EMIT/normative.md",
+        "definition_hash": "32b004a5b521"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-PLAN-EMIT/component-verification-procedure.md",
+          "plan_hash": "9b8934fda92a",
+          "artifact": "tests/test_c-plan-emit.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_c-plan-emit.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-1",
+        "rationale": "D0 leaf derived by cut edges; interfaces: E-6, E-25, E-35",
+        "traced_from": "SS-AUTHORITY",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-4"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-4.0",
+        "TC-4.1",
+        "TC-4.2",
+        "TC-4.3",
+        "TC-4.4"
+      ],
+      "test_refs": [
+        "TC-4.0",
+        "TC-4.1",
+        "TC-4.2",
+        "TC-4.3",
+        "TC-4.4"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_c_plan_emit.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_c_plan_emit.py"
+      ]
+    },
+    {
+      "task_id": "SS-CUSTODY",
+      "altitude": "subsystem",
+      "parent": "SYS-HARD",
+      "decomposes_into": [
+        "C-CUSTODY-LEDGER",
+        "C-CUSTODY-RECONCILE"
+      ],
+      "title": "Custody lifecycle",
+      "description": "The subsystem shall integrate: Custody lifecycle.",
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "The subsystem shall integrate: Custody lifecycle."
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "full-suite",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-CUSTODY/subsystem-spec.md",
+        "definition_hash": "510c409e9545"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-CUSTODY/component-verification-procedure.md",
+          "plan_hash": "73b4a730c535",
+          "artifact": "tests/test_ss-custody.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_ss-custody.py -q"
+          ]
+        },
+        "subsystem_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-CUSTODY/subsystem-verification-plan.md",
+          "plan_hash": "6d31c55b45c9",
+          "artifact": "tests/test_ss-custody.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_ss-custody.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "SS-1",
+        "rationale": "derived from parent decomposition",
+        "traced_from": "SYS-HARD",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "subsystem"
+      },
+      "subsystem_spec_path": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-CUSTODY/subsystem-spec.md",
+      "realizes_refs": [
+        "US-7",
+        "US-14"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-14.0",
+        "TC-14.1",
+        "TC-7.0",
+        "TC-7.1",
+        "TC-7.2",
+        "TC-7.3",
+        "TC-7.4",
+        "TC-7.5",
+        "TC-7.6",
+        "TC-7.7"
+      ],
+      "test_refs": [
+        "TC-14.0",
+        "TC-14.1",
+        "TC-7.0",
+        "TC-7.1",
+        "TC-7.2",
+        "TC-7.3",
+        "TC-7.4",
+        "TC-7.5",
+        "TC-7.6",
+        "TC-7.7"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_ss_custody.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_ss_custody.py"
+      ]
+    },
+    {
+      "task_id": "C-CUSTODY-LEDGER",
+      "altitude": "component",
+      "parent": "SS-CUSTODY",
+      "decomposes_into": [],
+      "title": "custody-ledger.jsonl rows, projected-total budget admission, dispositions, valid",
+      "description": "The component shall provide: custody-ledger.jsonl rows, projected-total budget admission, dispositions, validate_custody_close, missing-row detection.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-GATE-POLICY",
+        "C-CUTOVER-OBLIGATIONS"
+      ],
+      "acceptance_criteria": [
+        "TC-7.0 green (see tests-pseudo.md)",
+        "TC-7.1 green (see tests-pseudo.md)",
+        "TC-7.2 green (see tests-pseudo.md)",
+        "TC-7.3 green (see tests-pseudo.md)",
+        "TC-7.4 green (see tests-pseudo.md)",
+        "TC-7.5 green (see tests-pseudo.md)",
+        "TC-7.6 green (see tests-pseudo.md)",
+        "TC-7.7 green (see tests-pseudo.md)"
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md",
+        ".architecture/primer.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CUSTODY-LEDGER/normative.md",
+        "definition_hash": "40ec03bd710a"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CUSTODY-LEDGER/component-verification-procedure.md",
+          "plan_hash": "10fabbcc3c86",
+          "artifact": "tests/test_c-custody-ledger.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_c-custody-ledger.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-1",
+        "rationale": "D0 leaf derived by cut edges; interfaces: E-5, E-10, E-11, E-20",
+        "traced_from": "SS-CUSTODY",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-7"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-7.0",
+        "TC-7.1",
+        "TC-7.2",
+        "TC-7.3",
+        "TC-7.4",
+        "TC-7.5",
+        "TC-7.6",
+        "TC-7.7"
+      ],
+      "test_refs": [
+        "TC-7.0",
+        "TC-7.1",
+        "TC-7.2",
+        "TC-7.3",
+        "TC-7.4",
+        "TC-7.5",
+        "TC-7.6",
+        "TC-7.7"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_c_custody_ledger.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_c_custody_ledger.py"
+      ]
+    },
+    {
+      "task_id": "C-CUSTODY-RECONCILE",
+      "altitude": "component",
+      "parent": "SS-CUSTODY",
+      "decomposes_into": [],
+      "title": "Removal-preview validation (inventory, runtime dependency, recovery ref, exact a",
+      "description": "The component shall provide: Removal-preview validation (inventory, runtime dependency, recovery ref, exact authorization) and interruption reconciliation at session start.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-CUSTODY-LEDGER",
+        "C-OBS-CAPTURE",
+        "C-GATE-POLICY"
+      ],
+      "acceptance_criteria": [
+        "TC-14.0 green (see tests-pseudo.md)",
+        "TC-14.1 green (see tests-pseudo.md)",
+        "TC-7.0 green (see tests-pseudo.md)",
+        "TC-7.1 green (see tests-pseudo.md)",
+        "TC-7.2 green (see tests-pseudo.md)",
+        "TC-7.3 green (see tests-pseudo.md)",
+        "TC-7.4 green (see tests-pseudo.md)",
+        "TC-7.5 green (see tests-pseudo.md)",
+        "TC-7.6 green (see tests-pseudo.md)",
+        "TC-7.7 green (see tests-pseudo.md)"
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md",
+        ".architecture/primer.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CUSTODY-RECONCILE/normative.md",
+        "definition_hash": "27961243fd31"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CUSTODY-RECONCILE/component-verification-procedure.md",
+          "plan_hash": "0d028e0c0886",
+          "artifact": "tests/test_c-custody-reconcile.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_c-custody-reconcile.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-1",
+        "rationale": "D0 leaf derived by cut edges; interfaces: E-11, E-12, E-33",
+        "traced_from": "SS-CUSTODY",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-7",
+        "US-14"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-14.0",
+        "TC-14.1",
+        "TC-7.0",
+        "TC-7.1",
+        "TC-7.2",
+        "TC-7.3",
+        "TC-7.4",
+        "TC-7.5",
+        "TC-7.6",
+        "TC-7.7"
+      ],
+      "test_refs": [
+        "TC-14.0",
+        "TC-14.1",
+        "TC-7.0",
+        "TC-7.1",
+        "TC-7.2",
+        "TC-7.3",
+        "TC-7.4",
+        "TC-7.5",
+        "TC-7.6",
+        "TC-7.7"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_c_custody_reconcile.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_c_custody_reconcile.py"
+      ]
+    },
+    {
+      "task_id": "SS-REVIEW",
+      "altitude": "subsystem",
+      "parent": "SYS-HARD",
+      "decomposes_into": [
+        "C-CRITIC-PROMPTS",
+        "C-FINALIZE-ORACLE"
+      ],
+      "title": "Review plane: critic prompts and finalize ORACLE",
+      "description": "The subsystem shall integrate: Review plane: critic prompts and finalize ORACLE.",
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "The subsystem shall integrate: Review plane: critic prompts and finalize ORACLE."
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "full-suite",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-REVIEW/subsystem-spec.md",
+        "definition_hash": "45d600214030"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-REVIEW/component-verification-procedure.md",
+          "plan_hash": "e9fdce46ec03",
+          "artifact": "tests/test_ss-review.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_ss-review.py -q"
+          ]
+        },
+        "subsystem_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-REVIEW/subsystem-verification-plan.md",
+          "plan_hash": "b786acc1d69a",
+          "artifact": "tests/test_ss-review.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_ss-review.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "SS-1",
+        "rationale": "derived from parent decomposition",
+        "traced_from": "SYS-HARD",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "subsystem"
+      },
+      "subsystem_spec_path": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-REVIEW/subsystem-spec.md",
+      "realizes_refs": [
+        "US-8",
+        "US-9"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-8.0",
+        "TC-8.1",
+        "TC-8.2",
+        "TC-9.0",
+        "TC-9.1",
+        "TC-9.2",
+        "TC-9.3"
+      ],
+      "test_refs": [
+        "TC-8.0",
+        "TC-8.1",
+        "TC-8.2",
+        "TC-9.0",
+        "TC-9.1",
+        "TC-9.2",
+        "TC-9.3"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_ss_review.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_ss_review.py"
+      ]
+    },
+    {
+      "task_id": "C-CRITIC-PROMPTS",
+      "altitude": "component",
+      "parent": "SS-REVIEW",
+      "decomposes_into": [],
+      "title": "Debate guardrail + gauntlet seat prompt additions (route identity, shared contra",
+      "description": "The component shall provide: Debate guardrail + gauntlet seat prompt additions (route identity, shared contract, identity contradiction, callable predecessor); broker cross-path BLOCKED rule.",
+      "effort": "S",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-CENSUS",
+        "C-BINDING-COMPILE"
+      ],
+      "acceptance_criteria": [
+        "TC-8.0 green (see tests-pseudo.md)",
+        "TC-8.1 green (see tests-pseudo.md)",
+        "TC-8.2 green (see tests-pseudo.md)"
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md",
+        ".architecture/primer.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CRITIC-PROMPTS/normative.md",
+        "definition_hash": "e46d7bceb43c"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CRITIC-PROMPTS/component-verification-procedure.md",
+          "plan_hash": "660f2025e05b",
+          "artifact": "tests/test_c-critic-prompts.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_c-critic-prompts.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-1",
+        "rationale": "D0 leaf derived by cut edges; interfaces: E-14, E-15, E-29",
+        "traced_from": "SS-REVIEW",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-8"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-8.0",
+        "TC-8.1",
+        "TC-8.2"
+      ],
+      "test_refs": [
+        "TC-8.0",
+        "TC-8.1",
+        "TC-8.2"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_c_critic_prompts.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_c_critic_prompts.py"
+      ]
+    },
+    {
+      "task_id": "C-FINALIZE-ORACLE",
+      "altitude": "component",
+      "parent": "SS-REVIEW",
+      "decomposes_into": [],
+      "title": "ORACLE",
+      "description": "The component shall provide: ORACLE: obligation\u2194test bijection, executable witness with G/M controls, binding-required check, concern-closure rule, declared-assertion-shape check.",
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-GATE-POLICY",
+        "C-BINDING-COMPILE",
+        "C-CENSUS",
+        "C-CRITIC-PROMPTS"
+      ],
+      "acceptance_criteria": [
+        "TC-9.0 green (see tests-pseudo.md)",
+        "TC-9.1 green (see tests-pseudo.md)",
+        "TC-9.2 green (see tests-pseudo.md)",
+        "TC-9.3 green (see tests-pseudo.md)"
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md",
+        ".architecture/primer.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-FINALIZE-ORACLE/normative.md",
+        "definition_hash": "d04fe3444ae5"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-FINALIZE-ORACLE/component-verification-procedure.md",
+          "plan_hash": "e3860c30f6dc",
+          "artifact": "tests/test_c-finalize-oracle.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_c-finalize-oracle.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-1",
+        "rationale": "D0 leaf derived by cut edges; interfaces: E-4, E-13, E-14, E-30, E-34",
+        "traced_from": "SS-REVIEW",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-9"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-9.0",
+        "TC-9.1",
+        "TC-9.2",
+        "TC-9.3"
+      ],
+      "test_refs": [
+        "TC-9.0",
+        "TC-9.1",
+        "TC-9.2",
+        "TC-9.3"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_c_finalize_oracle.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_c_finalize_oracle.py"
+      ]
+    },
+    {
+      "task_id": "SS-PROOF",
+      "altitude": "subsystem",
+      "parent": "SYS-HARD",
+      "decomposes_into": [
+        "C-GOLDEN-HARNESS",
+        "C-BOOTSTRAP-ADOPT"
+      ],
+      "title": "Proof and adoption",
+      "description": "The subsystem shall integrate: Proof and adoption.",
+      "effort": "L",
+      "strategy": "test-first",
+      "depends_on": [],
+      "acceptance_criteria": [
+        "The subsystem shall integrate: Proof and adoption."
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "full-suite",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-PROOF/subsystem-spec.md",
+        "definition_hash": "5f3f13d7f463"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-PROOF/component-verification-procedure.md",
+          "plan_hash": "95e6f31563d3",
+          "artifact": "tests/test_ss-proof.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_ss-proof.py -q"
+          ]
+        },
+        "subsystem_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-PROOF/subsystem-verification-plan.md",
+          "plan_hash": "4e2b3d1ac756",
+          "artifact": "tests/test_ss-proof.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_ss-proof.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "SS-1",
+        "rationale": "derived from parent decomposition",
+        "traced_from": "SYS-HARD",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "subsystem"
+      },
+      "subsystem_spec_path": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-PROOF/subsystem-spec.md",
+      "realizes_refs": [
+        "US-0",
+        "US-10",
+        "US-12",
+        "US-16"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-0.0",
+        "TC-0.1",
+        "TC-10.0",
+        "TC-10.1",
+        "TC-10.2",
+        "TC-12.0",
+        "TC-12.1",
+        "TC-12.2",
+        "TC-16.0",
+        "TC-16.1"
+      ],
+      "test_refs": [
+        "TC-0.0",
+        "TC-0.1",
+        "TC-10.0",
+        "TC-10.1",
+        "TC-10.2",
+        "TC-12.0",
+        "TC-12.1",
+        "TC-12.2",
+        "TC-16.0",
+        "TC-16.1"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_ss_proof.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_ss_proof.py"
+      ]
+    },
+    {
+      "task_id": "C-GOLDEN-HARNESS",
+      "altitude": "component",
+      "parent": "SS-PROOF",
+      "decomposes_into": [],
+      "title": "Golden replay (15 + 3), one-field mutation matrix, reject-code coverage check",
+      "description": "The component shall provide: Golden replay (15 + 3), one-field mutation matrix, reject-code coverage check.",
+      "effort": "M",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-GATE-POLICY",
+        "C-PROMOTION-COMPARE",
+        "C-CENSUS",
+        "C-CUTOVER-OBLIGATIONS",
+        "C-PLAN-EMIT",
+        "C-CUSTODY-LEDGER",
+        "C-FINALIZE-ORACLE"
+      ],
+      "acceptance_criteria": [
+        "TC-10.0 green (see tests-pseudo.md)",
+        "TC-10.1 green (see tests-pseudo.md)",
+        "TC-10.2 green (see tests-pseudo.md)"
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md",
+        ".architecture/primer.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-unit",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-GOLDEN-HARNESS/normative.md",
+        "definition_hash": "f80fd60d64ce"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-GOLDEN-HARNESS/component-verification-procedure.md",
+          "plan_hash": "70c7e70b55df",
+          "artifact": "tests/test_c-golden-harness.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_c-golden-harness.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-1",
+        "rationale": "D0 leaf derived by cut edges; interfaces: E-16, E-17, E-18, E-19, E-20, E-22, E-34, E-35",
+        "traced_from": "SS-PROOF",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-10"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-10.0",
+        "TC-10.1",
+        "TC-10.2"
+      ],
+      "test_refs": [
+        "TC-10.0",
+        "TC-10.1",
+        "TC-10.2"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_c_golden_harness.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_c_golden_harness.py"
+      ]
+    },
+    {
+      "task_id": "C-BOOTSTRAP-ADOPT",
+      "altitude": "component",
+      "parent": "SS-PROOF",
+      "decomposes_into": [],
+      "title": "Readiness command (ready/degraded/broken), adoption guide, v5\u2192v6 migration doc, ",
+      "description": "The component shall provide: Readiness command (ready/degraded/broken), adoption guide, v5\u2192v6 migration doc, worked non-money example.",
+      "effort": "S",
+      "strategy": "test-first",
+      "depends_on": [
+        "C-TMR-CONTRACT",
+        "C-GOLDEN-HARNESS"
+      ],
+      "acceptance_criteria": [
+        "TC-0.0 green (see tests-pseudo.md)",
+        "TC-0.1 green (see tests-pseudo.md)",
+        "TC-12.0 green (see tests-pseudo.md)",
+        "TC-12.1 green (see tests-pseudo.md)",
+        "TC-12.2 green (see tests-pseudo.md)",
+        "TC-16.0 green (see tests-pseudo.md)",
+        "TC-16.1 green (see tests-pseudo.md)"
+      ],
+      "architecture_refs": [
+        ".architecture/INDEX.md",
+        ".architecture/primer.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "targeted",
+      "implementation_status": "greenfield",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-BOOTSTRAP-ADOPT/normative.md",
+        "definition_hash": "28145d047e13"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-BOOTSTRAP-ADOPT/component-verification-procedure.md",
+          "plan_hash": "cb1c27cbf470",
+          "artifact": "tests/test_c-bootstrap-adopt.py",
+          "kind": "verification",
+          "verify_commands": [
+            "uv run pytest tests/test_c-bootstrap-adopt.py -q"
+          ]
+        }
+      },
+      "requirement_metadata": {
+        "requirement_id": "C-1",
+        "rationale": "D0 leaf derived by cut edges; interfaces: E-21, E-22",
+        "traced_from": "SS-PROOF",
+        "owner": "spec-producer",
+        "verification_method": "test",
+        "verification_level": "component"
+      },
+      "realizes_refs": [
+        "US-0",
+        "US-12",
+        "US-16"
+      ],
+      "tested_by": "llm",
+      "test_cases": [
+        "TC-0.0",
+        "TC-0.1",
+        "TC-12.0",
+        "TC-12.1",
+        "TC-12.2",
+        "TC-16.0",
+        "TC-16.1"
+      ],
+      "test_refs": [
+        "TC-0.0",
+        "TC-0.1",
+        "TC-12.0",
+        "TC-12.1",
+        "TC-12.2",
+        "TC-16.0",
+        "TC-16.1"
+      ],
+      "verify_commands": [
+        "uv run pytest skills/adversarial-spec/scripts/tests/test_c_bootstrap_adopt.py -q"
+      ],
+      "test_files": [
+        "skills/adversarial-spec/scripts/tests/test_c_bootstrap_adopt.py"
+      ]
+    }
+  ],
+  "_artifact_manifest": [
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SYS-HARD/system-spec.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SYS-HARD/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SYS-HARD/subsystem-verification-plan.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SYS-HARD/system-verification-plan.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-CONTRACT/subsystem-spec.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-CONTRACT/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-CONTRACT/subsystem-verification-plan.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-TMR-CONTRACT/normative.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-TMR-CONTRACT/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-BINDING-COMPILE/normative.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-BINDING-COMPILE/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-GATE-POLICY/normative.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-GATE-POLICY/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-PROMOTION/subsystem-spec.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-PROMOTION/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-PROMOTION/subsystem-verification-plan.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-OBS-CAPTURE/normative.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-OBS-CAPTURE/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-PROMOTION-COMPARE/normative.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-PROMOTION-COMPARE/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-AUTHORITY/subsystem-spec.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-AUTHORITY/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-AUTHORITY/subsystem-verification-plan.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CENSUS/normative.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CENSUS/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CUTOVER-OBLIGATIONS/normative.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CUTOVER-OBLIGATIONS/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-PLAN-EMIT/normative.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-PLAN-EMIT/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-CUSTODY/subsystem-spec.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-CUSTODY/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-CUSTODY/subsystem-verification-plan.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CUSTODY-LEDGER/normative.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CUSTODY-LEDGER/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CUSTODY-RECONCILE/normative.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CUSTODY-RECONCILE/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-REVIEW/subsystem-spec.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-REVIEW/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-REVIEW/subsystem-verification-plan.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CRITIC-PROMPTS/normative.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-CRITIC-PROMPTS/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-FINALIZE-ORACLE/normative.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-FINALIZE-ORACLE/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-PROOF/subsystem-spec.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-PROOF/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/SS-PROOF/subsystem-verification-plan.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-GOLDEN-HARNESS/normative.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-GOLDEN-HARNESS/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-BOOTSTRAP-ADOPT/normative.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/C-BOOTSTRAP-ADOPT/component-verification-procedure.md",
+    ".adversarial-spec/specs/bounded-pipeline-reform-hardening-alignment/conops-outline.md"
+  ],
+  "generated_at": "2026-09-15T06:43:30Z",
+  "provenance": {
+    "d0_manifest_hash": "e0d767106f3e",
+    "roadmap": "roadmap/manifest.json v2",
+    "emitter": "mini_spec_emission.emit_fizzy_plan"
+  }
+}

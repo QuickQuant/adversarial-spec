@@ -1,0 +1,43 @@
+{
+  "decision": "BASELINE",
+  "candidate_hash": "7a29ceccc5feee9fe0af4ff2f20800dbaf9b8953",
+  "decided_at": "2026-09-15T07:18:44Z",
+  "decided_by": "claude conductor (Fable 5.1)",
+  "hashes_match": {
+    "impl_sha256": "sha256:ada3644c6e245f143d4504d04e7445e5d27568d89cbf1a9d7faf2e49e09e4a6c",
+    "suite_sha256": "sha256:6ea0aa5fd8ce4eb02c0c26f1adcfea0fddcc153be828c79b29b408358536561b",
+    "matrix": "fanout/observation-matrix.json"
+  },
+  "allocation_coverage": "6/6 obligations of this leaf discharged by the selected candidate",
+  "critical_risk_silently_accepted": false,
+  "e_failure_dispositions": [
+    {
+      "candidate": "antigravity/gemini-3.8-flash-high",
+      "row": "O-5",
+      "disposition": "REBASE",
+      "note": "seat dropped with attribution; not carried into the baseline"
+    }
+  ],
+  "open_actions": [
+    {
+      "id": "R-1",
+      "owner": "claude conductor",
+      "due": "post-finalize W-task",
+      "text": "LLM-emitted diffs must be generated from real file states or recounted; dispatch wrapper for candidate seats"
+    },
+    {
+      "id": "R-2",
+      "owner": "Jason (operator decision)",
+      "due": "before next fanout",
+      "text": "scoped permissions.allow for agy candidate seats, or accept print-only agy candidates"
+    }
+  ],
+  "reviewer_independence": {
+    "author": "codex/gpt-6-astra",
+    "judge_and_synthesizer": "claude",
+    "local_challenger": "antigravity/gemini-3.8-flash-high",
+    "satisfied": true
+  },
+  "nasa_mapping": "MDR/SDR (candidates are disposable prototypes until the post-finalize W-task lands the canonical implementation)",
+  "decision_record": "fanout/synthesis.md"
+}
