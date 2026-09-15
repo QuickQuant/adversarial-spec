@@ -25,7 +25,7 @@ The spec jumped directly into technical architecture without defining WHO would 
 
 ```
 US-1: Developer Bootstrapping New API
-  AS A developer starting a new project against an API (e.g., Kalshi)
+  AS A developer starting new project against an API (e.g., Kalshi)
   I WANT TO quickly set up documentation lookup for that API
   SO THAT I can get targeted, token-efficient answers about API endpoints
 
@@ -348,6 +348,179 @@ The adversarial-spec process successfully produced a technically sound specifica
 
 ---
 
+---
+
+## Process Failure #2: Spec Format Incompatible with Execution Planner
+
+**Date:** 2026-01-28
+**Phase:** Execution Planning (Phase 6)
+**Symptom:** Pipeline generated 0 tasks despite 56 gauntlet concerns
+
+### What Happened
+
+After completing debate (2 rounds) and gauntlet (3 personas, 56 concerns), the session state was marked `complete` — **skipping the execution planning phase entirely**.
+
+When execution planning was attempted manually, the pipeline parsed the spec but extracted:
+- 0 functional requirements
+- 0 data models
+- 0 API endpoints
+- 0 tasks generated
+
+```
+[3/6] Task Plan Generation...
+  Generated 0 tasks
+```
+
+### Root Cause: Format Mismatch
+
+The `execution_planner` module expects specs in one of two formats:
+
+**PRD Format Expected:**
+```markdown
+## User Stories
+### US-1: Story Title
+AS A [user]...
+
+## Functional Requirements
+### FR-1: Requirement Title
+[requirement content]
+```
+
+**Tech Spec Format Expected:**
+```markdown
+## 2. Goals
+[Numbered section with goals/non-goals headers]
+
+## 4. Data Models
+### 4.1 ModelName
+[TypeScript/structured code block]
+
+## 6. API Endpoints
+### 6.1 endpoint:name
+[Request/response schemas]
+```
+
+**What Our Spec Has:**
+```markdown
+## Goals
+1. Return the most relevant chunk...
+2. Enable first successful query...
+
+## Data Models
+### EndpointItem (for OpenAPI sources)
+```python
+class Parameter(BaseModel):
+    name: str
+    ...
+```
+
+## Commands
+### init
+```bash
+docmaster init <source_id> --file <path>...
+```
+```
+
+### Specific Mismatches
+
+| Expected | Actual | Impact |
+|----------|--------|--------|
+| `US-1`, `US-2` prefixes | Prose user stories in session JSON | 0 user stories parsed |
+| `FR-1`, `FR-2` prefixes | No functional requirements section | 0 FRs parsed |
+| `### 4.1 ModelName` format | `### EndpointItem (for OpenAPI)` | 0 data models parsed |
+| `## 6. API Endpoints` | `## Commands` | 0 endpoints parsed |
+| TypeScript code blocks | Python code blocks | Format detection failed |
+| Numbered sections (##1, ##2) | Named sections only | Section extraction failed |
+
+### Why This Happened
+
+1. **Format not specified during debate** - No template or format requirement was enforced
+2. **Gauntlet didn't check format** - Personas focused on content, not structure
+3. **Phase skipped** - Session jumped from gauntlet → complete, skipping execution planning
+4. **No validation** - Nothing verified the spec could be parsed by downstream tools
+
+### Impact
+
+1. **Wasted gauntlet work** - 56 concerns addressed but can't be linked to tasks
+2. **Manual task creation required** - Execution plan is empty, must create tasks by hand
+3. **No traceability** - Can't auto-generate acceptance criteria from gauntlet concerns
+4. **Spec rework needed** - Either reformat spec or enhance parser
+
+### Recommendations
+
+#### 1. Enforce Spec Format Templates
+
+Add to Phase 1 (initialization):
+
+```markdown
+## Spec Format Selection (REQUIRED)
+
+Select output format based on downstream tooling:
+
+1. **Executable Format** (recommended if using execution planner)
+   - PRD: US-X, FR-X, NFR-X prefixed sections
+   - Tech Spec: Numbered sections, TypeScript code blocks
+
+2. **Narrative Format** (human-readable, manual task creation)
+   - Prose sections
+   - Any code block format
+
+If "Executable Format" selected, use templates from:
+~/.claude/skills/adversarial-spec/templates/
+```
+
+#### 2. Add Format Validation Before Finalize
+
+Add to Phase 5 (finalize):
+
+```markdown
+## Pre-Finalize Validation (REQUIRED)
+
+Before marking spec complete, run:
+
+python3 debate.py validate-format --spec-file spec-output.md
+
+This checks:
+- [ ] User stories have US-X prefixes (PRD) or Goals section exists (tech spec)
+- [ ] Functional requirements have FR-X prefixes or Commands section parseable
+- [ ] Data models have expected structure
+- [ ] Section numbering matches parser expectations
+
+If validation fails, either:
+1. Reformat spec to match expected structure
+2. Explicitly acknowledge manual task creation will be required
+```
+
+#### 3. Never Skip Execution Phase
+
+Add to session state machine:
+
+```
+gauntlet_complete → execution (REQUIRED) → complete
+                    ↓
+                    If execution generates 0 tasks:
+                    → BLOCK completion
+                    → Alert: "Spec format incompatible, reformat or acknowledge manual mode"
+```
+
+#### 4. Enhance Execution Planner Parser
+
+The `spec_intake.py` parser is too rigid. Consider:
+
+1. **Fuzzy section matching** - Accept "Commands" as alias for "API Endpoints"
+2. **Code block format detection** - Parse Python, TypeScript, or any typed language
+3. **Prose user story extraction** - Parse "As a... I want... So that..." even without US-X prefix
+4. **Fallback task generation** - If structured parsing fails, use LLM to extract tasks
+
+### Immediate Remediation Options
+
+1. **Reformat spec-output.md** to use FR-X prefixes and numbered sections
+2. **Enhance execution_planner** to handle narrative format
+3. **Create tasks manually** and link gauntlet concerns by hand
+4. **Hybrid approach** - Add FR-X wrapper sections pointing to existing content
+
+---
+
 ## Appendix: Session Statistics
 
 | Metric | Value |
@@ -359,3 +532,45 @@ The adversarial-spec process successfully produced a technically sound specifica
 | Bootstrap Workflow Defined | Round 4 (after user asked) |
 | Lines of Spec Before Bootstrap Section | ~600 |
 | Lines Added for Bootstrap | ~120 |
+
+## Appendix: Execution Planning Failure Statistics
+
+| Metric | Value |
+|--------|-------|
+| Gauntlet Concerns | 56 |
+| Concerns Linked to Tasks | 0 |
+| Tasks Generated | 0 |
+| Functional Requirements Parsed | 0 |
+| Data Models Parsed | 0 |
+| API Endpoints Parsed | 0 |
+| Root Cause | Format mismatch between spec and parser |
+
+---
+
+## Process Failure #3: Conductor Wake-Up Storm from Consecutive Idle Status Updates
+
+**Date:** 2026-07-19
+**Phase:** Debate (Phase 3)
+**Symptom:** Conductor agent (Claude) woke up repeatedly in a loop, consuming turns/tokens while the Gemini worker was idle.
+
+### What Happened
+
+A Gemini worker registration process successfully registered the worker session, and then entered a background self-pickup loop (`gemini_worker_loop.py`).
+Because the active session was in the **debate phase (Phase 3)**, no task or review cards were available on the board. The worker continually received `action="idle"` from `pipeline_do_next_task`.
+Following the instructions in the `register-gemini-worker` skill, the script posted a `worker_idle` status update to the conductor's feed (`.conductor/dispatch/claude/updates.jsonl`) every 5 consecutive idle polls (roughly every 10 minutes).
+The conductor's wake listener watched this feed on disk and interpreted every new line (including identical, consecutive `worker_idle` heartbeats) as an event requiring the conductor (Claude) to wake up and process it. This caused a continuous wake-up loop (churn) that consumed substantial Claude tokens/turns without executing any real work.
+
+### Root Cause: Redundant Heartbeats & Over-sensitive Wake Listener
+
+1. **Lack of State-Change Filtering**: The worker loop blindly posted `worker_idle` updates every 5 polls even if the worker's status was *already* idle. It did not check if the status had transitioned from working to idle, resulting in consecutive, identical idle notifications.
+2. **Conductor Wake Listener Sensitivity**: The wake listener blindly wakes up the conductor for *any* new line in the updates feed, without filtering out redundant or duplicate status notifications.
+3. **Phase-Awareness Gap**: The worker loop was launched during a non-implementation phase where it could only spin idle.
+
+### Recommendations & Fix
+
+1. **Suppressed Consecutive Idle Updates (The Fix)**:
+   Workers must **never** post two consecutive `worker_idle` status updates in a row. A worker should write a `worker_idle` status update *only* when transitioning from a working/claiming state to an idle state.
+2. **Deregister When Inactive**:
+   Deregister workers and kill polling loops when entering non-implementation phases (e.g. debate, requirements) to prevent spinning.
+3. **Listener Smart Filtering**:
+   Configure the conductor's wake listener to ignore redundant heartbeats or status updates that do not represent an actionable phase change or new card assignment.

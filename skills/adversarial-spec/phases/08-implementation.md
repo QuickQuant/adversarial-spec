@@ -110,7 +110,26 @@ Load in order. Skipping this → decisions that contradict the spec or codebase 
 
 This is the core implementation protocol. All agents (Claude, Codex, Gemini) follow the same loop.
 
-#### Step 1: Get Next Task
+#### Step 1: Inspect, Then Claim Work
+
+Use a read-only call when deciding whether to begin or reporting status:
+
+```
+pipeline_next_actions(session_id, agent, board_id)
+# or pipeline_lane_state(pipeline="task", session_id, agent, board_id)
+```
+
+These calls name an actionable card, human gate, live claim, or unmet
+prerequisite without changing card metadata. Do **not** call
+`pipeline_do_next_task` merely to poll or inspect: it claims work when work is
+available.
+
+If `attention.session_context.kind` is `session_card_missing`, stop. The task
+cards were separated from their parent session (often by an incomplete archive
+move), so no agent may claim, sweep, or archive them until the session is
+restored or reconciled on the board.
+
+When ready to perform the returned action, claim it through:
 
 ```
 pipeline_do_next_task(
@@ -125,26 +144,38 @@ The pipeline walks lanes in priority order and returns the next qualifying card:
 
 | Priority | Lane | Selection Rule |
 |----------|------|----------------|
-| 1 | Failed Review | First unclaimed card (claim-wait-verify) |
-| 2 | Review | First card where `implementer_agent != requesting agent` |
-| 3 | Untested | First card |
-| 4 | New Todo | First unclaimed card where all `depends_on` are satisfied (claim-wait-verify) |
+| 1 | Failed Review | Original implementer while its live rework reservation remains; otherwise first claimable card |
+| 2 | Review | First claimable card where `implementer_agent != requesting agent` |
+| 3 | Untested | First claimable agent-test card; human-attestation cards are surfaced as a human action instead |
+| 4 | New Todo | First claimable card where all `depends_on` are satisfied |
 | 5 | Passed Test | Only when lanes 1-4 are all empty |
 
 **Card Claiming Protocol (built into MCP):**
-For Failed Review and New Todo lanes, the pipeline uses a claim-wait-verify protocol
-to prevent two agents from working on the same card simultaneously:
+For every working lane (Failed Review, Review, Untested, and New Todo), the
+pipeline re-reads the candidate, writes `claim_status=in_progress` with an
+optimistic metadata-version guard, and treats a 409 conflict as a lost claim.
+Native assignee display is cosmetic; the metadata claim is authoritative. Claims
+normally expire after 30 minutes. `pipeline_heartbeat(event="active"|"beat")`
+keeps a matching live claim fresh, but persistence is coalesced (normally every
+five minutes) so status heartbeats do not create a write storm.
 
-1. **Write claim:** Set `claimed_by` + `claimed_at` in the card's state/metadata
-2. **Wait 3 seconds:** Race-condition window — if another agent also claimed, their
-   write may overwrite ours
-3. **Re-read and verify:** Fetch the card again. If `claimed_by` still matches our
-   agent name, the claim succeeded. If not, skip the card and try the next one.
+Failed Review has a second fence: the recorded implementer receives a temporary
+rework reservation. Do not steal that work during the reservation. Use
+`pipeline_handoff_claim` for a deliberate ownership transfer; it moves the claim
+and reservation in one metadata CAS instead of creating a release-and-reclaim gap.
 
-Claims expire after 10 minutes (stale claims are ignored). This is fully automatic —
-agents don't need to do anything special beyond calling `pipeline_do_next_task`.
+If you selected a card but cannot begin work, call `pipeline_release_claim` yourself
+with a concise reason. Never leave a diagnostic or abandoned live claim for TTL
+expiry.
 
-Returns: `{card_id, task_id, action_string, lane, effort, strategy}` or idle.
+An idle result now includes a bounded `attention` block. Read `attention.next_actions`
+and `attention.blocked` before reporting that there is no work; it names the review,
+human gate, live owner, or prerequisite card that is actually holding the queue.
+
+**Visible comments:** follow the Fizzy Card Comment Convention in `SKILL.md`.
+Write a short outcome, only the evidence a human needs, and the next actor. Keep
+machine detail in pipeline metadata and tool results. Never paste JSON, tool
+payloads, transcripts, or checklist dumps into `add_comment`.
 
 #### Step 2: Execute Based on Action
 
@@ -229,18 +260,53 @@ Same as "implement" but:
    - `summary`: brief test results
 4. **Return to Step 1**
 
+If `pipeline_next_actions` or idle `attention.human_actions` says a card requires
+human attestation, do not claim it and do not call `pipeline_test` for it. Give the
+human a concise brief with the card, evidence to inspect, and requested decision;
+the operator records the result through `pipeline_attest_task`.
+
+**action = "blocked" with `blocker.kind = "human_execution"`**
+
+1. Do **not** claim another card or try to implement the blocked card. The
+   scheduler has deliberately selected operator-owned work.
+2. Surface the card's `operator_procedure`, `evidence_destination`, and its
+   plain-language `HUMAN ACTION:` brief in the same conversation/report. Do not
+   paraphrase it into opaque plan jargon and do not make the operator discover
+   evidence paths unaided.
+3. The operator resolves it through `pipeline_complete_human_task`, supplying
+   literal outcome evidence for **every** acceptance step. Agents may facilitate
+   the call, but must never invent, summarize as firsthand, or self-attest the
+   operator's evidence.
+4. Respect scope. `global` means stop the worker loop until that human task is
+   resolved; `dependency` means the blocked task is unavailable but independent
+   safe work may still be dispatched. Never turn this into a blanket ban on
+   orthogonal implementation or isolated speculative worktrees.
+
 **action = "sweep" (from Passed Test, only when all other lanes empty)**
 
 1. **Do NOT call pipeline_sweep yet.** All cards in Passed Test means implementation
    is done, but verification hasn't run.
-2. **Transition to Phase 9: Verification.** Follow `09-verification.md`.
-3. Verification produces a report and either sweeps (all pass) or fails specific cards.
-4. **Stop the self-pickup loop.** Phase 9 takes over from here.
+2. Run `pipeline_check_sweep_readiness(session_id, board_id)`. If it says the
+   session card is missing from the current board, stop and repair that split;
+   do not force a sweep against orphaned task cards.
+3. **Transition to Phase 9: Verification.** Follow `09-verification.md`.
+4. Verification produces a report and either sweeps (all pass) or fails specific cards.
+5. **Stop the self-pickup loop.** Phase 9 takes over from here.
+
+After the session and every task are in `Completed-Unmapped` or
+`Completed-Mapped`, an operator may run `pipeline_archive_completed_session` as
+a dry run. It never closes work by default; applying it requires the exact
+confirmation string returned by the preview.
 
 **action = "idle" (no qualifying cards)**
 
 1. Report status to the user:
+   - Read `attention.next_actions`, `attention.human_actions`, and `attention.blocked`.
+     State the named card and next actor, not only a lane count.
    - If reason mentions self-review skip: "Cards exist in Review but need a different agent to review them."
+   - A human attestation is actionable only when `attention.human_actions` says it is;
+     a card configured with `tested_by: both` is not awaiting a human while it is
+     still in New Todo or its automated test result is pending.
    - If all lanes empty: "All cards completed. Implementation done."
 2. **Stop the loop.** Do not continue polling.
 
@@ -249,7 +315,7 @@ Same as "implement" but:
 After each completed action, immediately return to Step 1. The loop continues
 until the pipeline returns "idle."
 
-#### Human-Gated Cards (blocker_type=human_decision) — HUMAN BRIEF required
+#### Human-decision cards (`blocker_type=human_decision`) — HUMAN BRIEF required
 
 When you call `pipeline_block_task` with `blocker_type: "human_decision"`, the card
 is now a question **for the operator**, not for agents. Two obligations, both
@@ -274,6 +340,23 @@ When the operator resolves or defers the question, **re-block with the new
 truth**: a deferral is `blocker_type: "external_dependency"` with the deferral
 reason and the unblocking artifact named — never leave the machine state reading
 `human_decision`/awaiting-operator after the operator has already answered.
+
+#### Human-execution cards (`blocker_type=human_execution`) — no agent claim
+
+This is not a question for an agent to answer and not a `tested_by` attestation
+waiting in Untested. It is a plan-declared, pure operator task. `pipeline_load`
+materializes it with a blocked tag, no agent assignee, the procedure/evidence
+destination, and the resolving tool. Its card description must contain the
+`HUMAN ACTION:` brief authored in Phase 7.
+
+When a human-execution task is ready, auto-surface it in the same session:
+regenerate `recent.html` or send its exact brief through Telegram. A global one
+must cause `pipeline_do_next_task` to return `action: "blocked"` for **all**
+workers before claim selection; a dependency-scoped one may coexist with
+unrelated work. Resolve success or rejection only through
+`pipeline_complete_human_task`; it records per-criterion evidence and moves the
+card to the appropriate lane. Do not use `pipeline_attest_task` to retrofit a
+pure human task and do not use `pipeline_test` on it.
 
 ---
 
@@ -498,7 +581,12 @@ If you believe a new file is needed that the plan doesn't list, **stop and updat
 When a user asks "can you check X" or "I want to see Y working":
 
 1. **Check scope first** — Is this part of the current session's tasks?
-2. **Track it** — Add the investigation as a Fizzy card or comment on the relevant card
+2. **Track it through the right record** — For an investigation with no new
+   implementation work, add a comment on the relevant Card. For new implementation
+   work, amend the execution plan and its `fizzy-plan.json`, get the required plan
+   approval, then run `pipeline_validate_plan` followed by `pipeline_load`; only then
+   use `pipeline_do_next_task`. That is what **carded** means. Raw `add_card` does not
+   create a Task Card for an active Session, and a comment does not authorize work.
 3. **Targeted queries only** — Don't burn context with ad-hoc debugging
 4. **Identify root cause** — Don't just poke values to make things "look right"
 5. **Propose fix through process** — Update Fizzy card with the fix needed

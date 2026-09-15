@@ -133,6 +133,15 @@ def test_guardrails_registered_separately_from_adversaries():
         assert name not in ADVERSARY_TEMPLATES, f"{name} should not be in ADVERSARY_TEMPLATES"
 
 
+def test_scope_guardrail_flags_unlinked_cross_project_authority_work():
+    """A project spec may not silently implement a different project's repair."""
+    scope = GUARDRAILS["scope_creep_detector"].persona
+
+    assert "CROSS-PROJECT / AUTHORITY EXPANSION" in scope
+    assert "linked sibling session/card" in scope
+    assert "different repository" in scope
+
+
 def test_contract_and_test_guardrails_audit_semantic_causality():
     """CANON and TCOV should catch causality/display drift, not just type hygiene."""
     canon = GUARDRAILS["canonical_type_auditor"].persona.lower()

@@ -1,33 +1,28 @@
 # Architecture Access Guide
 
-> How to read `.architecture/` without loading everything. Generated at `ef18c66`; if a referenced source file changed after that commit, trust source over this corpus.
+> How to read `.architecture/` without loading everything.
 
 ## General Primer
 
 1. Read [primer.md](primer.md).
-2. Use [INDEX.md](INDEX.md) only for navigation and component selection.
-3. Escalate to [overview.md](overview.md) when the primer does not explain the system shape.
+2. Use [INDEX.md](INDEX.md) only to select a component.
+3. Escalate to [overview.md](overview.md) for whole-system shape.
 
 ## Actionable Concerns
 
 1. Read [concerns.md](concerns.md).
-2. Follow each concern's source refs into [findings.md](findings.md), [patterns.md](patterns.md), or the cited component document.
-3. Use [structured/cross-references.md](structured/cross-references.md) when the recommended action changes a shared type, file boundary, or persistence contract.
+2. Follow its source references into the matched component doc and [findings.md](findings.md).
+3. Use this route before planning a fix or starting adversarial review.
 
 ## Plan Evaluation
 
-1. Start with [primer.md](primer.md).
-2. Use [INDEX.md](INDEX.md) to match plan paths and terms to `components[].key_files` and `intent_tags`.
-3. Read [concerns.md](concerns.md) for known hazards in the proposed blast zone.
-4. Read the matched document in [structured/components/](structured/components/).
-5. Read [structured/cross-references.md](structured/cross-references.md) for contracts, called-by relationships, and shared files.
-6. Read [structured/flows.md](structured/flows.md) only when the plan crosses components or runtime boundaries.
+1. Start with [primer.md](primer.md), then match plan paths and nouns in [INDEX.md](INDEX.md).
+2. Read the matching [component doc](structured/components/).
+3. For any CLI/file/hook boundary, read [cross-references.md](structured/cross-references.md).
+4. Read [flows.md](structured/flows.md) only when the change crosses components.
 
 ## Component Deep Dive
 
-1. Read [primer.md](primer.md), then [overview.md](overview.md) if needed.
-2. Read the selected component document in [structured/components/](structured/components/); its Contracts and Invariants sections come first.
-3. Read [concerns.md](concerns.md) if that component is named in a concern.
-4. Read [structured/flows.md](structured/flows.md) for the component's cross-boundary flows.
-
-`INDEX.md` is navigation-only. `manifest.json` is the machine-readable source of truth for freshness, component metadata, access paths, verification debt, and findings.
+1. Start with [primer.md](primer.md) and the component’s quick-reference/contracts section.
+2. Read [cross-references.md](structured/cross-references.md) for callers, contracts and config precedence.
+3. Read [flows.md](structured/flows.md) only for lifecycle or recovery semantics.

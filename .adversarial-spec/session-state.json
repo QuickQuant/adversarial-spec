@@ -3,22 +3,30 @@
   "active_session_id": "adv-spec-202607060132-post-fable-hardening-skill",
   "active_session_file": ".adversarial-spec/sessions/adv-spec-202607060132-post-fable-hardening-skill.json",
   "context_name": "Post-Fable Hardening (skill slice G1+G2+G5)",
-  "current_phase": "debate",
-  "current_step": "Phase 3 (debate) entered; roadmap persisted + confirmed; spec draft v1 not yet authored",
-  "next_action": "Author spec draft v1 (technical depth) from roadmap/manifest.json per phases/03-debate.md, then debate rounds via pipeline tools (opponents: codex/gpt-5.5 + gemini/gemini-3.5-flash; NEVER gemini-cli \u2014 fresh spawns fail auth)",
-  "updated_at": "2026-07-08T16:10:43Z",
-  "written_by": "adversarial-spec skill (roadmap gate passed)",
+  "current_phase": "implementation",
+  "current_step": "Phase 8 wave-0 opening: W0-1 (6021), B-1 (6043), B-11 (6053) implemented, attested and moved to Review by claude; queue idle pending a non-claude reviewer",
+  "next_action": "Phase 8: cards 6021/6043/6053 sit in Review and REQUIRE a reviewer other than claude (codex or gemini) \u2014 pipeline_do_next_task as that agent on board 03fw5alxw15iqwh6hq15vfdsb. 35 cards remain dependency-blocked behind W0-1. Pre-existing uncommitted tree unchanged (architecture remap, SKILL.md guard+comment-convention edits, agy transport fix, spec artifacts).",
+  "updated_at": "2026-07-22T14:13:25Z",
+  "written_by": "adversarial-spec skill (Phase 8 loop, 3 cards to Review)",
   "pipeline_card_id": "5857",
   "plan_path": "docs/improvement-goals-2026-07.md",
-  "spec_path": ".adversarial-spec/specs/post-fable-hardening-skill/spec.md",
-  "completed_work": "Requirements gate passed (G1-F2 amended: no size caps; Fable window ~2026-07-12). Roadmap phase complete: complexity 27/complex; draft + R1 debate (codex/gpt-5.5 + gemini/gemini-3.5-flash API path); 4 revisions folded (waiver US-15, personas, global KPIs, boundary US-16); G4 excluded (Jason). Artifacts: roadmap/manifest.json (9 milestones/17 US), roadmap.md, tests-pseudo.md (17 spines), trello-plan.json placeholder, _progress. Card 5857 \u2192 Debate lane. Ops: gemini-cli fresh-spawn IneligibleTierError diagnosed (oauth-personal, latest CLI; live panes unaffected; over-claim corrected in memory/Telegram/card); debate.py preflight breaks on thinking models (--skip-preflight workaround, M1 candidate); session_activity_logger v1.1 adds invoker attribution + cold-gap logging (Brainquarters repo, uncommitted)",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202607081610-roadmap-complete-debate-entered.md",
+  "spec_path": ".adversarial-spec/specs/post-fable-hardening-skill/spec-final.md",
+  "completed_work": "Resolved validation_emission.py stash conflict (kept full impl; suite 933 green). Phase 7 in one session: full .architecture read (10 docs + 11 components), spec-final v9.1 read, arch fingerprint 7fa0ae7a re-verified reproducible, 38 tasks/4 workstreams decomposed with all 5 pre-load gates (DF-1..20 mapped, TMR keystone-first task B-1, adverse suite W0-15, tested_by all llm, altitude system confirmed from card metadata). D1 clean (76 edges). Jason approved via finalize+load directive. Validation leg: manifest gained flat user_stories, conops 17 stories, 17 rows check-rows clean, committed with plan (1252dd5). Schema-3 emission via re-runnable orchestration/emit_plan_v3.py (93 node artifacts, real verify commands). validate_plan valid:true after test_targets fix on aggregates. Smoke: 3 pytest shapes collected+ran. Load required backtracking card 5857 Completed-Unmapped->Finalization (reason file on disk). 43 cards loaded, 3 ready/35 blocked, critical path W0-1..B-6. Comments posted via haiku bookkeeper, spot-checked verbatim. pipeline_advance correctly blocked (unverified_descendant) - card releases via Phase 8 V&V rollup. Committed 20ab11c.",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202607221333-phase7-closed-plan-loaded-phase8-open.md",
   "do_not_ask": [
     "whether to dogfood (decided: q-20260704-goal-scope choice a)",
-    "whether to refresh mapcodebase now (deferred: choice b)"
+    "whether to refresh mapcodebase now (deferred: choice b)",
+    "whether to refresh mapcodebase now (externally regenerated 2026-07-19 at ef18c66; caveat discharged)",
+    "gauntlet sizing (decided: 6 personas AUDT/ARCH/BURN/PARA/PEDA/FLOW, codex+agy-gemini attack models)",
+    "CONS verify disposition (done: operator-sanctioned pass ran, VERIFIED)",
+    "tcov-deferral disposition (done: all 19 to Phase 7 tested_by w/ mandatory register-vs-plan diff)",
+    "whether v9.1 is accepted (Jason accepted 2026-07-21; in-place spec-final.md revision)",
+    "whether the plan is approved (Jason 2026-07-22 finalize+load directive)",
+    "whether to emit schema 2 vs 3 (v3 mandatory: pipeline_version 5 + altitude system)"
   ],
   "active_session": "adv-spec-202607060132-post-fable-hardening-skill",
   "session_stack": [
     "adv-spec-202607060132-post-fable-hardening-skill"
-  ]
+  ],
+  "execution_plan_path": ".adversarial-spec/specs/post-fable-hardening-skill/execution-plan.md"
 }

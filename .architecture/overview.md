@@ -1,71 +1,62 @@
 # System Overview: adversarial-spec
 
-> Generated: 2026-07-19T08:43:13-05:00 | Git: ef18c66 | Target: /home/jason/PycharmProjects/adversarial-spec
-> Skill version: 4.0 | Model: Codex
-> Freshness: caution | Trust: source-backed local synthesis after delegated explorer timeout; if derived source files changed after `ef18c66`, trust source over this document.
+> Generated: 2026-07-20T14:44:38-05:00 | Git: `2433efa` | Target: `/home/jason/PycharmProjects/adversarial-spec`
+> Skill version: 4.0 | Model: Codex (Terra xhigh) | Freshness: caution
+> Trust: mapped from source including a dirty worktree; source wins if derived files change.
 
 ## What This System Does
 
-`adversarial-spec` is a Claude Code plugin and Python CLI that turns a product idea or document into a specification refined by multiple model critiques. Once a round reaches the desired agreement, the gauntlet attacks the surviving spec with named adversary personas, evaluates and adjudicates the resulting concerns, and emits a verdict plus resumable artifacts. The current repository also contains a schema-first test-maturity/evidence toolchain and Claude Code hook processes used to enforce pipeline safety.
+The project implements a Claude-facing adversarial specification workflow with Python runtime tools. A user-facing debate CLI gates and dispatches model critique, the gauntlet applies sequential adversarial phases and saves resumable evidence, and validation/TMR tooling produces auditable close artifacts.
 
 ## Architecture at a Glance
 
-The primary runtime begins at the `adversarial-spec` console entry declared in `pyproject.toml:48`, resolving to `debate.main` at `skills/adversarial-spec/scripts/debate.py:1623`. The CLI parses spec, model, profile, session, pipeline-gate, and gauntlet options. It resolves providers and credentials through `providers.py`, optionally preflights models, then sends independent calls through `models.py`. The model layer supports CLI subprocess adapters and LiteLLM/Bedrock paths, returning `ModelResponse` objects and updating a thread-safe token tracker.
+The runtime is intentionally file-backed. `debate.py` is the broad command dispatcher: it verifies pipeline/card requirements, loads or resumes a `SessionState`, invokes provider adapters in parallel, persists partial results, and can invoke the gauntlet (`debate.py:1026-1227,1623-1687`). The gauntlet packages phases behind `run_gauntlet()` (`gauntlet/orchestrator.py:205`) and separates domain dataclasses, model dispatch/rate control, persistence, and reporting. Pre-gauntlet runs before the standalone gauntlet when requested, gathering bounded Git/system/schema context and returning either enriched context or an alignment state (`pre_gauntlet/orchestrator.py:67-325`).
 
-Debate output can be checkpointed and resumed through `session.py`. A gauntlet request enters `gauntlet/orchestrator.py:205`, which resolves prompts/adversaries and runs a sequence of internal phases: attack generation, synthesis/filtering, clustering, tiered evaluation, rebuttal, adjudication, and final-boss verdict. Typed dataclasses in `gauntlet/core_types.py` are the shared contract. `gauntlet/persistence.py` stores checkpoints and run manifests behind FileLock and integrity hashes; raw model results and phase artifacts remain file-backed so a partial run can resume.
-
-The pre-gauntlet subsystem checks whether a spec is compatible with the repository before hostile review. It loads `[tool.adversarial-spec.compatibility]` from `pyproject.toml`, gathers git/system context, discovers relevant services, runs configured build/schema/validation commands, and returns typed status/exit outcomes. This path is secondary to the debate CLI but can block gauntlet entry when baseline drift is detected.
-
-The newer evidence layer is deliberately schema-first. `tmr_schema.py` defines strict `TestMaturityRecord` validation; `tmr_compile_step.py` turns candidate prose/accessors into confirmed registry records and a derived prose view. `validation_emission.py` manages a locked ledger and a JSON `Envelope` boundary for row normalization, digest assembly, Telegram reply parsing, system-validation evidence, self-check, and stale-batch status. `provenance_journal.py` provides ordered multi-file locks, expected-coordinate checks, append-only transitions, and atomic registry/journal/index writes. `phase8_promotion.py`, `criticality_classifier.py`, and `tcov_liveness.py` consume these contracts to decide whether implementation evidence is sufficient for close.
-
-The `.claude/hooks/` directory is a separate process boundary. Claude Code invokes `codex_pretool_combined.py` and individual hooks with JSON on stdin. Safety hooks classify commands and payloads; pipeline hooks detect roles, inject continuation/status messages, and optionally write activity or notification records. They communicate via stdout and intentionally do not import the runtime skill modules.
+Validation emission is a separate command suite around a locked ledger. It derives ConOps, normalizes rows, binds evidence, emits digest batches, parses authenticated human replies, then writes and self-checks a system-validation artifact (`validation_emission.py:688-3102`). The TMR compiler, provenance journal and Phase 8 promotion tools add strict typed registry and transition evidence. Project hooks do not import the runtime: they receive JSON on stdin, guard tool use or append notifications/activity records, and fail safely when data is malformed.
 
 ## Primary Data Flows
 
-### Debate round
+### Debate to model results
 
-Spec text and CLI/profile input enter `debate.py:525-611`, are converted into model routes by `parse_models` at `debate.py:757`, validated at `debate.py:1312`, then sent through `models.call_models_parallel` at `models.py:1114`. Responses are parsed into critique/spec/task shapes and written to output/session/Telegram surfaces by `debate.py:1227` and `session.py:45-133`.
+Spec text comes from stdin or session state, optional context is loaded, and one future per model invokes the appropriate CLI/API adapter. Each result becomes a `ModelResponse`, partial results are persisted, then aggregate JSON/text is emitted (`debate.py:1026-1227`, `models.py:688-1199`).
 
-### Gauntlet verdict
+### Gauntlet to persisted verdict
 
-The spec enters `run_gauntlet` at `gauntlet/orchestrator.py:205`. Adversary calls produce `Concern` records, later phases cluster and evaluate them, rebuttals and adjudication update disposition, and the final boss produces a `GauntletResult`. Persistence writes checkpoint envelopes, run manifests, raw responses, stats, medals, and the spec copy through `gauntlet/persistence.py:469-629`.
+The gauntlet hashes the exact spec and config, writes an initial manifest, generates attacks, filters/clusters, evaluates in provider-bounded waves, optionally rebuts/adjudicates, and runs Final Boss before writing a complete run (`gauntlet/orchestrator.py:250-963`). Checkpoints carry schema/spec/config/data hashes and use file locks plus atomic replace (`gauntlet/persistence.py:111-152,560-583`).
 
-### Test maturity and validation evidence
+### Validation closeout
 
-Candidate records are compiled and assigned stable `tmr_uid` values by `tmr_compile_step.py:64-249`, then validated by `tmr_schema.py:377`. Validation commands mutate a locked ledger at `validation_emission.py:1337`, assemble and parse bounded batches, record evidence, and emit an `Envelope` from `validation_emission.py:3423`. Provenance updates take ordered locks and atomically update the registry/journal/index at `provenance_journal.py:581-596`.
+ConOps and ledger rows are hash-bound; evidence and digest replies update the locked ledger; a close artifact is emitted only after coverage/provenance checks (`validation_emission.py:715-1372,1528-3036`). The CLI always emits a JSON `Envelope` to stdout (`validation_emission.py:200-214,3423-3462`).
 
-### Hook decision
+### Hook side effects
 
-A Claude Code event enters `codex_pretool_combined.main` at `.claude/hooks/codex_pretool_combined.py:57`. It invokes configured hook modules, which may deny/warn/allow or emit a system message. The combined result is returned on stdout; notification and activity logging are optional side effects, not authoritative pipeline state.
+Hook JSON is parsed from stdin. A Fizzy guard can block before a tool call, while notifications/activity handlers append JSONL or invoke optional messaging after relevant events (`fizzy_payload_guard.py:86-125`, `pipeline_notifications.py:392-437`, `session_activity_logger.py:55-96`).
 
 ## Key Architectural Decisions
 
-- **File-backed resumability:** checkpoints, manifests, ledgers, and journals are inspectable and recoverable without a daemon.
-- **Typed phase contracts:** dataclasses/Pydantic models centralize cross-module fields and make validation failures explicit.
-- **Integrity + locking:** FileLock, content hashes, atomic replacement, and expected-coordinate checks protect concurrent or stale writers.
-- **Parallel model calls:** ThreadPoolExecutor reduces wall-clock time; token accounting is protected by a lock.
-- **Schema-first evidence:** TMR JSON is authoritative, while Markdown/prose views are derived.
-- **Process-separated hooks:** safety/coordination hooks use stdin/stdout protocols and stay outside runtime skill imports.
+- **Typed domain contracts:** gauntlet and TMR types make phase payloads and evidence validation explicit.
+- **Artifact integrity over implicit state:** hashes, checkpoint metadata, lock files and atomic replace make resume data inspectable.
+- **Provider-bounded parallelism:** models run concurrently, but gauntlet dispatch groups submissions by provider/rate policy.
+- **Separate hook plane:** safety/coordination hooks are process-bound JSON adapters rather than runtime imports.
+- **Evidence-gated closure:** validation/TMR components treat human judgment, live evidence and provenance as first-class state.
 
 ## Non-Obvious Things
 
-- The root `adversarial_spec` path is a symlink to the canonical source directory. Packaging and direct imports therefore depend on the source layout, not a conventional root package directory.
-- The top-level debate CLI and `gauntlet` CLI are both live surfaces with divergent flag names/defaults.
-- `python-dotenv` is declared, but provider behavior is primarily environment-name checks and JSON profile/config reads.
-- Large `.adversarial-spec/` session/spec artifacts, generated reports, caches, and historical Gemini bundles are not runtime architecture components.
-- The current source includes both the established debate/gauntlet runtime and a validation-leg/test-maturity subsystem; the latter is not simply a gauntlet subphase.
+- The root `adversarial_spec` symlink deliberately bridges distribution metadata to `skills/adversarial-spec/scripts`; root console help is verified, but preserve that bridge during packaging changes.
+- Pre-gauntlet and the gauntlet CLI may be interactive; unattended execution changes only the input mechanism, not the blocking semantics.
+- A locked atomic JSON writer does not protect an entire multi-step read-modify-write sequence.
+- Notifications and dispatch logs are non-authoritative side effects; query live Fizzy state before treating one as a transition.
 
 ## Component Map
 
 | Component | Purpose | Key Entry |
-|-----------|---------|-----------|
-| Debate CLI | top-level parsing, gates, critique orchestration | `main()` at `debate.py:1623` |
-| Models and providers | model adapters, config, credentials, cost | `call_models_parallel()` at `models.py:1114` |
-| Gauntlet pipeline | adversary-to-verdict processing | `run_gauntlet()` at `gauntlet/orchestrator.py:205` |
-| Gauntlet persistence | checkpoint/run/stat/medal storage | `save_checkpoint()` at `gauntlet/persistence.py:560` |
-| Pre-gauntlet | compatibility/alignment checks | `run_pre_gauntlet()` at `pre_gauntlet/orchestrator.py:207` |
-| TMR schema/compiler | typed registry and prose derivation | `compile_tmr_records()` at `tmr_compile_step.py:64` |
-| Validation emission | locked ledger and evidence protocol | `main()` at `validation_emission.py:3423` |
-| Provenance and promotion | lineage, liveness, Phase 8 close | `ProvenanceJournalWriter` at `provenance_journal.py:112` |
-| Harness hooks | Claude Code safety/coordination boundary | `main()` at `.claude/hooks/codex_pretool_combined.py:57` |
-| Plan analysis | dependency semantics and concern parsing | `analyze_plan()` at `dependency_semantics.py:82` |
+|---|---|---|
+| Debate/session | model critique and resume | `main()` at `debate.py:1623` |
+| Models/providers | provider selection and invocation | `call_models_parallel()` at `models.py:1114` |
+| Gauntlet | seven-phase concern pipeline | `run_gauntlet()` at `orchestrator.py:205` |
+| Pre-gauntlet | codebase grounding and alignment | `PreGauntletOrchestrator.run()` at `pre_gauntlet/orchestrator.py:85` |
+| Validation emission | evidence lifecycle CLI | `main()` at `validation_emission.py:3423` |
+| TMR/provenance | registry and transition evidence | `compile_tmr_records()` at `tmr_compile_step.py:64` |
+| Hooks | safety and coordination adapters | `main()` at `fizzy_payload_guard.py:86` |
+
+For operational detail, select a file under `structured/components/`.

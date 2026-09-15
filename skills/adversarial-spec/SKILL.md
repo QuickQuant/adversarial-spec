@@ -77,18 +77,30 @@ Phases that need more (gauntlet → `gauntlet_concerns_path`, finalize → `requ
 Compare the actual transition sequence in the journey log against the canonical phase order. A silently-skipped phase (the kind detected post-hoc in Phase 7 scope assessment 2026-05-17) is exactly what this catches.
 
 ```bash
-# Extract the transition sequence from the journey log
-jq -r 'select(.type == "transition") | .event' \
-  .adversarial-spec/sessions/<id>.journey.log 2>/dev/null \
-  | sed -nE 's/^Phase transition: ([a-z_-]+) → ([a-z_-]+).*$/\1 \2/p' \
-  > /tmp/journey-transitions-<id>.txt
+# Use the checker-owned parser; never silently drop a transition with sed/grep.
+# It accepts historical `->` and canonical `→` records, and fails closed on
+# an unknown transition format.
+python3 ~/.claude/skills/adversarial-spec/scripts/phase8_subflow_migration.py \
+  --check-journey .adversarial-spec/sessions/<id>.journey.log
 ```
 
-Canonical order: `requirements → roadmap → debate → target-architecture → gauntlet → finalize → execution → implementation → complete`.
+Exit 0 means clean; exit 1 carries real ordering anomalies; exit 2 is malformed
+or unreadable history and must be investigated rather than treated as missing
+phases. The JSON result includes the parsed transition pairs and selected mode.
 
-**Verification:** the second column of consecutive rows must be a sub-sequence of the canonical order. Specifically, between any two transitions `A → B` and `C → D`, the canonical order must contain `B` either equal to or strictly before `C`. If `B` is canonically before `C` with a gap, those canonical phases were skipped.
+Canonical order is version-aware:
 
-**Required exclusion:** `pre-gauntlet`, `reconciliation`, and other Fizzy-FSM-internal lanes that are not in the skill's canonical order should be treated as part of the `gauntlet` macro-phase, not as separate phases. Map them to their canonical equivalent before comparing.
+- Pre-v6: `requirements → roadmap → debate → target-architecture → gauntlet → finalize → execution → implementation → complete`.
+- v6: `requirements → roadmap → decomposition → debate → gauntlet → finalize → execution → implementation → complete`.
+
+**Verification:** the second column of consecutive rows must be a sub-sequence of the applicable canonical order. Specifically, between any two transitions `A → B` and `C → D`, the canonical order must contain `B` either equal to or strictly before `C`. If `B` is canonically before `C` with a gap, those canonical phases were skipped.
+
+**Central normalization:** `triage → requirements` is the legal non-canonical entry;
+`pre-roadmap` folds to `roadmap` for v6; `pre-gauntlet` and `reconciliation`
+fold to `gauntlet`; and historical `implementation → verification` folds to a
+self-transition. v6 has no Target-Architecture board lane: a valid skip-mode
+Phase-4 artifact is carried by D0 decomposition rather than inferred as a skip.
+Do not re-implement these mappings manually.
 
 **`verification` is a Phase 8 subflow, not a phase (CON-002, 2026-07-21).** It never
 appeared in the canonical order above. Sessions track verification progress as
@@ -98,8 +110,8 @@ appeared in the canonical order above. Sessions track verification progress as
 `implementation` before comparing, exactly like the FSM-internal lanes, so they raise no
 anomaly. `scripts/phase8_subflow_migration.py` owns both the one-time state migration
 (idempotent, appending exactly one `phase8_subflow_migration` journey event) and the
-`canonical_order_anomalies()` check this section describes — prefer calling it over
-re-implementing the comparison by hand.
+transition parser plus `canonical_order_anomalies()` check this section describes —
+invoke its `--check-journey` command rather than re-implementing the comparison by hand.
 
 **On detected skip:**
 ```

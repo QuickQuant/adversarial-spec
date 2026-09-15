@@ -61,6 +61,7 @@ MODEL_COSTS = {
     # Replaces the retired standalone Gemini CLI (Google migrated Code Assist for
     # individuals into the Antigravity suite ~2026-06; the old `gemini` binary now
     # fails auth/tier). This is the current subscription path for the Google family.
+    "antigravity/gemini-3.7-flash-high": {"input": 0.0, "output": 0.0},
     "antigravity/gemini-3.6-flash-high": {"input": 0.0, "output": 0.0},
     "antigravity/gemini-3.5-flash": {"input": 0.0, "output": 0.0},
 }
@@ -319,7 +320,7 @@ def list_providers():
             "ANTHROPIC_API_KEY",
             "claude-opus-4-7, claude-sonnet-4-6",
         ),
-        ("Google", "GEMINI_API_KEY", "gemini/gemini-3-pro, gemini/gemini-3.5-flash, gemini/gemini-3-flash"),
+        ("Google", "GEMINI_API_KEY", "gemini/gemini-3-pro, gemini/gemini-3-flash"),
         ("xAI", "XAI_API_KEY", "xai/grok-3, xai/grok-beta"),
         ("Mistral", "MISTRAL_API_KEY", "mistral/mistral-large, mistral/codestral"),
         ("Groq", "GROQ_API_KEY", "groq/llama-3.3-70b-versatile"),
@@ -347,27 +348,24 @@ def list_providers():
     # Codex CLI (uses ChatGPT subscription, not API key)
     codex_status = "[installed]" if CODEX_AVAILABLE else "[not installed]"
     print(f"  {'Codex CLI':12} {'(ChatGPT subscription)':24} {codex_status}")
-    print("             Example models: codex/gpt-5.6-luna, codex/gpt-5.6-terra, codex/gpt-5.6-sol")
+    print("             Example models: codex/gpt-5.6-luna (max effort — default for review-grade work), codex/gpt-5.6-terra, codex/gpt-5.6-sol")
     print(
-        "             Reasoning: --codex-reasoning (minimal, low, medium, high, xhigh)"
+        "             Reasoning: --codex-reasoning (minimal, low, medium, high, xhigh, max)"
     )
     print("             Install: npm install -g @openai/codex && codex login")
     print()
 
     # Gemini CLI (uses Google account, not API key)
-    gemini_cli_status = "[installed]" if GEMINI_CLI_AVAILABLE else "[not installed]"
-    print(f"  {'Gemini CLI':12} {'(Google account)':24} {gemini_cli_status}")
-    print(
-        "             Example models: gemini-cli/gemini-3.6-flash-high, gemini-cli/gemini-3-flash-preview"
-    )
-    print("             Install: npm install -g @google/gemini-cli && gemini auth")
+    print(f"  {'Gemini CLI':12} {'(RETIRED)':24} [deprecated]")
+    print("             DEPRECATED: the standalone Gemini CLI is retired; gemini-cli/ model")
+    print("             strings fail at setup. Use the Antigravity provider below.")
     print()
 
     # Claude CLI (uses Anthropic subscription via claude command)
     claude_cli_status = "[installed]" if CLAUDE_CLI_AVAILABLE else "[not installed]"
     print(f"  {'Claude CLI':12} {'(Anthropic subscription)':24} {claude_cli_status}")
     print(
-        "             Example models: claude-cli/claude-opus-4-7, claude-cli/claude-sonnet-4-6"
+        "             Example models: claude-cli/claude-fable-5 (medium effort)"
     )
     print("             Install: npm install -g @anthropic-ai/claude-code && claude setup-token")
     print()
@@ -376,7 +374,7 @@ def list_providers():
     antigravity_status = "[installed]" if ANTIGRAVITY_AVAILABLE else "[not installed]"
     print(f"  {'Antigravity':12} {'(Antigravity subscription)':24} {antigravity_status}")
     print(
-        "             Example models: antigravity/gemini-3.6-flash-high, antigravity/gemini-3.5-flash"
+        "             Example models: antigravity/gemini-3.7-flash-high"
     )
     print("             Replaces the retired standalone Gemini CLI (agy models to list).")
     print()
@@ -423,7 +421,7 @@ def get_available_providers() -> list[tuple[str, Optional[str], str]]:
     providers = [
         # Note: OpenAI direct API deprecated in favor of Codex CLI (free with ChatGPT subscription)
         ("Anthropic", "ANTHROPIC_API_KEY", "claude-opus-4-7"),
-        ("Google", "GEMINI_API_KEY", "gemini/gemini-3.5-flash"),
+        ("Google", "GEMINI_API_KEY", "gemini/gemini-3-flash"),
         ("xAI", "XAI_API_KEY", "xai/grok-3"),
         ("Mistral", "MISTRAL_API_KEY", "mistral/mistral-large"),
         ("Groq", "GROQ_API_KEY", "groq/llama-3.3-70b-versatile"),
@@ -441,9 +439,7 @@ def get_available_providers() -> list[tuple[str, Optional[str], str]]:
     if CODEX_AVAILABLE:
         available.append(("Codex CLI", None, GPT_56_SOL))
 
-    # Add Gemini CLI if available
-    if GEMINI_CLI_AVAILABLE:
-        available.append(("Gemini CLI", None, GEMINI_CLI_36_FLASH_HIGH))
+    # Standalone Gemini CLI is RETIRED — never auto-pick it.
 
     # Add Claude CLI if available
     if CLAUDE_CLI_AVAILABLE:
@@ -451,7 +447,7 @@ def get_available_providers() -> list[tuple[str, Optional[str], str]]:
 
     # Add Antigravity CLI if available (Google-family subscription path)
     if ANTIGRAVITY_AVAILABLE:
-        available.append(("Antigravity", None, ANTIGRAVITY_GEMINI_36_FLASH_HIGH))
+        available.append(("Antigravity", None, "antigravity/gemini-3.7-flash-high"))
 
     return available
 

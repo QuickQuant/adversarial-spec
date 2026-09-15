@@ -885,7 +885,7 @@ After incorporating critiques into a new spec version (Step 5 item 8), run check
 | Guardrail | Prefix | What it checks |
 |-----------|--------|----------------|
 | `consistency_auditor` | CONS | Cross-section contradictions, duplicate numbering, arithmetic consistency |
-| `scope_creep_detector` | SCOPE | New scope additions not in original requirements |
+| `scope_creep_detector` | SCOPE | New scope additions not in original requirements, including unlinked cross-project/authority work |
 | `requirements_tracer` | TRACE | User stories/acceptance criteria that lost coverage |
 | `canonical_type_auditor` | CANON | Canonical contract drift: named types/enums, formulas, parameter causality, payload meanings, UI/display claims, and active-vs-legacy classifications. |
 | `test_coverage_auditor` | TCOV | Test adequacy: tests-pseudo/tests-spec would actually fail for contract, causality, UI, formula, state, BVA, and negative-path violations; rejects field-presence-only false confidence. |
@@ -898,6 +898,7 @@ After incorporating critiques into a new spec version (Step 5 item 8), run check
 2. Each subagent receives a self-contained payload:
    - persona prompt from `adversaries.py`
    - identical orchestrator-passed content bundle (current spec, roadmap/user stories, tests-pseudo/tests-spec when present, canonical contract index, relevant architecture/code excerpts)
+   - **SESSION BOUNDARY CONTEXT for SCOPE**: subject project/repository and allowed write roots; authoritative session/card; named external dependencies; linked sibling sessions/cards; and every newly proposed or performed out-of-boundary action since the prior round. A phrase such as "pipeline recovery" or "necessary infrastructure" is not an approval record. If this context is missing, SCOPE must return `SCOPE INPUT GAP` rather than a clean result.
    - this round's text diff
    - TMR semantic-delta with stable join keys (`tmr_uid`, `test_id`, `user_story`) even when the key text is outside the changed hunk
    - **ownership matrices, when present** (`specs/<slug>/ownership-baseline.md` written by mapcodebase, ≤40 rows; `specs/<slug>/ownership-live.md` amended each round): before dispatch, amend ownership-live.md with a provenance note for every entity (table, endpoint, store, config key) whose home this round's spec version introduces or moves, then compute the deterministic baseline↔live A/B diff and include it in the CONS payload. Two homes for one entity, or a home contradicting the baseline without a provenance note, is a CONS finding. See `docs/proposals/ownership-matrices-cons.md`. Mid-debate these stay warning severity (fix next round); the finalize pass runs `action="finalize"` where any unresolved CONS finding blocks (06-finalize.md).
@@ -905,7 +906,9 @@ After incorporating critiques into a new spec version (Step 5 item 8), run check
 4. Transient transport failures (`429`, timeout, retryable CLI/API failure) are retried with bounded backoff before any orchestration error is synthesized. A dead or exhausted subagent yields a synthetic `ORCH` finding: `blocking` on gauntlet, `warning` on critique. Four passing guardrails plus one ORCH is not green for gauntlet.
 5. Join keys are journaled only for findings that mutate a TMR/node field. Spec/contract-only findings are recorded in the round aggregate, but they do not create conflict-disposition entries unless they identify a concrete TMR/node field transition.
 
-**Session file dependency:** SCOPE, TRACE, CANON, and TCOV all require external input beyond the spec. If `requirements_summary` (SCOPE), the roadmap manifest (TRACE/TCOV), the canonical contract index (CANON/TCOV), or tests-pseudo/tests-spec (TCOV) is missing or empty, warn the user and skip only the affected guardrail rather than running it without the external input. CANON with an empty contract index degrades to repeated-inline-union and repeated-formula detection only; it cannot audit parameter causality or display-contract drift without owner excerpts.
+**Session file dependency:** SCOPE, TRACE, CANON, and TCOV all require external input beyond the spec. SCOPE requires both `requirements_summary` and SESSION BOUNDARY CONTEXT; if either is missing, do not call it clean — surface an input gap and stop the next-round transition until the operator supplies or explicitly waives it. If the roadmap manifest (TRACE/TCOV), canonical contract index (CANON/TCOV), or tests-pseudo/tests-spec (TCOV) is missing or empty, warn the user and skip only the affected guardrail rather than running it without the external input. CANON with an empty contract index degrades to repeated-inline-union and repeated-formula detection only; it cannot audit parameter causality or display-contract drift without owner excerpts.
+
+**SCOPE authority-boundary addendum:** A current-project session may discover that a dependency or pipeline mechanism is defective. That makes the current project **blocked**; it does not authorize repair work in the dependency's repository. Before the next round, create or link the owning sibling session/card, record the dependency in this session, and let that owner perform the repair. SCOPE flags an unlinked external repair even if no spec paragraph mentions it and even if it was presented as a purely operational or architectural necessity.
 
 **Depth limit (FM-2):** If CONS finds issues, fix them and re-run CONS. If the re-run finds NEW contradictions introduced by the fix, defer to the user after 2 attempts — do not loop indefinitely.
 

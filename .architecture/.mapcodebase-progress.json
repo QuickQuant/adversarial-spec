@@ -1,8 +1,9 @@
 {
   "status": "complete",
-  "started_at": "2026-07-19T08:43:13-05:00",
-  "git_hash": "ef18c66",
-  "mode": "update",
+  "completed_at": "2026-07-20T15:44:34-05:00",
+  "started_at": "2026-07-20T14:44:38-05:00",
+  "git_hash": "2433efa",
+  "mode": "full",
   "target_dir": "/home/jason/PycharmProjects/adversarial-spec",
   "skill_version": "4.0",
   "phases": {
@@ -24,11 +25,30 @@
       ".architecture/.work/discovery/dependencies.md",
       ".architecture/.work/discovery/contracts.md"
     ],
+    "phase_4_verification": [
+      ".architecture/.work/diagnosis-scans.md"
+    ],
+    "phase_5_patterns": [
+      ".architecture/patterns.md"
+    ],
+    "phase_6_findings": [
+      ".architecture/findings.md",
+      ".architecture/concerns.md",
+      ".architecture/action-plan.md"
+    ],
+    "phase_6f_verification": [
+      ".architecture/manifest.json#verification_items"
+    ],
+    "phase_7_manifest": [
+      ".architecture/manifest.json",
+      ".architecture/.work/answerability-check.md"
+    ],
     "phase_8_visuals": [
       ".architecture/HUMAN_READ_ONLY_visuals/system-overview.html",
       ".architecture/HUMAN_READ_ONLY_visuals/gauntlet-flow.html",
       ".architecture/HUMAN_READ_ONLY_visuals/validation-emission-flow.html",
-      ".architecture/HUMAN_READ_ONLY_visuals/harness-hooks-flow.html"
+      ".architecture/HUMAN_READ_ONLY_visuals/harness-hooks-flow.html",
+      ".reports/overview.html"
     ]
   },
   "artifacts_written": [
@@ -37,6 +57,7 @@
     ".architecture/.work/discovery/control-flow.md",
     ".architecture/.work/discovery/dependencies.md",
     ".architecture/.work/discovery/contracts.md",
+    ".architecture/.work/discovery-progress/broad-contracts.md",
     ".architecture/primer.md",
     ".architecture/access-guide.md",
     ".architecture/overview.md",
@@ -45,35 +66,29 @@
     ".architecture/structured/entry-points.md",
     ".architecture/structured/flows.md",
     ".architecture/structured/cross-references.md",
-    ".architecture/structured/components/adversaries.md",
-    ".architecture/structured/components/debate-engine.md",
-    ".architecture/structured/components/emission-toolchain.md",
-    ".architecture/structured/components/execution-planner.md",
+    ".architecture/structured/components/adversaries-prompts.md",
+    ".architecture/structured/components/debate-session.md",
+    ".architecture/structured/components/models-providers.md",
+    ".architecture/structured/components/gauntlet-orchestration.md",
     ".architecture/structured/components/gauntlet-persistence.md",
-    ".architecture/structured/components/gauntlet.md",
-    ".architecture/structured/components/harness-hooks.md",
-    ".architecture/structured/components/mcp-tasks.md",
-    ".architecture/structured/components/models.md",
-    ".architecture/structured/components/plan-analysis.md",
     ".architecture/structured/components/pre-gauntlet.md",
-    ".architecture/structured/components/prompts.md",
-    ".architecture/structured/components/provenance-promotion.md",
-    ".architecture/structured/components/providers.md",
-    ".architecture/structured/components/session.md",
-    ".architecture/structured/components/tmr-evidence-toolchain.md",
-    ".architecture/structured/components/token-tracking.md",
     ".architecture/structured/components/validation-emission.md",
+    ".architecture/structured/components/tmr-provenance.md",
+    ".architecture/structured/components/harness-hooks.md",
+    ".architecture/structured/components/plan-analysis.md",
+    ".architecture/structured/components/telegram-usage.md",
     ".architecture/patterns.md",
-    ".architecture/.work/diagnosis-scans.md",
     ".architecture/findings.md",
     ".architecture/concerns.md",
     ".architecture/action-plan.md",
+    ".architecture/.work/diagnosis-scans.md",
     ".architecture/.work/answerability-check.md",
-    ".architecture/HUMAN_READ_ONLY_visuals/system-overview.md",
+    ".architecture/.work/overview-revamp-brief.md",
+    ".architecture/manifest.json",
     ".architecture/HUMAN_READ_ONLY_visuals/system-overview.html",
     ".architecture/HUMAN_READ_ONLY_visuals/gauntlet-flow.html",
     ".architecture/HUMAN_READ_ONLY_visuals/validation-emission-flow.html",
     ".architecture/HUMAN_READ_ONLY_visuals/harness-hooks-flow.html",
-    ".architecture/manifest.json"
+    ".reports/overview.html"
   ]
 }

@@ -832,6 +832,29 @@ def main(argv: list[str] | None = None) -> int:
                 semantic_metadata=semantic_metadata,
                 decomposition=decomposition,
             )
+    ledger_path_for_report: str | None = None
+    if args.emit_report is not None and semantics_bytes is not None and args.semantics is not None:
+        # pipeline_load resolves the report's ledger from the fizzy-plan.json
+        # directory and deliberately rejects absolute or escaping paths.  Make
+        # the emitted credential portable even when this CLI received absolute
+        # input paths (the usual invocation from a worker's project root).
+        plan_root = args.plan.resolve().parent
+        try:
+            ledger_path_for_report = args.semantics.resolve().relative_to(plan_root).as_posix()
+        except ValueError:
+            report = dict(report)
+            report["valid"] = False
+            report["issues"] = [
+                *list(report.get("issues") or []),
+                _issue(
+                    "SEMANTIC_REPORT_LEDGER_OUTSIDE_PLAN_ROOT",
+                    detail=(
+                        "--semantics must be inside the fizzy-plan.json directory "
+                        "when --emit-report is used"
+                    ),
+                ),
+            ]
+
     if args.emit_report is not None:
         bound = dict(report)
         bound["analyzer_version"] = ANALYZER_VERSION
@@ -839,8 +862,8 @@ def main(argv: list[str] | None = None) -> int:
         if plan_bytes is not None:
             bound["plan_path"] = str(args.plan)
             bound["plan_sha256"] = hashlib.sha256(plan_bytes).hexdigest()
-        if semantics_bytes is not None:
-            bound["ledger_path"] = str(args.semantics)
+        if semantics_bytes is not None and ledger_path_for_report is not None:
+            bound["ledger_path"] = ledger_path_for_report
             bound["ledger_sha256"] = hashlib.sha256(semantics_bytes).hexdigest()
         args.emit_report.write_text(
             json.dumps(bound, indent=2, sort_keys=True) + "\n", encoding="utf-8"

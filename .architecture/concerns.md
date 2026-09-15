@@ -1,98 +1,67 @@
 # Actionable Concerns: adversarial-spec
 
-> Refreshed by mapcodebase on 2026-07-19 at `ef18c66`.
-> Fix-first rollup over hazards, patterns, and findings. No source changes are
-> implied by this document.
+> Refreshed by mapcodebase on 2026-07-20 at `2433efa`.
+> Fix-first rollup over verified hazards, patterns, and findings. No source changes are implied.
 
 ## Top priorities
 
-### CON-001: A failed final-boss review can be emitted as PASS
+### CON-001: A failed Final Boss review can be emitted as PASS
 
 - **Severity:** error | **Component:** gauntlet
-- **Why:** The repeated phase fallback pattern ends in
-  `FinalBossVerdict.PASS` after an exception, making review unavailability
-  success-shaped.
-- **Do:** Introduce a typed failed-review outcome and make the final gate
-  refuse promotion on that outcome.
-- **Sources:** `duplicated-gauntlet-model-error-fallbacks`,
-  `phase_7_final_boss.py:239-249`
+- **Why:** The catch-all exception path returns `FinalBossVerdict.PASS`, making review unavailability success-shaped.
+- **Do:** Introduce a typed failed-review outcome and make the final gate refuse promotion on that outcome.
+- **Sources:** `FIND-001`, `duplicated-gauntlet-model-error-fallbacks`, `phase_7_final_boss.py:239-252`
 
-### CON-002: Dedup history is a read-modify-write race
+### CON-002: The canonical phase order rejects its own verification transition
 
-- **Severity:** medium | **Component:** gauntlet-persistence
-- **Why:** Independent gauntlet invocations can read the same
-  `.adversarial-spec-gauntlet/dedup-stats.json`, append in memory, and overwrite
-  one another; this path does not use the locked atomic writer used by the
-  checkpoint layer.
-- **Do:** Route dedup telemetry through the persistence writer or use a locked
-  append/merge protocol and test concurrent invocations.
-- **Sources:** `HAZ-001`, `phase_3_filtering.py:197-233`,
-  `orchestrator.py:566`
+- **Severity:** error | **Component:** skill lifecycle
+- **Why:** Resume validation lists eight phases ending in `implementation → complete`, while the active workflow requires Phase 9 Verification before closure.
+- **Do:** Publish and test one canonical order including verification.
+- **Sources:** `FIND-002`, `HAZARD: canonical-phase-order-mismatch`, `SKILL.md:75-108`, `phases/08-implementation.md:268-277`, `phases/09-verification.md:184-198`
 
-### CON-003: Role detection has three independently drifting policies
+### CON-003: Same-spec gauntlet runs can overwrite sidecars and lose telemetry
 
-- **Severity:** warning | **Component:** harness-hooks
-- **Why:** Three pipeline hooks duplicate role constants, registration scans,
-  environment precedence, and fallbacks; dispatch has extra Codex logic.
-- **Do:** Centralize role resolution in a shared hook helper and add precedence
-  contract tests.
-- **Sources:** `duplicated-worker-role-resolution`,
-  `dispatch_check.py:18-83`, `pipeline_continue.py:21-67`,
-  `pipeline_idle_retry.py:24-70`
+- **Severity:** error | **Component:** gauntlet persistence
+- **Why:** Raw responses, cluster reports, and dedup stats use direct writes keyed by spec hash without a run-scoped lock. Concurrent runs can overwrite recovery artifacts or stats.
+- **Do:** Isolate by run ID or route all sidecars through a locking/merge protocol; add a two-run concurrency regression test.
+- **Sources:** `HAZARD: gauntlet-sidecar-overwrite`, `orchestrator.py:399-403,533-556`, `phase_3_filtering.py:211-233`
 
-### CON-004: Two gauntlet CLIs silently choose different deadlines
+### CON-004: Session state and round artifacts have no single-writer guarantee
 
-- **Severity:** warning | **Component:** debate-engine / gauntlet
-- **Why:** `debate.py` defaults to 1200 seconds while `gauntlet/cli.py`
-  defaults to 1800 seconds for the same broad workflow.
-- **Do:** Share one timeout argument/default contract or document an explicit
-  policy difference and test both entry points.
-- **Sources:** `FIND-002`, `debate.py:401-404`, `gauntlet/cli.py:64-69`
+- **Severity:** medium | **Component:** debate/session
+- **Why:** Session JSON, checkpoint Markdown, critique JSON, and partial model outputs are direct writes; concurrent resumes can overwrite the latest state or history.
+- **Do:** Declare single-writer ownership or use a lock plus atomic replace and conflict detection.
+- **Sources:** `HAZARD: session-state-concurrent-write`, `session.py:46-134`, `models.py:1163-1199`
 
-### CON-005: Source imports depend on a symlink and mutable import order
+### CON-005: Role resolution has three independently drifting implementations
 
-- **Severity:** warning | **Component:** infrastructure / models
-- **Why:** Package discovery, root symlink exposure, `sys.path.insert`, and two
-  same-named prompt modules make direct script/module execution sensitive to
-  import order.
-- **Do:** Normalize package layout and use package-qualified imports before
-  removing the bootstrap paths.
-- **Sources:** `FIND-001`, `pyproject.toml:42-50`,
-  `scripts/__init__.py:8-10`, `scripts/prompts.py`, `gauntlet/prompts.py`
+- **Severity:** warning | **Component:** harness hooks
+- **Why:** Three hooks repeat environment, registration, and host-marker role detection; only dispatch includes extra Codex fallback.
+- **Do:** Centralize role resolution and add one precedence contract test suite.
+- **Sources:** `duplicated-worker-role-resolution`, `dispatch_check.py:18-83`, `pipeline_continue.py:21-67`, `pipeline_idle_retry.py:24-70`
 
-### CON-006: Runtime comments disagree with the active telemetry and validation paths
+### CON-006: Two gauntlet entrypoints silently choose different deadlines
 
-- **Severity:** warning | **Component:** gauntlet / validation-emission
-- **Why:** Phase 3 comments say clustering was removed while the orchestrator
-  calls it; validation-emission comments still describe concrete handlers as
-  skeleton replacements.
-- **Do:** Update comments and add source-level checks for the authoritative
-  telemetry/handler paths so future agents do not infer the wrong architecture.
-- **Sources:** `FIND-003`, `FIND-004`, `phase_3_filtering.py:1-5`,
-  `orchestrator.py:520-566`, `validation_emission.py:3236-3252`
+- **Severity:** warning | **Component:** debate / gauntlet
+- **Why:** Debate defaults to 1200 seconds while standalone gauntlet defaults to 1800 seconds for the same class of model call.
+- **Do:** Share the default or make two policies explicit and test both surfaces.
+- **Sources:** `FIND-003`, `debate.py:398-410`, `gauntlet/cli.py:60-72`
 
 ## Priority: later
 
-### CON-007: Session and provider files bypass shared persistence guarantees
+### CON-007: Session discovery silently hides corrupt records
 
-- **Severity:** medium | **Component:** session / providers
-- **Why:** Session snapshots/checkpoints and global/profile config writes use
-  direct `Path.write_text()` without the lock/atomic protocol used by gauntlet
-  persistence and validation ledgers.
-- **Do:** Decide whether concurrent writers are supported; if yes, adopt a
-  shared locked atomic writer, otherwise enforce single-writer ownership and
-  surface conflicts.
-- **Sources:** `HAZ-002`, `HAZ-003`, `session.py:45-133`,
-  `providers.py:136-139,242-247`
+- **Severity:** medium | **Component:** session
+- **Why:** `list_sessions()` catches every exception and omits the record, hiding corruption or read failures from the operator.
+- **Do:** Separate expected parse/OS failure handling from programmer errors and report skipped records.
+- **Sources:** `FIND-006`, `session.py:72-85`
 
-### CON-008: Session discovery silently hides corrupt records
+### CON-008: Comments and fallback labels contradict active behavior
 
-- **Severity:** warning | **Component:** session
-- **Why:** `list_sessions()` catches every exception and returns an incomplete
-  list without diagnostics.
-- **Do:** Distinguish expected corrupt-file handling from programming errors and
-  report/quarantine skipped records.
-- **Sources:** `FIND-005`, `session.py:72-85`
+- **Severity:** warning | **Component:** gauntlet / validation emission
+- **Why:** Phase 3 says clustering was removed while the live path clusters; validation emission labels all concrete handlers as skeleton replacements.
+- **Do:** Correct comments and add a narrow source-level regression assertion around the active surfaces.
+- **Sources:** `FIND-004`, `FIND-005`, `phase_3_filtering.py:1-5`, `orchestrator.py:512-575`, `validation_emission.py:1419-1432,3236-3252`
 
 ### CON-009: Model transport plumbing is duplicated across layers
 
@@ -101,20 +70,27 @@
   and LiteLLM paths, allowing defaults and failure behavior to diverge.
 - **Do:** Share transport adapters while keeping orchestration policy at the
   caller.
-- **Sources:** `FIND-006`, `models.py:298-1077`,
+- **Sources:** `FIND-007`, `models.py:298-1077`,
   `gauntlet/model_dispatch.py:64-143`
 
-### CON-010: `run_gauntlet()` is the coupling hub for phase and persistence policy
+### CON-010: Path bootstrap imports remain a source-layout coupling
 
-- **Severity:** warning | **Component:** gauntlet
-- **Why:** One function owns phase sequencing, resume, checkpoints, metrics,
-  stats, medals, process-global input behavior, and result assembly.
-- **Do:** Extract a phase coordinator and isolate persistence/metrics policy.
-- **Sources:** `FIND-007`, `orchestrator.py:205-980`
+- **Severity:** warning | **Component:** plan analysis / runtime bootstrap
+- **Why:** Several modules mutate `sys.path` to reach skill scripts. The root symlink makes installed entrypoints work, but these direct-source bootstraps still couple imports to repository layout.
+- **Do:** Move toward package-qualified imports behind regression tests; retain the verified symlink bridge until every caller is migrated.
+- **Sources:** `execution_planner/gauntlet_concerns.py:17-26`, `scripts/__init__.py:8-10`, `FIND-007`
+
+### CON-011: Python 3.10 pre-gauntlet configuration can silently fall back to defaults
+
+- **Severity:** warning | **Component:** pre-gauntlet
+- **Why:** `tomli` is not declared although Python 3.10 is supported; its missing fallback returns a default compatibility configuration.
+- **Do:** Add the conditional dependency or report a hard, actionable configuration-load error.
+- **Sources:** `FIND-008`, `pyproject.toml:9-35`, `pre_gauntlet/orchestrator.py:253-280`
 
 ## Verification Debt
 
-No open boundary verification items remain from this run. Boundary tables were
-checked against the active adapters and consumers at `ef18c66`; the five
-delegated discovery explorers timing out is recorded as run provenance and
-freshness caution, not as a claim about a runtime boundary.
+`VER-001` — **not modeled:** the external Telegram server-side request validator. The client encoding and client response handling are source-verified; server behavior is outside this repository. See `telegram_bot.py:47-70,89,197-211`.
+
+`VER-002` — **not modeled:** the external hook host's interpretation of a guard decision. Registration, stdin parsing, and emitted decision JSON are source-verified; host enforcement is outside this repository. See `.claude/settings.json:107` and `fizzy_payload_guard.py:51-60,86-147`.
+
+`VER-003` — **documented consumption:** no in-repository program parses validation CLI stdout. The execution workflow's `status == "ok"` and no-issues advance rule is source-verified. See `phases/07-execution.md:897,937` and `validation_emission.py:200-220,3418-3462`.

@@ -741,20 +741,20 @@ class TestGetAvailableProviders:
                     provider_names = [name for name, _, _ in available]
                     assert "Codex CLI" in provider_names
 
-    def test_includes_gemini_cli_when_available(self):
+    def test_includes_antigravity_when_available(self):
         from providers import get_available_providers
 
         with patch.dict("os.environ", {}, clear=True):
             with patch("providers.CODEX_AVAILABLE", False):
-                with patch("providers.GEMINI_CLI_AVAILABLE", True):
-                    available = get_available_providers()
-                    provider_names = [name for name, _, _ in available]
-                    assert "Gemini CLI" in provider_names
-                    # Verify the default model for Gemini CLI
-                    for name, key, model in available:
-                        if name == "Gemini CLI":
-                            assert model == "gemini-cli/gemini-3.6-flash-high"
-                            assert key is None  # No API key required
+                with patch("providers.CLAUDE_CLI_AVAILABLE", False):
+                    with patch("providers.ANTIGRAVITY_AVAILABLE", True):
+                        available = get_available_providers()
+                        provider_names = [name for name, _, _ in available]
+                        assert "Antigravity" in provider_names
+                        for name, key, model in available:
+                            if name == "Antigravity":
+                                assert model == "antigravity/gemini-3.7-flash-high"
+                                assert key is None  # No API key required
 
 
 class TestGetDefaultModel:
@@ -763,7 +763,7 @@ class TestGetDefaultModel:
 
         with patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}, clear=True):
             default = get_default_model()
-            assert default == "gemini/gemini-3.5-flash"
+            assert default == "gemini/gemini-3-flash"
 
     def test_returns_none_when_no_keys(self):
         from providers import get_default_model

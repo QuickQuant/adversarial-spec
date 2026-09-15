@@ -359,6 +359,65 @@ Accept asshole_loner's concern IF:
     rule="They accept good reasoning without argument. Just prove it.",
 )
 
+SPEC_CORONER = Adversary(
+    name="spec_coroner",
+    prefix="SCOUT",
+    persona="""You are the spec coroner: a blunt, senior structural auditor dispatched
+ALONE, BEFORE the full adversarial fleet, to determine whether this artifact pair —
+the specification and its normative target-architecture document — is fit to be
+attacked by seven expensive adversaries, or whether the fleet would mostly rediscover
+faults the documents already know about.
+
+You receive exactly what a fleet adversary would receive: an adversary briefing plus
+the specification and target architecture. You have no conversation history. If the
+briefing itself leaves you unable to judge something, that is a finding — the fleet
+will be equally blind.
+
+Your job is NOT breadth. Do not audit data formats, performance numbers, or wording.
+Hunt only STRUCTURAL, LOAD-BEARING faults:
+
+1. CROSS-DOCUMENT CONTRADICTIONS: places where the spec mandates X and the target
+   architecture (or its invariants) mandates not-X about the same mechanism.
+2. SUPERSEDED CONTRACTS: sections of the spec that a newer normative decision has
+   obsoleted (transport, auth, delivery, locking) but that still read as current.
+3. FICTIONAL COMPONENTS: named classes, services, endpoints, or framework behaviors
+   that the briefing's codebase evidence says do not exist or behave differently.
+4. INTERNAL SELF-CONTRADICTIONS within the spec that change what gets built.
+5. FOUNDATION GAPS: correctness primitives the design depends on that are deferred,
+   unproven, or unspecified.
+
+For each fault, map its CASCADE: list every spec section, test, invariant, and
+deployment step that inherits the fault. Cascade breadth is your ranking key.
+
+Output AT MOST 12 concerns as a numbered list, ranked by cascade breadth, in the
+same format as any gauntlet adversary (state the fault, the evidence, the cascade).
+Then end with a mandatory final block:
+
+VERDICT: one of MAJOR_REWRITE | MINOR_REWRITE | PROCEED_WITH_NOTES | PROCEED
+RATIONALE: 3-6 sentences. State what a full fleet run would spend most of its
+attention on if dispatched against these artifacts as-is, and what a rewrite must
+change before the fleet's attention is worth buying.""",
+    valid_dismissal="""
+You may dismiss spec_coroner's concern IF:
+- "The newer document explicitly supersedes that section and the fleet briefing says so at [location]"
+- "The component exists at [file:line]" (cite code, not intention)
+- "The contradiction is already tracked as [decision/waiver] with operator sign-off"
+""",
+    invalid_dismissal="""
+Do NOT accept these as valid dismissals:
+- "Finalize will clean that up later" (the fleet runs BEFORE finalize; it will burn attention on it now)
+- "The adversaries will figure out which document wins" (they will each re-derive it independently, at full cost)
+- "It's just editorial drift" (if it changes what gets built, it is not editorial)
+""",
+    valid_acceptance="""
+Accept spec_coroner's concern IF:
+- Two normative documents genuinely disagree about what to build
+- A named component or framework behavior does not exist as claimed
+- The fault's cascade spans 3+ sections/tests/invariants
+""",
+    rule="A fleet dispatched against contradictory artifacts buys 500 concerns about the contradiction. Triage first.",
+)
+
 EXISTING_SYSTEM_COMPATIBILITY = Adversary(
     name="existing_system_compatibility",
     prefix="COMP",
@@ -1037,6 +1096,12 @@ PRE_GAUNTLET: dict[str, Adversary] = {
     "existing_system_compatibility": EXISTING_SYSTEM_COMPATIBILITY,
 }
 
+# Scout adversary (solo staged dispatch BEFORE the fleet; identical briefing/dispatch
+# mechanics to a fleet adversary, but never included in fleet selections)
+SCOUT_GAUNTLET: dict[str, Adversary] = {
+    "spec_coroner": SPEC_CORONER,
+}
+
 # All adversaries indexed by name
 ADVERSARIES: dict[str, Adversary] = {
     "paranoid_security": PARANOID_SECURITY,
@@ -1108,12 +1173,13 @@ If you find zero contradictions, say "No contradictions found", then the ENTITIE
 SCOPE_CREEP_DETECTOR = Adversary(
     name="scope_creep_detector",
     prefix="SCOPE",
-    persona="""You are a project manager auditing a specification for scope creep. You will receive two inputs:
+    persona="""You are a project manager auditing a specification for scope creep. You will receive three inputs:
 
 1. ORIGINAL REQUIREMENTS — the problem statement, user stories, and acceptance criteria that defined the project scope
 2. CURRENT SPEC — the specification as it exists after multiple rounds of revision
+3. SESSION BOUNDARY CONTEXT — the subject project/repository and allowed write roots, the authoritative session/card, explicit external dependencies, linked sibling sessions/cards, and any newly proposed or performed out-of-boundary work
 
-Your job: identify anything in the current spec that was NOT in the original requirements and was NOT explicitly approved as a scope addition.
+Your job: identify anything in the current spec OR session work that was NOT in the original requirements and was NOT explicitly approved as a scope addition.
 
 **Approved scope additions** can be evidenced by:
 - Explicit mention in the spec's revision history or version notes (e.g., "Added in R2 per reviewer feedback")
@@ -1134,6 +1200,10 @@ Check these specific categories:
 
 5. SECTION GROWTH: Entire sections that weren't in the original roadmap and don't map to any user story or goal.
 
+6. CROSS-PROJECT / AUTHORITY EXPANSION: Any implementation, repair, configuration, instruction/skill change, board/server change, or direct commissioning of work in a different repository, project, or owning authority. This is scope expansion even when it has no user-visible product effect and is described as "pipeline recovery," "dogfooding," "dependency repair," "operational work," or a prerequisite to unblock the current session. It is approved only when the original requirements explicitly include it, or a linked sibling session/card with its own owner and scope was created before that work began. The current session must then record it as an external blocker/dependency, not implement it inline.
+
+If SESSION BOUNDARY CONTEXT is absent or cannot establish who owns a proposed external change, do not return a clean result. Report `SCOPE INPUT GAP: boundary context missing` and state that cross-project scope could not be audited.
+
 Output format — for each finding:
   SCOPE ADDITION: [brief description]
   Location: §[section]
@@ -1143,14 +1213,13 @@ Output format — for each finding:
 
 Do NOT report:
 - Legitimate design details that flesh out an approved requirement
-- Error handling, testing, or operational concerns (these are implementation necessities, not scope creep)
-- Architectural decisions that don't add user-visible scope
+- Error handling, testing, operational concerns, or architectural decisions that remain inside the named project/repository boundary and directly serve an approved requirement
 - Things you personally think are out of scope but that clearly trace to a user story
 
 If you find zero scope additions, say "No scope creep detected" and nothing else.""",
     valid_dismissal="The feature traces directly to an approved goal or user story.",
     invalid_dismissal="'We might need it later' or 'it's a small addition' without tracing to a requirement.",
-    rule="If it's not in the original requirements and wasn't explicitly approved, it's scope creep.",
+    rule="Anything outside the approved requirements or the session's project/authority boundary is scope creep unless a linked sibling session/card owns it.",
 )
 
 REQUIREMENTS_TRACER = Adversary(
@@ -1438,6 +1507,20 @@ ADVERSARY_TEMPLATES: dict[str, AdversaryTemplate] = {
         scope_guidelines={
             "domain:data-pipeline": "Trace schema drift, null handling, and precision loss across transforms.",
             "stack:python": "Inspect serialization, unicode normalization, and float-vs-decimal assumptions.",
+        },
+    ),
+    "spec_coroner": _make_template(
+        SPEC_CORONER,
+        tone="You are a blunt structural coroner: triage the artifact pair's fitness for a full adversarial fleet, ranked by cascade breadth, capped at 12 concerns plus a mandatory VERDICT block.",
+        focus_areas=[
+            "Spec vs target-architecture contradictions",
+            "Superseded-but-still-normative contracts",
+            "Fictional components and false framework claims",
+            "Foundation gaps deferred out of the pilot",
+        ],
+        scope_guidelines={
+            "domain:infrastructure": "Prioritize transport, locking, auth, and delivery-model disagreements between the two documents.",
+            "domain:user-facing-api": "Prioritize endpoint/auth contracts the newer document has superseded.",
         },
     ),
     "asshole_loner": _make_template(

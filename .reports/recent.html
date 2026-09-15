@@ -1,585 +1,576 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=768">
-  <title>adversarial-spec — recent activity</title>
-  <style>
-    :root {
-      color-scheme: light;
-      --bg: #ece7dc;
-      --paper: #fbf9f3;
-      --paper-2: #f4efe4;
-      --paper-3: #e6ded0;
-      --ink: #201e1a;
-      --muted: #5f5a50;
-      --line: #cfc5b4;
-      --line-strong: #aa9d87;
-      --green: #24613b;
-      --green-soft: #dfeadf;
-      --rust: #8c4b28;
-      --rust-soft: #f1ded3;
-      --gold: #80631f;
-      --gold-soft: #f1e5c6;
-      --black: #0f0f0f;
-      --blue: #1a73e8;
-      --blue-soft: #d7e7ff;
-      --red: #8a2e25;
-      --red-soft: #ead3ce;
-      --radius: 8px;
-      --focus: 0 0 0 3px rgba(36, 97, 59, 0.24);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    * { box-sizing: border-box; }
-    html { min-width: 320px; background: var(--bg); color: var(--ink); }
-    body { margin: 0; background: var(--bg); color: var(--ink); line-height: 1.45; }
-    button, input, textarea { font: inherit; }
-    button { min-height: 2.35rem; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--paper); color: var(--ink); cursor: pointer; padding: 0.48rem 0.76rem; }
-    button:hover { border-color: var(--green); }
-    button:focus-visible, input:focus-visible, textarea:focus-visible { outline: none; box-shadow: var(--focus); }
-    .page { max-width: 1160px; margin: 0 auto; padding: 22px; }
-    .topline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 0 0 14px; border-bottom: 1px solid var(--line-strong); }
-    .eyebrow { margin: 0; color: var(--muted); font-size: 0.82rem; font-weight: 800; letter-spacing: 0; text-transform: uppercase; }
-    .head-meta { margin: 0; color: var(--muted); font-size: 0.92rem; }
-    header { padding: 20px 0 18px; }
-    h1 { margin: 0 0 14px; font-size: 2.45rem; line-height: 1.04; letter-spacing: 0; }
-    h2 { margin: 0; font-size: 1.55rem; line-height: 1.16; letter-spacing: 0; }
-    h3 { margin: 0; font-size: 1rem; line-height: 1.22; letter-spacing: 0; }
-    p { margin: 0; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.94em; }
-    .status-grid { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: 16px; align-items: stretch; }
-    .status-wrap { overflow-x: auto; border: 1px solid var(--line); background: var(--paper); border-radius: var(--radius); }
-    .status-table { width: 100%; min-width: 680px; border-collapse: collapse; }
-    .status-table th, .status-table td { padding: 0.9rem 1rem; border-bottom: 1px solid var(--line); vertical-align: top; text-align: left; }
-    .status-table tr:last-child th, .status-table tr:last-child td { border-bottom: 0; }
-    .status-table th { width: 10rem; color: var(--ink); white-space: nowrap; }
-    .status-table td { color: var(--muted); }
-    .jason-quote { color: var(--green); font-weight: 900; }
-    .clock-card { display: grid; align-content: center; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper-2); padding: 1rem; }
-    .clock-title { margin: 0 0 0.55rem; color: var(--muted); font-size: 0.78rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0; }
-    .clock { margin: 0; white-space: pre; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.94rem; line-height: 1.55; color: var(--ink); }
-    main { display: grid; gap: 0; border-top: 1px solid var(--line-strong); }
-    .report-section, footer { padding: 24px 0; border-bottom: 1px solid var(--line-strong); }
-    .section-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
-    .section-tag, .chip, .mini-chip { display: inline-flex; align-items: center; max-width: 100%; min-width: 0; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--paper); color: var(--muted); font-weight: 800; white-space: normal; overflow-wrap: anywhere; }
-    .section-tag { min-height: 1.7rem; padding: 0.16rem 0.52rem; font-size: 0.78rem; }
-    .chip { min-height: 1.65rem; padding: 0.18rem 0.52rem; font-size: 0.78rem; }
-    .mini-chip { min-height: 1.45rem; padding: 0.12rem 0.42rem; font-size: 0.72rem; }
-    .green { border-color: #8eb592; background: var(--green-soft); color: var(--green); }
-    .rust { border-color: #c89476; background: var(--rust-soft); color: var(--rust); }
-    .gold { border-color: #c3aa5f; background: var(--gold-soft); color: var(--gold); }
-    .red { border-color: #c28f87; background: var(--red-soft); color: var(--red); }
-    .muted { color: var(--muted); }
-    .flow { display: flex; align-items: stretch; gap: 0.5rem; overflow-x: auto; padding: 2px 0 6px; }
-    .phase { display: grid; align-content: center; gap: 0.22rem; min-width: 8.7rem; min-height: 4rem; padding: 0.62rem 0.72rem; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--paper); text-align: center; }
-    .phase.done { background: var(--green-soft); border-color: #8eb592; }
-    .phase.current { background: var(--gold-soft); border-color: #c3aa5f; box-shadow: inset 0 0 0 2px rgba(128, 99, 31, 0.16); }
-    .phase.pending { color: var(--muted); background: var(--paper-2); }
-    .phase-mark { font-size: 1.05rem; font-weight: 900; }
-    .phase-name { font-size: 0.86rem; font-weight: 850; overflow-wrap: anywhere; }
-    .arrow { display: flex; align-items: center; justify-content: center; min-width: 1.2rem; color: var(--muted); font-weight: 900; }
-    .caption { margin-top: 0.7rem; color: var(--muted); font-size: 0.92rem; }
-    .comment-panel { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
-    .field-label { display: block; margin: 0 0 0.36rem; color: var(--muted); font-size: 0.82rem; font-weight: 850; }
-    textarea { display: block; width: 100%; min-height: 5rem; resize: vertical; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--paper); color: var(--ink); padding: 0.68rem; }
-    .ladder { display: grid; gap: 12px; }
-    .ladder-row, .branch-row { display: flex; align-items: stretch; gap: 0.55rem; min-width: 0; overflow-x: auto; padding-bottom: 4px; }
-    .branch-wrap { display: grid; grid-template-columns: minmax(11.5rem, 15rem) minmax(0, 1fr); gap: 12px; align-items: stretch; }
-    .branch-stack { display: grid; gap: 10px; min-width: 0; }
-    .milestone { flex: 1 0 12.6rem; min-width: 12.6rem; max-width: 18rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 0.82rem; }
-    .milestone.shared { max-width: none; min-width: 0; }
-    .milestone-top { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0.45rem; margin-bottom: 0.45rem; }
-    .milestone-id { font-weight: 950; color: var(--rust); }
-    .milestone-title { display: block; margin-top: 0.2rem; font-weight: 850; }
-    .milestone-purpose { margin-top: 0.55rem; color: var(--muted); font-size: 0.92rem; }
-    .node-flags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.6rem; min-width: 0; }
-    .debate-grid { display: grid; grid-template-columns: 18rem minmax(0, 1fr); gap: 16px; align-items: start; }
-    .model-pair { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; padding: 1rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper-2); }
-    .model-badge { display: inline-flex; align-items: center; justify-content: center; width: 3rem; height: 3rem; border-radius: 999px; }
-    .model-badge svg { width: 2.25rem; height: 2.25rem; display: block; }
-    .model-badge.codex { background: var(--black); }
-    .model-badge.gemini { background: var(--blue); }
-    .badge-label { color: var(--muted); font-size: 0.9rem; }
-    .revision-list, .incident-list { display: grid; gap: 10px; }
-    .revision, .incident { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 0.86rem; }
-    .revision-head, .incident-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.48rem; margin-bottom: 0.38rem; }
-    .tradeoff { color: var(--muted); font-size: 0.93rem; }
-    .ops-diagram { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px; align-items: stretch; margin-bottom: 14px; }
-    .ops-box { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 0.9rem; }
-    .ops-box h3 { margin-bottom: 0.4rem; }
-    .ops-arrow { display: flex; align-items: center; color: var(--muted); font-weight: 950; }
-    .decision-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-    fieldset.decision { min-inline-size: 0; margin: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 0.95rem; }
-    .decision legend { padding: 0 0.35rem; font-weight: 950; color: var(--ink); overflow-wrap: anywhere; }
-    .choice-list { display: grid; gap: 0.6rem; margin-top: 0.8rem; }
-    .choice { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 0.62rem; min-height: 2.6rem; padding: 0.62rem 0.68rem; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-2); cursor: pointer; }
-    .choice input { margin-top: 0.22rem; accent-color: var(--green); }
-    .choice span { min-width: 0; }
-    .choice-text { display: block; color: var(--ink); font-weight: 850; overflow-wrap: anywhere; }
-    .choice-note { display: block; color: var(--muted); font-size: 0.9rem; overflow-wrap: anywhere; }
-    .qid-comment { margin-top: 0.78rem; }
-    .footer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.7rem; margin: 0.8rem 0; }
-    .primary { background: var(--green); border-color: var(--green); color: #fff; font-weight: 850; }
-    .inline-status { min-height: 1.35rem; color: var(--muted); font-size: 0.9rem; font-weight: 850; }
-    .inline-status.ok { color: var(--green); }
-    .inline-status.error { color: var(--red); }
-    #feedback-json { min-height: 14rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.84rem; white-space: pre; }
-    .note { color: var(--muted); font-size: 0.9rem; }
-    @media (max-width: 980px) {
-      .status-grid, .debate-grid, .decision-grid, .ops-diagram, .branch-wrap { grid-template-columns: 1fr; }
-      .ops-arrow { justify-content: center; transform: rotate(90deg); min-height: 1.8rem; }
-    }
-    @media (max-width: 720px) {
-      .page { padding: 16px; }
-      h1 { font-size: 2rem; }
-      .phase { min-width: 7.7rem; }
-      .milestone { flex-basis: 11.8rem; min-width: 11.8rem; }
-    }
-  </style>
-</head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=768">
+<title>adversarial-spec — Recent Activity</title>
+<style>
+:root {
+  color-scheme: light;
+  --paper: #f7f4ee;
+  --surface: #efeae0;
+  --ink: #2b2620;
+  --muted: #7a7264;
+  --rule: #d8d0c0;
+  --accent: #3d6b35;
+  --accent-soft: #e4ead9;
+  --warn: #a05c22;
+  --warn-soft: #f3e3d3;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+}
+* { box-sizing: border-box; }
+body { max-width: 768px; margin: 0 auto; padding: 20px 18px 64px; line-height: 1.5; }
+h1, h2, h3 { font-family: ui-serif, Georgia, "Times New Roman", serif; font-weight: 600; }
+h1 { font-size: 1.5rem; margin: 4px 0 6px; }
+h2 { font-size: 1.15rem; margin: 0 0 8px; }
+h3 { font-size: 1rem; margin: 0 0 6px; }
+code, .mono, #clock-widget { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+a { color: var(--accent); }
+.section-tag {
+  display: inline-block; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted); border: 1px solid var(--rule); border-radius: 999px; padding: 2px 10px;
+  margin-bottom: 6px; background: var(--surface);
+}
+.report-card { border-top: 1px solid var(--rule); padding: 22px 0; }
+.report-card:first-of-type { border-top: none; padding-top: 4px; }
+.followup { margin-left: 20px; padding-left: 16px; border-left: 3px solid var(--accent); }
+
+/* Clock widget */
+#clock-widget {
+  display: inline-block; white-space: pre; font-size: 0.82rem; line-height: 1.5;
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 8px 12px; margin-top: 8px;
+}
+
+/* Status table + generic tables */
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin-top: 6px; }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.status-table td:first-child { color: var(--muted); white-space: nowrap; width: 108px; font-size: 0.82rem; }
+caption { text-align: left; font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; }
+.table-scroll { overflow-x: auto; }
+td.sev { white-space: nowrap; }
+
+/* Pills / chips — containment rules from make-interfaces-feel-better */
+.chip {
+  display: inline-flex; align-items: center; min-width: 0; max-width: 100%;
+  font-size: 0.78rem; padding: 2px 9px; border-radius: 999px; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; background: var(--surface); border: 1px solid var(--rule);
+}
+.chip.ok { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.chip.warn { background: var(--warn-soft); border-color: var(--warn); color: var(--warn); }
+.chip.crit { background: var(--warn-soft); border-color: var(--warn); color: var(--warn); }
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+
+/* Needs-attention */
+.attention-empty {
+  display: flex; align-items: center; gap: 8px; background: var(--accent-soft);
+  border: 1px solid var(--accent); border-radius: 6px; padding: 10px 14px; font-weight: 600;
+  color: var(--accent); margin-bottom: 12px;
+}
+.attention-note {
+  border-left: 4px solid var(--accent); background: var(--surface); padding: 10px 14px;
+  margin-top: 12px; border-radius: 0 6px 6px 0; font-size: 0.92rem;
+}
+.answered-callout {
+  border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 10px 14px;
+  border-radius: 0 6px 6px 0; font-size: 0.9rem; margin: 10px 0;
+}
+.advisory-table td.count { font-variant-numeric: tabular-nums; white-space: nowrap; }
+ul.attn-list { margin: 8px 0 0; padding-left: 20px; }
+ul.attn-list li { margin-bottom: 5px; font-size: 0.92rem; }
+
+/* Peer card grid (3 distinct outcomes, not a table) */
+.peer-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 12px; min-width: 0; }
+.peer-card { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+.peer-card h3 { display: flex; align-items: center; gap: 6px; }
+.peer-card .badge { font-size: 0.8rem; }
+.peer-card .badge.ok { color: var(--accent); }
+.peer-card .badge.warn { color: var(--warn); }
+.peer-card p { margin: 6px 0 0; font-size: 0.88rem; }
+.stat-strip { margin-top: 12px; font-size: 0.85rem; color: var(--muted); }
+
+/* Signature flow diagram (SVG) */
+.flow-diagram { width: 100%; margin: 14px 0 4px; overflow-x: auto; }
+.flow-diagram svg { width: 100%; height: auto; display: block; min-width: 560px; }
+.flow-node rect { fill: var(--surface); stroke: var(--rule); stroke-width: 1; }
+.flow-node.ok rect { fill: var(--accent-soft); stroke: var(--accent); }
+.flow-node.warn rect { fill: var(--warn-soft); stroke: var(--warn); }
+.flow-node text { fill: var(--ink); font-family: ui-sans-serif, system-ui, sans-serif; }
+.flow-node .fn-title { font-weight: 700; font-size: 11px; }
+.flow-node .fn-body { font-size: 9.5px; fill: var(--muted); }
+.flow-node.ok .fn-title { fill: var(--accent); }
+.flow-node.warn .fn-title { fill: var(--warn); }
+.flow-edge { fill: none; stroke: var(--muted); stroke-width: 1.4; marker-end: url(#arrowhead); }
+.flow-caption { font-size: 0.85rem; color: var(--ink); margin-top: 10px; }
+
+/* Process diagram (fallback grammar reused elsewhere) */
+.gate-diagram {
+  display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; margin: 14px 0;
+  overflow-x: auto; padding-bottom: 4px;
+}
+.gate-node {
+  flex: 1 1 128px; min-width: 128px; background: var(--surface); border: 1px solid var(--rule);
+  border-radius: 8px; padding: 10px 10px; font-size: 0.8rem; display: flex; flex-direction: column; gap: 4px;
+}
+.gate-node .label { font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
+.gate-node.reject { border-color: var(--warn); background: var(--warn-soft); }
+.gate-node.reject .label { color: var(--warn); }
+.gate-node.ok { border-color: var(--accent); background: var(--accent-soft); }
+.gate-node.ok .label { color: var(--accent); }
+.gate-arrow {
+  align-self: center; flex: 0 0 auto; color: var(--muted); font-size: 1.1rem; padding: 0 2px;
+}
+@media (max-width: 480px) {
+  .gate-diagram { flex-direction: column; }
+  .gate-arrow { transform: rotate(90deg); align-self: flex-start; margin-left: 8px; }
+}
+
+.verbatim-quote {
+  font-style: italic; font-weight: 700; color: var(--accent); border-left: 3px solid var(--accent);
+  padding: 4px 0 4px 12px; margin: 10px 0;
+}
+.recorded-note {
+  font-style: italic; color: var(--ink); border-left: 3px solid var(--muted);
+  padding: 4px 0 4px 12px; margin: 10px 0; font-size: 0.9rem;
+}
+.provenance-flag { font-size: 0.78rem; color: var(--warn); margin-top: 2px; }
+
+/* Decision widgets */
+.decision-widget {
+  margin-top: 12px; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 14px;
+}
+.decision-widget .choice { display: block; padding: 8px 6px; border-radius: 6px; font-size: 0.9rem; }
+.decision-widget .choice:hover { background: var(--paper); }
+.decision-widget input[type="radio"] { margin-right: 6px; }
+.decision-comment {
+  width: 100%; min-height: 64px; margin-top: 8px; font: inherit; font-size: 0.88rem;
+  padding: 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--ink);
+}
+.decision-choice-controls { margin-top: 8px; }
+.decision-clear {
+  background: transparent; border: 1px solid var(--muted); color: var(--muted);
+  border-radius: 6px; padding: 5px 10px; font-size: 0.8rem; cursor: pointer;
+}
+.decision-clear:disabled { cursor: not-allowed; opacity: 0.5; }
+.decision-clear:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+details.full-context { margin-top: 10px; font-size: 0.88rem; }
+details.full-context summary { cursor: pointer; color: var(--muted); }
+details.full-context .inner { padding: 8px 4px 0 4px; }
+
+/* Operator answer callout (renderer-owned) */
+.operator-answer { margin-top: 14px; padding: 12px 14px; background: var(--accent-soft); border-left: 4px solid var(--accent); border-radius: 0 6px 6px 0; font-size: 0.9rem; }
+.operator-answer.moot { background: var(--surface); border-left-color: var(--muted); }
+.answer-choice { margin: 4px 0; font-weight: 600; }
+.operator-answer .verbatim { margin-top: 6px; white-space: pre-wrap; font-style: italic; }
+.operator-response { margin-top: 10px; }
+
+/* Feedback affordances */
+.content-affordance, .meta-affordance { margin-top: 14px; display: grid; gap: 6px; }
+.content-affordance label, .meta-affordance label { font-size: 0.82rem; color: var(--muted); }
+.meta-affordance { font-size: 0.85rem; }
+textarea { min-height: 60px; font: inherit; font-size: 0.88rem; padding: 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--ink); width: 100%; }
+
+ul { padding-left: 20px; }
+li { margin-bottom: 4px; }
+
+/* Feedback footer */
+section[aria-label="Feedback"] {
+  margin-top: 24px; border-top: 2px solid var(--rule); padding-top: 18px;
+}
+#feedback-json { width: 100%; box-sizing: border-box; min-height: 160px; font-size: 0.78rem; }
+.feedback-buttons { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; }
+button { min-height: 38px; font: inherit; font-size: 0.85rem; border-radius: 6px; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); padding: 0 14px; cursor: pointer; }
+button:hover { background: var(--paper); border-color: var(--accent); }
+button[data-submit-feedback="1"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+button[data-submit-feedback="1"]:hover { filter: brightness(1.08); }
+button[data-submit-feedback="0"] { background: var(--paper); }
+.file-fallback-note { font-size: 0.8rem; color: var(--muted); margin-top: 10px; }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1c1a16; --surface: #262319; --ink: #ece6d8; --muted: #a89e8c;
+    --rule: #3c382c; --accent: #7fbf6e; --accent-soft: #24301f; --warn: #d99257; --warn-soft: #332318;
+  }
+  .decision-clear { color: var(--muted); border-color: var(--muted); }
+}
+:root[data-theme="dark"] {
+  --paper: #1c1a16; --surface: #262319; --ink: #ece6d8; --muted: #a89e8c;
+  --rule: #3c382c; --accent: #7fbf6e; --accent-soft: #24301f; --warn: #d99257; --warn-soft: #332318;
+}
+:root[data-theme="light"] {
+  --paper: #f7f4ee; --surface: #efeae0; --ink: #2b2620; --muted: #7a7264;
+  --rule: #d8d0c0; --accent: #3d6b35; --accent-soft: #e4ead9; --warn: #a05c22; --warn-soft: #f3e3d3;
+}
+</style></head>
 <body>
-  <div class="page">
-    <div class="topline" aria-label="Report metadata">
-      <p class="eyebrow">Recent activity report</p>
-      <p class="head-meta">checkpoint 2026-07-08 16:10 UTC · git b31f8fd · card 5857</p>
-    </div>
+<main data-recent-cards><section class="report-card" data-block="s1-header"><div class="card-custom"><span class="section-tag">Status</span>
+<h1>adversarial-spec &mdash; Recent Activity</h1>
+<p style="color:var(--muted); margin-top:0;">Session <code>adv-spec-202607060132-post-fable-hardening-skill</code> &mdash;
+Increased-Intelligence Hardening (skill slice G1+G2+G5; codex upgrade in scope)</p>
+<div id="clock-widget" class="mono">generated  &mdash;
+now        &mdash;
+age        &mdash;</div>
 
-    <header>
-      <h1>adversarial-spec recent activity</h1>
-      <div class="status-grid">
-        <div class="status-wrap">
-          <table class="status-table" aria-label="Header status">
-            <tbody>
-              <tr>
-                <th scope="row">Last worked</th>
-                <td>2026-07-08 16:10 UTC (checkpoint)</td>
-              </tr>
-              <tr>
-                <th scope="row">What we did</th>
-                <td>Requirements gate (a rule that must pass before moving on) passed with Jason's G1-F2 amendment: phase docs decomposed into discrete units, <strong><em class="jason-quote">"no more, no less"</em></strong>. Roadmap completed through one 📣 debate round with 4 accepted revisions. Card 5857 → Debate lane.</td>
-              </tr>
-              <tr>
-                <th scope="row">Up next</th>
-                <td>Author spec draft v1 at technical depth, then run debate rounds via pipeline tools (board automation).</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <aside class="clock-card" aria-label="Report clock">
-          <p class="clock-title">Clock</p>
-          <pre class="clock">generated  2026-07-08 11:10 CDT
-now        <span id="clock-now">loading</span>
-age        <span id="clock-age">loading</span></pre>
-        </aside>
-      </div>
-    </header>
+<table class="status-table" style="margin-top:16px;">
+  <tbody>
+    <tr><td>Last worked</td><td>2026-07-21, through 15:15Z (checkpoint <a href="/md/adversarial-spec/.adversarial-spec/checkpoints/checkpoint-202607211515-v9-1-accepted-phase7-entry.md"><code>checkpoint-202607211515-v9-1-accepted-phase7-entry.md</code></a>), git HEAD <code>2433efa</code>.</td></tr>
+    <tr><td>What we did</td><td>Jason's review of <code>spec-final.md</code> v9.0 came back <strong>request changes</strong> (2 blockers, 2 high, 1 medium, 1 open question). All six change-sets landed as a surgical in-place v9.1: discriminated authorization facts, a consumable architecture package with a final fingerprint, the Phase&nbsp;8 verification subflow, the prepare/commit recovery split, an identity/manifest rebind, and the approved initial regression policy. A scoped CONS/CANON/TCOV rerun over just the touched seams closed 3 findings (one new deferral family, DF-20). Jason accepted v9.1; the long-blocked gauntlet-completion gate discharged and the session advanced finalize&rarr;execution.</td></tr>
+    <tr><td>Up next</td><td>Phase&nbsp;7 execution planning in a fresh context: full <code>.architecture/</code> read, decomposition, and the DF-1..20 register-vs-<code>tested_by</code> diff reported to Jason before <code>pipeline_load</code>. No operator action is required right now &mdash; see Needs attention below.</td></tr>
+  </tbody>
+</table></div><div class="content-affordance"><label for="comment-s1-header">Comment on this content</label><textarea id="comment-s1-header" data-comment-block="s1-header"></textarea></div><div class="meta-affordance"><label for="meta-s1-header">Feedback on how this section was built</label><textarea id="meta-s1-header" data-meta-block="s1-header"></textarea></div></section>
+<section class="report-card" data-block="s5-needs-attention"><div class="card-custom"><span class="section-tag">Needs attention</span>
+<h2>Nothing waiting on you right now</h2>
+<div class="attention-empty">&#10003; No operator action required. The v9.0 review question is answered.</div>
+<div class="answered-callout">v9.0 &rarr; request changes &rarr; v9.1 &rarr; <strong>accepted</strong> (in-conversation, 2026-07-21).</div>
 
-    <main>
-      <section class="report-section" id="pipeline-position" data-block-id="pipeline-position">
-        <div class="section-head">
-          <h2>Pipeline Position</h2>
-          <span class="section-tag">card 5857 · Debate</span>
-        </div>
-        <div class="flow" aria-label="8-phase flow">
-          <div class="phase done"><span class="phase-mark">✓</span><span class="phase-name">requirements</span></div>
-          <span class="arrow" aria-hidden="true">→</span>
-          <div class="phase done"><span class="phase-mark">✓</span><span class="phase-name">roadmap</span></div>
-          <span class="arrow" aria-hidden="true">→</span>
-          <div class="phase current"><span class="phase-mark">◉</span><span class="phase-name">debate</span></div>
-          <span class="arrow" aria-hidden="true">→</span>
-          <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">target-architecture</span></div>
-          <span class="arrow" aria-hidden="true">→</span>
-          <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">gauntlet</span></div>
-          <span class="arrow" aria-hidden="true">→</span>
-          <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">finalize</span></div>
-          <span class="arrow" aria-hidden="true">→</span>
-          <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">execution</span></div>
-          <span class="arrow" aria-hidden="true">→</span>
-          <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">implementation</span></div>
-        </div>
-        <p class="caption">Current work: write the first technical spec draft from the roadmap, then send it back through opponents for critique.</p>
-        <div class="comment-panel">
-          <label class="field-label" for="comment-pipeline-position">Comment on pipeline position</label>
-          <textarea id="comment-pipeline-position" data-block="pipeline-position" placeholder="Feedback for this block"></textarea>
-        </div>
-      </section>
+<p>Worker context: next actor is the <strong>conductor</strong>, for Phase&nbsp;7 execution planning in a <strong>fresh context</strong> (this context is heavy; Jason chose to checkpoint rather than push decomposition into it).</p>
 
-      <section class="report-section" id="roadmap-ladder" data-block-id="roadmap-ladder">
-        <div class="section-head">
-          <h2>Roadmap Ladder</h2>
-          <span class="section-tag">9 milestones · 17✓ stories</span>
-        </div>
-        <div class="ladder" aria-label="Roadmap dependency ladder">
-          <div class="ladder-row">
-            <article class="milestone">
-              <div class="milestone-top"><span class="milestone-id">M0</span><span class="chip green">1✓ US</span></div>
-              <span class="milestone-title">Getting Started</span>
-              <p class="milestone-purpose">Prove the local tools and tests can run before real work starts.</p>
-            </article>
-          </div>
+<h3 style="margin-top:16px;">Board state</h3>
+<p>The pipeline board has <strong>no task cards yet</strong> &mdash; the execution plan hasn't been loaded. Card <code>5857</code> sits at <strong>Completed-Unmapped</strong>, the pre-load terminal lane, which is the correct resting state before <code>pipeline_load</code> runs.</p>
 
-          <div class="branch-wrap">
-            <article class="milestone shared">
-              <div class="milestone-top"><span class="milestone-id">M1</span><span class="chip green">4✓ US</span></div>
-              <span class="milestone-title">Gate Inventory &amp; Mechanization</span>
-              <p class="milestone-purpose">Turn hand-checked rules into visible checks or named judgment tests.</p>
-              <div class="node-flags"><span class="mini-chip rust">R1 + US-15 waiver</span><span class="mini-chip">shared root</span></div>
-            </article>
-            <div class="branch-stack">
-              <div class="branch-row" aria-label="G1 branch">
-                <article class="milestone">
-                  <div class="milestone-top"><span class="milestone-id">M2</span><span class="chip green">2✓ US</span></div>
-                  <span class="milestone-title">Phase-Doc Decomposition</span>
-                  <p class="milestone-purpose">Load only the phase instructions needed for the current step.</p>
-                </article>
-                <span class="arrow" aria-hidden="true">→</span>
-                <article class="milestone">
-                  <div class="milestone-top"><span class="milestone-id">M3</span><span class="chip green">1✓ US</span></div>
-                  <span class="milestone-title">Conductor Competence Harness</span>
-                  <p class="milestone-purpose">Measure whether a conductor can choose the next right action.</p>
-                </article>
-              </div>
-              <div class="branch-row" aria-label="G2 branch">
-                <article class="milestone">
-                  <div class="milestone-top"><span class="milestone-id">M4</span><span class="chip green">2✓ US</span></div>
-                  <span class="milestone-title">System-Spine Verification</span>
-                  <p class="milestone-purpose">Make larger checks come from the shared evidence list.</p>
-                  <div class="node-flags"><span class="mini-chip rust">R1 + US-16 boundary</span></div>
-                </article>
-                <span class="arrow" aria-hidden="true">→</span>
-                <article class="milestone">
-                  <div class="milestone-top"><span class="milestone-id">M5</span><span class="chip green">1✓ US</span></div>
-                  <span class="milestone-title">Pseudo→Real Promotion Gate</span>
-                  <p class="milestone-purpose">A session cannot complete while critical tests are unrun.</p>
-                </article>
-                <span class="arrow" aria-hidden="true">→</span>
-                <article class="milestone">
-                  <div class="milestone-top"><span class="milestone-id">M6</span><span class="chip green">2✓ US</span></div>
-                  <span class="milestone-title">ConOps + Durable Artifacts</span>
-                  <p class="milestone-purpose">Walk the happy path and leave proof later agents can inspect.</p>
-                </article>
-              </div>
-            </div>
-          </div>
-
-          <div class="ladder-row" aria-label="G5 branch">
-            <article class="milestone">
-              <div class="milestone-top"><span class="milestone-id">M7</span><span class="chip green">2✓ US</span></div>
-              <span class="milestone-title">Settle/Freeze + Debate Registry</span>
-              <p class="milestone-purpose">Freeze settled decisions so the same points are not reargued.</p>
-            </article>
-            <span class="arrow" aria-hidden="true">→</span>
-            <article class="milestone">
-              <div class="milestone-top"><span class="milestone-id">M8</span><span class="chip green">2✓ US</span></div>
-              <span class="milestone-title">Deterministic Reconciliation</span>
-              <p class="milestone-purpose">Rebuild derived files and catch false agreement before the stress test.</p>
-            </article>
-          </div>
-        </div>
-        <div class="comment-panel">
-          <label class="field-label" for="comment-roadmap-ladder">Comment on roadmap ladder</label>
-          <textarea id="comment-roadmap-ladder" data-block="roadmap-ladder" placeholder="Feedback for this block"></textarea>
-        </div>
-      </section>
-
-      <section class="report-section" id="debate-r1" data-block-id="debate-r1">
-        <div class="section-head">
-          <h2>Debate R1 Outcome</h2>
-          <span class="section-tag">4 accepted · 1 rejected</span>
-        </div>
-        <div class="debate-grid">
-          <div class="model-pair" aria-label="Debate models">
-            <span class="model-badge codex" title="Codex" aria-label="Codex">
-              <svg viewBox="0 0 32 32" role="img" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="#fff" stroke-width="3"/><text x="16" y="21" text-anchor="middle" font-size="15" font-family="Arial, sans-serif" font-weight="900" fill="#fff">C</text></svg>
-            </span>
-            <span class="model-badge gemini" title="Gemini" aria-label="Gemini">
-              <svg viewBox="0 0 32 32" role="img" aria-hidden="true"><path d="M16 3.5 19.5 12.5 28.5 16 19.5 19.5 16 28.5 12.5 19.5 3.5 16 12.5 12.5Z" fill="#fff"/><text x="16" y="20" text-anchor="middle" font-size="12" font-family="Arial, sans-serif" font-weight="900" fill="#1a73e8">G</text></svg>
-            </span>
-            <span class="badge-label">Two-model critique round, one merged roadmap.</span>
-          </div>
-          <div class="revision-list">
-            <article class="revision">
-              <div class="revision-head"><span class="chip green">accepted</span><strong>US-15 waiver mechanism</strong></div>
-              <p class="tradeoff">Authorized exceptions become visible and testable; tradeoff: every exception needs an owner, reason, and audit trail.</p>
-            </article>
-            <article class="revision">
-              <div class="revision-head"><span class="chip green">accepted</span><strong>Expanded personas</strong></div>
-              <p class="tradeoff">More reviewer viewpoints cover more failure modes; tradeoff: broader critique can add noise that reconciliation must filter.</p>
-            </article>
-            <article class="revision">
-              <div class="revision-head"><span class="chip green">accepted</span><strong>Global KPIs</strong></div>
-              <p class="tradeoff">Success now has cross-milestone numbers; tradeoff: metrics must stay tied to behavior, not ceremony.</p>
-            </article>
-            <article class="revision">
-              <div class="revision-head"><span class="chip green">accepted</span><strong>US-16 contract boundary + user journey</strong></div>
-              <p class="tradeoff">The separate Fizzy slice stays outside this spec while its boundary is guarded; tradeoff: extra checks before handoff.</p>
-            </article>
-            <article class="revision">
-              <div class="revision-head"><span class="chip red">rejected</span><strong>Blue-badge ≤15KB context cap</strong></div>
-              <p class="tradeoff">Rejected because a byte cap contradicts Jason's no-size-caps amendment; docs should be split by need, not size.</p>
-            </article>
-          </div>
-        </div>
-        <div class="comment-panel">
-          <label class="field-label" for="comment-debate-r1">Comment on debate R1</label>
-          <textarea id="comment-debate-r1" data-block="debate-r1" placeholder="Feedback for this block"></textarea>
-        </div>
-      </section>
-
-      <section class="report-section" id="ops-incidents" data-block-id="ops-incidents">
-        <div class="section-head">
-          <h2>Ops Incidents</h2>
-          <span class="section-tag">before → after</span>
-        </div>
-        <div class="ops-diagram" aria-label="Ops before and after">
-          <div class="ops-box">
-            <h3>Before</h3>
-            <p class="muted">Fresh model spawns and tiny preflight pings looked like ordinary readiness checks.</p>
-          </div>
-          <div class="ops-arrow" aria-hidden="true">→</div>
-          <div class="ops-box">
-            <h3>After</h3>
-            <p class="muted">Known failures have named workarounds and candidates for mechanized checks.</p>
-          </div>
-        </div>
-        <div class="incident-list">
-          <article class="incident">
-            <div class="incident-head"><span class="chip red">spawn auth</span><strong>gemini-cli fresh spawns fail <code>IneligibleTierError</code></strong></div>
-            <p class="tradeoff">Latest CLI 0.49.0 with <code>oauth-personal</code> fails for new processes; live panes still work. Dispatches switched to API-path <code>gemini/gemini-3.5-flash</code>.</p>
-          </article>
-          <article class="incident">
-            <div class="incident-head"><span class="chip gold">preflight</span><strong><code>debate.py</code> false-fails thinking models</strong></div>
-            <p class="tradeoff">The tiny ping budget is eaten by internal reasoning, so a working model can look broken. Workaround: <code>--skip-preflight</code>. Candidate for M1 mechanization.</p>
-          </article>
-          <article class="incident">
-            <div class="incident-head"><span class="chip green">logger v1.1</span><strong><code>session_activity_logger</code> attribution added</strong></div>
-            <p class="tradeoff"><code>SessionStart</code> now logs invoker ancestry, tty, and env; <code>UserPromptSubmit</code> logs idle gap with <code>cold:true</code> past the 300s cache TTL. Change lives uncommitted in the Brainquarters repo.</p>
-          </article>
-        </div>
-        <div class="comment-panel">
-          <label class="field-label" for="comment-ops-incidents">Comment on ops incidents</label>
-          <textarea id="comment-ops-incidents" data-block="ops-incidents" placeholder="Feedback for this block"></textarea>
-        </div>
-      </section>
-
-      <section class="report-section" id="decision-widgets">
-        <div class="section-head">
-          <h2>Decision Widgets</h2>
-          <span class="section-tag">pending Jason input</span>
-        </div>
-        <div class="decision-grid">
-          <fieldset class="decision" data-qid="q-20260708-branch-commit">
-            <legend>Commit session work to spec branch</legend>
-            <div class="choice-list">
-              <label class="choice"><input type="radio" name="q-20260708-branch-commit" value="a"><span><span class="choice-text">a: create <code>spec/post-fable-hardening</code> branch + commit now</span><span class="choice-note">Goals doc mandates branches; current work sits uncommitted on stale <code>phase7/liveness-gate-test-ladder</code>.</span></span></label>
-              <label class="choice"><input type="radio" name="q-20260708-branch-commit" value="b"><span><span class="choice-text">b: keep accumulating uncommitted until spec finalize</span><span class="choice-note">Fewer commits; more loss risk and harder review boundary.</span></span></label>
-              <label class="choice"><input type="radio" name="q-20260708-branch-commit" value="c"><span><span class="choice-text">c: commit to current branch as-is</span><span class="choice-note">Fastest path; wrong branch name for the spec work.</span></span></label>
-            </div>
-            <div class="qid-comment"><label class="field-label" for="comment-q-20260708-branch-commit">Decision comment</label><textarea id="comment-q-20260708-branch-commit" data-qid-comment="q-20260708-branch-commit" placeholder="Optional comment"></textarea></div>
-          </fieldset>
-
-          <fieldset class="decision" data-qid="q-20260708-wake-cost-concern">
-            <legend>Wake/listener lifecycle cost as spec concern</legend>
-            <div class="choice-list">
-              <label class="choice"><input type="radio" name="q-20260708-wake-cost-concern" value="a"><span><span class="choice-text">a: add as named concern for debate</span><span class="choice-note">Stop-hook demands a listener, harness kills it, each death costs a full-context wake; this is an honor-system boundary in G1 scope.</span></span></label>
-              <label class="choice"><input type="radio" name="q-20260708-wake-cost-concern" value="b"><span><span class="choice-text">b: out of scope; ops annoyance only</span><span class="choice-note">Keeps the spec narrower; leaves listener lifecycle cost outside this hardening pass.</span></span></label>
-            </div>
-            <div class="qid-comment"><label class="field-label" for="comment-q-20260708-wake-cost-concern">Decision comment</label><textarea id="comment-q-20260708-wake-cost-concern" data-qid-comment="q-20260708-wake-cost-concern" placeholder="Optional comment"></textarea></div>
-          </fieldset>
-        </div>
-      </section>
-    </main>
-
-    <footer>
-      <div class="section-head">
-        <h2>Feedback JSON</h2>
-        <span class="section-tag">report-feedback/1</span>
-      </div>
-      <label class="field-label" for="feedback-json">Encoded feedback</label>
-      <textarea id="feedback-json" readonly aria-live="polite"></textarea>
-      <div class="footer-actions">
-        <button type="button" class="primary" id="copy-json">Copy</button>
-        <button type="button" id="submit-feedback">Submit</button>
-        <span id="feedback-status" class="inline-status" aria-live="polite"></span>
-      </div>
-      <p class="note">Submit needs the reports server. Copy works from file://.</p>
-    </footer>
+<h3 style="margin-top:16px;">Five pre-load gates queued for the fresh-context session</h3>
+<ul class="attn-list">
+  <li><strong>DF-1..20 register diff</strong> &mdash; every row of <a href="/md/adversarial-spec/.adversarial-spec/specs/post-fable-hardening-skill/tcov-deferral-register-v8.md">tcov-deferral-register-v8.md</a> (20 families) must map onto a task's <code>tested_by</code> set; the mapping is reported to the operator <em>before</em> <code>pipeline_load</code>, not after.</li>
+  <li><strong>TMR keystone-first</strong> &mdash; 3 new TMR fields this spec introduces (<code>obligation_revision</code>, <code>obligation_policy_version</code>, <code>tmr_record_hash</code>) route through the shared TMR keystone first, not a local fork.</li>
+  <li><strong>Executable adverse suite</strong> lands as W0-adjacent tasks (Phase&nbsp;7 obligation, not a pre-Phase-7 gate &mdash; the design-level dry-run already discharged publication).</li>
+  <li><code>tested_by</code> populated per task at decomposition time.</li>
+  <li><strong>session_altitude check</strong> from card 5857 metadata, to confirm the validation leg the fresh session should run.</li>
+</ul>
+<p class="attention-note">Diagram consideration: considered, no useful visual &mdash; this is an empty decision-state plus a five-item checklist; a list communicates it, a diagram would just decorate it.</p></div><div class="content-affordance"><label for="comment-s5-needs-attention">Comment on this content</label><textarea id="comment-s5-needs-attention" data-comment-block="s5-needs-attention"></textarea></div><div class="meta-affordance"><label for="meta-s5-needs-attention">Feedback on how this section was built</label><textarea id="meta-s5-needs-attention" data-meta-block="s5-needs-attention"></textarea></div></section>
+<section class="report-card" data-block="s2-review-verdict"><div class="card-custom"><span class="section-tag">Review</span>
+<h2>The review said: request changes</h2>
+<p>Jason's operator review of <code>spec-final.md</code> v9.0 returned six items &mdash; 2 blockers, 2 high, 1 medium, 1 open question &mdash; and asked for a surgical v9.1 rather than a new debate cycle.</p>
+<div class="table-scroll"><table>
+  <thead><tr><th>Item</th><th>Severity</th><th>Defect</th><th>Resolution</th></tr></thead>
+  <tbody>
+    <tr><td>OR-1</td><td class="sev"><span class="chip crit">Blocker</span></td><td>Deferred-promotion authorization facts had to bind an inherited-record hash and a commit-certificate hash that structurally can't exist before commit.</td><td>Discriminated <code>fact_binding_state</code> schema &mdash; provisional deferral binds a planned-transfer hash; committed deferral binds the record+certificate hashes; both feed different <code>authorization_set_hash</code> values.</td></tr>
+    <tr><td>CS2</td><td class="sev"><span class="chip crit">Blocker</span></td><td>Architecture package stuck at <code>architecture_fingerprint: null</code>: INV-020 still stated the superseded hash formula, and most contract-boundary rows specified presence reads where the spec requires signed probes.</td><td>INV-020 reconciled to the domain-separated formula, contract-boundary probe columns tightened, final fingerprint computed and injected across the artifact set (<code>7fa0ae7a&hellip;7141b7</code>); status flipped to consumable.</td></tr>
+    <tr><td>OR-3</td><td class="sev"><span class="chip warn">High</span></td><td>09-verification.md was on a path to becoming a phantom canonical Phase&nbsp;9, contradicting the no-new-Fizzy-lane constraint.</td><td>Demoted to a named Phase&nbsp;8 verification subflow tracked via <code>current_step</code>, plus an atomic, idempotent migration rule (resolves <code>CON-002</code>).</td></tr>
+    <tr><td>OR-4</td><td class="sev"><span class="chip warn">High</span></td><td>Lost/uncertain prepare responses routed to <code>promotion-commit-status-v1</code>, which needs a receipt hash a lost prepare never produces.</td><td>Split recovery: lost/uncertain PREPARE replays <code>promotion-prepare-v1</code> (same operation_id + intent hash); uncertain COMMIT keeps <code>promotion-commit-status-v1</code>.</td></tr>
+    <tr><td>OR-5</td><td class="sev"><span class="chip">Medium</span></td><td><code>spec-final.md</code> v9.0's header, <code>tests-spec.md</code>'s sha binding, and the manifest's TC counts had drifted out of lockstep.</td><td>Re-derived 103+25=128 TCs, rebound <code>tests-spec.md</code> to sha <code>5d981350</code>, manifest populated 9/17/128.</td></tr>
+    <tr><td>OR-6 (OQ-1)</td><td class="sev"><span class="chip">Open question</span></td><td><code>MAX_PHASE_REGRESSION_POINTS = 10</code> was left as placeholder language in the spec.</td><td>Jason approved 10 as the initial shipped policy, explicitly revisable from rollout telemetry; not rollout-blocking, no calibration task spawned.</td></tr>
+  </tbody>
+</table></div>
+<p style="margin-top:10px;">Primitive note: a table beats a diagram here &mdash; six parallel items sharing the same four fields is an inventory, not a mechanism.</p>
+<div class="recorded-note">&ldquo;Phase&rdquo; is a public lifecycle protocol, not a documentation boundary &mdash; promoting verification to a canonical Phase&nbsp;9 would contradict the existing-lane constraint and expand G3 scope just to legitimize a filename.</div>
+<p class="provenance-flag">&#9888; Recorded decision rationale (session decisions log, 2026-07-21T13:58:19Z), not a literal transcript of Jason's words &mdash; the build brief specified a verbatim quote here (&ldquo;I accept that&rdquo;) that does not appear on disk in that exact form; this is the closest disk-grounded, operator-attributed text. See discrepancy note.</p></div><div class="content-affordance"><label for="comment-s2-review-verdict">Comment on this content</label><textarea id="comment-s2-review-verdict" data-comment-block="s2-review-verdict"></textarea></div><div class="meta-affordance"><label for="meta-s2-review-verdict">Feedback on how this section was built</label><textarea id="meta-s2-review-verdict" data-meta-block="s2-review-verdict"></textarea></div></section>
+<section class="report-card" data-block="s3-v91-flow"><div class="card-custom"><span class="section-tag">Signature</span>
+<h2>How v9.1 landed</h2>
+<div class="flow-diagram">
+<svg viewBox="0 0 720 690" role="img" aria-labelledby="flow-title flow-desc">
+<title id="flow-title">Review verdict to Phase 7 entry</title>
+<desc id="flow-desc">Operator review verdict fans out into three dispatches (spec body, architecture reconcile, inline identity fix), converges through three scoped guardrails, is accepted by the operator, then discharges the gauntlet-completion gate, passes reconciliation, and lands the card at Completed-Unmapped with local phase execution.</desc>
+<defs>
+  <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)" />
+  </marker>
+</defs>
+<g fill="none">
+  <path class="flow-edge" d="M360,74 V87 H125 V100" />
+  <path class="flow-edge" d="M360,74 V87 H355 V100" />
+  <path class="flow-edge" d="M360,74 V87 H585 V100" />
+  <path class="flow-edge" d="M125,192 V210" />
+  <path class="flow-edge" d="M355,192 V210" />
+  <path class="flow-edge" d="M585,192 V210" />
+  <path class="flow-edge" d="M125,302 V316 H360 V330" />
+  <path class="flow-edge" d="M355,302 V330" />
+  <path class="flow-edge" d="M585,302 V316 H360 V330" />
+  <path class="flow-edge" d="M360,384 V404" />
+  <path class="flow-edge" d="M360,454 V474" />
+  <path class="flow-edge" d="M360,524 V544" />
+  <path class="flow-edge" d="M360,594 V614" />
+</g>
+<g class="flow-node">
+  <rect x="20" y="20" width="680" height="54" rx="7" />
+  <text x="360" y="41" text-anchor="middle" class="fn-title">Operator review &mdash; spec-final.md v9.0</text>
+  <text x="360" y="58" text-anchor="middle" class="fn-body">2 blockers &middot; 2 high &middot; 1 medium &middot; 1 open question</text>
+</g>
+<g class="flow-node">
+  <rect x="20" y="100" width="210" height="92" rx="7" />
+  <text x="125" y="119" text-anchor="middle" class="fn-title">D1 &middot; codex</text>
+  <text x="125" y="136" text-anchor="middle" class="fn-body">CS1 &middot; CS3 &middot; CS4 &middot; CS6</text>
+  <text x="125" y="151" text-anchor="middle" class="fn-body">spec body</text>
+  <text x="125" y="170" text-anchor="middle" class="fn-body">auth facts, subflow,</text>
+  <text x="125" y="183" text-anchor="middle" class="fn-body">recovery split, policy</text>
+</g>
+<g class="flow-node warn">
+  <rect x="250" y="100" width="210" height="92" rx="7" />
+  <text x="355" y="119" text-anchor="middle" class="fn-title">D2 &middot; codex</text>
+  <text x="355" y="136" text-anchor="middle" class="fn-body">CS2 arch reconcile</text>
+  <text x="355" y="151" text-anchor="middle" class="fn-body">fingerprint 7fa0ae7a&hellip;</text>
+  <text x="355" y="170" text-anchor="middle" class="fn-title" style="font-size:9px;">&#9888; stop-and-report</text>
+  <text x="355" y="183" text-anchor="middle" class="fn-body">allowlist gap caught, amended, re-dispatched</text>
+</g>
+<g class="flow-node">
+  <rect x="480" y="100" width="210" height="92" rx="7" />
+  <text x="585" y="119" text-anchor="middle" class="fn-title">D3 &middot; inline</text>
+  <text x="585" y="136" text-anchor="middle" class="fn-body">CS5 identity fix</text>
+  <text x="585" y="151" text-anchor="middle" class="fn-body">sha/manifest rebind</text>
+  <text x="585" y="170" text-anchor="middle" class="fn-body">103+25=128 TCs</text>
+  <text x="585" y="183" text-anchor="middle" class="fn-body">sha 5d981350</text>
+</g>
+<g class="flow-node ok">
+  <rect x="20" y="210" width="210" height="92" rx="7" />
+  <text x="125" y="231" text-anchor="middle" class="fn-title">CONS</text>
+  <text x="125" y="249" text-anchor="middle" class="fn-body">clean</text>
+  <text x="125" y="265" text-anchor="middle" class="fn-body">5 seams checked</text>
+</g>
+<g class="flow-node ok">
+  <rect x="250" y="210" width="210" height="92" rx="7" />
+  <text x="355" y="231" text-anchor="middle" class="fn-title">CANON</text>
+  <text x="355" y="249" text-anchor="middle" class="fn-body">2 warnings &rarr; fixed</text>
+  <text x="355" y="265" text-anchor="middle" class="fn-body">current_step bound,</text>
+  <text x="355" y="280" text-anchor="middle" class="fn-body">migration token bound</text>
+</g>
+<g class="flow-node warn">
+  <rect x="480" y="210" width="210" height="92" rx="7" />
+  <text x="585" y="231" text-anchor="middle" class="fn-title">TCOV</text>
+  <text x="585" y="249" text-anchor="middle" class="fn-body">1 blocking &rarr; deferred</text>
+  <text x="585" y="265" text-anchor="middle" class="fn-body">DF-20 family added</text>
+  <text x="585" y="280" text-anchor="middle" class="fn-body">20 families total</text>
+</g>
+<g class="flow-node ok">
+  <rect x="210" y="330" width="300" height="54" rx="7" />
+  <text x="360" y="352" text-anchor="middle" class="fn-title">v9.1 ACCEPTED &mdash; Jason</text>
+  <text x="360" y="369" text-anchor="middle" class="fn-body">in-place revision, no separate file</text>
+</g>
+<g class="flow-node ok">
+  <rect x="170" y="404" width="380" height="50" rx="7" />
+  <text x="360" y="425" text-anchor="middle" class="fn-title">mark_gauntlet_complete &mdash; owed, DISCHARGED</text>
+  <text x="360" y="441" text-anchor="middle" class="fn-body">registry-lag gap fixed</text>
+</g>
+<g class="flow-node ok">
+  <rect x="170" y="474" width="380" height="50" rx="7" />
+  <text x="360" y="495" text-anchor="middle" class="fn-title">reconciliation gate &mdash; PASS</text>
+  <text x="360" y="511" text-anchor="middle" class="fn-body">cons-report-final.md</text>
+</g>
+<g class="flow-node">
+  <rect x="170" y="544" width="380" height="50" rx="7" />
+  <text x="360" y="565" text-anchor="middle" class="fn-title">card 5857 &rarr; Completed-Unmapped</text>
+  <text x="360" y="581" text-anchor="middle" class="fn-body">pre-load terminal lane</text>
+</g>
+<g class="flow-node">
+  <rect x="170" y="614" width="380" height="50" rx="7" />
+  <text x="360" y="635" text-anchor="middle" class="fn-title">local phase = execution</text>
+  <text x="360" y="651" text-anchor="middle" class="fn-body">authoritative for resume</text>
+</g>
+</svg>
+</div>
+<p class="flow-caption">One operator review verdict fanned out into three dispatches (spec-body edits, architecture reconciliation, an inline identity fix), was re-verified by three scoped guardrails, and got accepted. That single accept discharged the long-blocked gauntlet-completion gate and walked the card straight to Completed-Unmapped with local phase set to execution.</p></div><div class="content-affordance"><label for="comment-s3-v91-flow">Comment on this content</label><textarea id="comment-s3-v91-flow" data-comment-block="s3-v91-flow"></textarea></div><div class="meta-affordance"><label for="meta-s3-v91-flow">Feedback on how this section was built</label><textarea id="meta-s3-v91-flow" data-meta-block="s3-v91-flow"></textarea></div></section>
+<section class="report-card" data-block="s4-guardrails"><div class="card-custom"><span class="section-tag">Guardrails</span>
+<h2>Scoped guardrail rerun</h2>
+<p>Only the five touched seams were re-checked (OR-1, OR-3, OR-4, CS2, OR-5) &mdash; not a full re-scan. Three distinct outcomes:</p>
+<div class="peer-cards">
+  <div class="peer-card">
+    <h3><span class="badge ok">&#10003;</span> CONS</h3>
+    <p>Clean across all 5 seams &mdash; no contradictions found.</p>
   </div>
+  <div class="peer-card">
+    <h3><span class="badge ok">&#10003;</span> CANON</h3>
+    <p>2 warnings, both fixed: <code>current_step</code> bound as the sole subflow field, and the <code>phase8_subflow_migration</code> event token bound.</p>
+  </div>
+  <div class="peer-card">
+    <h3><span class="badge warn">&rarr;</span> TCOV</h3>
+    <p>1 blocking finding, resolved by deferral: migration mechanics became <strong>DF-20</strong> in the deferral register (routed to Phase&nbsp;7 <code>tested_by</code>), bringing the register to 20 families total.</p>
+  </div>
+</div>
+<p class="stat-strip">128 &#10003; test cases stable through the rerun (103 story + 25 invariant) &middot; 17/17 spines intact.</p>
+<p style="margin-top:8px;">Primitive note: three peers with genuinely different outcomes (clean / fixed / deferred) read better as cards than as a table row of near-identical fields.</p></div><div class="content-affordance"><label for="comment-s4-guardrails">Comment on this content</label><textarea id="comment-s4-guardrails" data-comment-block="s4-guardrails"></textarea></div><div class="meta-affordance"><label for="meta-s4-guardrails">Feedback on how this section was built</label><textarea id="meta-s4-guardrails" data-meta-block="s4-guardrails"></textarea></div></section>
+<section class="report-card" data-block="s6-carries"><div class="card-custom"><span class="section-tag">Handoff</span>
+<h2>What Phase 7 inherits</h2>
+<div class="table-scroll"><table>
+  <thead><tr><th>Obligation</th><th>Source</th><th>Gate</th></tr></thead>
+  <tbody>
+    <tr><td>DF-1..20 deferred coverage families</td><td><a href="/md/adversarial-spec/.adversarial-spec/specs/post-fable-hardening-skill/tcov-deferral-register-v8.md">tcov-deferral-register-v8.md</a></td><td>Register-vs-<code>tested_by</code> diff, reported to the operator before <code>pipeline_load</code>; an unmapped row blocks the load.</td></tr>
+    <tr><td>11 TMR schema-gap carries (3 new fields: <code>obligation_revision</code>, <code>obligation_policy_version</code>, <code>tmr_record_hash</code>)</td><td>tests-spec.md promotion, 2026-07-21</td><td>Keystone-first routing &mdash; edits land in the shared TMR keystone before any local field.</td></tr>
+    <tr><td>Executable adverse suite</td><td>dry-run-results.json <code>executable_deferral</code></td><td>W0-adjacent tasks in the execution plan; a Phase&nbsp;7 obligation, not a pre-Phase-7 gate (the design-level dry-run already discharged publication).</td></tr>
+    <tr><td><code>phase8_subflow_migration</code> + 09-verification.md doc move</td><td>OR-3 / CON-002 resolution</td><td>Phase&nbsp;7 tasks: implement the migration event and relocate the doc under the Phase&nbsp;8 tree.</td></tr>
+    <tr><td><code>middleware-candidates.json</code> materializable candidates</td><td>Phase&nbsp;4 architecture package (11 candidates)</td><td>Middleware-creator slot decision surfaces at Phase&nbsp;7, not before.</td></tr>
+  </tbody>
+</table></div>
+<p style="margin-top:10px;">Primitive note: five obligations sharing the same three fields (what / where it came from / what gates it) is exact repeated structure &mdash; a table beats prose or cards.</p></div><div class="content-affordance"><label for="comment-s6-carries">Comment on this content</label><textarea id="comment-s6-carries" data-comment-block="s6-carries"></textarea></div><div class="meta-affordance"><label for="meta-s6-carries">Feedback on how this section was built</label><textarea id="meta-s6-carries" data-meta-block="s6-carries"></textarea></div></section></main>
+<section aria-label="Feedback">
+  <h2>Feedback payload</h2>
+  <p style="font-size:0.85rem;color:var(--muted);">Live JSON reflecting every widget/comment/meta box above. Copy it manually if the submit buttons can't reach the server (e.g. viewing this file over <code>file://</code>).</p>
+  <textarea id="feedback-json" readonly></textarea>
+  <div class="feedback-buttons">
+    <button id="copy-feedback" type="button">Copy JSON</button>
+    <button data-submit-feedback="1" type="button">Submit &amp; wake</button>
+    <button data-submit-feedback="0" type="button">Submit &amp; defer to next pickup</button>
+  </div>
+  <p class="file-fallback-note">Opened via <code>file://</code>? Submit buttons need the report server and won't reach it — copy the JSON above and paste it into the feedback inbox instead.</p>
+</section>
+<script>
+(() => {
+  const el = document.getElementById('clock-widget');
+  if (!el) return;
+  const GENERATED_AT = "2026-07-21T15:20:00Z";
+  const tz = 'America/Chicago';
+  function fmt(dateObj) {
+    const parts = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false,
+    }).formatToParts(dateObj);
+    const get = (t) => parts.find((p) => p.type === t)?.value;
+    const tzParts = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz, timeZoneName: 'short',
+    }).formatToParts(dateObj);
+    const abbr = tzParts.find((p) => p.type === 'timeZoneName')?.value || '';
+    return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')} ${abbr}`;
+  }
+  function ageMinutes(genIso, now) {
+    const diffMs = now.getTime() - new Date(genIso).getTime();
+    return Math.max(0, Math.round(diffMs / 60000));
+  }
+  function render() {
+    const now = new Date();
+    const genText = fmt(new Date(GENERATED_AT));
+    const nowText = fmt(now);
+    const age = ageMinutes(GENERATED_AT, now);
+    el.textContent = `generated  ${genText}\nnow        ${nowText}\nage        ${age} min`;
+  }
+  render();
+  window.setInterval(render, 60000);
+})();
+</script>
+<script>
+(() => {
+  const project = "adversarial-spec";
+  const generatedAt = "2026-07-21T15:23:19Z";
+  const output = document.getElementById('feedback-json');
+  const draftScope = project || window.location.pathname;
+  const draftKey = `recent-feedback-draft/1/${draftScope}/${generatedAt}`;
+  const store = (() => {
+    try { return window.localStorage; } catch { return null; }
+  })();
 
-  <script>
-    (function () {
-      "use strict";
+  function payload() {
+    const answers = [];
+    document.querySelectorAll('.decision-widget[data-qid]').forEach((widget) => {
+      const selected = widget.querySelector('input[type="radio"]:checked');
+      const comment = widget.querySelector('.decision-comment');
+      const text = comment ? comment.value : '';
+      if (selected || text) {
+        answers.push({
+          qid: widget.dataset.qid,
+          choice: selected ? selected.value : null,
+          comment: text,
+        });
+      }
+    });
+    const comments = [...document.querySelectorAll('textarea[data-comment-block]')]
+      .filter((field) => field.value.trim())
+      .map((field) => ({block: field.dataset.commentBlock, comment: field.value}));
+    const meta = [...document.querySelectorAll('textarea[data-meta-block]')]
+      .filter((field) => field.value.trim())
+      .map((field) => ({block: field.dataset.metaBlock, comment: field.value}));
+    return {
+      schema: 'report-feedback/1', project, report_generated_at: generatedAt,
+      answers, comments, meta,
+    };
+  }
 
-      var reportMeta = {
-        schema: "report-feedback/1",
-        project: "adversarial-spec",
-        report_generated_at: "2026-07-08T16:19:34Z"
-      };
-      var generatedAt = new Date("2026-07-08T16:10:43Z");
-      var feedbackOutput = document.getElementById("feedback-json");
-      var statusEl = document.getElementById("feedback-status");
-      var copyButton = document.getElementById("copy-json");
-      var submitButton = document.getElementById("submit-feedback");
-      var clockNow = document.getElementById("clock-now");
-      var clockAge = document.getElementById("clock-age");
-      var statusTimer = null;
+  function hasFeedback(value) {
+    return value.answers.length || value.comments.length || value.meta.length;
+  }
 
-      var dateFormatter = new Intl.DateTimeFormat("sv-SE", {
-        timeZone: "America/Chicago",
-        hour12: false,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit"
+  function setClearEnabled(widget) {
+    const clear = widget.querySelector('.decision-clear');
+    if (clear) clear.disabled = !widget.querySelector('input[type="radio"]:checked');
+  }
+
+  function configureDecisionWidgets() {
+    document.querySelectorAll('.decision-widget[data-qid]').forEach((widget) => {
+      const qid = widget.dataset.qid;
+      const radios = [...widget.querySelectorAll('input[type="radio"]')];
+      radios.forEach((radio) => { radio.name = `decision-${qid}`; });
+      if (!radios.length || widget.querySelector('.decision-clear')) return;
+      const controls = document.createElement('div');
+      controls.className = 'decision-choice-controls';
+      const clear = document.createElement('button');
+      clear.type = 'button';
+      clear.className = 'decision-clear';
+      clear.textContent = 'Clear choice';
+      clear.setAttribute('aria-label', `Clear choice for ${qid}`);
+      clear.addEventListener('click', () => {
+        radios.forEach((radio) => { radio.checked = false; });
+        refresh();
+        cacheDraft();
       });
-      var tzFormatter = new Intl.DateTimeFormat("en-US", {
-        timeZone: "America/Chicago",
-        timeZoneName: "short",
-        hour: "2-digit",
-        minute: "2-digit"
+      controls.append(clear);
+      widget.append(controls);
+      setClearEnabled(widget);
+    });
+  }
+
+  function restoreDraft() {
+    if (!store) return;
+    let draft;
+    try { draft = JSON.parse(store.getItem(draftKey)); } catch { return; }
+    if (!draft || !Array.isArray(draft.answers) || !Array.isArray(draft.comments)
+      || !Array.isArray(draft.meta)) return;
+    const answers = new Map(draft.answers.map((answer) => [answer.qid, answer]));
+    document.querySelectorAll('.decision-widget[data-qid]').forEach((widget) => {
+      const answer = answers.get(widget.dataset.qid);
+      if (!answer) return;
+      widget.querySelectorAll('input[type="radio"]').forEach((radio) => {
+        radio.checked = answer.choice !== null && radio.value === answer.choice;
       });
-
-      function trimmedValue(element) {
-        return element && element.value ? element.value.trim() : "";
-      }
-
-      function tzAbbrev(date) {
-        var parts = tzFormatter.formatToParts(date);
-        var tzPart = parts.find(function (part) { return part.type === "timeZoneName"; });
-        return tzPart ? tzPart.value : "CT";
-      }
-
-      function formatChicago(date) {
-        return dateFormatter.format(date).replace("T", " ") + " " + tzAbbrev(date);
-      }
-
-      function formatAge(milliseconds) {
-        var totalMinutes = Math.max(0, Math.floor(milliseconds / 60000));
-        var days = Math.floor(totalMinutes / 1440);
-        var hours = Math.floor((totalMinutes % 1440) / 60);
-        var minutes = totalMinutes % 60;
-        return days + "d " + hours + "h " + minutes + "m";
-      }
-
-      function updateClock() {
-        var now = new Date();
-        clockNow.textContent = formatChicago(now);
-        clockAge.textContent = formatAge(now.getTime() - generatedAt.getTime());
-      }
-
-      function getDecisionPayload(fieldset) {
-        var qid = fieldset.getAttribute("data-qid");
-        var selected = fieldset.querySelector("input[type='radio']:checked");
-        var commentEl = document.querySelector("[data-qid-comment='" + qid + "']");
-        var comment = trimmedValue(commentEl);
-        if (!selected && !comment) {
-          return null;
+      const comment = widget.querySelector('.decision-comment');
+      if (comment) comment.value = answer.comment || '';
+    });
+    for (const [selector, entries] of [
+      ['textarea[data-comment-block]', draft.comments],
+      ['textarea[data-meta-block]', draft.meta],
+    ]) {
+      const key = selector.includes('meta') ? 'metaBlock' : 'commentBlock';
+      const values = new Map(entries.map((entry) => [entry.block, entry.comment]));
+      document.querySelectorAll(selector).forEach((field) => {
+        if (values.has(field.dataset[key])) {
+          field.value = values.get(field.dataset[key]);
         }
-        return {
-          qid: qid,
-          choice: selected ? selected.value : "",
-          comment: comment
-        };
-      }
+      });
+    }
+  }
 
-      function buildPayload() {
-        var payload = {
-          schema: reportMeta.schema,
-          project: reportMeta.project,
-          report_generated_at: reportMeta.report_generated_at,
-          answers: [],
-          comments: []
-        };
+  function cacheDraft() {
+    if (!store) return;
+    try {
+      const current = payload();
+      if (hasFeedback(current)) store.setItem(draftKey, JSON.stringify(current));
+      else store.removeItem(draftKey);
+    } catch { /* private browsing or quota failure: leave the page usable */ }
+  }
 
-        document.querySelectorAll("[data-qid]").forEach(function (fieldset) {
-          var answer = getDecisionPayload(fieldset);
-          if (answer) {
-            payload.answers.push(answer);
-          }
-        });
-
-        document.querySelectorAll("textarea[data-block]").forEach(function (textarea) {
-          var comment = trimmedValue(textarea);
-          if (comment) {
-            payload.comments.push({
-              block: textarea.getAttribute("data-block"),
-              comment: comment
-            });
-          }
-        });
-
-        return payload;
-      }
-
-      function renderPayload() {
-        feedbackOutput.value = JSON.stringify(buildPayload(), null, 2);
-      }
-
-      function setStatus(message, mode) {
-        window.clearTimeout(statusTimer);
-        statusEl.textContent = message;
-        statusEl.classList.remove("ok", "error");
-        if (mode) {
-          statusEl.classList.add(mode);
-        }
-        if (message) {
-          statusTimer = window.setTimeout(function () {
-            statusEl.textContent = "";
-            statusEl.classList.remove("ok", "error");
-          }, 2200);
-        }
-      }
-
-      function fallbackCopy(text) {
-        feedbackOutput.focus();
-        feedbackOutput.select();
-        try {
-          return document.execCommand("copy");
-        } catch (error) {
-          return false;
-        }
-      }
-
-      function copyJson() {
-        var text = feedbackOutput.value;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).then(function () {
-            setStatus("copied", "ok");
-          }).catch(function () {
-            var copied = fallbackCopy(text);
-            setStatus(copied ? "copied" : "copy failed", copied ? "ok" : "error");
-          });
-          return;
-        }
-        var copied = fallbackCopy(text);
-        setStatus(copied ? "copied" : "copy failed", copied ? "ok" : "error");
-      }
-
-      function submitFeedback() {
-        setStatus("submitting", "");
-        fetch("/feedback/adversarial-spec", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: feedbackOutput.value
-        }).then(function (response) {
-          if (!response.ok) {
-            throw new Error("submit failed");
-          }
-          setStatus("submitted", "ok");
-        }).catch(function () {
-          setStatus("submit failed", "error");
-        });
-      }
-
-      document.addEventListener("input", renderPayload);
-      document.addEventListener("change", renderPayload);
-      copyButton.addEventListener("click", copyJson);
-      submitButton.addEventListener("click", submitFeedback);
-      updateClock();
-      window.setInterval(updateClock, 30000);
-      renderPayload();
-    })();
-  </script>
-</body>
-</html>
+  function refresh() {
+    if (output) output.value = JSON.stringify(payload(), null, 2);
+    document.querySelectorAll('.decision-widget[data-qid]').forEach(setClearEnabled);
+  }
+  configureDecisionWidgets();
+  restoreDraft();
+  refresh();
+  document.addEventListener('input', () => { refresh(); cacheDraft(); });
+  document.addEventListener('change', () => { refresh(); cacheDraft(); });
+  window.setInterval(cacheDraft, 15000);
+  window.addEventListener('pagehide', cacheDraft);
+  document.getElementById('copy-feedback')?.addEventListener('click', async () => {
+    refresh(); await navigator.clipboard?.writeText(output.value);
+  });
+  document.querySelectorAll('[data-submit-feedback]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      if (!project) return;
+      const wake = button.dataset.submitFeedback;
+      const url = `/feedback/${encodeURIComponent(project)}?wake=${wake}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {'content-type': 'application/json'},
+        body: JSON.stringify(payload()),
+      });
+      button.dataset.result = response.ok ? 'submitted' : 'failed';
+      if (response.ok) store?.removeItem(draftKey);
+    });
+  });
+})();
+</script>
+</body></html>

@@ -1,47 +1,26 @@
-# Phase 6 Mandatory Cross-File Scans
+# Phase 6 mandatory scans
 
-> Generated: 2026-07-19T08:43:13-05:00 | Git: `ef18c66`
+> Run: 2026-07-20T15:27:47-05:00 | Git: `2433efa`
 
-## Registry / Config / Mapping Deduplication
+## Registry/configuration mapping
 
-Command family used:
+Command: `rg -n -i -C 2 "registry|mapping|config|duplicate|dedup|unique" skills/adversarial-spec/scripts/providers.py skills/adversarial-spec/scripts/gauntlet/model_dispatch.py skills/adversarial-spec/scripts/tmr_parser.py skills/adversarial-spec/scripts/tmr_schema.py skills/adversarial-spec/scripts/tmr_compile_step.py skills/adversarial-spec/scripts/gauntlet/phase_3_filtering.py`.
 
-```text
-rg -l -i 'registry|_registry|config|mapping|catalog' skills/adversarial-spec/scripts .claude execution_planner
-rg -n 'listdir|iterdir|scandir|os.walk|glob\(' skills/adversarial-spec/scripts .claude execution_planner
-```
+Result: `BEDROCK_MODEL_MAP` is intentionally overridden by explicit custom aliases; TMR parsing rejects duplicate keys and duplicate `tmr_uid`; dedup stats are a concurrency hazard recorded as `CON-003`, not a registry collision.
 
-Result: no confirmed same-purpose registry pair with less than 50% key
-overlap. `MODEL_COSTS` and `BEDROCK_MODEL_MAP` map different entities;
-`ADVERSARIES` is a persona catalog; validation `SUBCOMMANDS` and `HANDLERS`
-are one command table plus its dispatch implementation; the hook registry is
-metadata, not the active settings registry. The `.conductor/agents` JSON files
-are a role-discovery data source and are covered by the hook contract.
+## Near-duplicate command names
 
-## Near-Duplicate Command / Endpoint Names
+Command: `rg -n "def .*main|ArgumentParser|add_parser|add_subparsers" skills/adversarial-spec/scripts/debate.py skills/adversarial-spec/scripts/gauntlet_check_cli.py skills/adversarial-spec/scripts/dependency_semantics.py skills/adversarial-spec/scripts/usage_router.py skills/adversarial-spec/scripts/telegram_bot.py skills/adversarial-spec/scripts/validation_emission.py skills/adversarial-spec/scripts/gauntlet/cli.py`.
 
-Command used:
+Result: no ambiguous same-surface command pair. `gauntlet` and `gauntlet-check` differ in purpose and required arguments; their shared timeout behavior is separately recorded as `FIND-003`.
 
-```text
-uv run python -c '...SequenceMatcher over the entry-point names...'
-```
+## Numeric/document accuracy
 
-Result: `NO_NEAR_DUPLICATE_NAMES`. The two live gauntlet CLI surfaces have
-different names and behavior, but they are a semantic duplication finding
-because their timeout defaults diverge; they do not meet the edit-distance
-trigger by name alone.
+Commands:
 
-## Documentation Accuracy Spot-Check
+- `rg --files .architecture/structured/components | wc -l` → 11 components.
+- `rg -n '^### ' .architecture/structured/flows.md` → 9 documented flows.
+- `rg -n '^### [a-z].*' .architecture/structured/cross-references.md` → 8 boundary contracts.
+- `rg --files skills/adversarial-spec/scripts execution_planner .claude/hooks -g '*.py' | wc -l` → 142 mapped Python files.
 
-Command family used:
-
-```text
-rg -n '\b[0-9]{1,4}\b|multiple|several' .architecture/{primer,overview,filesystem-map,INDEX,access-guide,patterns}.md
-rg -n 'SUBCOMMANDS|KNOWN_ROLES|MODEL_COSTS|BEDROCK_MODEL_MAP|ADVERSARIES|FINAL_BOSS|PRE_GAUNTLET' skills/adversarial-spec/scripts .claude/hooks
-```
-
-Result: no high-level cardinality claim exceeded the 20% mismatch threshold.
-The exact claims retained in high-level docs are the eight adversarial-spec
-pipeline phases, two active gauntlet CLI surfaces, and the five timed-out
-delegated discovery explorers; each was checked against project docs, source
-entry points, and this run's delegation result.
+Result: current high-level document claims use those counts; no inaccurate numeric claim found.

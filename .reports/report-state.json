@@ -1,38 +1,81 @@
 {
- "schema_version": "1.0",
- "recent": {
-  "generated_at": "2026-07-08T16:19:34Z",
-  "covered_sessions": [
-   "3ba11a17-79e7-4c2b-afa4-6d13b2e22e94",
-   "078a6e36-cf43-4244-b143-76541d6dbb8a"
-  ],
-  "last_event_ts": "2026-07-08T16:19:34Z",
-  "git_head": "b31f8fd",
-  "covers_checkpoint": "checkpoint-202607081610-roadmap-complete-debate-entered.md",
-  "summary_recent": "Requirements gate passed with G1-F2 amendment (discrete phase-doc units, no size caps). Roadmap completed: 9 milestones/17 user stories through one debate round (codex + gemini-3.5-flash), 4 revisions folded in, G4 excluded. Card 5857 advanced to Debate lane.",
-  "next_up": "Author spec draft v1 (technical depth) from the roadmap manifest, then run debate rounds via pipeline tools.",
-  "pending_questions": []
- },
- "feedback": {
-  "last_ingested": "2026-07-10T15:07:25Z"
- },
- "overview": {
-  "last_full_revamp_at": "2026-07-08T16:29:25Z",
-  "mapcodebase_git_hash": "f198887",
-  "appended": [
-   {
-    "at": "2026-07-08T16:29:25Z",
-    "session_id": "3ba11a17-79e7-4c2b-afa4-6d13b2e22e94",
-    "checkpoint_file": "checkpoint-202607081610-roadmap-complete-debate-entered.md",
-    "git_head": "b31f8fd"
-   },
-   {
-    "at": "2026-07-09T00:00:00Z",
-    "session_id": "adv-spec-202607060132-post-fable-hardening-skill",
-    "checkpoint_file": null,
-    "git_head": "35738f0"
-   }
-  ],
-  "redlines": []
- }
+  "schema_version": "1.0",
+  "recent": {
+    "generated_at": "2026-07-21T15:24:27Z",
+    "covered_sessions": [
+      "3ba11a17-79e7-4c2b-afa4-6d13b2e22e94",
+      "078a6e36-cf43-4244-b143-76541d6dbb8a",
+      "adv-spec-202607060132-post-fable-hardening-skill",
+      "ee20d497-cc00-4389-9318-38d354ac7abe",
+      "f61aa761-167b-4696-9021-98596dbd0a88",
+      "6455d7b7-9696-4163-b353-30ef40cffee8"
+    ],
+    "last_event_ts": "2026-07-21T14:51:37Z",
+    "git_head": "2433efa",
+    "covers_checkpoint": "checkpoint-202607211515-v9-1-accepted-phase7-entry.md",
+    "summary_recent": "Operator review of v9.0 returned 2 blockers + 2 high + 1 medium; all six change-sets landed as a surgical in-place v9.1 (discriminated authorization facts, consumable architecture package w/ final fingerprint, Phase-8 verification subflow, prepare/commit recovery split, identity rebind, regression policy approved). Scoped CONS/CANON/TCOV rerun closed 3 findings (new DF-20 deferral family). Jason accepted v9.1; the long-blocked gauntlet card gate discharged and the session advanced finalize\u2192execution.",
+    "next_up": "Phase 7 execution planning in a fresh context: full .architecture/ read, decomposition, and the DF-1..20 register-vs-tested_by diff reported before pipeline_load.",
+    "pending_questions": [],
+    "attention": {
+      "as_of": "2026-07-21T15:24:27Z",
+      "operator_actions": [],
+      "worker_actions": [
+        {
+          "kind": "ready",
+          "reason": "Phase 7 execution planning, fresh context, conductor"
+        }
+      ],
+      "blocked": []
+    }
+  },
+  "feedback": {
+    "last_ingested": "2026-07-18T18:32:38Z"
+  },
+  "overview": {
+    "last_full_revamp_at": "2026-07-20T15:43:30-05:00",
+    "mapcodebase_git_hash": "2433efa",
+    "appended": [
+      {
+        "at": "2026-07-20T21:36:08Z",
+        "session_id": "adv-spec-202607060132-post-fable-hardening-skill",
+        "checkpoint_file": "checkpoint-202607202124-gauntlet-gate-cleared-sized-con001-fixed.md",
+        "git_head": "2433efa"
+      },
+      {
+        "at": "2026-07-21T10:20:00Z",
+        "session_id": "adv-spec-202607060132-post-fable-hardening-skill",
+        "checkpoint_file": "checkpoint-202607211005-finalize-complete-v9-awaiting-operator-review.md",
+        "git_head": "2433efa"
+      },
+      {
+        "at": "2026-07-21T15:30:00Z",
+        "session_id": "adv-spec-202607060132-post-fable-hardening-skill",
+        "checkpoint_file": "checkpoint-202607211515-v9-1-accepted-phase7-entry.md",
+        "git_head": "2433efaaeaf38caed68737b95a372631dc270ae5",
+        "note": "uncommitted working tree; HEAD unchanged since last append (2433efa)"
+      }
+    ],
+    "redlines": [
+      {
+        "at": "2026-07-20T21:36:08Z",
+        "claim_anchor": "header-attention-con001",
+        "note": "CON-001 exception->PASS claim redlined: Final Boss now uses select_eval_model() policy routing and returns REFINE on failure."
+      },
+      {
+        "at": "2026-07-20T21:36:08Z",
+        "claim_anchor": "atlas-runtime-fallback-con001",
+        "note": "Runtime-path fallback table redlined: exception no longer becomes PASS-shaped; returns REFINE + retry-required concern."
+      },
+      {
+        "at": "2026-07-20T21:36:08Z",
+        "claim_anchor": "risks-table-con001",
+        "note": "Risks table CON-001 mechanism/next-action redlined: fixed, FinalBossVerdict.REFINE not PASS, retired-Opus route removed, 23/23 tests."
+      },
+      {
+        "at": "2026-07-21T15:30:00Z",
+        "claim_anchor": "risks-table-con002",
+        "note": "CON-002 lifecycle-gate claim annotated (not deleted): v9.1 decided the fix (Phase 8 verification subflow, not a new phase) but it is not yet implemented in source, so the underlying claim stands \u2014 added <ins> decision note in attention banner, risks table, and Wave 1 item."
+      }
+    ]
+  }
 }

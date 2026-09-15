@@ -1,79 +1,52 @@
-# Phase 1 Discovery: Dependencies
+# Discovery: Dependencies
 
-> Architecture verified at `ef18c66`. This report is a local fallback because
-> the five delegated explorers were shut down after timeout.
+> Full nuke run; normalized from a delegated explorer.
 
-## Source/package topology
+DEPENDENCY_GRAPH:
 
-- Canonical runtime source is `skills/adversarial-spec/scripts/`; the tracked root entry `adversarial_spec` is a symlink to that directory (`ls -ld` at scan time). `pyproject.toml:39-44` packages `adversarial_spec*` and `execution_planner*`.
-- Console scripts are declared at `pyproject.toml:48-49`.
-- The skill definition and phase/reference documents live under `skills/adversarial-spec/`; they are consumed by Claude Code rather than imported by the Python runtime.
-- `execution_planner/` currently contains the gauntlet-concern parser; cached deleted/legacy modules are excluded from the map.
-- `docs/adversarial-spec-gemini-bundle-20260318/` is a historical snapshot, not an active import target.
+`debate.py:73` imports token tracking, adversaries, gauntlet, models, prompts, providers, session and Telegram; it is the top-level debate runtime.
 
-## Internal dependency graph
+`gauntlet/orchestrator.py:16` imports domain types, all seven phases, model dispatch, clustering, medals and persistence; `gauntlet/__init__.py:10` and `gauntlet/cli.py:18` consume it.
 
-adversarial_spec.debate
-  imports: models, providers, prompts, session, adversaries, gauntlet, pre_gauntlet, execution_planner, Telegram/helpers
-  imported_by: console script, tests, direct module users
+`pre_gauntlet/orchestrator.py:15` coordinates collectors, extractors, git/process integrations and compatibility models; `pre_gauntlet/__init__.py:39` exposes it to gauntlet CLI.
 
-adversarial_spec.models
-  imports: litellm, subprocess, concurrent.futures, providers, token_tracking
-  imported_by: debate, gauntlet.model_dispatch, tests
+`gauntlet_check_cli.py:12` imports gate result, spine coverage, TMR parser/schema; root console metadata points here.
 
-adversarial_spec.providers
-  imports: pathlib/json/os/shutil, model-cost/config definitions
-  imported_by: models, debate, token_tracking, gauntlet.model_dispatch
+HUBS:
+- `gauntlet/core_types.py` — 24 importers (14 production, 10 tests)
+- `tmr_schema.py` — 16 importers
+- `adversaries.py` — 15 importers
+- `gauntlet/model_dispatch.py` — 8 production importers
+- `token_tracking.py` — 8 importers
+- `gauntlet/persistence.py`, `gauntlet/prompts.py` — 7 each
+- `gate_result.py`, `gauntlet/reporting.py`, `models.py`, `providers.py`, `.claude/hooks/_resolve_config.py` — 5 each
 
-adversarial_spec.gauntlet.orchestrator
-  imports: core_types, persistence, model dispatch, phase modules, prompts, adversaries
-  imported_by: debate and `gauntlet.__init__`/CLI
+SHARED_UTILITIES:
+- `generate_concern_id` — `adversaries.py:1535`
+- `call_model` — `gauntlet/model_dispatch.py:64`, shared by phases 1-7
+- `TokenTracker.record_call` — `token_tracking.py:21`; shared tracker at line 66
+- `resolve_config` — `.claude/hooks/_resolve_config.py:39`
+- `ProcessRunner.run` plus redaction — `integrations/process_runner.py:56-179`
 
-adversarial_spec.gauntlet.core_types
-  imports: dataclasses/enum and adversaries concern-ID helper
-  imported_by: every gauntlet phase, persistence, reporting, tests
+EXTERNAL_PACKAGES:
+- `litellm` — model backend (`gauntlet/model_dispatch.py:28`, `models.py:19-20`)
+- `filelock` — persistence/provenance/validation writes
+- `pydantic` — TMR, gate and pre-gauntlet models
+- `python-dotenv` — provider env loader (`providers.py:12-20`)
+- `tomli` fallback — `pre_gauntlet/orchestrator.py:269-275`; not declared in root dependency lists
 
-adversarial_spec.gauntlet.persistence
-  imports: FileLock, JSON/pathlib, core_types
-  imported_by: orchestrator, phase modules, medals, CLI/reporting
+CONFIG_SOURCES:
+- Provider env file/name registry — `providers.py:15-23,297-566`
+- Rate/model runtime flags — `gauntlet/model_dispatch.py:155-306`
+- Telegram env names — `telegram_bot.py:36-44`
+- Hook role/config precedence — `.claude/hooks/_resolve_config.py:9-71`, `dispatch_check.py:65-70`
+- Consumer compatibility config — `pre_gauntlet/orchestrator.py:237-290`
 
-validation_emission
-  imports: FileLock, subprocess, hashlib, JSON/pathlib, Telegram reply helpers
-  imported_by: CLI/tests and adjacent validation tooling
+ARCHITECTURAL_LAYERS:
+- Entrypoints: debate, gauntlet, gate-check CLIs
+- Orchestration: gauntlet/pre-gauntlet orchestrators
+- Contracts: core types, adversaries, TMR, gate results
+- Infrastructure: providers/models, artifacts, integrations
+- Hooks: separate stdlib-oriented process plane
 
-tmr_schema / tmr_parser / tmr_compile_step
-  imports: Pydantic, JSON/hashlib/pathlib; parser/compiler chain is schema-first
-  imported_by: phase8 promotion, classifiers, journal, tests, validation tools
-
-guardrail_orchestration
-  imports: dataclasses, JSON/pathlib, model/dispatch integration as configured
-  imported_by: test ladder/guardrail callers and tests
-
-.claude/hooks
-  imports: standard library plus `_resolve_config`; hooks communicate by stdin/stdout and do not import skill runtime modules
-  entry adapter: `codex_pretool_combined.py:18-65`
-
-## External packages and system boundaries
-
-- `litellm==1.80.13`: model API dispatch (`models.py` and `gauntlet/model_dispatch.py`).
-- `filelock==3.16.1`: checkpoint, ledger, and provenance synchronization.
-- `pydantic>=2.0`: TMR and gate-result validation.
-- `mcp>=1.0.0`: external pipeline/MCP integrations in the broader skill surface.
-- `python-dotenv>=1.0.0`: dependency declared; current provider code primarily reads environment variables and JSON profiles.
-- Python subprocesses: Codex/Gemini/Claude/Antigravity CLIs (`models.py:298-688`, `usage_router.py:116`).
-- HTTPS: LiteLLM providers, Telegram API (`telegram_bot.py:47-75`), and optional headroom routing.
-- Filesystem: config/profiles under `~/.config/adversarial-spec` and `~/.claude/adversarial-spec`, run/checkpoint artifacts under `.adversarial-spec-gauntlet`, validation ledgers and spec artifacts.
-
-## Configuration sources
-
-- Provider credentials and availability: environment variable names accessed by `providers.py:16`, `providers.py:299-340`, `gauntlet/model_dispatch.py:160-301`; values are never part of this map.
-- Model profiles: `~/.config/adversarial-spec/profiles/` and global config `~/.claude/adversarial-spec/config.json` (`providers.py:22-25`, `125-250`).
-- Project compatibility: `pyproject.toml` `[tool.adversarial-spec.compatibility]` (`pre_gauntlet/orchestrator.py:254`).
-- Hook behavior: `.claude/hooks/hook_config.json` and project/user config resolved by `_resolve_config.py:39`.
-
-## Layer notes
-
-- CLI/orchestration (`debate`, `gauntlet`, pre-gauntlet) depends on model/provider and persistence layers.
-- TMR/validation modules form a schema and evidence layer used by Phase 8/pipeline guardrails.
-- Hooks are an external coordination plane: they inspect tool events and emit decisions; direct imports into runtime skill code would violate the current separation.
-- `adversarial_spec` symlink + `skills/.../scripts` canonical path creates a packaging/source-layout coupling and must remain explicit in downstream docs.
+DRIFT: root console scripts/package discovery name `adversarial_spec` (`pyproject.toml:44-55`), while runtime source is `skills/adversarial-spec/scripts`; several modules mutate `sys.path` and tests use root `pythonpath` injection (`scripts/__init__.py:8-10`, `pre_gauntlet/orchestrator.py:15-16`, `execution_planner/gauntlet_concerns.py:17-26`, `pyproject.toml:80`).

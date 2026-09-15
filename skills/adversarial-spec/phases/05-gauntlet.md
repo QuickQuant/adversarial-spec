@@ -117,6 +117,38 @@ After consensus is reached but before finalization, offer the adversarial gauntl
 
 **If user accepts gauntlet:**
 
+### Permanent ground-truth protocol
+
+The gauntlet has two separate roles:
+
+- **Seats** are read-only reviewers. They inspect the supplied artifacts, file
+  concerns and self-contained `GT-REQUEST` records, and must not execute the
+  system under review. A seat that needs an observation asks the broker.
+- **The neutral broker** collects, de-duplicates, triages, investigates, and
+  answers requests. Its records are `GT-REQUEST`, `GT-INVESTIGATION`,
+  `GT-RESPONSE`, and `ROUND-TELEMETRY`. The broker is the source of observed
+  behavior; a seat's expected answer is not ground truth.
+
+Every request declares its fixture requirements and outcomes. If the required
+fixture is unavailable, the broker records `BLOCKED` plus the unblock
+requirements. A mocked result is authoritative only for the logic and fixture
+it actually exercised; it must not be promoted to a browser, wire, permission,
+or credential claim. The response must state its execution scope and claim
+ceiling.
+
+The broker returns the full response set to every seat, including seats that
+filed no request. An unrequested broker observation is recorded as `BYCATCH`
+and is the primary observed value of sharing; a response to another seat's
+request is `CROSS_SEAT_RESPONSE` and is a secondary, selective benefit. Future
+rounds measure reach, intent yield, noise, follow-up requests, and broker cost
+separately. No-request termination, fixture novelty, blocked-question
+decomposition, and at least one pre-registered refutation are recorded as
+telemetry; a zero-request round alone is not sufficient convergence evidence.
+
+The project may provide a more specific governing document (for example,
+`orchestration/governing/BROKER-ROUNDS-v1-DRAFT.md`), but it may not weaken
+these evidence-boundary rules.
+
 **Step 0: Size the gauntlet (HUMAN DECIDES, LLM ASKS).**
 
 Before selecting adversaries or models, decide how *big* the gauntlet should be. This is a human call, not an LLM call — Claude does not have enough context about the operator's threat model, deploy surface, or "what's at stake if this ships buggy" to make this decision autonomously. Past sessions have defaulted to the full 9-adversary slate on features that did not warrant it, burning hours of synthesis time on concerns the spec will never need to absorb. **Ask, present options with rough guidance, let the human pick.**
@@ -198,7 +230,7 @@ After sizing is agreed, proceed to step 1 below.
 
    **Recommended lineup (if available):**
    - `codex/gpt-5.6-luna` — GPT-5.6 Luna via Codex CLI (free, xhigh effort)
-   - `gemini-cli/gemini-3.6-flash-high` — Gemini 3.6 Flash High (free via CLI)
+   - `antigravity/gemini-3.7-flash-high` — Gemini 3.7 Flash High via Antigravity (the standalone Gemini CLI is RETIRED — `gemini-cli/...` model strings fail in `_doSetupUser`; observed 2026-08-27)
    - `claude-cli/claude-sonnet-4-6` — Claude Sonnet 4.6 (free via CLI)
 
    These become `--gauntlet-attack-models` (comma-separated). The frontier evaluation model is selected automatically.

@@ -1,94 +1,73 @@
-# Phase 1 Discovery: Data Flow
+# Discovery: Data Flow
 
-> Architecture verified at `ef18c66`. Local fallback after five delegated
-> discovery explorers were shut down for timeout; anchors are from current source.
+> Full nuke run; normalized from a delegated explorer. All anchors were reported from source.
 
-## Debate and model dispatch
+PATH: debate-cli-to-model-output
+SOURCE: stdin/session JSON (`debate.py:1026-1062`) and optional context files (`models.py:154`)
+TRANSFORMS: session load; context wrapping; parallel `call_models_parallel` (`models.py:1114`); provider routing (`models.py:298-596,952`)
+SINK: stdout (`debate.py:1227`), session/checkpoint files (`session.py:46-120`), per-model partial files (`models.py:1170`)
+DATA_SHAPE: spec/options -> `ModelResponse {model,response,agreed,spec,error,input_tokens,output_tokens,cost}` -> results/cost output
+NOTES: three retry attempts with exponential delays; partial persistence is best effort.
 
-PATH: debate_spec_to_model_results
-SOURCE: CLI arguments/stdin/file loading through `skills/adversarial-spec/scripts/debate.py:525-611`
-TRANSFORMS:
-  1. `create_parser` and argument handlers normalize command/profile/gauntlet options (`debate.py:525`)
-  2. `parse_models` resolves explicit/default provider models (`debate.py:757`)
-  3. `validate_models_before_run` checks credentials/availability (`debate.py:1312`)
-  4. `preflight_models` optionally pings model routes (`models.py:1088`)
-  5. `call_models_parallel` dispatches independent model calls (`models.py:1114`)
-  6. `call_single_model` selects CLI, Bedrock, or LiteLLM adapter (`models.py:688`)
-SINK: `output_results` plus session/checkpoint/Telegram output (`debate.py:1227`, `session.py:45-133`)
-DATA_SHAPE: spec/context text in; `ModelResponse` objects and model-specific text/usage out (`models.py:141-151`)
-NOTES: model calls run in a `ThreadPoolExecutor`; partial results are persisted on failure (`models.py:1170-1197`).
+PATH: gauntlet-spec-to-verdict
+SOURCE: CLI spec file/stdin (`gauntlet/cli.py:189`) or legacy debate CLI (`debate.py:921`)
+TRANSFORMS: `run_gauntlet` (`orchestrator.py:205`); attacks (`phase_1_attacks.py:219`); filtering/clustering (`orchestrator.py:479-518`); multi-model evaluation (`phase_4_evaluation.py:118`); rebuttal/adjudication (`orchestrator.py:696-722`)
+SINK: formatted report/stdout (`debate.py:973`) and resumable artifacts
+DATA_SHAPE: spec -> `Concern[]` -> `Evaluation[]` -> final concerns
+NOTES: non-empty unparseable attack output is fatal; evaluation parse failures defer a batch conservatively.
 
-PATH: gauntlet_spec_to_verdict
-SOURCE: `skills/adversarial-spec/scripts/gauntlet/orchestrator.py:205`
-TRANSFORMS:
-  1. load approved prompts and resolve enabled adversaries (`orchestrator.py:125-200`)
-  2. generate adversarial concerns in parallel (`phase_1_attacks.py:323-363`)
-  3. synthesize/filter concerns (`phase_2_synthesis.py:1`, `phase_3_filtering.py:130`)
-  4. cluster near-duplicates and persist clustering state (`clustering.py:1`, `persistence.py:587`)
-  5. evaluate concerns in tiered parallel batches (`phase_4_evaluation.py:118-245`)
-  6. collect rebuttals, adjudicate, and run final boss (`phase_5_rebuttals.py:1`, `phase_6_adjudication.py:1`, `phase_7_final_boss.py:1`)
-SINK: `GauntletResult`, run manifest, checkpoint/raw-response/spec artifacts (`core_types.py:232`, `persistence.py:469-629`)
-DATA_SHAPE: spec text -> `Concern`/`Evaluation`/`Rebuttal`/verdict dataclasses (`core_types.py:83-232`)
-NOTES: FileLock and integrity hashes protect checkpoint/run writes; retry and partial-resume paths exist.
+PATH: gauntlet-resume-and-artifacts
+SOURCE: exact spec, phase results, resume request
+TRANSFORMS: canonical serialization/hash (`gauntlet/persistence.py:79-106`); checkpoint validation (`persistence.py:281-325`); atomic locked writer (`persistence.py:124-152`)
+SINK: `.adversarial-spec-gauntlet/` checkpoint, manifest, raw-response and report files (`orchestrator.py:305-533`)
+DATA_SHAPE: `{_meta:{schema_version,spec_hash,config_hash,phase,data_hash},data}` envelope
+NOTES: incompatible/corrupt checkpoints are ignored rather than resumed.
 
-PATH: pre_gauntlet_compatibility
-SOURCE: `skills/adversarial-spec/scripts/pre_gauntlet/orchestrator.py:207`
-TRANSFORMS:
-  1. load compatibility configuration from `pyproject.toml` (`orchestrator.py:254`)
-  2. collect git/system context (`collectors/git_position.py:30`, `collectors/system_state.py:33`)
-  3. discover services and build context (`pre_gauntlet/discovery.py:44`, `context_builder.py:17`)
-  4. run configured build/schema/validation checks
-SINK: `PreGauntletResult` serialized by `save_report` (`orchestrator.py:293`)
-DATA_SHAPE: spec and repo configuration -> compatibility status plus findings
-NOTES: blocker status enters Alignment Mode; exit code is selected by `get_exit_code` (`orchestrator.py:317`).
+PATH: pre-gauntlet-grounding
+SOURCE: spec, repo files, git state, configured commands
+TRANSFORMS: affected-file extraction; git/system collectors; bounded context construction (`pre_gauntlet/orchestrator.py:85-204`)
+SINK: `PreGauntletResult.context_markdown` and optional JSON report (`orchestrator.py:293`)
+DATA_SHAPE: spec + repository observations -> typed concerns/state -> bounded markdown
+NOTES: process runner validates arrays, redacts and truncates output (`integrations/process_runner.py:56-115`).
 
-PATH: tmr_prose_to_registry
-SOURCE: candidate records supplied to `tmr_compile_step.compile_tmr_records` (`tmr_compile_step.py:64`)
-TRANSFORMS:
-  1. coerce candidate/accessor shapes and resolve identity (`tmr_compile_step.py:183-222`)
-  2. mint/validate ULID identity where missing (`tmr_compile_step.py:158-170`)
-  3. diff by `tmr_uid` and emit semantic diff events (`tmr_compile_step.py:224-249`)
-  4. validate every record against strict Pydantic schema (`tmr_schema.py:175-377`)
-SINK: confirmed `tmr-registry.json` and regenerated prose view (`tmr_compile_step.py:123-156`)
-DATA_SHAPE: candidate mappings -> `TestMaturityRecord` JSON with schema/identity/lineage fields
-NOTES: registry is authoritative once present; prose view is derived.
+PATH: validation-manifest-to-conops
+SOURCE: roadmap-manifest JSON (`validation_emission.py:688`)
+TRANSFORMS: JSON/story validation, deterministic Markdown render, containment/byte/hash checks (`validation_emission.py:480-701`)
+SINK: atomic ConOps file and stdout envelope
+DATA_SHAPE: stories/milestones -> ConOps text plus full/per-story hashes
+NOTES: overwrite is refused when an existing ledger binds the old hash unless forced.
 
-PATH: validation_ledger_lifecycle
-SOURCE: JSON/CLI input to `validation_emission.main` (`validation_emission.py:3423`)
-TRANSFORMS:
-  1. parse subcommand and resolve paths under the spec root (`validation_emission.py:3255`, `312`)
-  2. normalize/lint rows and compute canonical row/story/conops hashes (`validation_emission.py:397-457`, `1093`)
-  3. mutate ledger under FileLock with atomic replacement (`validation_emission.py:1337`, `1048`)
-  4. assemble/send/parse Telegram digest batches or record system-validation evidence (`validation_emission.py:1528`, `1757`, `2348`, `2606`)
-  5. run self-check/status and emit an `Envelope` (`validation_emission.py:2888`, `3102`, `200`)
-SINK: ledger, evidence artifacts, batch state, and one-line stdout envelope
-DATA_SHAPE: bounded JSON objects/Markdown replies -> normalized rows, hashes, evidence records, status envelope
-NOTES: duplicate IDs, stale hashes, lock contention, oversized input, secrets, and stale batches have explicit issue codes.
+PATH: validation-rows-and-evidence-ledger
+SOURCE: ledger, ConOps, row/evidence CLI inputs
+TRANSFORMS: row validation/normalization/evidence binding; sole `mutate_ledger` write path (`validation_emission.py:715-1372`)
+SINK: `validation-rows.json`, per-row evidence files, stdout envelope
+DATA_SHAPE: ledger rows/hash bindings -> normalized rows/evidence
+NOTES: writer has lock+temp+fsync+replace; corrupt ledger is quarantined.
 
-PATH: provenance_transition
-SOURCE: registry/journal inputs to `ProvenanceJournalWriter` (`provenance_journal.py:112`)
-TRANSFORMS:
-  1. validate subject and event types (`provenance_journal.py:19-40`)
-  2. check expected coordinates/lineage and build transition record (`provenance_journal.py:54`, `460`)
-  3. acquire ordered locks for registry, journal, and index (`provenance_journal.py:581-596`)
-  4. atomically write registry/journal/index and restore previous bytes on failure (`provenance_journal.py:522-573`)
-SINK: TMR registry, append-only decision/journey log, and provenance index
-DATA_SHAPE: transition command -> immutable event/receipt (`AppendReceipt` at `provenance_journal.py:105`)
-NOTES: `expected_from` rejects stale writers; tombstone/rename are explicit events.
+PATH: validation-digest-to-human-judgment
+SOURCE: unjudged rows/evidence/ConOps and terminal or raw Telegram reply
+TRANSFORMS: digest assembly (`validation_emission.py:1528`); send record; sender/reply/replay validation (`2348-2552`)
+SINK: digest parts and ledger batch/judgment/security fields
+DATA_SHAPE: rows -> multipart digest -> authenticated reply -> judgments
+NOTES: secret-like digest content blocks emission; reply application is all-or-nothing.
 
-PATH: hook_stdio_decision
-SOURCE: Claude hook JSON stdin (`.claude/hooks/codex_pretool_combined.py:57`)
-TRANSFORMS:
-  1. decode input and invoke configured sub-hooks (`codex_pretool_combined.py:26-65`)
-  2. classify command/payload/role via safety and pipeline hook modules
-  3. append local activity/dispatch or send Telegram notifications when configured
-SINK: JSON decision/systemMessage on stdout; optional local logs/Telegram side effects
-DATA_SHAPE: hook event JSON -> allow/deny/warn decision envelope
-NOTES: hook outputs must remain machine-readable; failures should fail closed for safety hooks.
+PATH: tmr-registry-and-provenance
+SOURCE: compile candidates, typed TMR records, registry JSON
+TRANSFORMS: strict TMR validation/compile (`tmr_compile_step.py:64-156`); provenance transition/rollback (`provenance_journal.py:173-362`)
+SINK: confirmed registry, append-only journal and index, conflict store
+DATA_SHAPE: candidates -> TMR records/diff -> immutable transition records
+NOTES: registry writes need confirmation; transitions use ordered locks/idempotency.
 
-PATH: plan_to_dependency_report
-SOURCE: plan JSON consumed by `dependency_semantics.main` (`dependency_semantics.py:525-575`)
-TRANSFORMS: parse tasks, normalize edge kinds/waves, topologically profile dependencies (`dependency_semantics.py:35-82`)
-SINK: JSON report to stdout (`dependency_semantics.py:570`)
-DATA_SHAPE: execution-plan task graph -> report schema version 1 with issues and profiles
-NOTES: no persistent write path.
+PATH: hook-protocol-and-telemetry
+SOURCE: hook stdin JSON / successful pipeline tool result
+TRANSFORMS: Fizzy input guard (`fizzy_payload_guard.py:86`), event extraction/dispatch (`pipeline_notifications.py:188-437`), session logger (`session_activity_logger.py:55-96`)
+SINK: JSONL dispatch/activity logs and optional notification subprocess
+DATA_SHAPE: hook payload -> normalized event / session activity line
+NOTES: notification is non-blocking; pre-tool guard is authoritative for denial.
+
+PATH: usage-aware-router
+SOURCE: local headroom snapshot (`usage_router.py:36-64`) and optional prompt
+TRANSFORMS: usage extraction/routing (`usage_router.py:64-121`)
+SINK: stdout decision/response, optional Telegram sender
+DATA_SHAPE: account usage -> `Route` -> optional Codex response
+NOTES: stale/unavailable usage fails open to default route.

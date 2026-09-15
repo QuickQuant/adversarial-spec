@@ -30,7 +30,7 @@ Supported providers (set corresponding API key):
                 Reasoning: --codex-reasoning xhigh (minimal, low, medium, high, xhigh)
     Claude CLI: (Anthropic subscription) models: claude-cli/claude-opus-4-7, claude-cli/claude-sonnet-4-6
                 Install: npm install -g @anthropic-ai/claude-code && claude setup-token
-    Gemini CLI:  (Google account) models: gemini-cli/gemini-3.6-flash-high, gemini-cli/gemini-3-flash-preview
+    Antigravity: (agy) models: antigravity/gemini-3.7-flash-high  [standalone Gemini CLI RETIRED]
 
 Document types:
     spec  - Specification (default). Use --depth to control focus:
@@ -263,7 +263,7 @@ def add_core_arguments(parser: argparse.ArgumentParser) -> None:
         "--models",
         "-m",
         default=None,
-        help="Comma-separated list of models (e.g., codex/gpt-5.6-sol,gemini-cli/gemini-3.6-flash-high)",
+        help="Comma-separated list of models (e.g., codex/gpt-5.6-luna,antigravity/gemini-3.7-flash-high)",
     )
     parser.add_argument(
         "--doc-type",
@@ -544,7 +544,7 @@ Examples:
   python3 debate.py focus-areas
   python3 debate.py personas
   python3 debate.py profiles
-  python3 debate.py save-profile myprofile --models codex/gpt-5.6-sol,gemini-cli/gemini-3.6-flash-high --focus security
+  python3 debate.py save-profile myprofile --models codex/gpt-5.6-luna,antigravity/gemini-3.7-flash-high --focus security
 
 Gauntlet commands (adversarial attack on specs):
   echo "spec" | python3 debate.py gauntlet                   # Run gauntlet with all adversaries
@@ -787,7 +787,7 @@ def parse_models(args: argparse.Namespace) -> list[str]:
                 "  Codex CLI: Install codex CLI for codex/gpt-5.6-luna (FREE with ChatGPT subscription)", file=sys.stderr
             )
             print(
-                "  Gemini CLI: Install gemini CLI for gemini-cli/gemini-3.6-flash-high (FREE)", file=sys.stderr
+                "  Antigravity: agy provides antigravity/gemini-3.7-flash-high (standalone Gemini CLI RETIRED)", file=sys.stderr
             )
             print(
                 "  OpenAI:    Set OPENAI_API_KEY for gpt-5.6-sol", file=sys.stderr

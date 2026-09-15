@@ -1,103 +1,97 @@
-# Phase 1 Discovery: Control Flow
+# Discovery: Control Flow and Hazards
 
-> Architecture verified at `ef18c66`. Delegated explorers timed out; this
-> fallback records current source-backed lifecycle and hazard evidence.
+> Full nuke run; normalized from a delegated explorer.
 
-## Lifecycle and state flows
-
-FLOW: debate_round_lifecycle
+FLOW: skill-session-phase-lifecycle
 TYPE: lifecycle
-SEQUENCE:
-  1. parse CLI/profile/session/gauntlet options (`debate.py:525-611`)
-  2. apply profile and resolve model list (`debate.py:733-824`)
-  3. validate credentials and preflight models (`debate.py:1312`, `models.py:1088`)
-  4. load/resume session or read new spec (`debate.py:1026`)
-  5. dispatch parallel critiques and synthesize own response (`debate.py:1086`)
-  6. persist checkpoints/output and optionally return for another round (`debate.py:1227`, `session.py:45`)
-TRIGGERS:
-  - installed CLI invocation
-EXITS:
-  - consensus/output, user review, error, or checkpoint/resume
-NOTES: pipeline-card and staleness gates can stop execution before model calls (`debate.py:1366`).
+SEQUENCE: register role/listener -> validate session pointer, journey and phase artifacts -> requirements through implementation -> verification/closure
+TRIGGERS: skill invocation or resume pointer
+EXITS: missing artifact/order anomaly stops for operator direction; Phase 9 pass permits closure
+NOTES: `skills/adversarial-spec/SKILL.md:50-145`, Phase 8/9 docs; documented sequence omits verification while Phase 9 requires it.
 
-FLOW: gauntlet_pipeline
+FLOW: debate-round-dispatch-and-checkpoint
 TYPE: lifecycle
-SEQUENCE:
-  1. resolve config/prompts/adversaries (`orchestrator.py:125-205`)
-  2. gauntlet-internal phase 1 attacks (`phase_1_attacks.py:323`)
-  3. gauntlet-internal phase 2 synthesis and phase 3 filtering (`phase_2_synthesis.py`, `phase_3_filtering.py:130`)
-  4. gauntlet-internal phase 3.5 clustering (`clustering.py`, `persistence.py:587`)
-  5. gauntlet-internal phase 4 evaluation, phase 5 rebuttals, phase 6 adjudication (`phase_4_evaluation.py:118`, `phase_5_rebuttals.py:1`, `phase_6_adjudication.py:1`)
-  6. gauntlet-internal phase 7 final boss and verdict (`phase_7_final_boss.py:1`)
-  7. persist result/stats/medals/run manifest (`persistence.py:469-629`, `medals.py:220`)
-TRIGGERS:
-  - `debate.handle_gauntlet` or `gauntlet.cli.main`
-EXITS:
-  - `GauntletResult`, resume checkpoint, or typed execution error
-NOTES: phase checkpoints are integrity-checked and can resume from partial runs.
+SEQUENCE: pipeline gate -> model/profile validation -> session load -> parallel critique -> partial result save -> session/checkpoint write -> optional Telegram
+TRIGGERS: `debate.py critique`
+EXITS: gates/preflight failures abort; individual model failures remain per-result errors
+NOTES: `debate.py:1026-1214,1366-1675`; `models.py:741-790,1114-1199`.
 
-FLOW: validation_ledger_state_machine
+FLOW: fizzy-managed-debate-round
+TYPE: lifecycle
+SEQUENCE: create workspace/checklist -> dispatch isolated critics -> register returned artifacts -> recover timed-out wrapper by polling expected result directory
+TRIGGERS: Phase 3 debate
+EXITS: rejection/recovery procedure ends standalone fallback
+NOTES: `phases/03-debate.md:459-534`; timeout means ambiguous launch state, not permission to redispatch.
+
+FLOW: gauntlet-seven-phase-orchestration
+TYPE: lifecycle
+SEQUENCE: config/hash/manifest -> compatible resume -> attacks -> synthesis/filter/cluster -> evaluation -> rebuttal/adjudication -> optional Final Boss -> persist result
+TRIGGERS: standalone gauntlet CLI or debate gauntlet
+EXITS: interrupt writes status and exits 130; invalid config fails before phases
+NOTES: `gauntlet/orchestrator.py:250-975`; persistence is locked/atomic per target file.
+
+FLOW: parallel-gauntlet-model-work
+TYPE: loop
+SEQUENCE: provider-bounded attack batches -> concurrent filtering -> concurrent evaluation waves -> optional concurrent rebuttals
+TRIGGERS: selected models and nonempty concern list
+EXITS: parse/operational failures defer or retain concerns conservatively
+NOTES: `phase_1_attacks.py:321-384`, `phase_4_evaluation.py:73-324`, `phase_5_rebuttals.py:74-90`; token tracker has a lock.
+
+FLOW: pre-gauntlet-alignment
 TYPE: state_machine
-STATES:
-  - assembled -> [send] -> sent
-  - sent -> [parse reply] -> processed or reprompt/error
-  - failed/stale -> [reset/cancel] -> terminal batch state
-  - ledger row -> [evidence/promotion] -> updated TMR/evidence state
-TRIGGERS:
-  - validation_emission subcommands (`validation_emission.py:67`, `3255`)
-EXITS:
-  - one-line `Envelope` and process exit code
-NOTES: allowed statuses and issue exit mapping are constants at `validation_emission.py:51-67`; lock contention is explicit.
+STATES: COMPLETE, NEEDS_ALIGNMENT, ABORTED, INFRA_ERROR
+TRIGGERS: gauntlet `--pre-gauntlet`
+EXITS: non-complete maps to CLI exit code; complete enriches spec
+NOTES: `pre_gauntlet/orchestrator.py:67-325`, `alignment_mode.py:60-177`.
 
-FLOW: phase8_promotion_gate
+FLOW: validation-close
 TYPE: state_machine
-STATES:
-  - non-concrete TMR -> [build request] -> PromotionRequest
-  - PromotionRequest -> [capture run] -> RunExecution/evidence
-  - TMR -> [evaluate close] -> promoted or blocking PromotionIssue
-TRIGGERS:
-  - Phase 8 implementation close checks (`phase8_promotion.py:74-162`)
-EXITS:
-  - `Phase8PromotionReport` with issues and promotion requests
-NOTES: critical/spine real-data records require live or induced evidence, negative oracle, and boundary-mock lint.
+STATES: drafted -> evidence-attached -> digested -> judged-pass/fail/na -> remediation/re-execution or superseded
+TRIGGERS: implementation close leg
+EXITS: all required rows must pass/supersede before artifact/check/MCP close
+NOTES: `phases/08-implementation.md:331-498`, `validation_emission.py:956-1372`.
 
-FLOW: hook_decision
-TYPE: branch
-SEQUENCE:
-  1. receive tool event on stdin (`codex_pretool_combined.py:57`)
-  2. run sub-hooks in configured order (`codex_pretool_combined.py:18-26`)
-  3. classify as allow, warn, deny, or system message (`fizzy_payload_guard.py:51-86`, `dispatch_check.py:86`)
-  4. emit JSON decision on stdout
-TRIGGERS:
-  - Claude Code hook lifecycle
-EXITS:
-  - tool proceeds, is blocked, or operator receives a system message
-NOTES: some hooks are safety gates, others are coordination/notification side effects.
+FLOW: hook-dispatch-and-telemetry
+TYPE: loop
+SEQUENCE: hook stdin JSON -> payload validation/event extraction -> optional notification/dispatch/activity append
+TRIGGERS: hook lifecycle and Fizzy tool events
+EXITS: invalid/missing inputs exit without output side effects
+NOTES: `.claude/hooks/fizzy_payload_guard.py:86`, `pipeline_notifications.py:392-437`, `session_activity_logger.py:55-96`.
 
-## Concurrency and shared-state evidence
+## Hazards
 
-HAZARD: parallel model responses share partial-result and token accounting state
-RESOURCE: partial result files and process-wide token tracker
-CALLERS:
-  - `call_models_parallel` worker futures (`models.py:1114`)
-  - `_save_partial_result` (`models.py:1170`)
-  - `TokenTracker` updates from model calls (`token_tracking.py:19`)
-SYNCHRONIZATION: token tracker uses a `threading.Lock` (`token_tracking.py:19`); partial-result filenames are per-model but failure recovery needs targeted review
-CONSEQUENCE: duplicate/overwritten partial artifacts or inconsistent totals if a new caller reuses a result path
+HAZARD: gauntlet-sidecar-overwrite
+RESOURCE: raw responses, cluster reports, dedup stats for a spec hash
+CALLERS: `run_gauntlet` direct sidecar writes (`orchestrator.py:399-403,533-556`); `_track_dedup_stats` (`phase_3_filtering.py:211-233`)
+SYNCHRONIZATION: none
+CONSEQUENCE: concurrent same-spec runs can overwrite recovery artifacts or lose stats.
 
-HAZARD: validation ledger and provenance writers have competing file writers
-RESOURCE: validation ledger/batches and TMR registry/journal/index
-CALLERS:
-  - `mutate_ledger` (`validation_emission.py:1337`)
-  - `ProvenanceJournalWriter.append` path (`provenance_journal.py:112`, `581`)
-SYNCHRONIZATION: FileLock for ledger (`validation_emission.py:959`, `1337`); ordered multi-file locks for provenance (`provenance_journal.py:581-596`)
-CONSEQUENCE: lock contention is surfaced as a typed issue; stale expected coordinates reject lost updates.
+HAZARD: resolved-concern-counter-lost-update
+RESOURCE: `resolved_concerns.json` match counters
+CALLERS: concurrent Phase-3 futures and `record_explanation_match` (`phase_3_filtering.py:155-165`, `persistence.py:927-935`)
+SYNCHRONIZATION: lock does not span read-modify-write
+CONSEQUENCE: historical match count can undercount.
 
-HAZARD: gauntlet stats/medals/run artifacts have multiple writers
-RESOURCE: `.adversarial-spec-gauntlet` and home stats/medal files
-CALLERS:
-  - checkpoint/run persistence (`persistence.py:469-629`)
-  - medals writes (`medals.py:220-240`)
-  - filtering stats append (`phase_3_filtering.py:217-233`)
-SYNCHRONIZATION: persistence uses per-file FileLock (`persistence.py:74-137`); filtering stats write path has no shared lock visible in the current source
-CONSEQUENCE: concurrent gauntlet runs may race on stats append; run-specific artifacts are safer than shared stats.
+HAZARD: session-state-concurrent-write
+RESOURCE: session JSON and round checkpoints
+CALLERS: session updates and parallel partial model completions (`session.py:46-134`, `models.py:1163-1199`)
+SYNCHRONIZATION: none
+CONSEQUENCE: concurrent resumes can overwrite session history/latest spec.
+
+HAZARD: hook-idle-counter-cross-session
+RESOURCE: `/tmp/pipeline-idle-count-<project>-<role>.txt`
+CALLERS: idle-hook executions (`pipeline_idle_retry.py:73-156`)
+SYNCHRONIZATION: none; key omits session ID
+CONSEQUENCE: same-role workers alter each other’s backoff state.
+
+HAZARD: review-dispatch-replay
+RESOURCE: `.conductor/dispatch/<agent>/updates.jsonl`
+CALLERS: completion/review notification hooks (`pipeline_notifications.py:275-346`)
+SYNCHRONIZATION: no event ID/deduplication
+CONSEQUENCE: replayed hooks create duplicate dispatch messages.
+
+HAZARD: canonical-phase-order-mismatch
+RESOURCE: session journey validation
+CALLERS: resume checker and Phase 8/9 workflow documents
+SYNCHRONIZATION: documentation/state-contract mismatch
+CONSEQUENCE: a recorded verification transition can be falsely flagged as out of order (`SKILL.md:75-108`, `phases/08-implementation.md:268-277`, `phases/09-verification.md:184-198`).

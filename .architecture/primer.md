@@ -1,56 +1,54 @@
 # Architecture Primer: adversarial-spec
 
-> Generated: 2026-07-19T08:43:13-05:00 | Git: ef18c66
-> Freshness: caution | Trust: source-backed local synthesis; five delegated discovery explorers timed out, and the worktree is dirty. If a derived source file changes after `ef18c66`, trust source over this document.
+> Generated: 2026-07-20T14:44:38-05:00 | Git: `2433efa`
+> Freshness: **caution** | Trust: full source scan includes the dirty worktree. Every substantive claim below is source-anchored; if a listed source file changes, trust source over this document.
 
 ## System Summary
 
-`adversarial-spec` is a Python-backed Claude Code skill for refining product specifications through multi-model debate, then stress-testing the result through a resumable gauntlet. The runtime is a CLI plus file-backed tooling: model/provider adapters produce typed responses, gauntlet phases transform concerns into a verdict, and the newer TMR/validation/provenance toolchain records test maturity and evidence. Claude Code hooks form a separate stdin/stdout safety and pipeline-coordination plane.
+`adversarial-spec` is a Python-backed skill and CLI suite for moving a specification through multi-model critique, compatibility grounding, a seven-phase gauntlet, and evidence-backed closeout. It combines file-backed resumability and typed contracts with a separate hook plane for local tool safety and Fizzy coordination.
 
 ## Most Important Components
 
 | Component | Role | Runtime | Architecture |
-|-----------|------|---------|--------------|
-| Debate CLI | Parse specs, enforce gates, run critique rounds | implemented | active_primary |
-| Model/provider routing | Select providers, run CLI/LiteLLM calls, track cost | implemented | active_primary |
-| Gauntlet pipeline | Generate, cluster, evaluate, rebut, adjudicate, and finalize concerns | implemented | active_primary |
-| Gauntlet persistence | Lock, hash, checkpoint, resume, and report runs | implemented | active_primary |
-| TMR/evidence toolchain | Validate test-maturity records, liveness, promotion, and provenance | implemented | active_primary |
-| Validation emission | Ledger lifecycle, digest/reply parsing, system validation, self-check | implemented | active_primary |
-| Pre-gauntlet | Check repo compatibility before stress testing | implemented | active_secondary |
-| Harness hooks | Enforce shell/Fizzy/pipeline safety and send coordination notices | implemented | active_primary |
-| Plan analysis | Parse gauntlet concerns and inspect task dependency semantics | partial | active_secondary |
-| Telegram/usage helpers | Human notification and local model-headroom routing | implemented | active_secondary |
+|---|---|---|---|
+| Debate and session | Gate, resume and run parallel critique rounds | implemented | active_primary |
+| Model/provider routing | Profile models, invoke CLI/API adapters, record cost | implemented | active_primary |
+| Gauntlet orchestration | Attack through Final Boss pipeline | implemented | active_primary |
+| Gauntlet persistence | Hash, lock, atomically resume checkpoint artifacts | implemented | active_primary |
+| Pre-gauntlet | Build repo context and alignment decision | implemented | active_primary |
+| Validation emission | Ledger, evidence, digest, judgment and close artifact CLI | implemented | active_primary |
+| TMR/provenance | Strict TMR registry and append-only transition evidence | implemented | active_primary |
+| Hook plane | Guard tool calls and emit dispatch/activity side effects | implemented | active_primary |
+| Plan analysis | Parse gauntlet concerns and analyze dependencies | partial | active_secondary |
+| Telegram/usage | Human reply protocol and one-shot headroom routing | implemented | active_secondary |
 
 ## Shared Contracts and Boundaries
 
-- **Gauntlet typed chain:** `Concern → Evaluation → Rebuttal → FinalBossResult → GauntletResult` in `gauntlet/core_types.py:83-232`; phase modules and persistence depend on these shapes.
-- **Checkpoint envelope:** `_meta` carries schema/spec/config/data hashes; `gauntlet/persistence.py:79-137,281-333` rejects mismatched resume state.
-- **TMR registry:** `tmr_schema.py:175-377` is strict and authoritative; `tmr_compile_step.py:64-156` derives the prose view.
-- **Validation `Envelope`:** `validation_emission.py:200-220` is the CLI boundary; `status`, `issues`, and command-specific `data` must be interpreted together.
-- **Hook stdio:** `.claude/hooks/codex_pretool_combined.py:18-72` runs configured classifiers and emits tool-protocol decisions. Hook output is transient; notifications are not transition proof.
-- **File locks:** ledger, provenance, and gauntlet checkpoint writes use FileLock/ordered locks; the shared filtering stats append remains a concurrency review point.
+- **Validation `Envelope`:** stdout always contains `status`, `code`, `issues`, and `data`; null/empty defaults are intentional, not omitted fields (`validation_emission.py:200-214,3423-3459`).
+- **Gauntlet checkpoint envelope:** `_meta` binds schema/spec/config/phase/data hash to `data`; resume rejects incompatible envelopes (`gauntlet/persistence.py:560-583,281-325`).
+- **Gauntlet types:** `Concern → Evaluation → FinalBossResult → GauntletResult` is the cross-phase payload chain (`gauntlet/core_types.py:83-232`).
+- **TMR registry:** `TestMaturityRecord` is strict and drives compiler/provenance/promotion behavior (`tmr_schema.py:175-377`).
+- **Hook session activity:** a missing `session_id` or `event` produces no JSONL record; `source`/`model` exist only for SessionStart (`.claude/hooks/session_activity_logger.py:55-96`).
 
 ## Non-Obvious Gotchas
 
-- `adversarial_spec` is a root symlink to `skills/adversarial-spec/scripts`; edit the canonical target, and keep both packaging and import paths in mind.
-- There are two active gauntlet CLIs: top-level `debate.py` and `gauntlet/cli.py`; their flags/defaults are not a single contract.
-- `tmr-registry.json` is authoritative once present; `tests-pseudo.md` is a derived prose view and must not be edited as the source of truth.
-- A missing field in the validation `Envelope` is not automatically success; consumers must inspect `status` and `issues`.
-- TMR maturity/liveness is evidence-sensitive: unit-green, mock-only, and live/induced evidence are distinct classifications.
-- Hook modules are intentionally process-boundary code. They should emit safe JSON and avoid importing runtime skill modules.
-- The repository contains large historical specs/checkpoints/reports; `.adversarial-spec/` is excluded from architecture source mapping.
+- Root console metadata targets `adversarial_spec.*`, and the root `adversarial_spec` symlink deliberately maps that package to `skills/adversarial-spec/scripts`; `uv run adversarial-spec --help` succeeds. Preserve that bridge when changing imports or packaging (`pyproject.toml:44-55`).
+- Two gauntlet entrances exist—`debate.py gauntlet` and `python -m gauntlet`—so defaults and gate behavior are not a single CLI contract (`debate.py:898`, `gauntlet/cli.py:13`).
+- Checkpoint atomicity protects individual files, not all read-modify-write sidecars; concurrent same-spec runs can still lose data (`gauntlet/persistence.py:124-152`, `phase_3_filtering.py:211-233`).
+- A Final Boss execution failure currently returns PASS with warning text, rather than a failure verdict (`gauntlet/phase_7_final_boss.py:239-252`).
+- Hook notification is an audit/dispatch side effect, not proof that a card transition or wakeup succeeded (`pipeline_notifications.py:392-437`).
+- TMR prose is derived from strict registry records; edit the registry/compile path, not an output view (`tmr_compile_step.py:64-156`).
 
 ## Top Actionable Concerns
 
-See [concerns.md](concerns.md) for the fix-first rollup. Current priorities are
-the final-boss failure-as-PASS path, shared gauntlet stats writes, duplicated
-hook role resolution, and the divergent gauntlet CLI timeout contract.
+- **Phase lifecycle mismatch:** make the canonical phase list include the verification work performed in later phase documents; see [concerns.md](concerns.md).
+- **Concurrent gauntlet sidecars:** lock or isolate raw-response/cluster/stats writes by run; see [concerns.md](concerns.md).
+- **Final Boss failure-as-PASS:** decide whether transport failure can safely satisfy a final decision gate; see [concerns.md](concerns.md).
 
 ## Escalation Guidance
 
-- Read [concerns.md](concerns.md) when you need the fix-first architecture debt and next actions.
-- Read [overview.md](overview.md) for the full system narrative.
-- Read [structured/flows.md](structured/flows.md) when a change crosses CLI, model, gauntlet, evidence, or hook boundaries.
-- Read matched docs in [structured/components/](structured/components/) for a specific blast zone.
-- Read [access-guide.md](access-guide.md) for guided reading paths by task type.
+- Read [concerns.md](concerns.md) for fix-first architecture debt.
+- Read [overview.md](overview.md) for system narrative.
+- Read [structured/flows.md](structured/flows.md) for multi-component behavior.
+- Read [structured/components/](structured/components/) for a targeted blast zone.
+- Read [access-guide.md](access-guide.md) for the compact reading paths.

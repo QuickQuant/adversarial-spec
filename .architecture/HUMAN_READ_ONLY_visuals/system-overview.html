@@ -1,41 +1,50 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>adversarial-spec — system overview</title>
-  <style>
-    :root{color-scheme:light;--ink:#17212b;--muted:#5c6b76;--line:#b8c5cc;--paper:#f7f8f6;--blue:#dbeafe;--green:#dcfce7;--amber:#fef3c7;--rose:#ffe4e6;--violet:#ede9fe}
-    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}main{max-width:1200px;margin:0 auto;padding:36px 28px 52px}h1{font:700 clamp(28px,4vw,46px)/1.05 Georgia,serif;letter-spacing:-.03em;margin:0 0 10px}h2{font-size:17px;margin:30px 0 8px}p{max-width:760px;color:var(--muted)}.meta{font:12px/1.4 ui-monospace,SFMono-Regular,monospace;color:var(--muted)}.frame{border:1px solid var(--line);background:#fff;border-radius:18px;padding:16px;box-shadow:0 12px 34px #17212b10}.legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px}.legend span{display:inline-flex;align-items:center;gap:6px}.swatch{width:13px;height:13px;border:1px solid var(--line);border-radius:3px;display:inline-block}.caption{font-size:12px;color:var(--muted);margin-top:10px}.node{stroke:var(--line);stroke-width:1.5}.label{font-weight:700;font-size:15px;fill:var(--ink)}.small{font-size:12px;fill:var(--muted)}.edge{stroke:#5b6b75;stroke-width:2;fill:none}.dashed{stroke-dasharray:6 5}.branch{fill:#fff7ed;stroke:#c2410c}.external{fill:var(--violet);stroke:#8b5cf6}.event{fill:var(--rose);stroke:#e11d48}
-  </style>
-</head>
-<body>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>adversarial-spec — system overview</title>
+<style>
+  :root{--paper:#f5f5f5;--ink:#2d3142;--muted:#4f5d75;--soft:#7a8399;--rule:rgba(45,49,66,.12);--accent:#eb6c36;--accent-tint:rgba(235,108,54,.08);--link:#2e5aa8}
+  *{box-sizing:border-box} body{margin:0;background:var(--paper);color:var(--ink);font-family:Geist,Arial,sans-serif} main{max-width:1120px;margin:auto;padding:48px 32px} .eyebrow{margin:0 0 8px;color:var(--muted);font:500 12px/1.2 ui-monospace,monospace;letter-spacing:.14em}.title{margin:0;font:400 40px/1.05 Georgia,serif}.deck{max-width:720px;margin:16px 0 32px;color:var(--muted);line-height:1.5}.frame{overflow-x:auto}.note{margin-top:24px;padding-top:16px;border-top:1px solid var(--rule);color:var(--muted);font-size:14px;line-height:1.5}.note strong{color:var(--ink)}
+</style>
 <main>
-  <div class="meta">HUMAN_READ_ONLY_visuals · verified at ef18c66 · generated 2026-07-19</div>
-  <h1>One specification, several guarded planes</h1>
-  <p>The primary path refines a specification, attacks the agreed result, and records evidence for promotion. Hooks and external services sit at process boundaries; their notices do not replace authoritative state.</p>
+  <p class="eyebrow">ARCHITECTURE · FULL MAP · 2026-07-20</p>
+  <h1 class="title">adversarial-spec runtime</h1>
+  <p class="deck">A file-backed specification workflow: debate and gauntlet produce evidence, validation and TMR close it, and hooks keep the host-facing control plane separate.</p>
   <div class="frame">
-    <svg viewBox="0 0 1140 610" role="img" aria-labelledby="title desc">
-      <title id="title">adversarial-spec system architecture</title>
-      <desc id="desc">A flow from CLI and specification through debate, model adapters, gauntlet, evidence and promotion, with persistence and hook planes around it.</desc>
-      <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#5b6b75"/></marker></defs>
-      <path class="edge" marker-end="url(#arrow)" d="M170 150H260"/><path class="edge" marker-end="url(#arrow)" d="M450 150H540"/><path class="edge" marker-end="url(#arrow)" d="M730 150H820"/><path class="edge" marker-end="url(#arrow)" d="M920 205V285"/>
-      <path class="edge dashed" marker-end="url(#arrow)" d="M355 215V315H520"/><path class="edge dashed" marker-end="url(#arrow)" d="M635 215V315H520"/><path class="edge dashed" marker-end="url(#arrow)" d="M820 365H700"/><path class="edge dashed" marker-end="url(#arrow)" d="M520 365H400"/>
-      <path class="edge event" marker-end="url(#arrow)" d="M920 480V535H720"/>
-      <rect class="node" x="35" y="105" width="135" height="90" rx="14" fill="var(--blue)"/><text class="label" x="102" y="140" text-anchor="middle">CLI / spec</text><text class="small" x="102" y="163" text-anchor="middle">argv · stdin · profile</text><text class="small" x="102" y="181" text-anchor="middle">debate.main</text>
-      <rect class="node" x="260" y="105" width="190" height="90" rx="14" fill="var(--blue)"/><text class="label" x="355" y="140" text-anchor="middle">Debate engine</text><text class="small" x="355" y="163" text-anchor="middle">rounds · gates · sessions</text><text class="small" x="355" y="181" text-anchor="middle">ModelResponse</text>
-      <rect class="node" x="540" y="105" width="190" height="90" rx="14" fill="var(--green)"/><text class="label" x="635" y="140" text-anchor="middle">Model adapters</text><text class="small" x="635" y="163" text-anchor="middle">CLI subprocess · LiteLLM</text><text class="small" x="635" y="181" text-anchor="middle">token tracking</text>
-      <rect class="node" x="820" y="105" width="200" height="100" rx="14" fill="var(--amber)"/><text class="label" x="920" y="140" text-anchor="middle">Gauntlet</text><text class="small" x="920" y="163" text-anchor="middle">attacks → evaluation</text><text class="small" x="920" y="181" text-anchor="middle">rebuttal → verdict</text>
-      <rect class="node" x="820" y="285" width="200" height="95" rx="14" fill="var(--green)"/><text class="label" x="920" y="319" text-anchor="middle">Evidence plane</text><text class="small" x="920" y="342" text-anchor="middle">TMR registry · ledger</text><text class="small" x="920" y="360" text-anchor="middle">provenance · Phase 8 close</text>
-      <rect class="node" x="280" y="285" width="240" height="95" rx="14" fill="#f1f5f9"/><text class="label" x="400" y="319" text-anchor="middle">File-backed state</text><text class="small" x="400" y="342" text-anchor="middle">sessions · checkpoints</text><text class="small" x="400" y="360" text-anchor="middle">hashes · locks · reports</text>
-      <rect class="node" x="520" y="285" width="180" height="95" rx="14" fill="#f1f5f9"/><text class="label" x="610" y="319" text-anchor="middle">Pre-gauntlet</text><text class="small" x="610" y="342" text-anchor="middle">compatibility checks</text><text class="small" x="610" y="360" text-anchor="middle">serialized report</text>
-      <rect class="node event" x="820" y="430" width="200" height="95" rx="14"/><text class="label" x="920" y="464" text-anchor="middle">Hook plane</text><text class="small" x="920" y="487" text-anchor="middle">allow / deny / message</text><text class="small" x="920" y="505" text-anchor="middle">transient protocol output</text>
-      <rect class="node external" x="35" y="450" width="180" height="90" rx="14"/><text class="label" x="125" y="484" text-anchor="middle">External services</text><text class="small" x="125" y="507" text-anchor="middle">provider APIs · Telegram</text><text class="small" x="125" y="525" text-anchor="middle">Fizzy MCP</text>
-      <path class="edge dashed" marker-end="url(#arrow)" d="M215 495H300"/><text class="small" x="245" y="481" text-anchor="middle">boundary</text>
-    </svg>
-    <div class="legend"><span><i class="swatch" style="background:var(--blue)"></i>authoring/runtime</span><span><i class="swatch" style="background:var(--amber)"></i>analysis pipeline</span><span><i class="swatch" style="background:var(--green)"></i>evidence/state contract</span><span><i class="swatch" style="background:var(--rose)"></i>event boundary</span><span><i class="swatch" style="background:var(--violet)"></i>external</span></div>
-    <div class="caption">Solid arrows are the primary run. Dashed arrows are persistence, compatibility, or event side paths.</div>
+  <svg viewBox="0 0 960 560" width="960" height="560" role="img" aria-labelledby="title desc">
+    <title id="title">adversarial-spec system architecture</title><desc id="desc">Core CLI flow from input through debate, gauntlet, persistence, validation, and hooks, with providers above.</desc>
+    <defs>
+      <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#4f5d75"/></marker>
+      <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#eb6c36"/></marker>
+      <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#2e5aa8"/></marker>
+    </defs>
+    <rect width="960" height="560" fill="#f5f5f5"/>
+    <!-- connectors first -->
+    <line x1="208" y1="248" x2="256" y2="248" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+    <line x1="416" y1="248" x2="464" y2="248" stroke="#eb6c36" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+    <line x1="624" y1="248" x2="704" y2="248" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+    <line x1="544" y1="128" x2="544" y2="208" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+    <line x1="584" y1="288" x2="584" y2="368" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+    <line x1="784" y1="288" x2="784" y2="368" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+    <!-- input -->
+    <rect x="48" y="208" width="160" height="80" rx="6" fill="#ececec" stroke="#7a8399"/><text x="64" y="228" fill="#7a8399" font-size="8" font-family="ui-monospace,monospace" letter-spacing="1">INPUT</text><text x="128" y="252" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">Spec + session</text><text x="128" y="272" fill="#4f5d75" font-size="8" font-family="ui-monospace,monospace" text-anchor="middle">stdin · JSON</text>
+    <!-- debate -->
+    <rect x="256" y="208" width="160" height="80" rx="6" fill="rgba(235,108,54,.08)" stroke="#eb6c36" stroke-width="1.2"/><text x="272" y="228" fill="#eb6c36" font-size="8" font-family="ui-monospace,monospace" letter-spacing="1">FOCAL</text><text x="336" y="252" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">Debate + session</text><text x="336" y="272" fill="#4f5d75" font-size="8" font-family="ui-monospace,monospace" text-anchor="middle">gate · resume · fanout</text>
+    <!-- provider -->
+    <rect x="464" y="48" width="160" height="80" rx="6" fill="rgba(45,49,66,.03)" stroke="rgba(45,49,66,.30)"/><text x="480" y="68" fill="#4f5d75" font-size="8" font-family="ui-monospace,monospace" letter-spacing="1">EXTERNAL</text><text x="544" y="92" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">Model providers</text><text x="544" y="112" fill="#4f5d75" font-size="8" font-family="ui-monospace,monospace" text-anchor="middle">CLI · LiteLLM</text>
+    <!-- gauntlet -->
+    <rect x="464" y="208" width="160" height="80" rx="6" fill="rgba(235,108,54,.08)" stroke="#eb6c36" stroke-width="1.2"/><text x="480" y="228" fill="#eb6c36" font-size="8" font-family="ui-monospace,monospace" letter-spacing="1">FOCAL</text><text x="544" y="252" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">Gauntlet</text><text x="544" y="272" fill="#4f5d75" font-size="8" font-family="ui-monospace,monospace" text-anchor="middle">phases · verdict</text>
+    <!-- persistence -->
+    <rect x="704" y="208" width="160" height="80" rx="6" fill="rgba(45,49,66,.05)" stroke="#4f5d75"/><text x="720" y="228" fill="#4f5d75" font-size="8" font-family="ui-monospace,monospace" letter-spacing="1">STORE</text><text x="784" y="252" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">Artifacts + locks</text><text x="784" y="272" fill="#4f5d75" font-size="8" font-family="ui-monospace,monospace" text-anchor="middle">hash · checkpoint</text>
+    <!-- validation -->
+    <rect x="464" y="368" width="160" height="80" rx="6" fill="#fff" stroke="#2d3142"/><text x="480" y="388" fill="#7a8399" font-size="8" font-family="ui-monospace,monospace" letter-spacing="1">CLOSURE</text><text x="544" y="412" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">Validation + TMR</text><text x="544" y="432" fill="#4f5d75" font-size="8" font-family="ui-monospace,monospace" text-anchor="middle">ledger · spine · proof</text>
+    <!-- hooks -->
+    <rect x="704" y="368" width="160" height="80" rx="6" fill="rgba(235,108,54,.05)" stroke="rgba(235,108,54,.50)" stroke-dasharray="4,4"/><text x="720" y="388" fill="#7a8399" font-size="8" font-family="ui-monospace,monospace" letter-spacing="1">HOOK PLANE</text><text x="784" y="412" fill="#2d3142" font-size="12" font-weight="600" text-anchor="middle">Guard + telemetry</text><text x="784" y="432" fill="#4f5d75" font-size="8" font-family="ui-monospace,monospace" text-anchor="middle">stdin · JSONL</text>
+    <line x1="48" y1="496" x2="912" y2="496" stroke="rgba(45,49,66,.12)" stroke-width=".8"/>
+    <text x="48" y="520" fill="#4f5d75" font-size="8" font-family="ui-monospace,monospace" letter-spacing="1">LEGEND</text><rect x="176" y="512" width="16" height="12" rx="2" fill="rgba(235,108,54,.08)" stroke="#eb6c36"/><text x="204" y="522" fill="#4f5d75" font-size="8" font-family="ui-monospace,monospace">core gate</text><rect x="328" y="512" width="16" height="12" rx="2" fill="rgba(45,49,66,.05)" stroke="#4f5d75"/><text x="356" y="522" fill="#4f5d75" font-size="8" font-family="ui-monospace,monospace">file-backed state</text><line x1="536" y1="520" x2="568" y2="520" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/><text x="584" y="522" fill="#4f5d75" font-size="8" font-family="ui-monospace,monospace">provider boundary</text>
+  </svg>
   </div>
+  <p class="note"><strong>Read with:</strong> [Primer](../primer.md) for orientation, then the component sheet named by the node. Arrows describe primary ownership paths, not every call.</p>
 </main>
-</body>
 </html>

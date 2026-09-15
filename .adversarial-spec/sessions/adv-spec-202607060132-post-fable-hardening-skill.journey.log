@@ -7,3 +7,38 @@
 {"time":"2026-07-08T05:51:46Z","event":"Roadmap artifacts persisted (manifest 9M/17US, roadmap.md, tests-pseudo v1.1, trello-plan placeholder)","type":"artifact"}
 {"time":"2026-07-08T05:51:46Z","event":"Phase transition: roadmap → debate","type":"transition"}
 {"time": "2026-07-08T05:52:16Z", "event": "Phase transition: debate -> debate", "type": "transition", "source": "pipeline_advance"}
+{"time":"2026-07-17T21:10:38Z","event":"Debate R1 (pipeline) complete on spec-draft-v2; guardrails run; awaiting R1 user checkpoint","type":"decision"}
+{"time":"2026-07-19T00:44:00Z","event":"R1 checkpoint calls resolved (OQ-4 external-dep, §18 cut, OQ-3 04→07→03); PF filed + resume-guard added","type":"decision"}
+{"time":"2026-07-19T15:17:26Z","event":"INCIDENT: agy critic ran as agent, mutated board (round replaced 2x, self-dispatched critics); board self-healed; PF filed; R2 quorum gated on glm recharge / gemini litellm decision","type":"decision"}
+{"time":"2026-07-19T21:44:46Z","event":"R3 complete: v4 synthesized, tests v5, guardrails green, advanced convergence=false","type":"artifact"}
+{"time":"2026-07-19T23:12:58Z","event":"SCOPE-1 resolved: split (perf envelope out, behavioral in); R4 dispatch unblocked","type":"decision"}
+{"time":"2026-07-19T23:41:14Z","event":"R4 complete: v5 synthesized, tests v6.1, guardrails green, advanced convergence=false","type":"artifact"}
+{"time":"2026-07-20T01:26:02Z","event":"R5 complete: v6 synthesized, tests v7, guardrails green, advanced convergence=false","type":"artifact"}
+{"time":"2026-07-20T01:36:54Z","event":"R6 complete: v7 synthesized, tests v8.1, guardrails green, advanced convergence=false","type":"artifact"}
+{"time":"2026-07-20T01:44:41Z","event":"R7 convergence declared: both critics AGREE (codex pressed, held); debate closed on v7/v8.1","type":"decision"}
+{"time": "2026-07-20T01:54:37Z", "event": "Phase transition: debate \u2192 target-architecture", "type": "transition"}
+{"time": "2026-07-20T01:55:38Z", "event": "Phase transition: target-architecture -> pre-gauntlet", "type": "transition", "source": "pipeline_advance"}
+{"event_id": "je-20260720-66bc75", "idempotency_key": "37bd4904f19650f98edfc2e47b55805c1dcd60251c7e40500f3c21c0cf0b6ca0", "time": "2026-07-20T03:09:30Z", "phase": "target-architecture", "level": "info", "event": "phase4_started", "fingerprint": "c31949b14c1828deeb9f61f42545adf87d5b81fc4d0d07490ddc0a1a5dd71a14", "details": null}
+{"event_id": "je-20260720-264847", "idempotency_key": "111c919179805a52e5c808644a0201a54944d135df7c61e0ca746e2931bfe036", "time": "2026-07-20T03:09:30Z", "phase": "target-architecture", "level": "info", "event": "scale_check_complete", "fingerprint": "c31949b14c1828deeb9f61f42545adf87d5b81fc4d0d07490ddc0a1a5dd71a14", "details": "phase_mode=full approved by human (roadmap verdict new_components)"}
+{"event_id": "je-20260720-321ad3", "idempotency_key": "d31a39ec1d285341aa7b3b5f1841c8037c959b5317b105e27c92c6800f36ec40", "time": "2026-07-20T03:09:30Z", "phase": "target-architecture", "level": "info", "event": "context_detected", "fingerprint": "c31949b14c1828deeb9f61f42545adf87d5b81fc4d0d07490ddc0a1a5dd71a14", "details": "brownfield_feature approved by human"}
+{"event_id": "je-20260720-5d5686", "idempotency_key": "6f7574c59a2b3a3ed1d4d497ce78074b35fe0a1974b7620d6a866b64d1b16f5b", "time": "2026-07-20T03:09:30Z", "phase": "target-architecture", "level": "info", "event": "bootstrap_complete", "fingerprint": "c31949b14c1828deeb9f61f42545adf87d5b81fc4d0d07490ddc0a1a5dd71a14", "details": "input_fingerprint computed; 17/17 stories aligned (goal links derived from milestone title tags)"}
+{"event_id": "je-20260720-6781f3", "idempotency_key": "1f83573e32289a6a55ad9bb9c5e2319d7024925491da5e8f1a291c99289be777", "time": "2026-07-20T03:16:45Z", "phase": "target-architecture", "level": "info", "event": "draft_written", "fingerprint": "c31949b14c1828deeb9f61f42545adf87d5b81fc4d0d07490ddc0a1a5dd71a14", "details": "target-architecture.md (full, brownfield_feature) + architecture-invariants.json (14) + middleware-candidates.json (6) + TC-INV-001..014 upserted"}
+{"time":"2026-07-20T14:36:28Z","event":"Phase 4 arch-review R4 folded -> target-architecture v5 (22 INVs, PSF-8..10); R5 hard-stop dispatch next","type":"decision"}
+{"time":"2026-07-20T15:00:59Z","event":"Phase 4 §9 review closed at R5 hard stop; target-architecture v6 (24 INVs, 11 MW, PSF-1..15); next: §10 executable dry-run","type":"decision"}
+{"time":"2026-07-20T15:06:33Z","event":"Phase 4 dry-run complete: 8/8 pass (design level); dry-run-results.json written; final approval gate","type":"artifact"}
+{"time": "2026-07-20T16:35:00Z", "event": "Phase transition: target-architecture \u2192 gauntlet", "type": "transition"}
+{"time": "2026-07-20T21:14:43Z", "event": "Phase transition: gauntlet -> gauntlet", "type": "transition", "source": "pipeline_advance"}
+{"time": "2026-07-20T23:55:00Z", "event": "Gauntlet complete: 170 concerns -> 25 themes -> spec-draft-v8.2 + 99 TCs; guardrails CANON/TCOV closed, CONS final verify operator-deferred", "type": "artifact"}
+{"time":"2026-07-20T23:44:03Z","event":"Final CONS verify pass run (operator-sanctioned): 3 residuals fixed CONS-R1..R3, status VERIFIED; CONS-F1 tag unattributable","type":"artifact"}
+{"time":"2026-07-21T00:19:20Z","event":"Phase transition: gauntlet → finalize","type":"transition"}
+{"time":"2026-07-21T04:34:34Z","event":"Spec finalized: specs/post-fable-hardening-skill/spec-final.md (v9.0 from v8.3; final guardrail pass green after 1 CONS + 5 CANON + 9 TCOV fixes)","type":"artifact"}
+{"time":"2026-07-21T04:42:02Z","event":"tests-spec.md promoted (128 TCs, 17/17 coverage, 11 schema-gap carries to Phase 7: new TMR keystone fields)","type":"artifact"}
+{"time":"2026-07-21T14:43:57Z","event":"v9.1 revision complete: 6 operator change-sets + 3 guardrail fixes landed; arch package consumable (fingerprint 7fa0ae7a); DF-20 added (20 deferral families)","type":"artifact"}
+{"time":"2026-07-21T14:49:08Z","event":"Phase transition: finalize → execution","type":"transition"}
+{"time": "2026-07-21T14:50:19Z", "event": "Phase transition: execution -> reconciliation", "type": "transition", "source": "pipeline_advance"}
+{"time": "2026-07-21T14:51:10Z", "event": "Phase transition: reconciliation -> finalize", "type": "transition", "source": "pipeline_advance"}
+{"time": "2026-07-21T14:51:16Z", "event": "Phase transition: finalize -> complete", "type": "transition", "source": "pipeline_advance"}
+{"time":"2026-07-21T14:51:37Z","event":"Phase transition: finalize → execution (board FSM lane Completed-Unmapped = pre-load terminal; local phase authoritative per skill rule)","type":"transition"}
+{"time": "2026-07-22T13:20:53Z", "event": "Phase transition: execution -> finalize", "type": "transition", "source": "pipeline_backtrack_session"}
+{"time":"2026-07-22T13:35:00Z","event":"Phase transition: execution → implementation","type":"transition"}
+{"time": "2026-07-22T14:13:25Z", "event": "Phase 8 wave-0 opening: W0-1, B-1, B-11 implemented and moved to Review", "type": "artifact"}

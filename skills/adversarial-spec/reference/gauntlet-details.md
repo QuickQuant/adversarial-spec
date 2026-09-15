@@ -13,6 +13,23 @@ The gauntlet is a multi-phase stress test that puts your spec through adversaria
 7. **Phase 6: Final Adjudication** — Synthesize evaluations + rebuttals into final verdicts
 8. **Phase 7: Final Boss** (optional) — Opus 4.7 UX Architect reviews the spec holistically
 
+### Ground-truth broker (normative)
+
+Gauntlet seats are read-only reviewers. They file self-contained `GT-REQUEST`
+records when a claim needs observation; they do not execute the system under
+review. A neutral broker de-duplicates, investigates, and returns
+`GT-RESPONSE` records to every seat. `BLOCKED` is a valid response and carries
+the missing fixture plus unblock requirements.
+
+Broker answers are bounded by the fixture and execution surface they actually
+exercise. Mocked app logic does not establish browser, wire, permission, or
+credential behavior. Record unrequested broker observations as `BYCATCH` and
+cross-seat answers as `CROSS_SEAT_RESPONSE`; treat bycatch as the primary
+observed value and cross-seat sharing as a selective secondary benefit. Track
+reach, yield, noise, follow-up requests, and cost separately. A zero-request
+round is not sufficient termination evidence; retain fixture-novelty and
+deliberate-refutation telemetry.
+
 ### Adversary Personas
 
 | Persona | Focus |

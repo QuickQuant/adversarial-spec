@@ -344,7 +344,10 @@ USER REQUEST:
             "codex",
             "exec",
             "--json",
-            "--full-auto",
+            # codex-cli 0.147.0 removed --full-auto; -s workspace-write is the
+            # equivalent sandbox policy for non-interactive exec (2026-08-23).
+            "-s",
+            "workspace-write",
             "--skip-git-repo-check",
             "--disable",
             "codex_hooks",
@@ -718,6 +721,14 @@ ANTIGRAVITY_MODEL_MAP = {
     "gemini-3.5-flash": "Gemini 3.5 Flash (High)",
     "gemini-3.5-flash-medium": "Gemini 3.5 Flash (Medium)",
     "gemini-3.5-flash-low": "Gemini 3.5 Flash (Low)",
+    # Synced with `agy models` 2026-08-23 (gemini-cli retired → antigravity).
+    "gemini-3.1-pro-high": "Gemini 3.1 Pro (High)",
+    "gemini-3.1-pro-low": "Gemini 3.1 Pro (Low)",
+    "gemini-3.7-flash-high": "Gemini 3.7 Flash (High)",
+    # Synced with `agy models` 2026-09-04 (Jason: "gemini is actually 3.8 now").
+    "gemini-3.8-flash-high": "Gemini 3.8 Flash (High)",
+    "gemini-3.8-flash-medium": "Gemini 3.8 Flash (Medium)",
+    "gemini-3.8-flash-low": "Gemini 3.8 Flash (Low)",
 }
 
 # --- Oversized-prompt transport ------------------------------------------

@@ -171,6 +171,12 @@ distinction matters. fizzy's `*_task` tool names (`pipeline_do_next_task`,
 "fixed."
 _Avoid_: "task" for a TodoWrite item.
 
+**Carded**:
+A requested change has become a plan-backed Task: its fully specified plan task is
+materialized 1:1 as a Task Card by `pipeline_load`, carrying Session and plan
+provenance. A raw `add_card` card, Card comment, or assignment is not carded.
+_Avoid_: using "carded" to mean merely added, noted, or assigned.
+
 **Card**:
 A Fizzy board object. Four contract kinds (`card_type`): **Session Card** (tracks one
 Session through the lanes), **Task Card** (one plan task), and the middleware pair

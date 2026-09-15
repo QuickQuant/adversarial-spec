@@ -1,68 +1,39 @@
 # Entry Points
 
-> All runtime entrances and external-input surfaces. Generated at `ef18c66`; if a cited source file changes, trust source over this document.
+> Full system entrances. Generated: 2026-07-20T14:44:38-05:00 | Verified at `2433efa` against the dirty worktree.
 
 ## Summary
 
-The project has CLI entry points for debate, gauntlet, gate checks, validation emission, dependency analysis, Telegram, usage routing, and migration, plus Claude Code hook event entrances. There are no HTTP server routes owned by this repository; outbound HTTP is used for Telegram and optional headroom/model services.
+The runtime is CLI and hook dominated: the debate/gauntlet, validation, and TMR gate CLIs are primary entrances; `.claude/settings.json` registers a separate stdin/stdout hook plane. The root `adversarial_spec` symlink deliberately bridges console metadata to the traced source layout.
 
 ## Entry Point Table
 
-| Entry point | File:line | Type | Trigger | Direct calls |
+| Entry point | File:line | Type | Trigger | Direct role |
 |---|---|---|---|---|
-| `debate.main()` | `skills/adversarial-spec/scripts/debate.py:1623` | cli | `adversarial-spec` console script | parser, profile/model resolution, gates, critique/gauntlet handlers |
-| `gauntlet_check_cli.main()` | `skills/adversarial-spec/scripts/gauntlet_check_cli.py:27` | cli | `gauntlet-check` console script | gate checks, result envelope, exit mapping |
-| `gauntlet.cli.main()` | `skills/adversarial-spec/scripts/gauntlet/cli.py:13` | cli | `python -m gauntlet` | `run_gauntlet`, persistence, reporting |
-| `validation_emission.main()` | `skills/adversarial-spec/scripts/validation_emission.py:3423` | cli | validation subcommand invocation | parser, command handler, envelope emitter |
-| `dependency_semantics.main()` | `skills/adversarial-spec/scripts/dependency_semantics.py:525` | cli | plan-report invocation | `analyze_plan`, JSON output |
-| `telegram_bot.main()` | `skills/adversarial-spec/scripts/telegram_bot.py:404` | cli | Telegram helper invocation | setup/send/poll/notify handlers |
-| `usage_router.main()` | `skills/adversarial-spec/scripts/usage_router.py:145` | cli | usage-router invocation | headroom fetch, route selection, CLI dispatch |
-| `migrate-journey-to-log.main()` | `skills/adversarial-spec/scripts/migrate-journey-to-log.py:81` | cli | migration script invocation | session migration, atomic write |
-| `PreGauntletOrchestrator.run_pre_gauntlet()` | `skills/adversarial-spec/scripts/pre_gauntlet/orchestrator.py:207` | export | gauntlet compatibility check | config, collectors, discovery, context, validation commands |
-| `run_gauntlet()` | `skills/adversarial-spec/scripts/gauntlet/orchestrator.py:205` | export | debate/standalone gauntlet caller | internal phases, persistence, final result |
-| `codex_pretool_combined.main()` | `.claude/hooks/codex_pretool_combined.py:57` | event | Claude Code pre-tool hook | configured safety sub-hooks |
-| `fizzy_payload_guard.main()` | `.claude/hooks/fizzy_payload_guard.py:86` | event | Fizzy MCP pre-tool hook | deny/warn/override logic |
-| `pipeline_continue.main()` | `.claude/hooks/pipeline_continue.py:70` | event | successful pipeline tool result | role/result parsing, system message |
-| `pipeline_idle_retry.main()` | `.claude/hooks/pipeline_idle_retry.py:73` | event | pipeline idle result | backoff, system message, status note |
-| `dispatch_check.main()` | `.claude/hooks/dispatch_check.py:86` | event | agent dispatch/tool event | role/dispatch validation |
-| `pipeline_notifications.main()` | `.claude/hooks/pipeline_notifications.py:392` | event | card completion/review event | event extraction, local/Telegram notification |
+| `debate.main()` | `scripts/debate.py:1623` | cli | direct debate script | gate, session, critique/gauntlet dispatch |
+| `handle_gauntlet()` | `scripts/debate.py:898` | cli | `debate.py gauntlet` | invokes gauntlet/reporting |
+| `gauntlet.cli.main()` | `scripts/gauntlet/cli.py:13` | cli | `python -m gauntlet` | optional pre-gauntlet then gauntlet |
+| `run_gauntlet()` | `scripts/gauntlet/orchestrator.py:205` | export | gauntlet import/CLI | phase 1–7 pipeline |
+| `validation_emission.main()` | `scripts/validation_emission.py:3423` | cli | validation subcommand | calls handler, emits Envelope |
+| `gauntlet_check_cli.main()` | `scripts/gauntlet_check_cli.py:27` | cli | gate invocation | TMR/spine result |
+| `dependency_semantics.main()` | `scripts/dependency_semantics.py:525` | cli | `--plan` invocation | JSON dependency analysis |
+| `usage_router.main()` | `scripts/usage_router.py:145` | cli | optional prompt | headroom route/optional Codex |
+| `telegram_bot.main()` | `scripts/telegram_bot.py:404` | cli | setup/send/poll/notify | Telegram protocol |
+| `synthesis_extract.main()` | `scripts/gauntlet/synthesis_extract.py:119` | cli | direct script | run-log to synthesis input |
+| `migrate-journey-to-log.main()` | `scripts/migrate-journey-to-log.py:81` | cli | direct script | legacy migration |
+| `verification_tier_lint` block | `scripts/verification_tier_lint.py:220` | cli | direct module | fixed-path lint |
+| `fizzy_payload_guard.main()` | `.claude/hooks/fizzy_payload_guard.py:86` | event | PreToolUse | block/allow Fizzy call |
+| `pipeline_notifications.main()` | `.claude/hooks/pipeline_notifications.py:392` | event | PostToolUse | optional notification/dispatch |
+| `session_activity_logger.main()` | `.claude/hooks/session_activity_logger.py:55` | event | hook lifecycle | append session JSONL |
+| skill manifest | `skills/adversarial-spec/SKILL.md:2` | export | skill discovery | routes into session workflow |
 
-## CLI metadata
+## Important exported facades
 
-- `pyproject.toml:48` maps `adversarial-spec` to `adversarial_spec.debate:main`.
-- `pyproject.toml:49` maps `gauntlet-check` to `adversarial_spec.gauntlet_check_cli:main`.
-- `skills/adversarial-spec/scripts/gauntlet/__main__.py:3` delegates module execution to `gauntlet.cli.main`.
+- `gauntlet.run_gauntlet`, `format_gauntlet_report`, leaderboard functions — `scripts/gauntlet/__init__.py:8-13`.
+- `pre_gauntlet.run_pre_gauntlet`, `run_discovery`, `load_config_from_pyproject`, `save_report` — `scripts/pre_gauntlet/__init__.py:12-48`.
+- `execution_planner.load_concerns_for_spec` — `execution_planner/__init__.py:14`.
+- `extractors.extract_spec_affected_files` — `scripts/extractors/__init__.py:7`.
 
-## Main / Startup
+## Packaging note
 
-ENTRY: `debate.main`
-FILE: `skills/adversarial-spec/scripts/debate.py:1623`
-TRIGGER: installed console script or direct execution
-CALLS: `create_parser`, utility handlers, `handle_gauntlet`, `run_critique`, output/session helpers
-NOTES: gate enforcement occurs before expensive model calls; no daemon startup.
-
-ENTRY: `validation_emission.main`
-FILE: `skills/adversarial-spec/scripts/validation_emission.py:3423`
-TRIGGER: direct script/module execution
-CALLS: `build_parser`, `HANDLERS[args.subcommand]`, `_emit`
-NOTES: stdout remains a single JSON envelope even on handled exceptions.
-
-## Event / Hook Handlers
-
-ENTRY: `codex_pretool_combined.main`
-FILE: `.claude/hooks/codex_pretool_combined.py:57`
-EVENT: Claude Code pre-tool JSON event
-SOURCE: Claude Code hook runner
-CALLS: `load_and_run` for each configured safety hook
-
-ENTRY: `pipeline_continue.main`
-FILE: `.claude/hooks/pipeline_continue.py:70`
-EVENT: post-tool pipeline result
-SOURCE: Claude Code hook runner
-CALLS: `_detect_role`, tool-result parsing, stdout system message
-
-ENTRY: `pipeline_notifications.main`
-FILE: `.claude/hooks/pipeline_notifications.py:392`
-EVENT: pipeline completion/review tool result
-SOURCE: Claude Code hook runner
-CALLS: `_extract_event`, `_handle_complete_task`, `_handle_review`, Telegram/local dispatch helpers
+`pyproject.toml:45-46` declares `adversarial_spec.debate:main` and `adversarial_spec.gauntlet_check_cli:main`; the root `adversarial_spec` symlink maps that package to `skills/adversarial-spec/scripts`. `uv run adversarial-spec --help` succeeds, so this is a verified packaging bridge rather than a path-drift finding.

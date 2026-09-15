@@ -6,6 +6,9 @@
 > R1 debate revisions applied 2026-07-08 (Jason: all four): waiver story US-15, expanded personas,
 > global KPIs (codex-style; gemini's ≤15KB context target REJECTED — contradicts no-size-caps amendment),
 > G3 contract-boundary guardrail US-16, user-journey section.
+> **R3-prep changelog (CONS-4, 2026-07-19):** Renumbered every roadmap test
+> reference from legacy milestone IDs to canonical story-numbered IDs in
+> `tests-pseudo.md` and spec §14.
 
 ### Personas
 
@@ -22,7 +25,7 @@
 2. They run the competence harness against their candidate conductor before any live session (M3).
 3. Mid-session, the conductor hits a mechanized gate violation → hard block with the gate id and fix; if genuinely exceptional, Jason grants a logged waiver (M1/US-15).
 4. As debate sections converge they freeze; rounds shrink to the volatile surface (M7); every spec bump mechanically reconciles derived artifacts (M8).
-5. After the Phase 8 sweep, verification cards derive from the TMR registry (M4); the promotion gate holds completion until run evidence lands (M5); Jason walks the ConOps script against the live system and the session closes with durable spine artifacts (M6).
+5. After the Phase 8 sweep, verification cards derive from the TMR registry (M4); Jason walks the ConOps script against the live system (M6) so its evidence hash can enter the signed promotion intent; the promotion gate then holds completion until all run evidence lands (M5) and the session closes with durable spine artifacts. (Order per spec §9 signed-intent contract — CONS-3 R3.)
 
 ### Global KPIs
 
@@ -44,8 +47,9 @@
 ### Non-Goals
 
 - **G3 fizzy-side contract reconciliation** — separate coordinated spec in the fizzy repo; this roadmap only *names* the contract deltas it depends on (see M4/M5 dependencies).
+- **Fizzy authority-capability issuance** (v7 spec sync) — `promotion-prepare-v1`/`promotion-commit-v1`, the creation attestation, and `hardening-rollout-policy-v1` (incl. its one-time `cutoff_at` issuance) are fizzy/operator-side work consumed by this slice, never built in it (spec §8.2/§18; Dependency Graph cross-slice note).
 - **G4 dispatch reliability** — excluded entirely (Jason, alignment gate 2026-07-08). Gets its own session later; the confirmed RequirementsSummary is the scope contract.
-- **mapcodebase/diagnosecodebase refresh** — deferred (Jason 2026-07-05); architecture-impact is assessed against the stale f198887 corpus with that caveat recorded.
+- **mapcodebase/diagnosecodebase refresh** — deferred as slice work (Jason 2026-07-05). Architecture-impact was originally assessed against the stale f198887 corpus; an external regeneration on 2026-07-19 brought the map to `ef18c66` (environmental fact, not slice scope — CONS-3/SCOPE-1 R2), which discharges the staleness caveat for future assessment.
 - **Byte-count targets for phase docs** — explicitly amended out; organization quality is the criterion.
 
 ---
@@ -61,7 +65,7 @@
 - [ ] Exit code distinguishes ready / degraded / broken
 
 **Test Cases:**
-- TC-0.1: Bootstrap on healthy checkout reports ready, exit 0 (stage: nl) [happy-path spine seed]
+- TC-0.0: Bootstrap on healthy checkout reports ready, exit 0 (stage: nl) [happy-path spine seed]
 - TC-0.2: Bootstrap with a missing harness fixture dir names the missing path, nonzero exit (stage: nl)
 
 **Dependencies:** None (lands early, extended as M1/M3/M8 tools appear)
@@ -81,9 +85,9 @@
 - [ ] Each (c) rubric has ≥1 golden fixture
 
 **Test Cases:**
-- TC-1.1: Inventory covers phases 01–09 with no unclassified gate (stage: nl) [happy-path spine seed]
-- TC-1.2: A deliberately-violated mechanized gate blocks with a named error (stage: nl)
-- TC-1.3: A judgment gate's fixture scores a known-bad transcript as fail (stage: nl)
+- TC-1.0: Inventory covers phases 01–09 with no unclassified gate (stage: nl) [happy-path spine seed]
+- TC-2.0: A deliberately-violated mechanized gate blocks with a named error (stage: nl)
+- TC-3.0: A judgment gate's fixture scores a known-bad transcript as fail (stage: nl)
 
 - US-15: As Jason, I want an authorized waiver mechanism for any blocking gate (mechanized gate, promotion gate, ConOps close) — recording authority, justification, and affected evidence — so that exceptional sessions can proceed without re-legalizing the honor system.
 
@@ -93,7 +97,7 @@
 - [ ] Waiver events surface in session close reports (no silent waivers)
 
 **Test Cases** *(US-15 additions)*:
-- TC-15.1: Waived gate proceeds with durable waiver record (stage: nl)
+- TC-15.0: Waived gate proceeds with durable waiver record (stage: nl)
 - TC-15.2: Conductor attempt to bypass without waiver is blocked and logged (stage: nl)
 
 **Dependencies:** None
@@ -109,12 +113,12 @@
 **Success Criteria (Natural Language):**
 - [ ] Every phase has a spine unit whose content is only orders-of-operation + exact commands + gate pointers
 - [ ] Every extracted reference unit is reachable from the spine by explicit pointer (no orphaned content, verified mechanically)
-- [ ] A conductor executing a phase touches only the units its current step names (spot-audited via transcript)
+- [ ] Resolver-mediated context loads match the executing step's named units, proven by per-step context-load-manifests (mechanized; unmediated workspace reads sit outside this evidence boundary and get transcript spot-audit only — spec §6.2 narrowing, TCOV-5 morph)
 - [ ] No content deleted without a decision-log entry (moved ≠ deleted)
 
 **Test Cases:**
-- TC-2.1: Doclint proves spine↔reference pointer closure — no orphans, no dangling pointers (stage: nl) [happy-path spine seed]
-- TC-2.2: A phase execution transcript shows only step-named units loaded (stage: nl)
+- TC-4.0: Doclint proves spine↔reference pointer closure — no orphans, no dangling pointers (stage: nl) [happy-path spine seed]
+- TC-5.0: Resolver-mediated context-load-manifests contain only step-named units (stage: nl)
 
 **Dependencies:** M1 (inventory tells us which prescriptions are load-bearing before we move them)
 
@@ -131,8 +135,8 @@
 - [ ] Sonnet/Opus baseline runs recorded; regression threshold defined
 
 **Test Cases:**
-- TC-3.1: Harness scores a candidate model across all fixtures and emits report (stage: nl) [happy-path spine seed]
-- TC-3.2: A fixture with a known-wrong next-action answer scores as fail (stage: nl)
+- TC-6.0: Harness scores a candidate model across all fixtures and emits report (stage: nl) [happy-path spine seed]
+- TC-6.2: A fixture with a known-wrong next-action answer scores as fail (stage: nl)
 
 **Dependencies:** M1 (rubrics for judgment gates become fixtures), M2 (spine units define the correct next actions)
 
@@ -141,7 +145,7 @@
 ### Milestone 4: System-Spine Verification Phases (G2-F1)
 
 **User Stories:**
-- US-7: As Jason, I want subsystem-verification and system-verification steps after the Phase 8 sweep, with a card set derived mechanically from `tmr-registry.json` (maturity < concrete, or missing `live_or_induced` evidence on critical seams), so that end-to-end seams are exercised before completion.
+- US-7: As Jason, I want subsystem-verification and system-verification steps after the Phase 8 sweep, with a card set derived mechanically from the **Session TMR registry** (at `session-manifest.json.tmr_registry_path`) by the named predicates `select_for_verification(tmr) ≡ critical_seam != false AND NOT is_promotion_ready(tmr)` (spec §8.1/§9 — CANON-1/CANON-3 R2: never paraphrased), so that end-to-end seams are exercised before completion.
 
 **Success Criteria (Natural Language):**
 - [ ] Verification card set is derived by code from the TMR registry — never attested into existence
@@ -149,8 +153,8 @@
 - [ ] Cards carry the seam, the TMR uid, and the required evidence class
 
 **Test Cases:**
-- TC-4.1: Registry with 3 sub-concrete critical-seam TMRs yields exactly 3 verification cards (stage: nl) [happy-path spine seed]
-- TC-4.2: Registry with all-concrete/live TMRs yields an empty verification set and a recorded no-op (stage: nl)
+- TC-7.0: Registry with 3 sub-concrete critical-seam TMRs yields exactly 3 verification cards (stage: nl) [happy-path spine seed]
+- TC-7.2: Registry where every critical-seam TMR satisfies `is_promotion_ready(tmr)` yields an empty verification set and a recorded no-op (stage: nl)
 
 - US-16: As an integration owner, I want every fizzy-side dependency of M4/M5 expressed as a named, versioned contract this slice *consumes* — never implements — so that scope cannot silently leak into the G3 slice.
 
@@ -159,7 +163,7 @@
 - [ ] No task in this slice's execution plan touches the fizzy repo
 
 **Test Cases** *(US-16 additions)*:
-- TC-16.1: Contract-boundary artifact enumerates all fizzy deltas M4/M5 reference; execution-plan lint finds zero fizzy-repo file scopes (stage: nl)
+- TC-16.0: Contract-boundary oracle validates every consumed v3 fizzy binding; execution-plan lint finds zero fizzy-repo file scopes (stage: nl)
 
 **Dependencies:** M1 (gate classification); fizzy-side G3 contract for lanes (named via US-16, not built here)
 
@@ -168,7 +172,7 @@
 ### Milestone 5: Pseudo→Real Promotion Gate (G2-F2)
 
 **User Stories:**
-- US-8: As Jason, I want finalize/complete structurally blocked while critical-seam TMRs hold declared-only (unrun) evidence, so that promotion to run-evidence is a blocking lane, not a follow-up.
+- US-8: As Jason, I want the **final completion transition** structurally blocked while critical-seam TMRs hold declared-only (unrun) evidence, so that promotion to run-evidence is a blocking gate, not a follow-up. (CONS-2 R2 aligned to spec §9 / sol R1 CRIT-3: **finalize validates the registry and creates the verification plan WITHOUT requiring run evidence** — requiring evidence at finalize deadlocks, since the evidence-producing verification work exists only after Phase 8. The promotion gate fires at completion.)
 
 **Success Criteria (Natural Language):**
 - [ ] Gate derives its verdict from `run_evidence` in the TMR registry — owner-written pass/fail prose does not count
@@ -176,9 +180,9 @@
 - [ ] Skip/deferred semantics defined (resolved unknown U2) with named authority to grant them
 
 **Test Cases:**
-- TC-5.1: Session with one declared-only critical-seam TMR cannot advance past finalize; gate names the TMR (stage: nl) [happy-path spine seed]
-- TC-5.2: Same session after run-evidence lands advances cleanly (stage: nl)
-- TC-5.3: Gateway 25-bug-ledger replay is blocked at the gate (stage: nl)
+- TC-8.0: Session with one declared-only critical-seam TMR passes finalize (plan created) but cannot reach `complete`; the completion gate names the TMR (stage: nl) [happy-path spine seed] (CONS-2 R2: gate location = completion, not finalize)
+- TC-8.2: Same session after run-evidence lands advances cleanly (stage: nl)
+- TC-8.3: Gateway 25-bug-ledger replay is blocked at the gate (stage: nl)
 
 **Dependencies:** M4 (verification cards produce the run evidence the gate consumes)
 
@@ -196,10 +200,10 @@
 - [ ] Spine artifacts survive session close and are consumed by the next session's bootstrap
 
 **Test Cases:**
-- TC-6.1: Completed walkthrough writes evidence artifact; session closes (stage: nl) [happy-path spine seed]
-- TC-6.2: Missing walkthrough evidence blocks close with actionable message (stage: nl)
+- TC-9.0: Completed walkthrough writes evidence artifact; session closes (stage: nl) [happy-path spine seed]
+- TC-9.2: Missing walkthrough evidence blocks close with actionable message (stage: nl)
 
-**Dependencies:** M5 (runs after promotion gate passes)
+**Dependencies:** M4 (ConOps evidence is produced BEFORE the M5 completion evaluation; the promotion intent embeds the ConOps evidence hash — spec §9, CONS-3 R3)
 
 ---
 
@@ -215,8 +219,8 @@
 - [ ] Registry persists across checkpoints and sessions
 
 **Test Cases:**
-- TC-7.1: Frozen section absent from round N+1 dispatch payload (stage: nl) [happy-path spine seed]
-- TC-7.2: New concern naming a frozen section reopens exactly that section, with registry event (stage: nl)
+- TC-11.0: Frozen section absent from round N+1 dispatch payload (stage: nl) [happy-path spine seed]
+- TC-11.2: New concern naming a frozen section reopens exactly that section, with registry event (stage: nl)
 
 **Dependencies:** None (debate-engine scoped)
 
@@ -234,9 +238,9 @@
 - [ ] Card-5715 R3 and R7 transcripts, replayed, are both flagged
 
 **Test Cases:**
-- TC-8.1: Spec bump with stale tests-pseudo blocks round dispatch, names the drifted artifact (stage: nl) [happy-path spine seed]
-- TC-8.2: Quorum-AGREE with dirty derived diff is rejected as false convergence (stage: nl)
-- TC-8.3: Card-5715 R3/R7 replay flags both false convergences (stage: nl)
+- TC-13.0: Spec bump with stale tests-pseudo blocks round dispatch, names the drifted artifact (stage: nl) [happy-path spine seed]
+- TC-14.0: Quorum-AGREE with dirty derived diff is rejected as false convergence (stage: nl)
+- TC-14.2: Card-5715 R3/R7 replay flags both false convergences (stage: nl)
 
 **Dependencies:** M7 (node registry supplies the derived-artifact list)
 
@@ -272,6 +276,13 @@
 
 M0 → (extended by M1/M3/M8 tooling)
 M1 → M2 → M3
-M1 → M4 → M5 → M6
+M1 → M4 → M6 → M5
 M7 → M8
 Cross-slice: M4/M5 name fizzy-side (G3) lane/contract deltas — coordinate, don't build.
+Cross-slice (v7 spec sync, R5-guardrail TRACE-1): the fizzy-owned authority
+capabilities the spec consumes — `promotion-prepare-v1` / `promotion-commit-v1`
+(§8.2/§9), the `pipeline_create_session` creation attestation (§8.2/§18), and
+`hardening-rollout-policy-v1` incl. its one-time operator-side `cutoff_at`
+issuance at this slice's finalize (§18) — are EXTERNAL dependencies:
+coordinate with the fizzy spec session, don't build here. Blocking rule:
+absence fails closed per spec §8.2 (`authority-capability-missing`).

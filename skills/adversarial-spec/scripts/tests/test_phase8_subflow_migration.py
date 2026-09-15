@@ -29,9 +29,11 @@ from phase8_subflow_migration import (
     LEGACY_SUBFLOW_PHASE,
     MIGRATION_EVENT,
     SUBFLOW_STEP,
+    JourneyTransitionParseError,
     VerificationPhaseWriteError,
     assert_writable_phase,
     canonical_order_anomalies,
+    load_journey_transitions,
     migrate_session_files,
     normalized_transitions,
 )
@@ -214,6 +216,11 @@ def test_unknown_phase_is_rejected_too() -> None:
         assert_writable_phase("verifying")
 
 
+@pytest.mark.parametrize("phase", ("pre-roadmap", "decomposition", "pre-gauntlet", "reconciliation"))
+def test_valid_v6_fsm_phases_remain_writable(phase: str) -> None:
+    assert_writable_phase(phase)
+
+
 def test_migration_refuses_to_reintroduce_verification(session) -> None:
     """A post-migration session that somehow carries the old phase is an error."""
     _migrate(session, now="2026-07-22T12:00:00Z")
@@ -315,6 +322,77 @@ def test_backwards_transition_is_reported() -> None:
     assert anomalies[0]["kind"] == "regression"
 
 
+def test_mixed_arrow_v6_history_is_accepted_without_hiding_a_phase_skip(tmp_path: Path) -> None:
+    """Regression: pipeline_advance wrote ASCII while manual entries used Unicode."""
+    journey = tmp_path / "mixed.journey.log"
+    events = [
+        ("triage", "requirements", "→"),
+        ("requirements", "pre-roadmap", "->"),
+        ("pre-roadmap", "decomposition", "->"),
+        ("decomposition", "debate", "->"),
+        ("debate", "pre-gauntlet", "->"),
+        ("pre-gauntlet", "gauntlet", "->"),
+        ("gauntlet", "reconciliation", "->"),
+        ("reconciliation", "finalize", "->"),
+        ("finalize", "execution", "→"),
+        ("execution", "implementation", "→"),
+    ]
+    journey.write_text(
+        "\n".join(
+            json.dumps(
+                {
+                    "time": "2026-07-29T00:00:00Z",
+                    "event": f"Phase transition: {source} {arrow} {target}",
+                    "type": "transition",
+                }
+            )
+            for source, target, arrow in events
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    transitions = load_journey_transitions(journey)
+
+    assert transitions == [(source, target) for source, target, _ in events]
+    assert canonical_order_anomalies(transitions) == []
+
+
+def test_unparseable_transition_fails_closed_instead_of_being_dropped(tmp_path: Path) -> None:
+    journey = tmp_path / "bad.journey.log"
+    journey.write_text(
+        json.dumps(
+            {
+                "time": "2026-07-29T00:00:00Z",
+                "event": "Phase transition: requirements => roadmap",
+                "type": "transition",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(JourneyTransitionParseError, match="unparseable"):
+        load_journey_transitions(journey)
+
+
+def test_narrative_transition_milestone_is_not_treated_as_a_phase_pair(tmp_path: Path) -> None:
+    journey = tmp_path / "narrative.journey.log"
+    journey.write_text(
+        json.dumps(
+            {
+                "time": "2026-07-29T00:00:00Z",
+                "event": "D0 gate ACCEPTED; advanced Decomposition -> Debate",
+                "type": "transition",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    assert load_journey_transitions(journey) == []
+
+
 def test_migrated_session_resumes_cleanly(session) -> None:
     """AC-3 end to end: migrate, then read back exactly what resume reads."""
     _migrate(session, now="2026-07-22T12:00:00Z")
@@ -324,11 +402,4 @@ def test_migrated_session_resumes_cleanly(session) -> None:
     assert_writable_phase(detail["current_phase"])
     assert detail["current_phase"] == pointer["current_phase"] == "implementation"
 
-    transitions = []
-    for event in _journey_lines(session["journey"]):
-        if event.get("type") != "transition":
-            continue
-        text = event["event"].removeprefix("Phase transition: ")
-        source, _, target = text.partition(" → ")
-        transitions.append((source.strip(), target.strip()))
-    assert canonical_order_anomalies(transitions) == []
+    assert canonical_order_anomalies(load_journey_transitions(session["journey"])) == []

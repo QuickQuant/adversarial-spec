@@ -31,11 +31,14 @@ we just migrate".
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
+import re
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 
 CANONICAL_PHASES: tuple[str, ...] = (
     "requirements",
@@ -47,6 +50,40 @@ CANONICAL_PHASES: tuple[str, ...] = (
     "execution",
     "implementation",
     "complete",
+)
+
+# Version 6 moves architecture discovery into the D0 decomposition phase.  Its
+# board flow intentionally has no Target-Architecture lane: Phase 4 may leave
+# a skip-mode artifact, but it must not look like a skipped board transition.
+V6_CANONICAL_PHASES: tuple[str, ...] = (
+    "requirements",
+    "roadmap",
+    "decomposition",
+    "debate",
+    "gauntlet",
+    "finalize",
+    "execution",
+    "implementation",
+    "complete",
+)
+
+_V6_SHAPE_PHASES = frozenset({"pre-roadmap", "decomposition"})
+_COMMON_FSM_INTERNAL_LANES: dict[str, str] = {
+    "pre-gauntlet": "gauntlet",
+    "reconciliation": "gauntlet",
+}
+_V6_FSM_INTERNAL_LANES: dict[str, str] = {
+    **_COMMON_FSM_INTERNAL_LANES,
+    "pre-roadmap": "roadmap",
+}
+_WRITABLE_PHASES = frozenset(
+    (*CANONICAL_PHASES, "pre-roadmap", "decomposition", "pre-gauntlet", "reconciliation")
+)
+_TRANSITION_EVENT_RE = re.compile(
+    r"^Phase transition:\s*"
+    r"(?P<source>[a-z][a-z_-]*)\s*"
+    r"(?:→|->)\s*"
+    r"(?P<target>[a-z][a-z_-]*)(?:\b.*)?$"
 )
 
 #: The phase value that never was. Retained as a constant so every consumer
@@ -61,16 +98,6 @@ SUBFLOW_PARENT_PHASE = "implementation"
 #: v9.1 CANON fix: the bound event name. No other spelling is valid.
 MIGRATION_EVENT = "phase8_subflow_migration"
 
-#: Fizzy-FSM lanes that are not skill phases. They belong to the gauntlet macro
-#: phase and must be folded before any canonical-order comparison.
-FSM_INTERNAL_LANES: dict[str, str] = {
-    "pre-gauntlet": "gauntlet",
-    "reconciliation": "gauntlet",
-}
-
-_PHASE_INDEX = {phase: index for index, phase in enumerate(CANONICAL_PHASES)}
-
-
 class VerificationPhaseWriteError(ValueError):
     """Raised when something tries to write `verification` as a phase."""
 
@@ -81,6 +108,16 @@ class VerificationPhaseWriteError(ValueError):
             f"write current_phase={SUBFLOW_PARENT_PHASE!r} with "
             f"current_step={SUBFLOW_STEP!r}"
         )
+
+
+class JourneyTransitionParseError(ValueError):
+    """A structured phase-transition event cannot be safely interpreted.
+
+    Resume validation must fail closed when a record claims the canonical
+    ``Phase transition:`` shape.  Older logs also use ``type: transition`` for
+    narrative gate milestones; those are not phase-order records and are not
+    candidates for this parser.
+    """
 
 
 @dataclass
@@ -101,7 +138,7 @@ def assert_writable_phase(phase: str) -> None:
 
     if phase == LEGACY_SUBFLOW_PHASE:
         raise VerificationPhaseWriteError(phase)
-    if phase not in _PHASE_INDEX:
+    if phase not in _WRITABLE_PHASES:
         raise ValueError(
             f"{phase!r} is not a canonical phase; expected one of "
             + ", ".join(CANONICAL_PHASES)
@@ -121,6 +158,8 @@ def migrate_state_mapping(state: dict[str, Any]) -> tuple[dict[str, Any], bool]:
 
 def normalized_transitions(
     transitions: Iterable[tuple[str, str]],
+    *,
+    pipeline_version: int | None = None,
 ) -> list[tuple[str, str]]:
     """Guarantee 4 -- fold legacy and FSM-internal values onto canonical phases.
 
@@ -129,20 +168,41 @@ def normalized_transitions(
     accepts, rather than a jump to a phase that does not exist.
     """
 
+    raw = list(transitions)
+    v6 = uses_v6_shape(raw, pipeline_version=pipeline_version)
     folded: list[tuple[str, str]] = []
-    for source, target in transitions:
-        folded.append((_fold(source), _fold(target)))
+    for source, target in raw:
+        folded.append((_fold(source, v6=v6), _fold(target, v6=v6)))
     return folded
 
 
-def _fold(phase: str) -> str:
+def uses_v6_shape(
+    transitions: Iterable[tuple[str, str]],
+    *,
+    pipeline_version: int | None = None,
+) -> bool:
+    """Identify a v6 journey without trusting optional stale session metadata."""
+
+    if pipeline_version is not None:
+        return pipeline_version >= 6
+    return any(
+        phase in _V6_SHAPE_PHASES
+        for source, target in transitions
+        for phase in (source, target)
+    )
+
+
+def _fold(phase: str, *, v6: bool) -> str:
     if phase == LEGACY_SUBFLOW_PHASE:
         return SUBFLOW_PARENT_PHASE
-    return FSM_INTERNAL_LANES.get(phase, phase)
+    lanes = _V6_FSM_INTERNAL_LANES if v6 else _COMMON_FSM_INTERNAL_LANES
+    return lanes.get(phase, phase)
 
 
 def canonical_order_anomalies(
     transitions: Sequence[tuple[str, str]],
+    *,
+    pipeline_version: int | None = None,
 ) -> list[dict[str, Any]]:
     """Report skipped or backwards phase transitions.
 
@@ -151,9 +211,18 @@ def canonical_order_anomalies(
     backwards move.
     """
 
+    raw = list(transitions)
+    v6 = uses_v6_shape(raw, pipeline_version=pipeline_version)
+    phase_order = V6_CANONICAL_PHASES if v6 else CANONICAL_PHASES
+    phase_index = {phase: index for index, phase in enumerate(phase_order)}
+
     anomalies: list[dict[str, Any]] = []
-    for source, target in normalized_transitions(transitions):
-        if source not in _PHASE_INDEX or target not in _PHASE_INDEX:
+    for source, target in normalized_transitions(raw, pipeline_version=pipeline_version):
+        # Triage is an additive front door, not a canonical phase.  Only its
+        # normal entrance is exempt; any other jump from triage still reports.
+        if (source, target) == ("triage", "requirements"):
+            continue
+        if source not in phase_index or target not in phase_index:
             anomalies.append(
                 {
                     "kind": "unknown_phase",
@@ -163,7 +232,7 @@ def canonical_order_anomalies(
                 }
             )
             continue
-        start, end = _PHASE_INDEX[source], _PHASE_INDEX[target]
+        start, end = phase_index[source], phase_index[target]
         if end < start:
             anomalies.append(
                 {"kind": "regression", "from": source, "to": target, "missing": []}
@@ -174,10 +243,54 @@ def canonical_order_anomalies(
                     "kind": "skipped_phase",
                     "from": source,
                     "to": target,
-                    "missing": list(CANONICAL_PHASES[start + 1 : end]),
+                    "missing": list(phase_order[start + 1 : end]),
                 }
             )
     return anomalies
+
+
+def parse_transition_event(event: Mapping[str, Any]) -> tuple[str, str] | None:
+    """Extract one transition pair from either supported historical notation.
+
+    Both ``→`` and ``->`` are accepted indefinitely because pipeline v6 wrote
+    the latter.  New writes use the Unicode form, but a history checker must
+    never turn a formatting migration into a false phase-skip incident.
+    """
+
+    if event.get("type") != "transition":
+        return None
+    text = event.get("event")
+    if not isinstance(text, str):
+        raise JourneyTransitionParseError("transition event must contain a string event field")
+    if not text.startswith("Phase transition:"):
+        return None
+    match = _TRANSITION_EVENT_RE.match(text)
+    if match is None:
+        raise JourneyTransitionParseError(f"unparseable transition event: {text!r}")
+    return match.group("source"), match.group("target")
+
+
+def load_journey_transitions(path: Path) -> list[tuple[str, str]]:
+    """Load every transition from a JSONL journey, failing closed on bad data."""
+
+    transitions: list[tuple[str, str]] = []
+    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        if not line.strip():
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise JourneyTransitionParseError(
+                f"invalid JSON in journey {path} line {line_number}"
+            ) from exc
+        if not isinstance(event, dict):
+            raise JourneyTransitionParseError(
+                f"journey {path} line {line_number} must be a JSON object"
+            )
+        transition = parse_transition_event(event)
+        if transition is not None:
+            transitions.append(transition)
+    return transitions
 
 
 def journey_carries_migration_event(path: Path) -> bool:
@@ -287,3 +400,52 @@ def _fsync_dir(directory: Path) -> None:
         os.fsync(fd)
     finally:
         os.close(fd)
+
+
+def _main(argv: Sequence[str] | None = None) -> int:
+    """Expose the canonical journey check without re-implementing its parser."""
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--check-journey",
+        type=Path,
+        metavar="PATH",
+        help="Validate phase-transition order in a JSONL journey log.",
+    )
+    parser.add_argument(
+        "--pipeline-version",
+        type=int,
+        help="Optional explicit pipeline version; inferred from v6-only lanes when omitted.",
+    )
+    args = parser.parse_args(argv)
+    if args.check_journey is None:
+        parser.error("--check-journey is required")
+
+    try:
+        transitions = load_journey_transitions(args.check_journey)
+    except (OSError, JourneyTransitionParseError) as exc:
+        print(json.dumps({"ok": False, "parse_error": str(exc)}), file=sys.stderr)
+        return 2
+
+    anomalies = canonical_order_anomalies(
+        transitions,
+        pipeline_version=args.pipeline_version,
+    )
+    print(
+        json.dumps(
+            {
+                "ok": not anomalies,
+                "mode": "v6"
+                if uses_v6_shape(transitions, pipeline_version=args.pipeline_version)
+                else "legacy",
+                "transitions": transitions,
+                "anomalies": anomalies,
+            },
+            indent=2,
+        )
+    )
+    return 0 if not anomalies else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(_main())

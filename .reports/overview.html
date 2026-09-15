@@ -2,560 +2,109 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=768">
-  <title>adversarial-spec — overview</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Source-backed architecture field guide for adversarial-spec.">
+  <title>adversarial-spec — architecture field guide</title>
   <style>
-    :root {
-      color-scheme: light;
-      --bg: #ece7dc;
-      --paper: #fbf9f3;
-      --paper-2: #f4efe4;
-      --paper-3: #e6ded0;
-      --ink: #201e1a;
-      --muted: #5f5a50;
-      --line: #cfc5b4;
-      --line-strong: #aa9d87;
-      --green: #24613b;
-      --green-soft: #dfeadf;
-      --rust: #8c4b28;
-      --rust-soft: #f1ded3;
-      --gold: #80631f;
-      --gold-soft: #f1e5c6;
-      --red: #8a2e25;
-      --red-soft: #ead3ce;
-      --blue: #24586f;
-      --blue-soft: #d8e8ed;
-      --focus: 0 0 0 3px rgba(36, 97, 59, 0.24);
-      --radius: 8px;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    * { box-sizing: border-box; }
-    html { min-width: 320px; background: var(--bg); color: var(--ink); }
-    body { margin: 0; background: var(--bg); color: var(--ink); line-height: 1.45; }
-    button, textarea { font: inherit; }
-    button { min-height: 2.35rem; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--paper); color: var(--ink); cursor: pointer; padding: 0.48rem 0.76rem; }
-    button:hover { border-color: var(--green); }
-    button:focus-visible, textarea:focus-visible, a:focus-visible { outline: none; box-shadow: var(--focus); }
-    a { color: var(--green); font-weight: 850; text-decoration-thickness: 0.08em; text-underline-offset: 0.18em; }
-    h1, h2, h3, p { margin: 0; }
-    h1 { margin-bottom: 12px; font-size: 2.45rem; line-height: 1.04; letter-spacing: 0; }
-    h2 { font-size: 1.55rem; line-height: 1.16; letter-spacing: 0; }
-    h3 { font-size: 1rem; line-height: 1.22; letter-spacing: 0; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.94em; }
-    .page { max-width: 1160px; margin: 0 auto; padding: 22px; }
-    .topline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line-strong); }
-    .eyebrow { color: var(--muted); font-size: 0.82rem; font-weight: 900; letter-spacing: 0; text-transform: uppercase; }
-    .top-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem; color: var(--muted); font-size: 0.92rem; }
-    header { padding: 20px 0 18px; }
-    .hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) 18rem; gap: 16px; align-items: stretch; }
-    .summary-box { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 1rem; }
-    .summary-box p + p { margin-top: 0.65rem; }
-    .stale-banner { margin-top: 14px; border: 1px solid #c28f87; border-radius: var(--radius); background: var(--red-soft); color: var(--red); padding: 0.9rem 1rem; font-weight: 750; }
-    .clock-card { display: grid; align-content: center; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper-2); padding: 1rem; }
-    .clock-title { margin: 0 0 0.55rem; color: var(--muted); font-size: 0.78rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0; }
-    .clock { margin: 0; white-space: pre; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.94rem; line-height: 1.55; color: var(--ink); }
-    main { display: grid; gap: 0; border-top: 1px solid var(--line-strong); }
-    .report-section, footer { padding: 24px 0; border-bottom: 1px solid var(--line-strong); }
-    .section-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
-    .head-stack { display: grid; gap: 0.45rem; min-width: 0; }
-    .tag-row, .pill-list, .chips { display: flex; flex-wrap: wrap; gap: 0.45rem; min-width: 0; }
-    .section-tag, .chip, .mini-chip { display: inline-flex; align-items: center; max-width: 100%; min-width: 0; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--paper); color: var(--muted); font-weight: 850; white-space: normal; overflow-wrap: anywhere; }
-    .section-tag { min-height: 1.7rem; padding: 0.16rem 0.52rem; font-size: 0.78rem; }
-    .chip { min-height: 1.65rem; padding: 0.18rem 0.52rem; font-size: 0.78rem; }
-    .mini-chip { min-height: 1.45rem; padding: 0.12rem 0.42rem; font-size: 0.72rem; }
-    .green { border-color: #8eb592; background: var(--green-soft); color: var(--green); }
-    .rust { border-color: #c89476; background: var(--rust-soft); color: var(--rust); }
-    .gold { border-color: #c3aa5f; background: var(--gold-soft); color: var(--gold); }
-    .red { border-color: #c28f87; background: var(--red-soft); color: var(--red); }
-    .blue { border-color: #8db2be; background: var(--blue-soft); color: var(--blue); }
-    .warning-chip { border-color: #c3aa5f; background: var(--gold-soft); color: var(--gold); }
-    .muted { color: var(--muted); }
-    .lead { color: var(--ink); font-size: 1.02rem; }
-    .stack { display: grid; gap: 14px; }
-    .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
-    .three-col { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
-    .panel { min-width: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 0.95rem; }
-    .panel h3 { margin-bottom: 0.42rem; }
-    .panel p + p { margin-top: 0.52rem; }
-    .flow { display: flex; align-items: stretch; gap: 0.5rem; overflow-x: auto; padding: 2px 0 6px; }
-    .phase { display: grid; align-content: center; gap: 0.22rem; min-width: 8.7rem; min-height: 4rem; padding: 0.62rem 0.72rem; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--paper); text-align: center; }
-    .phase.done { background: var(--green-soft); border-color: #8eb592; }
-    .phase.current { background: var(--gold-soft); border-color: #c3aa5f; box-shadow: inset 0 0 0 2px rgba(128, 99, 31, 0.16); }
-    .phase.pending { color: var(--muted); background: var(--paper-2); }
-    .phase-mark { font-size: 1.05rem; font-weight: 900; }
-    .phase-name { font-size: 0.86rem; font-weight: 850; overflow-wrap: anywhere; }
-    .arrow { display: flex; align-items: center; justify-content: center; min-width: 1.2rem; color: var(--muted); font-weight: 900; }
-    .compare-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
-    .compare-card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 1rem; }
-    .compare-card h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; margin-bottom: 0.7rem; }
-    .steps { display: flex; flex-wrap: wrap; gap: 0.42rem; margin-top: 0.78rem; }
-    .step-pill { border: 1px solid var(--line); border-radius: 999px; background: var(--paper-2); color: var(--muted); font-size: 0.78rem; font-weight: 850; padding: 0.18rem 0.5rem; overflow-wrap: anywhere; }
-    .problem-map { display: grid; gap: 10px; }
-    .map-row { display: grid; grid-template-columns: minmax(10rem, 0.72fr) auto minmax(13rem, 1fr); gap: 10px; align-items: stretch; }
-    .map-cell { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 0.82rem; min-width: 0; }
-    .map-cell strong { display: block; margin-bottom: 0.28rem; }
-    .map-arrow { display: flex; align-items: center; justify-content: center; color: var(--muted); font-weight: 950; }
-    .component-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-    .component { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 0.82rem; min-width: 0; }
-    .component h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem; }
-    .component p { color: var(--muted); font-size: 0.92rem; }
-    .files { margin-top: 0.45rem; color: var(--ink); font-size: 0.86rem; overflow-wrap: anywhere; }
-    .decision-list { margin-top: 14px; }
-    .concern-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-    .concern { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 0.82rem; min-width: 0; }
-    .concern h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem; }
-    .concern p { color: var(--muted); font-size: 0.92rem; }
-    .tail-list { display: grid; gap: 10px; }
-    .tail-entry { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); padding: 0.95rem; }
-    .tail-meta { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.55rem; }
-    .comment-panel { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
-    .field-label { display: block; margin: 0 0 0.36rem; color: var(--muted); font-size: 0.82rem; font-weight: 850; }
-    textarea { display: block; width: 100%; min-height: 5rem; resize: vertical; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--paper); color: var(--ink); padding: 0.68rem; }
-    .footer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.7rem; margin: 0.8rem 0; }
-    .primary { background: var(--green); border-color: var(--green); color: #fff; font-weight: 850; }
-    .inline-status { min-height: 1.35rem; color: var(--muted); font-size: 0.9rem; font-weight: 850; }
-    .inline-status.ok { color: var(--green); }
-    .inline-status.error { color: var(--red); }
-    #feedback-json { min-height: 14rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 0.84rem; white-space: pre; }
-    .note { color: var(--muted); font-size: 0.9rem; }
-    @media (max-width: 980px) {
-      .hero-grid, .two-col, .three-col, .compare-grid, .component-grid, .concern-grid { grid-template-columns: 1fr; }
-      .map-row { grid-template-columns: 1fr; }
-      .map-arrow { min-height: 1.6rem; transform: rotate(90deg); }
-    }
-    @media (max-width: 720px) {
-      .page { padding: 16px; }
-      h1 { font-size: 2rem; }
-      .phase { min-width: 7.7rem; }
-    }
+    :root{color-scheme:light;--bg:#ece6da;--paper:#fbf8f1;--surface:#fffdf8;--paper2:#f1eadf;--ink:#282621;--muted:#6d675d;--rule:#d5cbbb;--strong:#b9aa95;--green:#24613b;--green-soft:#e4eee2;--rust:#8b3428;--rust-soft:#f3dfd8;--gold:#80621b;--gold-soft:#f3e8c8;--blue:#24586f;--blue-soft:#dbeaf0;--focus:0 0 0 3px rgba(36,97,59,.24);--radius:8px;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    *{box-sizing:border-box}html{min-width:320px;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}body{margin:0;background:var(--bg);line-height:1.5}.page{max-width:1160px;margin:0 auto;padding:24px}.mono,code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9em}a{color:var(--green);font-weight:750;text-decoration-thickness:.08em;text-underline-offset:.18em}a:focus-visible,button:focus-visible,textarea:focus-visible{outline:none;box-shadow:var(--focus)}h1,h2,h3,p{margin:0}h1,h2{text-wrap:balance}p,td,th{text-wrap:pretty}h1,h2{font-family:Iowan Old Style,Baskerville,"Times New Roman",serif;font-weight:400;line-height:1.02}h1{font-size:clamp(2.4rem,5vw,4rem);letter-spacing:-.025em}h2{font-size:1.8rem}h3{font-size:1rem}.eyebrow{color:var(--muted);font:800 .72rem/1.2 ui-monospace,monospace;letter-spacing:.13em;text-transform:uppercase}.topline{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:0 0 14px;border-bottom:1px solid var(--strong)}.top-actions,.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:var(--muted);font-size:.84rem}.chip{display:inline-flex;align-items:center;min-height:26px;border:1px solid var(--strong);border-radius:999px;padding:3px 9px;background:var(--surface);font-size:.76rem;font-weight:800}.chip.green{border-color:#8db392;background:var(--green-soft);color:var(--green)}.chip.rust{border-color:#c99a8e;background:var(--rust-soft);color:var(--rust)}.chip.gold{border-color:#c8ad65;background:var(--gold-soft);color:var(--gold)}.chip.blue{border-color:#91b9c6;background:var(--blue-soft);color:var(--blue)}header{padding:30px 0 24px}.hero{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(17rem,.75fr);gap:20px}.hero-copy{display:grid;align-content:center;gap:12px}.lead{max-width:70ch;font-size:1.08rem}.subtle{color:var(--muted);font-size:.9rem}.status{align-self:stretch;border:1px solid #c39b8f;border-radius:var(--radius);background:var(--rust-soft);padding:16px}.status strong{color:var(--rust);font-size:.76rem;letter-spacing:.1em}.status p{margin-top:8px;color:#673127;font-size:.9rem}.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:20px}.fact{border-top:2px solid var(--strong);padding:10px 4px 0}.fact strong{display:block;font-size:1.6rem;line-height:1;font-variant-numeric:tabular-nums}.fact span{display:block;margin-top:5px;color:var(--muted);font-size:.78rem}.section{padding:30px 0;border-top:1px solid var(--strong)}.section-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:16px}.section-head>div{display:grid;gap:7px}.subtitle{max-width:75ch;color:var(--muted);font-size:.94rem}.panel,.atlas{border:1px solid var(--rule);border-radius:var(--radius);background:var(--surface)}.panel{padding:14px}.table-wrap{overflow-x:auto;border:1px solid var(--rule);border-radius:var(--radius);background:var(--surface)}table{width:100%;min-width:680px;border-collapse:collapse;font-size:.88rem}th,td{padding:10px 12px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top}th{background:var(--paper2);color:var(--muted);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase}tr:last-child td{border-bottom:0}.atlas{padding:12px}.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}button{min-height:40px;border:1px solid var(--strong);border-radius:6px;background:var(--surface);color:var(--ink);padding:.48rem .72rem;font:inherit;cursor:pointer;transition-property:border-color,background-color,transform;transition-duration:160ms}button:hover{border-color:var(--green)}button:active{transform:scale(.96)}.tab{background:var(--paper2);color:var(--muted);font-size:.8rem}.tab[aria-selected="true"]{border-color:var(--rust);background:var(--rust-soft);color:var(--rust)}.tab-panel[hidden]{display:none}.scroll{overflow-x:auto}.tab-panel svg{display:block;min-width:720px;width:100%;height:auto}.caption{display:grid;grid-template-columns:minmax(0,1fr) minmax(16rem,.55fr);gap:16px;margin-top:12px;padding-top:12px;border-top:1px solid var(--rule)}.caption p{margin-top:4px;color:var(--muted);font-size:.86rem}.fallback{margin-top:12px}.fallback summary{cursor:pointer;color:var(--green);font-weight:800}.fallback table{margin-top:8px;min-width:520px}.split{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}.waves{display:grid;grid-template-columns:1.1fr 1fr .9fr;gap:12px;margin-top:14px}.wave{border-top:3px solid var(--strong);padding:12px;background:var(--surface)}.wave:first-child{border-color:var(--rust)}.wave:nth-child(2){border-color:var(--gold)}.wave:nth-child(3){border-color:var(--blue)}.wave h3{margin-bottom:8px}.wave ol{margin:0;padding-left:1.2rem;color:var(--muted);font-size:.87rem}.wave li+li{margin-top:7px}.callout{border-left:3px solid var(--rust);background:var(--rust-soft);padding:12px}.callout p{color:#673127;font-size:.9rem}.feedback{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid var(--rule)}.feedback label{display:grid;gap:5px;color:var(--muted);font-size:.76rem;font-weight:800}textarea{width:100%;min-height:60px;resize:vertical;border:1px solid var(--strong);border-radius:6px;background:var(--paper);color:var(--ink);padding:8px;font:inherit}.history{display:grid;gap:10px}.history article{border:1px solid var(--rule);border-radius:var(--radius);background:var(--surface);padding:12px}.history .chips{margin-bottom:8px}.footer{padding:30px 0}.footer-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(18rem,.55fr);gap:14px}.footer-grid>div:first-child{display:grid;gap:10px;align-content:start}.primary{border-color:var(--green);background:var(--green);color:white;font-weight:800}.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.inline-status{color:var(--muted);font-size:.82rem;font-weight:800}.inline-status.ok{color:var(--green)}.inline-status.error{color:var(--rust)}#feedback-json{min-height:190px;font-size:.8rem;white-space:pre}.quote{color:var(--green);font-weight:800;font-style:italic}@media(max-width:900px){.hero,.split,.waves,.footer-grid,.caption{grid-template-columns:1fr}.facts{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:720px){.page{padding:16px}.feedback{grid-template-columns:1fr}h1{font-size:2.45rem}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
   </style>
 </head>
 <body>
-  <div class="page">
-    <div class="topline" aria-label="Report metadata">
-      <p class="eyebrow">Whole-project overview</p>
-      <div class="top-actions">
-        <a href="recent.html">recent activity</a>
-        <span>git b31f8fd · map f198887</span>
+<div class="page">
+  <div class="topline"><p class="eyebrow">Whole-project architecture field guide</p><div class="top-actions"><a href="recent.html">recent activity</a><span class="mono">map 2433efa · full remap · 2026-07-20</span></div></div>
+  <header id="orientation" data-feedback-section="orientation">
+    <div class="hero"><div class="hero-copy"><p class="eyebrow">adversarial-spec / source-backed map</p><h1>One skill, four load-bearing boundaries.</h1><p class="lead">A Python-backed specification workflow that gates debate, runs a resumable gauntlet, records validation evidence, and keeps host hooks in a separate process plane.</p><p class="subtle">Full mapping completed at <code>2433efa</code>. The current worktree is dirty, so source remains authoritative if it changes after this scan.</p></div><aside class="status" role="note"><strong>CAUTION · FRESHNESS</strong><p>The map is <code>success</code> with freshness <code>caution</code>: the scan includes a dirty worktree, not missing exploration. All five discovery roles returned durable reports; the initial contracts attempt was transparently replaced by a complete broad contract scan.</p><p><a href="/md/adversarial-spec/.architecture/manifest.json">manifest</a> · <a href="/md/adversarial-spec/.architecture/concerns.md">fix-first concerns</a></p></aside></div>
+    <div class="facts"><div class="fact"><strong>11</strong><span>mapped components</span></div><div class="fact"><strong>9</strong><span>documented flows</span></div><div class="fact"><strong>8</strong><span>verified contracts</span></div><div class="fact"><strong>11</strong><span>actionable concerns</span></div></div>
+    <div class="panel" style="margin-top:16px"><h3>What needs attention now <span class="chip gold">⚠ changing during post-fable-hardening-skill, in progress (v9.1 accepted 2026-07-21 → Phase 7 execution: Phase 8 verification subflow migration, TMR keystone fields, gauntlet/guardrail doc fixes)</span></h3><div class="table-wrap" style="margin-top:10px"><table><tbody><tr><th>Correctness gate</th><td><span class="chip rust">CON-001 · error</span> <del>Final Boss catches an exception and returns a <code>PASS</code>-shaped verdict. An unavailable review can look approved.</del> <ins>Fixed (2026-07-20): Final Boss now uses the shared policy-routed <code>select_eval_model()</code> (codex, then gemini CLI, else hard error — never an ambient-key Anthropic/Opus route); an operational failure returns <code>REFINE</code> with a retry-required concern, never <code>PASS</code>.</ins></td></tr><tr><th>Lifecycle gate</th><td><span class="chip rust">CON-002 · error</span> Canonical order omits required verification even though Phase 8/9 require it before close.<ins> Fix decided (2026-07-21, spec-final v9.1): 09-verification demotes to a named Phase 8 verification subflow (tracked via <code>current_step</code>/<code>implementation_subflow</code>, never a separate <code>current_phase=verification</code>); canonical transition stays implementation → complete. Migration event + doc move are Phase 7 execution work, not yet landed in source.</ins></td></tr><tr><th>Shared state</th><td><span class="chip rust">CON-003 · error</span> Same-spec gauntlet runs can overwrite raw-response, cluster, or dedup sidecars.</td></tr><tr><th>Baseline</th><td><span class="chip green">913 passed</span> Current project tests pass with 3 existing collection warnings. No source changes were made by this map.</td></tr></tbody></table></div></div>
+    <div class="feedback"><label>Comment on orientation<textarea data-comment-block="orientation" placeholder="What is missing or misleading?"></textarea></label><label>Feedback on how this section was built<textarea data-meta-block="orientation" placeholder="Evidence, layout, or freshness feedback"></textarea></label></div>
+  </header>
+  <main>
+    <section class="section" id="atlas" data-feedback-section="atlas">
+      <div class="section-head"><div><p class="eyebrow">01 · architecture atlas</p><h2>Four views, one evidence boundary</h2><p class="subtitle">Select a view to change the question, not the facts. Each answers a concrete architecture question and keeps a compact text fallback.</p></div><span class="chip green">source-backed · 2433efa</span> <span class="chip gold">⚠ changing during post-fable-hardening-skill, in progress (v9.1 accepted 2026-07-21 → Phase 7 execution: Phase 8 verification subflow migration, TMR keystone fields, gauntlet/guardrail doc fixes)</span></div>
+      <div class="atlas"><div class="tabs" role="tablist" aria-label="Architecture atlas"><button class="tab" role="tab" aria-selected="true" aria-controls="atlas-context" id="tab-context" data-tab="atlas-context">System context</button><button class="tab" role="tab" aria-selected="false" aria-controls="atlas-runtime" id="tab-runtime" data-tab="atlas-runtime" tabindex="-1">Runtime path</button><button class="tab" role="tab" aria-selected="false" aria-controls="atlas-contracts" id="tab-contracts" data-tab="atlas-contracts" tabindex="-1">Contracts</button><button class="tab" role="tab" aria-selected="false" aria-controls="atlas-hooks" id="tab-hooks" data-tab="atlas-hooks" tabindex="-1">Hook ownership</button></div>
+        <div class="tab-panel" id="atlas-context" role="tabpanel" aria-labelledby="tab-context" tabindex="0"><div class="scroll"><svg viewBox="0 0 1080 332" role="img" aria-labelledby="context-title context-desc"><title id="context-title">System context</title><desc id="context-desc">Input enters debate, gauntlet uses providers and creates artifacts, validation and TMR close proof, and hooks remain separate.</desc><defs><marker id="a1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0L8 3L0 6Z" fill="#6d675d"/></marker><marker id="r1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0L8 3L0 6Z" fill="#8b3428"/></marker><marker id="b1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0L8 3L0 6Z" fill="#24586f"/></marker></defs><rect width="1080" height="332" fill="#fbf8f1"/><rect x="192" y="36" width="704" height="124" rx="8" fill="#282621" fill-opacity=".025" stroke="#282621" stroke-opacity=".12"/><rect x="192" y="196" width="704" height="96" rx="8" fill="#282621" fill-opacity=".025" stroke="#282621" stroke-opacity=".12"/><rect x="208" y="40" width="88" height="16" rx="2" fill="#fbf8f1"/><text x="252" y="52" text-anchor="middle" font-size="8" fill="#6d675d" font-family="ui-monospace,monospace" letter-spacing="1">RUNTIME</text><rect x="208" y="200" width="160" height="16" rx="2" fill="#fbf8f1"/><text x="288" y="212" text-anchor="middle" font-size="8" fill="#6d675d" font-family="ui-monospace,monospace" letter-spacing="1">EVIDENCE + STATE</text><!-- arrows --><line x1="152" y1="108" x2="224" y2="108" stroke="#6d675d" stroke-width="1.2" marker-end="url(#a1)"/><line x1="400" y1="108" x2="456" y2="108" stroke="#8b3428" stroke-width="1.2" marker-end="url(#r1)"/><line x1="632" y1="108" x2="688" y2="108" stroke="#24586f" stroke-width="1.2" marker-end="url(#b1)"/><line x1="544" y1="144" x2="544" y2="232" stroke="#6d675d" stroke-width="1.2" marker-end="url(#a1)"/><line x1="776" y1="144" x2="776" y2="232" stroke="#6d675d" stroke-width="1.2" marker-end="url(#a1)"/><!-- nodes --><g font-family="Inter,Arial,sans-serif"><rect x="32" y="84" width="120" height="48" rx="6" fill="#dbeaf0" stroke="#24586f"/><text x="92" y="105" text-anchor="middle" font-size="12" font-weight="600">Spec / session</text><text x="92" y="121" text-anchor="middle" font-size="8" fill="#24586f" font-family="ui-monospace,monospace">stdin · JSON</text><rect x="224" y="84" width="176" height="48" rx="6" fill="#fffdf8" stroke="#8b3428"/><text x="312" y="105" text-anchor="middle" font-size="12" font-weight="600">Debate + session</text><text x="312" y="121" text-anchor="middle" font-size="8" fill="#6d675d" font-family="ui-monospace,monospace">gate · resume · fanout</text><rect x="456" y="84" width="176" height="48" rx="6" fill="#f3dfd8" stroke="#8b3428"/><text x="544" y="105" text-anchor="middle" font-size="12" font-weight="600">Gauntlet</text><text x="544" y="121" text-anchor="middle" font-size="8" fill="#8b3428" font-family="ui-monospace,monospace">seven phases</text><rect x="688" y="84" width="176" height="48" rx="6" fill="#fffdf8" stroke="#b9aa95"/><text x="776" y="105" text-anchor="middle" font-size="12" font-weight="600">Model providers</text><text x="776" y="121" text-anchor="middle" font-size="8" fill="#6d675d" font-family="ui-monospace,monospace">CLI · LiteLLM</text><rect x="456" y="232" width="176" height="48" rx="6" fill="#fffdf8" stroke="#b9aa95"/><text x="544" y="253" text-anchor="middle" font-size="12" font-weight="600">Validation + TMR</text><text x="544" y="269" text-anchor="middle" font-size="8" fill="#6d675d" font-family="ui-monospace,monospace">ledger · spine · proof</text><rect x="688" y="232" width="176" height="48" rx="6" fill="#e4eee2" stroke="#24613b"/><text x="776" y="253" text-anchor="middle" font-size="12" font-weight="600">Artifacts + locks</text><text x="776" y="269" text-anchor="middle" font-size="8" fill="#24613b" font-family="ui-monospace,monospace">hash · checkpoint</text></g><line x1="32" y1="308" x2="1048" y2="308" stroke="#d5cbbb"/><text x="32" y="324" font-size="8" fill="#6d675d" font-family="ui-monospace,monospace">HOOK PLANE: separate stdin/stdout process boundary; notification and activity records are side effects, not proof of a transition.</text></svg></div><div class="caption"><div><strong>Question answered</strong><p>Where do runtime, evidence, providers, and durable state meet?</p></div><div><strong>Why it matters</strong><p>It prevents treating hook side effects as runtime ownership or artifact state as a single global transaction.</p></div></div><details class="fallback"><summary>Text fallback</summary><div class="table-wrap"><table><thead><tr><th>Source</th><th>Destination</th><th>Contract</th></tr></thead><tbody><tr><td>Spec/session</td><td>Debate</td><td>CLI + resumable SessionState</td></tr><tr><td>Gauntlet</td><td>Providers</td><td>normalized response/content usage</td></tr><tr><td>Gauntlet</td><td>Artifacts</td><td>hash-bound checkpoint envelope</td></tr><tr><td>Validation/TMR</td><td>Close workflow</td><td>typed stdout and registry evidence</td></tr></tbody></table></div></details></div>
+        <div class="tab-panel" id="atlas-runtime" role="tabpanel" aria-labelledby="tab-runtime" tabindex="0" hidden><div class="scroll"><svg viewBox="0 0 1080 296" role="img" aria-label="Gauntlet runtime path"><defs><marker id="a2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0L8 3L0 6Z" fill="#6d675d"/></marker><marker id="r2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0L8 3L0 6Z" fill="#8b3428"/></marker></defs><rect width="1080" height="296" fill="#fbf8f1"/><!-- arrows --><line x1="152" y1="112" x2="176" y2="112" stroke="#6d675d" stroke-width="1.2" marker-end="url(#a2)"/><line x1="304" y1="112" x2="328" y2="112" stroke="#6d675d" stroke-width="1.2" marker-end="url(#a2)"/><line x1="456" y1="112" x2="480" y2="112" stroke="#6d675d" stroke-width="1.2" marker-end="url(#a2)"/><line x1="608" y1="112" x2="632" y2="112" stroke="#6d675d" stroke-width="1.2" marker-end="url(#a2)"/><line x1="760" y1="112" x2="784" y2="112" stroke="#8b3428" stroke-width="1.2" marker-end="url(#r2)"/><line x1="912" y1="112" x2="936" y2="112" stroke="#6d675d" stroke-width="1.2" marker-end="url(#a2)"/><g font-family="Inter,Arial,sans-serif"><rect x="24" y="88" width="128" height="48" rx="6" fill="#f1eadf" stroke="#b9aa95"/><text x="88" y="109" text-anchor="middle" font-size="12" font-weight="600">Entry</text><text x="88" y="125" text-anchor="middle" font-size="8" fill="#6d675d" font-family="ui-monospace,monospace">CLI / debate</text><rect x="176" y="88" width="128" height="48" rx="6" fill="#fffdf8" stroke="#b9aa95"/><text x="240" y="109" text-anchor="middle" font-size="12" font-weight="600">Attacks</text><text x="240" y="125" text-anchor="middle" font-size="8" fill="#6d675d" font-family="ui-monospace,monospace">Concern[]</text><rect x="328" y="88" width="128" height="48" rx="6" fill="#fffdf8" stroke="#b9aa95"/><text x="392" y="109" text-anchor="middle" font-size="12" font-weight="600">Filter + cluster</text><text x="392" y="125" text-anchor="middle" font-size="8" fill="#6d675d" font-family="ui-monospace,monospace">phase 2–3</text><rect x="480" y="88" width="128" height="48" rx="6" fill="#fffdf8" stroke="#b9aa95"/><text x="544" y="109" text-anchor="middle" font-size="12" font-weight="600">Evaluate</text><text x="544" y="125" text-anchor="middle" font-size="8" fill="#6d675d" font-family="ui-monospace,monospace">phase 4</text><rect x="632" y="88" width="128" height="48" rx="6" fill="#fffdf8" stroke="#b9aa95"/><text x="696" y="109" text-anchor="middle" font-size="12" font-weight="600">Decide</text><text x="696" y="125" text-anchor="middle" font-size="8" fill="#6d675d" font-family="ui-monospace,monospace">phase 5–6</text><rect x="784" y="88" width="128" height="48" rx="6" fill="#f3dfd8" stroke="#8b3428"/><text x="848" y="109" text-anchor="middle" font-size="12" font-weight="600">Final Boss</text><text x="848" y="125" text-anchor="middle" font-size="8" fill="#8b3428" font-family="ui-monospace,monospace">optional phase 7</text><rect x="936" y="88" width="120" height="48" rx="6" fill="#e4eee2" stroke="#24613b"/><text x="996" y="109" text-anchor="middle" font-size="12" font-weight="600">Run saved</text><text x="996" y="125" text-anchor="middle" font-size="8" fill="#24613b" font-family="ui-monospace,monospace">manifest + artifacts</text></g><rect x="752" y="184" width="224" height="56" rx="6" fill="#f3dfd8" stroke="#8b3428"/><text x="768" y="204" font-size="8" fill="#8b3428" font-family="ui-monospace,monospace" letter-spacing="1">FOCAL RISK · CON-001</text><text x="768" y="224" font-size="12" fill="#282621" font-weight="600">Exception fallback currently returns PASS</text><path d="M848 136 V160 Q848 168 840 168 H808 Q800 168 800 176 V184" fill="none" stroke="#8b3428" stroke-width="1.2" marker-end="url(#r2)"/></svg></div><div class="caption"><div><strong>Question answered</strong><p>How does a spec become a gauntlet result?</p></div><div><strong>Why it matters</strong><p>The phase sequence is resumable, but several sidecars are not isolated per run.</p></div></div><details class="fallback"><summary>Text fallback</summary><div class="table-wrap"><table><thead><tr><th>Stage</th><th>Durable output</th><th>Failure note</th></tr></thead><tbody><tr><td>Attacks through adjudication</td><td>phase checkpoints and metrics</td><td>operational failures vary by phase</td></tr><tr><td>Final Boss</td><td>final result / checkpoint</td><td><del>exception currently becomes PASS-shaped</del> <ins>(2026-07-20) exception returns REFINE + a retry-required concern, never PASS</ins></td></tr><tr><td>Sidecars</td><td>raw responses, cluster, dedup stats</td><td>same-spec concurrent write risk</td></tr></tbody></table></div></details></div>
+        <div class="tab-panel" id="atlas-contracts" role="tabpanel" aria-labelledby="tab-contracts" tabindex="0" hidden><div class="scroll"><svg viewBox="0 0 1080 300" role="img" aria-label="Boundary contracts"><defs><marker id="a3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0L8 3L0 6Z" fill="#6d675d"/></marker><marker id="b3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0L8 3L0 6Z" fill="#24586f"/></marker></defs><rect width="1080" height="300" fill="#fbf8f1"/><!-- arrows --><line x1="256" y1="100" x2="344" y2="100" stroke="#6d675d" stroke-width="1.2" marker-end="url(#a3)"/><line x1="536" y1="100" x2="624" y2="100" stroke="#6d675d" stroke-width="1.2" marker-end="url(#a3)"/><line x1="816" y1="100" x2="904" y2="100" stroke="#24586f" stroke-width="1.2" marker-end="url(#b3)"/><line x1="440" y1="140" x2="440" y2="212" stroke="#6d675d" stroke-width="1.2" marker-end="url(#a3)"/><line x1="720" y1="140" x2="720" y2="212" stroke="#6d675d" stroke-width="1.2" marker-end="url(#a3)"/><g font-family="Inter,Arial,sans-serif"><rect x="64" y="76" width="192" height="48" rx="6" fill="#dbeaf0" stroke="#24586f"/><text x="160" y="97" text-anchor="middle" font-size="12" font-weight="600">Provider response</text><text x="160" y="113" text-anchor="middle" font-size="8" fill="#24586f" font-family="ui-monospace,monospace">choices · usage</text><rect x="344" y="76" width="192" height="48" rx="6" fill="#fffdf8" stroke="#b9aa95"/><text x="440" y="97" text-anchor="middle" font-size="12" font-weight="600">Model normalization</text><text x="440" y="113" text-anchor="middle" font-size="8" fill="#6d675d" font-family="ui-monospace,monospace">text + token tuple</text><rect x="624" y="76" width="192" height="48" rx="6" fill="#fffdf8" stroke="#b9aa95"/><text x="720" y="97" text-anchor="middle" font-size="12" font-weight="600">Gauntlet checkpoint</text><text x="720" y="113" text-anchor="middle" font-size="8" fill="#6d675d" font-family="ui-monospace,monospace">_meta + data</text><rect x="904" y="76" width="128" height="48" rx="6" fill="#e4eee2" stroke="#24613b"/><text x="968" y="97" text-anchor="middle" font-size="12" font-weight="600">Resume</text><text x="968" y="113" text-anchor="middle" font-size="8" fill="#24613b" font-family="ui-monospace,monospace">hash checks</text><rect x="344" y="212" width="192" height="48" rx="6" fill="#fffdf8" stroke="#b9aa95"/><text x="440" y="233" text-anchor="middle" font-size="12" font-weight="600">Validation Envelope</text><text x="440" y="249" text-anchor="middle" font-size="8" fill="#6d675d" font-family="ui-monospace,monospace">status · code · issues · data</text><rect x="624" y="212" width="192" height="48" rx="6" fill="#fffdf8" stroke="#b9aa95"/><text x="720" y="233" text-anchor="middle" font-size="12" font-weight="600">TMR registry</text><text x="720" y="249" text-anchor="middle" font-size="8" fill="#6d675d" font-family="ui-monospace,monospace">unique tmr_uid · spine</text></g></svg></div><div class="caption"><div><strong>Question answered</strong><p>Which data shapes cross process, provider, or durable-file boundaries?</p></div><div><strong>Why it matters</strong><p>Eight contracts explicitly name field ownership, absence semantics, and the consuming adapter.</p></div></div><details class="fallback"><summary>Text fallback</summary><div class="table-wrap"><table><thead><tr><th>Boundary</th><th>Authority</th><th>Key fields</th></tr></thead><tbody><tr><td>Checkpoint envelope</td><td>persistence loader</td><td>_meta, hashes, data_hash, data</td></tr><tr><td>Validation stdout</td><td>CLI Envelope</td><td>status, code, issues, data</td></tr><tr><td>TMR registry</td><td>strict parser</td><td>records, tmr_uid, status/spine</td></tr></tbody></table></div></details></div>
+        <div class="tab-panel" id="atlas-hooks" role="tabpanel" aria-labelledby="tab-hooks" tabindex="0" hidden><div class="scroll"><svg viewBox="0 0 1080 300" role="img" aria-label="Hook authority"><defs><marker id="a4" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0L8 3L0 6Z" fill="#6d675d"/></marker><marker id="r4" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><path d="M0 0L8 3L0 6Z" fill="#8b3428"/></marker></defs><rect width="1080" height="300" fill="#fbf8f1"/><!-- arrows --><line x1="200" y1="96" x2="280" y2="96" stroke="#8b3428" stroke-width="1.2" marker-end="url(#r4)"/><line x1="472" y1="96" x2="552" y2="96" stroke="#8b3428" stroke-width="1.2" marker-end="url(#r4)"/><line x1="200" y1="220" x2="280" y2="220" stroke="#6d675d" stroke-width="1.2" marker-end="url(#a4)"/><line x1="472" y1="220" x2="552" y2="220" stroke="#6d675d" stroke-width="1.2" marker-end="url(#a4)"/><path d="M744 220 H808 Q816 220 816 212 V144 Q816 136 824 136 H888" fill="none" stroke="#6d675d" stroke-width="1.2" stroke-dasharray="5 4" marker-end="url(#a4)"/><g font-family="Inter,Arial,sans-serif"><rect x="48" y="72" width="152" height="48" rx="6" fill="#dbeaf0" stroke="#24586f"/><text x="124" y="93" text-anchor="middle" font-size="12" font-weight="600">PreTool event</text><text x="124" y="109" text-anchor="middle" font-size="8" fill="#24586f" font-family="ui-monospace,monospace">stdin JSON</text><rect x="280" y="72" width="192" height="48" rx="6" fill="#f3dfd8" stroke="#8b3428"/><text x="376" y="93" text-anchor="middle" font-size="12" font-weight="600">Fizzy payload guard</text><text x="376" y="109" text-anchor="middle" font-size="8" fill="#8b3428" font-family="ui-monospace,monospace">metadata rules</text><rect x="552" y="72" width="192" height="48" rx="6" fill="#f3dfd8" stroke="#8b3428"/><text x="648" y="93" text-anchor="middle" font-size="12" font-weight="600">Allow / block</text><text x="648" y="109" text-anchor="middle" font-size="8" fill="#8b3428" font-family="ui-monospace,monospace">stdout decision</text><rect x="48" y="196" width="152" height="48" rx="6" fill="#dbeaf0" stroke="#24586f"/><text x="124" y="217" text-anchor="middle" font-size="12" font-weight="600">PostTool event</text><text x="124" y="233" text-anchor="middle" font-size="8" fill="#24586f" font-family="ui-monospace,monospace">lifecycle JSON</text><rect x="280" y="196" width="192" height="48" rx="6" fill="#fffdf8" stroke="#b9aa95"/><text x="376" y="217" text-anchor="middle" font-size="12" font-weight="600">Notify + activity</text><text x="376" y="233" text-anchor="middle" font-size="8" fill="#6d675d" font-family="ui-monospace,monospace">filter + append</text><rect x="552" y="196" width="192" height="48" rx="6" fill="#fffdf8" stroke="#b9aa95"/><text x="648" y="217" text-anchor="middle" font-size="12" font-weight="600">JSONL side effects</text><text x="648" y="233" text-anchor="middle" font-size="8" fill="#6d675d" font-family="ui-monospace,monospace">activity · dispatch</text><rect x="888" y="112" width="144" height="48" rx="6" fill="#f1eadf" stroke="#b9aa95" stroke-dasharray="5 4"/><text x="960" y="133" text-anchor="middle" font-size="12" font-weight="600">Live board state</text><text x="960" y="149" text-anchor="middle" font-size="8" fill="#6d675d" font-family="ui-monospace,monospace">query to verify</text></g></svg></div><div class="caption"><div><strong>Question answered</strong><p>Which hook output has authority, and which outputs are merely observed?</p></div><div><strong>Why it matters</strong><p>The guard decision is load-bearing; notifications cannot prove acknowledgement or a board transition.</p></div></div><details class="fallback"><summary>Text fallback</summary><div class="table-wrap"><table><thead><tr><th>Surface</th><th>Authority</th><th>Durability</th></tr></thead><tbody><tr><td>Fizzy guard stdout</td><td>host decision protocol</td><td>transient decision + accepted override log</td></tr><tr><td>Notifications/activity</td><td>none for board state</td><td>append-only JSONL side effects</td></tr><tr><td>Board query</td><td>live board</td><td>authoritative operational check</td></tr></tbody></table></div></details></div>
       </div>
-    </div>
+      <div class="feedback"><label>Comment on atlas<textarea data-comment-block="atlas" placeholder="Which view needs more or less detail?"></textarea></label><label>Feedback on how this section was built<textarea data-meta-block="atlas" placeholder="Diagram, labels, or evidence feedback"></textarea></label></div>
+    </section>
+    <section class="section" id="boundaries" data-feedback-section="boundaries"><div class="section-head"><div><p class="eyebrow">02 · boundary register</p><h2>Eight contracts make absence explicit</h2><p class="subtitle">The complete field tables name producer, adapter, consumer, persistence, authority, and absent semantics.</p></div><a class="chip blue" href="/md/adversarial-spec/.architecture/structured/cross-references.md">field-level source</a></div><div class="table-wrap"><table><thead><tr><th>Boundary</th><th>Producer → consumer</th><th>Contract focus</th><th>Absent / limitation</th></tr></thead><tbody><tr><td>Gauntlet checkpoint</td><td>orchestrator → persistence → resume</td><td><code>_meta</code>, schema/spec/config/data hashes, <code>data</code></td><td>mismatch rejects resume; same-spec sidecars remain a separate race</td></tr><tr><td>Model normalization</td><td>LiteLLM → dispatch → phases</td><td>content and token usage tuple</td><td>missing usage normalizes to zero</td></tr><tr><td>Debate resume</td><td>debate → SessionState → debate</td><td>spec, round, doc type, models</td><td>concurrent writers are not serialized</td></tr><tr><td>TMR spine gate</td><td>compiler → parser → gate</td><td>records, unique <code>tmr_uid</code>, spine state</td><td>schema error blocks the gate</td></tr><tr><td>Validation stdout</td><td>CLI → documented execution workflow</td><td>status, code, issues, data</td><td>consumer is documented; no in-repo parser</td></tr><tr><td>Hook guard</td><td>host → guard → host</td><td>tool name, input, override, decision</td><td>host interpretation is external</td></tr><tr><td>Telegram</td><td>client → Bot API → poll</td><td>chat/text/parse mode, update filter</td><td>server validation is external</td></tr><tr><td>Gauntlet check CLI</td><td>gate CLI → debate subprocess parent</td><td>outcome, findings, override eligibility</td><td>parent preserves process exit</td></tr></tbody></table></div><div class="feedback"><label>Comment on boundaries<textarea data-comment-block="boundaries" placeholder="Which contract needs another field or consumer?"></textarea></label><label>Feedback on how this section was built<textarea data-meta-block="boundaries" placeholder="Boundary coverage or absent-semantics feedback"></textarea></label></div></section>
+    <section class="section" id="components" data-feedback-section="components"><div class="section-head"><div><p class="eyebrow">03 · component register</p><h2>Eleven components, one reading rule</h2><p class="subtitle">Match a change to the component sheet first; open flows only when it crosses an ownership boundary.</p></div><a class="chip green" href="/md/adversarial-spec/.architecture/INDEX.md">component index</a> <span class="chip gold">⚠ changing during post-fable-hardening-skill, in progress (v9.1 accepted 2026-07-21 → Phase 7 execution: Phase 8 verification subflow migration, TMR keystone fields, gauntlet/guardrail doc fixes)</span></div><div class="table-wrap"><table><thead><tr><th>Component</th><th>Status</th><th>Primary responsibility</th><th>Read first</th></tr></thead><tbody><tr><td>Adversaries + prompts</td><td>active</td><td>persona identity, prompt shape, stable concern IDs</td><td><code>adversaries-prompts.md</code></td></tr><tr><td>Debate + session</td><td>active</td><td>gates, resume, model fanout, critique persistence</td><td><code>debate-session.md</code></td></tr><tr><td>Models + providers</td><td>active</td><td>provider selection, adapters, retry, token accounting</td><td><code>models-providers.md</code></td></tr><tr><td>Gauntlet + persistence <ins>⚠ changing (post-fable-hardening-skill, in progress)</ins></td><td>active</td><td>phase sequence, verdict, checkpoint/artifact integrity<ins> — process-failure fixes for 05-gauntlet/07-execution docs (register-vs-<code>tested_by</code> enforcement, CONS budget limbo, unpersisted patch sets) routed to pipeline intake, not yet landed</ins></td><td><code>gauntlet-*.md</code></td></tr><tr><td>Pre-gauntlet</td><td>active</td><td>bounded repository grounding and alignment</td><td><code>pre-gauntlet.md</code></td></tr><tr><td>Validation + TMR <ins>⚠ changing (post-fable-hardening-skill, in progress)</ins></td><td>active</td><td>evidence ledger, strict registry, close proof<ins> — 3 new TMR keystone fields (<code>obligation_revision</code>, <code>obligation_policy_version</code>, <code>tmr_record_hash</code>) land keystone-first in Phase 7</ins></td><td><code>validation-emission.md</code>, <code>tmr-provenance.md</code></td></tr><tr><td>Harness hooks</td><td>active</td><td>host policy guard and non-authoritative telemetry</td><td><code>harness-hooks.md</code></td></tr><tr><td>Plan analysis</td><td>partial</td><td>dependency semantics and concern parsing</td><td><code>plan-analysis.md</code></td></tr><tr><td>Telegram + usage</td><td>secondary</td><td>human feedback transport and optional route selection</td><td><code>telegram-usage.md</code></td></tr></tbody></table></div><div class="feedback"><label>Comment on components<textarea data-comment-block="components" placeholder="Which ownership boundary is unclear?"></textarea></label><label>Feedback on how this section was built<textarea data-meta-block="components" placeholder="Register, status, or naming feedback"></textarea></label></div></section>
+    <section class="section" id="risks" data-feedback-section="risks"><div class="section-head"><div><p class="eyebrow">04 · risks and action</p><h2>Fix the gate before the refactor</h2><p class="subtitle">Each concern names a mechanism, source anchor, and narrow next action. The full prioritized plan stays in <a href="/md/adversarial-spec/.architecture/action-plan.md">action-plan.md</a>.</p></div><span class="chip rust">three errors first</span> <span class="chip gold">⚠ changing during post-fable-hardening-skill, in progress (v9.1 accepted 2026-07-21 → Phase 7 execution: Phase 8 verification subflow migration, TMR keystone fields, gauntlet/guardrail doc fixes)</span></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Mechanism</th><th>Next action</th></tr></thead><tbody><tr><td><span class="chip rust">CON-001</span></td><td><del>Final Boss exception returns <code>FinalBossVerdict.PASS</code>.</del> <ins>Fixed (2026-07-20): Final Boss exception returns <code>FinalBossVerdict.REFINE</code> with a retry-required concern; retired-Opus fallback route removed.</ins></td><td>Add a failed/blocked outcome and refuse promotion on it. <ins>(done — see fix note; 23/23 regression tests)</ins></td></tr><tr><td><span class="chip rust">CON-002</span></td><td>Canonical journey order omits required verification.<ins> Decided (v9.1, 2026-07-21): Phase 8 subflow, not a new phase.</ins></td><td>Publish one order including verification; regression-test implementation → verification → complete. <ins>(decision made — implementation lands Phase 7)</ins></td></tr><tr><td><span class="chip rust">CON-003</span></td><td>Raw responses, cluster reports, and dedup stats share direct same-spec writes.</td><td>Use run isolation or locked merge semantics; test two concurrent runs.</td></tr><tr><td><span class="chip gold">CON-004 / 007</span></td><td>Session state has no single-writer guarantee and silently hides corrupt records.</td><td>Serialize/reject competing writes and report skipped session paths.</td></tr><tr><td><span class="chip gold">CON-005 / 006</span></td><td>Hook role resolver and gauntlet timeout defaults drift by surface.</td><td>Centralize precedence; share or explicitly document deadline policy.</td></tr><tr><td><span class="chip blue">CON-008–011</span></td><td>Stale prose, duplicated model transport, path bootstraps, and Python 3.10 TOML fallback.</td><td>Address after gate/persistence semantics are explicit.</td></tr></tbody></table></div><div class="waves"><div class="wave"><h3>Wave 1 · correctness</h3><ol><li>Make Final Boss failure non-success.</li><li>Include verification in lifecycle order. <ins>(decided: Phase 8 subflow, v9.1, 2026-07-21 — not yet implemented)</ins></li><li>Isolate or merge gauntlet sidecars.</li><li>Declare session writer ownership.</li></ol></div><div class="wave"><h3>Wave 2 · policy drift</h3><ol><li>Unify timeout policy.</li><li>Centralize hook role resolution.</li><li>Correct active-path comments and fallback labels.</li></ol></div><div class="wave"><h3>Wave 3 · coupling</h3><ol><li>Share model transport adapters.</li><li>Reduce source-layout bootstraps.</li><li>Make Python 3.10 TOML behavior explicit.</li></ol></div></div><div class="callout" style="margin-top:14px"><p><strong>Verification debt is explicit, not hidden:</strong> Telegram server validation and hook-host decision interpretation are outside repository source; validation stdout consumption is documented rather than programmatically parsed. See <code>VER-001</code> through <code>VER-003</code>.</p></div><div class="feedback"><label>Comment on risks<textarea data-comment-block="risks" placeholder="Which concern should move or be split?"></textarea></label><label>Feedback on how this section was built<textarea data-meta-block="risks" placeholder="Diagnosis or action-plan feedback"></textarea></label></div></section>
+    <section class="section" id="provenance" data-feedback-section="provenance"><div class="section-head"><div><p class="eyebrow">05 · reading paths and provenance</p><h2>Find the next answer without rediscovering the system</h2><p class="subtitle">This is the curated field guide. The architecture corpus is canonical; recent activity remains the turnover surface.</p></div><a class="chip blue" href="recent.html">recent activity</a></div><div class="split"><div class="panel"><h3>Read by task</h3><div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>Question</th><th>Path</th></tr></thead><tbody><tr><td>What does it do?</td><td><a href="/md/adversarial-spec/.architecture/primer.md">primer</a> → <a href="/md/adversarial-spec/.architecture/overview.md">overview</a></td></tr><tr><td>What could break?</td><td><a href="/md/adversarial-spec/.architecture/concerns.md">concerns</a> → <a href="/md/adversarial-spec/.architecture/action-plan.md">action plan</a></td></tr><tr><td>What crosses a boundary?</td><td><a href="/md/adversarial-spec/.architecture/structured/cross-references.md">cross references</a> → component sheet</td></tr><tr><td>What happened recently?</td><td><a href="recent.html">recent activity</a> → checkpoint/decision artifacts</td></tr></tbody></table></div></div><div class="panel"><h3>Map provenance</h3><p class="subtle">Full remap at <code>2433efa</code>, backed by five durable discovery reports plus a replacement broad contract scan that verified all eight boundary tables.</p><p class="subtle" style="margin-top:10px">Validation: both console help entries ran successfully; <code>uv run pytest</code> passed 913 tests with 3 warnings. No secrets are included in the corpus.</p></div></div><div class="history" style="margin-top:14px"><article><div class="chips"><span class="chip green">2026-07-20</span><span class="chip mono">2433efa</span><span class="chip mono">full map regenerated</span></div><p>The previous partial corpus was replaced with a full source-backed map: 11 components, 9 flows, 8 contract tables, six hazards, two repeated-pattern analyses, eight findings, and eleven concerns. A root symlink check corrected a false packaging-drift diagnosis; both installed console entrypoints resolve successfully.</p></article><article><div class="chips"><span class="chip green">2026-07-20</span><span class="chip mono">2433efa</span><span class="chip gold">gauntlet gate cleared</span></div><p>Session <code>adv-spec-202607060132-post-fable-hardening-skill</code>: the Pre-Gauntlet gate cleared after a verified codex mapcodebase re-run (fresh at <code>2433efa</code>, distance 0, 913 tests) plus an operator-authorized gate-recovery patch correcting a dirty-worktree→caution vocabulary misuse (process-failure note filed); card 5857 advanced to the Gauntlet lane. The gauntlet was then sized with 6 personas (AUDT/ARCH/BURN/PARA/PEDA/FLOW) × codex + agy-gemini attack models, and CON-001 was fixed inline: the retired <code>claude-opus-4-7</code> route was removed from eval selection and Final Boss, and a Final Boss transport failure now returns <code>REFINE</code> with an operational-failure concern instead of <code>PASS</code> (23/23 tests). See <a href="/md/adversarial-spec/.adversarial-spec/checkpoints/checkpoint-202607202124-gauntlet-gate-cleared-sized-con001-fixed.md">checkpoint-202607202124-gauntlet-gate-cleared-sized-con001-fixed.md</a>.</p></article><article><div class="chips"><span class="chip green">2026-07-21</span><span class="chip mono">2433efa</span><span class="chip gold">finalize v9.0 — awaiting review</span></div><p>Session <code>adv-spec-202607060132-post-fable-hardening-skill</code>: <code>spec-final.md</code> finalized at v9.0 after the full guardrail pass went green (SCOPE clean, TRACE 17/17 stories, CONS 1 fix, CANON 5 fixes for the canonical <code>authorization_set_hash</code> formula, TCOV 8+1 fixes adding 5 new test cases); <code>tests-spec.md</code> was promoted to 128 test cases with 17/17 story coverage (11 TMR-keystone schema-gap carries noted). All 15 PSF fold obligations were discharged (13 folded directly, 2 with notes: PSF-7 two-layer idempotency + G3 leaf deferral, PSF-13 the canonical formula). A Playwright-verified narrative explainer was built and sent to Jason on Telegram (<a href="spec-final-narrative.html">spec-final-narrative.html</a>). <strong>Next action:</strong> the session is waiting at the operator review gate — Jason must accept, request changes, or run another review cycle on v9.0. See <a href="/md/adversarial-spec/.adversarial-spec/checkpoints/checkpoint-202607211005-finalize-complete-v9-awaiting-operator-review.md">checkpoint-202607211005-finalize-complete-v9-awaiting-operator-review.md</a>.</p></article><article><div class="chips"><span class="chip green">2026-07-21</span><span class="chip mono">2433efa (uncommitted)</span><span class="chip gold">v9.1 accepted — Phase 7 entry</span></div><p>Session <code>adv-spec-202607060132-post-fable-hardening-skill</code>: Jason reviewed spec-final.md v9.0 and requested changes (2 blockers, 2 high, 1 medium, 1 open question); six surgical change-sets landed as an in-place v9.1 revision — discriminated <code>fact_binding_state</code> authorization facts, the target-architecture package flipped <strong>consumable</strong> with final fingerprint <code>7fa0ae7a…</code>, a Phase 8 verification subflow decision plus <code>phase8_subflow_migration</code> event and migration rule (resolves CON-002's design question — not yet implemented in source), split prepare/commit recovery, an identity/manifest rebind (9 stories/17 spines/128 test cases), and <code>MAX_PHASE_REGRESSION_POINTS=10</code> approved as initial policy. A scoped CONS/CANON/TCOV guardrail rerun over just the touched seams found and fixed 3 residuals and opened a new deferral family (DF-20, 20 total). Jason accepted v9.1; the long-blocked <code>mark_gauntlet_complete</code> card gate was discharged (fizzy model-registry lag fixed), and card 5857 walked through to Completed-Unmapped. The session is now in <strong>Phase 7 (execution planning)</strong>, deliberately opening in a fresh context. All work above is <strong>uncommitted</strong> in the working tree (git HEAD unchanged at <code>2433efa</code>). See <a href="/md/adversarial-spec/.adversarial-spec/checkpoints/checkpoint-202607211515-v9-1-accepted-phase7-entry.md">checkpoint-202607211515-v9-1-accepted-phase7-entry.md</a>.</p></article></div><div class="feedback"><label>Comment on reading paths<textarea data-comment-block="provenance" placeholder="What should the next worker find faster?"></textarea></label><label>Feedback on how this section was built<textarea data-meta-block="provenance" placeholder="Provenance or navigation feedback"></textarea></label></div></section>
+  </main>
+  <footer class="footer" id="feedback" data-feedback-section="feedback"><div class="footer-grid"><div><p class="eyebrow">report-feedback/1</p><h2>Leave a comment, not a mystery</h2><p class="subtle">Comment-only feedback remains <code>answers: []</code>; section comments and build feedback are separate lanes. Copy works offline; submit requires the reports server.</p><div class="actions"><button class="primary" type="button" id="copy-feedback">Copy JSON</button><button type="button" id="submit-feedback">Submit feedback</button><span class="inline-status" id="feedback-status" aria-live="polite"></span></div></div><div><label class="eyebrow" for="feedback-json">Encoded payload</label><textarea id="feedback-json" readonly aria-live="polite"></textarea></div></div></footer>
+</div>
+<script type="text/plain" data-superseded="true">
+(()=>{const project="adversarial-spec",generatedAt="2026-07-20T15:43:30-05:00",out=document.getElementById("feedback-json"),status=document.getElementById("feedback-status"),store=(()=>{try{return localStorage}catch{return null}})(),key=`overview-feedback-draft/1/${project}/${generatedAt}`;const payload=()=>({schema:"report-feedback/1",project,report:"overview",report_generated_at:generatedAt,answers:[],comments:[...document.querySelectorAll("textarea[data-comment-block]")].filter(x=>x.value.trim()).map(x=>({block:x.dataset.commentBlock,comment:x.value.trim()})),meta:[...document.querySelectorAll("textarea[data-meta-block]")].filter(x=>x.value.trim()).map(x=>({block:x.dataset.metaBlock,comment:x.value.trim()}))});const refresh=()=>out.value=JSON.stringify(payload(),null,2),cache=()=>{try{const p=payload();if(p.comments.length||p.meta.length)store?.setItem(key,JSON.stringify(p));else store?.removeItem(key)}catch{}};const restore=()=>{try{const p=JSON.parse(store?.getItem(key)||"null");if(!p)return;for(const [sel,prop,list] of [["textarea[data-comment-block]","commentBlock",p.comments||[]],["textarea[data-meta-block]","metaBlock",p.meta||[]]]){const m=new Map(list.map(x=>[x.block,x.comment]));document.querySelectorAll(sel).forEach(x=>{if(m.has(x.dataset[prop]))x.value=m.get(x.dataset[prop])})}}catch{}};const say=(m,c="")=>{status.textContent=m;status.className=`inline-status ${c}`};const tabs=[...document.querySelectorAll("[role=tab]"],select=t=>{tabs.forEach(x=>{const on=x===t;x.setAttribute("aria-selected",String(on));x.tabIndex=on?0:-1;document.getElementById(x.getAttribute("aria-controls")).hidden=!on});t.focus()};tabs.forEach((t,i)=>{t.addEventListener("click",()=>select(t));t.addEventListener("keydown",e=>{if(!["ArrowRight","ArrowLeft","Home","End"].includes(e.key))return;e.preventDefault();select(tabs[e.key==="Home"?0:e.key==="End"?tabs.length-1:(i+(e.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length])})});document.addEventListener("input",()=>{refresh();cache()});document.getElementById("copy-feedback").addEventListener("click",async()=>{refresh();try{await navigator.clipboard.writeText(out.value);say("copied","ok")}catch{out.focus();out.select();say("select and copy")}});document.getElementById("submit-feedback").addEventListener("click",async()=>{refresh();say("submitting");try{const r=await fetch(`/feedback/${encodeURIComponent(project)}?wake=0`,{method:"POST",headers:{"content-type":"application/json"},body:out.value});if(!r.ok)throw Error();store?.removeItem(key);say("submitted","ok")}catch{say("submit failed","error")}});restore();refresh()})();
+</script>
+<script>
+(() => {
+  const project = "adversarial-spec";
+  const generatedAt = "2026-07-20T15:43:30-05:00";
+  const output = document.getElementById("feedback-json");
+  const status = document.getElementById("feedback-status");
+  const storage = (() => { try { return window.localStorage; } catch { return null; } })();
+  const draftKey = `overview-feedback-draft/1/${project}/${generatedAt}`;
 
-    <header>
-      <h1>adversarial-spec overview</h1>
-      <div class="hero-grid">
-        <div class="summary-box">
-          <p class="lead">A long-lived step-back page for architecture-decision gates. It explains what the program is, how debate differs from gauntlet review, what is actively changing, and which architectural risks should stay visible.</p>
-          <p class="muted">Current program: <code>post-fable-hardening-skill</code> is in the debate phase now. It covers G1 post-Fable operability, G2 system-spine verification, and G5 debate efficiency; G3 lives in the Fizzy task-system slice, and G4 is deferred outside this active skill slice.</p>
-        </div>
-        <aside class="clock-card" aria-label="Report clock">
-          <p class="clock-title">Clock</p>
-          <pre class="clock">generated  <span id="clock-generated">2026-07-08 11:29 CDT</span>
-now        <span id="clock-now">loading</span>
-age        <span id="clock-age">loading</span></pre>
-        </aside>
-      </div>
-      <div class="stale-banner" role="note">Architecture corpus is CAUTION-stale — generated 2026-06-11 at commit f198887, now 50 commits behind b31f8fd; the TMR/F-prime/validation-emission wave is unmapped; refresh deliberately deferred (Jason 2026-07-05). Narrative claims below derive from that corpus and may trail HEAD. Plainly: TMR is the test-maturity evidence registry, F-prime is the freshness gate, and validation-emission is the validation-card output path.</div>
-    </header>
-
-    <main>
-      <section class="report-section" id="narrative-what" data-block-id="narrative-what">
-        <div class="section-head">
-          <div class="head-stack">
-            <h2>What It Is</h2>
-            <div class="tag-row">
-              <span class="section-tag">Claude Code skill</span>
-              <span class="section-tag">multi-model debate</span>
-              <span class="section-tag">Fizzy board coordination</span>
-            </div>
-          </div>
-        </div>
-        <div class="stack">
-          <p class="lead"><code>adversarial-spec</code> is a Claude Code skill for refining specs through multiple language models. It takes a product spec, sends it to critics, reconciles their objections, and moves the work through the project pipeline until the spec is ready for execution and implementation.</p>
-          <div class="flow" aria-label="8-phase pipeline flow">
-            <div class="phase done"><span class="phase-mark">✓</span><span class="phase-name">requirements</span></div>
-            <span class="arrow" aria-hidden="true">→</span>
-            <div class="phase done"><span class="phase-mark">✓</span><span class="phase-name">roadmap</span></div>
-            <span class="arrow" aria-hidden="true">→</span>
-            <div class="phase current"><span class="phase-mark">◉</span><span class="phase-name">debate</span></div>
-            <span class="arrow" aria-hidden="true">→</span>
-            <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">target-architecture</span></div>
-            <span class="arrow" aria-hidden="true">→</span>
-            <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">gauntlet</span></div>
-            <span class="arrow" aria-hidden="true">→</span>
-            <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">finalize</span></div>
-            <span class="arrow" aria-hidden="true">→</span>
-            <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">execution</span></div>
-            <span class="arrow" aria-hidden="true">→</span>
-            <div class="phase pending"><span class="phase-mark">○</span><span class="phase-name">implementation</span></div>
-          </div>
-          <div class="two-col">
-            <div class="panel">
-              <h3>Coordination Plane</h3>
-              <p class="muted">Work moves on a Fizzy board, which is the pipeline task board. Hooks inject dispatch messages, keep workers moving after card completion, and log activity without importing the skill code.</p>
-            </div>
-            <div class="panel">
-              <h3>Current In-Flight Spec</h3>
-              <p class="muted"><code>post-fable-hardening-skill</code> is in Debate. Requirements passed with the G1-F2 amendment: phase docs split into exact task-sized units, not arbitrary byte caps. Roadmap is complete: 9 milestones and 17 user stories.</p>
-              <div class="chips"><span class="chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span></div>
-            </div>
-          </div>
-        </div>
-        <div class="comment-panel">
-          <label class="field-label" for="comment-narrative-what">Comment on what it is</label>
-          <textarea id="comment-narrative-what" data-block="narrative-what" placeholder="Feedback for this block"></textarea>
-        </div>
-      </section>
-
-      <section class="report-section" id="narrative-how" data-block-id="narrative-how">
-        <div class="section-head">
-          <div class="head-stack">
-            <h2>How It Works</h2>
-            <div class="tag-row"><span class="section-tag">debate vs gauntlet</span><span class="section-tag">single command-line invocation</span></div>
-          </div>
-        </div>
-        <div class="stack">
-          <div class="compare-grid" aria-label="Debate and gauntlet comparison">
-            <article class="compare-card">
-              <h3><span>📣 Debate</span><span class="chip blue">collaborative Opponents</span></h3>
-              <p class="muted">Debate uses collaborating critic models, called Opponents, to improve a draft over numbered rounds. The goal is convergence: objections are answered, accepted, or turned into revisions.</p>
-              <div class="steps" aria-label="Debate steps">
-                <span class="step-pill">draft</span><span class="step-pill">opponent critique</span><span class="step-pill">reconcile</span><span class="step-pill">round checkpoint</span><span class="step-pill">convergence check</span>
-              </div>
-              <div class="chips"><span class="chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span></div>
-            </article>
-            <article class="compare-card">
-              <h3><span>⚔ Gauntlet</span><span class="chip rust">hostile Adversary personas</span></h3>
-              <p class="muted">Gauntlet is a later stress test. Named Adversaries attack the spec, evaluators sort the attacks, and the output is Concerns: specific risks that must be accepted, dismissed, acknowledged, or deferred.</p>
-              <div class="steps" aria-label="Gauntlet internal steps">
-                <span class="step-pill">1 attack</span><span class="step-pill">2 synthesize</span><span class="step-pill">3 filter</span><span class="step-pill">3.5 cluster</span><span class="step-pill">4 evaluate</span><span class="step-pill">5 rebut</span><span class="step-pill">6 adjudicate</span><span class="step-pill">7 final boss</span>
-              </div>
-            </article>
-          </div>
-          <div class="three-col">
-            <div class="panel">
-              <h3>Model Calls</h3>
-              <p class="muted">The models layer routes API-backed calls through LiteLLM and subscription models through command-line subprocesses. A preflight ping catches bad model names and broken auth before long critique runs.</p>
-            </div>
-            <div class="panel">
-              <h3>Checkpointing</h3>
-              <p class="muted">Debate sessions and gauntlet phases write restartable checkpoints. Gauntlet checkpoints use FileLock-guarded integrity envelopes, so resume can reject mismatched or corrupted state.</p>
-            </div>
-            <div class="panel">
-              <h3>Gate Enforcement</h3>
-              <p class="muted">The command line enforces pipeline-card and test-staleness gates before dispatch. The current hardening spec is expanding this pattern so fewer gates depend on conductor memory.</p>
-              <div class="chips"><span class="chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span></div>
-            </div>
-          </div>
-        </div>
-        <div class="comment-panel">
-          <label class="field-label" for="comment-narrative-how">Comment on how it works</label>
-          <textarea id="comment-narrative-how" data-block="narrative-how" placeholder="Feedback for this block"></textarea>
-        </div>
-      </section>
-
-      <section class="report-section" id="narrative-why" data-block-id="narrative-why">
-        <div class="section-head">
-          <div class="head-stack">
-            <h2>Why This Wave Exists</h2>
-            <div class="tag-row"><span class="section-tag">G1 · G2 · G5 active</span><span class="section-tag">G3 Fizzy slice</span><span class="section-tag">G4 later</span></div>
-          </div>
-        </div>
-        <div class="problem-map" aria-label="Problem to goal mapping">
-          <div class="map-row">
-            <div class="map-cell"><strong>Seams passed locally, failed end-to-end</strong><span class="muted">Component tests went green while full operator-to-system paths still broke.</span></div>
-            <div class="map-arrow" aria-hidden="true">→</div>
-            <div class="map-cell"><strong>G2 system spine</strong><span class="muted">Add subsystem/system verification phases, a pseudo→real evidence promotion gate, and a ConOps walkthrough before close.</span><div class="chips"><span class="mini-chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span></div></div>
-          </div>
-          <div class="map-row">
-            <div class="map-cell"><strong>Gates attested instead of derived</strong><span class="muted">Some checks relied on a worker saying evidence existed rather than deriving it from artifacts.</span></div>
-            <div class="map-arrow" aria-hidden="true">→</div>
-            <div class="map-cell"><strong>G3 contract reconciliation</strong><span class="muted">Fizzy-side contract work lives in a separate slice; this overview marks it as outside the active skill-side debate.</span></div>
-          </div>
-          <div class="map-row">
-            <div class="map-cell"><strong>Debate re-litigated settled points</strong><span class="muted">Card 5715 took 12 rounds, had two false convergences, and let derived artifacts drift.</span></div>
-            <div class="map-arrow" aria-hidden="true">→</div>
-            <div class="map-cell"><strong>G5 freeze and reconcile</strong><span class="muted">Track settled debate nodes, exclude frozen sections from routine critique, and mechanically reconcile derived artifacts before more rounds.</span><div class="chips"><span class="mini-chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span></div></div>
-          </div>
-          <div class="map-row">
-            <div class="map-cell"><strong>Dispatch was fragile</strong><span class="muted">Timeouts, quota deaths, stale model names, triple LiteLLM pathways, and divergent command surfaces all produced friction.</span></div>
-            <div class="map-arrow" aria-hidden="true">→</div>
-            <div class="map-cell"><strong>G4 dispatch reliability</strong><span class="muted">The July goals name the work, but the current checkpoint excludes G4 from this skill-side spec and leaves it for a later session.</span></div>
-          </div>
-          <div class="map-row">
-            <div class="map-cell"><strong>Honor-system gates and oversized phase docs</strong><span class="muted">Phase instructions assumed a frontier conductor could remember large rule sets and enforce every gate.</span></div>
-            <div class="map-arrow" aria-hidden="true">→</div>
-            <div class="map-cell"><strong>G1 post-Fable operability</strong><span class="muted">Inventory every MUST/gate, mechanize what can be checked, give judgment gates fixtures, split phase docs into exact-use units, and add a conductor competence harness.</span><div class="chips"><span class="mini-chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span></div></div>
-          </div>
-        </div>
-        <div class="comment-panel">
-          <label class="field-label" for="comment-narrative-why">Comment on why/current program</label>
-          <textarea id="comment-narrative-why" data-block="narrative-why" placeholder="Feedback for this block"></textarea>
-        </div>
-      </section>
-
-      <section class="report-section" id="components" data-block-id="components">
-        <div class="section-head">
-          <div class="head-stack">
-            <h2>Components</h2>
-            <div class="tag-row"><span class="section-tag">12 live components from architecture index</span><span class="section-tag">retired modules noted</span></div>
-          </div>
-        </div>
-        <div class="component-grid" aria-label="Component grid">
-          <article class="component"><h3>Debate Engine <span class="mini-chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span></h3><p>Command-line router for critique, gates, preflight, debate rounds, and consensus checks.</p><p class="files"><code>debate.py</code></p></article>
-          <article class="component"><h3>Gauntlet Pipeline</h3><p>Seven-step adversarial stress test that generates, filters, evaluates, rebuts, and adjudicates Concerns.</p><p class="files"><code>gauntlet/orchestrator.py</code>, <code>gauntlet/core_types.py</code>, <code>gauntlet/batch_tiering.py</code>, <code>gauntlet/clustering.py</code></p></article>
-          <article class="component"><h3>Models</h3><p>Shared language-model call layer, including API calls, command-line model subprocesses, and preflight.</p><p class="files"><code>models.py</code></p></article>
-          <article class="component"><h3>Token Tracking</h3><p>Thread-safe token and cost accounting singleton used across parallel model calls.</p><p class="files"><code>token_tracking.py</code></p></article>
-          <article class="component"><h3>Providers</h3><p>Model configuration, cost table, Bedrock routing, and command-line availability checks.</p><p class="files"><code>providers.py</code></p></article>
-          <article class="component"><h3>Adversaries</h3><p>Frozen persona registry, reusable adversary templates, and deterministic Concern IDs.</p><p class="files"><code>adversaries.py</code></p></article>
-          <article class="component"><h3>Prompts</h3><p>Prompt templates for debate and gauntlet-specific prompt wording.</p><p class="files"><code>prompts.py</code>, <code>gauntlet/prompts.py</code></p></article>
-          <article class="component"><h3>Emission Toolchain <span class="mini-chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span></h3><p>Plan emission and self-checks for Fizzy v3 contracts; validation-card emission is the next pattern match.</p><p class="files"><code>mini_spec_emission.py</code></p></article>
-          <article class="component"><h3>Gauntlet Persistence</h3><p>FileLock plus integrity-hashed checkpoint envelopes for gauntlet resume safety.</p><p class="files"><code>gauntlet/persistence.py</code></p></article>
-          <article class="component"><h3>Harness Hooks <span class="mini-chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span></h3><p>Pipeline coordination hooks for dispatch injection, forced continuation, idle retry, notifications, and activity logging.</p><p class="files"><code>.claude/hooks/*.py</code></p></article>
-          <article class="component"><h3>Pre-Gauntlet</h3><p>Collector for git and system context before a gauntlet run.</p><p class="files"><code>pre_gauntlet/orchestrator.py</code></p></article>
-          <article class="component"><h3>Session</h3><p>Persistence for multi-round debate state and resume continuity.</p><p class="files"><code>session.py</code></p></article>
-        </div>
-        <div class="decision-list pill-list" aria-label="Architecture decisions">
-          <span class="chip green">Single-invocation CLI; continuity via checkpoints, not daemons.</span>
-          <span class="chip green">Deterministic code over LLM subagents for clustering, tiering, and extraction.</span>
-          <span class="chip green">FileLock plus integrity-hashed envelopes for gauntlet state; resume validates everything.</span>
-          <span class="chip green">Gates enforced in code: pipeline-card, test staleness, Phase-1 quality, and preflight.</span>
-          <span class="chip green">Hooks are the coordination plane and never import skill code.</span>
-        </div>
-        <p class="muted" style="margin-top: 14px;">Retired June 2026: MCP Tasks, the old task-server path, plus <code>task_manager.py</code>, <code>scope.py</code>, and <code>gauntlet_monolith.py</code>. The deprecated execution-planner remainder is concern parsing only and is not counted in this live component grid.</p>
-        <div class="comment-panel">
-          <label class="field-label" for="comment-components">Comment on components</label>
-          <textarea id="comment-components" data-block="components" placeholder="Feedback for this block"></textarea>
-        </div>
-      </section>
-
-      <section class="report-section" id="concerns" data-block-id="concerns">
-        <div class="section-head">
-          <div class="head-stack">
-            <h2>Top Concerns</h2>
-            <div class="tag-row"><span class="section-tag">from 2026-06-11 architecture rollup</span><span class="section-tag">fix-first summary</span></div>
-          </div>
-        </div>
-        <div class="concern-grid" aria-label="Concern summary grid">
-          <article class="concern"><h3><span class="chip rust">CON-001</span> One model-call wrapper</h3><p>Three LiteLLM call paths carry different defaults. A single low-level wrapper would remove silent drift.</p></article>
-          <article class="concern"><h3><span class="chip rust">CON-002</span> Token tracking still leaks upward</h3><p>The extraction landed, but gauntlet phases still import the global tracker. Model dispatch should own accounting.</p></article>
-          <article class="concern"><h3><span class="chip rust">CON-009</span> Prompt module shadowing</h3><p><code>prompts.py</code> name collision can load the wrong module in standalone paths; packaging or renaming should remove the trap.</p></article>
-          <article class="concern"><h3><span class="chip gold">CON-003</span> Oversized gauntlet orchestrator</h3><p><code>run_gauntlet()</code> mixes phase flow, checkpoints, manifests, medals, and stats. A phase table would narrow blast radius.</p></article>
-          <article class="concern"><h3><span class="chip gold">CON-007</span> Divergent command surfaces</h3><p><code>debate.py</code> and <code>gauntlet/cli.py</code> expose different flag names and timeout defaults for the same backend.</p></article>
-          <article class="concern"><h3><span class="chip gold">CON-008</span> Dispatch race</h3><p>Same-role workers share a baseline file and can miss conductor updates. Baselines need per-worker or per-Codex-session identity.</p></article>
-          <article class="concern"><h3><span class="chip blue">CON-004</span> Remaining dead code</h3><p>Most deleted shims are gone, but a focused cleanup should remove the remaining deprecated commands and stale remnants.</p></article>
-          <article class="concern"><h3><span class="chip blue">CON-005</span> Inline late-phase prompts</h3><p>Gauntlet phases 5 and 7 still carry inline prompt text instead of centralizing it with the gauntlet prompt templates.</p></article>
-          <article class="concern"><h3><span class="chip blue">CON-006</span> <code>sys.path</code> packaging debt</h3><p>Several scripts patch import paths directly. Proper package config and relative imports would remove fragile startup behavior.</p></article>
-        </div>
-        <div class="chips" style="margin-top: 14px;"><span class="chip warning-chip">⚠ changing during post-fable-hardening-skill, in progress</span><span class="chip">G4 dispatch-reliability concern set is not part of the current skill-slice debate.</span></div>
-        <div class="comment-panel">
-          <label class="field-label" for="comment-concerns">Comment on concerns</label>
-          <textarea id="comment-concerns" data-block="concerns" placeholder="Feedback for this block"></textarea>
-        </div>
-      </section>
-
-      <section class="report-section" id="tail" data-block-id="tail">
-        <div class="section-head">
-          <div class="head-stack">
-            <h2>Appended Tail</h2>
-            <div class="tag-row"><span class="section-tag">newest last</span><span class="section-tag">seed entry</span></div>
-          </div>
-        </div>
-        <div class="tail-list" aria-label="Appended overview tail">
-          <article class="tail-entry">
-            <div class="tail-meta">
-              <span class="chip green">2026-07-08</span>
-              <span class="chip">session 3ba11a17-79e7-4c2b-afa4-6d13b2e22e94</span>
-              <span class="chip">checkpoint-202607081610-roadmap-complete-debate-entered.md</span>
-              <span class="chip">git b31f8fd</span>
-            </div>
-            <p>Requirements gate passed with G1-F2 amendment (discrete phase-doc units, no size caps). Roadmap completed: 9 milestones / 17 user stories through one debate round; card 5857 in Debate lane.</p>
-          </article>
-          <article class="tail-entry">
-            <div class="tail-meta">
-              <span class="chip green">2026-07-09</span>
-              <span class="chip">session adv-spec-202607060132-post-fable-hardening-skill</span>
-              <span class="chip">git 35738f0</span>
-            </div>
-            <p>Phase 8 skill doc (<code>08-implementation.md</code>) now requires a plain-language <code>HUMAN BRIEF:</code> on any card blocked with <code>blocker_type: "human_decision"</code>, plus same-session operator surfacing via the recent.html decision widget or telegram-send — a block that only lives in board state is a silent stall. Deferred questions must be re-blocked as <code>external_dependency</code>, never left sitting on <code>human_decision</code>. Doc-only rule (no runtime code change); origin card 5966.</p>
-          </article>
-        </div>
-        <div class="comment-panel">
-          <label class="field-label" for="comment-tail">Comment on appended tail</label>
-          <textarea id="comment-tail" data-block="tail" placeholder="Feedback for this block"></textarea>
-        </div>
-      </section>
-    </main>
-
-    <footer>
-      <div class="section-head">
-        <h2>Feedback JSON</h2>
-        <span class="section-tag">report-feedback/1</span>
-      </div>
-      <label class="field-label" for="feedback-json">Encoded feedback</label>
-      <textarea id="feedback-json" readonly aria-live="polite"></textarea>
-      <div class="footer-actions">
-        <button type="button" class="primary" id="copy-json">Copy</button>
-        <button type="button" id="submit-feedback">Submit</button>
-        <span id="feedback-status" class="inline-status" aria-live="polite"></span>
-      </div>
-      <p class="note">Submit needs the reports server. Copy works from file://.</p>
-    </footer>
-  </div>
-
-  <script>
-    (function () {
-      "use strict";
-
-      var reportMeta = {
-        schema: "report-feedback/1",
-        project: "adversarial-spec",
-        report: "overview",
-        report_generated_at: "2026-07-08T16:29:25Z"
-      };
-      var generatedAt = new Date("2026-07-08T16:29:25Z");
-      var feedbackOutput = document.getElementById("feedback-json");
-      var statusEl = document.getElementById("feedback-status");
-      var copyButton = document.getElementById("copy-json");
-      var submitButton = document.getElementById("submit-feedback");
-      var clockGenerated = document.getElementById("clock-generated");
-      var clockNow = document.getElementById("clock-now");
-      var clockAge = document.getElementById("clock-age");
-      var statusTimer = null;
-
-      var dateFormatter = new Intl.DateTimeFormat("sv-SE", {
-        timeZone: "America/Chicago",
-        hour12: false,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit"
+  const payload = () => ({
+    schema: "report-feedback/1", project, report: "overview", report_generated_at: generatedAt, answers: [],
+    comments: [...document.querySelectorAll("textarea[data-comment-block]")].filter((field) => field.value.trim()).map((field) => ({ block: field.dataset.commentBlock, comment: field.value.trim() })),
+    meta: [...document.querySelectorAll("textarea[data-meta-block]")].filter((field) => field.value.trim()).map((field) => ({ block: field.dataset.metaBlock, comment: field.value.trim() })),
+  });
+  const refresh = () => { output.value = JSON.stringify(payload(), null, 2); };
+  const cache = () => {
+    try { const current = payload(); if (current.comments.length || current.meta.length) storage?.setItem(draftKey, JSON.stringify(current)); else storage?.removeItem(draftKey); } catch {}
+  };
+  const restore = () => {
+    try {
+      const saved = JSON.parse(storage?.getItem(draftKey) || "null");
+      if (!saved) return;
+      [["textarea[data-comment-block]", "commentBlock", saved.comments || []], ["textarea[data-meta-block]", "metaBlock", saved.meta || []]].forEach(([selector, key, entries]) => {
+        const values = new Map(entries.map((entry) => [entry.block, entry.comment]));
+        document.querySelectorAll(selector).forEach((field) => { if (values.has(field.dataset[key])) field.value = values.get(field.dataset[key]); });
       });
-      var tzFormatter = new Intl.DateTimeFormat("en-US", {
-        timeZone: "America/Chicago",
-        timeZoneName: "short",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
+    } catch {}
+  };
+  const setStatus = (message, className = "") => { status.textContent = message; status.className = `inline-status ${className}`; };
 
-      function trimmedValue(element) {
-        return element && element.value ? element.value.trim() : "";
-      }
-
-      function tzAbbrev(date) {
-        var parts = tzFormatter.formatToParts(date);
-        var tzPart = parts.find(function (part) { return part.type === "timeZoneName"; });
-        return tzPart ? tzPart.value : "CT";
-      }
-
-      function formatChicago(date) {
-        return dateFormatter.format(date).replace("T", " ") + " " + tzAbbrev(date);
-      }
-
-      function formatAge(milliseconds) {
-        var totalMinutes = Math.max(0, Math.floor(milliseconds / 60000));
-        var days = Math.floor(totalMinutes / 1440);
-        var hours = Math.floor((totalMinutes % 1440) / 60);
-        var minutes = totalMinutes % 60;
-        return days + "d " + hours + "h " + minutes + "m";
-      }
-
-      function updateClock() {
-        var now = new Date();
-        clockGenerated.textContent = formatChicago(generatedAt);
-        clockNow.textContent = formatChicago(now);
-        clockAge.textContent = formatAge(now.getTime() - generatedAt.getTime());
-      }
-
-      function buildPayload() {
-        var payload = {
-          schema: reportMeta.schema,
-          project: reportMeta.project,
-          report: reportMeta.report,
-          report_generated_at: reportMeta.report_generated_at,
-          comments: []
-        };
-
-        document.querySelectorAll("textarea[data-block]").forEach(function (textarea) {
-          var comment = trimmedValue(textarea);
-          if (comment) {
-            payload.comments.push({
-              block: textarea.getAttribute("data-block"),
-              comment: comment
-            });
-          }
-        });
-
-        return payload;
-      }
-
-      function renderPayload() {
-        feedbackOutput.value = JSON.stringify(buildPayload(), null, 2);
-      }
-
-      function setStatus(message, mode) {
-        window.clearTimeout(statusTimer);
-        statusEl.textContent = message;
-        statusEl.classList.remove("ok", "error");
-        if (mode) {
-          statusEl.classList.add(mode);
-        }
-        if (message) {
-          statusTimer = window.setTimeout(function () {
-            statusEl.textContent = "";
-            statusEl.classList.remove("ok", "error");
-          }, 2200);
-        }
-      }
-
-      function fallbackCopy(text) {
-        feedbackOutput.focus();
-        feedbackOutput.select();
-        try {
-          return document.execCommand("copy");
-        } catch (error) {
-          return false;
-        }
-      }
-
-      function copyJson() {
-        var text = feedbackOutput.value;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).then(function () {
-            setStatus("copied", "ok");
-          }).catch(function () {
-            var copied = fallbackCopy(text);
-            setStatus(copied ? "copied" : "copy failed", copied ? "ok" : "error");
-          });
-          return;
-        }
-        var copied = fallbackCopy(text);
-        setStatus(copied ? "copied" : "copy failed", copied ? "ok" : "error");
-      }
-
-      function submitFeedback() {
-        setStatus("submitting", "");
-        fetch("/feedback/adversarial-spec", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: feedbackOutput.value
-        }).then(function (response) {
-          if (!response.ok) {
-            throw new Error("submit failed");
-          }
-          setStatus("submitted", "ok");
-        }).catch(function () {
-          setStatus("submit failed", "error");
-        });
-      }
-
-      document.addEventListener("input", renderPayload);
-      copyButton.addEventListener("click", copyJson);
-      submitButton.addEventListener("click", submitFeedback);
-      updateClock();
-      window.setInterval(updateClock, 30000);
-      renderPayload();
-    })();
-  </script>
+  const tabs = [...document.querySelectorAll("[role=tab]")];
+  const selectTab = (tab) => {
+    tabs.forEach((candidate) => {
+      const active = candidate === tab;
+      candidate.setAttribute("aria-selected", String(active));
+      candidate.tabIndex = active ? 0 : -1;
+      document.getElementById(candidate.getAttribute("aria-controls")).hidden = !active;
+    });
+    tab.focus();
+  };
+  tabs.forEach((tab, index) => {
+    tab.addEventListener("click", () => selectTab(tab));
+    tab.addEventListener("keydown", (event) => {
+      if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+      selectTab(tabs[next]);
+    });
+  });
+  document.addEventListener("input", () => { refresh(); cache(); });
+  document.getElementById("copy-feedback").addEventListener("click", async () => {
+    refresh();
+    try { await navigator.clipboard.writeText(output.value); setStatus("copied", "ok"); }
+    catch { output.focus(); output.select(); setStatus("select and copy"); }
+  });
+  document.getElementById("submit-feedback").addEventListener("click", async () => {
+    refresh(); setStatus("submitting");
+    try {
+      const response = await fetch(`/feedback/${encodeURIComponent(project)}?wake=0`, { method: "POST", headers: { "content-type": "application/json" }, body: output.value });
+      if (!response.ok) throw new Error("submit failed");
+      storage?.removeItem(draftKey); setStatus("submitted", "ok");
+    } catch { setStatus("submit failed", "error"); }
+  });
+  restore(); refresh();
+})();
+</script>
 </body>
 </html>

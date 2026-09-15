@@ -1,5 +1,5 @@
 # CLAUDE.md
-<!-- Base: Brainquarters v2.2 | Project: v1.8 | Last synced: 2026-06-09 -->
+<!-- Base: Brainquarters v2.3 | Project: v1.8 | Last synced: 2026-07-12 -->
 <!-- Last reviewed: 2026-06-09 | Next review: 2026-06-30 -->
 <!-- Target: 60-100 lines | If >100 lines, prune or move to .active_context.md -->
 
@@ -77,19 +77,25 @@ Don't pre-load domain context. Load when needed:
 - Background notification for already-consumed task → reply "Already processed." (one line).
 - Delegate or restart when debugging loops, repeated large reads, or metadata chatter are inflating primary context. The conductor still owns final validation of diffs, tests, and evidence.
 
-## Multi-Agent Coordination (Claude + Codex)
+## Pipeline Work (Phase-Owned)
 
-Agents work **in parallel on the same branch**. Coordination via **pipeline board + dispatch JSONL + Telegram**.
+`/adversarial-spec`, the active session state, and the current phase document own
+pipeline behavior. This file deliberately does not define a second pickup, wakeup,
+or waiting protocol.
 
-- **Card pickup**: Use `pipeline_do_next_task` — walks lanes in priority order, respects dependencies
-- **State gates, not commit gates**: Advance pipeline state only when exit criteria are satisfied
-- **When work is review-ready**: `pipeline_complete_task` moves card → "Review" with commit hash evidence
-- **Reviews before new work**: `pipeline_do_next_task` checks Review lane first — reviewing takes priority
-- **Don't stall**: If there are pending todos or cards, just do the work — don't ask "Shall I proceed?"
-- **Scope discipline**: Fix adjacent issues only within your card's declared file scope. Flag out-of-scope issues as comments on the dependent card.
-- **Full protocol**: Read `.coordination/PROTOCOL.md`
+- **Route first**: Resolve the active adversarial-spec phase before touching a card.
+- **Board status**: Use `pipeline_lane_state` for status. Never call
+  `pipeline_do_next_task` merely to poll, wait, or inspect.
+- **Pickup**: Call `pipeline_do_next_task` only when ready to perform whatever it
+  returns. Always pass the explicit Fizzy `board_id`.
+- **Idle**: Read the returned `attention`/blocker, report the named next actor, then
+  stop. Never sleep-and-retry, watch `.handoff.md`, or relaunch a local watcher.
+- **Dispatch**: A dispatch is a notice or audit record, not proof of a claim,
+  acknowledgement, or successful wakeup. Verify live board state before acting.
+- **Unavailable review**: Surface an unreachable independent reviewer as unavailable;
+  do not simulate liveness with a local loop.
 
-Board: Fizzy `03fw5alxw15iqwh6hq15vfdsb` (adversarial-spec) | Trello `69be407deef7267a2cea1feb` (legacy, read-only)
+Board routing: `adversarial-spec` — Fizzy (`03fw5alxw15iqwh6hq15vfdsb`).
 
 ## Debugging Rules
 - If you suspect failure, write a failing test saved to disk. Judge your solution by running the test. The test stays to prove no future changes resurface the bug.

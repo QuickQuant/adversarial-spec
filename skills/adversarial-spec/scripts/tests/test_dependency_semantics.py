@@ -210,6 +210,40 @@ def test_cli_writes_a_read_only_json_report(tmp_path, capsys) -> None:
     assert plan_path.read_text(encoding="utf-8").endswith("\n")
 
 
+def test_cli_emit_report_records_ledger_relative_to_plan_root(tmp_path, capsys) -> None:
+    plan_path = tmp_path / "fizzy-plan.json"
+    semantics_path = tmp_path / "dependency-semantics.json"
+    report_path = tmp_path / "dependency-semantics-report.json"
+    plan_path.write_text(json.dumps({"tasks": [task("W0")]}) + "\n", encoding="utf-8")
+    semantics_path.write_text(
+        json.dumps(
+            {
+                "edge_ledger": [],
+                "scope_closure": {
+                    "active": [], "deferred": [], "excluded": [],
+                    "operator_approved_exceptions": [],
+                },
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    exit_code = main(
+        [
+            "--plan", str(plan_path),
+            "--semantics", str(semantics_path),
+            "--emit-report", str(report_path),
+        ]
+    )
+
+    capsys.readouterr()
+    bound_report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert exit_code == 0
+    assert bound_report["verdict"] == "green"
+    assert bound_report["ledger_path"] == "dependency-semantics.json"
+
+
 def data_ready_edge(dependent: str, prerequisite: str, receipt_id: str | None = None) -> dict:
     entry = edge(dependent, prerequisite, "data_ready")
     if receipt_id is not None:

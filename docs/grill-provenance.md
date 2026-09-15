@@ -15,3 +15,11 @@ Transcript: ~/.claude/projects/-home-jason-PycharmProjects-fizzy-pipeline-mcp/97
 
 Appended same day: v6 mechanics — seam (+ seam-defect reconciliation), gate vs barrier, leaf / X-node / Task disambiguation, altitude vs model effort, oracle stable-core family (oracle / oracle suite / declared oracle / acceptance criterion). Oracle production semantics remain with the gauntlet deferral.
 
+## 2026-08-10 — carded / plan-to-Card provenance
+Resolved: **Carded** means a requested change is a plan-backed Task materialized 1:1
+by `pipeline_load`, carrying Session and plan provenance. A raw `add_card` card,
+comment, or assignment is not carded. Phase 8 now spells out the plan amendment →
+`pipeline_validate_plan` → `pipeline_load` route; fizzy-pipeline-mcp rejects an
+unmanaged Task Card in an active Session.
+ADRs: none (terms and workflow clarification only).
+Transcript: ~/.codex/sessions/2026/08/02/rollout-2026-08-02T09-07-02-019fc2cc-b267-75c3-b287-20059423eb9a.jsonl

@@ -3,15 +3,15 @@
   "session_id": "adv-spec-202607060132-post-fable-hardening-skill",
   "context_name": "Increased-Intelligence Hardening (skill slice G1+G2+G5; codex upgrade in scope)",
   "created_at": "2026-07-06T01:32:38Z",
-  "updated_at": "2026-07-08T16:10:43Z",
-  "current_phase": "debate",
-  "current_step": "Phase 3 (debate) entered; roadmap persisted + confirmed; spec draft v1 not yet authored",
+  "updated_at": "2026-07-22T14:13:25Z",
+  "current_phase": "implementation",
+  "current_step": "Phase 8 wave-0 opening: W0-1 (6021), B-1 (6043), B-11 (6053) implemented, attested and moved to Review by claude; queue idle pending a non-claude reviewer",
   "checkpointed_cleanly": true,
   "session_altitude": "system",
   "session_altitude_source": "declared",
   "complexity_tier": "complex",
   "plan_path": "docs/improvement-goals-2026-07.md",
-  "spec_path": ".adversarial-spec/specs/post-fable-hardening-skill/spec.md",
+  "spec_path": ".adversarial-spec/specs/post-fable-hardening-skill/spec-final.md",
   "manifest_path": ".adversarial-spec/specs/post-fable-hardening-skill/manifest.json",
   "fizzy_card_id": "5857",
   "context": {
@@ -26,28 +26,67 @@
   ],
   "do_not_ask": [
     "whether to dogfood (decided: q-20260704-goal-scope choice a)",
-    "whether to refresh mapcodebase now (deferred: choice b)"
+    "whether to refresh mapcodebase now (deferred: choice b)",
+    "whether to refresh mapcodebase now (externally regenerated 2026-07-19 at ef18c66; caveat discharged)",
+    "gauntlet sizing (decided: 6 personas AUDT/ARCH/BURN/PARA/PEDA/FLOW, codex+agy-gemini attack models)",
+    "CONS verify disposition (done: operator-sanctioned pass ran, VERIFIED)",
+    "tcov-deferral disposition (done: all 19 to Phase 7 tested_by w/ mandatory register-vs-plan diff)",
+    "whether v9.1 is accepted (Jason accepted 2026-07-21; in-place spec-final.md revision)",
+    "whether the plan is approved (Jason 2026-07-22 finalize+load directive)",
+    "whether to emit schema 2 vs 3 (v3 mandatory: pipeline_version 5 + altitude system)"
   ],
   "todowrite_snapshot": [
     {
-      "content": "Author spec draft v1 (technical depth) from roadmap manifest",
-      "status": "pending",
-      "activeForm": "Authoring spec draft v1"
+      "content": "Resolve validation_emission.py UU conflict (blocker) \u2014 933 tests green",
+      "status": "completed"
     },
     {
-      "content": "Run debate rounds via pipeline tools until consensus",
-      "status": "pending",
-      "activeForm": "Running debate rounds"
+      "content": "Phase 7: read ALL .architecture docs + spec v9.1 + arch package (fingerprint 7fa0ae7a re-verified)",
+      "status": "completed"
     },
     {
-      "content": "Per round: synthesize critiques, apply revisions, run guardrails",
-      "status": "pending",
-      "activeForm": "Synthesizing round feedback"
+      "content": "Decompose into 38 tasks / 4 workstreams; persist execution-plan.md (Step 3.5)",
+      "status": "completed"
     },
     {
-      "content": "Check convergence with anti-bare-AGREE press",
-      "status": "pending",
-      "activeForm": "Checking convergence"
+      "content": "Gates V1-V4 + D1 clean; DF-1..20 register-vs-plan diff reported; 0 exempt tasks",
+      "status": "completed"
+    },
+    {
+      "content": "Plan approved (Jason 2026-07-22, finalize+load directive); DRAFT banner dropped",
+      "status": "completed"
+    },
+    {
+      "content": "Validation leg (system altitude): conops 17 stories + 17 rows check-rows clean; committed 1252dd5",
+      "status": "completed"
+    },
+    {
+      "content": "Emit schema-3 fizzy-plan.json (43 nodes, 93 artifacts); validate_plan valid:true; P7-2 smoke ok",
+      "status": "completed"
+    },
+    {
+      "content": "pipeline_load: 43 cards 6016-6058; wave spine enforced (3 ready/35 blocked); comments 43/43",
+      "status": "completed"
+    },
+    {
+      "content": "Phase transition execution -> implementation dual-written; Telegram milestone sent",
+      "status": "completed"
+    },
+    {
+      "content": "Phase 8: process next ready card from pipeline_do_next_task (board 03fw5alxw15iqwh6hq15vfdsb)",
+      "status": "pending"
+    },
+    {
+      "content": "Phase 8: session card 5857 stays in Finalization until V&V rollup (unverified_descendant) \u2014 advance only via marks",
+      "status": "pending"
+    },
+    {
+      "content": "Route SpadeShark systemic fixes to owning repos (carried from prior session)",
+      "status": "pending"
+    },
+    {
+      "content": "Decide W0 of agy dispatch consolidation scope (carried; queued behind 3-project work)",
+      "status": "pending"
     }
   ],
   "doc_type": "spec",
@@ -116,9 +155,9 @@
   },
   "tests_pseudo_path": ".adversarial-spec/specs/post-fable-hardening-skill/tests-pseudo.md",
   "roadmap_path": ".adversarial-spec/specs/post-fable-hardening-skill/roadmap/manifest.json",
-  "completed_work": "Requirements gate passed (G1-F2 amended: no size caps; Fable window ~2026-07-12). Roadmap phase complete: complexity 27/complex; draft + R1 debate (codex/gpt-5.5 + gemini/gemini-3.5-flash API path); 4 revisions folded (waiver US-15, personas, global KPIs, boundary US-16); G4 excluded (Jason). Artifacts: roadmap/manifest.json (9 milestones/17 US), roadmap.md, tests-pseudo.md (17 spines), trello-plan.json placeholder, _progress. Card 5857 \u2192 Debate lane. Ops: gemini-cli fresh-spawn IneligibleTierError diagnosed (oauth-personal, latest CLI; live panes unaffected; over-claim corrected in memory/Telegram/card); debate.py preflight breaks on thinking models (--skip-preflight workaround, M1 candidate); session_activity_logger v1.1 adds invoker attribution + cold-gap logging (Brainquarters repo, uncommitted)",
-  "next_action": "Author spec draft v1 (technical depth) from roadmap/manifest.json per phases/03-debate.md, then debate rounds via pipeline tools (opponents: codex/gpt-5.5 + gemini/gemini-3.5-flash; NEVER gemini-cli \u2014 fresh spawns fail auth)",
-  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202607081610-roadmap-complete-debate-entered.md",
+  "completed_work": "Resolved validation_emission.py stash conflict (kept full impl; suite 933 green). Phase 7 in one session: full .architecture read (10 docs + 11 components), spec-final v9.1 read, arch fingerprint 7fa0ae7a re-verified reproducible, 38 tasks/4 workstreams decomposed with all 5 pre-load gates (DF-1..20 mapped, TMR keystone-first task B-1, adverse suite W0-15, tested_by all llm, altitude system confirmed from card metadata). D1 clean (76 edges). Jason approved via finalize+load directive. Validation leg: manifest gained flat user_stories, conops 17 stories, 17 rows check-rows clean, committed with plan (1252dd5). Schema-3 emission via re-runnable orchestration/emit_plan_v3.py (93 node artifacts, real verify commands). validate_plan valid:true after test_targets fix on aggregates. Smoke: 3 pytest shapes collected+ran. Load required backtracking card 5857 Completed-Unmapped->Finalization (reason file on disk). 43 cards loaded, 3 ready/35 blocked, critical path W0-1..B-6. Comments posted via haiku bookkeeper, spot-checked verbatim. pipeline_advance correctly blocked (unverified_descendant) - card releases via Phase 8 V&V rollup. Committed 20ab11c.",
+  "next_action": "Phase 8 per 08-implementation.md: pipeline_do_next_task loop on board 03fw5alxw15iqwh6hq15vfdsb. Ready: W0-1 (6021, scaffold+3.14), B-1 (6043, TMR keystone-first), B-11 (6053, subflow migration). Session card 5857 stays in Finalization until V&V marks roll up. Uncommitted in tree (pre-existing): agy transport fix (models.py + test), consolidation scope doc, resolved validation_emission.py (staged).",
+  "last_checkpoint": ".adversarial-spec/checkpoints/checkpoint-202607221333-phase7-closed-plan-loaded-phase8-open.md",
   "status": "active",
   "journey": [
     {
@@ -130,6 +169,627 @@
       "time": "2026-07-08T16:10:43Z",
       "event": "Checkpoint saved: roadmap-complete-debate-entered.",
       "type": "checkpoint"
+    },
+    {
+      "time": "2026-07-13T01:39:44Z",
+      "event": "Verified codex app-server usage API live + drafted usage-aware Telegram router design; awaiting 2 routing decisions",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-07-13T01:39:44Z",
+      "event": "Checkpoint saved: codex-appserver-usage-router-investigation.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-07-18T18:25:16Z",
+      "event": "Debate R1 advanced on card 5857 (spec v2 + 4 guardrails + lost-update recovery); awaiting Jason 3 R1 checkpoint calls",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-07-18T18:25:16Z",
+      "event": "Checkpoint saved: debate-r1-complete-usage-router-live.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-07-19T13:20:25Z",
+      "event": "R2 round started on card 5857 (958affe0f52944a4, sol+gemini); gemini-3-flash dispatch failed (agy is an interactive agent, unsuitable as debate critic - verified twice). Awaiting Jason A/B: run R2 with sol+glm now, or build litellm gemini runner first.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-07-19T13:20:25Z",
+      "event": "Checkpoint saved: r2-blocked-agy-critic-rejected-gemini-litellm-pending.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-07-19T16:01:53Z",
+      "event": "R2 closed on card 5857: spec-draft-v3 + tests-pseudo v3 + guardrail-report-r2 (CONS re-run green) on disk; round advanced convergence=false; workspace archived",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-07-19T16:01:53Z",
+      "event": "Checkpoint saved: r2-closed-v3-guardrails-green-agy-incident.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-07-19T21:49:43Z",
+      "event": "R3 closed on card 5857: spec-draft-v4 + tests-pseudo v5 (81 TCs) + guardrail-report-r3 (CONS green, 3 passes) on disk; round advanced convergence=false; workspace archived",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-07-19T21:49:43Z",
+      "event": "Checkpoint saved: r3-closed-v4-quorum-restored.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-07-20T01:48:58Z",
+      "event": "R7 convergence declared: both critics AGREE on spec v7 + tests v8.1 (84 TCs/17 spines); codex bare-AGREE pressed per anti-bare-AGREE gate and held; debate closed after 4 quorum rounds R4-R7 (trend 6\u21924\u21922\u21920)",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-07-20T01:48:58Z",
+      "event": "Checkpoint saved: r7-converged-debate-closed.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-07-20T13:54:47Z",
+      "event": "Phase 4 \u00a79 architecture review R4 complete: gemini 2nd consecutive content-verified AGREE; codex 8 findings (2 CRIT: leaf-evidence custody + deferral stale-state; 4 HIGH incl. session-bootstrap drift + transaction-corrupt-not-waiverable; 2 MED). Awaiting operator choice at round-4 escalation gate",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-07-20T13:54:47Z",
+      "event": "Checkpoint saved: phase4-arch-review-r4-complete-r5-decision-pending.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-07-20T15:17:54Z",
+      "event": "Phase 4 COMPLETE: \u00a79 closed at R5 hard stop (fold->v6); \u00a710 dry-run 8/8 design-level; final approval granted; v6 artifact set + contract-boundary.md + ADRs 0003-0005 published; transitioned to gauntlet. Card 5857 lane advance blocked by fizzy gate mapcodebase_fresh=false (surfaced to Jason, TG msg 302)",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-07-20T15:17:54Z",
+      "event": "Checkpoint saved: phase4-complete-v6-published-gauntlet-entry.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-07-20T19:55:36Z",
+      "event": "Gauntlet entry holds. Today: PF filed (Phase 4 arch rounds R1-R5 bypassed fizzy round machinery \u2014 3 defects); 3-way brainstorm (adv-spec / fizzy-pipeline-mcp / fork) Entries 1-8 CLOSED: layer split settled, single-doc CAS commit + derived inheritance (SD-2), fork-side signing, derived capability advertisement, Entry 8 = operator kickoff register for D/E; coordination plan + flowchart rev2 (5 workstreams A-E); mapcodebase misfire root-caused (codex 07-19 run: 5/5 explorer timeouts, caution+87 misfields) \u2192 skill fixed (harness gate abort-only, codex=luna-high explorers, strict field semantics); full mapcodebase re-run RUNNING via codex",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-07-20T19:55:36Z",
+      "event": "Checkpoint saved: brainstorm-closed-coordination-plan-mapcodebase-rerun.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-07-20T21:24:02Z",
+      "event": "Gauntlet lane entered (card 5857): mapcodebase gate cleared via verified re-run + gate-recovery patch (PF: dirty-worktree->caution misuse); gauntlet sized w/ Jason: 6 personas AUDT/ARCH/BURN/PARA/PEDA/FLOW x codex+agy-gemini; CON-001 fixed inline (retired opus route removed, final-boss failure->REFINE not PASS, dead gemini-3-pro string removed; 23/23 tests)",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-07-20T21:24:02Z",
+      "event": "Checkpoint saved: gauntlet-gate-cleared-sized-con001-fixed.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-07-20T22:39:14Z",
+      "event": "Gauntlet Step 7 complete: spec-draft-v8.2 (25 themes folded, 3-pass guardrail patch sets) + tests-pseudo 99 TCs + tcov-deferral-register-v8.md; CONS final verify re-run deferred to operator (max-2 budget spent)",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-07-20T22:39:14Z",
+      "event": "Checkpoint saved: gauntlet-complete-v8-2-guardrails-cons-deferred.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-07-21T10:05:19Z",
+      "event": "Phase 6 complete through Step 7 entry: spec-final.md v9.0 + tests-spec.md (128 TCs) written; final guardrails green after fixes (CONS 1, CANON 5, TCOV 9 via FTCOV-1..9); PSF-1..15 discharged; spec-final-narrative.html built + sent via Telegram; /html-final-spec skill created",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-07-21T10:05:19Z",
+      "event": "Checkpoint saved: finalize-complete-v9-awaiting-operator-review.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-07-21T15:15:04Z",
+      "event": "finalize\u2192execution transition complete: v9.1 accepted by Jason; gauntlet+reconciliation card gates discharged (a4dafd47 artifacts, CONS PASS); card 5857 at Completed-Unmapped (pre-load terminal); Phase 7 doc read, operator chose fresh-context checkpoint before decomposition",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-07-21T15:15:04Z",
+      "event": "Checkpoint saved: v9-1-accepted-phase7-entry.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-07-21T21:27:56Z",
+      "event": "Out-of-band skill-hardening excursion complete (operator-approved): agy oversized-prompt transport fixed + live-verified, consolidation scoped. Pipeline session state unchanged \u2014 still at Phase 7 entry, decomposition not started.",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-07-21T21:27:56Z",
+      "event": "Checkpoint saved: agy-transport-fix-and-consolidation-scope.",
+      "type": "checkpoint"
+    },
+    {
+      "time": "2026-07-22T13:33:05Z",
+      "event": "Phase 7 closed end-to-end: blocker cleared (933 tests), 38-task plan drafted+approved, validation leg drafted pre-implementation (commit 1252dd5), schema-3 plan emitted (43 nodes, validate_plan clean, P7-2 smoke ok), pipeline_load created cards 6016-6058 with wave spine enforced, 43/43 concern comments posted, phase dual-written to implementation (commit 20ab11c)",
+      "type": "milestone"
+    },
+    {
+      "time": "2026-07-22T13:33:05Z",
+      "event": "Checkpoint saved: phase7-closed-plan-loaded-phase8-open.",
+      "type": "checkpoint"
     }
-  ]
+  ],
+  "extended_state": {
+    "context_inventory": {
+      "schema_version": "1.1",
+      "git_hash": "ef18c66",
+      "blast_zone": [
+        "gate_inventory.py",
+        "reconcile_derived.py",
+        "record_verification_evidence.py",
+        "verification_cards.py",
+        "promotion_gate.py",
+        "hardening_bootstrap.py",
+        "competence_harness.py",
+        "dependency_semantics.py",
+        "debate.py",
+        "tmr-registry.json",
+        "node-registry",
+        "spine-manifest"
+      ],
+      "sources": {
+        "arch_primer": {
+          "status": "available",
+          "path": ".architecture/primer.md",
+          "summary": "skill architecture primer",
+          "est_tokens": 600
+        },
+        "arch_overview": {
+          "status": "available",
+          "path": ".architecture/overview.md",
+          "summary": "system narrative",
+          "est_tokens": 900
+        },
+        "comp_session": {
+          "status": "available",
+          "path": ".architecture/structured/components/session.md",
+          "summary": "session state machine"
+        },
+        "comp_harness_hooks": {
+          "status": "available",
+          "path": ".architecture/structured/components/harness-hooks.md",
+          "summary": "hooks/gates enforcement"
+        },
+        "comp_debate_engine": {
+          "status": "available",
+          "path": ".architecture/structured/components/debate-engine.md",
+          "summary": "debate dispatch"
+        },
+        "comp_models": {
+          "status": "available",
+          "path": ".architecture/structured/components/models.md",
+          "summary": "model routing (gemini/cli/api/antigravity)"
+        },
+        "comp_providers": {
+          "status": "available",
+          "path": ".architecture/structured/components/providers.md",
+          "summary": "provider/key config"
+        },
+        "tests_pseudo": {
+          "status": "available",
+          "path": ".adversarial-spec/specs/post-fable-hardening-skill/tests-pseudo.md",
+          "summary": "585-line test registry"
+        },
+        "lookup_log": {
+          "status": "available",
+          "path": ".adversarial-spec/specs/post-fable-hardening-skill/lookup-log.md",
+          "summary": "resolved hedges"
+        },
+        "router_issue": {
+          "status": "available",
+          "path": ".adversarial-spec/issues/2026-07-18-usage-router-own-session.md",
+          "summary": "OQ-4 external-dep context"
+        }
+      },
+      "gaps_noted": [
+        "build/test status: pytest available, not run this turn"
+      ],
+      "audit_timestamp": "2026-07-19T01:58:39Z"
+    }
+  },
+  "phase4_bootstrap": {
+    "schema_version": "1.0",
+    "status": "complete",
+    "session_id": "adv-spec-202607060132-post-fable-hardening-skill",
+    "spec_slug": "post-fable-hardening-skill",
+    "input_fingerprint": "c31949b14c1828deeb9f61f42545adf87d5b81fc4d0d07490ddc0a1a5dd71a14",
+    "architecture_fingerprint": null,
+    "phase_mode": "full",
+    "context_mode": "brownfield_feature",
+    "current_gate": null,
+    "blocking_error": null,
+    "started_at": "2026-07-20T01:57:46Z",
+    "updated_at": "2026-07-20T16:08:00Z",
+    "completed_at": "2026-07-20T16:35:00Z",
+    "artifact_publish_state": "none",
+    "gate_approvals": {
+      "scale_check": {
+        "status": "approved",
+        "recommended": "full",
+        "final_value": "full",
+        "decided_by": "human",
+        "decided_at": "2026-07-20T02:09:52Z"
+      },
+      "context_mode": {
+        "status": "approved",
+        "recommended": "brownfield_feature",
+        "final_value": "brownfield_feature",
+        "decided_by": "human",
+        "decided_at": "2026-07-20T03:08:17Z"
+      },
+      "draft_review": {
+        "status": "approved",
+        "decided_by": "human",
+        "decided_at": "2026-07-20T12:31:34Z"
+      },
+      "final_approval": {
+        "status": "pending",
+        "decided_by": null,
+        "decided_at": null
+      }
+    },
+    "artifact_paths": {
+      "target_architecture": ".adversarial-spec/specs/post-fable-hardening-skill/target-architecture.md",
+      "invariants": ".adversarial-spec/specs/post-fable-hardening-skill/architecture-invariants.json",
+      "tests_pseudo": ".adversarial-spec/specs/post-fable-hardening-skill/tests-pseudo.md",
+      "dry_run_results": ".adversarial-spec/specs/post-fable-hardening-skill/dry-run-results.json",
+      "middleware_candidates": ".adversarial-spec/specs/post-fable-hardening-skill/middleware-candidates.json",
+      "architecture_invariants": ".adversarial-spec/specs/post-fable-hardening-skill/architecture-invariants.json",
+      "contract_boundary": ".adversarial-spec/specs/post-fable-hardening-skill/contract-boundary.md",
+      "adrs": [
+        "docs/adr/0003-python-314-floor-migration.md",
+        "docs/adr/0004-locking-durability-substrate.md",
+        "docs/adr/0005-hook-plane-rules.md"
+      ]
+    },
+    "roadmap_ref": {
+      "goals": [
+        "G1 post-Fable operability",
+        "G2 V-model ascending arm",
+        "G5 debate efficiency"
+      ],
+      "non_goals": [
+        "G3 fizzy-side (separate spec; consumed as contract via US-16)",
+        "G4 excluded entirely (Jason 2026-07-08)",
+        "mapcodebase refresh (deferred)",
+        "byte-count doc targets (amended out)"
+      ],
+      "user_stories": [
+        "US-0",
+        "US-1",
+        "US-2",
+        "US-3",
+        "US-15",
+        "US-4",
+        "US-5",
+        "US-6",
+        "US-7",
+        "US-16",
+        "US-8",
+        "US-9",
+        "US-10",
+        "US-11",
+        "US-12",
+        "US-13",
+        "US-14"
+      ]
+    },
+    "story_alignment": [
+      {
+        "story_id": "US-0",
+        "goal_ids": [
+          "G1 post-Fable operability",
+          "G2 V-model ascending arm",
+          "G5 debate efficiency"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "bootstrap milestone serves all goals"
+      },
+      {
+        "story_id": "US-1",
+        "goal_ids": [
+          "G1 post-Fable operability"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "derived from milestone title tag(s) ['G1']"
+      },
+      {
+        "story_id": "US-2",
+        "goal_ids": [
+          "G1 post-Fable operability"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "derived from milestone title tag(s) ['G1']"
+      },
+      {
+        "story_id": "US-3",
+        "goal_ids": [
+          "G1 post-Fable operability"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "derived from milestone title tag(s) ['G1']"
+      },
+      {
+        "story_id": "US-15",
+        "goal_ids": [
+          "G1 post-Fable operability"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "derived from milestone title tag(s) ['G1']"
+      },
+      {
+        "story_id": "US-4",
+        "goal_ids": [
+          "G1 post-Fable operability"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "derived from milestone title tag(s) ['G1']"
+      },
+      {
+        "story_id": "US-5",
+        "goal_ids": [
+          "G1 post-Fable operability"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "derived from milestone title tag(s) ['G1']"
+      },
+      {
+        "story_id": "US-6",
+        "goal_ids": [
+          "G1 post-Fable operability"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "derived from milestone title tag(s) ['G1']"
+      },
+      {
+        "story_id": "US-7",
+        "goal_ids": [
+          "G2 V-model ascending arm"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "derived from milestone title tag(s) ['G2']"
+      },
+      {
+        "story_id": "US-16",
+        "goal_ids": [
+          "G2 V-model ascending arm"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "derived from milestone title tag(s) ['G2']; consumes G3 fizzy contract (explicitly permitted by non-goal wording)"
+      },
+      {
+        "story_id": "US-8",
+        "goal_ids": [
+          "G2 V-model ascending arm"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "derived from milestone title tag(s) ['G2']"
+      },
+      {
+        "story_id": "US-9",
+        "goal_ids": [
+          "G2 V-model ascending arm"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "derived from milestone title tag(s) ['G2']"
+      },
+      {
+        "story_id": "US-10",
+        "goal_ids": [
+          "G2 V-model ascending arm"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "derived from milestone title tag(s) ['G2']"
+      },
+      {
+        "story_id": "US-11",
+        "goal_ids": [
+          "G5 debate efficiency"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "derived from milestone title tag(s) ['G5']"
+      },
+      {
+        "story_id": "US-12",
+        "goal_ids": [
+          "G5 debate efficiency"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "derived from milestone title tag(s) ['G5']"
+      },
+      {
+        "story_id": "US-13",
+        "goal_ids": [
+          "G5 debate efficiency"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "derived from milestone title tag(s) ['G5']"
+      },
+      {
+        "story_id": "US-14",
+        "goal_ids": [
+          "G5 debate efficiency"
+        ],
+        "conflicting_non_goal_ids": [],
+        "verdict": "aligned",
+        "rationale": "derived from milestone title tag(s) ['G5']"
+      }
+    ],
+    "framework_profile": {
+      "profile_type": "multi",
+      "category": "cli",
+      "framework": "Multi-component: skill-runtime (Python package/CLI, argparse + uv entrypoints) + hook-plane (Claude Code command hooks, bounded JSON stdin / event-specific stdout-exit protocol, cli_command surface) + authority-client (injected outbound transports)",
+      "framework_version": "Python >=3.14 (ecosystem-policy migration, W0 coordinated); Claude Code >=2.1.199,<3; rfc8785==0.1.4; cryptography==49.0.0; fcntl LOCK_SH/LOCK_EX direct; filelock>=3.20.3,<4 legacy writers only",
+      "runtime": "python",
+      "deployment_target": "serverful",
+      "enabled_features": [
+        "atomic-write protocol (tmp+fsync+os.replace+dir-fsync, descriptor-relative)",
+        "fcntl.flock shared/exclusive locking (LOCK_SH readers, LOCK_EX writers); filelock legacy writers only",
+        "StateTransaction leased coupled-file transactions (repo-scoped .txn/ coordinator)",
+        "RFC 8785 JCS canonical JSON",
+        "ed25519 signature VERIFICATION + purpose-scoped TrustPolicy authorization (signing lives in operator/fizzy authority domains)",
+        "hash-chained JSONL journals",
+        "Claude Code command hooks (parallel execution; single slice dispatcher per event; JSON-on-exit-0 xor exit-2/stderr)",
+        "fizzy MCP consumed contracts (capability-probed) incl. evidence-snapshot-registration-v1"
+      ],
+      "subprofiles": {
+        "rendering_model": "N/A",
+        "data_access_model": "file-backed JSON/JSONL registries under .adversarial-spec/ with envelope validation; authoritative registries over prose views",
+        "mutation_model": "CLI commands with deterministic exit codes; hook stdio decisions; REMOTE mutations only via consumed fizzy contracts",
+        "cache_model": "content-hash staleness (normalized semantic form excludes content_hash+generated_at); frozen-node hash pins; no in-memory cache layer",
+        "error_model": "named fail-closed result enums (RemoteOperationResult, PromotionSequenceResult) + exit codes 0/1/2 + validation Envelope; failure never success-shaped"
+      },
+      "enforcement_model": "per-surface: CLI gates fire in code w/ negative tests at real boundary; hooks block pre-tool; fizzy lane gates consumed via capability probes; judgment gates rubric+fixture",
+      "notes": "profile_type=multi (R1 sol finding 2; bootstrap synced to target-architecture v5 at R4 fold \u2014 R4 sol finding 6 flagged this record as stale: it still declared single profile, request_response hook mapping, filelock 3.16.1, cryptography>=42). Hook plane is cli_command (subprocess stdio event protocol), NOT request_response."
+    },
+    "execution_surfaces": [
+      "skill-runtime:cli_command",
+      "skill-runtime:startup_migration",
+      "hook-plane:cli_command",
+      "authority-client:outbound_integration"
+    ],
+    "research_findings": [
+      {
+        "source": "project pyproject/ecosystem convention",
+        "finding": "Python floor 3.14; uv-managed deps; pytest+ruff toolchain",
+        "version": "3.14+"
+      },
+      {
+        "source": "gauntlet/persistence.py (existing pattern)",
+        "finding": "locked atomic writer + checkpoint envelope w/ schema/spec/config/data hashes already proven in-repo; extend, don't fork (spec \u00a71 protocol matches)",
+        "version": "ef18c66"
+      },
+      {
+        "source": "filelock (pinned decision, gauntlet refactor Mar 2026)",
+        "finding": "advisory locking primitive; deterministic lock ordering required by spec \u00a71",
+        "version": "3.16.1"
+      },
+      {
+        "source": "RFC 8785 JCS",
+        "finding": "canonical JSON for envelope hashing/signing; pure-Python `rfc8785` implementation available; parsers must reject invalid UTF-8, duplicate members, unrepresentable values",
+        "version": "RFC 8785"
+      },
+      {
+        "source": "cryptography (ed25519)",
+        "finding": "skill VERIFIES ed25519 signatures only (operator/fizzy sign); Ed25519PublicKey.verify raises InvalidSignature \u2014 map to named fail-closed verdicts",
+        "version": "cryptography>=42"
+      },
+      {
+        "source": ".claude/hooks/codex_pretool_combined.py",
+        "finding": "hook plane contract: stdin JSON once, replayed to sub-hooks, first non-zero exit stops chain; hooks never import skill runtime code",
+        "version": "ef18c66"
+      },
+      {
+        "source": ".architecture/concerns.md",
+        "finding": "CON-001 failure-as-PASS, CON-002/CON-007 unlocked writes, CON-003 triple role-resolution drift, CON-004 timeout divergence, CON-005 symlink import order \u2014 debt the new components must not reinforce",
+        "version": "ef18c66"
+      }
+    ]
+  },
+  "architecture_taxonomy": {
+    "schema_version": "1.0",
+    "category": "cli",
+    "dimensions": [
+      {
+        "name": "execution model",
+        "value": "short-lived CLI invocations + hook subprocesses; no daemons in-slice (usage router external, \u00a713)",
+        "rationale": "every new component is a CLI or hook check; BOOT-ROUTER advisory only",
+        "source_refs": [
+          "spec \u00a73",
+          "spec \u00a713"
+        ]
+      },
+      {
+        "name": "config precedence",
+        "value": "spec-bound constants > repo files/registries > CLI flags; no env-var behavior switches for gates",
+        "rationale": "INV: behavior constants require spec bump + reconciliation (\u00a77 MAX_PHASE_REGRESSION_POINTS, \u00a712.2 press chars)",
+        "source_refs": [
+          "spec \u00a77",
+          "spec \u00a712.2"
+        ]
+      },
+      {
+        "name": "error model",
+        "value": "named fail-closed enums + exit codes 0/1/2; failure output names check id + artifact + remediation",
+        "rationale": "spec \u00a73 exit contract, \u00a75.2 RemoteOperationResult/PromotionSequenceResult; kills the CON-001 class at new boundaries",
+        "source_refs": [
+          "spec \u00a73",
+          "spec \u00a75.2",
+          "concerns CON-001"
+        ]
+      },
+      {
+        "name": "concurrency",
+        "value": "single-conductor assumed, never trusted: advisory locks + deterministic order + atomic replace on every state write",
+        "rationale": "spec \u00a71 global protocol; CON-002/CON-007 show unlocked writes already bite",
+        "source_refs": [
+          "spec \u00a71",
+          "concerns CON-002/CON-007"
+        ]
+      },
+      {
+        "name": "I/O boundaries",
+        "value": "local blocking checks: repo files + attestations ONLY (no socket/DNS/HTTP/model/fizzy); REMOTE ops explicit and enumerated",
+        "rationale": "spec \u00a75.2 no-network rule (SCOPE-1 relocation); hermetic split \u00a73",
+        "source_refs": [
+          "spec \u00a75.2",
+          "spec \u00a73"
+        ]
+      },
+      {
+        "name": "observability",
+        "value": "hash-chained JSONL event logs + envelope-wrapped reports + report identity (model id, versions, fixture-set hash)",
+        "rationale": "spec \u00a710.2 event log, \u00a77 report identity, \u00a712 reconciliation reports",
+        "source_refs": [
+          "spec \u00a710.2",
+          "spec \u00a77"
+        ]
+      },
+      {
+        "name": "testing",
+        "value": "3-tier (pytest code / system-validation prompts / golden-eval LLM judgment); negative tests at real enforcement boundaries; REAL-DATA induced-live per Data Strategy",
+        "rationale": "code-grounded-verification memory + spec \u00a75.2/\u00a714",
+        "source_refs": [
+          "spec \u00a75.2",
+          "spec \u00a714"
+        ]
+      }
+    ]
+  },
+  "target_architecture_path": ".adversarial-spec/specs/post-fable-hardening-skill/target-architecture.md",
+  "phase_artifacts": {
+    "target_architecture_path": ".adversarial-spec/specs/post-fable-hardening-skill/target-architecture.md"
+  },
+  "gauntlet_concerns_path": ".adversarial-spec/gauntlet-concerns-2026-07-20.json",
+  "current_spec_draft_path": ".adversarial-spec/specs/post-fable-hardening-skill/spec-draft-v8.md",
+  "tests_spec_path": ".adversarial-spec/specs/post-fable-hardening-skill/tests-spec.md",
+  "execution_plan_path": ".adversarial-spec/specs/post-fable-hardening-skill/execution-plan.md"
 }

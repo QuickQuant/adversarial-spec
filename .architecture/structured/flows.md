@@ -1,236 +1,185 @@
 # Structured Flows
 
-> Every significant flow uses the full eight-field notation. Generated at `ef18c66`; if cited source files change, trust source over this document.
+> Significant flows in contract-first notation. Generated: 2026-07-20T14:44:38-05:00 | Git: `2433efa`.
 
 ## Lifecycle Flows
 
-### FLOW: debate-round-lifecycle
+### FLOW: debate-critique-round
 
-```text
-TRIGGER: installed `adversarial-spec` CLI invocation
-ENTRY: debate.main() (skills/adversarial-spec/scripts/debate.py:1623)
+```
+TRIGGER: `debate.py critique` with stdin spec or `--resume`
+ENTRY: main() (skills/adversarial-spec/scripts/debate.py:1623)
 STATUS: implemented
 STEPS:
-  1. create_parser() -> apply_profile() -> parse_models()
-  2. validate_models_before_run() -> preflight_models()
-  3. load_or_resume_session() -> run_critique()
-  4. run_critique() -> output_results() -> checkpoint/next round
+  1. parse arguments -> enforce pipeline-card/F-prime/model gates
+  2. load or resume SessionState -> choose spec and persisted preferences
+  3. preflight selected models -> abort on preflight failure
+  4. call_models_parallel() -> per-model partial checkpoint
+  5. save round/session artifacts -> optional Telegram feedback -> render output
 DATA_IN:
-  - argv/stdin/spec file: CLI options and specification text
-  - profile/config: model/provider selection
+  - spec: str (stdin or resumed state)
+  - model/profile/context options: CLI values
 DATA_OUT:
-  - critique/spec/task output: text plus ModelResponse metadata
-  - session checkpoint: JSON state when resumability is enabled
-EXITS_TO: gauntlet-pipeline, user-review, session-resume, cli-error
-BOUNDARIES: model-cli-stdio, model-litellm, session-files, telegram-http
+  - results: ModelResponse[] (stdout and session artifacts)
+EXITS_TO: gauntlet-seven-phase | session-resume
+BOUNDARIES: debate-session-state-resume, telegram-bot-http-roundtrip
 ```
 
-### FLOW: gauntlet-pipeline
+### FLOW: gauntlet-seven-phase
 
-```text
-TRIGGER: `--gauntlet` through debate CLI or `python -m gauntlet`
+```
+TRIGGER: standalone gauntlet CLI or debate `gauntlet` action
 ENTRY: run_gauntlet() (skills/adversarial-spec/scripts/gauntlet/orchestrator.py:205)
 STATUS: implemented
 STEPS:
-  1. resolve config/prompts/adversaries -> attack generation
-  2. phase_1_attacks -> phase_2_synthesis -> phase_3_filtering
-  3. clustering -> tiered evaluation -> rebuttals
-  4. adjudication -> final boss -> GauntletResult
-  5. save checkpoint/run manifest/stats/medals -> render report
+  1. hash spec/config -> write initial manifest
+  2. resume [compatible checkpoint] -> restore phase data | start fresh
+  3. generate attacks -> filter -> synthesize/cluster
+  4. evaluate provider-bounded batches -> rebut dismissed -> adjudicate sustained
+  5. Final Boss [enabled] -> combine concerns -> save run/stats/manifest
 DATA_IN:
-  - spec: text to attack
-  - GauntletConfig: models, adversaries, thresholds, resume/options
+  - spec: str
+  - config: gauntlet options/model selections
 DATA_OUT:
-  - GauntletResult: concerns, evaluations, rebuttals, verdict, metrics
-  - run artifacts: JSON/Markdown checkpoints and reports
-EXITS_TO: debate-output, gauntlet-resume, gauntlet-error
-BOUNDARIES: model-cli-stdio, model-litellm, gauntlet-file-state
+  - GauntletResult: typed verdict and concerns
+EXITS_TO: gauntlet-checkpoint-resume | validation-closeout
+BOUNDARIES: gauntlet-checkpoint-envelope, litellm-response-normalization
 ```
 
-### FLOW: pre-gauntlet-compatibility
+### FLOW: pre-gauntlet-alignment
 
-```text
-TRIGGER: compatibility check requested before gauntlet
-ENTRY: run_pre_gauntlet() (skills/adversarial-spec/scripts/pre_gauntlet/orchestrator.py:207)
+```
+TRIGGER: standalone gauntlet `--pre-gauntlet`
+ENTRY: PreGauntletOrchestrator.run() (skills/adversarial-spec/scripts/pre_gauntlet/orchestrator.py:85)
 STATUS: implemented
 STEPS:
-  1. load_config_from_pyproject() -> collect git/system context
-  2. discover services -> build compatibility context
-  3. execute configured build/schema/validation commands
-  4. aggregate findings -> save_report() -> select exit status
+  1. select document-type rules -> disabled returns COMPLETE
+  2. extract affected files -> collect git/system/schema state
+  3. build bounded context -> collect blockers
+  4. blockers [interactive] -> alignment choice | noninteractive NEEDS_ALIGNMENT
 DATA_IN:
-  - spec: proposed specification
-  - repo_root/CompatibilityConfig: repository and configured checks
+  - spec: str
+  - target repository/config: paths and TOML policy
 DATA_OUT:
-  - PreGauntletResult: status, checks, findings, alignment data
-EXITS_TO: gauntlet-pipeline, alignment-review, pre-gauntlet-error
-BOUNDARIES: pre-gauntlet-subprocess, pre-gauntlet-report
+  - PreGauntletResult: status and context_markdown
+EXITS_TO: gauntlet-seven-phase | operator-alignment
+BOUNDARIES: none
+```
+
+### FLOW: validation-closeout
+
+```
+TRIGGER: validation-emission subcommands during execution/close
+ENTRY: main() (skills/adversarial-spec/scripts/validation_emission.py:3423)
+STATUS: implemented
+STEPS:
+  1. derive ConOps -> bind hashes to ledger rows
+  2. normalize rows/evidence -> locked atomic ledger mutation
+  3. assemble digest -> record delivery -> parse authenticated reply
+  4. emit system validation -> self-check artifact/hash/coverage
+  5. emit Envelope -> process exit status
+DATA_IN:
+  - manifests, ConOps, ledger/evidence paths, CLI arguments
+DATA_OUT:
+  - Envelope: {status, code, issues, data}; validation artifacts
+EXITS_TO: human-judgment | implementation-close
+BOUNDARIES: validation-cli-stdout-envelope
 ```
 
 ## Data Processing Flows
 
-### FLOW: tmr-compile-and-validate
+### FLOW: tmr-registry-to-spine-gate
 
-```text
-TRIGGER: candidate TMR records are compiled
+```
+TRIGGER: confirmed TMR compile or gauntlet-check invocation
 ENTRY: compile_tmr_records() (skills/adversarial-spec/scripts/tmr_compile_step.py:64)
 STATUS: implemented
 STEPS:
-  1. coerce candidate -> resolve accessors/identity
-  2. mint missing ULID -> diff by tmr_uid
-  3. validate strict TestMaturityRecord -> write confirmed registry
-  4. render prose view from confirmed records
+  1. validate/mint stable TMR identity -> compute semantic diff
+  2. confirmed [true] -> write registry | return preview only
+  3. parse registry -> strict schema/duplicate-key checks
+  4. count active spine records by user story -> JSON/text gate result
 DATA_IN:
-  - candidates: prose-derived or structured candidate mappings
-  - existing_registry: optional prior TMR records
+  - CompileCandidate[] or registry JSON; roadmap/session paths
 DATA_OUT:
-  - confirmed_records: schema-valid TMR JSON
-  - semantic_diff_events: created/updated/unchanged record changes
-  - prose_view: derived Markdown
-EXITS_TO: phase8-promotion, provenance-transition, compile-error
-BOUNDARIES: tmr-registry-prose-view
+  - confirmed registry and GateResult
+EXITS_TO: execution-gate | remediation
+BOUNDARIES: tmr-registry-to-spine-gate, gauntlet-check-cli-json-envelope
 ```
 
-### FLOW: validation-ledger-lifecycle
+### FLOW: hook-pretool-guard
 
-```text
-TRIGGER: validation-emission subcommand invocation
-ENTRY: validation_emission.main() (skills/adversarial-spec/scripts/validation_emission.py:3423)
+```
+TRIGGER: Claude PreToolUse for configured Fizzy tool
+ENTRY: main() (.claude/hooks/fizzy_payload_guard.py:86)
 STATUS: implemented
 STEPS:
-  1. parse subcommand -> resolve spec-root paths and enforce bounds
-  2. normalize/lint rows -> compute canonical hashes
-  3. mutate ledger under FileLock -> assemble/send/parse evidence batch
-  4. record system-validation evidence or self-check -> emit Envelope
+  1. parse stdin JSON -> exit quietly [invalid]
+  2. inspect tool_name/tool_input/metadata -> validate override [present]
+  3. scoped rule violation -> emit block decision | otherwise exit zero
+  4. accepted override -> append decisions log best effort
 DATA_IN:
-  - argv: subcommand and bounded paths/payloads
-  - ledger/reply/artifact: JSON/Markdown evidence inputs
+  - hook JSON: tool_name, tool_input, optional metadata
 DATA_OUT:
-  - Envelope: status/code/issues/data on stdout
-  - ledger/evidence: atomic file updates when command mutates state
-EXITS_TO: phase8-promotion, telegram-reply, validation-error
-BOUNDARIES: validation-cli-stdout, validation-ledger-files, telegram-http
+  - block decision JSON or no decision
+EXITS_TO: external-hook-host
+BOUNDARIES: fizzy-pretool-guard-decision
 ```
 
-### FLOW: provenance-transition
+### FLOW: telegram-notify-and-reply
 
-```text
-TRIGGER: a TMR/node transition or disposition must be recorded
-ENTRY: ProvenanceJournalWriter (skills/adversarial-spec/scripts/provenance_journal.py:112)
-STATUS: implemented
-STEPS:
-  1. validate subject/event -> check expected coordinates
-  2. acquire ordered locks -> append journal transition
-  3. atomically update registry/index -> return AppendReceipt
-  4. restore prior bytes on failure -> raise typed provenance error
-DATA_IN:
-  - transition: typed JournalTransition
-  - registry/journal/index: current file-backed state
-DATA_OUT:
-  - receipt: append identity and resulting state
-  - registry/journal/index: updated lineage artifacts
-EXITS_TO: phase8-promotion, provenance-conflict
-BOUNDARIES: provenance-files
 ```
-
-### FLOW: plan-dependency-analysis
-
-```text
-TRIGGER: plan dependency report requested
-ENTRY: analyze_plan() (skills/adversarial-spec/scripts/dependency_semantics.py:82)
+TRIGGER: Telegram CLI send/poll/notify or debate optional feedback
+ENTRY: poll_for_reply() (skills/adversarial-spec/scripts/telegram_bot.py:175)
 STATUS: implemented
 STEPS:
-  1. parse plan tasks/edges -> normalize edge kinds and waves
-  2. topological profile -> detect semantic/ordering issues
-  3. serialize report -> stdout
+  1. load named environment config -> send chunked message
+  2. getUpdates long poll -> filter matching chat/nonempty text
+  3. update offset -> return reply | deadline returns None
 DATA_IN:
-  - plan: execution-plan JSON
-  - semantics: optional semantic-document JSON
+  - message text; configured chat and bot values
 DATA_OUT:
-  - report: schema-versioned dependency analysis JSON
-EXITS_TO: plan-review, plan-error
-BOUNDARIES: plan-json-stdio
-```
-
-## Background Flows
-
-### FLOW: parallel-model-dispatch
-
-```text
-TRIGGER: debate or gauntlet requests multiple model calls
-ENTRY: call_models_parallel() (skills/adversarial-spec/scripts/models.py:1114)
-STATUS: implemented
-STEPS:
-  1. create worker futures -> call_single_model() per route
-  2. collect ModelResponse or timeout/error -> update TokenTracker
-  3. save partial results on failure -> return ordered responses
-DATA_IN:
-  - models: model route names
-  - prompt/context: text payload and optional context files
-DATA_OUT:
-  - responses: list of ModelResponse
-  - partial artifacts: per-call failure recovery files
-EXITS_TO: debate-round-lifecycle, gauntlet-pipeline, model-error
-BOUNDARIES: model-cli-stdio, model-litellm
-```
-
-### FLOW: hook-decision
-
-```text
-TRIGGER: Claude Code invokes a configured hook with JSON on stdin
-ENTRY: codex_pretool_combined.main() (.claude/hooks/codex_pretool_combined.py:57)
-STATUS: implemented
-STEPS:
-  1. json.load(stdin) -> invoke SUB_HOOKS sequentially
-  2. first non-zero sub-hook exit -> stop and preserve hook output
-  3. successful pipeline event -> optional systemMessage/notification hook
-  4. emit protocol JSON or exit 0/no output
-DATA_IN:
-  - hook_event: tool name, tool input, tool result, role metadata
-DATA_OUT:
-  - decision: conditional block/warn/allow behavior
-  - systemMessage: conditional operator/worker instruction
-EXITS_TO: tool-execution, tool-blocked, pipeline-idle
-BOUNDARIES: hook-stdio, fizzy-mcp-boundary, telegram-http
+  - bool send result or reply text
+EXITS_TO: debate-critique-round | caller output
+BOUNDARIES: telegram-bot-http-roundtrip
 ```
 
 ## Error Recovery Flows
 
-### FLOW: gauntlet-resume
+### FLOW: gauntlet-checkpoint-resume
 
-```text
-TRIGGER: a prior gauntlet checkpoint or partial run is selected
-ENTRY: load_partial_run() (skills/adversarial-spec/scripts/gauntlet/persistence.py:688)
+```
+TRIGGER: gauntlet resume request
+ENTRY: _load_checkpoint_envelope() (skills/adversarial-spec/scripts/gauntlet/persistence.py:281)
 STATUS: implemented
 STEPS:
-  1. resolve checkpoint path -> load envelope under lock
-  2. validate schema/spec/config/data hashes -> reject mismatch
-  3. restore phase state -> continue from next incomplete phase
-  4. persist replacement checkpoint/manifest -> return result or typed error
+  1. read locked JSON -> return none [missing/corrupt]
+  2. validate envelope/meta/schema/spec/config -> ignore [mismatch]
+  3. verify data hash [truthy hash] -> ignore [mismatch]
+  4. return phase payload -> orchestrator resumes phase
 DATA_IN:
-  - checkpoint: JSON integrity envelope
-  - spec/config: current hashes for compatibility
+  - checkpoint path; expected spec/config hashes
 DATA_OUT:
-  - resumed state: phase data and metrics
-  - error: mismatch/corruption/lock failure
-EXITS_TO: gauntlet-pipeline, gauntlet-error
-BOUNDARIES: gauntlet-file-state
+  - phase data or None
+EXITS_TO: gauntlet-seven-phase
+BOUNDARIES: gauntlet-checkpoint-envelope
 ```
 
-### FLOW: phase8-promotion-gate
+### FLOW: model-response-normalization
 
-```text
-TRIGGER: Phase 8 attempts to close implementation work
-ENTRY: evaluate_phase8_close() (skills/adversarial-spec/scripts/phase8_promotion.py:162)
+```
+TRIGGER: LiteLLM-backed model call in gauntlet phase
+ENTRY: call_model() (skills/adversarial-spec/scripts/gauntlet/model_dispatch.py:64)
 STATUS: implemented
 STEPS:
-  1. select critical/spine records -> require promotion/evidence checks
-  2. build PromotionRequest -> capture RunExecution evidence
-  3. reject missing liveness/negative oracle/boundary mock lint -> or accept close
+  1. validate model name -> invoke LiteLLM
+  2. extract choices[0].message.content -> raise [missing]
+  3. normalize missing usage counts to zero -> record token tracker
+  4. phase parser -> concern/evaluation parse or conservative fallback
 DATA_IN:
-  - records: TMR registry rows and run evidence
+  - system/user prompts; model/rate configuration
 DATA_OUT:
-  - Phase8PromotionReport: requests, issues, promotable rows
-EXITS_TO: provenance-transition, implementation-close, phase8-blocked
-BOUNDARIES: tmr-registry-prose-view, provenance-files, validation-cli-stdout
+  - response text and normalized token counts
+EXITS_TO: gauntlet-seven-phase
+BOUNDARIES: litellm-response-normalization
 ```

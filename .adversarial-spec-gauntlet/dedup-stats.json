@@ -108,5 +108,33 @@
       "gemini-cli/gemini-3-flash-preview"
     ],
     "clustering_model": "jaccard-deterministic"
+  },
+  {
+    "timestamp": "2026-07-20T21:34:59.076309+00:00",
+    "spec_hash": "a4dafd47",
+    "raw_concerns": 142,
+    "post_filter": 142,
+    "post_cluster": 142,
+    "cluster_deduped": 0,
+    "reduction_pct": 0.0,
+    "attack_models": [
+      "codex/gpt-5.6-luna",
+      "antigravity/gemini-3.5-flash-low"
+    ],
+    "clustering_model": "jaccard-deterministic"
+  },
+  {
+    "timestamp": "2026-07-20T21:41:02.153457+00:00",
+    "spec_hash": "a4dafd47",
+    "raw_concerns": 170,
+    "post_filter": 170,
+    "post_cluster": 170,
+    "cluster_deduped": 0,
+    "reduction_pct": 0.0,
+    "attack_models": [
+      "codex/gpt-5.6-luna",
+      "antigravity/gemini-3.5-flash-low"
+    ],
+    "clustering_model": "jaccard-deterministic"
   }
 ]
