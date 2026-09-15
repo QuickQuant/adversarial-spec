@@ -37,6 +37,7 @@ def valid_code_evidence(**overrides):
         "artifact_sha256": "a" * 64,
         "runner": "skill-runner",
         "live_or_induced": {"kind": "tc-netem:partition"},
+        "target_observation": None,
     }
     evidence.update(overrides)
     return evidence
@@ -62,6 +63,8 @@ def valid_tmr(**overrides):
         "source_spec": "liveness-gate-test-ladder",
         "live_or_induced": {"kind": "natural-wait"},
         "run_evidence": valid_code_evidence(),
+        "target_binding": None,
+        "target_binding_status": "legacy-unbound",
         # Obligation identity (B-1) -- optional with null defaults, but spelled
         # out here because this round-trip is field-for-field.
         "obligation_revision": "1",

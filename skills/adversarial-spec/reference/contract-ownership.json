@@ -1,0 +1,50 @@
+{
+  "contracts": [
+    {
+      "contract": "tmr-keystone",
+      "owner": "Brainquarters",
+      "consumers": [
+        {
+          "name": "adversarial-spec",
+          "scope": "mirror + regenerate + sha tripwire"
+        },
+        {
+          "name": "fizzy-pipeline-mcp",
+          "scope": "plan/metadata contracts only; no TMR execution logic"
+        },
+        {
+          "name": "skill-runner",
+          "scope": "executes"
+        }
+      ]
+    },
+    {
+      "contract": "plan-schema",
+      "owner": "fizzy-pipeline-mcp",
+      "consumers": [
+        {
+          "name": "adversarial-spec",
+          "scope": "authors and emits plans against the owner's validation contract"
+        },
+        {
+          "name": "fizzy-pipeline-mcp",
+          "scope": "validates and loads plans"
+        }
+      ]
+    },
+    {
+      "contract": "card-metadata",
+      "owner": "fizzy-pipeline-mcp",
+      "consumers": [
+        {
+          "name": "adversarial-spec",
+          "scope": "reads task metadata and supplies contract fields"
+        },
+        {
+          "name": "fizzy-pipeline-mcp",
+          "scope": "validates, builds, and persists card metadata"
+        }
+      ]
+    }
+  ]
+}

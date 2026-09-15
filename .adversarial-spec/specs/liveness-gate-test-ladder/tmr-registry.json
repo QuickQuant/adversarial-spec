@@ -44,7 +44,9 @@
     "required_tier": null,
     "tmr_record_hash": null,
     "negative_oracle": null,
-    "negative_oracle_ref": null
+    "negative_oracle_ref": null,
+    "target_binding": null,
+    "target_binding_status": "legacy-unbound"
   },
   {
     "accessors": [
@@ -91,7 +93,9 @@
     "required_tier": null,
     "tmr_record_hash": null,
     "negative_oracle": null,
-    "negative_oracle_ref": null
+    "negative_oracle_ref": null,
+    "target_binding": null,
+    "target_binding_status": "legacy-unbound"
   },
   {
     "accessors": [
@@ -138,7 +142,9 @@
     "required_tier": null,
     "tmr_record_hash": null,
     "negative_oracle": null,
-    "negative_oracle_ref": null
+    "negative_oracle_ref": null,
+    "target_binding": null,
+    "target_binding_status": "legacy-unbound"
   },
   {
     "accessors": [
@@ -185,7 +191,9 @@
     "required_tier": null,
     "tmr_record_hash": null,
     "negative_oracle": null,
-    "negative_oracle_ref": null
+    "negative_oracle_ref": null,
+    "target_binding": null,
+    "target_binding_status": "legacy-unbound"
   },
   {
     "accessors": [
@@ -232,7 +240,9 @@
     "required_tier": null,
     "tmr_record_hash": null,
     "negative_oracle": null,
-    "negative_oracle_ref": null
+    "negative_oracle_ref": null,
+    "target_binding": null,
+    "target_binding_status": "legacy-unbound"
   },
   {
     "accessors": [
@@ -279,7 +289,9 @@
     "required_tier": null,
     "tmr_record_hash": null,
     "negative_oracle": null,
-    "negative_oracle_ref": null
+    "negative_oracle_ref": null,
+    "target_binding": null,
+    "target_binding_status": "legacy-unbound"
   },
   {
     "accessors": [
@@ -326,7 +338,9 @@
     "required_tier": null,
     "tmr_record_hash": null,
     "negative_oracle": null,
-    "negative_oracle_ref": null
+    "negative_oracle_ref": null,
+    "target_binding": null,
+    "target_binding_status": "legacy-unbound"
   },
   {
     "accessors": [
@@ -373,7 +387,9 @@
     "required_tier": null,
     "tmr_record_hash": null,
     "negative_oracle": null,
-    "negative_oracle_ref": null
+    "negative_oracle_ref": null,
+    "target_binding": null,
+    "target_binding_status": "legacy-unbound"
   },
   {
     "accessors": [
@@ -420,7 +436,9 @@
     "required_tier": null,
     "tmr_record_hash": null,
     "negative_oracle": null,
-    "negative_oracle_ref": null
+    "negative_oracle_ref": null,
+    "target_binding": null,
+    "target_binding_status": "legacy-unbound"
   },
   {
     "accessors": [
@@ -467,7 +485,9 @@
     "required_tier": null,
     "tmr_record_hash": null,
     "negative_oracle": null,
-    "negative_oracle_ref": null
+    "negative_oracle_ref": null,
+    "target_binding": null,
+    "target_binding_status": "legacy-unbound"
   },
   {
     "accessors": [
@@ -514,7 +534,9 @@
     "required_tier": null,
     "tmr_record_hash": null,
     "negative_oracle": null,
-    "negative_oracle_ref": null
+    "negative_oracle_ref": null,
+    "target_binding": null,
+    "target_binding_status": "legacy-unbound"
   },
   {
     "accessors": [
@@ -561,7 +583,9 @@
     "required_tier": null,
     "tmr_record_hash": null,
     "negative_oracle": null,
-    "negative_oracle_ref": null
+    "negative_oracle_ref": null,
+    "target_binding": null,
+    "target_binding_status": "legacy-unbound"
   },
   {
     "accessors": [
@@ -608,7 +632,9 @@
     "required_tier": null,
     "tmr_record_hash": null,
     "negative_oracle": null,
-    "negative_oracle_ref": null
+    "negative_oracle_ref": null,
+    "target_binding": null,
+    "target_binding_status": "legacy-unbound"
   },
   {
     "accessors": [
@@ -655,7 +681,9 @@
     "required_tier": null,
     "tmr_record_hash": null,
     "negative_oracle": null,
-    "negative_oracle_ref": null
+    "negative_oracle_ref": null,
+    "target_binding": null,
+    "target_binding_status": "legacy-unbound"
   },
   {
     "accessors": [
@@ -702,6 +730,8 @@
     "required_tier": null,
     "tmr_record_hash": null,
     "negative_oracle": null,
-    "negative_oracle_ref": null
+    "negative_oracle_ref": null,
+    "target_binding": null,
+    "target_binding_status": "legacy-unbound"
   }
 ]
