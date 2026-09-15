@@ -46,6 +46,8 @@ class CompileCandidate:
 
     anchor: str
     record: dict[str, object]
+    # Synthesis (antigravity design point): typed callers can annotate too.
+    annotations: str = ""
 
 
 @dataclass(frozen=True)
@@ -231,7 +233,7 @@ def _coerce_candidate(
     candidate: CompileCandidate | Mapping[str, object],
 ) -> tuple[CompileCandidate, object]:
     if isinstance(candidate, CompileCandidate):
-        return candidate, ""
+        return candidate, candidate.annotations
     if "anchor" not in candidate:
         raise SchemaValidationError("anchor", "Compile candidate missing anchor")
     record = candidate.get("record", candidate)
