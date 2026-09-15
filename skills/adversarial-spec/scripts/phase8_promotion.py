@@ -9,7 +9,7 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, TypedDict
 
 from pydantic import ValidationError
 
@@ -29,6 +29,22 @@ class PromotionIssue:
     tmr_uid: str
     message: str
     severity: Literal["halt", "failing"] = "failing"
+
+
+class TargetObservationCapture(TypedDict):
+    """Runner capture envelope consumed by promotion (E-7) and custody reconcile (E-12).
+
+    Synthesis (antigravity design point): a typed shape for consumers to import.
+    """
+
+    capture_state: Literal["COMPLETE", "INCOMPLETE"]
+    observation_source: Literal["runner"]
+    owner_observation_ignored: bool
+    captured_at: str
+    target_ref: str
+    runtime_receipt: dict[str, Any] | None
+    run_evidence: dict[str, Any] | None
+    issues: list[dict[str, Any]]
 
 
 @dataclass(frozen=True)
@@ -216,7 +232,7 @@ def capture_run_evidence(
     env: Literal["live", "dev", "ci"],
     owner_written_result: str | Mapping[str, Any] | None = None,
     owner_written_observation: Mapping[str, Any] | None = None,
-) -> dict[str, Any]:
+) -> TargetObservationCapture:
     """Execute once and return a detached TargetObservationCapture envelope.
 
     The callback owns measured fields and the receipt ID; the binding owns only
@@ -243,7 +259,7 @@ def capture_run_evidence(
             receipt[field_name] = _get(binding, field_name)
     else:
         receipt = None
-    capture = {
+    capture: TargetObservationCapture = {
         "capture_state": "INCOMPLETE",
         "observation_source": "runner",
         "owner_observation_ignored": owner_observation_ignored,
