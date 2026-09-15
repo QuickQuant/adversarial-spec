@@ -12,6 +12,7 @@ promoter's field names and the keystone is a failing test, not a silent gap.
 from __future__ import annotations
 
 import copy
+import json
 
 import pytest
 from phase8_promotion import evaluate_phase8_close
@@ -73,7 +74,9 @@ BASE_RECORD = {
 def _validated(**overrides) -> dict:
     payload = copy.deepcopy(BASE_RECORD)
     payload.update(overrides)
-    return dump_tmr_record(validate_tmr_record(payload))
+    validated_record = validate_tmr_record(payload)
+    serialized_json = json.dumps(dump_tmr_record(validated_record))
+    return json.loads(serialized_json)
 
 
 def test_promoter_negative_oracle_fields_exist_in_canonical_schema() -> None:
@@ -118,3 +121,20 @@ def test_negative_oracle_fields_are_strictly_typed(field: str, value: object) ->
     with pytest.raises(SchemaValidationError) as excinfo:
         validate_tmr_record({**copy.deepcopy(BASE_RECORD), field: value})
     assert excinfo.value.field == field
+
+
+def test_validated_record_full_json_model_round_trip() -> None:
+    """Explicitly verify model -> JSON string -> model validate -> promote."""
+    payload = copy.deepcopy(BASE_RECORD)
+    payload["negative_oracle"] = True
+
+    record = validate_tmr_record(payload)
+    json_str = json.dumps(dump_tmr_record(record))
+
+    reloaded_dict = json.loads(json_str)
+    reloaded_record = validate_tmr_record(reloaded_dict)
+
+    assert reloaded_record.negative_oracle is True
+    report = evaluate_phase8_close([dump_tmr_record(reloaded_record)])
+    assert report.can_close is True
+
