@@ -1,0 +1,205 @@
+{
+  "leaf": "C-PROMOTION-COMPARE",
+  "card_id": "21549",
+  "session_id": "adv-spec-202609150549-bounded-reform-hardening-align",
+  "authored_at": "2026-09-15T15:39:34.130086Z",
+  "operator": "Jason \u2014 explicit C-PROMOTION-COMPARE Phase A/B authoring request; authored by Codex",
+  "component_inputs": {
+    "goal_refs": [
+      "G-1",
+      "G-4"
+    ],
+    "surface_refs": [
+      "phase8_promotion.compare_target_observation",
+      "phase8_promotion.classify_fixture_provenance",
+      "phase8_promotion._lint_boundary_mock",
+      "phase8_promotion.terminal_enum_coverage",
+      "phase8_promotion.evaluate_phase8_close",
+      "phase8_promotion.PromotionIssue",
+      "phase8_promotion.RejectionDiagnostic",
+      "phase8_promotion.diagnose",
+      "phase8_promotion.requires_target_binding",
+      "phase8_promotion.TargetObservationCapture",
+      "tmr_schema.TargetObservation",
+      "tmr_schema.CodeRunEvidence",
+      "tmr_compile_step.compile_tmr_records",
+      "gate_policy.RejectCode",
+      "gate_policy.EnforcementMode",
+      "gate_policy.is_receipt_fresh",
+      "gate_policy.FRESHNESS_WINDOW_SECONDS"
+    ],
+    "consumed_refs": [
+      "phase8_promotion.capture_run_evidence",
+      "tmr_schema.TargetProofBinding"
+    ]
+  },
+  "guarantee_doc": "guarantee-obligations.md",
+  "guarantee_doc_sha256": "sha256:c4eaafbccfcd5767b9001609dc4ab5ab37053cd2e2f5e74406889de13bd24ae4",
+  "guarantees": [
+    {
+      "guarantee_id": "GU-1",
+      "statement": "Validated target bindings and matching trusted runner observations close; measured caller/path/authority/outcome/contract differences produce typed issues under the supplied enforcement mode",
+      "goal_refs": [
+        "G-1",
+        "G-4"
+      ],
+      "surface_refs": [
+        "phase8_promotion.compare_target_observation",
+        "phase8_promotion.evaluate_phase8_close",
+        "tmr_schema.TargetObservation",
+        "tmr_schema.CodeRunEvidence",
+        "tmr_compile_step.compile_tmr_records",
+        "gate_policy.RejectCode",
+        "gate_policy.EnforcementMode"
+      ]
+    },
+    {
+      "guarantee_id": "GU-2",
+      "statement": "Required source/package/activation/process joins and all reachable terminal states are proven by supplied facts; stale ref/identity or policy freshness failures cannot discharge an obligation",
+      "goal_refs": [
+        "G-1"
+      ],
+      "surface_refs": [
+        "phase8_promotion.compare_target_observation",
+        "phase8_promotion.terminal_enum_coverage",
+        "gate_policy.is_receipt_fresh",
+        "gate_policy.FRESHNESS_WINDOW_SECONDS"
+      ]
+    },
+    {
+      "guarantee_id": "GU-3",
+      "statement": "Typed provenance imposes a fixture ceiling at precisely the required real-producer boundaries; lexical mock detection is advisory and untriggered pure formula fixtures pay no binding burden",
+      "goal_refs": [
+        "G-1"
+      ],
+      "surface_refs": [
+        "phase8_promotion.classify_fixture_provenance",
+        "phase8_promotion._lint_boundary_mock",
+        "phase8_promotion.requires_target_binding"
+      ]
+    },
+    {
+      "guarantee_id": "GU-4",
+      "statement": "Every rejection provides structured recovery data while missing, partial, or unsupported evidence remains distinct from mismatch and never gains a fabricated result",
+      "goal_refs": [
+        "G-1"
+      ],
+      "surface_refs": [
+        "phase8_promotion.PromotionIssue",
+        "phase8_promotion.RejectionDiagnostic",
+        "phase8_promotion.diagnose",
+        "phase8_promotion.TargetObservationCapture",
+        "phase8_promotion.evaluate_phase8_close"
+      ]
+    }
+  ],
+  "obligations": [
+    {
+      "obligation_id": "O-1",
+      "guarantee_id": "GU-1",
+      "claim": "Canonical schema-validated matching record/capture/context yields empty comparisons and can_close true; reject halts, warn retains warnings, legacy preserves old checks, and preexisting close failures remain blocking"
+    },
+    {
+      "obligation_id": "O-2",
+      "guarantee_id": "GU-1",
+      "claim": "Actual caller ID/kind, path/entrypoint, authority ref/role, outcome and producer/consumer hashes compare independently; golden ASP-HARDEN-005 emits all three PROOF codes even in live environment and with intended labels matching"
+    },
+    {
+      "obligation_id": "O-3",
+      "guarantee_id": "GU-2",
+      "claim": "Every declared runtime slot joins intended, packaged, activated, running and reporting sources; golden ASP-HARDEN-007 emits both runtime and package codes naming activation-to-running; missing slots/links remain missing; repaired multi-process joins pass"
+    },
+    {
+      "obligation_id": "O-4",
+      "guarantee_id": "GU-2",
+      "claim": "Receipt freshness uses gate_policy.is_receipt_fresh with supplied timestamps/refs, accepts the inclusive FRESHNESS_WINDOW_SECONDS boundary, rejects future/expired/changed-ref receipts, and independently rejects changed PID/start-time identities"
+    },
+    {
+      "obligation_id": "O-5",
+      "guarantee_id": "GU-2",
+      "claim": "Terminal coverage computes the sorted unique reachable-minus-accepted set, names all uncovered states including golden aborted, and close consumes the full matrix rather than only the present run terminal"
+    },
+    {
+      "obligation_id": "O-6",
+      "guarantee_id": "GU-3",
+      "claim": "Every typed provenance entry is classified against an explicit real-producer boundary requirement; recorded/constructed/stub/mock at a required boundary emits FIXTURE_PROVENANCE_CEILING, including makeEnvelope; safe and unrelated entries pass"
+    },
+    {
+      "obligation_id": "O-7",
+      "guarantee_id": "GU-3",
+      "claim": "The exact no-mocks reproduction title generates only advisory lexical detection in every mode; verbatim CTRL-001 has requires_target_binding false, no fixture ceiling, and no runtime-chain burden"
+    },
+    {
+      "obligation_id": "O-8",
+      "guarantee_id": "GU-4",
+      "claim": "diagnose produces code, plain message, test ID, durable obligation ID, structured expected/observed values, evidence class, worker next actor and permitted recovery naming the intended path; unrelated completed records are unchanged"
+    },
+    {
+      "obligation_id": "O-9",
+      "guarantee_id": "GU-4",
+      "claim": "Absent/partial/identity-incomplete observations emit RUNTIME_IDENTITY_INCOMPLETE with MISSING, owner/detached origins with UNSUPPORTED_ORIGIN; no PROOF mismatch or passing evidence is fabricated, and original records/captures remain unchanged"
+    }
+  ],
+  "primary_map": [
+    {
+      "obligation_id": "O-1",
+      "test_selector": "test_o1_matching_validated_record_closes_and_modes_preserve_old_guards",
+      "red_fingerprint": "78c6a4f9ae31e0ce"
+    },
+    {
+      "obligation_id": "O-2",
+      "test_selector": "test_o2_wrong_caller_path_authority_and_contracts_reject_without_live_widening",
+      "red_fingerprint": "8c97a14a21355a97"
+    },
+    {
+      "obligation_id": "O-3",
+      "test_selector": "test_o3_package_runtime_join_names_broken_link_and_unproven_component",
+      "red_fingerprint": "ea5df5398382b97b"
+    },
+    {
+      "obligation_id": "O-4",
+      "test_selector": "test_o4_policy_freshness_window_ref_and_process_restart_invalidate",
+      "red_fingerprint": "94ace771f471ed12"
+    },
+    {
+      "obligation_id": "O-5",
+      "test_selector": "test_o5_terminal_matrix_names_all_uncovered_states_including_golden_aborted",
+      "red_fingerprint": "a074fe42fd56499a"
+    },
+    {
+      "obligation_id": "O-6",
+      "test_selector": "test_o6_typed_fixture_ceiling_checks_each_bound_real_producer",
+      "red_fingerprint": "91b11c3a568e232c"
+    },
+    {
+      "obligation_id": "O-7",
+      "test_selector": "test_o7_lexical_mock_is_advisory_and_ctrl001_has_no_binding_burden",
+      "red_fingerprint": "86a391bb3833c39e"
+    },
+    {
+      "obligation_id": "O-8",
+      "test_selector": "test_o8_diagnostics_identify_obligation_values_class_actor_and_recovery",
+      "red_fingerprint": "cac6f934198ed73d"
+    },
+    {
+      "obligation_id": "O-9",
+      "test_selector": "test_o9_missing_partial_and_unsupported_observations_never_become_mismatch_or_pass",
+      "red_fingerprint": "0e80842c1704f3ac"
+    }
+  ],
+  "suite_path": "ab_suite/test_c_promotion_compare.py",
+  "suite_sha256": "sha256:5499cf5086afe760a3bae56baf08d4bfa3c3cd3d4b7a7e1ecc0936374ff472bd",
+  "controls": {
+    "known_good": "ab_suite/ab_controls/good_contract.py",
+    "known_bad": "ab_suite/ab_controls/bad_contract.py (frozen 08b848c)",
+    "known_good_passes": true,
+    "known_bad_fails": true
+  },
+  "red_runs": {
+    "count": 0,
+    "identical_fingerprints": false,
+    "suite_fingerprint": "TBD",
+    "red_for_right_reason": false
+  },
+  "safety_kernel": "SYNTHETIC validator inputs prove behavior, never boundary reality; writes/temporary extraction only inside this leaf; no live skill, network, board or git commands; comparison/close I/O barred; candidate red attestations remain unset"
+}

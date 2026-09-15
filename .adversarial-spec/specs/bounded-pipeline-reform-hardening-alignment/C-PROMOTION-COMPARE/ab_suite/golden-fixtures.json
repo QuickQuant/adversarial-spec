@@ -1,0 +1,116 @@
+{
+  "source": "/home/jason/PycharmProjects/prediction-prime/orchestration/adversarial-spec-hardening-packet-20260913/05-golden-regression-catalog.json",
+  "source_sha256": "sha256:37186dff6cebc02fbb5cc4da99a0612923e5217be95080923407ea173dd8515d",
+  "cases": [
+    {
+      "case_id": "ASP-HARDEN-005",
+      "name": "real legacy harness attempts to discharge product route",
+      "historical_class": "flatten_wrong_real_path",
+      "fixture": {
+        "obligation_path": "PATH-FLATTEN-V3",
+        "observed_path": "PATH-EXIT-V2",
+        "caller_kind": "harness",
+        "caller_equivalence_ref": null,
+        "environment": "live"
+      },
+      "expected_reject_codes": [
+        "PROOF_CALLER_MISMATCH",
+        "PROOF_PATH_MISMATCH",
+        "PROOF_AUTHORITY_ROLE_MISMATCH"
+      ],
+      "must_prove": [
+        "live environment does not widen evidence",
+        "v2 result cannot close v3 obligation"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/prediction-prime/docs/exit-vs-flatten-2026-09-07.md:8",
+        "/home/jason/PycharmProjects/prediction-prime/scripts/live_exit/browser_gateway.py:139"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-007",
+      "name": "new package proof runs old listener process",
+      "historical_class": "listener_runtime_identity",
+      "fixture": {
+        "intended_source": "56112c37",
+        "packaged_source": "56112c37",
+        "running_source": "05742a38",
+        "gateway_source": "56112c37"
+      },
+      "expected_reject_codes": [
+        "RUNTIME_IDENTITY_INCOMPLETE",
+        "PACKAGE_COMPONENT_UNPROVEN"
+      ],
+      "must_prove": [
+        "old running process cannot discharge fresh package",
+        "every shipped process has joined identity"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/prediction-prime/.adversarial-spec/specs/browser-stability-lna-compact/process-failures/2026-09-03-listener-never-deployed.md:1"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-012",
+      "name": "lexical mock detector misses constructed replacement producer",
+      "historical_class": "fixture_provenance",
+      "fixture": {
+        "test_helper": "makeEnvelope",
+        "contains_word_mock": false,
+        "replaced_boundary": "gateway producer"
+      },
+      "expected_reject_codes": [
+        "FIXTURE_PROVENANCE_CEILING"
+      ],
+      "must_prove": [
+        "typed provenance detects boundary substitution",
+        "lexical absence cannot raise claim ceiling"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/prediction-prime/.adversarial-spec/retrospectives/2026-04-21-balances-shipped-broken-contract-gap.md:63",
+        "/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/phase8_promotion.py:212"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-013",
+      "name": "terminal aborted emitted but runner times out",
+      "historical_class": "flatten_terminal_enum",
+      "fixture": {
+        "system_terminal": "aborted",
+        "runner_known_terminals": [
+          "completed",
+          "failed",
+          "expired"
+        ]
+      },
+      "expected_reject_codes": [
+        "TERMINAL_ENUM_UNCOVERED"
+      ],
+      "must_prove": [
+        "runner reports aborted directly",
+        "timeout cannot replace reachable terminal state"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/prediction-prime/orchestration/dual-mandate-reconstruction-20260907/research/major-mistake-causal-journeys-20260912.md"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-CTRL-001",
+      "name": "synthetic BVA remains valid for exact formula boundary",
+      "historical_class": "control",
+      "fixture": {
+        "data_strategy": "SYNTHETIC",
+        "critical_seam": false,
+        "claim": "pure at-boundary formula behavior",
+        "replaced_external_boundary": false
+      },
+      "expected_reject_codes": [],
+      "must_prove": [
+        "no runtime-chain burden",
+        "fixture claim remains narrow"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/phases/02-roadmap.md:482"
+      ]
+    }
+  ]
+}

@@ -6,8 +6,8 @@ import os
 import sys
 from collections.abc import Callable, Mapping, Sequence
 from copy import deepcopy
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass, field, replace
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Literal, TypedDict
 
@@ -15,8 +15,10 @@ from pydantic import ValidationError
 
 if __package__:
     from .tmr_schema import CodeRunEvidence, TargetObservation
+    from .gate_policy import RejectCode, is_receipt_fresh
 else:
     from tmr_schema import CodeRunEvidence, TargetObservation
+    from gate_policy import RejectCode, is_receipt_fresh
 
 REAL_DATA_STRATEGIES = frozenset({"REAL-DATA", "REAL-DATA + PROPERTY"})
 EXEMPT_VERIFICATION_MODES = frozenset({"artifact-sync", "static-check", "manual-ux"})
@@ -28,7 +30,23 @@ class PromotionIssue:
     code: str
     tmr_uid: str
     message: str
-    severity: Literal["halt", "failing"] = "failing"
+    severity: Literal["halt", "failing", "warning", "advisory"] | str = "failing"
+    expected: dict[str, Any] = field(default_factory=dict)
+    observed: dict[str, Any] = field(default_factory=dict)
+    evidence_class: str = "MISMATCH"
+
+
+@dataclass(frozen=True)
+class RejectionDiagnostic:
+    code: str
+    message: str
+    test_id: str
+    obligation_id: str
+    expected: dict[str, Any]
+    observed: dict[str, Any]
+    evidence_class: str
+    next_actor: str
+    permitted_recovery: list[str]
 
 
 class TargetObservationCapture(TypedDict):
@@ -96,7 +114,7 @@ class Phase8PromotionReport:
 
     @property
     def can_close(self) -> bool:
-        return not self.issues
+        return not any(i.severity in {"halt", "failing"} for i in self.issues)
 
 
 CommandRunner = Callable[[PromotionRequest], RunExecution]
@@ -297,84 +315,437 @@ def capture_run_evidence(
     return capture
 
 
-def evaluate_phase8_close(records: Sequence[Mapping[str, Any]]) -> Phase8PromotionReport:
+def _utc(value: datetime | str) -> datetime:
+    parsed = datetime.fromisoformat(value) if isinstance(value, str) else value
+    if not isinstance(parsed, datetime) or parsed.utcoffset() is None:
+        raise ValueError("timezone-aware timestamp required")
+    return parsed.astimezone(timezone.utc)
+
+
+def _issue(
+    code: RejectCode | str,
+    field_name: str,
+    expected: Any,
+    observed: Any,
+    evidence_class: str = "MISMATCH",
+    *,
+    severity: str = "halt",
+) -> PromotionIssue:
+    return PromotionIssue(
+        str(code),
+        "",
+        f"Evidence for {field_name} cannot discharge the declared obligation: "
+        f"expected {expected!r}; observed {observed!r}.",
+        severity,
+        {"field": field_name, "value": deepcopy(expected)},
+        {"field": field_name, "value": deepcopy(observed)},
+        evidence_class,
+    )
+
+
+def compare_target_observation(
+    binding: Mapping[str, Any],
+    observation: Mapping[str, Any] | None,
+    *,
+    now: datetime | str,
+    cutover_mode: str,
+) -> list[PromotionIssue]:
+    if cutover_mode not in {"legacy", "warn", "reject"}:
+        raise ValueError("unsupported enforcement mode")
+    if cutover_mode == "legacy":
+        return []
+    severity = "warning" if cutover_mode == "warn" else "halt"
+    issues: list[PromotionIssue] = []
+
+    def add(
+        code: RejectCode | str,
+        name: str,
+        expected: Any,
+        actual: Any,
+        category: str = "MISMATCH",
+    ) -> None:
+        issues.append(_issue(code, name, expected, actual, category, severity=severity))
+
+    def incomplete(
+        name: str, actual: Any = None, category: str = "MISSING"
+    ) -> list[PromotionIssue]:
+        add(
+            RejectCode.RUNTIME_IDENTITY_INCOMPLETE,
+            name,
+            "complete trusted runner evidence",
+            actual,
+            category,
+        )
+        return issues
+
+    if observation is None:
+        return incomplete("target_observation")
+    if observation.get("observation_source") != "runner":
+        return incomplete(
+            "observation_source",
+            observation.get("observation_source"),
+            "UNSUPPORTED_ORIGIN",
+        )
+    if observation.get("capture_state") != "COMPLETE":
+        return incomplete("capture_state", observation.get("capture_state"))
+    receipt = observation.get("runtime_receipt")
+    evidence = observation.get("run_evidence")
+    if not isinstance(receipt, dict) or not isinstance(evidence, dict):
+        return incomplete("runtime_receipt")
+    if receipt != evidence.get("target_observation"):
+        return incomplete(
+            "run_evidence.target_observation",
+            evidence.get("target_observation"),
+            "UNSUPPORTED_ORIGIN",
+        )
+    for key in TargetObservation.model_fields:
+        if receipt.get(key) is None or receipt.get(key) == "":
+            return incomplete(key)
+    if type(receipt["pid"]) is not int or receipt["pid"] <= 0:
+        return incomplete("pid", receipt["pid"])
+    try:
+        _utc(receipt["pid_start_time"])
+        TargetObservation.model_validate(receipt)
+    except (ValueError, TypeError, ValidationError):
+        return incomplete("runtime_receipt", receipt)
+    expected = binding.get("_comparison", {})
+    actual = observation.get("_comparison", {})
+    for key in (
+        "caller_id_observed",
+        "caller_kind_observed",
+        "path_id_observed",
+        "authority_role_observed",
+    ):
+        if not actual.get(key):
+            return incomplete(key)
+    for name, value in (
+        ("captured_at", observation.get("captured_at")),
+        ("target_ref_at_capture", observation.get("target_ref")),
+        ("target_ref_now", expected.get("target_ref")),
+    ):
+        if not value:
+            return incomplete(name)
+    try:
+        fresh = is_receipt_fresh(
+            observation["captured_at"],
+            now,
+            target_ref_at_capture=observation["target_ref"],
+            target_ref_now=expected["target_ref"],
+        )
+    except Exception:
+        return incomplete("captured_at", observation.get("captured_at"))
+    if not fresh:
+        add(
+            RejectCode.RUNTIME_IDENTITY_INCOMPLETE,
+            "receipt_freshness",
+            {"target_ref": expected["target_ref"], "now": str(now)},
+            {
+                "target_ref": observation["target_ref"],
+                "captured_at": observation["captured_at"],
+            },
+            "STALE",
+        )
+    comparisons = (
+        (
+            RejectCode.PROOF_OUTCOME_MISMATCH,
+            "outcome_id",
+            binding["outcome_id"],
+            receipt["outcome_id"],
+        ),
+        (
+            RejectCode.PROOF_CALLER_MISMATCH,
+            "caller",
+            [binding["caller_id"], binding["caller_kind"]],
+            [actual["caller_id_observed"], actual["caller_kind_observed"]],
+        ),
+        (
+            RejectCode.PROOF_PATH_MISMATCH,
+            "path",
+            [binding["path_id"], binding["entrypoint"]],
+            [actual["path_id_observed"], receipt["entrypoint_observed"]],
+        ),
+        (
+            RejectCode.PROOF_AUTHORITY_ROLE_MISMATCH,
+            "authority",
+            [binding["authority_ref"], binding["authority_role"]],
+            [receipt["authority_ref_observed"], actual["authority_role_observed"]],
+        ),
+        (
+            RejectCode.PRODUCER_CONSUMER_CONTRACT_UNPROVEN,
+            "contract_hashes",
+            [
+                binding["producer_contract"]["sha256"],
+                binding["consumer_contract"]["sha256"],
+            ],
+            [receipt["producer_contract_hash"], receipt["consumer_contract_hash"]],
+        ),
+    )
+    for code, name, desired, seen in comparisons:
+        if desired != seen:
+            add(code, name, desired, seen)
+    if binding.get("runtime_chain_required"):
+        for slot in binding.get("runtime_slots", []):
+            desired = expected.get("runtime_slots", {}).get(slot, {})
+            seen = actual.get("runtime_slots", {}).get(slot, {})
+            chain = (
+                "packaged_source",
+                "activation_source",
+                "running_source",
+                "gateway_source",
+            )
+            missing = [k for k in chain if not seen.get(k)]
+            if not desired.get("intended_source") or missing:
+                for code in (
+                    RejectCode.RUNTIME_IDENTITY_INCOMPLETE,
+                    RejectCode.PACKAGE_COMPONENT_UNPROVEN,
+                ):
+                    add(code, f"runtime_slots.{slot}", desired, seen, "MISSING")
+                continue
+            for key in ("pid", "pid_start_time"):
+                if not desired.get(key) or not seen.get(key):
+                    add(
+                        RejectCode.RUNTIME_IDENTITY_INCOMPLETE,
+                        f"runtime_slots.{slot}.{key}",
+                        desired.get(key),
+                        seen.get(key),
+                        "MISSING",
+                    )
+                elif desired[key] != seen[key] or (
+                    slot == binding["runtime_slots"][0] and receipt[key] != seen[key]
+                ):
+                    add(
+                        RejectCode.RUNTIME_IDENTITY_INCOMPLETE,
+                        f"runtime_slots.{slot}.{key}",
+                        desired[key],
+                        seen[key],
+                        "STALE",
+                    )
+            for index, key in enumerate(chain):
+                if seen[key] != desired["intended_source"]:
+                    link = (
+                        ("intended_source" if index == 0 else chain[index - 1])
+                        + " -> "
+                        + key
+                    )
+                    for code in (
+                        RejectCode.RUNTIME_IDENTITY_INCOMPLETE,
+                        RejectCode.PACKAGE_COMPONENT_UNPROVEN,
+                    ):
+                        add(
+                            code,
+                            f"runtime_slots.{slot}.{link}",
+                            desired["intended_source"],
+                            seen[key],
+                        )
+                    break
+    terminal_issue = terminal_enum_coverage(binding, [receipt["terminal_state"]])
+    if terminal_issue:
+        issues.append(replace(terminal_issue, severity=severity))
+    return issues
+
+
+def requires_target_binding(record: Mapping[str, Any]) -> bool:
+    binding = record.get("target_binding") or {}
+    return record.get("status", "active") == "active" and bool(
+        record.get("spine")
+        or record.get("critical_seam")
+        or binding.get("runtime_chain_required")
+    )
+
+
+def classify_fixture_provenance(record: Mapping[str, Any]) -> PromotionIssue | None:
+    binding = record.get("target_binding") or {}
+    entries = binding.get("fixture_provenance", [])
+    if not entries:
+        return None
+    context = record.get("_comparison", {})
+    if "real_producer_boundaries" not in context:
+        raise ValueError("real_producer_boundaries comparison input is required")
+    real_boundaries = set(context["real_producer_boundaries"])
+    for entry in entries:
+        if entry.get("kind") not in {
+            "none",
+            "real-source",
+            "recorded",
+            "constructed",
+            "stub",
+            "mock",
+        }:
+            raise ValueError("invalid typed fixture provenance")
+        if entry.get("boundary") in real_boundaries and entry.get("kind") not in {
+            "none",
+            "real-source",
+        }:
+            return _issue(
+                RejectCode.FIXTURE_PROVENANCE_CEILING,
+                entry["boundary"],
+                "real-source",
+                entry,
+                "UNSUPPORTED_ORIGIN",
+            )
+    return None
+
+
+def terminal_enum_coverage(
+    binding: Mapping[str, Any], reachable_states: Sequence[str]
+) -> PromotionIssue | None:
+    accepted = set(binding["terminal_oracle"]["accepted_states"])
+    missing = sorted(set(reachable_states) - accepted)
+    if not missing:
+        return None
+    issue = _issue(
+        RejectCode.TERMINAL_ENUM_UNCOVERED,
+        "terminal_oracle.accepted_states",
+        sorted(accepted),
+        sorted(set(reachable_states)),
+    )
+    return replace(issue, observed={**issue.observed, "uncovered_states": missing})
+
+
+def diagnose(
+    issue: PromotionIssue, record: Mapping[str, Any]
+) -> RejectionDiagnostic:
+    path = (record.get("target_binding") or {}).get("path_id", record["test_id"])
+    recovery = {
+        "PROOF_CALLER_MISMATCH": f"Re-run {path} with the bound caller and trusted runner observation.",
+        "PROOF_PATH_MISMATCH": f"Re-run the intended path {path} and present the new runner receipt.",
+        "PROOF_AUTHORITY_ROLE_MISMATCH": f"Re-run {path} through the declared authority and capture its role.",
+        "RUNTIME_IDENTITY_INCOMPLETE": f"Obtain a complete fresh runtime join for {path} and re-run the intended target.",
+        "PACKAGE_COMPONENT_UNPROVEN": f"Activate the declared package for every required process on {path}, then capture a fresh join.",
+        "FIXTURE_PROVENANCE_CEILING": f"Re-run {path} with the real producer at the named boundary.",
+        "TERMINAL_ENUM_UNCOVERED": f"Cover every named reachable state in the terminal oracle for {path}, then re-run.",
+    }.get(
+        issue.code,
+        f"Re-run {path} with the declared outcome and exact producer/consumer contracts.",
+    )
+    return RejectionDiagnostic(
+        code=issue.code,
+        message=issue.message,
+        test_id=str(record["test_id"]),
+        obligation_id=str(record["tmr_uid"]),
+        expected=deepcopy(issue.expected),
+        observed=deepcopy(issue.observed),
+        evidence_class=issue.evidence_class,
+        next_actor="worker",
+        permitted_recovery=[recovery],
+    )
+
+
+def evaluate_phase8_close(
+    records: Sequence[Mapping[str, Any]],
+    *,
+    now: datetime | str | None = None,
+    cutover_mode: str = "legacy",
+    comparison_contexts: Mapping[str, Any] | None = None,
+) -> Phase8PromotionReport:
+    if cutover_mode not in {"legacy", "warn", "reject"}:
+        raise ValueError("unsupported enforcement mode")
+    contexts = comparison_contexts or {}
     issues: list[PromotionIssue] = []
     for record in records:
-        if not _is_real_critical_or_spine(record):
-            continue
-        tmr_uid = str(record["tmr_uid"])
-        run_evidence = record.get("run_evidence")
-
-        if record.get("test_strategy") == "spike" or record.get(
-            "verification_mode"
-        ) in EXEMPT_VERIFICATION_MODES:
-            issues.append(
-                PromotionIssue(
-                    code="spine_critical_exempt",
-                    tmr_uid=tmr_uid,
-                    message="spine or critical-seam REAL-DATA tests may not close as spike/exempt",
+        uid = str(record["tmr_uid"])
+        context = contexts.get(uid, {})
+        capture = context.get("capture")
+        evidence = capture.get("run_evidence") if capture else None
+        if cutover_mode == "legacy" and not context:
+            evidence = record.get("run_evidence")
+        real = _is_real_critical_or_spine(record)
+        local: list[PromotionIssue] = []
+        if real:
+            if not _accessors(record) or record.get("binding_status") != "bound":
+                local.append(
+                    PromotionIssue(
+                        code="unbound_accessor_halt",
+                        tmr_uid=uid,
+                        message="Unbound accessors halt Phase 8 close.",
+                        severity="halt",
+                    )
+                )
+            if not _has_negative_oracle(record):
+                local.append(
+                    PromotionIssue(
+                        code="negative_oracle_missing",
+                        tmr_uid=uid,
+                        message="REAL-DATA promotion requires a negative oracle.",
+                        severity="failing",
+                    )
+                )
+            if record.get("test_strategy") == "spike" or record.get(
+                "verification_mode"
+            ) in EXEMPT_VERIFICATION_MODES:
+                local.append(
+                    PromotionIssue(
+                        code="spine_critical_exempt",
+                        tmr_uid=uid,
+                        message="Critical or spine tests cannot close as exempt.",
+                        severity="failing",
+                    )
+                )
+            if evidence:
+                for condition, code in (
+                    (evidence.get("result") != "pass", "run_evidence_not_green"),
+                    (evidence.get("runner") != "skill-runner", "untrusted_run_evidence"),
+                    (
+                        evidence.get("env") in CRITICAL_NON_LIVE_ENVS
+                        and not evidence.get("live_or_induced"),
+                        "real_pass_technique_missing",
+                    ),
+                ):
+                    if condition:
+                        local.append(
+                            PromotionIssue(
+                                code=code,
+                                tmr_uid=uid,
+                                message="Existing runner evidence requirements are not satisfied.",
+                                severity="failing",
+                            )
+                        )
+            elif cutover_mode == "legacy":
+                local.append(
+                    PromotionIssue(
+                        code="run_evidence_missing",
+                        tmr_uid=uid,
+                        message="Required run evidence is absent.",
+                        severity="failing",
+                    )
+                )
+            lint = _lint_boundary_mock(record)
+            if lint:
+                local.append(lint)
+        if requires_target_binding(record) and cutover_mode != "legacy":
+            binding = {
+                **(record.get("target_binding") or {}),
+                "_comparison": context.get("expected", {}),
+            }
+            observation = (
+                None
+                if capture is None
+                else {**capture, "_comparison": context.get("observed", {})}
+            )
+            local.extend(
+                compare_target_observation(
+                    binding, observation, now=now, cutover_mode=cutover_mode
                 )
             )
-
-        if not _accessors(record) or record.get("binding_status") != "bound":
-            issues.append(
-                PromotionIssue(
-                    code="unbound_accessor_halt",
-                    tmr_uid=tmr_uid,
-                    message="unbound accessors halt Phase-8 close",
-                    severity="halt",
-                )
+            fixture = classify_fixture_provenance(
+                {**record, "_comparison": context.get("expected", {})}
             )
-
-        if not _has_negative_oracle(record):
-            issues.append(
-                PromotionIssue(
-                    code="negative_oracle_missing",
-                    tmr_uid=tmr_uid,
-                    message="REAL-DATA promotion requires a negative oracle",
+            terminal = (
+                terminal_enum_coverage(
+                    binding, context.get("reachable_states", [])
                 )
+                if binding.get("terminal_oracle")
+                else None
             )
-
-        if run_evidence is None:
-            issues.append(
-                PromotionIssue(
-                    code="run_evidence_missing",
-                    tmr_uid=tmr_uid,
-                    message="declared REAL-DATA critical/spine test has never been run",
-                )
-            )
-            continue
-
-        if _get(run_evidence, "result") != "pass":
-            issues.append(
-                PromotionIssue(
-                    code="run_evidence_not_green",
-                    tmr_uid=tmr_uid,
-                    message="Phase-8 close requires a green skill-runner receipt",
-                )
-            )
-        if _get(run_evidence, "runner") != "skill-runner":
-            issues.append(
-                PromotionIssue(
-                    code="untrusted_run_evidence",
-                    tmr_uid=tmr_uid,
-                    message="owner-written results are not trusted as run evidence",
-                )
-            )
-        if _get(run_evidence, "env") in CRITICAL_NON_LIVE_ENVS and _get(
-            run_evidence, "live_or_induced"
-        ) is None:
-            issues.append(
-                PromotionIssue(
-                    code="real_pass_technique_missing",
-                    tmr_uid=tmr_uid,
-                    message="dev/ci critical-seam pass must record live_or_induced technique",
-                )
-            )
-
-        mock_issue = _lint_boundary_mock(record)
-        if mock_issue:
-            issues.append(mock_issue)
+            for issue in (fixture, terminal):
+                if issue:
+                    local.append(
+                        replace(
+                            issue,
+                            severity="warning" if cutover_mode == "warn" else "halt",
+                        )
+                    )
+        issues.extend(replace(issue, tmr_uid=uid) for issue in local)
     return Phase8PromotionReport(issues=issues)
 
 
@@ -401,8 +772,8 @@ def _lint_boundary_mock(record: Mapping[str, Any]) -> PromotionIssue | None:
     return PromotionIssue(
         code="boundary_mock_detected",
         tmr_uid=str(record["tmr_uid"]),
-        message="boundary mock detected in promoted REAL-DATA critical/spine test",
-        severity="halt",
+        message="Text mentions mock; inspect typed provenance for the actual boundary classification.",
+        severity="advisory",
     )
 
 
