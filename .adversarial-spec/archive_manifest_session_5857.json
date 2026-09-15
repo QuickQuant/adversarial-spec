@@ -1,0 +1,361 @@
+{
+  "timestamp": "2026-09-15T04:30:51.691400+00:00",
+  "board_id": "03fw5alxw15iqwh6hq15vfdsb",
+  "session_root": 5857,
+  "reason": "Board cleanup and bounded pipeline reconciliation: archiving 44 stale cards from July 2026 unconstrained decomposition (#5857, #6016-#6058) to clear board clutter and establish clean state for bounded adversarial spec workflow.",
+  "card_count": 44,
+  "cards": [
+    {
+      "number": 5857,
+      "title": "Post-Fable Hardening (skill slice G1+G2+G5)",
+      "lane": "Finalization",
+      "description": "",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6016,
+      "title": "[SYS] Post-Fable Hardening skill slice (G1+G2+G5)",
+      "lane": "Decomposed",
+      "description": "Harden the adversarial-spec skill for post-Fable conductors: mechanized gates, competence harness, V-model ascending arm with authority-committed promotion, debate freeze/reconciliation/convergence guards, over a shared hardening substrate.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6017,
+      "title": "[SS-W0] Shared hardening substrate",
+      "lane": "Decomposed",
+      "description": "adversarial_spec.hardening package: MW-001..MW-011 plus scaffold, safe paths, authority-matrix suite, and the executable adverse suite.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6018,
+      "title": "[SS-A] G1 operability",
+      "lane": "Decomposed",
+      "description": "Gate inventory + doclint, hook dispatcher, judgment corpus, competence harness, spine units, waiver flow, bootstrap.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6019,
+      "title": "[SS-B] G2 ascending arm",
+      "lane": "Decomposed",
+      "description": "TMR keystone fields, verification cards, evidence write-back, criticality resolution, promotion local+remote, ConOps walkthrough, spine DAG, contract probes, regime lifecycle, subflow migration.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6020,
+      "title": "[SS-C] G5 debate efficiency",
+      "lane": "Decomposed",
+      "description": "Reconciliation gate, node registry, freeze seam, false-convergence guard, critic output contract.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6021,
+      "title": "[W0-1] Scaffold hardening package + Python 3.14 floor",
+      "lane": "Review",
+      "description": "Create skills/adversarial-spec/scripts/hardening/ per the target-architecture component tree; bump requires-python to >=3.14; pin rfc8785==0.1.4 + cryptography==49.0.0; clean-env wheel-install test. No upward import from gauntlet.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6022,
+      "title": "[W0-2] MW-001 StrictArtifactCodec + canonical_sets",
+      "lane": "New Todo",
+      "description": "artifacts.py + canonical_sets.py: bounded strict decode (dup-member/NaN/BOM/surrogate/negative-zero rejection), schema validation, RFC 8785 JCS, content-hash verify with spec-exact exclusions, domain-prefix signature bytes, authority-signed/local-derived profiles, canonical_set() with bytewise order + duplicate REJECTION, discriminated authorization-fact variants (OR-1, structural absence).",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6023,
+      "title": "[W0-3] MW-008 CliBoundary",
+      "lane": "New Todo",
+      "description": "cli_boundary.py: shared strict argparse (allow_abbrev=False, unknown-arg rejection), one structured result envelope per invocation, exit mapping 0/1/2 with blocking precedence, no env-var gate inputs.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6024,
+      "title": "[W0-4] MW-002 DurableStateStore + StateTransaction",
+      "lane": "New Todo",
+      "description": "state_store.py: persistent-identity fcntl sidecar locks, expected-hash CAS, atomic single-file writes, repo-scoped .txn/ coordinator with leases, canonical bytewise lock order, PREPARED/PUBLISHING/COMMITTED roll-forward recovery, reader release-recover-retry, transaction-corrupt terminal quarantine (non-waivable), reachability-only GC.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6025,
+      "title": "[W0-5] Safe-path resolver + filesystem capability probes",
+      "lane": "New Todo",
+      "description": "Per-component dir_fd walk with O_NOFOLLOW + fstat device/mount validation (normative); ..-, absolute-, cross-session targets fail closed; bootstrap lock-capability probe proving cross-process shared/exclusive semantics; filesystem-capability-unsupported named failure.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6026,
+      "title": "[W0-6] MW-003 HashChainedJournal",
+      "lane": "New Todo",
+      "description": "journal.py: logical append (each event hashes predecessor), chain verification, event-head projection, external-anchor record emission for authority-side anchoring.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6027,
+      "title": "[W0-7] MW-004 ReceiptVerifier + TrustPolicy",
+      "lane": "New Todo",
+      "description": "receipts.py + trust_policy.py: trusted-key lookup from launcher config, exact-byte ed25519 verification (domain prefix || JCS minus signature), THEN purpose-scoped TrustPolicy authorization under immutable policy identity + hash; purpose-preserving chained keyset rotation; full 5.4 rejection-set semantics.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6028,
+      "title": "[W0-8] MW-005 PromotionPredicates (pure)",
+      "lane": "New Todo",
+      "description": "predicates.py: pure functions over validated types. is_concrete exact enum equality; is_promotion_ready six typed conditions incl. provenance condition 6; is_obligation_satisfied with critical_seam != null precondition and independent skip/deferred disjuncts (provisional pre-commit / committed post-commit, parent-scoped); select_for_verification.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6029,
+      "title": "[W0-9] MW-009 AuthorizationSetBuilder",
+      "lane": "New Todo",
+      "description": "authorization_set.py: validates receipts + successor inherited-obligation records against ONE registry generation into immutable ValidatedAuthorizationSet with authorization_set_hash per the exact spec formula; consumes TrustPolicySnapshot; emits canonical provisional transfer plan; obligation policy vs trust policy separation.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6030,
+      "title": "[W0-10] MW-011 DurableOperationJournal",
+      "lane": "New Todo",
+      "description": "operation_journal.py (imports no transport): operation_id + contract id + behavior fingerprint + canonical request hash journaled + fsynced BEFORE dispatch; intent-durable/in-flight/uncertain/resolved state machine; PromotionSequenceResult derivation from record absence; restart recovery.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6031,
+      "title": "[W0-11] MW-006 LocalCapabilityVerifier + trusted-time watermark",
+      "lane": "New Todo",
+      "description": "local_capabilities.py: offline signature/version/freshness verification of cached capability attestations; persisted monotonic authority-time watermark; max(local clock, watermark) expiry; every capability-state maps to exactly one deterministic token; release-signature validation.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6032,
+      "title": "[W0-12] MW-007 RemoteAuthorityClient",
+      "lane": "New Todo",
+      "description": "remote_authority.py: snapshot upload/finalize, prepare, commit, status reconciliation, signed challenge-response probes (+ negative probes), behavior-fingerprint pinning, over injected transports; never dispatches a recoverable mutation without a durable MW-011 intent; OR-4 recovery split (uncertain prepare replays prepare; uncertain commit uses commit-status keyed by operation_id + receipt hash).",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6033,
+      "title": "[W0-13] MW-010 TmrRegistryWriter + sole-writer lint",
+      "lane": "New Todo",
+      "description": "tmr_registry_writer.py: the single Session-TMR-registry persistence path (read revision, validate preconditions, write under canonical lock order, bump revision); stale expected-revision rejected; classifier-relevant change invalidates dependent evidence in the same transaction; authoring-lint fails any outside write-open call site.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6034,
+      "title": "[W0-14] Authority-matrix lint + consumer tests",
+      "lane": "New Todo",
+      "description": "Matrix-driven consumer tests: for every spec 1.2 row, consumers branch only on validated authority state and fail closed with the named result on stale/missing/invalid mirror; undeclared-authority lint for security-fact reads with no declared row.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6035,
+      "title": "[W0-15] Executable adverse suite (Phase 4 residual obligation)",
+      "lane": "New Todo",
+      "description": "The executable end-to-end adverse suite deferred by Phase 4 publication: every R4 mandatory adverse case + all 13 R5 additions as executable tests over the real substrate. No design-walkthrough evidence claims.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6036,
+      "title": "[A-1] gate_inventory.py + gates.json + doclint",
+      "lane": "New Todo",
+      "description": "Maintain gates.json (classification enum, enforcement, owner, contract_id, violation_modes); normalized semantic form; doclint mapping phase-doc markers to gate_id; phase_docs_hash staleness; negative-test execution harness; hosts the authoring-lint family.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6037,
+      "title": "[A-2] Hook-plane dispatcher + conformance fixtures",
+      "lane": "New Todo",
+      "description": "One slice-owned dispatcher per event type in .claude/hooks/ (hook-local codec, NO skill imports); declarative versioned registration; duplicate/third-party handler detection at bootstrap; typed ALLOW/DENY/DIAGNOSTIC verdicts; blocking mode for preventive gates; shared conformance fixtures against both hook-local and skill validators; consolidate the three drifting role resolvers (CON-005).",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6038,
+      "title": "[A-3] Judgment-gate corpus (rubrics + fixtures)",
+      "lane": "New Todo",
+      "description": "rubrics/.md (<=~40 lines) + >=1 golden fixture per judgment gate under fixtures/conductor-competence//; fixture schema validator consumed by BOOT-HARNESS.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6039,
+      "title": "[A-4] competence_harness.py + baselines + coverage manifest",
+      "lane": "New Todo",
+      "description": "Harness runner: strict-JSON answer scoring (required subset next subset allowed; forbidden empty; exact citation equality; critical => >=1 required); exact arithmetic; bounded retry with attempt evidence + not-comparable threshold; coverage manifest; immutable identity-keyed baselines incl. environment fingerprint; waivable pre-session gate with MAX_PHASE_REGRESSION_POINTS=10.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6040,
+      "title": "[A-5] Phase-doc spine units + 09-verification relocation",
+      "lane": "New Todo",
+      "description": "Decompose phase docs into phases/-/spine.md + reference/*.md with single-owner pointers; relocate phases/09-verification.md under the Phase 8 tree with spine-step ownership + SKILL.md router update + decisions-log entries; architecture_refs resolver writing per-step context-load-manifest.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6041,
+      "title": "[A-6] Waiver flow: challenge, receipt acceptance, audit cache",
+      "lane": "New Todo",
+      "description": "Blocking-checker challenge creation (immutable block_id, one-time nonce request, local-derived challenge envelope); receipt acceptance via MW-004 (challenge-byte binding, nonce-consumption receipt, authorization_kind precedence, non-waivable class rejection, consumption at protected transitions); nonces.jsonl audit cache; issuance idempotency by operation_id; surfacing in close report/checkpoint/card.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6042,
+      "title": "[A-7] hardening_bootstrap.py (BOOT-* checks + live preflight)",
+      "lane": "New Todo",
+      "description": "Bootstrap CLI: BOOT-GATES/HARNESS/RECON/REGISTRY/SPINE blocking + BOOT-ROUTER advisory; hermetic blocking path (no transport instantiation); --live-preflight REMOTE path via MW-007; deferred-state exit mapping by pending regime-sensitive transition; five-minute fresh-clone target; failure output contract.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6043,
+      "title": "[B-1] TMR keystone-first schema extension (obligation fields)",
+      "lane": "Review",
+      "description": "KEYSTONE-FIRST: add obligation_revision, obligation_policy_version, tmr_record_hash (+ required_liveness_class/required_environment/required_tier if absent) to Brainquarters/shared-context/test-maturity-record-schema.md FIRST, then mirror into tmr_schema.py with schema_sha256 drift tripwire. Resolves the 11 tests-spec SCHEMA GAP carries.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6044,
+      "title": "[B-2] verification_cards.py deterministic emitter + board upsert",
+      "lane": "New Todo",
+      "description": "One card per qualifying TMR keyed (session_id, tmr_uid, obligation_revision, obligation_policy_version); registry_hash as provenance snapshot never key; supersede obsolete cards; pipeline_load upsert with stable local key + expected board revision; lost response resolved by authority query; board-ahead = local-mirror-stale.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6045,
+      "title": "[B-3] record_verification_evidence.py write-back + maturity authority",
+      "lane": "New Todo",
+      "description": "The ONLY path from completed card to promotion-eligible evidence: validates card binding, evidence class, artifact hash, tmr_uid before registry update via TmrRegistryWriter; sole authorized writer of nl|acceptance -> concrete atomically with write-back.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6046,
+      "title": "[B-4] criticality_classifier.py resolution extension",
+      "lane": "New Todo",
+      "description": "Extend existing classifier: resolution action recording rule version + source-artifact hash + architecture link for any false resolution; null preserved or resolved true otherwise; operator receipt-bound resolution decisions recorded by this sole writer; writes via TmrRegistryWriter.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6047,
+      "title": "[B-5] promotion_gate.py local evaluation + intent construction",
+      "lane": "New Todo",
+      "description": "Local promotion evaluation over MW-005/MW-009; finalize-transition check (registry validity + plan, NO run evidence - deadlock rule); completion-gate quantifier over critical_seam != false; JCS promotion intent binding the complete spec-9 field list; pre-dispatch local generation re-read.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6048,
+      "title": "[B-6] Promotion remote sequence + authority-committed inheritance",
+      "lane": "New Todo",
+      "description": "Wire the canonical runtime sequence (local eval -> REMOTE snapshot registration -> intent -> prepare -> commit) via MW-007/MW-011; successor derivation from authority commit record at required read-version; startup reconciliation gate; mirror materialization under StateTransaction with LocalReconciliationResult states; local-mirror-stale blocking + idempotent rematerialization; failure-ownership table.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6049,
+      "title": "[B-7] ConOps walkthrough: script gen + typed predicates + evidence binding",
+      "lane": "New Todo",
+      "description": "conops-walkthrough.md generated from happy-path spine tests deriving rows SOLELY from roadmap/conops.md; typed expected-observation predicates per class (API/CLI/GUI/human-judgment routes to rubric); evidence binding (row_id, script hash, operator identity, timestamp, artifact hash, provenance class); close-verifier rejection of stale/swapped/wrong-script evidence; canonical hash-regeneration order.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6050,
+      "title": "[B-8] Spine artifacts: close-binding DAG + BOOT-SPINE",
+      "lane": "New Todo",
+      "description": "spine-core.json -> evidence-index.json -> spine-manifest.json with schema-enforced acyclic references and exact hash projections; BOOT-SPINE transitive validation (schema + spine_core_hash + evidence_index_hash + node-registry hash).",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6051,
+      "title": "[B-9] Contract boundary: registry, capability probes, plan lint",
+      "lane": "New Todo",
+      "description": "Probe implementation for all 9 consumed contracts (signed challenge-response + negative probes + schema_sha256 behavior-fingerprint pinning + prepare/commit revalidation); registry-vs-contract-boundary.md drift check; execution-plan lint failing fizzy-repo-scoped tasks; per-delta G3 tracking pointers.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6052,
+      "title": "[B-10] Regime lifecycle (spec 18): attestation, backfill, cross-regime transfer",
+      "lane": "New Todo",
+      "description": "Regime materialization comparing authority-attested creation time against validated hardening-rollout-policy-v1 (binding policy identity+hash+keyset epoch); mirror validation against signed attestation; epoch-zero pre-rollout immutability; legacy materialization only for pre-contract sessions via historical lookup; creation-unprovable operator disposition; cross-regime deferral solely via obligation-transfer-v1 with conductor-produced provenance cap.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6053,
+      "title": "[B-11] Phase 8 verification-subflow migration (OR-3 / DF-20)",
+      "lane": "Review",
+      "description": "Atomic migration current_phase: verification -> {current_phase: implementation, current_step: verification} preserving artifacts + board state; idempotent single phase8_subflow_migration journey event; post-migration rejection of new current_phase: verification writes; canonical-order validator normalizes historical implementation -> verification transitions as legacy subflow events; SKILL.md canonical order updated.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6054,
+      "title": "[C-1] reconcile_derived.py: 4 adapters + lineage + snapshot consistency",
+      "lane": "New Todo",
+      "description": "In-process adapter registry (tests-pseudo, tmr-registry, architecture-invariants, node-registry) with per-adapter dirty contracts + semantic_binding_fingerprint; reconciliation/lineage-map.json authored at refactor time, both-fingerprints-resolve validation; ONE immutable source snapshot per run with mixed-generation invalidation; envelope report bound to exact spec hash; --self-check for BOOT-RECON; hosts contract-list drift check.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6055,
+      "title": "[C-2] Debate node registry: snapshot + hash-chained event log",
+      "lane": "New Todo",
+      "description": "Versioned envelope snapshot (payload.nodes[] settled/volatile/derived) + hash-chained debate-nodes.events.jsonl under one StateTransaction; canonical leaf-heading extraction; checkpoint/resume lifecycle with durable manifest reference + fail-closed chain validation; round-metrics accumulation (KPI-7 baseline).",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6056,
+      "title": "[C-3] Freeze enforcement: debate.py payload assembly seam",
+      "lane": "New Todo",
+      "description": "debate.py payload assembly excludes frozen nodes (one-line stub: node_id + settled round + hash); payload diffable against freeze list; changed frozen-node hash blocks dispatch until reopened by named concern; unresolvable critique anchors block freezing.",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6057,
+      "title": "[C-4] False-convergence guard: quorum, press, Phase 4 exit gate",
+      "lane": "New Todo",
+      "description": "Computed quorum (distinct identities x registry-validated families; content-derived verdicts override contradicting agreed flags -> registry event); convergence requires clean reconciliation report for the EXACT agreed spec hash; Phase 4 exit gate binding claimed rounds to authority round records; press mechanization (MIN_PRESS_JUSTIFICATION_CHARS=280 NFC, structured verdict rules).",
+      "closed_before": false,
+      "metadata": null
+    },
+    {
+      "number": 6058,
+      "title": "[C-5] Critic-runner stdout contract + provenance-coupled salvage",
+      "lane": "New Todo",
+      "description": "One shared parser ([AGREE] xor critique+[SPEC], line-start markers, first-wins, duplicate-conflict invalid, size cap, escape rule) with fixture tests; debate_return_quality invalid marking; salvage flow (original path + SHA-256 at discovery + timestamp + dispatch id, copy + decisions-log entry through ONE StateTransaction); agentic-CLI prompts demand stdout-only.",
+      "closed_before": true,
+      "metadata": null
+    }
+  ]
+}
