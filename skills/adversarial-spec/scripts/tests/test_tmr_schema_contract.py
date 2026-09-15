@@ -70,6 +70,9 @@ def valid_tmr(**overrides):
         "required_environment": "live",
         "required_tier": "code",
         "tmr_record_hash": None,
+        # Negative oracle (Defect A, 2026-09-14) -- optional with null defaults.
+        "negative_oracle": None,
+        "negative_oracle_ref": None,
         "why_impossible_to_reproduce_live": None,
         "technical_constraint": None,
         "also_covers": [],

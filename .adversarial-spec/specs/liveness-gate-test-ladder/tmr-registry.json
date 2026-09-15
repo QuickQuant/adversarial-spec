@@ -42,7 +42,9 @@
     "required_liveness_class": null,
     "required_environment": null,
     "required_tier": null,
-    "tmr_record_hash": null
+    "tmr_record_hash": null,
+    "negative_oracle": null,
+    "negative_oracle_ref": null
   },
   {
     "accessors": [
@@ -87,7 +89,9 @@
     "required_liveness_class": null,
     "required_environment": null,
     "required_tier": null,
-    "tmr_record_hash": null
+    "tmr_record_hash": null,
+    "negative_oracle": null,
+    "negative_oracle_ref": null
   },
   {
     "accessors": [
@@ -132,7 +136,9 @@
     "required_liveness_class": null,
     "required_environment": null,
     "required_tier": null,
-    "tmr_record_hash": null
+    "tmr_record_hash": null,
+    "negative_oracle": null,
+    "negative_oracle_ref": null
   },
   {
     "accessors": [
@@ -177,7 +183,9 @@
     "required_liveness_class": null,
     "required_environment": null,
     "required_tier": null,
-    "tmr_record_hash": null
+    "tmr_record_hash": null,
+    "negative_oracle": null,
+    "negative_oracle_ref": null
   },
   {
     "accessors": [
@@ -222,7 +230,9 @@
     "required_liveness_class": null,
     "required_environment": null,
     "required_tier": null,
-    "tmr_record_hash": null
+    "tmr_record_hash": null,
+    "negative_oracle": null,
+    "negative_oracle_ref": null
   },
   {
     "accessors": [
@@ -267,7 +277,9 @@
     "required_liveness_class": null,
     "required_environment": null,
     "required_tier": null,
-    "tmr_record_hash": null
+    "tmr_record_hash": null,
+    "negative_oracle": null,
+    "negative_oracle_ref": null
   },
   {
     "accessors": [
@@ -312,7 +324,9 @@
     "required_liveness_class": null,
     "required_environment": null,
     "required_tier": null,
-    "tmr_record_hash": null
+    "tmr_record_hash": null,
+    "negative_oracle": null,
+    "negative_oracle_ref": null
   },
   {
     "accessors": [
@@ -357,7 +371,9 @@
     "required_liveness_class": null,
     "required_environment": null,
     "required_tier": null,
-    "tmr_record_hash": null
+    "tmr_record_hash": null,
+    "negative_oracle": null,
+    "negative_oracle_ref": null
   },
   {
     "accessors": [
@@ -402,7 +418,9 @@
     "required_liveness_class": null,
     "required_environment": null,
     "required_tier": null,
-    "tmr_record_hash": null
+    "tmr_record_hash": null,
+    "negative_oracle": null,
+    "negative_oracle_ref": null
   },
   {
     "accessors": [
@@ -447,7 +465,9 @@
     "required_liveness_class": null,
     "required_environment": null,
     "required_tier": null,
-    "tmr_record_hash": null
+    "tmr_record_hash": null,
+    "negative_oracle": null,
+    "negative_oracle_ref": null
   },
   {
     "accessors": [
@@ -492,7 +512,9 @@
     "required_liveness_class": null,
     "required_environment": null,
     "required_tier": null,
-    "tmr_record_hash": null
+    "tmr_record_hash": null,
+    "negative_oracle": null,
+    "negative_oracle_ref": null
   },
   {
     "accessors": [
@@ -537,7 +559,9 @@
     "required_liveness_class": null,
     "required_environment": null,
     "required_tier": null,
-    "tmr_record_hash": null
+    "tmr_record_hash": null,
+    "negative_oracle": null,
+    "negative_oracle_ref": null
   },
   {
     "accessors": [
@@ -582,7 +606,9 @@
     "required_liveness_class": null,
     "required_environment": null,
     "required_tier": null,
-    "tmr_record_hash": null
+    "tmr_record_hash": null,
+    "negative_oracle": null,
+    "negative_oracle_ref": null
   },
   {
     "accessors": [
@@ -627,7 +653,9 @@
     "required_liveness_class": null,
     "required_environment": null,
     "required_tier": null,
-    "tmr_record_hash": null
+    "tmr_record_hash": null,
+    "negative_oracle": null,
+    "negative_oracle_ref": null
   },
   {
     "accessors": [
@@ -672,6 +700,8 @@
     "required_liveness_class": null,
     "required_environment": null,
     "required_tier": null,
-    "tmr_record_hash": null
+    "tmr_record_hash": null,
+    "negative_oracle": null,
+    "negative_oracle_ref": null
   }
 ]

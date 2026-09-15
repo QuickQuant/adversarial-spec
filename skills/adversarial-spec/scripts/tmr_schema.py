@@ -110,11 +110,11 @@ OBLIGATION_IDENTITY_FIELDS = frozenset(
 # constant is the tripwire that makes divergence mechanical instead of silent.
 KEYSTONE_RELATIVE_PATH = Path("shared-context") / "test-maturity-record-schema.md"
 KEYSTONE_SCHEMA_SHA256 = (
-    "sha256:995538a2f187b38c0b4b6db32a8f0658a4c35360a4f51652626160c7bc16e005"
+    "sha256:0f65d8de7d707247760df61b428bbffa99aae8b6a160ad77c3838774e0bffddb"
 )
 KEYSTONE_PROVENANCE = {
-    "commit": "c9d3c12ef5f3001baa75a1ab1dd83ab05bbe3391",
-    "committed_at": "2026-07-22T08:57:31-05:00",
+    "commit": "f8db8f0a9200165e9a0f707253ad3c47bff650f5",
+    "committed_at": "2026-09-14T21:03:11-05:00",
     "repo": "Brainquarters",
 }
 
@@ -282,6 +282,14 @@ class TestMaturityRecord(StrictSchemaModel):
     required_environment: Literal["live", "dev", "ci"] | None = None
     required_tier: Literal["code", "system-validation", "judgment"] | None = None
     tmr_record_hash: str | None = None
+
+    # Negative oracle (Phase 8 promotion, W4-1). ``phase8_promotion`` reads
+    # these to decide ``negative_oracle_missing``; until 2026-09-14 the keystone
+    # did not carry them, so a validated record could never satisfy the
+    # promoter (hardening packet Defect A). Optional + null per keystone
+    # decision 5; NOT part of the obligation-identity projection (2b).
+    negative_oracle: bool | None = None
+    negative_oracle_ref: str | None = None
 
     why_impossible_to_reproduce_live: str | None = None
     technical_constraint: str | None = None

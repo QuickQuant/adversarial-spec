@@ -1,5 +1,5 @@
 {
-  "$comment": "generated-from:sha256:995538a2f187b38c0b4b6db32a8f0658a4c35360a4f51652626160c7bc16e005",
+  "$comment": "generated-from:sha256:0f65d8de7d707247760df61b428bbffa99aae8b6a160ad77c3838774e0bffddb",
   "$defs": {
     "CodeRunEvidence": {
       "additionalProperties": false,
@@ -373,6 +373,30 @@
       ],
       "title": "Maturity",
       "type": "string"
+    },
+    "negative_oracle": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Negative Oracle"
+    },
+    "negative_oracle_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Negative Oracle Ref"
     },
     "obligation_policy_version": {
       "anyOf": [
