@@ -20,8 +20,11 @@ Run:
 """
 
 import hashlib
+import json
 import re
+from pathlib import Path
 
+import pytest
 from mini_spec_emission import (
     ALTITUDE_OBLIGATIONS,
     REQUIREMENT_ID_RE,
@@ -71,6 +74,50 @@ def test_tc2_emitted_plan_is_schema_3_and_self_checks():
     assert plan["session_id"] == "sess-s7"
     result = self_check_plan(plan)
     assert result["valid"] is True, result["issues"]
+
+
+# ── Defect B: plan_schema_version is a strict integer ───────────────
+# Hardening packet (2026-09-13): Fizzy's loader silently downgraded a present
+# non-integer ("2", true) to legacy v1 validation. Fizzy now rejects it as
+# PLAN_SCHEMA_VERSION_TYPE_INVALID (card 21533); this side must never emit one.
+
+PHASE7_DOC = Path(__file__).resolve().parents[2] / "phases" / "07-execution.md"
+
+
+def test_emitted_plan_schema_version_is_a_strict_int_after_json_round_trip():
+    plan = emit_fizzy_plan(representative_tree(), session_id="sess-s7")
+    assert type(plan["plan_schema_version"]) is int
+    reloaded = json.loads(json.dumps(plan))
+    assert type(reloaded["plan_schema_version"]) is int
+    assert reloaded["plan_schema_version"] == 3
+
+
+@pytest.mark.parametrize("bad", ["3", True, 3.0, None])
+def test_self_check_rejects_present_non_integer_schema_version(bad):
+    plan = emit_fizzy_plan(representative_tree(), session_id="sess-s7")
+    plan["plan_schema_version"] = bad
+    result = self_check_plan(plan)
+    assert result["valid"] is False
+    assert "PLAN_SCHEMA_VERSION_TYPE_INVALID" in {i["code"] for i in result["issues"]}
+
+
+def test_self_check_distinguishes_wrong_integer_from_wrong_type():
+    plan = emit_fizzy_plan(representative_tree(), session_id="sess-s7")
+    plan["plan_schema_version"] = 2
+    codes = {i["code"] for i in self_check_plan(plan)["issues"]}
+    assert "WRONG_SCHEMA_VERSION" in codes
+    assert "PLAN_SCHEMA_VERSION_TYPE_INVALID" not in codes
+
+
+def test_phase7_doc_templates_spell_schema_version_as_bare_integer():
+    """The hand-authored v2 path is doc-driven; the doc's literals are the emitter."""
+    text = PHASE7_DOC.read_text(encoding="utf-8")
+    hits = re.findall(r'"plan_schema_version"\s*:\s*([^,\n]+)', text)
+    assert hits, "07-execution.md no longer carries a plan_schema_version template"
+    for raw in hits:
+        assert re.fullmatch(r"[0-9]+", raw.strip()), (
+            f"non-integer plan_schema_version literal in 07-execution.md: {raw!r}"
+        )
 
 
 def test_self_check_catches_obligation_drift():

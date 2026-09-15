@@ -270,6 +270,7 @@ W0-4  Create component boundary template  S   Blocks: Tasks 3, 4, 5
 | `verify_commands` | string[] | conditional | Shell command strings the tester runs. Required for `automated-*` and `test-producer`. |
 | `verification_notes` | string\|null | optional | Free-text notes about constraints, edge cases, or special considerations. |
 | `exemption_reason` | string\|null | conditional | Why this task does not require automated test evidence. Required for `artifact-sync`, `static-check`, `manual-ux`. |
+| `human_execution` | object | conditional | Required when a task is performed exclusively by the operator and agents must never claim it. Object keys: `scope` (`global` or `dependency`), `reason`, `procedure`, `evidence_destination`. This is ownership/dispatch metadata, not a substitute for `tested_by`. |
 
 **`verification_mode` enum values:**
 
@@ -309,6 +310,48 @@ W0-4  Create component boundary template  S   Blocks: Tasks 3, 4, 5
 | `test-producer` | `targeted`, `full-suite` |
 
 Invalid combinations (e.g., `automated-unit` + `manual`, or `static-check` + `targeted`) are rejected at Gate V2.
+
+### Pure human-execution contract
+
+Use `human_execution` only for work the operator, rather than an agent, must
+perform: a production-console observation, an approval immediately before a
+money action, or a terminal observation that cannot be automated. Do **not**
+infer this from `tested_by: user`: `tested_by` says who may verify a task, while
+`human_execution` says agents may not claim or implement it.
+
+For every pure human-execution task, emit all of the following together:
+
+```json
+{
+  "strategy": "spike",
+  "behavior_change": false,
+  "verification_mode": "manual-ux",
+  "verification_scope": "manual",
+  "tested_by": "user",
+  "human_execution": {
+    "scope": "dependency",
+    "reason": "Why an operator, rather than an agent, must perform this action.",
+    "procedure": "Plain-language ordered action, safe stop condition, and no-secret rule.",
+    "evidence_destination": "Where pipeline_complete_human_task records each acceptance-evidence statement."
+  }
+}
+```
+
+Choose scope deliberately, never by default:
+
+- `dependency`: the human task blocks only tasks that depend on it. Use it for
+  external configuration observations and final attestation; unrelated safe or
+  speculative work remains schedulable.
+- `global`: once the task's own dependencies are satisfied, every worker must
+  receive `action: "blocked"` from `pipeline_do_next_task` before it can claim
+  another card. Use it only when further work must stop, such as the explicit
+  authorization immediately before a real-money attempt.
+
+The task description must start a plain-language `HUMAN ACTION:` section: what
+to do, why it matters, what evidence to record, what "done" means, and what not
+to paste or change. It must be intelligible without plan IDs, artifacts, or
+agent jargon. Human work with unmet ordinary dependencies stays hidden from the
+operator until it becomes actionable; it is not an early attention item.
 
 **Path and command validation rules:**
 
@@ -524,6 +567,7 @@ Add error response codes     | test-after  | 1 low concern
 - If `verification_mode` starts with `automated-`: require non-empty `test_refs`, non-empty `test_files`, and non-empty `verify_commands`.
 - If `verification_mode` is `test-producer`: require non-empty `test_files` and non-empty `verify_commands`. (`test-producer` is NOT exempt.)
 - If `verification_mode` is `artifact-sync`, `static-check`, or `manual-ux`: require non-empty `exemption_reason`.
+- If `human_execution` is present: require `strategy: spike`, `behavior_change: false`, `verification_mode: manual-ux`, `verification_scope: manual`, `tested_by: user`, and non-empty `scope`, `reason`, `procedure`, and `evidence_destination`. Decide and record its scope in the dependency graph; do not add it merely because a task has a human test at the end.
 - Mode-to-scope compatibility must hold per the Verification Schema matrix.
 - `test_files` paths must be repo-relative (no absolute paths, no `..` traversal).
 - `verify_commands` must be literal shell strings (no template interpolation).
@@ -674,7 +718,7 @@ uv run python skills/adversarial-spec/scripts/dependency_semantics.py \
 
 The plan gains two versioned ROOT fields (never task fields): `"semantic_contract_version": 1` and `"semantic_report_path": "dependency-semantics-report.json"` (resolved relative to the plan file). `pipeline_load` then rejects only: a missing/red/hash-mismatched report, an `analyzer_version` below the loader's documented floor, or a task the report names in `live_spine_owners` that carries an exempt/manual verification mode. Staleness is hash mismatch only — no clocks. Everything else stays in this gate, where diagnostics are richer.
 
-**Operator-procedure template (required for every `tested_by: user|both` task).** The task description must state: `actor; preconditions; ordered actions; evidence location; pass condition; stop conditions; escalation path` — and the card is assigned and pinned to the named operator using existing Fizzy capabilities (Telegram human-gate remains the attention channel). A `manual-ux` exemption alone is not an action specification. This is a plan-authoring template, not a schema; promote it to schema only if a second documented unintelligible-human-task incident occurs.
+**Operator-procedure template (required for every `tested_by: user|both` task).** The task description must state: `actor; preconditions; ordered actions; evidence location; pass condition; stop conditions; escalation path`. A `manual-ux` exemption alone is not an action specification. If the task is pure operator work, use the `human_execution` schema above; it materializes a blocked card rather than an agent-claimable one and carries the `HUMAN ACTION:` brief into the operator surface. Do not claim that a board assignment/pin exists unless the board has actually created one.
 
 The analyzer is a semantic preflight only. Run `pipeline_validate_plan` afterwards: Fizzy remains authoritative for wire-schema, ID, and cycle validation.
 
@@ -1144,7 +1188,7 @@ Core fields (unchanged from v1):
 - `wave`: Wave number from the plan
 - `effort`: S / M / L
 - `strategy` (the **Test Strategy** field on the wire — the JSON key stays `strategy` per ADR `0001`): the generator emits test-first / test-after / spike. fizzy's full enum is `VALID_STRATEGIES = {test-first, test-after, spike, refactor}` (`pipeline.py:164`) — `refactor` is valid to fizzy but Step 4 never assigns it. Use `spike` for deferred / doc-only / config-only / manual-only tasks that commit to **no automated tests** — never emit `"skip"` (not in the enum; fizzy rejects it at load: `PLAN_INVALID "invalid strategy"`). `strategy` is decoupled from the v2 verification gate (`_validate_v2_task` never reads it), so these tasks still verify independently via an EXEMPT `verification_mode` + `exemption_reason`.
-- `tested_by` (**REQUIRED per task on v2+ sessions** — fizzy `VALID_TESTED_BY = {llm, user, both}`, PR 4d): declares who is qualified to verify the task. `llm` for fully automated tests (pytest / golden-corpus / doc-lint / system-validation runs the agent can execute and judge) — the default, and correct for almost every task here. `user` when only the human can verify (manual UX sign-off with no automatable oracle). `both` when an automated pass AND a human attestation are both required before the card leaves Untested. **`load_plan` hard-rejects a v2+ plan missing this field** (`MISSING_OR_INVALID_TESTED_BY`) even though the field has a card-runtime default of `llm` — so always emit it explicitly.
+- `tested_by` (**REQUIRED per task on v2+ sessions** — fizzy `VALID_TESTED_BY = {llm, user, both}`, PR 4d): declares who is qualified to verify the task. `llm` for fully automated tests (pytest / golden-corpus / doc-lint / system-validation runs the agent can execute and judge) — the default, and correct for almost every task here. `user` when only the human can verify (manual UX sign-off with no automatable oracle). `both` when an automated pass AND a human attestation are both required before the card leaves Untested. **`tested_by` does not make a task operator-owned.** Use `human_execution` when agents must never claim it. **`load_plan` hard-rejects a v2+ plan missing this field** (`MISSING_OR_INVALID_TESTED_BY`) even though the field has a card-runtime default of `llm` — so always emit it explicitly.
 - `depends_on`: List of task_ids this task depends on (from dependency graph)
 - `concern_refs`: List of gauntlet concern IDs linked to this task
 - `invariant_refs`, `surface_scope`: Populated when Phase 4 ran (see Step 3)
@@ -1156,8 +1200,9 @@ Verification block fields (v2, see Verification Schema reference above for full 
 - `test_refs`, `test_files`, `verify_commands`: required per mode
 - `exemption_reason`: required for exempt modes (`artifact-sync`, `static-check`, `manual-ux`)
 - `verification_notes`: optional free-text
+- `human_execution`: only for pure operator work; use the contract above and add the same plain-language `HUMAN ACTION:` brief to the description.
 
-**Plan-level version marker:** include `plan_schema_version: 2` at the root. fizzy-pipeline-mcp uses this to select the strict validation path at `pipeline_load`. Plans missing this marker (or with version `1`) load with warnings during the migration window.
+**Plan-level version marker:** include `plan_schema_version: 2` at the root. fizzy-pipeline-mcp uses this to select the strict validation path at `pipeline_load`. Plans missing this marker (or with version `1`) load with warnings during the migration window. The value is a bare JSON integer (`2`), never a string (`"2"`) or a boolean: a present non-integer is rejected by fizzy-pipeline-mcp as `PLAN_SCHEMA_VERSION_TYPE_INVALID` (Fizzy card 21533). Before that gate it silently downgraded to legacy v1 validation (hardening packet 2026-09-13, Defect B).
 
 **Emit verification-coverage.json:** If Gate V3 did not already write it, write the coverage report to `.adversarial-spec/specs/<slug>/verification-coverage.json` now using the `report_schema_version: 1` shape documented in Gate V3. Keep it alongside `fizzy-plan.json` so reviewers can inspect both artifacts from the same session directory.
 
@@ -1248,6 +1293,9 @@ Confirm cards appear in New Todo with correct count.
 > emission above unchanged — they are grandfathered forever. v4 plans are
 > `plan_schema_version: 3` (the altitude schema; the card pipeline version is 4,
 > the plan schema number is 3 — the two knobs are deliberately decoupled).
+> Both are bare JSON integers. `"3"`, `true`, or `3.0` is
+> `PLAN_SCHEMA_VERSION_TYPE_INVALID` at `pipeline_load` (Fizzy card 21533) and
+> `self_check_plan` rejects it locally before submission (Defect B).
 >
 > **v4 is VERIFICATION-ONLY.** Do NOT emit `validation-ledger.json`, do NOT emit a
 > `system_validation` binding, and do NOT add a force/override/bypass field.

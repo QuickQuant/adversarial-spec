@@ -421,7 +421,18 @@ def self_check_plan(plan: dict[str, Any]) -> dict[str, Any]:
     tasks = plan.get("tasks", [])
     by_id = {t.get("task_id"): t for t in tasks}
 
-    if plan.get("plan_schema_version") != PLAN_SCHEMA_VERSION:
+    if "plan_schema_version" not in plan:
+        issues.append({"code": "WRONG_SCHEMA_VERSION", "task_id": "<plan>"})
+    elif type(plan["plan_schema_version"]) is not int:
+        # Hardening packet (2026-09-13) Defect B: a PRESENT non-integer -- "3",
+        # true, 3.0, null -- is a typed reject, never a silent legacy downgrade.
+        # ``type(...) is int`` rather than isinstance because bool subclasses
+        # int. Mirrors fizzy-pipeline-mcp PLAN_SCHEMA_VERSION_TYPE_INVALID
+        # (Fizzy card 21533).
+        issues.append(
+            {"code": "PLAN_SCHEMA_VERSION_TYPE_INVALID", "task_id": "<plan>"}
+        )
+    elif plan["plan_schema_version"] != PLAN_SCHEMA_VERSION:
         issues.append({"code": "WRONG_SCHEMA_VERSION", "task_id": "<plan>"})
 
     roots = [t for t in tasks if not t.get("parent")]
