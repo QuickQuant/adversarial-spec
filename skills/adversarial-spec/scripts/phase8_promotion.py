@@ -2,9 +2,21 @@
 
 from __future__ import annotations
 
+import os
+import sys
 from collections.abc import Callable, Mapping, Sequence
+from copy import deepcopy
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Literal
+
+from pydantic import ValidationError
+
+if __package__:
+    from .tmr_schema import CodeRunEvidence, TargetObservation
+else:
+    from tmr_schema import CodeRunEvidence, TargetObservation
 
 REAL_DATA_STRATEGIES = frozenset({"REAL-DATA", "REAL-DATA + PROPERTY"})
 EXEMPT_VERIFICATION_MODES = frozenset({"artifact-sync", "static-check", "manual-ux"})
@@ -31,6 +43,7 @@ class PromotionRequest:
     accessors: list[str]
     negative_oracle_required: bool = True
     owner_authors_and_binds: bool = True
+    target_binding: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -45,6 +58,7 @@ class PromotionRequest:
             "accessors": self.accessors,
             "negative_oracle_required": self.negative_oracle_required,
             "owner_authors_and_binds": self.owner_authors_and_binds,
+            "target_binding": deepcopy(self.target_binding),
         }
 
 
@@ -56,6 +70,7 @@ class RunExecution:
     artifact_uri: str
     artifact_sha256: str
     live_or_induced: dict[str, str] | None = None
+    target_observation: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -120,9 +135,78 @@ def build_promotion_requests(
                 repo=repo,
                 commit=commit,
                 accessors=accessors,
+                target_binding=deepcopy(record.get("target_binding")),
             )
         )
     return Phase8PromotionReport(requests=requests, issues=issues)
+
+
+def read_process_start_time(pid: int) -> str | None:
+    """Read a live Linux process's UTC start time; unavailable identity is null.
+
+    Field 22 of /proc/PID/stat counts ticks since boot. Parse after the final
+    parenthesis because the process name can itself contain spaces or ')'.
+    Call while the child still exists; never substitute capture wall time.
+    """
+    if sys.platform != "linux" or type(pid) is not int or pid <= 0:
+        return None
+    try:
+        stat = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8")
+        end_comm = stat.rfind(")")
+        if end_comm < 0 or int(stat.split(" ", 1)[0]) != pid:
+            return None
+        ticks = int(stat[end_comm + 2 :].split()[19])
+        hz = os.sysconf("SC_CLK_TCK")
+        boot = next(
+            int(line.split()[1])
+            for line in Path("/proc/stat").read_text(encoding="utf-8").splitlines()
+            if line.startswith("btime ")
+        )
+        if ticks < 0 or hz <= 0 or boot < 0:
+            return None
+        return datetime.fromtimestamp(boot + ticks / hz, timezone.utc).isoformat()
+    except (OSError, ValueError, IndexError, OverflowError, StopIteration):
+        return None
+
+
+def _runtime_identity_issues(receipt: dict[str, Any] | None) -> list[dict[str, str]]:
+    """Check capture completeness, then defer structural rules to E-31."""
+
+    def incomplete(field: str) -> list[dict[str, str]]:
+        return [{"code": "RUNTIME_IDENTITY_INCOMPLETE", "field": field}]
+
+    if receipt is None:
+        return incomplete("runtime_receipt_id")
+    receipt_id = receipt.get("runtime_receipt_id")
+    if not isinstance(receipt_id, str) or not receipt_id.strip():
+        return incomplete("runtime_receipt_id")
+    pid = receipt.get("pid")
+    if type(pid) is not int or pid <= 0:
+        return incomplete("pid")
+    try:
+        start = datetime.fromisoformat(receipt.get("pid_start_time"))
+        if start.utcoffset() is None or start.utcoffset().total_seconds() != 0:
+            return incomplete("pid_start_time")
+    except (TypeError, ValueError):
+        return incomplete("pid_start_time")
+    for field_name in (
+        "entrypoint_observed",
+        "authority_ref_observed",
+        "terminal_state",
+    ):
+        value = receipt.get(field_name)
+        if not isinstance(value, str) or not value.strip():
+            return incomplete(field_name)
+    if receipt["terminal_state"] in {"partial", "timeout"}:
+        return incomplete("terminal_state")
+    try:
+        TargetObservation.model_validate(receipt)
+    except ValidationError as error:
+        return [
+            {"code": "RUNTIME_IDENTITY_INCOMPLETE", "field": str(issue["loc"][0])}
+            for issue in error.errors()
+        ]
+    return []
 
 
 def capture_run_evidence(
@@ -130,33 +214,71 @@ def capture_run_evidence(
     *,
     runner: CommandRunner,
     env: Literal["live", "dev", "ci"],
-    owner_written_result: str | None = None,
+    owner_written_result: str | Mapping[str, Any] | None = None,
+    owner_written_observation: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Run the declared command and build the only trusted code receipt.
+    """Execute once and return a detached TargetObservationCapture envelope.
 
-    ``owner_written_result`` is accepted only to make the trust boundary explicit:
-    the result always comes from the skill-runner process exit.
+    The callback owns measured fields and the receipt ID; the binding owns only
+    intended outcome/caller/path labels. Owner observations cannot repair a
+    runner receipt. Consumers must check COMPLETE before using run_evidence.
+    Capture does not compare targets, reconcile custody, or decide freshness.
     """
-
-    _ = owner_written_result
+    owner_observation_ignored = any(
+        observation is not None
+        for observation in (
+            owner_written_observation,
+            getattr(request, "target_observation", None),
+            _get(getattr(request, "run_evidence", None), "target_observation"),
+            _get(owner_written_result, "target_observation"),
+        )
+    )
+    binding = deepcopy(request.target_binding)
     execution = runner(request)
-    result: Literal["pass", "fail"] = "pass" if execution.exit_code == 0 else "fail"
-    return {
-        "tier": "code",
-        "command": request.command,
-        "cwd": request.cwd,
-        "repo": request.repo,
-        "commit": request.commit,
-        "started_at": execution.started_at,
-        "finished_at": execution.finished_at,
-        "exit": execution.exit_code,
-        "result": result,
-        "env": env,
-        "artifact_uri": execution.artifact_uri,
-        "artifact_sha256": execution.artifact_sha256,
-        "runner": "skill-runner",
-        "live_or_induced": execution.live_or_induced,
+    receipt = deepcopy(execution.target_observation)
+    if isinstance(receipt, dict):
+        # A receipt carries observations only. Exit status alone owns result.
+        receipt.pop("result", None)
+        for field_name in ("outcome_id", "caller_id", "path_id"):
+            receipt[field_name] = _get(binding, field_name)
+    else:
+        receipt = None
+    capture = {
+        "capture_state": "INCOMPLETE",
+        "observation_source": "runner",
+        "owner_observation_ignored": owner_observation_ignored,
+        "captured_at": datetime.now(timezone.utc).isoformat(),
+        "target_ref": request.commit,
+        "runtime_receipt": receipt,
+        "run_evidence": None,
+        "issues": _runtime_identity_issues(receipt),
     }
+    if capture["issues"]:
+        return capture
+
+    result: Literal["pass", "fail"] = "pass" if execution.exit_code == 0 else "fail"
+    evidence = CodeRunEvidence.model_validate(
+        {
+            "tier": "code",
+            "command": request.command,
+            "cwd": request.cwd,
+            "repo": request.repo,
+            "commit": request.commit,
+            "started_at": execution.started_at,
+            "finished_at": execution.finished_at,
+            "exit": execution.exit_code,
+            "result": result,
+            "env": env,
+            "artifact_uri": execution.artifact_uri,
+            "artifact_sha256": execution.artifact_sha256,
+            "runner": "skill-runner",
+            "live_or_induced": execution.live_or_induced,
+            "target_observation": receipt,
+        }
+    ).model_dump(mode="json")
+    capture["capture_state"] = "COMPLETE"
+    capture["run_evidence"] = evidence
+    return capture
 
 
 def evaluate_phase8_close(records: Sequence[Mapping[str, Any]]) -> Phase8PromotionReport:
