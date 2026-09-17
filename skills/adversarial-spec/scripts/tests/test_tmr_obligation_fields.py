@@ -345,6 +345,7 @@ def test_projection_field_set_is_exactly_the_keystone_ten() -> None:
             "required_liveness_class",
             "required_environment",
             "required_tier",
+            "target_binding",
         }
     )
     assert "tmr_record_hash" not in OBLIGATION_IDENTITY_FIELDS

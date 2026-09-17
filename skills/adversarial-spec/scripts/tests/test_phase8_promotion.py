@@ -113,8 +113,13 @@ def test_tc_11_0_emits_typed_promotion_request_and_halts_unbound_accessors():
 
 
 def test_skill_runner_captures_receipt_and_ignores_owner_written_result():
+    intended_ids = {
+        "outcome_id": "OUTCOME-GATEWAY",
+        "caller_id": "CALLER-GATEWAY",
+        "path_id": "PATH-GATEWAY",
+    }
     request = build_promotion_requests(
-        [record()],
+        [record(target_binding=intended_ids)],
         command_by_uid={"01J0PROMOTIONSTEP000000000A": "uv run pytest tests/test_gateway.py -q"},
         cwd="/repo",
         repo="owner-repo",
@@ -129,15 +134,33 @@ def test_skill_runner_captures_receipt_and_ignores_owner_written_result():
             artifact_uri="artifacts/gateway.json",
             artifact_sha256="b" * 64,
             live_or_induced={"kind": "natural-wait"},
+            target_observation={
+                "runtime_receipt_id": "runner-gateway-unit-receipt",
+                "pid": 1234,
+                "pid_start_time": "2026-06-18T12:00:00Z",
+                **intended_ids,
+                "entrypoint_observed": "tests/test_gateway.py",
+                "authority_ref_observed": "AUTH-GATEWAY",
+                "producer_contract_hash": "sha256:" + "a" * 64,
+                "consumer_contract_hash": "sha256:" + "b" * 64,
+                "terminal_state": "rejected",
+            },
         )
 
-    evidence = capture_run_evidence(
+    capture = capture_run_evidence(
         request,
         runner=failing_runner,
         env="ci",
         owner_written_result="pass",
     )
 
+    assert capture["capture_state"] == "COMPLETE"
+    assert capture["issues"] == []
+    assert capture["observation_source"] == "runner"
+    assert capture["owner_observation_ignored"] is False
+    assert "result" not in capture
+    evidence = capture["run_evidence"]
+    assert evidence["target_observation"] == capture["runtime_receipt"]
     assert evidence["runner"] == "skill-runner"
     assert evidence["result"] == "fail"
     assert evidence["exit"] == 1

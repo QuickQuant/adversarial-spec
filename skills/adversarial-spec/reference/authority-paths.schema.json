@@ -1,0 +1,268 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://brainquarters.local/candidates/authority-paths.v1.schema.json",
+  "title": "Candidate Authority Path Census",
+  "description": "Proposal only. Triggered Phase 4 census for all callable paths producing one external outcome.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "trigger", "outcome_classes"],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["triggered", "structural_reasons", "evaluated_at"],
+      "properties": {
+        "triggered": {
+          "type": "boolean"
+        },
+        "structural_reasons": {
+          "type": "array",
+          "items": {
+            "enum": ["equivalent_effect_paths", "separate_runtime", "authority_role_change"]
+          },
+          "uniqueItems": true
+        },
+        "evaluated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "rationale": {
+          "type": "string"
+        }
+      }
+    },
+    "outcome_classes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/outcomeClass"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "trigger": {
+            "properties": {
+              "triggered": {
+                "const": true
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "outcome_classes": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "stableId": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_-]{2,127}$"
+    },
+    "evidenceOrState": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "evidence_ref"],
+          "properties": {
+            "state": {
+              "const": "observed"
+            },
+            "evidence_ref": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state"],
+          "properties": {
+            "state": {
+              "const": "unknown"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "reason"],
+          "properties": {
+            "state": {
+              "const": "not_applicable"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "path": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path_id",
+        "operation",
+        "component",
+        "concrete_entrypoint",
+        "callers",
+        "current_role",
+        "target_role",
+        "authority_ref",
+        "gate_manifest",
+        "contract_owner_version",
+        "deployment_slot",
+        "supersedes",
+        "target_disposition",
+        "claim_predicates"
+      ],
+      "properties": {
+        "path_id": {
+          "$ref": "#/$defs/stableId"
+        },
+        "operation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "component": {
+          "type": "string",
+          "minLength": 1
+        },
+        "concrete_entrypoint": {
+          "type": "string",
+          "minLength": 1
+        },
+        "callers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["caller_id", "kind", "evidence_ref"],
+            "properties": {
+              "caller_id": {
+                "$ref": "#/$defs/stableId"
+              },
+              "kind": {
+                "enum": ["product", "operator", "system", "harness", "unknown"]
+              },
+              "evidence_ref": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "current_role": {
+          "enum": ["authoritative", "projection", "legacy", "emergency", "retiring", "dead"]
+        },
+        "target_role": {
+          "enum": ["authoritative", "projection", "legacy", "emergency", "retiring", "dead"]
+        },
+        "authority_ref": {
+          "$ref": "#/$defs/stableId"
+        },
+        "gate_manifest": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "contract_owner_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "deployment_slot": {
+          "type": "string",
+          "minLength": 1
+        },
+        "supersedes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/stableId"
+          }
+        },
+        "compatibility_window": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["owner", "reason", "expires", "differential_test_ref"],
+          "properties": {
+            "owner": {
+              "type": "string",
+              "minLength": 1
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            },
+            "expires": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "differential_test_ref": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "target_disposition": {
+          "enum": ["retained", "retired", "removed", "not_applicable"]
+        },
+        "negative_probe_ref": {
+          "type": ["string", "null"]
+        },
+        "claim_predicates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source", "integration", "artifact", "activation", "running", "live_acceptance", "retirement"],
+          "properties": {
+            "source": {"$ref": "#/$defs/evidenceOrState"},
+            "integration": {"$ref": "#/$defs/evidenceOrState"},
+            "artifact": {"$ref": "#/$defs/evidenceOrState"},
+            "activation": {"$ref": "#/$defs/evidenceOrState"},
+            "running": {"$ref": "#/$defs/evidenceOrState"},
+            "live_acceptance": {"$ref": "#/$defs/evidenceOrState"},
+            "retirement": {"$ref": "#/$defs/evidenceOrState"}
+          }
+        }
+      }
+    },
+    "outcomeClass": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome_id", "description", "paths"],
+      "properties": {
+        "outcome_id": {
+          "$ref": "#/$defs/stableId"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "paths": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/path"
+          }
+        }
+      }
+    }
+  }
+}

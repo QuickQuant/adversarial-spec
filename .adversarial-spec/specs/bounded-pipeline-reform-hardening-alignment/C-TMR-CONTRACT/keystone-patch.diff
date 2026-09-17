@@ -1,0 +1,144 @@
+--- a/shared-context/test-maturity-record-schema.md
++++ b/shared-context/test-maturity-record-schema.md
+@@ -13,10 +13,12 @@
+ 
+ > Date: 2026-06-18 | Status: tmr.v1 draft contract (keystone both specs depend on)
+ > Machine schema: `adversarial-spec/skills/adversarial-spec/reference/test-maturity-record.schema.json`
+-> schema_sha256: sha256:0f65d8de7d707247760df61b428bbffa99aae8b6a160ad77c3838774e0bffddb
++> schema_sha256: sha256:824449bb26c8f9ace09966cf366a50afc0f8eed9deaf2881bb8791c7bc17e361
+ > (convention: sha256 over the canonical JSON Schema payload, generated-comment excluded — the value
+ > `tmr_schema.schema_sha256()` computes and the machine schema file's `$comment` carries. Re-pinned
+ > 2026-09-14 for `negative_oracle` / `negative_oracle_ref` (decision 7); prior value `sha256:995538a2…`.)
++> Re-pinned 2026-09-15 for `target_binding`, `target_binding_status`, and
++> `run_evidence.target_observation` (decision 8); prior value `sha256:0f65d8de…`.
+ > Companion to `liveness-gate-and-test-ladder.md`. This is the **one cohesive data model** that
+ > changes A, C, D, F′, G, J, K all key on — and the **field-for-field contract** with
+ > `fizzy-pipeline-mcp` (which persists/enforces what this skill authors/emits).
+@@ -111,6 +113,10 @@
+   "accessors": ["arm_algo","legs_of","algo_id","leg_algo_id","fill_of"], // concept-accessor names (façade; binding is target-repo)
+   "binding_status": "unbound",           // unbound | bound  (acceptance→concrete promotion key)
+ 
++  // ── expected proof target (decision 8) ──
++  "target_binding": null,               // TargetProofBinding | null; identity core at nl/acceptance, full at concrete
++  "target_binding_status": "legacy-unbound", // derived: bound iff target_binding is non-null; accepted on input, disagreement rejected
++
+   // ── criticality (R2, adv-spec card 5715) — drives the liveness obligation (missing_liveness_test, Phase-8) ──
+   "critical_seam": false,                // true | false | null. null + criticality_source:unknown = criticality_unknown → treated as critical for system-altitude happy-paths until resolved
+   "criticality_source": "explicit",      // explicit | architecture_link | unknown. architecture_link is an INPUT to classification, not a parallel contract; if explicit and derived disagree → fail closed as critical + blocking finding
+@@ -132,6 +138,7 @@
+ 
+   // ── execution evidence (extends fizzy v3 evidence block) ──
+   "run_evidence": null,                  // null until executed; concrete non-exempt tests carry a tiered receipt
++                                         // code receipts may include target_observation (runner-owned; §2a)
+ 
+   // ── provenance ──
+   "source_spec": "take-take-chunk-execution-state-machine", // provenance, NOT system of record
+@@ -160,7 +167,9 @@
+ (back-compat: optional + warn first), and a `null` member fails the promotion condition rather
+ than waiving it. `negative_oracle` (`null`), `negative_oracle_ref` (`null`) — same decision-5
+ landing; both `null` fails Phase 8 promotion for REAL-DATA critical/spine records rather than
+-waiving it.
++waiving it. `target_binding` defaults to `null`; `target_binding_status` is derived as
++`bound` for a non-null binding and `legacy-unbound` otherwise. A supplied status must agree,
++including on dump/reload. This is separate from the accessor `binding_status`.
+ 
+ **Conditionally required:** `why_impossible_to_reproduce_live` is non-empty when
+ `data_strategy ∉ {REAL-DATA, REAL-DATA + PROPERTY} ∧ critical_seam=true` or when `data_strategy=MOCK`
+@@ -168,6 +177,56 @@
+ `live_or_induced=null`; `tombstoned_at` is non-null when `status=tombstoned`; concrete non-exempt
+ records carry a `run_evidence` tier variant.
+ 
++**TargetProofBinding (strict at every object boundary):** stable IDs use
++`^[A-Z][A-Z0-9_-]{2,127}$`; prefixed hashes use `^sha256:[0-9a-f]{64}$`.
++
++| Fields | Shape / population |
++|---|---|
++| `binding_version` | required integer constant `1` |
++| `outcome_id`, `caller_id`, `path_id`, `authority_ref` | required stable IDs |
++| `caller_kind` | required: `product`, `operator`, `system`, `harness` |
++| `entrypoint` | required non-empty string |
++| `authority_role` | required: `authoritative`, `projection`, `legacy`, `emergency`, `retiring`, `dead` |
++| `caller_equivalence_ref` | non-empty string or null; defaults null |
++| `producer_contract`, `consumer_contract` | strict contract references or null; default null |
++| `runtime_chain_required` | boolean or null; defaults null |
++| `runtime_slots`, `predecessor_path_ids` | unique stable-ID arrays; default `[]` |
++| `terminal_oracle` | strict terminal oracle or null; defaults null |
++| `negative_oracle_ref` | non-empty string or null; defaults null |
++| `equivalence_group` | stable ID or null; defaults null |
++| `fixture_provenance` | array of strict provenance objects; defaults `[]` |
++
++A contract reference requires non-empty strings `owner`, `name`, `version`, `source_ref`,
++and a prefixed `sha256`. A terminal oracle requires a non-empty, unique `accepted_states`
++array of non-empty strings and a non-empty `reconciliation_authority` string. Each fixture
++provenance object requires non-empty strings `boundary`, `source`, `claim_ceiling`, and
++`kind` from `none`, `real-source`, `recorded`, `constructed`, `stub`, `mock`.
++
++At `nl` and `acceptance`, only the identity core (the first five rows above) is required.
++At `concrete`, a present binding must supply every field; `producer_contract`,
++`consumer_contract`, `runtime_chain_required`, `terminal_oracle`, `negative_oracle_ref`,
++and `equivalence_group` must be non-null. Missing fields are schema errors naming the
++field. `caller_equivalence_ref` may remain null for any caller kind: equivalence proof
++is checked by compiler/promotion consumers, not inferred by this shape. List fields may
++be empty except `runtime_slots` must be non-empty at `concrete` when
++`runtime_chain_required=true`. A legacy record with no binding remains valid at any maturity
++and visibly dumps `target_binding:null`, `target_binding_status:"legacy-unbound"`.
++
++**CodeRunEvidence.target_observation:** optional, defaults null. A present observation is
++strict, runner-owned, and requires all of these fields:
++
++| Fields | Type |
++|---|---|
++| `runtime_receipt_id`, `pid_start_time` | string |
++| `pid` | integer; no string or boolean coercion |
++| `outcome_id`, `caller_id`, `path_id`, `authority_ref_observed` | stable ID |
++| `entrypoint_observed`, `terminal_state` | string |
++| `producer_contract_hash`, `consumer_contract_hash` | prefixed SHA-256 hash |
++
++Only code receipts carry this object; other evidence tiers retain their existing shapes.
++Observation capture and comparison to expectations belong to the runner and downstream
++validation. The schema describes the payload and rejects unknown owner-added keys.
++
+ **Fail-closed invariant (from design §3):** an `accessor` that is unbound or no-op MUST fail, never
+ skip/return a plausible value. A silently no-op binding rebuilds the exact fake-socket failure this
+ whole effort kills. The binding layer + lint live **target-repo / its CI** (unassigned in all source
+@@ -176,15 +235,22 @@
+ ### 2b. Obligation identity — the `tmr_record_hash` projection
+ 
+ `tmr_record_hash` is **derived**, not authored: SHA-256 over the RFC 8785 JCS serialization of
+-exactly these ten fields, and nothing else.
++exactly these eleven fields, and nothing else.
+ 
+ ```text
+ {tmr_uid, test_id, user_story, critical_seam, criticality_source,
+  obligation_revision, obligation_policy_version,
+- required_liveness_class, required_environment, required_tier}
++ required_liveness_class, required_environment, required_tier, target_binding}
+ ```
+ 
+-The projection deliberately **excludes** `maturity`, `binding_status`, `run_evidence`, and every
++`target_binding` contributes its complete JSON dump (including defaults and nested expected
++contracts), or JSON null for legacy records. Every expected target field participates, including
++caller kind, authority role, runtime requirements, predecessor IDs, and fixture provenance.
++Adding this member changes even legacy record hashes: stored hashes must be recomputed and
++verified against this projection, never accepted as a newer truth.
++
++The projection deliberately **excludes** `maturity`, `binding_status`, `target_binding_status`,
++`run_evidence` (including `target_observation`), and every
+ other evidence field. That exclusion is the whole point: recording evidence against an obligation
+ must not invalidate a standing waiver, while any change to *what is being waived* must. A waiver
+ receipt covers a TMR only when its `obligation` block exactly equals the record's current
+@@ -347,5 +413,12 @@
+    Phase 8 promoter had read these since W4-1 while the keystone forbade them (`extra: forbid`), so
+    a validated record could never satisfy promotion; the two suites were green only in isolation.
+    Landed optional-and-null per decision 5, keystone-first, outside the 2b projection. The
+-   broader `target_binding` axis from the same packet is deliberately NOT landed here; it waits
+-   for its validators and golden replay to stabilize in adversarial-spec first.
++   broader `target_binding` axis from the same packet was deferred at that point; decision 8
++   below adds its contract and packaging.
++8. ✅ **Expected target identity and observed receipts** (C-TMR-CONTRACT, 2026-09-15) — add strict,
++   progressively populated `target_binding`, derived `target_binding_status`, and optional
++   runner-owned `CodeRunEvidence.target_observation`; hash the expected binding in §2b and keep
++   observations outside it. Brainquarters owns this keystone; adversarial-spec mirrors,
++   regenerates, and checks the SHA tripwire; fizzy-pipeline-mcp consumes plan/metadata contracts
++   only (no TMR execution logic); skill-runner executes. The C candidate ships this keystone
++   patch for owner-first application before consumer rollout; it does not edit the live owner copy.

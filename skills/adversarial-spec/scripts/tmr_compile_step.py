@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import secrets
 import time
 from collections.abc import Callable, Mapping, Sequence
@@ -15,6 +16,24 @@ from tmr_schema import SchemaValidationError, TestMaturityRecord, dump_tmr_recor
 
 CROCKFORD32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 ULID_LENGTH = 26
+TARGET_ANNOTATION_FIELDS = {
+    "Outcome obligation": frozenset({"outcome_id", "equivalence_group"}),
+    "Intended caller": frozenset(
+        {"caller_id", "caller_kind", "caller_equivalence_ref"}
+    ),
+    "Proof target": frozenset(
+        {
+            "path_id", "entrypoint", "authority_ref", "authority_role",
+            "producer_contract", "consumer_contract", "runtime_chain_required",
+            "runtime_slots", "terminal_oracle", "negative_oracle_ref",
+            "predecessor_path_ids", "fixture_provenance",
+        }
+    ),
+}
+BINDING_TRIGGER_MARKERS = (
+    "money-effect", "authority-change", "cross-runtime", "separately-deployed",
+    "replacement",
+)
 
 
 class HumanConfirmationRequiredError(RuntimeError):
@@ -27,6 +46,8 @@ class CompileCandidate:
 
     anchor: str
     record: dict[str, object]
+    # Synthesis (antigravity design point): typed callers can annotate too.
+    annotations: str = ""
 
 
 @dataclass(frozen=True)
@@ -44,11 +65,24 @@ class SemanticDiffEvent:
 
 
 @dataclass(frozen=True)
+class TmrCompileDiagnostic:
+    """An authored test whose required target still needs annotation lines."""
+
+    test_id: str
+    missing_annotations: list[str]
+    trigger_reasons: list[str]
+    code: Literal["TMR_TARGET_BINDING_REQUIRED"] = "TMR_TARGET_BINDING_REQUIRED"
+    severity: Literal["warning"] = "warning"
+    status: Literal["unresolved"] = "unresolved"
+
+
+@dataclass(frozen=True)
 class TmrCompileResult:
     records: list[dict[str, object]]
     prose_view: str
     echo_diff: list[SemanticDiffEvent]
     requires_human_confirm: bool = True
+    diagnostics: list[TmrCompileDiagnostic] = field(default_factory=list)
 
     def registry_json(self) -> str:
         return json.dumps(self.records, indent=2, sort_keys=True)
@@ -73,6 +107,10 @@ def compile_tmr_records(
     The LLM may preserve an existing ``tmr_uid`` from a regenerated prose view,
     but it may not allocate a new one. New records receive compiler-minted
     ULIDs immediately before TmrParser validation.
+
+    Mapping candidates may supply an ``annotations`` string outside ``record``.
+    Its three JSON annotation lines provide the target binding; the canonical
+    schema owns defaults, completeness at concrete maturity, and binding status.
     """
 
     uid_factory = uid_factory or mint_ulid
@@ -83,8 +121,9 @@ def compile_tmr_records(
     seen_anchors: set[str] = set()
     seen_uids: set[str] = set()
     compiled: list[dict[str, object]] = []
+    diagnostics: list[TmrCompileDiagnostic] = []
     for raw_candidate in candidates:
-        candidate = _coerce_candidate(raw_candidate)
+        candidate, annotations = _coerce_candidate(raw_candidate)
         if candidate.anchor in seen_anchors:
             raise SchemaValidationError("anchor", f"Duplicate anchor: {candidate.anchor}")
         seen_anchors.add(candidate.anchor)
@@ -109,14 +148,24 @@ def compile_tmr_records(
         if resolved_uid in seen_uids:
             raise SchemaValidationError("tmr_uid", f"Duplicate tmr_uid: {resolved_uid}")
         seen_uids.add(resolved_uid)
-        compiled.append(record)
+        try:
+            diagnostic = _compile_target_binding(record, annotations)
+            validated = _parse_records([record])[0]
+        except SchemaValidationError as exc:
+            raise SchemaValidationError(
+                exc.field, f"{record.get('test_id', candidate.anchor)}: {exc.detail}"
+            ) from exc
+        compiled.append(validated)
+        if diagnostic is not None:
+            diagnostics.append(diagnostic)
 
-    parsed = _parse_records(compiled)
-    echo_diff = _diff_by_tmr_uid(existing, parsed)
+    _check_outcome_collisions(compiled)
+    echo_diff = _diff_by_tmr_uid(existing, compiled)
     return TmrCompileResult(
-        records=parsed,
-        prose_view=render_prose_view(parsed),
+        records=compiled,
+        prose_view=render_prose_view(compiled),
         echo_diff=echo_diff,
+        diagnostics=diagnostics,
     )
 
 
@@ -180,9 +229,11 @@ def _parse_records(records: Sequence[Mapping[str, object]]) -> list[dict[str, ob
     return [dump_tmr_record(record) for record in parsed]
 
 
-def _coerce_candidate(candidate: CompileCandidate | Mapping[str, object]) -> CompileCandidate:
+def _coerce_candidate(
+    candidate: CompileCandidate | Mapping[str, object],
+) -> tuple[CompileCandidate, object]:
     if isinstance(candidate, CompileCandidate):
-        return candidate
+        return candidate, candidate.annotations
     if "anchor" not in candidate:
         raise SchemaValidationError("anchor", "Compile candidate missing anchor")
     record = candidate.get("record", candidate)
@@ -190,7 +241,138 @@ def _coerce_candidate(candidate: CompileCandidate | Mapping[str, object]) -> Com
         raise SchemaValidationError("record", "Compile candidate record must be an object")
     record_dict = dict(record)
     record_dict.pop("anchor", None)
-    return CompileCandidate(anchor=str(candidate["anchor"]), record=record_dict)
+    if record is candidate:
+        record_dict.pop("annotations", None)
+    return (
+        CompileCandidate(anchor=str(candidate["anchor"]), record=record_dict),
+        candidate.get("annotations", ""),
+    )
+
+
+def _annotation_json(label: str, text: str) -> object:
+    def unique_keys(pairs: list[tuple[str, object]]) -> dict[str, object]:
+        value: dict[str, object] = {}
+        for key, item in pairs:
+            if key in value:
+                raise SchemaValidationError(key, f"Duplicate JSON key in {label}: {key}")
+            value[key] = item
+        return value
+
+    def reject_constant(value: str) -> object:
+        raise SchemaValidationError(label, f"Invalid JSON constant: {value}")
+
+    try:
+        return json.loads(
+            text, object_pairs_hook=unique_keys, parse_constant=reject_constant
+        )
+    except json.JSONDecodeError as exc:
+        raise SchemaValidationError(label, f"Invalid annotation JSON: {exc}") from exc
+
+
+def _parse_annotations(annotations: object) -> tuple[dict[str, dict[str, object]], list[str]]:
+    """Read case-sensitive, single-line JSON annotations outside code fences."""
+
+    if not isinstance(annotations, str):
+        raise SchemaValidationError("annotations", "annotations must be a string")
+    groups: dict[str, dict[str, object]] = {}
+    markers: list[str] = []
+    seen: set[str] = set()
+    fence = ""
+    for raw_line in annotations.splitlines():
+        line = raw_line.strip()
+        if fence:
+            if re.fullmatch(re.escape(fence[0]) + "{" + str(len(fence)) + ",}", line):
+                fence = ""
+            continue
+        opening = re.match(r"(`{3,}|~{3,})", line)
+        if opening:
+            fence = opening.group()
+            continue
+        label, colon, payload = line.partition(":")
+        if not colon or label not in (*TARGET_ANNOTATION_FIELDS, "Binding triggers"):
+            continue
+        if label in seen:
+            raise SchemaValidationError(label, f"Duplicate annotation: {label}")
+        seen.add(label)
+        value = _annotation_json(label, payload)
+        if label == "Binding triggers":
+            if not isinstance(value, list) or any(
+                not isinstance(marker, str) or marker not in BINDING_TRIGGER_MARKERS
+                for marker in value
+            ):
+                raise SchemaValidationError(
+                    label, "Binding triggers must be an array of supported markers"
+                )
+            markers = value
+            continue
+        if not isinstance(value, dict):
+            raise SchemaValidationError(label, f"{label} must be a JSON object")
+        unknown = sorted(set(value) - TARGET_ANNOTATION_FIELDS[label])
+        if unknown:
+            raise SchemaValidationError(
+                f"target_binding.{unknown[0]}",
+                f"Unknown or misplaced field in {label}: {unknown[0]}",
+            )
+        groups[label] = value
+    return groups, markers
+
+
+def _compile_target_binding(
+    record: dict[str, object], annotations: object,
+) -> TmrCompileDiagnostic | None:
+    groups, markers = _parse_annotations(annotations)
+    missing = [label for label in TARGET_ANNOTATION_FIELDS if label not in groups]
+    if not missing:
+        binding: dict[str, object] = {"binding_version": 1}
+        for values in groups.values():
+            binding.update(values)
+        record["target_binding"] = binding
+        # Discard the old derived status during an annotated registry upgrade.
+        # Validation supplies it again and sees only author-supplied fields.
+        record.pop("target_binding_status", None)
+        return None
+
+    if groups and record.get("maturity") == "concrete":
+        raise SchemaValidationError(
+            "target_binding", f"Incomplete concrete annotations; missing {', '.join(missing)}"
+        )
+    if (
+        record.get("target_binding") is not None
+        or record.get("status") != "active"
+        or record.get("maturity") not in {"nl", "acceptance"}
+    ):
+        return None
+    reasons = [name for name in ("spine", "critical_seam") if record.get(name) is True]
+    reasons.extend(marker for marker in BINDING_TRIGGER_MARKERS if marker in markers)
+    if reasons:
+        return TmrCompileDiagnostic(
+            test_id=str(record.get("test_id", "")),
+            missing_annotations=missing,
+            trigger_reasons=reasons,
+        )
+    return None
+
+
+def _check_outcome_collisions(records: Sequence[Mapping[str, object]]) -> None:
+    """Check the complete new registry, including replayed bound records."""
+
+    by_outcome: dict[str, list[tuple[str, object]]] = {}
+    for record in records:
+        binding = record.get("target_binding")
+        if not isinstance(binding, dict):
+            continue
+        outcome = str(binding["outcome_id"])
+        test_id = str(record["test_id"])
+        group = binding.get("equivalence_group")
+        members = by_outcome.setdefault(outcome, [])
+        for other_test_id, other_group in members:
+            if test_id != other_test_id and (not group or group != other_group):
+                raise SchemaValidationError(
+                    "target_binding.outcome_id",
+                    f"Outcome {outcome} collides between {other_test_id} and {test_id}; "
+                    "both tests must declare the same nonempty equivalence_group",
+                )
+        members.append((test_id, group))
 
 
 def _resolve_accessors(

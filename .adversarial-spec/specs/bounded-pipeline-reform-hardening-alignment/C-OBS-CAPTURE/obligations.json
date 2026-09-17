@@ -1,0 +1,165 @@
+{
+  "leaf": "C-OBS-CAPTURE",
+  "card_id": "21548",
+  "session_id": "adv-spec-202609150549-bounded-reform-hardening-align",
+  "authored_at": "2026-09-15T14:53:20.875405Z",
+  "operator": "Jason \u2014 explicit C-OBS-CAPTURE Phase A/B authoring request; authored by Codex",
+  "component_inputs": {
+    "goal_refs": [
+      "G-1",
+      "G-3"
+    ],
+    "surface_refs": [
+      "phase8_promotion.PromotionRequest.target_binding",
+      "phase8_promotion.RunExecution.target_observation",
+      "phase8_promotion.TargetObservationCapture (dict shape)",
+      "phase8_promotion.capture_run_evidence",
+      "phase8_promotion.read_process_start_time",
+      "tmr_schema.CodeRunEvidence.target_observation",
+      "tmr_schema.TargetObservation"
+    ]
+  },
+  "guarantee_doc": "guarantee-obligations.md",
+  "guarantee_doc_sha256": "sha256:58184714089a224cdcca7b02f28794cea927eea13e03d424ca3e5fe8fd72640b",
+  "guarantees": [
+    {
+      "guarantee_id": "GU-1",
+      "statement": "Real bound-command execution yields schema-valid runner evidence with capture time/ref, intended binding IDs, and actual runner entrypoint/authority/hashes/terminal reports",
+      "goal_refs": [
+        "G-1"
+      ],
+      "surface_refs": [
+        "phase8_promotion.PromotionRequest.target_binding",
+        "phase8_promotion.RunExecution.target_observation",
+        "phase8_promotion.capture_run_evidence",
+        "phase8_promotion.TargetObservationCapture (dict shape)",
+        "tmr_schema.TargetObservation",
+        "tmr_schema.CodeRunEvidence.target_observation"
+      ]
+    },
+    {
+      "guarantee_id": "GU-2",
+      "statement": "Owner observations and results cannot author or repair runner evidence; missing runner receipts fail closed and a rerun supplies new runner authority",
+      "goal_refs": [
+        "G-1"
+      ],
+      "surface_refs": [
+        "phase8_promotion.capture_run_evidence",
+        "phase8_promotion.TargetObservationCapture (dict shape)"
+      ]
+    },
+    {
+      "guarantee_id": "GU-3",
+      "statement": "Runtime identity comes from the real child PID and Linux field-22/CLK_TCK/btime conversion; restarted children receive a fresh receipt and later start time",
+      "goal_refs": [
+        "G-1"
+      ],
+      "surface_refs": [
+        "phase8_promotion.read_process_start_time",
+        "phase8_promotion.RunExecution.target_observation"
+      ]
+    },
+    {
+      "guarantee_id": "GU-4",
+      "statement": "Unavailable, invalid, absent, partial, and timeout receipts remain INCOMPLETE and carry no result to custody reconciliation",
+      "goal_refs": [
+        "G-1",
+        "G-3"
+      ],
+      "surface_refs": [
+        "phase8_promotion.capture_run_evidence",
+        "phase8_promotion.read_process_start_time",
+        "phase8_promotion.TargetObservationCapture (dict shape)"
+      ]
+    }
+  ],
+  "obligations": [
+    {
+      "obligation_id": "O-1",
+      "guarantee_id": "GU-1",
+      "claim": "A real exit-zero child produces complete canonical CodeRunEvidence with exact command/cwd/env/exit/artifact metadata and an in-call UTC captured_at plus exact target ref"
+    },
+    {
+      "obligation_id": "O-2",
+      "guarantee_id": "GU-2",
+      "claim": "Owner record/direct attributes, owner_written_observation, and owner_written_result observations/results are ignored; real zero/nonzero exits govern results and captured dictionaries are detached"
+    },
+    {
+      "obligation_id": "O-3",
+      "guarantee_id": "GU-2",
+      "claim": "Absent/null/empty runner receipt identity discards owner-authored observations with INCOMPLETE and no result, never repairs from owner data, and permits a fresh runner rerun"
+    },
+    {
+      "obligation_id": "O-4",
+      "guarantee_id": "GU-3",
+      "claim": "read_process_start_time(os.getpid()) matches real /proc/self/stat field 22 converted using CLK_TCK and btime within one tick in UTC; unavailable hosts return None and INCOMPLETE without skips"
+    },
+    {
+      "obligation_id": "O-5",
+      "guarantee_id": "GU-3",
+      "claim": "Two sequential real child executions retain their actual PIDs, mint distinct runner receipt IDs, and yield increasing procfs start times; unavailable identities remain INCOMPLETE"
+    },
+    {
+      "obligation_id": "O-6",
+      "guarantee_id": "GU-4",
+      "claim": "Non-Linux/unavailable process identity, invalid or missing required fields, and partial/timeout receipt states yield RUNTIME_IDENTITY_INCOMPLETE and run_evidence null without a result"
+    },
+    {
+      "obligation_id": "O-7",
+      "guarantee_id": "GU-1",
+      "claim": "Binding outcome/caller/path labels override redundant callback labels while actual entrypoint/authority/contract hashes/terminal reports survive expected-value differences and target changes without promotion comparisons"
+    }
+  ],
+  "primary_map": [
+    {
+      "obligation_id": "O-1",
+      "test_selector": "test_o1_real_command_populates_schema_valid_runner_evidence",
+      "red_fingerprint": "768ad17f1e975665"
+    },
+    {
+      "obligation_id": "O-2",
+      "test_selector": "test_o2_owner_observations_and_results_cannot_override_runner",
+      "red_fingerprint": "92de1aa288109591"
+    },
+    {
+      "obligation_id": "O-3",
+      "test_selector": "test_o3_missing_runner_receipt_discards_owner_observation",
+      "red_fingerprint": "a6255bfb0dadbd94"
+    },
+    {
+      "obligation_id": "O-4",
+      "test_selector": "test_o4_process_start_time_matches_real_procfs_conversion",
+      "red_fingerprint": "40ced9db11fa00e6"
+    },
+    {
+      "obligation_id": "O-5",
+      "test_selector": "test_o5_restarted_real_process_gets_new_start_time_and_receipt",
+      "red_fingerprint": "330769918dd18515"
+    },
+    {
+      "obligation_id": "O-6",
+      "test_selector": "test_o6_unavailable_or_partial_identity_carries_no_result",
+      "red_fingerprint": "d701bd2bfcde0c1e"
+    },
+    {
+      "obligation_id": "O-7",
+      "test_selector": "test_o7_binding_labels_and_actual_runner_reports_keep_their_provenance",
+      "red_fingerprint": "654dfebedfd53861"
+    }
+  ],
+  "suite_path": "ab_suite/test_c_obs_capture.py",
+  "suite_sha256": "sha256:19bf93b32d58027bc4ba2f6d4726c4e093b58bb12e5863da38b78d2c6e4bac73",
+  "controls": {
+    "known_good": "ab_suite/ab_controls/good_contract.py",
+    "known_bad": "ab_suite/ab_controls/bad_contract.py (frozen 36dafdd)",
+    "known_good_passes": true,
+    "known_bad_fails": true
+  },
+  "red_runs": {
+    "count": 0,
+    "identical_fingerprints": false,
+    "suite_fingerprint": "TBD",
+    "red_for_right_reason": false
+  },
+  "safety_kernel": "real local Python children and procfs; synthetic owner/partial-receipt attack rows; writes and temporary targets only inside this leaf; no live skill, network, board, or git commands"
+}

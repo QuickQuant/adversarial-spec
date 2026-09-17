@@ -23,6 +23,7 @@ from pydantic import (
     Field,
     PrivateAttr,
     ValidationError,
+    field_validator,
     model_validator,
 )
 
@@ -103,6 +104,7 @@ OBLIGATION_IDENTITY_FIELDS = frozenset(
         "required_liveness_class",
         "required_environment",
         "required_tier",
+        "target_binding",
     }
 )
 
@@ -110,7 +112,7 @@ OBLIGATION_IDENTITY_FIELDS = frozenset(
 # constant is the tripwire that makes divergence mechanical instead of silent.
 KEYSTONE_RELATIVE_PATH = Path("shared-context") / "test-maturity-record-schema.md"
 KEYSTONE_SCHEMA_SHA256 = (
-    "sha256:0f65d8de7d707247760df61b428bbffa99aae8b6a160ad77c3838774e0bffddb"
+    "sha256:824449bb26c8f9ace09966cf366a50afc0f8eed9deaf2881bb8791c7bc17e361"
 )
 KEYSTONE_PROVENANCE = {
     "commit": "f8db8f0a9200165e9a0f707253ad3c47bff650f5",
@@ -130,6 +132,126 @@ class StrictSchemaModel(BaseModel):
     """Base for every machine-schema object in this contract."""
 
     model_config = ConfigDict(extra="forbid", strict=True)
+
+
+StableId = Annotated[str, Field(pattern=r"^[A-Z][A-Z0-9_-]{2,127}$")]
+NonEmptyString = Annotated[str, Field(min_length=1)]
+Sha256Hash = Annotated[str, Field(pattern=r"^sha256:[0-9a-f]{64}$")]
+
+
+def _unique_items(values: list[str]) -> list[str]:
+    if len(values) != len(set(values)):
+        raise ValueError("items must be unique")
+    return values
+
+
+class TargetContractRef(StrictSchemaModel):
+    owner: NonEmptyString
+    name: NonEmptyString
+    version: NonEmptyString
+    source_ref: NonEmptyString
+    sha256: Sha256Hash
+
+
+class TargetTerminalOracle(StrictSchemaModel):
+    accepted_states: list[NonEmptyString] = Field(
+        min_length=1, json_schema_extra={"uniqueItems": True}
+    )
+    reconciliation_authority: NonEmptyString
+
+    _unique_states = field_validator("accepted_states")(_unique_items)
+
+
+class TargetFixtureProvenance(StrictSchemaModel):
+    boundary: NonEmptyString
+    kind: Literal["none", "real-source", "recorded", "constructed", "stub", "mock"]
+    source: NonEmptyString
+    claim_ceiling: NonEmptyString
+
+
+class TargetProofBinding(StrictSchemaModel):
+    """Expected proof target; completeness is checked at concrete maturity."""
+
+    binding_version: Literal[1]
+    outcome_id: StableId
+    caller_id: StableId
+    caller_kind: Literal["product", "operator", "system", "harness"]
+    path_id: StableId
+    entrypoint: NonEmptyString
+    authority_ref: StableId
+    authority_role: Literal[
+        "authoritative", "projection", "legacy", "emergency", "retiring", "dead"
+    ]
+    caller_equivalence_ref: NonEmptyString | None = None
+    producer_contract: TargetContractRef | None = None
+    consumer_contract: TargetContractRef | None = None
+    runtime_chain_required: bool | None = None
+    runtime_slots: list[StableId] = Field(
+        default_factory=list, json_schema_extra={"default": [], "uniqueItems": True}
+    )
+    terminal_oracle: TargetTerminalOracle | None = None
+    negative_oracle_ref: NonEmptyString | None = None
+    equivalence_group: StableId | None = None
+    predecessor_path_ids: list[StableId] = Field(
+        default_factory=list, json_schema_extra={"default": [], "uniqueItems": True}
+    )
+    fixture_provenance: list[TargetFixtureProvenance] = Field(
+        default_factory=list, json_schema_extra={"default": []}
+    )
+
+    _unique_ids = field_validator("runtime_slots", "predecessor_path_ids")(
+        _unique_items
+    )
+
+    @field_validator("binding_version", mode="before")
+    @classmethod
+    def require_integer_version(cls, value: Any) -> Any:
+        # Literal[1] alone also accepts True and 1.0, even in strict mode.
+        if type(value) is not int:
+            raise ValueError("binding_version must be the integer 1")
+        return value
+
+    def require_concrete_fields(self) -> None:
+        for field in (
+            "producer_contract",
+            "consumer_contract",
+            "runtime_chain_required",
+            "terminal_oracle",
+            "negative_oracle_ref",
+            "equivalence_group",
+        ):
+            if getattr(self, field) is None:
+                raise ValueError(
+                    f"target_binding.{field} is required for maturity=concrete"
+                )
+        for field in type(self).model_fields:
+            if field not in self.model_fields_set:
+                raise ValueError(
+                    f"target_binding.{field} must be supplied for maturity=concrete"
+                )
+        if self.runtime_chain_required and not self.runtime_slots:
+            raise ValueError(
+                "target_binding.runtime_slots must be non-empty for "
+                "maturity=concrete when runtime_chain_required=true"
+            )
+        # Caller equivalence is a compiler/promotion concern. The shape permits
+        # null for every caller_kind so expected caller identity can be recorded.
+
+
+class TargetObservation(StrictSchemaModel):
+    """Runner-owned observations, excluded from obligation identity."""
+
+    runtime_receipt_id: str
+    pid: int
+    pid_start_time: str
+    outcome_id: StableId
+    caller_id: StableId
+    path_id: StableId
+    entrypoint_observed: str
+    authority_ref_observed: StableId
+    producer_contract_hash: Sha256Hash
+    consumer_contract_hash: Sha256Hash
+    terminal_state: str
 
 
 class LiveOrInducedTechnique(StrictSchemaModel):
@@ -177,6 +299,7 @@ class CodeRunEvidence(StrictSchemaModel):
     artifact_sha256: str
     runner: str
     live_or_induced: LiveOrInducedTechnique | None
+    target_observation: TargetObservation | None = None
 
 
 class SystemValidationRunEvidence(StrictSchemaModel):
@@ -256,6 +379,9 @@ class TestMaturityRecord(StrictSchemaModel):
     live_or_induced: LiveOrInducedTechnique | None
     run_evidence: RunEvidence | None
 
+    target_binding: TargetProofBinding | None = None
+    target_binding_status: Literal["bound", "legacy-unbound"] = "legacy-unbound"
+
     # Obligation identity -- what this obligation DEMANDS, kept separate from
     # the evidence fields above, which record what was OBSERVED. Optional with
     # null defaults per keystone decision 5 (optional + warn first) so
@@ -303,6 +429,23 @@ class TestMaturityRecord(StrictSchemaModel):
     spine_step_ref: str | None = None
 
     _classified: bool = PrivateAttr(default=False)
+
+    @model_validator(mode="before")
+    @classmethod
+    def derive_target_binding_status(cls, payload: Any) -> Any:
+        if isinstance(payload, dict):
+            expected = (
+                "bound" if payload.get("target_binding") is not None else "legacy-unbound"
+            )
+            if (
+                "target_binding_status" in payload
+                and payload["target_binding_status"] != expected
+            ):
+                raise ValueError(
+                    f"target_binding_status must be {expected!r} for target_binding"
+                )
+            return {**payload, "target_binding_status": expected}
+        return payload
 
     def __getattribute__(self, name: str) -> Any:
         if name in ("critical_seam", "criticality_source", "architecture_link"):
@@ -360,6 +503,9 @@ class TestMaturityRecord(StrictSchemaModel):
 
     @model_validator(mode="after")
     def enforce_conditional_contract(self) -> "TestMaturityRecord":
+        if self.maturity == "concrete" and self.target_binding is not None:
+            self.target_binding.require_concrete_fields()
+
         if self.status == "tombstoned" and not _non_empty(self.tombstoned_at):
             raise ValueError("tombstoned_at is required when status=tombstoned")
         if self.status == "active" and self.tombstoned_at is not None:
@@ -469,11 +615,14 @@ def dump_tmr_record(record: TestMaturityRecord) -> dict[str, Any]:
 
 
 def obligation_identity_projection(record: TestMaturityRecord) -> dict[str, Any]:
-    """The ten obligation-identity fields, and nothing else (keystone 2b)."""
+    """The eleven obligation-identity fields, in JSON form (keystone 2b)."""
 
-    return {
+    projection = {
         field: getattr(record, field) for field in sorted(OBLIGATION_IDENTITY_FIELDS)
     }
+    if record.target_binding is not None:
+        projection["target_binding"] = record.target_binding.model_dump(mode="json")
+    return projection
 
 
 def compute_tmr_record_hash(record: TestMaturityRecord) -> str:

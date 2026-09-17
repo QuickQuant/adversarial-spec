@@ -1,0 +1,388 @@
+{
+  "catalog_version": 1,
+  "status": "candidate_input_for_adversarial_spec_project_llm",
+  "prepared_at": "2026-09-13T00:00:00-05:00",
+  "rules": {
+    "real_testing_policy": "preserve_existing_strict_policy",
+    "counterfactual_claim": "candidate_gate_expected_result_only_not_historical_prevention",
+    "secrets": "fixtures_must_not_contain_credentials_account_ids_order_ids_or_balances"
+  },
+  "cases": [
+    {
+      "case_id": "ASP-HARDEN-001",
+      "name": "real producer violates exact consumer envelope",
+      "historical_class": "balance_contract",
+      "fixture": {
+        "producer_output": {
+          "balances": [],
+          "errors": [],
+          "cached": false,
+          "fetchedAt": 1710000000000
+        },
+        "consumer_requires": {
+          "contractVersion": "integer_min_2",
+          "fetchedAt": "iso_datetime_string"
+        }
+      },
+      "expected_reject_codes": [
+        "PRODUCER_CONSUMER_CONTRACT_UNPROVEN"
+      ],
+      "must_prove": [
+        "actual producer output is passed unchanged to actual consumer parser",
+        "missing contractVersion fails",
+        "numeric fetchedAt fails"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/prediction-prime/.adversarial-spec/retrospectives/2026-04-21-balances-shipped-broken-contract-gap.md:17"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-002",
+      "name": "contract test oracle wider than canonical schema",
+      "historical_class": "balance_permissive_assertion",
+      "fixture": {
+        "canonical_type": "string",
+        "test_accepts": ["number", "string"]
+      },
+      "expected_reject_codes": [
+        "CONTRACT_ASSERTION_WIDER_THAN_SCHEMA"
+      ],
+      "must_prove": [
+        "contract test cannot discharge boundary obligation"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/prediction-prime/.adversarial-spec/retrospectives/2026-04-21-balances-shipped-broken-contract-gap.md:51"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-003",
+      "name": "consumer uses predecessor risk model before canonical dependency",
+      "historical_class": "dependency_model_identity",
+      "fixture": {
+        "consumer_authority": "signedOffsetUnits",
+        "required_authority": "worstCaseLossUsd",
+        "dependency_edge_present": false
+      },
+      "expected_reject_codes": [
+        "SCHEDULE_POSTCONDITION_FAILED"
+      ],
+      "must_prove": [
+        "consumer remains blocked",
+        "predecessor formula fails semantic oracle"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/prediction-prime/.adversarial-spec/checkpoints/checkpoint-202606200607-phase8-ledger-derive-failed-review-wave-order-wrong-model.md:1"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-004",
+      "name": "valid vendor event contains contradictory token and outcome identities",
+      "historical_class": "negrisk_identity_precedence",
+      "fixture": {
+        "asset_id_side": "no",
+        "wire_outcome": "YES",
+        "wire_price_semantics": "YES_complement"
+      },
+      "expected_reject_codes": [
+        "CONTRADICTORY_IDENTITY_UNTESTED"
+      ],
+      "must_prove": [
+        "known token identity wins",
+        "prices swap to selected side",
+        "contradiction telemetry emitted",
+        "one fill attributed and deduped",
+        "terminal inventory reconciles"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/prediction-prime/.adversarial-spec/checkpoints/checkpoint-202607162002-integration-live-wave-negrisk-flip-incident-fixed.md:23"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-005",
+      "name": "real legacy harness attempts to discharge product route",
+      "historical_class": "flatten_wrong_real_path",
+      "fixture": {
+        "obligation_path": "PATH-FLATTEN-V3",
+        "observed_path": "PATH-EXIT-V2",
+        "caller_kind": "harness",
+        "caller_equivalence_ref": null,
+        "environment": "live"
+      },
+      "expected_reject_codes": [
+        "PROOF_CALLER_MISMATCH",
+        "PROOF_PATH_MISMATCH",
+        "PROOF_AUTHORITY_ROLE_MISMATCH"
+      ],
+      "must_prove": [
+        "live environment does not widen evidence",
+        "v2 result cannot close v3 obligation"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/prediction-prime/docs/exit-vs-flatten-2026-09-07.md:8",
+        "/home/jason/PycharmProjects/prediction-prime/scripts/live_exit/browser_gateway.py:139"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-006",
+      "name": "equivalent effect paths lack coexistence and retirement",
+      "historical_class": "flatten_authority_divergence",
+      "fixture": {
+        "outcome_id": "OUT-FLATTEN-HELD-POSITION",
+        "paths": [
+          "PATH-CONVEX-A",
+          "PATH-EMERGENCY",
+          "PATH-EXIT-V2",
+          "PATH-FLATTEN-V3"
+        ],
+        "authoritative_paths": ["PATH-EXIT-V2", "PATH-FLATTEN-V3"],
+        "coexistence_policy": null
+      },
+      "expected_reject_codes": [
+        "PROOF_PATH_UNCENSUSED",
+        "PREDECESSOR_NEGATIVE_PROOF_MISSING"
+      ],
+      "must_prove": [
+        "all four paths are visible",
+        "one target authority selected",
+        "each predecessor has disposition"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/prediction-prime/docs/exit-vs-flatten-2026-09-07.md:23"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-007",
+      "name": "new package proof runs old listener process",
+      "historical_class": "listener_runtime_identity",
+      "fixture": {
+        "intended_source": "56112c37",
+        "packaged_source": "56112c37",
+        "running_source": "05742a38",
+        "gateway_source": "56112c37"
+      },
+      "expected_reject_codes": [
+        "RUNTIME_IDENTITY_INCOMPLETE",
+        "PACKAGE_COMPONENT_UNPROVEN"
+      ],
+      "must_prove": [
+        "old running process cannot discharge fresh package",
+        "every shipped process has joined identity"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/prediction-prime/.adversarial-spec/specs/browser-stability-lna-compact/process-failures/2026-09-03-listener-never-deployed.md:1"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-008",
+      "name": "independently healthy producer and consumer have incompatible schema",
+      "historical_class": "listener_contract_compatibility",
+      "fixture": {
+        "producer_fields": ["exchange", "marketId", "externalId", "yesTokenId", "noTokenId"],
+        "consumer_required_fields": ["title", "exchange", "externalId"]
+      },
+      "expected_reject_codes": [
+        "PRODUCER_CONSUMER_CONTRACT_UNPROVEN"
+      ],
+      "must_prove": [
+        "actual packaged versions run together",
+        "consumer projection succeeds on producer output"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/prediction-prime/.adversarial-spec/specs/browser-stability-lna-compact/process-failures/2026-09-03-listener-never-deployed.md:12"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-009",
+      "name": "present string plan schema version silently downgrades",
+      "historical_class": "plan_discriminator_type",
+      "fixture": {
+        "plan_schema_version": "2"
+      },
+      "expected_reject_codes": [
+        "PLAN_SCHEMA_VERSION_TYPE_INVALID"
+      ],
+      "must_prove": [
+        "validate and load reject identically",
+        "no legacy fallback"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/prediction-prime/.adversarial-spec/sessions/adv-spec-202608261625-browser-stability-lna-compact.decisions.log:3",
+        "/home/jason/PycharmProjects/fizzy-pipeline-mcp/src/fizzy_pipeline_mcp/pipeline.py:8629"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-010",
+      "name": "boolean plan version is not integer version",
+      "historical_class": "plan_discriminator_python_bool",
+      "fixture": {
+        "plan_schema_version": true
+      },
+      "expected_reject_codes": [
+        "PLAN_SCHEMA_VERSION_TYPE_INVALID"
+      ],
+      "must_prove": [
+        "parser uses exact integer type semantics"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/fizzy-pipeline-mcp/src/fizzy_pipeline_mcp/pipeline.py:8490"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-011",
+      "name": "canonical TMR rejects field required by Phase 8 closer",
+      "historical_class": "adversarial_spec_internal_contract",
+      "fixture": {
+        "negative_oracle": true,
+        "schema_extra_policy": "forbid"
+      },
+      "expected_reject_codes": [
+        "TMR_NEGATIVE_ORACLE_SCHEMA_DRIFT"
+      ],
+      "must_prove": [
+        "validated serialized TMR flows through promoter and closer",
+        "negative oracle remains present and typed"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/tmr_schema.py",
+        "/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/phase8_promotion.py:197"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-012",
+      "name": "lexical mock detector misses constructed replacement producer",
+      "historical_class": "fixture_provenance",
+      "fixture": {
+        "test_helper": "makeEnvelope",
+        "contains_word_mock": false,
+        "replaced_boundary": "gateway producer"
+      },
+      "expected_reject_codes": [
+        "FIXTURE_PROVENANCE_CEILING"
+      ],
+      "must_prove": [
+        "typed provenance detects boundary substitution",
+        "lexical absence cannot raise claim ceiling"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/prediction-prime/.adversarial-spec/retrospectives/2026-04-21-balances-shipped-broken-contract-gap.md:63",
+        "/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/phase8_promotion.py:212"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-013",
+      "name": "terminal aborted emitted but runner times out",
+      "historical_class": "flatten_terminal_enum",
+      "fixture": {
+        "system_terminal": "aborted",
+        "runner_known_terminals": ["completed", "failed", "expired"]
+      },
+      "expected_reject_codes": [
+        "TERMINAL_ENUM_UNCOVERED"
+      ],
+      "must_prove": [
+        "runner reports aborted directly",
+        "timeout cannot replace reachable terminal state"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/prediction-prime/orchestration/dual-mandate-reconstruction-20260907/research/major-mistake-causal-journeys-20260912.md"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-014",
+      "name": "aggregate worktree count attempts to close custody",
+      "historical_class": "custody_aggregate_inference",
+      "fixture": {
+        "before_count": 307,
+        "after_count": 72,
+        "itemized_dispositions": []
+      },
+      "expected_reject_codes": [
+        "CUSTODY_DISPOSITION_INCOMPLETE"
+      ],
+      "must_prove": [
+        "count delta closes zero rows",
+        "unknown actor and preservation stay visible"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/prediction-prime/orchestration/dual-mandate-reconstruction-20260907/research/worktree-custody-causal-trace-luna-20260912.md:100"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-015",
+      "name": "custody budget breach never authorizes deletion",
+      "historical_class": "custody_destructive_boundary",
+      "fixture": {
+        "budget": 4,
+        "active_pipeline_owned_items": 5,
+        "operator_exception": null,
+        "requested_action": "delete_oldest"
+      },
+      "expected_reject_codes": [
+        "CUSTODY_BUDGET_BREACH",
+        "CUSTODY_DESTRUCTIVE_PREVIEW_INCOMPLETE"
+      ],
+      "must_prove": [
+        "new fanout blocks",
+        "existing items remain untouched"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/prediction-prime/orchestration/dual-mandate-reconstruction-20260907/research/adversarial-spec-process-amendments-20260912.md"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-CTRL-001",
+      "name": "synthetic BVA remains valid for exact formula boundary",
+      "historical_class": "control",
+      "fixture": {
+        "data_strategy": "SYNTHETIC",
+        "critical_seam": false,
+        "claim": "pure at-boundary formula behavior",
+        "replaced_external_boundary": false
+      },
+      "expected_reject_codes": [],
+      "must_prove": [
+        "no runtime-chain burden",
+        "fixture claim remains narrow"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/phases/02-roadmap.md:482"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-CTRL-002",
+      "name": "single-path nondeployed component does not trigger authority census",
+      "historical_class": "control",
+      "fixture": {
+        "equivalent_effect_path_count": 1,
+        "separate_runtime": false,
+        "authority_role_change": false
+      },
+      "expected_reject_codes": [],
+      "must_prove": [
+        "trigger evaluation recorded false",
+        "no authority-path artifact burden"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/prediction-prime/orchestration/dual-mandate-reconstruction-20260907/research/adversarial-spec-process-amendments-20260912.md"
+      ]
+    },
+    {
+      "case_id": "ASP-HARDEN-CTRL-003",
+      "name": "independent reviewer checkout excluded from pipeline custody budget",
+      "historical_class": "control",
+      "fixture": {
+        "pipeline_owned": false,
+        "adopted_as_dependency": false,
+        "kind": "worktree"
+      },
+      "expected_reject_codes": [],
+      "must_prove": [
+        "not counted",
+        "not mutated"
+      ],
+      "source_refs": [
+        "/home/jason/PycharmProjects/prediction-prime/orchestration/dual-mandate-reconstruction-20260907/research/fable-incident-first-review-20260913.md"
+      ]
+    }
+  ]
+}

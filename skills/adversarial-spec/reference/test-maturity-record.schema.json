@@ -1,5 +1,5 @@
 {
-  "$comment": "generated-from:sha256:0f65d8de7d707247760df61b428bbffa99aae8b6a160ad77c3838774e0bffddb",
+  "$comment": "generated-from:sha256:824449bb26c8f9ace09966cf366a50afc0f8eed9deaf2881bb8791c7bc17e361",
   "$defs": {
     "CodeRunEvidence": {
       "additionalProperties": false,
@@ -70,6 +70,17 @@
         "started_at": {
           "title": "Started At",
           "type": "string"
+        },
+        "target_observation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TargetObservation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "tier": {
           "const": "code",
@@ -276,6 +287,364 @@
         "captured_at"
       ],
       "title": "SystemValidationRunEvidence",
+      "type": "object"
+    },
+    "TargetContractRef": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "owner": {
+          "minLength": 1,
+          "title": "Owner",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "source_ref": {
+          "minLength": 1,
+          "title": "Source Ref",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "owner",
+        "name",
+        "version",
+        "source_ref",
+        "sha256"
+      ],
+      "title": "TargetContractRef",
+      "type": "object"
+    },
+    "TargetFixtureProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "boundary": {
+          "minLength": 1,
+          "title": "Boundary",
+          "type": "string"
+        },
+        "claim_ceiling": {
+          "minLength": 1,
+          "title": "Claim Ceiling",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "none",
+            "real-source",
+            "recorded",
+            "constructed",
+            "stub",
+            "mock"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "source": {
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "boundary",
+        "kind",
+        "source",
+        "claim_ceiling"
+      ],
+      "title": "TargetFixtureProvenance",
+      "type": "object"
+    },
+    "TargetObservation": {
+      "additionalProperties": false,
+      "description": "Runner-owned observations, excluded from obligation identity.",
+      "properties": {
+        "authority_ref_observed": {
+          "pattern": "^[A-Z][A-Z0-9_-]{2,127}$",
+          "title": "Authority Ref Observed",
+          "type": "string"
+        },
+        "caller_id": {
+          "pattern": "^[A-Z][A-Z0-9_-]{2,127}$",
+          "title": "Caller Id",
+          "type": "string"
+        },
+        "consumer_contract_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Consumer Contract Hash",
+          "type": "string"
+        },
+        "entrypoint_observed": {
+          "title": "Entrypoint Observed",
+          "type": "string"
+        },
+        "outcome_id": {
+          "pattern": "^[A-Z][A-Z0-9_-]{2,127}$",
+          "title": "Outcome Id",
+          "type": "string"
+        },
+        "path_id": {
+          "pattern": "^[A-Z][A-Z0-9_-]{2,127}$",
+          "title": "Path Id",
+          "type": "string"
+        },
+        "pid": {
+          "title": "Pid",
+          "type": "integer"
+        },
+        "pid_start_time": {
+          "title": "Pid Start Time",
+          "type": "string"
+        },
+        "producer_contract_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Producer Contract Hash",
+          "type": "string"
+        },
+        "runtime_receipt_id": {
+          "title": "Runtime Receipt Id",
+          "type": "string"
+        },
+        "terminal_state": {
+          "title": "Terminal State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "runtime_receipt_id",
+        "pid",
+        "pid_start_time",
+        "outcome_id",
+        "caller_id",
+        "path_id",
+        "entrypoint_observed",
+        "authority_ref_observed",
+        "producer_contract_hash",
+        "consumer_contract_hash",
+        "terminal_state"
+      ],
+      "title": "TargetObservation",
+      "type": "object"
+    },
+    "TargetProofBinding": {
+      "additionalProperties": false,
+      "description": "Expected proof target; completeness is checked at concrete maturity.",
+      "properties": {
+        "authority_ref": {
+          "pattern": "^[A-Z][A-Z0-9_-]{2,127}$",
+          "title": "Authority Ref",
+          "type": "string"
+        },
+        "authority_role": {
+          "enum": [
+            "authoritative",
+            "projection",
+            "legacy",
+            "emergency",
+            "retiring",
+            "dead"
+          ],
+          "title": "Authority Role",
+          "type": "string"
+        },
+        "binding_version": {
+          "const": 1,
+          "title": "Binding Version",
+          "type": "integer"
+        },
+        "caller_equivalence_ref": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Caller Equivalence Ref"
+        },
+        "caller_id": {
+          "pattern": "^[A-Z][A-Z0-9_-]{2,127}$",
+          "title": "Caller Id",
+          "type": "string"
+        },
+        "caller_kind": {
+          "enum": [
+            "product",
+            "operator",
+            "system",
+            "harness"
+          ],
+          "title": "Caller Kind",
+          "type": "string"
+        },
+        "consumer_contract": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TargetContractRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "entrypoint": {
+          "minLength": 1,
+          "title": "Entrypoint",
+          "type": "string"
+        },
+        "equivalence_group": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Z][A-Z0-9_-]{2,127}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Equivalence Group"
+        },
+        "fixture_provenance": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/TargetFixtureProvenance"
+          },
+          "title": "Fixture Provenance",
+          "type": "array"
+        },
+        "negative_oracle_ref": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Negative Oracle Ref"
+        },
+        "outcome_id": {
+          "pattern": "^[A-Z][A-Z0-9_-]{2,127}$",
+          "title": "Outcome Id",
+          "type": "string"
+        },
+        "path_id": {
+          "pattern": "^[A-Z][A-Z0-9_-]{2,127}$",
+          "title": "Path Id",
+          "type": "string"
+        },
+        "predecessor_path_ids": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Z][A-Z0-9_-]{2,127}$",
+            "type": "string"
+          },
+          "title": "Predecessor Path Ids",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "producer_contract": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TargetContractRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "runtime_chain_required": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Runtime Chain Required"
+        },
+        "runtime_slots": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Z][A-Z0-9_-]{2,127}$",
+            "type": "string"
+          },
+          "title": "Runtime Slots",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "terminal_oracle": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TargetTerminalOracle"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "binding_version",
+        "outcome_id",
+        "caller_id",
+        "caller_kind",
+        "path_id",
+        "entrypoint",
+        "authority_ref",
+        "authority_role"
+      ],
+      "title": "TargetProofBinding",
+      "type": "object"
+    },
+    "TargetTerminalOracle": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted_states": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Accepted States",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "reconciliation_authority": {
+          "minLength": 1,
+          "title": "Reconciliation Authority",
+          "type": "string"
+        }
+      },
+      "required": [
+        "accepted_states",
+        "reconciliation_authority"
+      ],
+      "title": "TargetTerminalOracle",
       "type": "object"
     }
   },
@@ -561,6 +930,26 @@
       },
       "title": "Supersedes",
       "type": "array"
+    },
+    "target_binding": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TargetProofBinding"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "target_binding_status": {
+      "default": "legacy-unbound",
+      "enum": [
+        "bound",
+        "legacy-unbound"
+      ],
+      "title": "Target Binding Status",
+      "type": "string"
     },
     "technical_constraint": {
       "anyOf": [
