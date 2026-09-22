@@ -1,39 +1,38 @@
-> **FIRST ACTION upon entering this phase:** Create this TodoWrite immediately.
-> Do NOT read further until the TodoWrite is active.
-> Every `[GATE]` item must be marked completed before proceeding past it.
+> **FIRST ACTION upon entering this phase:** Restore `todowrite_snapshot` when it
+> exists; otherwise create this TodoWrite immediately. Do NOT replace a restored
+> snapshot with a fresh checklist. Every `[GATE]` item must be completed before
+> proceeding past it.
 
 ```
 TodoWrite([
-  {content: "Determine document type and depth", status: "in_progress", activeForm: "Determining document type"},
-  {content: "Identify starting point (file or concept)", status: "pending", activeForm: "Identifying starting point"},
+  {content: "Resolve intake handoff and document type", status: "in_progress", activeForm: "Resolving intake handoff"},
+  {content: "Identify missing starting-point facts", status: "pending", activeForm: "Identifying missing starting-point facts"},
   {content: "Offer interview mode (spec only)", status: "pending", activeForm: "Offering interview mode"},
-  {content: "Conduct interview — cover all 8 topics", status: "pending", activeForm: "Conducting requirements interview"},
-  {content: "Build RequirementsSummary (user_types, features, integrations, unknowns)", status: "pending", activeForm: "Building requirements summary"},
+  {content: "Conduct interview for unresolved facts", status: "pending", activeForm: "Conducting requirements interview"},
+  {content: "Lock Slice North Star [GATE]", status: "pending", activeForm: "Locking Slice North Star"},
+  {content: "Build RequirementsSummary (user_types, features, integrations, unknowns, slice_north_star)", status: "pending", activeForm: "Building requirements summary"},
   {content: "User confirms requirements before roadmap [GATE]", status: "pending", activeForm: "Awaiting user requirements confirmation"},
 ])
 ```
 
-Mark each step `completed` as you finish it. Mark the current step `in_progress`. For debug investigations, mark "Offer interview mode" and "Conduct interview" as `completed` immediately (not applicable).
+Mark each step `completed` as you finish it. For debug investigations, mark only
+the optional interview steps complete when they are not needed; the Slice North Star
+gate still applies.
 
 ### Treatment-Originated Session Shortcut
 
 If the active session has `"origin": "treatcodebase"` in its session detail file:
 
-1. Mark ALL Phase 1 TodoWrite items as `completed` (requirements already captured from diagnosis merge)
-2. Present pre-plan summary to user:
-   ```
-   Treatment Session Detected
-   ───────────────────────────────────────
-   Origin: treatcodebase ({N}-model diagnosis)
-   Concerns: {N} (now: {N}, next: {N}, later: {N})
-   Milestones: {N} proposed
-   Tests: {N} pseudocode tests in tests-pseudo.md
-
-   [Review roadmap] [Show pre-plan] [Start fresh]
-   ```
-3. On **"Review roadmap"**: Transition to Phase 02. The Phase 02 pre-plan detection handles the rest.
-4. On **"Show pre-plan"**: Print the Diagnosis Summary and Top 3 Concerns from the pre-plan, then ask again.
-5. On **"Start fresh"**: Clear `origin` and `pre_plan_path` from session detail file. Proceed with normal Phase 01 flow (interview, requirements gathering). The pre-plan remains on disk for reference.
+1. Read the pre-plan. If it contains a valid `slice_north_star`, restore the
+   snapshot and mark only the already-satisfied Phase 1 items completed.
+2. If it lacks one, keep the normal Slice North Star gate active. Do not bypass it
+   merely because diagnosis or a pre-plan exists.
+3. On **"Review roadmap"**: transition to Phase 02 only after both the North Star
+   and requirements confirmation gates are complete.
+4. On **"Show pre-plan"**: print the Diagnosis Summary and Top 3 Concerns, then
+   return to the unresolved Phase 1 item.
+5. On **"Start fresh"**: clear `origin` and `pre_plan_path` from session detail.
+   The pre-plan remains on disk for reference.
 
 ---
 
@@ -43,37 +42,35 @@ If the active session has `"origin": "treatcodebase"` in its session detail file
 
 ### Tracking System
 
-Adversarial-spec uses two complementary tracking mechanisms:
+Adversarial-spec uses three complementary stores:
 
 | Level | Mechanism | What it tracks | Persists across sessions? |
-|-------|-----------|---------------|--------------------------|
-| **Session/Pipeline** | Fizzy pipeline | Which phase the session is in, debate round count, gate completions | Yes — visible on the board |
-| **Step** | TodoWrite | Individual steps within the current phase (scale check, concern assessment, etc.) | No — per-conversation only |
+|-------|-----------|----------------|--------------------------|
+| **Pipeline** | Fizzy card | Lane, board-visible gates, claims, review/test lifecycle | Yes — visible on the board |
+| **Phase checklist** | `todowrite_snapshot` | In-progress and completed phase steps | Yes — checkpointed in session detail and restored |
+| **Decisions** | `requirements_summary` | Accepted requirements, boundaries, and Slice North Star | Yes — durable semantic record |
 
 **Fizzy pipeline** (session-level):
-- Every session gets a card via `pipeline_create_session` on the project's Fizzy board
-- Card moves through lanes: Evaluated Plans → Debate → Pre-Gauntlet → Gauntlet → Finalization
-- Card state block tracks: `debate_round`, `spec_path`, `last_agent`, `gauntlet_complete`
-- Use `pipeline_advance` for phase transitions (enforces gate checks)
-- Use `pipeline_patch_state` after each debate round to keep the card current
+- Every session gets a card via `pipeline_create_session` on the project's Fizzy board.
+- The card follows the current lane FSM; `pipeline_advance` enforces board gates.
+- Board state is not a substitute for checkpointed TodoWrite or the accepted
+  RequirementsSummary.
 
 **TodoWrite** (step-level):
-- Each phase doc defines its own TodoWrite checklist (see the phase file you're entering)
-- Mark steps `in_progress` when starting, `completed` when done
-- `[GATE]` items must complete before proceeding past them
-- TodoWrite is conversation-scoped — it resets on context switch. That's fine; the Fizzy card preserves cross-session state.
+- Each phase doc defines its checklist; checkpoint saves it as `todowrite_snapshot`.
+- Restore that snapshot after compaction; create a fresh checklist only when absent.
+- `[GATE]` items must complete before proceeding past them.
 
 ### Initial Task Structure
 
-When `/adversarial-spec` is invoked, create the following task structure using TaskCreate:
+Use the following as the fresh Phase 1 TodoWrite shape:
 
 ```
 Phase 1: Requirements Gathering
-- [ ] Determine document type (spec or debug)
-- [ ] If spec: determine depth (product, technical, or full)
-- [ ] Identify starting point (existing file or new concept)
-- [ ] Offer interview mode (spec only; debug skips interview)
-- [ ] Conduct interview (if selected, spec only)
+- [ ] Resolve intake handoff and document type/depth
+- [ ] Identify missing starting-point facts
+- [ ] Offer interview mode (spec only; debug skips if unnecessary)
+- [ ] Conduct interview for unresolved facts
   - [ ] Problem & Context (what problem, prior attempts, why now)
   - [ ] Users & Stakeholders (all user types, technical levels, concerns)
   - [ ] Functional Requirements (core journey, decision points, edge cases)
@@ -81,10 +78,10 @@ Phase 1: Requirements Gathering
   - [ ] UI/UX Considerations (experience, flows, density, platforms)
   - [ ] Tradeoffs & Priorities (what gets cut, speed/quality/cost)
   - [ ] Risks & Concerns (what could fail, assumptions, dependencies)
-  - [ ] Success Criteria (metrics, minimum viable, exceeding expectations)
-- [ ] For debug: Gather symptoms, evidence, initial hypotheses
-- [ ] Build RequirementsSummary (user types, features, integrations, unknowns)
-- [ ] User confirms requirements before roadmap
+  - [ ] Success Criteria (proof and intentionally deferred work)
+- [ ] Lock Slice North Star [GATE]
+- [ ] Build RequirementsSummary (user types, features, integrations, unknowns, Slice North Star)
+- [ ] User confirms requirements before roadmap [GATE]
 
 Phase 1.5: Roadmap Alignment (spec only, REQUIRED)
 - [ ] Assess complexity (simple/medium/complex)
@@ -146,10 +143,9 @@ Phase 4: Finalization
 - [ ] Quality check: Clarity (no ambiguous language?)
 - [ ] Quality check: Actionability (stakeholders can act without questions?)
 - [ ] Verify spec addresses ALL roadmap user stories
-- [ ] Document-specific verification:
-  - Spec (product depth): user stories, success metrics, scope boundaries
-  - Spec (technical/full depth): APIs with schemas, data models, performance targets, Getting Started
-  - Debug: evidence supports diagnosis, fix is proportional, verification plan exists
+  - Spec (product depth): Slice North Star, user stories, success metrics, scope boundaries
+  - Spec (technical/full depth): Slice North Star, APIs with schemas, data models, performance targets, Getting Started
+  - Debug: the end-to-end repair North Star, evidence supports diagnosis, fix is proportional, verification plan exists
 - [ ] Output final document to terminal
 - [ ] Write to spec-output.md (or debug-output.md for debug type)
 - [ ] Print debate summary (rounds, models, key refinements)
@@ -204,7 +200,10 @@ Phase 6: Implementation (if proceeding with code execution)
 - **Execution Planning**: If user declines, skip Phase 5
 - **Implementation**: If user just wanted the plan, skip Phase 6
 
-**Why this matters:** Long adversarial sessions can span many rounds, phases, and context switches. The Fizzy card preserves cross-session state so a fresh agent can pick up where the last one left off. TodoWrite keeps the current conversation focused on the right step. Together they prevent the failure pattern where sessions advance through phases with no gate enforcement or external visibility.
+**Why this matters:** Fizzy preserves board lifecycle and gates; the checkpointed
+TodoWrite restores phase progress; RequirementsSummary preserves accepted semantic
+decisions. Together they prevent a resumed session from losing either its work or
+its reason for existing.
 
 ## Setup
 
@@ -452,133 +451,61 @@ SPEC_EOF
 
 ## Process
 
-### Step 0: Context Detection (Work Stream Selection)
+### Phase 1 Entry
 
-**Before doing anything else**, detect if there's an active session in the current project. This prevents showing irrelevant contexts from other projects.
+The First Gate and Phase 0 own context detection and session creation. Do not create
+a workspace, session, branch, or Fizzy card here.
+1. Read the active detail file's `intake` and its `intake_path` sidecar when present.
+2. Restore `todowrite_snapshot`; otherwise use this phase's fresh checklist.
+3. Treat a missing `intake` as a legacy session: perform normal discovery and create
+   a Slice North Star here. Never restart Phase 0 or discard the active session.
+4. Intake facts prefill Phase 1. Ask only for unknown, ambiguous, or contradicted
+   facts; do not repeat settled route, problem, evidence, or boundary questions.
 
-**PRIORITY ORDER:**
-1. **Local session-state.json** (current project's session - ALWAYS check first)
-2. **MCP Tasks** (cross-project view - ONLY in Brainquarters, detected by `projects.yaml`)
+### Step 1: Resolve Intake and Missing Facts
 
-#### Step 0a: Check Local Session State (ALWAYS DO THIS FIRST)
+Use the handoff to establish document type/depth, starting point, and whether a
+full interview is useful. Resolve only absent or uncertain fields:
 
-```bash
-# Check for local session in current project
-if [ -f ".adversarial-spec/session-state.json" ]; then
-  cat .adversarial-spec/session-state.json
-fi
+1. **Document type/depth** — `spec` / `debug`; for specs, product, technical, or full.
+2. **Starting point** — an existing file, evidence source, or the change description.
+3. **Interview mode** — optional for specs; use it when material requirements remain
+   unknown. Debug investigations may proceed directly to evidence gathering.
+
+Do not treat a candidate route as permission to skip requirements confirmation.
+`bounded-investigation` still needs a decision-output North Star; `repair` still
+needs the repaired end-to-end path.
+
+### Step 1.25: Lock Slice North Star [GATE]
+
+Before building RequirementsSummary, turn the intake candidate into exactly one
+confirmed Slice North Star:
+
+```markdown
+## Slice North Star
+
+Kind: ui-target | process-output | end-to-end-repair
+Actor or trigger: <who starts the slice, or what starts it>
+Outcome: <one observable result that makes the slice worthwhile>
+Thin path: <entry → decisive action/process → useful end state>
+Proof: <demonstration, observation, or measurement>
+Not this slice: <adjacent work deliberately deferred>
 ```
 
-**If `.adversarial-spec/session-state.json` exists:**
-1. Read the `context_name` and `current_phase` from it
-2. If `active_session_id` field exists (v1.3) or `active_session` (legacy v1.1), load session file:
-   - v1.3: `sessions/<active_session_id>.json`
-   - v1.1 legacy: Check `active_session_file` or derive from `active_session`
-3. **Validate integrity:** If session file is MISSING, clear the reference and show "no active session"
-4. Present path context with journey (see SKILL.md for format):
-   ```
-   Found active session in this project:
+Rules:
 
-     Context: Brainquarters Definition
-     Phase: implementation
-     Last checkpoint: checkpoint-20260128-migration.md
+- It is an outcome anchor, never a feature inventory. A dashboard, endpoint, or
+  component name alone fails the gate.
+- A `ui-target` names the primary surface and decisive user action.
+- A `process-output` names the input, produced output, and usable quality bar.
+- An `end-to-end-repair` names the former failing trigger and the repaired successful
+  completion.
+- Keep one North Star. Additional valuable behavior belongs in later work or an
+  explicit non-goal.
 
-   Resume this session? Or describe something new.
-   ```
+Store the confirmed block as `requirements_summary.slice_north_star`. Complete this
+gate only when the user accepts the block.
 
-4. **If user wants to resume:** Load session state and proceed to where they left off
-5. **If user describes new work:** Ask for new context name, create new session
-
-#### Step 0b: Check MCP Tasks (ONLY IN BRAINQUARTERS)
-
-**IMPORTANT:** MCP Tasks is global and shows contexts from ALL projects. This is only useful when you're IN Brainquarters (the meta-project that manages other projects).
-
-**Detect if in Brainquarters:**
-```bash
-# Brainquarters has projects.yaml at root - other projects don't
-if [ -f "projects.yaml" ]; then
-  echo "In Brainquarters - can show cross-project contexts"
-fi
-```
-
-**If IN Brainquarters AND no local session:** Use `TaskList(list_contexts=True)` to see all project contexts:
-```
-Cross-project work streams (Brainquarters view):
-
-  1. OMS Implementation (prediction-prime)
-     - 3 tasks in progress
-
-  2. Pricing Bug Fix (quicktrade)
-     - 1 task in progress
-
-Switch to one of these? Or start new work.
-```
-
-**If NOT in Brainquarters:** Do NOT show MCP Tasks contexts from other projects. Only use local session-state.json. If no local session exists, proceed directly to creating a new one.
-
-#### Why This Scoping Matters
-
-- MCP Tasks is **global** - shows contexts from ALL projects
-- Local session-state.json is **project-specific** - always relevant
-- Completed contexts disappear from MCP Tasks `list_contexts` (only shows active)
-- Local session-state.json persists regardless of task status
-- **Only Brainquarters** (detected by `projects.yaml`) should see cross-project contexts
-
-**Session state file** (`.adversarial-spec/session-state.json`) structure (v1.3):
-
-```json
-{
-  "schema_version": "1.3",
-  "active_session_id": "adv-spec-202601281430-brainquarters-definition",
-  "context_name": "Brainquarters Definition",
-  "current_phase": "implementation",
-  "current_step": "Migration protocol",
-  "next_action": "Continue with next migration task",
-  "do_not_ask": ["hierarchy approach", "verbosity level"],
-  "updated_at": "ISO8601 UTC timestamp"
-}
-```
-
-**Note:** Session file path is derived from ID: `sessions/<active_session_id>.json`
-Legacy files with `active_session_file` field will still work (migration happens on read).
-
-### Step 0.5: Initialize Task Tracking
-
-Set up MCP Tasks for the workflow:
-
-1. **Read current project's session state:** Check `.adversarial-spec/session-state.json` to get the `session_id` and `context_name`
-2. **Check for existing session:** Use `TaskList(session_id="...")` to see only this context's tasks
-3. **Create session tasks:** Use `TaskCreate` to create tasks for each phase (see "Task-Driven Workflow" above)
-4. **Set metadata:** Include `session_id`, `context_name`, `phase`, and `doc_type` in each task's metadata
-5. **Set dependencies:** Use `addBlockedBy` to establish the dependency chain
-6. **Start first task:** Mark "Determine document type" as `in_progress` with owner `adv-spec:orchestrator`
-
-**IMPORTANT:** Always include `context_name` in task metadata. This enables the context detection in Step 0.
-
-### Step 1: Gather Input and Offer Interview Mode
-
-**Update Tasks:** Use `TaskUpdate` to mark "Determine document type" as `completed`, then mark "Identify starting point" as `in_progress`.
-
-Ask the user:
-
-1. **Document type**: "spec" or "debug"
-   - spec: Unified specification (replaces PRD/tech, use depth to control focus)
-   - debug: Debug Investigation (evidence-based diagnosis)
-
-2. **If spec, ask depth**: "product", "technical", or "full"
-   - product: Business/stakeholder focus (user stories, metrics, scope)
-   - technical: Engineering focus (architecture, APIs, data models)
-   - full: Both product and technical sections
-
-3. **Starting point**:
-   - Path to existing file (e.g., `./docs/spec.md`, `~/projects/auth-spec.md`)
-   - Or describe what to build (user provides concept, you draft the document)
-   - For debug: describe symptoms, provide logs, or reference an existing investigation
-
-4. **Interview mode** (optional, spec only):
-   > "Would you like to start with an in-depth interview session? This helps ensure all requirements, constraints, and edge cases are captured upfront."
-
-   Note: Debug investigations skip interview mode and go directly to evidence gathering.
 
 ### Step 1.5: Interview Mode (If Selected)
 
@@ -634,9 +561,9 @@ If the user opts for interview mode, conduct a comprehensive interview using the
 
 8. **Success Criteria**
    - How will we know this succeeded?
+   - What proof satisfies the Slice North Star?
    - What metrics matter?
-   - What's the minimum viable outcome?
-   - What would "exceeding expectations" look like?
+   - What intentionally valuable work is deferred from this slice?
 
 **Interview Guidelines:**
 - Ask probing follow-up questions. Don't accept surface-level answers.
@@ -646,9 +573,9 @@ If the user opts for interview mode, conduct a comprehensive interview using the
 - Continue until you have enough detail to write a comprehensive spec
 - Use multiple AskUserQuestion calls to cover all topics
 
-**After interview completion:**
-1. Synthesize all answers into a RequirementsSummary
-2. Present RequirementsSummary to user for confirmation
-3. Proceed to Step 1.6 (Roadmap Alignment)
-
-**[GATE] TodoWrite: Mark "User confirms requirements before roadmap" completed before proceeding to Step 1.6 (Roadmap).**
+**After interview completion or gap resolution:**
+1. Synthesize intake and new evidence into a RequirementsSummary, including
+   `slice_north_star`.
+2. Present the RequirementsSummary and confirmed Slice North Star together.
+3. Mark both the Slice North Star and requirements-confirmation gates complete only
+   after the user accepts them, then proceed to Step 1.6 (Roadmap Alignment).

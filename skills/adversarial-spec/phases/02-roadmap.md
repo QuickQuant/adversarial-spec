@@ -99,7 +99,9 @@ Phase 4 (target-architecture) injects invariant-derived test cases into `tests-p
 - Roadmap authors SHOULD leave the markers in place once they appear; deleting them forces Phase 4 to re-append.
 - The **normative source** for the marker protocol and upsert semantics is [`04-target-architecture.md` §8.3](./04-target-architecture.md). Do not redefine the contract here.
 
-Add TodoWrite item after "Draft roadmap": `{content: "Generate test pseudocode for user stories", status: "pending", activeForm: "Generating test pseudocode"}`
+Add TodoWrite items after "Draft roadmap":
+`{content: "Validate Slice North Star milestone [GATE]", status: "pending", activeForm: "Validating Slice North Star milestone"}`
+and `{content: "Generate test pseudocode for user stories", status: "pending", activeForm: "Generating test pseudocode"}`.
 
 ---
 
@@ -119,14 +121,27 @@ From interview answers (or by asking clarifying questions if no interview), buil
   "feature_groups": ["authentication", "data export", "reporting"],
   "external_integrations": ["Kalshi API", "Polymarket API"],
   "unknowns": ["rate limit behavior under load"],
-  "bootstrap_steps": ["Install CLI", "Configure API keys", "Run first query"]
+  "bootstrap_steps": ["Install CLI", "Configure API keys", "Run first query"],
+  "slice_north_star": {
+    "kind": "ui-target | process-output | end-to-end-repair",
+    "actor_or_trigger": "who or what starts the slice",
+    "outcome": "one observable worthwhile result",
+    "thin_path": "entry -> decisive action/process -> useful end state",
+    "proof": "demonstration, observation, or measurement",
+    "not_this_slice": ["deliberately deferred adjacent work"]
+  }
 }
 ```
 
 **Validation:**
 - `user_types` must have at least 1 entry
 - `feature_groups` must have at least 1 entry
-- For technical/full depth: `bootstrap_steps` must be non-empty
+- For technical/full depth, `bootstrap_steps` must be non-empty only when setup is a
+  declared prerequisite. Otherwise set `bootstrap_steps: []` and say in the roadmap
+  why no Getting Started milestone is required.
+
+- `slice_north_star` must contain all six fields and exactly one outcome.
+- `not_this_slice` must not be empty for a retained thin slice or repair.
 
 #### 2. Assess Complexity
 
@@ -145,7 +160,9 @@ score = user_types + feature_groups + (2 × integrations) + unknowns
 
 #### 3. Draft Roadmap
 
-Generate roadmap with user stories and milestones. **The roadmap MUST include the Goals and Non-Goals from the requirements interview** so that all subsequent reviewers (debate opponents, the user) can check alignment.
+Generate roadmap with user stories and milestones. The roadmap MUST include the
+Goals, Non-Goals, and confirmed Slice North Star from RequirementsSummary so that
+subsequent reviewers can judge both broad alignment and the first useful outcome.
 
 ```markdown
 ## Roadmap: [Feature Name]
@@ -158,14 +175,23 @@ Generate roadmap with user stories and milestones. **The roadmap MUST include th
 - [Non-goal 1 from requirements interview]
 - [Non-goal 2 ...]
 
-### Milestone 1: [Name]
+### Slice North Star
+- **Kind:** <ui-target | process-output | end-to-end-repair>
+- **Actor or trigger:** <…>
+- **Outcome:** <one observable result>
+- **Thin path:** <entry → decisive action/process → useful end state>
+- **Proof:** <…>
+- **Not this slice:** <…>
+
+### Milestone 1: [First Useful Outcome]
+**North Star Milestone:** yes
 **User Stories:**
 - US-1: As a [persona], I want [action] so that [benefit]
 - US-2: ...
 
 **Success Criteria (Natural Language):**
-- [ ] User can [do X]
-- [ ] System responds with [Y]
+- [ ] The Slice North Star outcome occurs through the declared thin path
+- [ ] The declared proof is observable
 - [ ] Error case [Z] is handled
 
 **Test Cases (expand during implementation):**
@@ -174,18 +200,28 @@ Generate roadmap with user stories and milestones. **The roadmap MUST include th
 
 **Dependencies:** None | M0
 
-### Milestone 2: ...
+### Milestone 2: [Later approved work]
+**North Star Milestone:** no
+...
 ```
 
-**For technical/full depth, REQUIRE a "Getting Started" milestone:**
+Exactly one milestone MUST be marked `North Star Milestone: yes`. It may follow a
+technical/full-depth Getting Started prerequisite; bootstrap is not automatically
+the useful outcome. Every story in that milestone must directly enable, deliver, or
+prove the declared thin path. A dashboard, endpoint, or component added without that
+link belongs in later work or an explicit non-goal.
+
+**For technical/full depth, require a "Getting Started" milestone when setup is a
+real prerequisite:**
 ```markdown
 ### Milestone 0: Getting Started (Bootstrap)
+**North Star Milestone:** no
 **User Stories:**
 - US-0: As a new user, I want to set up the tool so that I can start using it
 
 **Success Criteria:**
 - [ ] Setup takes < 5 minutes
-- [ ] Clear error messages if prerequisites missing
+- [ ] Clear error messages if prerequisites are missing
 - [ ] Can verify setup worked before proceeding
 ```
 
@@ -278,28 +314,28 @@ Generate roadmap with user stories and milestones. **The roadmap MUST include th
 
 ---
 
-#### 3.5. Goal Alignment Check (Human Guardrail)
+#### 3.5. Goal and Slice North Star Alignment Check (Human Guardrail)
 
 **This is a GATE — do not proceed to roadmap debate until alignment is confirmed.**
 
-**Update Tasks:** Mark "Goal alignment check (human guardrail)" as `in_progress`.
+**Update Tasks:** Mark "Validate Slice North Star milestone [GATE]" and
+"Goal alignment check (human guardrail)" as `in_progress`.
 
-Review each user story against the stated Goals and Non-Goals from the roadmap draft:
+Review the roadmap against both Goals/Non-Goals and the confirmed Slice North Star:
 
-1. For each user story, ask: **"If this story is implemented successfully, does it serve the goals or undermine them?"**
-2. Check for contradictions:
-   - A story that adds data to responses in a project whose goal is reducing response data is self-defeating
-   - A story that implements a stated non-goal is misaligned
-   - A story whose success metric conflicts with a goal's success metric is in tension
-3. If contradictions are found, present them to the user:
-   > "These user stories conflict with the stated goals. You need to either redefine the goals/non-goals or adjust the user stories until they align:
-   >
-   > - **US-X** conflicts with **Goal Y** because [explanation]
-   > - ..."
-4. If no Goals/Non-Goals section exists in the roadmap, flag that as a gap — stories can't be validated without knowing what they're supposed to serve.
-5. Loop until the user confirms alignment (goals adjusted, stories adjusted, or both).
+1. The roadmap has exactly one marked North Star Milestone, with at least one user
+   story and a success criterion that proves the declared outcome.
+2. Every story in that milestone directly enables, delivers, or proves the thin
+   path. A story that merely adds a dashboard panel, endpoint, or component fails
+   unless it has that direct link.
+3. Stories outside the North Star Milestone either support a declared prerequisite
+   or are marked later; they cannot silently expand the first useful slice.
+4. Each story still serves a stated goal and does not implement a non-goal.
+5. If the roadmap lacks Goals, Non-Goals, or Slice North Star, flag the gap and
+   repair it before debate.
 
-**[GATE] TodoWrite: Mark "Goal alignment check (human guardrail)" completed only after user confirms alignment.**
+When a contradiction appears, revise the North Star, stories, or boundaries until
+the user confirms alignment. Complete both TodoWrite gates only after confirmation.
 
 #### 4. Roadmap Debate (Medium/Complex Only)
 

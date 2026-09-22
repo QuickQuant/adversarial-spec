@@ -146,3 +146,48 @@ def test_authoring_model_is_documented_in_phase_docs_and_document_types():
         ">=1 named accessor",
     ):
         assert required_text in combined
+
+
+def test_intake_and_slice_north_star_contract_orders_recovery_and_milestone():
+    skill = (REPO_ROOT / "skills/adversarial-spec/SKILL.md").read_text(encoding="utf-8")
+    phase_00 = (REPO_ROOT / "skills/adversarial-spec/phases/00-triage.md").read_text(
+        encoding="utf-8"
+    )
+    phase_01 = (
+        REPO_ROOT / "skills/adversarial-spec/phases/01-init-and-requirements.md"
+    ).read_text(encoding="utf-8")
+    phase_02 = (REPO_ROOT / "skills/adversarial-spec/phases/02-roadmap.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert skill.index("## FIRST GATE — Route New Work Before Bootstrap") < skill.index(
+        "## ZEROTH ACTION — Conductor Registration"
+    )
+    assert "Do not register a conductor" in skill
+    assert "### Incomplete Phase 0 Handoff Recovery" in skill
+    assert "pipeline_sync_local_session(..., mode=\"repair\")" in skill
+    assert "legacy `fizzy_card_id`" in skill
+    assert "| evaluated-plans + incomplete intake receipt |" in skill
+    assert "journey event is absent" in skill
+    assert "card_id,fizzy_card_id" in skill
+
+    intake_receipt = phase_00.index(".intake.json")
+    card_creation = phase_00.index("pipeline_create_session(")
+    local_repair = phase_00.index("pipeline_sync_local_session(")
+    assert intake_receipt < card_creation < local_repair
+    assert "sync_local_session=false" in phase_00
+    assert 'mode="repair"' in phase_00
+    assert "Never re-run triage, mint a new id, or create a" in phase_00
+
+    assert phase_01.index("Restore `todowrite_snapshot`") < phase_01.index(
+        "Lock Slice North Star [GATE]"
+    )
+    assert "Store the confirmed block as `requirements_summary.slice_north_star`." in phase_01
+    assert "A `ui-target` names the primary surface and decisive user action." in phase_01
+
+    assert "`bootstrap_steps` must be non-empty only when setup is a" in phase_02
+    assert "Exactly one milestone MUST be marked `North Star Milestone: yes`." in phase_02
+    assert phase_02.index("### Slice North Star") < phase_02.index(
+        "### Milestone 1: [First Useful Outcome]"
+    )
+    assert "bootstrap is not automatically the useful outcome." in " ".join(phase_02.split())
