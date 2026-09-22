@@ -15,10 +15,10 @@ Delete the `> guidance` lines as you fill it in.
 
 ## Triage  *(from `phases/00-triage.md` — runs before any session machinery)*
 
-- **Complexity:** <simple|medium|complex> — integrations=<…>, unknowns=<…>
+- **Decision:** <repair|bounded-investigation|retained-thin-slice|full-feature>
+- **Slice North Star outcome:** <one observable result>
 - **Root altitude:** <component|subsystem|system> — highest-blast item is <X>,
   because <why it sets the root>.
-- **Go/no-go:** GO.
 
 > The forcing rule, stated where you pick the root: *the highest-blast item sets the
 > root.* Any item with irreversible external consequences (or that crosses a

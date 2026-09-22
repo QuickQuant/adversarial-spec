@@ -6,7 +6,6 @@
 ```
 TodoWrite([
   {content: "Load finalized spec and gauntlet concerns", status: "in_progress", activeForm: "Loading finalized spec and gauntlet concerns"},
-  {content: "Scope assessment — present to user", status: "pending", activeForm: "Assessing execution scope"},
   {content: "Load codebase architecture docs [GATE] — read ALL .architecture/ files (INDEX, primer, overview, concerns, access-guide, patterns, flows, and every structured/components/*.md) before decomposition or architecture_refs assignment", status: "pending", activeForm: "Loading codebase architecture docs"},
   {content: "Load target architecture and build Architecture Spine (if exists)", status: "pending", activeForm: "Building architecture spine"},
   {content: "Decompose into tasks with gauntlet concern linkage", status: "pending", activeForm: "Decomposing spec into tasks"},
@@ -65,29 +64,6 @@ If found, read the JSON. Each concern has:
 - `failure_mode`: What could go wrong
 - `detection`: How to detect the failure
 - `blast_radius`: Impact scope
-
----
-
-### Step 2: Scope Assessment
-
-Read through the spec and assess scope before decomposing:
-
-**Guidelines:**
-- **Small** (< 5 expected tasks): Single agent, sequential execution. No workstreams needed.
-- **Medium** (5-15 tasks): Single agent with logical workstreams. Group by component/layer.
-- **Large** (15+ tasks): Consider multi-agent execution. Identify independent workstreams that can run in parallel.
-
-Present the assessment:
-```
-Scope Assessment
-───────────────────────────────────────
-Spec sections: N
-Gauntlet concerns: M (X critical, Y high)
-Estimated tasks: ~Z
-Recommendation: [single-agent | single-agent with workstreams | multi-agent]
-
-Proceed with task decomposition? [Y/n]
-```
 
 ---
 
@@ -614,7 +590,7 @@ Apply consolidations? [Y/n/customize]
 
 ### Step 6: Parallelization Analysis
 
-For medium/large plans, identify independent workstreams and their earliest safe start. A workstream is not parallel merely because its cards have different titles: its first runnable card must be ready after the contract gate the spec promises.
+Identify independent workstreams and their earliest safe start. Phase 8 agents claim any ready card, so parallelism comes only from dependency order. A workstream is not parallel merely because its cards have different titles: its first runnable card must be ready after the contract gate the spec promises.
 
 **Present the Contract/Fanout Matrix for every statement such as “workstreams fan out after X”:**
 

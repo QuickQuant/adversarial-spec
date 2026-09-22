@@ -157,7 +157,6 @@ Phase 4: Finalization
 Phase 5: Execution Planning
 - [ ] Offer execution plan generation
 - [ ] FR-1: Spec Intake (parse, detect type, extract elements)
-- [ ] FR-2: Scope Assessment (single-agent vs multi-agent recommendation)
 - [ ] FR-3: Task Plan Generation (create tasks, link gauntlet concerns)
 - [ ] FR-4: Test Strategy Configuration (assign test-first/test-after)
 - [ ] FR-5: Over-Decomposition Guard (check threshold, suggest consolidation)

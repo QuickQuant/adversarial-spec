@@ -1,29 +1,20 @@
 # Phase 0 — Triage (the front door)
 
-**This runs before new session machinery.** The First Gate's read-only pointer
-and staged-receipt probe is the sole exception: it establishes whether an active
-session must resume or an accepted GO needs recovery, but creates and mutates
-nothing. Receipt recovery continues a prior GO; it is never a fresh triage action.
-For new work, triage has no conductor registration, Fizzy card, wake listener,
-workspace, or `session-state.json`. Only *after* a GO do you create state and let
-the rest of the pipeline bootstrap.
+Decide, before creating any state, whether this request earns a retained session
+and what its smallest useful outcome is. Triage creates no workspace, Fizzy card,
+listener, or session file; only a GO does. The First Gate in `SKILL.md` runs first
+and owns resume and interrupted-handoff recovery.
 
-> If triage needs a Fizzy card or a listener to run, it has failed its purpose.
-> The whole point is to answer "is this worth a retained session, and what is the
-> smallest useful outcome?" before committing state.
+**Input:** the change description, plus a plan file if one exists.
+**Model:** `reference/altitude.md`.
 
-**Read with this:** `reference/altitude.md` is the model. This doc applies it.
+## Outputs
 
-## Inputs
+### 1. Decision
 
-Just the change description (what the user wants built or fixed). Optionally the
-plan file if one exists. Nothing else.
+Choose exactly one.
 
-## Outputs (produce all five, in this order)
-
-### 1. Intent, route, and candidate Slice North Star
-
-Choose exactly one route:
+GO routes:
 
 - **`repair`** — restore a broken end-to-end path.
 - **`bounded-investigation`** — produce a decision receipt; no retained feature
@@ -31,9 +22,16 @@ Choose exactly one route:
 - **`retained-thin-slice`** — prove one useful, end-to-end slice before broader
   hardening or expansion.
 - **`full-feature`** — plan the complete approved feature.
-- **`stop-defer`** — no session now; name the prerequisite or reason.
 
-For every route except `stop-defer`, capture a **candidate Slice North Star**:
+NO-GO outcomes (create no state):
+
+- **`direct-action`** — trivial, reversible, component-only, no open questions.
+  Do it directly instead of opening a session.
+- **`underspecified`** — the outcome or blast radius is unknown. Name the missing
+  facts and ask for them.
+- **`stop-defer`** — not now; name the prerequisite or reason.
+
+### 2. Candidate Slice North Star (GO only)
 
 - **Kind:** `ui-target` | `process-output` | `end-to-end-repair`
 - **Actor or trigger:** who starts the slice, or what input/event starts it
@@ -43,59 +41,23 @@ For every route except `stop-defer`, capture a **candidate Slice North Star**:
 - **Not this slice:** adjacent work deliberately deferred
 
 This is an outcome anchor, never a feature inventory. A dashboard, endpoint, or
-component name alone is not a North Star. Phase 1 tests and locks the candidate
-into the durable `requirements_summary`.
+component name alone is not a North Star. Write `unknown` rather than inventing a
+field; Phase 1 resolves unknowns and locks the result into `requirements_summary`.
 
-### 2. Complexity tier — `simple` | `medium` | `complex`
+### 3. Root altitude (GO only) — `component` | `subsystem` | `system`
 
-Key off **two signals only: integrations + unknowns.** (Reversibility/consequence
-is NOT complexity — it is altitude. Don't double-count it.)
-
-- **simple** — few/no new integrations, no real open questions. One agent, a handful of tasks.
-- **medium** — a routing/contract decision or a few open questions, or several integrations.
-- **complex** — many external SDKs/services to wire AND several genuinely open design questions.
-
-There is no numeric score. Complexity decides **execution shape only** (single agent
-vs. workstreams) — it does not change rigor. A high-blast change can be *simple* to
-execute and still earn *system* rigor.
-
-### 3. Root altitude — `component` | `subsystem` | `system`
-
-Apply the **forcing rule** (`reference/altitude.md` §2):
-
-> **Pick the highest-blast item in the change. That item's altitude is the root.**
-> Any system-altitude node ⇒ the root must be `system`.
+> **The highest-blast item in the change sets the root.** Any system-altitude item
+> forces a `system` root.
 
 - **component** — the whole change is one leaf with a local failure surface.
-- **subsystem** — a cohesive unit several components depend on; contract expensive to reverse.
-- **system** — *any* node crosses a process/repo boundary OR has **irreversible
-  external consequences a code revert can't undo** (prod data loss, destructive
-  ops, irreversible outbound effects; moving money is one instance, not the
-  definition).
+- **subsystem** — a cohesive unit several components depend on; its contract is
+  expensive to reverse.
+- **system** — any item crosses a process/repo boundary or has irreversible
+  external consequences a code revert cannot undo (prod data loss, destructive
+  ops, irreversible outbound effects).
 
-State, in one line, *which item* is the highest-blast item and *why* it sets the root.
-
-**Altitude is DERIVED, never asked.** Do not prompt the user to pick or confirm the
-altitude (immutability is a reason to derive carefully, not to ask). If the blast
-radius is genuinely unknowable, that is a NO-GO *underspecified* — ask for the
-missing facts, not for the altitude.
-
-### 4. Tree sketch
-
-One block: nodes with their altitudes, honoring the minimum tree shape for the root
-(`reference/altitude.md` §2) and the strict parent>child altitude rule. Keep it to
-the real decomposition — don't invent nodes to look thorough.
-
-### 5. Go / no-go
-
-- **GO** — worth the pipeline. State the rigor it earns per tier (the verification
-  ladder, `reference/altitude.md` §4) and the gauntlet roster weight (§6).
-- **NO-GO** — and say which:
-  - *Too small* — a trivial, reversible, component-only change with no open
-    questions. Recommend doing it directly (plan-mode edit), not spinning up a
-    session. Proportional rigor cuts *down to direct action*, not just down a tier.
-  - *Underspecified* — you cannot pick a root because the blast radius is unknown.
-    Say exactly what's missing and ask for it before proceeding.
+Name the highest-blast item and why in one line. Derive altitude; never ask the user
+to pick it. If the blast radius is unknowable, the decision is `underspecified`.
 
 ## On GO — create or reuse one card, preserve the handoff, then bootstrap
 
@@ -104,11 +66,11 @@ the real decomposition — don't invent nodes to look thorough.
    before any code work.
 2. Generate the immutable session id and atomically write
    `.adversarial-spec/sessions/<id>.intake.json`. It contains the selected route,
-   problem, goal, non-goal, evidence, unknowns, candidate Slice North Star, next
-   durable artifact (`requirements_summary`), creation time, and replay-safe
-   card-creation inputs: `session_id`, `title`, `plan_path`, `board_id`, and
-   `session_altitude`. This sidecar is the recovery receipt; preserve it after the
-   handoff completes.
+   problem, goal, non-goal, evidence, unknowns, candidate Slice North Star, altitude
+   rationale, next durable artifact (`requirements_summary`), creation time, and
+   replay-safe card-creation inputs: `session_id`, `title`, `plan_path`,
+   `board_id`, and `session_altitude`. This sidecar is the recovery receipt;
+   preserve it after the handoff completes.
 3. Create or reuse the ordinary session card without local sync:
 
    ```
@@ -155,54 +117,37 @@ the real decomposition — don't invent nodes to look thorough.
    second card for that receipt.
 7. Return to `SKILL.md` for conductor/listener bootstrap, then enter Phase 1.
 
-> v3/v2 (pre-altitude) sessions are grandfathered: they never declare an altitude
-> and the `_pipeline_version >= 4` fences leave them exactly as before.
-
-## Worked example (this front door's own triage)
-
-> **Change:** add a discoverable triage front door to the adversarial-spec skill —
-> `phases/00-triage.md`, `reference/altitude.md`, a router entry, a plan template.
-
-1. **Route: retained-thin-slice.** Candidate North Star: an operator can start a
-   new request, see the selected route and handoff, and resume the same Phase 1
-   session after interruption. Proof: cold-start and resume walkthroughs. Not this
-   slice: changing downstream debate or board-lane semantics.
-2. **Complexity: medium.** Integrations: low (skill docs + one router edit, no new
-   service). Unknowns: a few (wire the router without breaking in-flight sessions;
-   rubric numeric-vs-numberless). → not simple, not complex.
-3. **Root altitude: subsystem.** Highest-blast item = the **router edit**: it changes
-   a phase-routing contract every project's sessions consume, so a bad edit breaks
-   routing broadly. That is subsystem (several consumers depend on it) — *not*
-   system: it moves nothing irreversible and a bad edit is caught at session-start
-   and reverted with one commit. No system node ⇒ root is not forced to system.
-4. **Tree:**
-   ```
-   SS  triage front door                              [subsystem]
-   ├─ C  reference/altitude.md (single page)          [component]
-   ├─ C  phases/00-triage.md (this front door)        [component]
-   ├─ C  plan template                                [component]
-   └─ SS router wiring (additive, grandfathering)     [subsystem]  ← highest blast
-   ```
-5. **GO.** Component docs earn a cold-read comprehension test. The router edit
-   earns a cold-start and in-flight-resume walkthrough. Light gauntlet roster.
-
 ## Output template
 
 ```
 ## Triage
 
-Route: <repair|bounded-investigation|retained-thin-slice|full-feature|stop-defer>
-Candidate Slice North Star:
+Decision: <repair|bounded-investigation|retained-thin-slice|full-feature|direct-action|underspecified|stop-defer>
+Candidate Slice North Star:            (GO only)
   Kind: <ui-target|process-output|end-to-end-repair>
   Actor or trigger: <…>
   Outcome: <…>
   Thin path: <…>
   Proof: <…>
   Not this slice: <…>
-Complexity: <tier>  — signals: integrations=<…>, unknowns=<…>
-Root altitude: <level>  — highest-blast item: <item>, because <why>
-Tree:
-  <node>  [<altitude>]
-  └─ …
-Go / no-go: <GO|NO-GO>  — <rigor per tier, or the reason + what's needed>
+Root altitude: <level> — highest-blast item: <item>, because <why>   (GO only)
+NO-GO detail: <direct action | missing facts | prerequisite>          (NO-GO only)
+```
+
+Example:
+
+```
+## Triage
+
+Decision: retained-thin-slice
+Candidate Slice North Star:
+  Kind: process-output
+  Actor or trigger: operator starts /adversarial-spec with a new request
+  Outcome: the request lands in Phase 1 with its route and handoff preserved
+  Thin path: request → triage decision → one card + local session → Phase 1
+  Proof: cold-start and interrupted-resume walkthroughs reach the same session
+  Not this slice: downstream debate and board-lane semantics
+Root altitude: subsystem — highest-blast item: the router edit, because every
+  project's sessions consume it, yet a bad edit is caught at session start and
+  reverted with one commit
 ```
