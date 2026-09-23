@@ -27,7 +27,12 @@ Runtime: Python 3.14+ | Deps: uv, pyproject.toml | Tests: pytest | Lint: ruff
 ```
 
 ### Phase Awareness
-Phases: requirements → roadmap → debate → target-architecture → gauntlet → finalize → execution → implementation
+Eight phases; select the route from the active session's `pipeline_version`:
+
+- Pre-v6: requirements → roadmap → debate → target-architecture → gauntlet → finalize → execution → implementation.
+- v6+: requirements → roadmap → decomposition → debate → gauntlet → finalize → execution → implementation.
+
+See `skills/adversarial-spec/SKILL.md` § Phase Router. v6 carries the Phase 4 artifact in D0; verification is a Phase 8 subflow.
 
 You must always know what phase you are in when operating on the codebase. It is rare to make changes outside of a pipeline task card. If you find yourself doing this, you must at least be operating from a plan the user just approved via plan mode.
 
@@ -89,7 +94,7 @@ or waiting protocol.
 - **Pickup**: Call `pipeline_do_next_task` only when ready to perform whatever it
   returns. Always pass the explicit Fizzy `board_id`.
 - **Idle**: Read the returned `attention`/blocker, report the named next actor, then
-  stop. Never sleep-and-retry, watch `.handoff.md`, or relaunch a local watcher.
+  stop. Never sleep-and-retry or launch/relaunch a local watcher to simulate progress.
 - **Dispatch**: A dispatch is a notice or audit record, not proof of a claim,
   acknowledgement, or successful wakeup. Verify live board state before acting.
 - **Unavailable review**: Surface an unreachable independent reviewer as unavailable;

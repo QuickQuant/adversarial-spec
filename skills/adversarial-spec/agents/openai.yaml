@@ -1,4 +1,4 @@
 interface:
   display_name: "Adversarial Spec"
   short_description: "Debate, gauntlet, and implementation self-pickup via Fizzy pipeline."
-  default_prompt: "Run adversarial-spec: read session-state.json, determine current phase, and continue. If in implementation phase, enter the self-pickup loop via pipeline_do_next_task."
+  default_prompt: "Run the adversarial-spec First Gate: resume valid active state, recover one incomplete intake receipt, or enter Phase 0 triage. Then follow the version-aware phase router; implementation uses the phase-owned pipeline self-pickup loop with explicit board_id."

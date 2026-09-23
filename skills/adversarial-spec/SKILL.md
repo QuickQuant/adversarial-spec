@@ -66,36 +66,46 @@ Receipt recovery continues the already-approved GO; it does not re-enter triage:
 
 ## ZEROTH ACTION — Conductor Registration (after first gate)
 
-Run this only for a valid active session or a session Phase 0 has just created.
+Run only for a valid active session or one Phase 0 has just created.
 
 ### 0a: Role
-Env-var detection: `$CLAUDE_PROJECT_DIR` → **claude** (conductor); `$GEMINI_PROJECT_DIR` → **gemini**; Codex-style env → **codex**. Workers otherwise.
+
+Env-var detection: `$CLAUDE_PROJECT_DIR` → **claude** (conductor);
+`$GEMINI_PROJECT_DIR` → **gemini**; Codex-style env → **codex**. Workers otherwise.
 
 ### 0b: Invocation Mode
-If `$ADVSPEC_INVOKED_BY_CONDUCTOR=1`: read `$ADVSPEC_DISPATCH_FILE` (JSON task payload), handle, then 0d. Otherwise self-invoked → 0c.
+
+If `$ADVSPEC_INVOKED_BY_CONDUCTOR=1`, read `$ADVSPEC_DISPATCH_FILE` (JSON task
+payload), handle it, then go to 0d. Otherwise self-register at 0c.
 
 ### 0c: Self-Registration
-Write `.conductor/agents/<role>.json` with `{role, pid, started_at, is_conductor, dispatch_log, session_state}` via atomic tmp+rename.
 
-- `is_conductor`: `true` for the CLI that ran `/conductor`, else `false`. Hooks gate behavior on this field; it survives compaction (re-read your own file to recover role).
-- PID: host PID, or `"sandboxed"` if `os.getpid()` < 100 (bubblewrap). PID is advisory.
-- Passive — no handshake. Stale markers OK. Don't keep a shell alive just to own an EXIT trap.
+Atomically write `.conductor/agents/<role>.json` with
+`{role, pid, started_at, is_conductor, dispatch_log, session_state}`.
+Set `is_conductor: true` only for the CLI that ran `/conductor`; re-read this
+marker after compaction. Use the host PID, or `"sandboxed"` if `os.getpid() < 100`.
+Registration is passive metadata: no handshake or shell kept alive for an EXIT trap.
 
 ### 0d: Wake Listener
-**Always relaunch on session start. Never reuse an existing listener PID.**
 
-- **Why:** `task-notification` is session-scoped — it only fires to the Claude session that launched the `run_in_background` task. A listener "alive" but launched by a previous (dead/compacted/different) session is a zombie wake-target: the notification fires into a void. The stop hook's binding check passes (banner exists in `/tmp/claude-*/.../tasks/*.output`) but it's the *old* session's banner. Result: messages accumulate in `updates.jsonl`, no wake fires, session goes silent for hours. This pattern has surfaced and been "fixed" 5+ times by tightening stop-hook gates (PID alive → PID bound to a task → ...). Each gate was symptom-patching a shared resource model that's structurally incompatible with session-scoped wake semantics. Drop the reuse optimization. Listener launch is ~50ms.
-- **Conductor (claude):** just launch `~/.claude/bin/telegram-wake-listener` via `Bash(run_in_background=true)`. **Do NOT kill anything first** — the script is self-superseding: on startup it kills the pidfile-recorded PID for THIS project (verified by command line, with a supersede breadcrumb) and claims the marker itself. An absent pidfile means nothing to do. NEVER hunt listeners via `pgrep` — other projects' live sessions own theirs, and a shotgun kill severs their wake paths (incident 2026-07-08). Enforced by `require-listener.sh` stop hook.
-- **Workers (gemini/codex):** same rule for `~/.claude/bin/dispatch-wake-listener <role>` (`/tmp/claude-dispatch-wake-<project>-<role>.pid`): launch fresh, no manual kills. Claude's `run_in_background` is Claude-only; Gemini/Codex use native backgrounding (`nohup … &` etc.), accounting for bubblewrap `/tmp` constraints.
-- Listener tails `.conductor/dispatch/<role>/updates.jsonl` and exits on first new line.
-- Can't background at all? Inline-check the dispatch log at the top of each pickup iteration (compare `wc -l` to baseline).
-- Missing binary → report the path and stop.
+Launch fresh on each CLI session start; never reuse a listener bound to an old
+conversation. Do not kill listeners manually or search for them with `pgrep`.
+The scripts supersede only their verified project/role pidfile owner.
 
-### Chicken-and-Egg (design note)
-Workers don't search for the conductor; conductor doesn't handshake. Workers drop a marker and self-pickup. Conductor reads `.conductor/agents/` when it has work. No discovery, no race.
+- Conductor: launch `~/.claude/bin/telegram-wake-listener` with
+  `Bash(run_in_background=true)`.
+- Workers: launch `~/.claude/bin/dispatch-wake-listener <role>` using their native
+  background mechanism; account for sandbox `/tmp` boundaries.
+- Listener tails `.conductor/dispatch/<role>/updates.jsonl` and exits on new input.
+  If backgrounding is unavailable, check that log at each active pickup iteration.
+- Missing binary: report its path and stop. Startup listeners do not authorize an
+  idle sleep-and-retry loop; follow the phase's returned blocker/next actor.
 
 ### Bootstrap Boundary
-Registration and startup checks are metadata-only. Do NOT start fizzy-mcp, app servers, Docker stacks, or probe by launching services. Inspect existing processes/PIDs/sockets/logs first. Only start a service when the current phase requires it and it isn't already running.
+
+Registration and startup checks are metadata-only. Inspect existing processes,
+PIDs, sockets, and logs before starting anything. Start a service only when the
+current phase requires it and it is not already running.
 
 ### 0e: Continue to resume inspection or Phase 1.
 
@@ -103,803 +113,359 @@ Registration and startup checks are metadata-only. Do NOT start fizzy-mcp, app s
 
 ## RESUME INSPECTION — Read Local Session State
 
-After the first gate and Zeroth Action, load the pointer fields required to resume
-the active session. Do not use this section to create a new session.
+After the First Gate and Zeroth Action, load the active pointer's
+`active_session_id`, `active_session_file`, `context_name`, `current_phase`,
+`current_step`, `next_action`, `do_not_ask` (list — RESPECT), and optional
+`session_stack`. A missing detail is a zombie pointer: return to the First Gate's
+receipt recovery/triage decision; never create a replacement here.
+
+Read only resume fields from the selected detail:
 
 ```bash
-cat .adversarial-spec/session-state.json 2>/dev/null
-```
-
-### If session-state.json exists:
-
-Pointer fields used on resume: `active_session_id`, `context_name`, `current_phase`, `current_step`, `next_action`, `do_not_ask` (list — RESPECT), `session_stack` (optional).
-
-**Zombie pointer check:** if `sessions/<active_session_id>.json` is missing (branch switch, deletion), warn the user and treat as "no active session."
-
-**Don't read the whole detail file.** It's 400+ lines and holds phase-scoped artifacts (`context_inventory`, `requirements_summary`) that resume doesn't need. The journey now lives in a sibling JSONL (`sessions/<id>.journey.log`) — read on demand only. Pull resume fields from the detail file via `jq`:
-
-```bash
-jq -r '{checkpointed_cleanly,current_phase,current_step,card_id,fizzy_card_id,spec_path,execution_plan_path,roadmap_path,last_checkpoint,todowrite_snapshot}' \
+jq -r '{checkpointed_cleanly,current_phase,current_step,pipeline_version,card_id,fizzy_card_id,spec_path,execution_plan_path,roadmap_path,last_checkpoint,todowrite_snapshot}' \
   .adversarial-spec/sessions/<id>.json
 ```
 
-Phases that need more (gauntlet → `gauntlet_concerns_path`, finalize → `requirements_summary`) read that one field on demand. Never `cat` the whole file.
+Read phase-specific fields on demand. Tail the last 20 lines of
+`sessions/<id>.decisions.log` when present; see § Decisions Log.
 
-**Recent decisions:** if `sessions/<id>.decisions.log` exists, tail ~20 lines. Authoritative "what landed and why it matters." Replaces `git log` / `git show` for orientation. See Decisions Log section.
+### Canonical-Phase-Order Check
 
-**Canonical-Phase-Order Check (REQUIRED on every resume):**
-
-Compare the actual transition sequence in the journey log against the canonical phase order. A silently-skipped phase (the kind detected post-hoc in Phase 7 scope assessment 2026-05-17) is exactly what this catches.
+Run on every resume, using the active card/detail's `pipeline_version`:
 
 ```bash
-# Use the checker-owned parser; never silently drop a transition with sed/grep.
-# It accepts historical `->` and canonical `→` records, and fails closed on
-# an unknown transition format.
 python3 ~/.claude/skills/adversarial-spec/scripts/phase8_subflow_migration.py \
-  --check-journey .adversarial-spec/sessions/<id>.journey.log
+  --check-journey .adversarial-spec/sessions/<id>.journey.log \
+  --pipeline-version <pipeline_version>
 ```
 
-Exit 0 means clean; exit 1 carries real ordering anomalies; exit 2 is malformed
-or unreadable history and must be investigated rather than treated as missing
-phases. The JSON result includes the parsed transition pairs and selected mode.
+For legacy history with no recorded version, omit `--pipeline-version`; the
+checker infers from recorded lanes. Do not substitute the latest pipeline version.
+Exit 0 is clean; 1 reports ordering anomalies; 2 means malformed/unreadable history
+and requires investigation. The checker owns parsing and normalization; do not
+filter transitions with sed/grep or reimplement its comparison.
 
-Canonical order is version-aware:
+Both versioned orders have eight phases, followed by terminal `complete`:
 
 - Pre-v6: `requirements → roadmap → debate → target-architecture → gauntlet → finalize → execution → implementation → complete`.
-- v6: `requirements → roadmap → decomposition → debate → gauntlet → finalize → execution → implementation → complete`.
+- v6+: `requirements → roadmap → decomposition → debate → gauntlet → finalize → execution → implementation → complete`.
 
-**Verification:** the second column of consecutive rows must be a sub-sequence of the applicable canonical order. Specifically, between any two transitions `A → B` and `C → D`, the canonical order must contain `B` either equal to or strictly before `C`. If `B` is canonically before `C` with a gap, those canonical phases were skipped.
+`triage → requirements` is local entry. The checker folds `pre-roadmap` into
+`roadmap` for v6, and `pre-gauntlet`/`reconciliation` into `gauntlet`.
+v6 has no Target-Architecture lane; D0 carries the Phase 4 skip-mode artifact.
+Verification stays `current_phase: implementation`, `current_step: verification`;
+the checker normalizes historical verification transitions as subflow events.
+`scripts/phase8_subflow_migration.py` also owns the idempotent legacy subflow migration.
 
-**Central normalization:** `triage → requirements` is the legal non-canonical entry;
-`pre-roadmap` folds to `roadmap` for v6; `pre-gauntlet` and `reconciliation`
-fold to `gauntlet`; and historical `implementation → verification` folds to a
-self-transition. v6 has no Target-Architecture board lane: a valid skip-mode
-Phase-4 artifact is carried by D0 decomposition rather than inferred as a skip.
-Do not re-implement these mappings manually.
-
-**`verification` is a Phase 8 subflow, not a phase (CON-002, 2026-07-21).** It never
-appeared in the canonical order above. Sessions track verification progress as
-`current_step: verification` while `current_phase` stays `implementation`; a new write of
-`current_phase: verification` is rejected. Historical journeys that recorded
-`implementation → verification` are **legacy subflow events** — normalize them to
-`implementation` before comparing, exactly like the FSM-internal lanes, so they raise no
-anomaly. `scripts/phase8_subflow_migration.py` owns both the one-time state migration
-(idempotent, appending exactly one `phase8_subflow_migration` journey event) and the
-transition parser plus `canonical_order_anomalies()` check this section describes —
-invoke its `--check-journey` command rather than re-implementing the comparison by hand.
-
-**On detected skip:**
-```
-Canonical-Order Anomaly Detected
-───────────────────────────────────────
-Journey shows: <phase A> → <phase B>
-Canonical order requires: <phase A> → <missing phase> → <phase B>
-
-Missing phase: <missing phase>
-Expected artifact: <path to phase's required artifact>
-Artifact exists:  [yes | no]
-
-If artifact exists but transition was not recorded → cosmetic; backfill the transition event.
-If artifact does NOT exist → process failure. Stop and surface to operator before continuing.
-```
-
-Do NOT auto-recover. The skill's canonical order is load-bearing; a silently-skipped phase loses attribution that downstream phases consume. Surface the anomaly and let the operator decide: backtrack, run the missing phase, or document the skip with explicit rationale (`do_not_ask` entry + process-failure note).
-
-**Required artifacts per canonical phase** (used by the artifact-existence check above):
+Check required artifacts for phases the history claims completed:
 
 | Phase | Required artifact |
 |-------|-------------------|
-| requirements | session detail `requirements_summary` field non-empty |
-| roadmap | `roadmap_path` set AND `roadmap/manifest.json` exists (or session inline for simple tier) |
-| debate | `spec_path` set AND file exists |
-| target-architecture | `.adversarial-spec/specs/<slug>/target-architecture.md` exists (even if stub from `phase_mode=skip`) |
-| gauntlet | `gauntlet_concerns_path` set AND file exists |
-| finalize | `spec_path` updated to finalized version AND file exists |
-| execution | `execution_plan_path` set AND file exists |
-| implementation | at least one pipeline_complete_task recorded in journey log |
+| requirements | Non-empty detail `requirements_summary` |
+| roadmap | `roadmap_path` and its manifest on disk, or the recorded inline roadmap |
+| decomposition (v6+) | Session-bound manifest with `d0` record and the Phase 4 skip-mode artifact at `target_architecture_path` |
+| debate | `spec_path` set and file exists |
+| target-architecture (pre-v6) | `target_architecture_path` (legacy: `.adversarial-spec/specs/<slug>/target-architecture.md`), including a skip-mode stub |
+| gauntlet | `gauntlet_concerns_path` set and file exists |
+| finalize | `spec_path` points to the finalized file |
+| execution | `execution_plan_path` set and file exists |
+| implementation | At least one successful `pipeline_complete_task` recorded in the journey |
 
-If a canonical phase appears in the journey-log transitions but its artifact is missing, that is a stronger anomaly than a missing transition — the phase claims to have run but produced nothing.
+Report the missing transition, expected artifact, and whether it exists. Missing
+artifacts or unexplained skips stop progress for an operator decision; never
+silently recover. Backfill a missing transition only from verified artifact and
+transition evidence. Record an operator-authorized skip's rationale in
+`do_not_ask` and a process-failure note.
 
+### Clean Exit and Context Intent
 
-**Clean-exit check:**
-- `checkpointed_cleanly: false` → previous session died mid-work. Warn, offer "Continue from last checkpoint" / "Review what changed."
-- `true` or absent → normal flow.
+- `checkpointed_cleanly: false`: warn that the previous CLI conversation ended
+  mid-work; offer continuation from checkpoint or review of changes. True/absent
+  follows normal resume.
+- Atomically set the detail's `checkpointed_cleanly: false` when work resumes.
+- Restore a non-empty `todowrite_snapshot`; otherwise use the phase template.
+- Ask which Context to resume if `session_stack` has multiple entries, the pointer
+  differs from the most recently updated detail, or the user's request suggests
+  another Context. Never auto-switch.
+- On an approved switch, atomically update pointer identity, phase, step,
+  `next_action`, and `updated_at`; append a `resume` event to the target journey.
+- Present the Context, phase, origin, and next action concisely.
 
-**Mark this session in progress** immediately — set `checkpointed_cleanly: false` via atomic tmp+rename on the detail file. If this session crashes, the next resume sees the flag.
+For legacy roadmap data without a manifest, offer reconstruction from the detail
+and checkpoints. Persist only supported data, flag gaps, and record generation as
+maintenance. This does not waive required phase artifacts.
 
-**TodoWrite snapshot:** if `todowrite_snapshot` is a non-empty list, restore TodoWrite from it. Otherwise the Phase Router creates a fresh one. Either way, the phase doc's behavioral rules still apply.
+### Targeted Architecture Read
 
-**Context Intent Gate:** if `session_stack` has multiple entries, or the pointer drifts from the most-recently-updated session file, or the user's recent messages suggest a different context → ask before proceeding:
-
-```
-Context Intent Check
-Active: [context_name] ([id])
-Recent alt: [alt_context_name] ([alt_id])
-
-Did we switch? [Continue active] [Switch to recent] [Show sessions]
-```
-
-Never auto-switch. On switch: atomically update pointer (`active_session_id`, `active_session_file`, `context_name`, `current_phase`, `current_step`, `next_action`, `updated_at`) and append a `resume` event to the target session's journey log.
-
-**Check for Missing Manifest (Retroactive Generation):**
-
-After validating the session exists, check if it has a corresponding manifest:
-```bash
-# Derive expected manifest path from context_name
-CONTEXT_SLUG=$(echo "$CONTEXT_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//;s/-$//')
-MANIFEST_PATH=".adversarial-spec/specs/${CONTEXT_SLUG}/manifest.json"
-
-[ -f "$MANIFEST_PATH" ] && echo "manifest exists" || echo "manifest missing"
-```
-
-If manifest is MISSING but session has roadmap-relevant data (milestones, user stories, test cases in session file or checkpoints):
-```
-Missing Manifest Detected
-───────────────────────────────────────
-Session: [context_name]
-Status: Session exists but no manifest.json
-
-This session predates roadmap artifacts. I can generate
-a manifest from:
-• Session file data (if milestones/stories exist)
-• Checkpoint files (extract structured content)
-
-[Generate manifest] [Skip - not needed] [Skip - will do manually]
-```
-
-**On "Generate manifest":**
-1. Scan session file for `milestones`, `user_stories`, `test_cases`
-2. Scan checkpoints for structured content (look for `##` headers, bullet lists)
-3. Create `specs/<slug>/manifest.json` with extracted data
-4. Append to journey log: `{"time": "ISO8601", "event": "Generated manifest retroactively", "type": "maintenance"}`
-
-**On "Skip":** Proceed without manifest. Some sessions (exploratory, debug-only) legitimately don't need one.
-
-**Check for Architecture Manifest:**
-
-After checking the spec manifest, also check for `.architecture/manifest.json`:
-```bash
-[ -f ".architecture/manifest.json" ] && echo "architecture mapping exists" || echo "architecture mapping missing"
-```
-
-If architecture manifest is MISSING:
-```
-Architecture Mapping Status
-───────────────────────────────────────
-Status: No .architecture/manifest.json found
-
-Architecture docs help fresh agents understand the codebase
-without re-reading source. Generate with /mapcodebase.
-
-[Run /mapcodebase now] [Skip - not needed yet]
-```
-
-If architecture manifest EXISTS, validate schema and freshness:
-```bash
-# Check schema + git hash
-ARCH_SCHEMA=$(python3 -c "import json; print(json.load(open('.architecture/manifest.json')).get('schema_version', '0'))" 2>/dev/null)
-ARCH_HASH=$(python3 -c "import json; print(json.load(open('.architecture/manifest.json')).get('git_hash', ''))" 2>/dev/null)
-CURRENT_HASH=$(git rev-parse --short HEAD 2>/dev/null)
-[ "$ARCH_SCHEMA" != "2.0" ] && echo "architecture mapping is legacy (schema $ARCH_SCHEMA)"
-[ "$ARCH_HASH" != "$CURRENT_HASH" ] && echo "architecture mapping may be stale (generated at $ARCH_HASH, now at $CURRENT_HASH)"
-```
-
-If schema `< 2.0`, show migration advisory:
-```
-Architecture Mapping Advisory
-───────────────────────────────────────
-Schema: [arch_schema]
-Status: Legacy architecture docs detected
-
-Mapcodebase 3.0 expects primer.md, access-guide.md, and
-manifest schema 2.0. Run full /mapcodebase to regenerate.
-
-[Run /mapcodebase now] [Skip - continue without architecture priming]
-```
-
-If schema `2.0` exists but docs are stale, show advisory (not blocking):
-```
-Architecture Mapping Advisory
-───────────────────────────────────────
-Generated at: [arch_hash]
-Current HEAD: [current_hash]
-Consider running /mapcodebase
-```
-
-**On "Skip" with legacy docs:** Proceed without architecture priming. Do NOT pretend `v2.x` docs are equivalent to 3.0 docs.
-
-**On "Skip" with current docs:** Proceed normally. Architecture mapping is advisory, not required.
-
-**Load Architecture Context (REQUIRED when `.architecture/` exists):**
-
-If `.architecture/manifest.json` exists with `schema_version = 2.0`, load targeted architecture docs into your context **now** — before any phase work begins. The LLM makes decisions throughout the session (synthesis, critique evaluation, accept/reject) that are all better when grounded in actual architecture.
-
-```bash
-# 1. Read INDEX.md to understand the component map (for YOUR navigation only)
-cat .architecture/INDEX.md 2>/dev/null
-
-# 2. Read primer.md — the default small-context architecture payload
-cat .architecture/primer.md 2>/dev/null
-
-# 3. Read concerns.md when you need fix-first architecture debt or drift context
-# [ -f ".architecture/concerns.md" ] && cat .architecture/concerns.md 2>/dev/null
-
-# 4. Escalate to overview.md only if the phase needs more system context
-# e.g. target-architecture, debate round 2+, or gauntlet
-# [ -f ".architecture/overview.md" ] && cat .architecture/overview.md 2>/dev/null
-
-# 5. Select 2-4 component docs based on the session's blast zone
-# Parse the spec/session requirements_summary for file paths and module names
-# Match those against the INDEX component table
-# Read matching component docs from .architecture/structured/components/
-```
-
-**Selection heuristic:**
-- Parse the spec (or session `requirements_summary`) for file paths and module names
-- Match those against the INDEX component table
-- Default load is `primer.md`
-- Read `concerns.md` when the session needs fix-first architecture debt or drift context
-- For `requirements` and early startup, `primer.md` is usually enough
-- For `target-architecture`, `debate` round 2+, and `gauntlet`, load `primer.md` plus matched component docs
-- Escalate to `overview.md` when the task needs the full system narrative
-- Escalate to `flows.md` only when the task crosses component boundaries
-- If unsure which components are relevant, `primer.md` + `overview.md` + matched component docs is the safest order
-
-**Cost:** usually lower than the old overview-first flow. **Benefit:** Avoids context-blind debate/gauntlet rounds while keeping startup context smaller.
-
-**IMPORTANT:** `INDEX.md` is for YOUR navigation only. It contains links that opponent models cannot follow. Never pass `INDEX.md` as `--context` to `debate.py` — pass the substantive docs it references instead.
-
-**Present Path Context (REQUIRED FORMAT):**
-```
-Path Context
-───────────────────────────────────────
-Session: [context_name]
-Phase: [current_phase]
-Origin: [branched_from or "Direct start"]
-
-Journey (recent):
-• [time] [event]
-• [time] [event]
-
-Next: [next_action]
-
-[Continue] [Switch recent] [New session] [Archive this] [Branch]
-```
+When `.architecture/` exists, read `.architecture/INDEX.md` → `primer.md` → 2–4
+component docs matching the active scope. Use `.architecture/structured/flows.md`
+for cross-component work; load concerns/overview only when needed. Report absent,
+legacy, or stale mapping and follow the active phase's freshness gate. Pass
+substantive docs to critics through the transport in
+`reference/context-addition-protocol.md`; INDEX is navigation, never critic context.
 
 ### If no valid active session
 
-The first gate owns this path. Enter `phases/00-triage.md`; do not offer or create
-a workspace, session file, branch, or Fizzy card from resume inspection.
-
-### New-session custody
-
-Only a Phase 0 GO may create a workspace, branch, local session state, or Fizzy
-card. `phases/00-triage.md` owns that sequence, including the branch-before-code
-rule and the local-only `triage → requirements` entry.
+Return to the First Gate. Only Phase 0 GO authorizes new workspace, branch, local
+session state, and card creation; `phases/00-triage.md` owns that sequence.
 
 ### Schema Migration (v1.1 → v1.3)
 
-**CRITICAL:** If session-state.json exists but `schema_version` < 1.3, trigger migration:
+For an established session with `schema_version` below 1.3, inspect actual field
+types before converting to a v1.3 pointer/detail pair. The resuming agent owns this
+migration; do not infer new work merely from absent v1.3 fields.
 
-1. **Detect legacy schema:**
-   ```bash
-   # Check schema version
-   jq -r '.schema_version // "1.0"' .adversarial-spec/session-state.json
-   ```
+1. Back up the legacy JSON under `.adversarial-spec/.backup/`; preserve the
+   existing session identity, card linkage, phase, and checkpoint evidence.
+2. Build `sessions/<id>.json` without losing fields. Preserve `completed_work`
+   in `requirements_summary.completed_work` with its original shape (schema 1.1
+   can contain an array, not just a string). Retain other rich fields, including
+   `scaling_results`, `bugs_fixed`, and `gauntlet_results`, in `extended_state`.
+3. Extract existing journey entries to JSONL; reconstruct only events supported
+   by checkpoints. Derive roadmap data from local artifacts or the linked Fizzy
+   record, with explicit `board_id`; flag missing data rather than inventing it.
+4. Validate preservation, then atomically write detail first and the v1.3 pointer
+   second. Keep `do_not_ask` as a list, preserving legacy string content as an item.
+5. Append a migration event; verify pointer/detail identity, field types, artifact
+   paths, and preserved rich data before normal resume.
 
-2. **If v1.1 or earlier:**
-   - Inform user: "Found legacy session state (v1.1). Migrating to v1.3 format..."
-   - Extract data from legacy session-state.json (completed_work, scaling_results, bugs_fixed, etc.)
-   - Create proper session file: `sessions/<session-id>.json` with:
-     - `sessions/<id>.journey.log` (JSONL, reconstruct from checkpoints if possible)
-     - `requirements_summary.completed_work` (from legacy `completed_work` string)
-     - `extended_state` (preserve rich fields like `gauntlet_results`, `dev_instance`, etc.)
-   - Create `specs/<project>-roadmap/manifest.json` if roadmap data can be inferred from:
-     - Tasks MCP (extract milestones from completed/pending tasks)
-     - Fizzy board (if linked)
-     - Checkpoint files (extract user stories, test cases)
-   - Update session-state.json to v1.3 pointer format
-   - Append to journey log: `{"time": "ISO8601", "event": "Migrated from v1.1 to v1.3", "type": "migration"}`
+### Session State Rules
 
-3. **Migration checklist:**
-   - [ ] Session file created with all legacy data preserved
-   - [ ] manifest.json created (even if partial)
-   - [ ] session-state.json updated to v1.3 pointer
-   - [ ] Rich fields preserved in `extended_state`
-   - [ ] Journey log reconstructed from checkpoints (JSONL)
-
-4. **After migration:** Proceed with normal v1.3 flow (show path context, offer options)
-
-### Session State Rules (CRITICAL):
-
-- If `do_not_ask` exists, DO NOT ask those questions
-- If `next_action` exists, DO that action — **subject to the build-verb guard below**
-- The session state tells you exactly what to do - follow it
-- `do_not_ask` is ALWAYS a list - if you see a string, it's legacy format
-
-**`next_action` build-verb guard (REQUIRED):** `next_action` is an instruction
-channel, not an authorization channel. Before executing a `next_action` (or a
-carried-over checkpoint `next_action`) whose text implies **code or system
-changes** — verbs like *build, implement, create `<file>`, write `<script>`, add
-code, enable/install `<service>`, migrate* — STOP unless one of these holds:
-(1) this session has reached Phase 7 and the work maps to an existing pipeline
-**task card**, or (2) the user has just given **plan-mode approval** for this
-change. Otherwise surface it: report the intended change, name the missing gate
-(no Phase 7 task card / no fresh approval), and ask whether to (a) route it
-through Phase 7 execution planning, (b) approve it via plan mode, or (c) drop it.
-Never build inline off a `next_action` alone. Read-only actions (investigate,
-verify, draft spec text, run a gate, dispatch a debate round) are exempt.
-*Rationale: incident 2026-07-18 — a checkpoint `next_action` = "build minimal
-router loop" produced an entire untracked subsystem during a debate-phase
-session with no Phase 7 ever run. See
-`specs/post-fable-hardening-skill/process-failures/2026-07-18-next-action-unguarded-build-channel.md`.*
+Respect `do_not_ask`; perform `next_action` only within the authorized scope.
+`next_action` is an instruction channel, not an authorization channel. If it
+implies code/system changes, require an existing Phase 7 plan-backed task card or
+fresh user plan-mode approval. Otherwise report the missing gate and route through
+execution planning, obtain approval, or drop the change. Read-only investigation,
+spec drafting, gate checks, and debate dispatch are exempt.
 
 ---
 
 ## Process Discipline (All Phases)
 
-**NEVER abandon the structured process** on tangential questions or "quick fixes":
+Keep work within the active scope; use the phase's TodoWrite milestones, investigate
+root causes, and obtain approval for scope changes. Persist evidence before claims.
 
-1. Check scope — part of this session?
-2. Use TodoWrite for ALL work, even small investigations.
-3. Stay targeted — 2-3 queries max for ad-hoc debugging.
-4. Root causes, not band-aids.
-5. Propose through process — update session state, get approval.
-
-**Red flags:** 10+ turns without TodoWrite updates; manually setting values to make things "look right"; multiple restarts without understanding why; "let me just quickly…" outside task context.
-
-When in doubt: update session state and use TodoWrite.
-
-### Pipeline-card fence (critique + gauntlet)
-
-**If the session has a `fizzy_card_id`, NEVER invoke `debate.py critique` or `debate.py gauntlet` directly.** All round dispatches go through the Fizzy pipeline tools (`pipeline_begin_debate_round` → `pipeline_dispatch_single_agent_debate` → `pipeline_register_debate_agent_return` → `pipeline_advance_debate_round`). Standalone runs bypass the Test-Spec Sync gate — that is exactly how `tests-pseudo.md` drifted from v2 through v7 without a single staleness warning.
-
-`debate.py` now enforces this itself: `critique` and `gauntlet` require `--pipeline-card <card_id>`, or `--pipeline-card IntentionalOverride --override-reason '<≥50 chars>'`. The script also runs a staleness check comparing `spec_path` mtime vs `tests_pseudo_path` mtime from the session detail file; stale → exit 2 unless `--accept-tests-stale` is passed. Overrides and stale-accepts are logged to `sessions/<id>.decisions.log`.
-
-When the pipeline rejects a round (sequence mismatch, checklist missing, active-round conflict), see `phases/03-debate.md` Step 4 "No fallback" — reconcile via pipeline tools or `pipeline_patch_state` with a `process_failure_path` note. Do not reach for `debate.py` as the escape hatch.
-
-**Codex long-dispatch rule:** For `pipeline_dispatch_single_agent_debate`, Codex can time out the MCP wrapper around 120s while the underlying Claude/Gemini/Codex critic keeps running. If that happens, do not retry immediately and do not back off. Poll the round workspace result directory every 90 seconds for `parsed.json` / `raw.txt`, then register the return if a dispatch ID is available. If the MCP timeout lost the dispatch ID, comment the artifact path on the Fizzy card and record a process-failure note; do not duplicate the model run.
-
----
+- Pass explicit `board_id` from `projects.yaml` on every board-scoped call.
+- Session tasks must be plan-backed: amend the execution plan and `fizzy-plan.json`,
+  then `pipeline_validate_plan` → approval → `pipeline_load`. Never raw `add_card`.
+- Implementer ≠ reviewer; use the independent review required by the active phase.
+- Carded critique and gauntlet work uses pipeline tools. Never bypass a rejected
+  round with standalone `debate.py`; follow `phases/03-debate.md` recovery.
+- Pick task classes and seats from `reference/current-models.md`, including the
+  Mechanical class for bulk payload handling. Guidance pointers do not update
+  runner defaults: `scripts/gauntlet/model_dispatch.py` still selects retired
+  Google CLI routes; verify the selected runner/seat before dispatch.
 
 ## Phase Router — Read ONLY What You Need
 
-Based on `current_phase`, read the matching phase file:
+Select by active `current_phase` and recorded `pipeline_version`, using the
+versioned orders in § Canonical-Phase-Order Check. Phase document numbers retain
+legacy numbering; v6 D0 carries the Phase 4 artifact before debate.
 
-| Phase | File to Read |
-|-------|--------------|
-| No session / New work | `~/.claude/skills/adversarial-spec/phases/00-triage.md` (read-only front door; on GO it creates the session, persists its route/handoff, then hands to Phase 1) |
-| triage | `~/.claude/skills/adversarial-spec/phases/00-triage.md` |
-| evaluated-plans + incomplete intake receipt | First Gate's **Incomplete Phase 0 Handoff Recovery**; do not route it as a normal phase |
+| Phase / state | Guidance to read |
+|---------------|------------------|
+| No session / new work; triage | First Gate, then `phases/00-triage.md` |
+| evaluated-plans + incomplete intake receipt | First Gate's **Incomplete Phase 0 Handoff Recovery** |
 | evaluated-plans without an intake receipt | `phases/01-init-and-requirements.md` (legacy entry; do not replay Phase 0) |
-| requirements | `~/.claude/skills/adversarial-spec/phases/01-init-and-requirements.md` |
-| roadmap | `~/.claude/skills/adversarial-spec/phases/02-roadmap.md` |
-| debate | `~/.claude/skills/adversarial-spec/phases/03-debate.md` |
-| target-architecture (MANDATORY — skip mode allowed, but must produce stub artifact) | `~/.claude/skills/adversarial-spec/phases/04-target-architecture.md` |
-| gauntlet | `~/.claude/skills/adversarial-spec/phases/05-gauntlet.md` |
-| finalize | `~/.claude/skills/adversarial-spec/phases/06-finalize.md` |
-| execution | `~/.claude/skills/adversarial-spec/phases/07-execution.md` |
-| middleware-creator (optional) | `~/.claude/skills/adversarial-spec/phases/middleware-creator.md` — runs after `execution` and before `implementation` when `middleware-candidates.json` exists and the user chooses to materialize shared middleware before normal pickup. Source task cards required by the fanout API are already loaded by Phase 7, so no detour is needed. |
-| implementation | `~/.claude/skills/adversarial-spec/phases/08-implementation.md` |
-| complete | Ask user: "Start new work? Or continue with follow-up?" |
+| requirements | `phases/01-init-and-requirements.md` |
+| roadmap; pre-roadmap (v6+) | `phases/02-roadmap.md` |
+| decomposition (v6+) | [v6 D0 Decomposition](#v6-d0-decomposition) below |
+| debate | `phases/03-debate.md` |
+| target-architecture (pre-v6) | `phases/04-target-architecture.md` (required, including skip-mode stub) |
+| gauntlet; pre-gauntlet; reconciliation | `phases/05-gauntlet.md` |
+| finalize | `phases/06-finalize.md` |
+| execution | `phases/07-execution.md` |
+| middleware-creator (optional subflow after execution) | `phases/middleware-creator.md`; requires loaded source task cards and user choice |
+| implementation | `phases/08-implementation.md` |
+| implementation + current_step: verification | `phases/09-verification.md` (Phase 8 subflow) |
+| complete | Ask whether to start new work or follow up; new work returns to First Gate |
 
-**Use the Read tool.** Don't load all phases at once.
+Read the target guidance on entry, after compaction, or when it changes. Avoid
+re-reading unchanged guidance already in the current context window.
+Restore `todowrite_snapshot`, otherwise initialize from the phase template.
+Phase 8 TodoWrite items stay phase-scoped; card IDs/commit hashes come from live
+pipeline state, not persisted checklist items.
 
-**Re-read discipline.** Read the phase doc only when:
-1. First activation of the phase (just transitioned in).
-2. A phase transition is happening this turn (load the TARGET doc).
-3. Session compacted, or the phase doc was edited since last read.
+### v6 D0 Decomposition
 
-If `current_phase` is unchanged since the prior checkpoint and you've seen the doc in a recent session, skip the re-read. Canonical rules live in the active TodoWrite + the pointer's `next_action`. Re-reading a 200–400-line phase doc every resume is a silent tax.
+For `pipeline_version >= 6`, confirm G1 before entering Decomposition. Produce a
+session-bound manifest with its `d0` record: component tree, evidence-backed
+CUT/NO_CUT responsibility edges, CUT-edge interfaces, resolved boundary probes,
+and an independent seam challenge. The schema and checks are owned by
+`pipeline_mark_decomposition_complete` / `mark_decomposition_complete` in the MCP.
 
-**TodoWrite source priority:**
-1. If `todowrite_snapshot` exists → restore TodoWrite from it (already done during the Clean-Exit step).
-2. Else → create fresh TodoWrite from the phase doc's `TodoWrite([...])` template.
+Produce the Phase 4 skip-mode `target-architecture.md` and persist
+`target_architecture_path` within this D0 handoff; read
+`phases/04-target-architecture.md` for its artifact contract and human gates.
+Do not add a Target-Architecture lane or journey phase to the v6 order.
 
-Either way, the phase doc's instructions and gate rules still apply — the snapshot only replaces TodoWrite init.
+Call `pipeline_mark_decomposition_complete(card_id, session_id, board_id,
+manifest_path)` to verify D0 on disk; advance only after it succeeds. Never patch
+`d0_closed` or assert adequacy in prose. Unresolved seams require the operator's
+`NO_GO_UNRESOLVED_SEAM` backtrack.
 
-**Multi-agent TodoWrite rule (CRITICAL):** in phases where multiple LLMs work the same board (Phase 8 implementation), TodoWrite items MUST be phase-scoped activities, never specific card IDs or commit hashes. The Fizzy pipeline is the only authoritative "what's next" — `pipeline_do_next_task` returns live state. Snapshotted card-specific todos go stale the moment another agent touches the board.
+**Acceptance obligations:** when a `REAL-DATA`, LIVE test is the sole discharge of
+a goal-level requirement, an `acceptance-only` ruling must retain a topology-free
+`acceptance_obligations[]` entry: `obligation_id`, `root_goal`, `discharge_test`,
+`route_prose`, `missing_evidence_classes[]`, `downstream_owner_phase`. No task edges
+or card IDs. `dependency_semantics.py` rejects an `acceptance_oracle` without the
+record; Phase 7 Gate D1 closes each obligation by ID through evidence receipts.
+Ordinary real-data smoke probes do not trigger this obligation.
 
-- Bad: `Review W1-7 card #1403 (codex impl 6c4bb3d)`.
-- Good: `Process next review card from pipeline`, `Handle failed-review cards first`, `Pick up next New Todo when review lane empty`.
-
-Card IDs and commit hashes belong in the live transcript, not the persisted snapshot.
-
-**Router order:**
-```
-triage → requirements → roadmap → debate → target-architecture → gauntlet → finalize → execution → middleware-creator? → implementation → complete
-```
-
-**v6 bounded-pipeline sessions (fizzy `pipeline_version >= 6`, 2026-07-22):** a
-`decomposition` phase sits between roadmap and debate, and debate is a FAN-OUT,
-not one artifact. Board reality for these sessions:
-
-```
-Evaluated Plans → Pre-Roadmap →(g1) Decomposition →(d0_closed) Debate → Pre-Gauntlet → Gauntlet → Reconciliation → Finalization
-```
-
-- **Decomposition** runs D0: component tree (system root, strict parent>child
-  descent), responsibility edges CUT/NO_CUT with evidence, interface records
-  for exactly the CUT edges, seam probes for every boundary unknown, and one
-  independent seam challenge. Exit is `pipeline_mark_decomposition_complete`
-  (verify-on-disk; `d0_closed` is patch_state-protected) — or the operator
-  NO_GO_UNRESOLVED_SEAM backtrack. Never assert D0 adequate in prose.
-- **Acceptance obligations (D0, including Phase-4 skip-mode):** when a test is
-  `REAL-DATA` AND LIVE AND the sole discharge of a goal-level requirement, an
-  `acceptance-only` ruling may narrow code responsibility but must record a
-  topology-free `acceptance_obligations[]` entry (`obligation_id`, `root_goal`,
-  `discharge_test`, `route_prose`, `missing_evidence_classes[]`,
-  `downstream_owner_phase`) — no task edges, no card IDs; Phase 7's D1 gate
-  closes it by `obligation_id` via the evidence-receipt register (see
-  07-execution.md Gate D1). The analyzer (`--decomposition`) rejects an
-  `acceptance_oracle` with no obligation record. Ordinary real-data smoke
-  probes trigger nothing.
-- **Debate (redefined for v6):** `pipeline_load` runs HERE (after `d0_closed`),
-  creating leaf component cards in the `Specifying` task lane; each leaf runs
-  its own bounded A→S cycle. The session card holds in Debate until every leaf
-  is `Synthesized` or carries a legal operator `DEFERRED`/`NO_GO` exception.
-- **Pre-Gauntlet (redefined):** the fan-in barrier — one system-altitude
-  gauntlet over the grouped result, never per-component gauntlets.
-- Pre-v6 sessions are untouched: no Decomposition lane, load at Finalization,
-  the classic order above. Canonical-order checks must treat `decomposition`
-  as legal (not an anomaly) exactly when the session is v6+.
-- Governing artifacts live in the consuming project:
-  `orchestration/governing/RULESET-bounded-pipeline-v1.md`,
-  `orchestration/governing/BRAINSTORM-2-lanes-and-flow.md` (§8, §10),
-  `orchestration/governing/DECISIONS-brainstorm-2-open.md` (D-1..D-4).
-
-**Triage (Phase 0) is the additive front door.** The first gate routes only
-missing, empty, or zombie local state there. It performs a read-only pointer probe
-before any machinery; after GO, Phase 0 creates the session with the chosen
-`session_altitude`, persists its route and handoff, then starts conductor/listener
-bootstrap. A session that already has a `current_phase` follows its existing row
-and never re-enters triage. See `phases/00-triage.md` (the gate) and
-`reference/altitude.md` (the model + the doc↔code enforcement map).
-
-`middleware-creator?` is optional, slotted between `execution` and `implementation`. It runs iff Phase 4 produced `middleware-candidates.json` AND the user chose to materialize shared middleware before normal pickup. Empty list or user skip → `execution → implementation` directly.
-
-**Why this order:** middleware-creator's source task cards are real execution-plan tasks (e.g., MW-A's source tasks are RC-2 and RC-4 user stories). They only exist after Phase 7 generates `execution-plan.md`, produces `fizzy-plan.json`, and `pipeline_load`s the typed task cards. Running middleware-creator before Phase 7 forces a "do half of the next phase, then come back" detour every time. Running it after Phase 7 makes the dependency honest.
-
-**Operational:** middleware fanouts require typed Fizzy source task cards and existing test-suite paths. Phase 7 produces both before middleware-creator activates. Don't bypass with raw `add_card` or direct card moves — use the Fizzy middleware pipeline tools.
+After D0, v6 loads leaf cards in Debate for bounded A→S cycles, then joins them
+at Pre-Gauntlet for one system gauntlet. Pre-v6 retains its Finalization load path.
+Follow the active phase and MCP results for dispatch; preserve G2/G3 approvals.
+Consuming-project governing artifacts:
+`orchestration/governing/RULESET-bounded-pipeline-v1.md`,
+`orchestration/governing/BRAINSTORM-2-lanes-and-flow.md`, and
+`orchestration/governing/DECISIONS-brainstorm-2-open.md`.
 
 ### User Language → Phase Mapping
 
-Users don't always use exact phase names. Map their intent:
+| User intent | Target |
+|-------------|--------|
+| Critique, review, feedback | debate |
+| Architecture, patterns | pre-v6 target-architecture; v6 D0 artifact guidance |
+| Stress test, attack, gauntlet | gauntlet |
+| Finalize, lock the spec | finalize |
+| Execution/implementation plan | execution |
+| Build, implement | implementation, subject to approval gates |
 
-| User says | Target phase |
-|-----------|-------------|
-| "critique," "review," "feedback," "get opinions" | **debate** |
-| "architecture," "target architecture," "how should we build it," "patterns" | **target-architecture** |
-| "adversarial," "stress test," "try to break it," "gauntlet," "attack" | **gauntlet** |
-| "finalize," "lock it down," "we're done debating" | **finalize** |
-| "execution plan," "implementation plan," "how to build it" | **execution** |
-| "start building," "implement," "code it" | **implementation** |
+Debate improves the spec through critic rounds; gauntlet challenges it with
+adversary personas. Use the target phase's tools. Gauntlet reviewers stay
+read-only; report missing evidence as blocked and carry fixture/claim ceilings.
+Mocked logic cannot establish browser, wire, permission, or credential behavior.
+See `phases/05-gauntlet.md` and `reference/gauntlet-details.md`.
 
-**The debate and gauntlet are fundamentally different processes:**
-- **Debate** = collaborative improvement via `debate.py critique` (round-based model feedback)
-- **Gauntlet** = adversarial stress testing via adversary personas (PARA, BURN, LAZY, etc.) with per-adversary briefings and a multi-phase attack pipeline
+### Phase Transition Protocol
 
-The gauntlet's evidence boundary is permanent: seats are read-only and file
-`GT-REQUEST` records; a neutral broker supplies observed answers, including
-explicit `BLOCKED` responses and fixture/claim ceilings. Unrequested broker
-observations (`BYCATCH`) are the primary observed value; cross-seat answers are
-secondary and measured separately for reach, yield, noise, follow-up, and cost.
-Mocked logic must not be reported as browser, wire, permission, or credential
-ground truth. See `phases/05-gauntlet.md` and `reference/gauntlet-details.md`.
+1. Read target guidance; satisfy its entry gates and persist the outgoing phase's
+   deliverables and artifact paths. Preserve G1/G2/G3 evidence, Phase 4 human
+   decisions, Phase 6 user review, and Phase 7 plan approval.
+2. Atomically write detail (`sessions/<id>.json`) first: `current_phase`,
+   `current_step`, `updated_at`, and phase-owned artifact fields. Append the
+   transition to the Journey Log. Then atomically write pointer
+   (`session-state.json`): `current_phase`, `current_step`, `next_action`,
+   `updated_at`. Add missing legacy detail phase fields; never omit either write.
+3. Resolve the card from detail `card_id`, legacy `fizzy_card_id`, or pointer
+   `pipeline_card_id`. Add a concise comment per § Fizzy Card Comment Convention;
+   use `pipeline_advance` with explicit `board_id` for legal board movement.
+   Never use `pipeline_patch_state` to transition or skip a fence. On rejection,
+   stop and reconcile local/board state through the owning gate.
+4. Apply § Major Milestone Notifications (Telegram) when notification is needed.
 
-Do NOT run `debate.py critique` when the user wants the gauntlet, and vice versa.
+**Triage exception:** after receipt persistence and
+`pipeline_sync_local_session(..., mode="repair")`, atomically merge intake into
+returned detail then pointer, set `current_phase: requirements`, and append the
+absent `triage → requirements` event. No `pipeline_advance`: the card stays in
+Evaluated Plans until the normal requirements-to-roadmap transition.
 
-### CRITICAL: Phase Transition Gate
+**Architecture gate:** pre-v6 must visit target-architecture between debate and
+gauntlet, even for a stub. v6 must carry that stub from D0; no invented intermediate
+phase. Follow Phase 4's artifact/human-gate contract in both cases.
 
-**On ANY phase transition (user request or natural progression), you MUST:**
+**Completion gates:** after Phase 6 user review, ask whether to generate the Phase
+7 execution plan; a decline may close with `execution skipped by user`. Otherwise
+validate and obtain approval before loading/implementation; warn on zero actionable
+tasks. Offer middleware-creator only for materializable `middleware-candidates.json`
+with loaded source cards and test-suite paths. Verification remains inside Phase 8;
+follow its sweep gate before closing implemented work. Set `completed_at` on closure.
 
-1. Read the TARGET phase file from the router — do not continue with the current one.
-2. Follow the target phase's entry protocol (each has specific startup steps).
-3. Do not apply the previous phase's commands/tools. E.g., no `debate.py critique` during the gauntlet.
+### Fizzy Card Comment Convention
 
-**Why:** Feb 2026 failure — LLM stayed in "debate mode" on a gauntlet request, ran `debate.py critique` R4 instead of `05-gauntlet.md`'s distinct Arm-Adversaries / persona-attack pipeline.
-
-### CRITICAL: Phase Transition Rules
-
-**NEVER mark `complete` without these gates:**
-
-1. **debate → target-architecture (MANDATORY) → gauntlet**: Phase 4 must be entered between debate and gauntlet, every session. `phase_mode=skip` is permitted, but only with a stub artifact recording the rationale — see Phase 4 doc's "Phase 4 is MANDATORY" section. Skipping Phase 4 silently (debate → gauntlet with no `target-architecture.md` on disk) is a process failure. If the Fizzy session FSM for this board lacks a Target-Architecture lane (some boards do), transition through Phase 4 locally — produce the stub artifact, append the journey transition, then call `pipeline_advance` to whatever lane the FSM has next. Do NOT skip artifact generation just because the lane is missing.
-
-2. **finalize → execution**: ask "Spec is finalized. Generate an execution plan now?"
-   - Yes → read `phases/07-execution.md`, create plan.
-   - No → mark complete with note `"execution skipped by user"`.
-
-3. **execution → middleware-creator? → implementation/complete**: create the plan directly using `phases/07-execution.md`. `debate.py execution-plan` is deprecated (Feb 2026, Option B+). If the plan has 0 actionable tasks, WARN before proceeding. After execution-plan + source cards are loaded, if `middleware-candidates.json` exists with materializable candidates, ask whether to run the optional middleware-creator pass before opening normal pickup. Skip → `execution → implementation` directly.
-
-**Why:** sessions were jumping gauntlet → complete, skipping execution and losing the concern-to-task linkage. The Phase 4 mandate (rule 1) was added 2026-05-17 after the ETB treatment session silently skipped target-architecture; see `.adversarial-spec/specs/treatment-etb/process-failures/phase-4-target-architecture-skipped-silently.md` for the incident.
-
-**Brainquarters** (detected by `projects.yaml`): `TaskList(list_contexts=True)` shows cross-project contexts.
-
-### Phase Transition Protocol (REQUIRED)
-
-**Triage entry exception:** `triage → requirements` is a legal local-only entry.
-After Phase 0 persists the returned `card_id` in its receipt and calls
-`pipeline_sync_local_session(..., mode="repair")`, it must atomically update the
-returned detail and pointer files with the intake handoff and `current_phase:
-requirements`, then append the journey event. This same merge completes an
-incomplete-handoff recovery. It MUST NOT call `pipeline_advance` or move the
-card: the card remains in Evaluated Plans until the ordinary requirements-to-roadmap
-transition. Every later transition follows the protocol below.
-
-**Every phase transition must update BOTH files atomically, in order:**
-
-1. **Detail file** (`sessions/<id>.json`) — first:
-   - Set `current_phase`, `current_step`, `updated_at` (ISO 8601).
-   - Append to journey log (`sessions/<id>.journey.log`, JSONL): `{"time":"ISO8601","event":"Phase transition: <old> → <new>","type":"transition"}`. See "Journey Log" below.
-
-2. **Pointer file** (`session-state.json`) — second:
-   - Set `current_phase`, `current_step`, `next_action`, `updated_at`.
-
-3. **Fizzy card** (if the detail has `card_id` or legacy `fizzy_card_id`, or the pointer has `pipeline_card_id`) — third:
-   - Add a human-readable phase comment using the card-comment convention below.
-   - Advance the card with `pipeline_advance` (gate-enforcing) — NEVER `pipeline_patch_state` for a phase transition. `patch_state` is for intra-phase state only (`debate_round`, `last_agent` after debate rounds) or gate-recovery with an on-disk process-failure note; the tool rejects transition misuse.
-   - Use a **haiku subagent** to keep MCP payload out of main context.
-
-4. **Telegram** (if project has telegram config) — fourth:
-   - `~/.claude/bin/telegram-send <project> "Phase: <old> → <new>. <1-2 sentence summary of what/next>."`
-   - **Wait 120 seconds** (`time.sleep(120)`) — deliberate pause so the human can Ctrl+C to redirect. Not a bug.
-
-**Order matters.** Interrupted mid-sequence: pointer catches up on next transition (safe); Fizzy isn't load-bearing for local resume; Telegram is notification, not state.
-
-**Artifact path fields** — set in detail file at these transitions:
-
-| Transition | Field | Value |
-|------------|-------|-------|
-| roadmap → debate | `roadmap_path` | `"roadmap/manifest.json"` or `"inline"` |
-| target-architecture → gauntlet | `target_architecture_path` | Path to architecture doc (e.g., `"specs/<slug>/target-architecture.md"`) |
-| gauntlet → finalize | `gauntlet_concerns_path` | Path to saved concerns JSON (e.g., `".adversarial-spec/gauntlet-concerns.json"`) |
-| finalize → execution | `spec_path` | Path to written spec (e.g., `"spec-output.md"`) |
-| finalize → execution | `manifest_path` | Path to spec manifest if created (e.g., `"specs/<slug>/manifest.json"`) |
-| execution → implementation | `execution_plan_path` | Path to written execution plan (e.g., `".adversarial-spec/specs/<slug>/execution-plan.md"`) |
-| any → complete | `completed_at` | ISO 8601 timestamp |
-
-**Non-artifact transitions** (debate → gauntlet, etc.) still MUST dual-write `current_phase` and `current_step` to both files. Every phase change syncs both — no exceptions. Both writes use atomic tmp+rename.
-
-**Backward compatibility:** legacy detail files missing `current_phase` → add it, don't error.
-
-### Fizzy Card Comment Convention (REQUIRED)
-
-Every `add_comment` write is an operator-visible event, not an MCP transcript.
-Write the visible text for a person who opens only this card; keep machine detail
-in card metadata, checklist attestations, and the owning pipeline tool result.
-
-Use a short heading and only the sections that add information:
-
-```markdown
-## <Outcome>
-
-**Why it matters:** <plain-language problem or decision>
-**Evidence:** <one concrete artifact, test result, concern ID, or card link>
-**Next:** <who or what moves the work forward>
-```
-
-- Lead with what changed. Keep normal comments under 180 words.
-- Include stable IDs and paths only when they help a reader retrieve evidence.
-- Do not paste raw JSON, tool payloads, model transcripts, or opaque
-  `pipeline:key=value` lines into a comment.
-- Never duplicate full checklists or a spec section. The card description and
-  structured metadata already own that detail.
-- A phase transition normally needs only `Outcome`, one evidence line, and `Next`.
-  Example: `## Phase: debate → target-architecture` followed by the accepted
-  design decision and the artifact path.
+Every `add_comment` is operator-visible. Use a short outcome heading, one concrete
+evidence reference, and the next action/actor; add why it matters only if needed.
+Keep normal comments under 180 words. Keep raw JSON, payloads, transcripts, and
+checklist dumps in their owning artifacts or pipeline metadata.
 
 ### Major Milestone Notifications (Telegram)
 
-Send Telegram + 120s pause at these intra-phase milestones — they're the moments where an interruption saves hours:
+Use Telegram for a phase's human-gated review when the user uses that channel;
+send routine milestone/status notifications only when requested. Bridge setup and
+transport live in `reference/telegram-bridge.md`.
 
-| Milestone | Message template |
-|-----------|-----------------|
-| Debate round complete | `"R{N} complete: {count} findings ({critical} critical, {major} major, {minor} minor) applied to spec. Guardrails next."` |
-| Guardrail results | `"R{N} guardrails: SCOPE {pass/fail}, TRACE {pass/fail}, CANON {pass/fail}, TCOV {pass/fail}, CONS {pass/fail}. {fix_count} fixes applied."` |
-| Convergence declared | `"Convergence after {N} rounds. Severity trend: {R1 summary} → {RN summary}. Proceeding to finalize."` |
-| Spec finalized | `"Spec finalized: {filename} ({lines} lines, {tc_count} TCs, {us_count} US). Proceeding to execution planning."` |
-| Execution plan loaded | `"Execution plan: {task_count} tasks across {stream_count} workstreams loaded into pipeline. Cards {first}-{last} in New Todo."` |
-| Gauntlet batch complete | `"Gauntlet batch {N}: {adversary_count} adversaries, {raw} raw → {unique} unique → {accepted} accepted concerns."` |
-
-**How:**
-1. `~/.claude/bin/telegram-send <project> "<message>"` (foreground; needs to actually send before the pause starts).
-2. Launch the 120s pause as a **background** Bash tool task: `Bash(command="sleep 120; echo done", run_in_background=true)`. Do NOT use foreground `sleep 120` — the long-leading-sleep rule blocks it, and even if it didn't, foreground would just freeze the turn.
-3. **End the turn** after kicking off the background sleep. Do not poll, do not chain follow-up tool calls behind it.
-
-**What "end the turn" means and why:** the pause exists to give the human time to read the Telegram and Ctrl+C / reply if they want to redirect. The background sleep fires `task-notification` after 120s. Two outcomes:
-- Human replies (or interrupts) within 120s → the new user message fires before the sleep notification; you respond to them, the sleep finishes irrelevant in the background.
-- No reply within 120s → the sleep's `task-notification` wakes the next turn; treat that as "human did not redirect, continue with the protocol's next step (e.g. begin R2, run guardrails, advance pipeline)."
-
-A backgrounded sleep that you don't end the turn on is just process theater — you'd march straight into the next round and the pause would gate nothing. Background + end turn is what actually delivers the safety property.
-
-**Rules:**
-- Check `has_telegram_config`; fail open if missing.
-- 120s pause is mandatory **and must be backgrounded + turn-ending** as described above.
-- If `telegram-send` fails, log to stderr and continue — never block on notification infra.
-- These are additive to Fizzy card comments. Fizzy = board state; Telegram = human attention.
+Gate approval must correlate the human reply to the specific gate request and
+artifact under review. Uncorrelated same-chat text never approves a gate. If reply
+correlation cannot be established, keep the gate pending and seek explicit approval
+through the active conversation. `scripts/telegram_bot.py`'s same-chat poller does
+not establish that correlation. A timeout, silence, or notification failure never
+means approval. Optional notification failure does not block ungated work.
 
 ---
 
 ## Workspace Bootstrap (Phase 0 GO Only)
 
-If `.adversarial-spec/` does not exist during an approved Phase 0 GO, create:
-
-```
-.adversarial-spec/sessions/
-.adversarial-spec/checkpoints/
-.adversarial-spec/specs/
-.adversarial-spec/issues/
-.adversarial-spec/retrospectives/
-.adversarial-spec/.backup/
-```
-
-Then create `session-state.json` as part of the same Phase 0 session-sync sequence.
-Never create this workspace merely to run triage.
-
----
+During approved Phase 0 GO, create missing `.adversarial-spec/` directories:
+`sessions/`, `checkpoints/`, `specs/`, `issues/`, `retrospectives/`, `.backup/`.
+Create the pointer through Phase 0's session-sync sequence; never bootstrap for
+read-only triage.
 
 ## Alignment Prompts
 
-Offer at **checkpoint**, **phase transition**, and **startup**:
+At startup, phase transitions, and checkpoint, offer goal/phase alignment when it
+needs confirmation. A refocus updates detail `context.goal` and appends
+`goal_history: [{at, from, to, why?}]`; unchanged confirmation creates no log event.
 
-```
-Alignment Check
-Goal: [context.goal]   Phase: [current_phase]
-Still aligned? [Yes] [Refocus] [Skip]
-```
+## Decisions Log
 
-- **Yes / Skip:** do nothing. These are UX-only; don't write journey noise ("confirmed"/"skipped" are identical across runs and nobody reads them).
-- **Refocus:** the real state change. Mutate `context.goal` on the detail file and append to `goal_history: [{at, from, to, why?}]`. That trail is the artifact — not a generic journey event.
+Append to `.adversarial-spec/sessions/<id>.decisions.log` after successful
+`pipeline_complete_task`, material phase milestones, and user decisions that
+foreclose an option. Plain text, one line per decision:
 
----
-
-## Decisions Log (`sessions/<id>.decisions.log`)
-
-A plain-text append-only ledger of "what landed and why it matters," written one entry per pipeline task completion (and at major phase milestones). Replaces `git log` / `git show` for session resume — gives fresh agents context without re-reading diffs.
-
-**When to append:**
-- Immediately after a successful `pipeline_complete_task` (card moves to Review).
-- At phase transitions that carry material consequences (spec v4 → v5, accepted gauntlet concern batch, architecture spine locked).
-- When a user decision forecloses an option (e.g., "GLM deferred").
-
-**Line format (plain text, one per line):**
-```
+```text
 <ISO8601> [<card_id|phase|decision>] <what landed> — <why it matters>
 ```
 
-**Append pattern:**
-```bash
-printf '%s [%s] %s — %s\n' \
-  "$(date -u +%FT%TZ)" "<card_id|phase|decision>" "<what>" "<why>" \
-  >> .adversarial-spec/sessions/<id>.decisions.log
+Include the commit hash for completed code work. Keep entries concise; put longer
+reasoning in retrospectives. Never rewrite the log or substitute a commit message
+for the required entry. On resume, read `tail -20` for recent decisions.
+
+## Journey Log
+
+`.adversarial-spec/sessions/<id>.journey.log` is append-only JSONL, one event per
+line; it is not an array in the detail JSON. Use a JSON encoder to escape values:
+
+```json
+{"time":"ISO8601","event":"Phase transition: <old> → <new>","type":"transition"}
 ```
 
-**Phase 8 integration:** after `pipeline_complete_task(...)` returns success, write one line. Keep it scannable — ≤120 chars preferred. Commit hash goes in the "what" field; card ID in the bracket.
+Other event types include `artifact`, `create`, `maintenance`, `decision`, and
+`resume`. Preserve historical fields and avoid duplicate events on recovery.
+For existing records with `idempotency_key`, check that key before appending.
+The resume checker reads transition history; load full event bodies only for
+investigation/context recovery. For legacy embedded `journey` arrays, use
+`scripts/migrate-journey-to-log.py` after reading its invocation and backup rules.
 
-**Read pattern (resume):**
-```bash
-tail -20 .adversarial-spec/sessions/<id>.decisions.log
-```
+## Checkpoint
 
-**Rules:**
-- Plain text (NOT JSONL) — humans read it, grep scans it.
-- Append only. Never rewrite.
-- One line per decision. Multi-line reasoning goes in retrospectives.
-- Omit if the commit message already says everything.
-
----
-
-## Journey Log (`sessions/<id>.journey.log`)
-
-Journey is a **JSONL file**, not a JSON-array field inside the session detail. One event per line, appended — never rewritten.
-
-**Append pattern:**
-```bash
-printf '%s\n' "$(jq -nc --arg time "$(date -u +%FT%TZ)" \
-  '{time:$time, event:"<event>", type:"<transition|artifact|create|maintenance|decision|resume>"}')" \
-  >> .adversarial-spec/sessions/<id>.journey.log
-```
-
-**Why separate file:** the array grew to 80+ entries (~10KB) on long sessions and bloated every targeted `jq` read of the detail file. JSONL means append is O(1) and resume skips the log entirely unless asked.
-
-**Read pattern (recent events):**
-```bash
-tail -5 .adversarial-spec/sessions/<id>.journey.log | jq .
-```
-
-Read only when the user asks "what happened?" or orphan/context detection needs event history. Never load on normal resume.
-
-**Phase 4 extended schema** (`idempotency_key`, `event_id`, `release_id`) writes to the same log; dedup by `idempotency_key` still applies — check the log before appending.
-
-**Legacy sessions** (pre-migration) with `journey` inside the JSON: run `.adversarial-spec/scripts/migrate-journey-to-log.py` once to extract.
-
----
-
-## Pre-Checkpoint Checklist (REQUIRED)
-
-`/checkpoint` only handles pointer/session state — surrounding process is your responsibility.
-
-```
-Pre-Checkpoint Verification
-[ ] Deliverables on disk — debate output, execution plans, specs, gauntlet concerns (not conversation-only)
-[ ] Alignment check offered
-[ ] Orphan detection run
-[ ] TodoWrite current and phase-scoped (no stale card IDs)
-Proceed? [Y/n]
-```
-
-Fix failing checks before running `/checkpoint`.
-- Debate output → `.adversarial-spec-checkpoints/` (`debate.py critique` auto-saves; manual synthesis writes the file yourself).
-- Execution plans → `.adversarial-spec/specs/<slug>/execution-plan.md`.
-
-**Why:** checkpoint exits 0 even with missing deliverables. Context switches after checkpoint destroy conversation-only output permanently.
-
----
-
-## Context Budget Gates (CRITICAL)
-
-**Checkpoint-First Rule:** after writing a final spec version or completing a context-heavy phase, checkpoint IMMEDIATELY. Reports, MEMORY.md updates, retros — all in the next session.
-
-| Transition | Gate |
-|-----------|------|
-| debate → gauntlet | Spec draft written this session → checkpoint before the gauntlet. It generates massive tool output; fresh context is essential. |
-| gauntlet → finalize | Full gauntlet round (8+ adversaries) run this session → checkpoint before synthesizing the final spec. |
-| any → checkpoint | Final deliverable written → checkpoint is your NEXT action. Not reports, MEMORY, or failure analysis. |
-
-**Danger zone:** spec draft AND full gauntlet round both done this session → checkpoint immediately, no additional work.
-
----
-
-## TaskOutput Anti-Patterns (CRITICAL)
-
-These have caused session death:
-
-1. **Never Read the output file after a blocking `TaskOutput`.** `TaskOutput(block=true)` already returns the full result — re-reading doubles the token cost.
-2. **Never re-launch a hook-rejected command.** Switch tools or fix the command. Do NOT read hook source to diagnose.
-3. **Never retry with incrementally larger timeouts.** Know the requirement up front: Codex calls need `timeout=900000` minimum. Use background mode for any long-running model call.
-4. **After launching background tasks, probe at ~45s with `block=false`** to catch quota/crash errors before committing to a full-timeout wait.
-
----
+Persist deliverables before checkpoint. Follow the
+`checkpoint-workflow` skill (`~/.codex/skills/checkpoint-workflow/SKILL.md`)
+for checkpoint procedure and the context boundary.
 
 ## File Discipline & Orphan Detection
 
-At checkpoint/resume, scan project root for orphans.
-
-**Allowlist (never flag):** README.md, CLAUDE.md, AGENTS.md, CONTRIBUTING.md, CHANGELOG.md, CODE_OF_CONDUCT.md, SECURITY.md, GOVERNANCE.md, LICENSE(.md), pyproject.toml, package.json, Makefile.
-
-**Heuristics:** root `*.md` not in allowlist; filename contains `YYYYMMDD`; filename contains `spec`/`checkpoint`/`session`/`notes`/`issues`.
-
-**On hit, prompt:**
-```
-Found potential orphans:
-• [filename]  →  suggest: .adversarial-spec/issues/
-Move? [Y/n/skip all]
-```
-
-**Never auto-move.** Always confirm.
-
----
+At checkpoint/resume, flag unexpected root Markdown artifacts and suggest their
+`.adversarial-spec/` destination. Exclude standard project docs, manifests, and
+build/config files. Ask before moving anything; never auto-move.
 
 ## Session ID Generation
 
-Format: `adv-spec-YYYYMMDDHHMM-<slug>`.
+Format: `adv-spec-YYYYMMDDHHMM-<slug>`. Lowercase the Context name, replace
+non-alphanumeric runs with `-`, trim separators, and cap the slug at 32 characters.
 
-**Slug:** lowercase context; non-alphanumeric → `-`; collapse runs of `-`; trim; cap 32 chars.
-Example: `Fix: User Login (Auth)` → `adv-spec-202601311430-fix-user-login-auth`.
+## Atomic Writes
 
----
-
-## Atomic Writes (CRITICAL)
-
-All JSON writes: write to `<path>.tmp`, then `rename` to target (atomic on POSIX). Prevents corruption on Ctrl+C.
-
----
+All JSON writes use `<path>.tmp` then atomic rename to target. For paired state
+updates, detail always precedes pointer; see § Phase Transition Protocol.
 
 ## Reference Files (Load On-Demand)
 
-- `reference/document-types.md` — spec types (product/technical/full/debug)
+- `reference/current-models.md` — task classes, seats, invocation policy
+- `reference/altitude.md` — scope and gate obligations
+- `reference/document-types.md` — document types and debug workflow
+- `reference/context-addition-protocol.md` — critic context transports
 - `reference/advanced-features.md` — focus modes, personas, profiles
-- `reference/script-commands.md` — `debate.py` CLI reference
+- `reference/script-commands.md` — CLI reference
 - `reference/gauntlet-details.md` — adversarial gauntlet details
-- `reference/convergence-and-telegram.md` — convergence rules, `--telegram` flag
-- `reference/telegram-bridge.md` — per-project Telegram bot setup (mobile human-gated review)
+- `reference/convergence-and-telegram.md` — convergence, notification entry points
+- `reference/telegram-bridge.md` — Telegram setup and reply transport

@@ -6,8 +6,8 @@
 
 The domain language of the adversarial-spec skill — a Claude Code skill that refines
 specs through multi-model adversarial debate and drives them through a phased pipeline
-(requirements → roadmap → debate → target-architecture → gauntlet → finalize →
-execution → implementation).
+with eight phases. See `skills/adversarial-spec/SKILL.md` § Phase Router for the
+version-aware order.
 
 ## Language
 
@@ -142,8 +142,10 @@ package, while the critique engine lives in the file itself.
 ### Pipeline structure
 
 **Phase**:
-One of the 8 pipeline phases: requirements → roadmap → debate → target-architecture →
-gauntlet → finalize → execution → implementation. Reserved exclusively for the pipeline.
+One of the 8 pipeline phases. Follow `skills/adversarial-spec/SKILL.md` § Phase
+Router: pre-v6 includes target-architecture; v6 uses decomposition before debate
+and carries the Phase 4 artifact in D0. Verification is a Phase 8 subflow.
+Reserved for the pipeline.
 _Avoid_: "stage" or "step" for a pipeline phase; bare "phase" for the gauntlet's
 internal processing steps (qualify: "gauntlet-internal phase N").
 
@@ -210,12 +212,10 @@ within Phase 7/8.
 _Avoid_: "workstream" for a Context — a workstream is intra-plan, a Context is the
 work identity itself.
 
-### Projects & infrastructure (MIRRORED VOCAB — canonical copy)
+### Projects & infrastructure
 
-<!-- MIRRORED VOCAB: adversarial-spec ⟷ fizzy-pipeline-mcp. This section is
-duplicated verbatim in fizzy-pipeline-mcp/CONTEXT.md. Conflicts resolve
-definitively, never fork. Edits land HERE first (ownership ruling 2026-07-30:
-adversarial-spec owns spec-system contracts; f-p-mcp mirrors). -->
+<!-- Project vocabulary is maintained here; shared ecosystem terms follow
+Brainquarters/shared-context/GLOSSARY.md. -->
 
 **Fizzy** (`fizzy`):
 The Rails board application itself — the browser-rendered UI at localhost:3001:
@@ -229,10 +229,7 @@ enforcement arm of the adversarial-spec workflow.
 _Avoid_: "fizzy's gates" / "fizzy tools" — the gates and tools belong to
 fizzy-pipeline-mcp, not the board app.
 
-### The "spec" family (MIRRORED VOCAB — canonical copy)
-
-<!-- MIRRORED VOCAB: adversarial-spec ⟷ fizzy-pipeline-mcp; duplicated verbatim in
-fizzy-pipeline-mcp/CONTEXT.md; edits land here first. -->
+### The "spec" family
 
 **Spec** (unqualified):
 The session's normative specification — the artifact the pipeline is refining. Safe
@@ -258,7 +255,7 @@ Debate-phase iteration artifacts, pre-finalize.
 One normative unit under the spec.v1 keystone contract: strict JSON metadata header
 + exact prose body. Post-adoption vocabulary.
 
-### Work modes (MIRRORED VOCAB — canonical copy)
+### Work modes
 
 **Brainstorm**:
 The out-of-pipeline hard-think mode: free-form written argument between models —
@@ -270,7 +267,7 @@ output becomes a session's requirements input.
 _Avoid_: "debate" for a brainstorm (implies Phase-3 session machinery); "brainstorm"
 for Phase 3 (undersells its gates and rounds).
 
-### Postponement family (MIRRORED VOCAB — canonical copy)
+### Postponement family
 
 **Exemption** (operator exemption):
 An attested gate bypass: operator ruling + incident ref, recorded loudly in the gate
@@ -296,7 +293,7 @@ _Avoid_: "watchlisted" for anything with an actual obligation attached.
 Rule of thumb: exemption weakens a gate once; deferral schedules debt; residue labels
 the product; watchlist just remembers.
 
-### v6 mechanics (MIRRORED VOCAB — canonical copy)
+### v6 mechanics
 
 **Seam**:
 An interface edge between decomposed components (D0's E1…En) whose correctness must
