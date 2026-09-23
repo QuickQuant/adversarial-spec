@@ -1,12 +1,12 @@
 ---
 name: adversarial-spec
-description: Iteratively refine a product spec by debating with multiple LLMs (GPT, Gemini, Grok, etc.) until all models agree. Use when user wants to write or refine a specification document using adversarial development.
+description: Spec-first development with independent multi-LLM debate, an adversarial gauntlet, and plan-backed execution on the Fizzy pipeline. Use when user wants to write or refine a specification document using adversarial development.
 allowed-tools: Bash, Read, Write, AskUserQuestion
 ---
 
 # Adversarial Spec Development
 
-Refine specs through iterative debate with multiple LLMs until all agree.
+Refine specs through independent multi-model critique; the pipeline records when rounds converge.
 
 **Claude is a participant, not just an orchestrator** — critique, challenge, contribute alongside the external models. Say so to the user.
 
@@ -438,9 +438,8 @@ investigation/context recovery. For legacy embedded `journey` arrays, use
 
 ## Checkpoint
 
-Persist deliverables before checkpoint. Follow the
-`checkpoint-workflow` skill (`~/.codex/skills/checkpoint-workflow/SKILL.md`)
-for checkpoint procedure and the context boundary.
+Persist deliverables before checkpoint. Follow the `checkpoint-workflow` skill for
+checkpoint procedure and the context boundary.
 
 ## File Discipline & Orphan Detection
 
