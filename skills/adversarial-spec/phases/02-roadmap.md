@@ -90,7 +90,8 @@ Phase 4 (target-architecture) injects invariant-derived test cases into `tests-p
 - Content outside the marker block (the user-story tests authored in this phase) is **never touched** by Phase 4.
 - If the markers are missing, Phase 4 appends a new block at the end of the file — but on the *next* run it will use the marker boundaries for replacement.
 - Roadmap authors SHOULD leave the markers in place once they appear; deleting them forces Phase 4 to re-append.
-- The **normative source** for the marker protocol and upsert semantics is [`04-target-architecture.md` §8.3](./04-target-architecture.md). Do not redefine the contract here.
+- Duplicate, malformed, or unpaired markers stop the upsert; report the file and line rather than guessing a boundary.
+- This section is the **normative source** for the marker protocol; [Phase 4 §8.3](./04-target-architecture.md) consumes it.
 
 ---
 
