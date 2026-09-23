@@ -1,107 +1,74 @@
 # Telegram Bridge — Agent Reference
 
-Projects can use a Telegram bot as a mobile-accessible interface for human-gated pipeline transitions and long-running reviews. Any agent operating in a project with a Telegram bridge configured can use it to communicate with Jason when he's away from the terminal.
+Telegram is an attention and feedback channel. It is never the durable pipeline
+state or evidence that a human gate passed.
 
-## Per-Project Configuration
-
-Each project that uses the bridge defines its own:
-
-- **Bot handle** (e.g., `@masterfizzybot`)
-- **Token env var** (e.g., `FIZZYBOT_TELEGRAM_KEY`) — expected to be present in the agent's shell environment already (inherited by the session). Reference it directly as `${<BOT_TOKEN_ENV>}`; **do NOT read it from `/etc/environment` or any other file**, do not echo/print it, and never run bare `export`/`env`/`declare -x` (an empty `export $VAR` dumps the whole environment). If the var is unset, ask the operator rather than recovering it from disk.
-- **Chat ID** — Jason's Telegram chat ID (same across projects, but projects should reference the value explicitly)
-- **Project emoji framing** — e.g., `🍾🟦` for fizzy-pipeline-mcp. Every message starts and ends with the project emoji so Jason can visually distinguish which project is talking.
-
-These values live in the project's `CLAUDE.md` (or a dedicated `onboarding/telegram-config.md`) so the agent can read them when initiating a message.
-
-Throughout this reference, placeholders like `<BOT_TOKEN_ENV>`, `<CHAT_ID>`, and `<PROJECT_EMOJI>` stand in for those per-project values.
-
-## Core Rules
-
-1. **Never block the conversation polling for replies.** Use `run_in_background=true` on Bash calls that long-poll. Tell the user "listening in background" and keep working or hand control back.
-2. **Use `reply_to_message_id` to correlate replies.** When Jason replies to a specific message, the Telegram API returns `reply_to_message.message_id`. Match that to the card/gate you sent the outbound for.
-3. **Send full content, not summaries.** When presenting a plan, roadmap, or spec for review, send the complete content across multiple messages if needed. No shortcuts, no "you saw this earlier" — Jason may be reading on mobile with no prior context.
-4. **Always frame with the project emoji.** Start and end every message with `<PROJECT_EMOJI>`. Non-negotiable — it's how Jason visually routes attention.
-5. **Use Markdown parse_mode for structured content.** Escape underscores (`\\_`) and other Markdown specials in identifiers.
-
-## Sending a Message
+## Canonical send route
 
 ```bash
-# Token is read directly from the inherited env var — never sourced from a file.
-curl -s -X POST "https://api.telegram.org/bot${<BOT_TOKEN_ENV>}/sendMessage" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "chat_id": <CHAT_ID>,
-    "parse_mode": "Markdown",
-    "text": "<PROJECT_EMOJI> your message here <PROJECT_EMOJI>"
-  }'
+~/.claude/bin/telegram-send <project> "<message>"
+
+# Multiline content may be supplied on stdin.
+~/.claude/bin/telegram-send <project> -
 ```
 
-For replies to a specific prior message (to maintain thread correlation):
-```json
-{"chat_id": <CHAT_ID>, "reply_to_message_id": 42, "text": "<PROJECT_EMOJI> ... <PROJECT_EMOJI>"}
-```
+The helper resolves the project's chat ID, token environment name, and optional
+emoji through the project registry. It prepends the configured emoji and sends
+Markdown, retrying as plain text if entity parsing fails. There is no required
+emoji suffix. Do not replace the helper with raw Telegram API calls.
 
-## Listening for a Reply (Background Pattern)
+Never print, echo, log, or expose a bot token. Let the helper resolve
+credentials; if it reports missing configuration, surface that error without
+dumping environment variables or secret files.
 
-```bash
-# Token is read directly from the inherited env var — never sourced from a file.
-LAST_UPDATE=$(curl -s "https://api.telegram.org/bot${<BOT_TOKEN_ENV>}/getUpdates?offset=-1" | \
-  python3 -c "import sys,json; d=json.load(sys.stdin); u=d.get('result',[]); print(u[-1]['update_id'] if u else 0)") && \
-OFFSET=$((LAST_UPDATE + 1)) && \
-while true; do
-  RESULT=$(curl -s "https://api.telegram.org/bot${<BOT_TOKEN_ENV>}/getUpdates?offset=${OFFSET}&timeout=30") && \
-  TEXT=$(echo "$RESULT" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-updates = data.get('result', [])
-if updates:
-    msg = updates[-1].get('message', {})
-    text = msg.get('text', '')
-    if text:
-        print(text)
-        sys.exit(0)
-sys.exit(1)
-" 2>/dev/null) && echo "$TEXT" && break
-done
-```
+For pipeline transition and milestone behavior, see `SKILL.md` § **Phase
+Transition Protocol**. Board state and the owning human-gate tool remain
+authoritative even after a notification is delivered.
 
-**Always run this with `run_in_background=true`.** When the reply arrives, the background task completes and a `task-notification` system message fires. Read the output file then to get the reply.
+## Reply and approval boundary
 
-## Extracting reply_to_message_id
+The implemented direct poller in `scripts/telegram_bot.py` snapshots an update
+ID, then accepts the first later text message from the configured chat. It
+filters by chat ID and update offset only. It does not inspect
+`reply_to_message_id`, a gate identifier, or a card identifier, and it polls
+synchronously. `debate.py --telegram` uses this only for optional debate
+feedback; see `reference/convergence-and-telegram.md`.
 
-```python
-import sys, json
-data = json.load(sys.stdin)
-updates = data.get('result', [])
-if updates:
-    msg = updates[-1].get('message', {})
-    reply = msg.get('reply_to_message', {})
-    print(f"text: {msg.get('text','')}")
-    print(f"reply_to_message_id: {reply.get('message_id','none')}")
-```
+An uncorrelated same-chat message **never approves a gate**. If the owning gate
+cannot correlate the response to the exact pending decision, keep the gate
+pending and request confirmation through a correlated pipeline or terminal
+path. Do not infer approval from timing or message content alone.
 
-Use this to correlate Jason's reply back to the specific gate or question you sent.
+Do not create a raw background polling loop. Use the owning pipeline protocol
+for pauses and wakeups; allow the direct debate CLI to own its bounded
+synchronous feedback wait.
 
-## When to Use Telegram
+## When to use
 
-- **Human-gated pipeline transitions** — roadmap confirmation, final plan approval
-- **Long-running review requests** — when Jason may step away and need to approve from mobile
-- **Dogfooding** — when explicitly testing the Telegram flow
-- **Status updates during long background tasks** — only if Jason has asked for them
+- Human-gated transitions when the owning protocol requests a notification
+- Long-running review requests the user asked to receive on mobile
+- Explicit Telegram-flow testing
+- Requested status updates during long-running work
 
-## When NOT to Use Telegram
+Include enough context to identify the project, card/gate, decision, evidence,
+and required response without relying on earlier terminal conversation.
 
-- For routine conversation during an active terminal session — stay in the terminal
-- For anything Jason hasn't asked you to move there
-- For debugging output or verbose logs — keep those local
-- As a substitute for proper logging or error handling
+## When not to use
+
+- Routine terminal conversation
+- Unrequested notifications
+- Debug output, verbose logs, or secrets
+- A substitute for Fizzy state, evidence, or an approval receipt
 
 ## Troubleshooting
 
-- **`getUpdates` returns 0:** A webhook may be set (consumes updates). Check with `getWebhookInfo`. If the project has a dedicated systemd listener owning webhook consumption, use that listener's log/output instead of polling `getUpdates` directly.
-- **Messages not arriving:** Verify `getMe` works to confirm token is valid.
-- **Reply not detected:** Ensure you're using long polling with the correct `offset`. Use `offset=-1` on first fetch to skip old messages, then increment.
-
-## Related Specs
-
-- Human-Gated Pipeline Transitions — the full spec that turns this ad-hoc bridge into a proper webhook-driven system with assign/pin side effects. Lives in the project that owns the bridge implementation (currently `fizzy-pipeline-mcp/.adversarial-spec/specs/human-gated-pipeline-transitions/`).
+- **No project configuration:** verify the project registry entry through its
+  owner; do not bypass it with a hard-coded chat or token.
+- **Missing token:** ask the operator to restore the configured credential; do
+  not inspect or print unrelated environment state.
+- **Markdown send failure:** the helper retries plain text automatically. Report
+  its final error if both attempts fail.
+- **No direct debate reply:** the poll may have timed out, received no later text
+  from the configured chat, or conflicted with a webhook/listener that owns
+  updates. Keep any gate pending and use the owning listener or terminal path;
+  do not start a competing raw poller.

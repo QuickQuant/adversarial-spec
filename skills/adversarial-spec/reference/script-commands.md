@@ -1,124 +1,152 @@
 ## Script Reference
 
+Model and seat selection belongs to `reference/current-models.md`. The two
+entrypoints below have different parsers; do not transfer flags between them.
+Set `$CARD_ID`, `$MODEL_LIST`, and `$SESSION_ID` before using templates that
+reference them.
+
+### Primary entrypoint: `debate.py`
+
 ```bash
-# Full path to debate.py (required - scripts are in a subdirectory)
-DEBATE="python3 ~/.claude/skills/adversarial-spec/scripts/debate.py"
+DEBATE="$HOME/.claude/skills/adversarial-spec/scripts/debate.py"
 
-# Core commands
-$DEBATE critique --models MODEL_LIST --doc-type TYPE [OPTIONS] < spec.md
-$DEBATE critique --resume SESSION_ID
-$DEBATE diff --previous OLD.md --current NEW.md
-$DEBATE export-tasks --models MODEL --doc-type TYPE [--json] < spec.md
+# Tracked technical critique.
+python3 "$DEBATE" critique --pipeline-card "$CARD_ID" --models "$MODEL_LIST" \
+  --doc-type spec --depth technical < spec.md
 
-# Info commands
-$DEBATE providers      # List supported providers and API key status
-$DEBATE focus-areas    # List available focus areas
-$DEBATE personas       # List available personas
-$DEBATE profiles       # List saved profiles
-$DEBATE sessions       # List saved sessions
+# Resume a saved debate; resume supplies the document, so no stdin is needed.
+python3 "$DEBATE" critique --pipeline-card "$CARD_ID" --resume "$SESSION_ID"
 
-# Profile management
-$DEBATE save-profile NAME --models ... [--focus ...] [--persona ...]
+# Tracked gauntlet runs still read the spec from stdin.
+python3 "$DEBATE" gauntlet --pipeline-card "$CARD_ID" \
+  --gauntlet-adversaries all < spec.md
+python3 "$DEBATE" gauntlet --pipeline-card "$CARD_ID" \
+  --gauntlet-adversaries NAME_A,NAME_B --gauntlet-resume < spec.md
 
-# Telegram
-$DEBATE send-final --models MODEL_LIST --doc-type TYPE --rounds N < spec.md
-
-# Gauntlet (adversarial attack on specs — 7-phase pipeline)
-# IMPORTANT: --gauntlet-adversaries expects NAMES, not a count!
-$DEBATE gauntlet --gauntlet-adversaries all < spec.md                    # All adversaries
-$DEBATE gauntlet --gauntlet-adversaries paranoid_security,burned_oncall  # Specific ones
-$DEBATE gauntlet --gauntlet-adversaries all --gauntlet-resume            # Resume from checkpoint
-$DEBATE gauntlet --gauntlet-adversaries all \
-  --gauntlet-attack-models "codex/gpt-5.6-luna,gemini-cli/gemini-3.6-flash-high"  # Multi-model attacks
-$DEBATE gauntlet --show-manifest                                         # Show latest run manifest
-$DEBATE gauntlet --show-manifest abc1234                                 # Show specific run manifest
-$DEBATE gauntlet-adversaries  # List available adversary names
-$DEBATE adversary-stats       # View adversary performance
-$DEBATE medal-leaderboard     # View medal rankings
-
-# Standalone gauntlet CLI (different flag names — see reference/gauntlet-details.md)
-GAUNTLET="python3 ~/.claude/skills/adversarial-spec/scripts/gauntlet/cli.py"
-$GAUNTLET --adversaries all < spec.md
-$GAUNTLET --spec-file spec.md --adversaries all --resume --unattended
-$GAUNTLET --list-runs
-$GAUNTLET --show-run FILENAME
+# Manifest inspection does not consume a spec.
+python3 "$DEBATE" gauntlet --pipeline-card "$CARD_ID" --show-manifest
+python3 "$DEBATE" gauntlet --pipeline-card "$CARD_ID" --show-manifest HASH
 ```
 
-**Critique options:**
-- `--models, -m` - Comma-separated model list (auto-detects from available API keys if not specified)
-- `--doc-type, -d` - Document type: prd or tech (default: tech)
-- `--round, -r` - Current round number (default: 1)
-- `--focus, -f` - Focus area for critique
-- `--persona` - Professional persona for critique
-- `--context, -c` - Context file (can be used multiple times)
-- `--profile` - Load settings from saved profile
-- `--preserve-intent` - Require explicit justification for any removal
-- `--session, -s` - Session ID for persistence and checkpointing
-- `--resume` - Resume a previous session by ID
-- `--press, -p` - Anti-laziness check for early agreement
-- `--telegram, -t` - Enable Telegram notifications
-- `--poll-timeout` - Telegram reply timeout in seconds (default: 60)
-- `--json, -j` - Output as JSON
-- `--codex-search` - Enable web search for Codex CLI models (allows researching current info)
-- `--timeout` - Timeout in seconds for model API/CLI calls (default: 600)
-- `--show-cost` - Show cost summary after critique
+`critique` and `gauntlet` require `--pipeline-card`. Use
+`IntentionalOverride` only with a meaningful `--override-reason` of at least 50
+characters. The pipeline path remains the normal path.
 
-**Gauntlet options (via debate.py):**
-- `--gauntlet, -g` - Enable gauntlet mode (can combine with critique)
-- `--gauntlet-adversaries` - **NAMES only** (comma-separated or `all`)
-- `--gauntlet-attack-models` - Comma-separated models for Phase 1 attacks
-- `--gauntlet-model` - Legacy single attack model (overridden by --gauntlet-attack-models)
-- `--gauntlet-frontier` - Evaluation model
-- `--codex-reasoning` - Attack reasoning effort (default: low). Maps to `attack_codex_reasoning` in the pipeline
-- `--eval-codex-reasoning` - Eval/adjudication reasoning (default: xhigh)
-- `--gauntlet-resume` - Resume from checkpoint
-- `--no-rebuttals` - Skip Phase 5 rebuttals
-- `--final-boss` - Auto-run Phase 7
-- `--show-manifest [HASH]` - Display run manifest
+#### Actions
 
-## External Documentation Discovery (Context7)
+| Action | Purpose / required operands |
+|---|---|
+| `critique` | Run a critique round or `--resume SESSION_ID`. Reads stdin unless resuming. |
+| `gauntlet` | Run the integrated gauntlet; reads stdin except with `--show-manifest`. |
+| `gauntlet-adversaries` | List registered adversaries. |
+| `adversary-stats` | Show adversary performance. |
+| `medal-leaderboard` | Show medal rankings. |
+| `adversary-versions` | Show the adversary version manifest. |
+| `providers` | Show provider availability. |
+| `send-final` | Send the stdin document; use `--models`, `--doc-type`, and `--rounds`. |
+| `diff` | Requires `--previous OLD.md --current NEW.md`. |
+| `focus-areas` | List focus values. |
+| `personas` | List personas. |
+| `profiles` | List saved profiles. |
+| `save-profile NAME` | Save the supplied model/document/focus/persona/context/intent settings. |
+| `sessions` | List saved debate sessions. |
+| `bedrock SUBCOMMAND [ARG]` | `status`, `enable`, `disable`, `add-model`, `remove-model`, `alias`, or `list-models`; `enable` accepts `--region`. |
 
-Before the gauntlet runs, the **Discovery Agent** extracts external services from your spec and fetches their official documentation via Context7. This prevents models from making assumptions based on training data patterns.
+Utility-only flags are `--previous` and `--current` for `diff`, plus `--region`
+and the optional second positional argument for `bedrock`.
 
-### Why Discovery Matters
+#### Critique and shared flags
 
-AI models share training data and thus share false assumptions. The classic failure:
+| Flag | Choices / default | Meaning |
+|---|---|---|
+| `--models, -m` | comma-separated; auto-detect when omitted | Critic models. |
+| `--doc-type, -d` | `spec`, `debug`, `architecture`; `spec` | Document contract. |
+| `--depth` | `product`, `technical`, `full`; `technical` | Used only with `--doc-type spec`. |
+| `--round, -r` | integer; `1` | Current critique round. |
+| `--rounds` | integer; `1` | Completed rounds reported by `send-final`. |
+| `--cwd` | path; unset | Working directory for CLI subprocesses. |
+| `--focus, -f` | text; unset | Critique focus. |
+| `--persona` | text; unset | Built-in or custom persona. |
+| `--context, -c` | repeatable path; none | Include each file in full. |
+| `--preserve-intent` | off | Require justification for removals. |
+| `--press, -p` | off | Require a fuller early-agreement check. |
+| `--session, -s` | ID; unset | Persist a named debate. |
+| `--resume` | ID; unset | Resume persisted state. |
+| `--profile` | name; unset | Fill unset settings from a saved profile. |
+| `--json, -j` | off | Emit structured output. |
+| `--show-cost` | off | Print the text cost summary. |
+| `--telegram, -t` | off | Send the direct debate-round notification and poll for feedback. |
+| `--poll-timeout` | seconds; `60` | Direct Telegram poll limit. |
+| `--codex-reasoning`, `--attack-codex-reasoning` | `minimal|low|medium|high|xhigh`; `xhigh` | Reasoning effort for primary/Codex attack calls. |
+| `--codex-search` | off | Permit search for supported CLI calls. |
+| `--timeout` | seconds; `1200` | Per model-call timeout. |
+| `--skip-preflight` | off | Skip the pre-dispatch model ping. |
 
-> All models assumed "crypto trading = on-chain transactions" when Polymarket's CLOB is actually off-chain with SDK-handled signing. 11 concerns were raised about nonces that don't exist.
+Pipeline-gate flags are `--pipeline-card`, `--override-reason`,
+`--accept-tests-stale`, `--accept-missing-spine`, and
+`--spine-override-reason`. Use the acceptance flags only for their named gate;
+they are logged and do not bypass other checks.
 
-### How to Use Discovery
+#### Integrated gauntlet flags
 
-When you have Context7 MCP tools available, run discovery before the gauntlet:
+| Flag | Choices / default | Meaning |
+|---|---|---|
+| `--gauntlet, -g` | off | Parsed but currently unused; dispatch through the positional `gauntlet` action. |
+| `--gauntlet-adversaries`, `--adversaries` | names or `all`; `all` | Select adversaries by name, never by count. |
+| `--gauntlet-model`, `--adversary-model` | model; auto | Legacy single attack model. |
+| `--gauntlet-attack-models`, `--attack-models` | comma-separated; unset | Attack models; overrides the single-model flag. |
+| `--gauntlet-frontier`, `--eval-model` | comma-separated; auto | Evaluation models. |
+| `--no-rebuttals` | off | Skip rebuttals. |
+| `--final-boss` | off | Run the final review stage. |
+| `--eval-codex-reasoning` | `minimal|low|medium|high|xhigh`; `xhigh` | Evaluation/adjudication effort. |
+| `--gauntlet-resume` | off | Resume valid gauntlet checkpoints. |
+| `--unattended` | off | Disable stdin prompts and enable automatic checkpoints. |
+| `--show-manifest [HASH]` | unset | Show the newest or matching run manifest and exit. |
 
-1. **Extract services from spec:**
-   ```python
-   from pre_gauntlet import DiscoveryAgent, run_discovery
+### Lower-level entrypoint: standalone gauntlet CLI
 
-   result = run_discovery(spec_text, min_confidence=0.6, max_services=5)
-   print(f"Discovered: {[s.name for s in result.services]}")
-   ```
+This entrypoint reads stdin unless `--spec-file` is supplied.
 
-2. **Fetch documentation via Context7:**
-   - Use `mcp__context7__resolve-library-id` to resolve library names
-   - Use `mcp__context7__query-docs` to fetch relevant documentation
-   - Results are cached locally (24h TTL, `~/.cache/adversarial-spec/knowledge/`)
+```bash
+GAUNTLET="$HOME/.claude/skills/adversarial-spec/scripts/gauntlet/cli.py"
 
-3. **Inject priming context into gauntlet:**
-   ```python
-   from pre_gauntlet import run_pre_gauntlet
+python3 "$GAUNTLET" --adversaries all < spec.md
+python3 "$GAUNTLET" --spec-file spec.md --adversaries all --resume --unattended
+python3 "$GAUNTLET" --list-adversaries
+python3 "$GAUNTLET" --list-runs
+python3 "$GAUNTLET" --show-run FILENAME
+```
 
-   pre_result = run_pre_gauntlet(
-       spec_text=spec,
-       doc_type="tech",
-       discovery_result=discovery_result,  # Includes priming context
-   )
-   ```
+| Flag | Choices / default | Meaning |
+|---|---|---|
+| `--adversaries` | names or `all`; `all` | Attack roster. |
+| `--adversary-model` | model; auto | Legacy single attack model. |
+| `--attack-models` | comma-separated; unset | Attack models; overrides the single-model flag. |
+| `--eval-model` | model; auto | Evaluation model. |
+| `--no-rebuttals` | off | Skip rebuttals. |
+| `--attack-codex-reasoning` | `minimal|low|medium|high|xhigh`; `low` | Attack effort. |
+| `--eval-codex-reasoning` | same choices; `xhigh` | Evaluation/adjudication effort. |
+| `--timeout` | seconds; `1800` | Per model-call timeout. |
+| `--json` | off | Emit JSON. |
+| `--list-adversaries` | off | List adversaries and exit. |
+| `--stats` | off | Show performance statistics and exit. |
+| `--list-runs [N]` | `10` when flag has no value | List recent runs and exit. |
+| `--show-run FILENAME` | unset | Show a persisted run and exit. |
+| `--pre-gauntlet` | off | Run compatibility checks before attacks. |
+| `--doc-type` | `prd`, `tech`, `debug`; `tech` | Standalone compatibility type. |
+| `--spec-file PATH` | unset | Read the spec from a file instead of stdin. |
+| `--report-path PATH` | `.adversarial-spec/pre_gauntlet_report.json` | Save the pre-gauntlet report. |
+| `--unattended` | off | Disable prompts and enable automatic checkpoints. |
+| `--resume` | off | Resume a valid checkpoint; no-op when none exists. |
+| `--eval-tier-strategy` | `flat`, `power_law_length`; `power_law_length` | Evaluation batching strategy. |
+| `--eval-tier-min-concerns` | integer; `30` | Minimum count before power-law tiering. |
+| `--eval-flat-batch-size` | integer; `15` | Flat fallback batch size. |
 
-### Integration with Adversaries
+### Optional documentation discovery
 
-The `assumption_auditor` adversary specifically challenges domain assumptions and demands documentation citations. When discovery has fetched docs, claims can be verified against actual documentation:
-
-- **VERIFIED**: Claim matches documentation
-- **REFUTED**: Documentation contradicts claim
-- **UNVERIFIABLE**: No documentation found
-- **PENDING**: Documentation found, needs LLM analysis
+External-service discovery is not automatic in either command above. The
+discovery module can extract service names, but the repository's former
+`KnowledgeService` implementation has been removed. Documentation fetching
+skips unless a caller injects a compatible service, and the standalone CLI does
+not inject one. Treat Context7 or another documentation source as an optional
+preparation step, then pass verified output through the normal context path.
