@@ -1,188 +1,71 @@
-> **FIRST ACTION upon entering this phase:** Create this TodoWrite immediately.
-> Do NOT read further until the TodoWrite is active.
-> Every `[GATE]` item must be marked completed before proceeding past it.
+# Finalize (Phase 6)
 
-```
+Enter after the pipeline has recorded successful `pipeline_finalize_debate_round`, with the completed round's convergence and altitude floor satisfied, and required gauntlet/reconciliation gates complete. An agreement marker alone is not the gate. If debate remains open, use [Phase 3](03-debate.md) to close it in the legal lane with explicit `board_id`; never patch convergence state.
+
+Use a local milestone worklist:
+
+```text
 TodoWrite([
-  {content: "Run final CONS guardrail [GATE]", status: "in_progress", activeForm: "Running final CONS guardrail"},
-  {content: "Run final SCOPE guardrail [GATE]", status: "pending", activeForm: "Running final SCOPE guardrail"},
-  {content: "Run final TRACE guardrail [GATE]", status: "pending", activeForm: "Running final TRACE guardrail"},
-  {content: "Run final CANON guardrail [GATE]", status: "pending", activeForm: "Running final CANON guardrail"},
-  {content: "Run final TCOV guardrail [GATE]", status: "pending", activeForm: "Running final TCOV guardrail"},
-  {content: "Quality verification (completeness, consistency, clarity, actionability)", status: "pending", activeForm: "Verifying spec quality"},
-  {content: "Write final spec to disk", status: "pending", activeForm: "Writing final spec to disk"},
-  {content: "Present to user for review [GATE]", status: "pending", activeForm: "Presenting spec for user review"},
-  {content: "Update session state with spec_path and manifest_path", status: "pending", activeForm: "Updating session state"},
+  {content: "Verify quality and promote test intent", status: "in_progress", activeForm: "Preparing final artifacts"},
+  {content: "Run final CONS/SCOPE/TRACE/CANON/TCOV [GATE]", status: "pending", activeForm: "Checking final artifacts"},
+  {content: "Write final document and artifact paths", status: "pending", activeForm: "Saving final artifacts"},
+  {content: "Obtain user review and acceptance [GATE]", status: "pending", activeForm: "Awaiting user review"},
+  {content: "Record approval and execution handoff", status: "pending", activeForm: "Recording finalization"},
 ])
 ```
 
-Mark each step `completed` as you finish it. Mark the current step `in_progress`.
+## Quality and Test Promotion
 
----
+Require substantive sections, consistent terminology, unambiguous claims and actionable instructions. Use [reference/document-types.md](../reference/document-types.md) for document structure.
 
-### Step 6: Finalize and Output Document
+| Document/depth | Check |
+|---|---|
+| Product spec | Executive summary, personas with goals/pain points, user stories with benefits, measurable success targets, explicit in/out scope |
+| Technical/full spec | Components/interactions; endpoint request/response/error contracts; field types/constraints/indexes/relations; security boundaries; measurable performance targets; Getting Started; story and semantic test coverage |
+| Debug investigation | Evidence before hypotheses; simple explanations ruled out; proven root-cause mechanism; proportional fix; concrete verification and prevention steps |
 
-When ALL opponent models AND you have said `[AGREE]` (and gauntlet is complete or skipped):
+When `tests_pseudo_path` exists:
 
-**Before outputting, perform a final quality check:**
+1. Read the refined `tests-pseudo.md` and validate schema references against actual source/type definitions.
+2. Write `tests-spec.md` in the active spec directory with concrete field names, validated references and complete error cases.
+3. Require every user story to map to at least one test and every test to a story; resolve uncovered stories and orphan tests.
+4. Require falsifying oracles for formulas, parameter causality, payload meanings, UI/display claims, state changes and negative/counterfactual paths, or an explicit approved deferral. Field-presence, HTTP 200, non-null and range-only checks remain supplemental smoke coverage.
+5. Retain `tests-pseudo.md` as the audit trail and set `tests_spec_path` in active detail. Include the promoted tests in the final guardrail bundle.
 
-**Final Guardrail Pass (REQUIRED):** Run all five checkpoint guardrails one last time:
-- **CONS:** Cross-reference consistency — every numeric claim is arithmetically consistent, every "deferred" item does not also appear as in-scope, section numbering has no duplicates
-- **SCOPE:** Scope integrity — verify the final spec and session work haven't drifted beyond the approved requirements or subject-project boundary, especially after gauntlet fix incorporation which can introduce scope additions disguised as bug fixes or "pipeline recovery"
-- **TRACE:** Requirements coverage — verify no user story was orphaned during revisions; this is the last chance to catch dropped requirements before execution planning
-- **CANON:** Canonical contract integrity — named types/enums, formulas, parameter causality, payload meanings, UI/display claims, and active-vs-legacy classifications match the architecture/code contract index
-- **TCOV:** Test adequacy — tests-pseudo/tests-spec would actually fail for contract, causality, formula, UI/display, state, BVA, and negative-path violations; smoke-only checks do not count as semantic coverage
+## Final Guardrail Delta
 
-Fix any CONS findings. Present SCOPE additions for user approval. Restore TRACE-flagged coverage or explicitly descope with user approval. Apply CANON contract fixes or explicitly document a migration from the old contract. Apply TCOV fixes by strengthening tests or explicitly deferring uncovered semantic claims with user approval. Only proceed after guardrails pass or user overrides.
+Run **CONS, SCOPE, TRACE, CANON, TCOV** with `action="finalize"`. See [03-debate.md — Checkpoint Guardrails](03-debate.md#checkpoint-guardrails-after-each-round-incorporation) for the shared five-call payload, independent dispatch, retry, result and remediation mechanics. Prompts have one editable source: [adversaries.py](../scripts/adversaries.py); seats come from [current-models.md](../reference/current-models.md).
 
-**Final SCOPE boundary gate:** Include the same SESSION BOUNDARY CONTEXT required by Phase 3: subject project/repository and allowed write roots, authoritative session/card, external dependencies, linked sibling sessions/cards, and out-of-boundary work performed or proposed since the prior round. `SCOPE INPUT GAP` is not a clean or skippable SCOPE result at finalize. It blocks finalization until the context is supplied, the external work is moved to a linked owner, or the operator writes an explicit override with a process-failure note.
+Finalization adds these blocking conditions:
 
-**Finalize is a hard gate for CONS (2026-07-10 amendment, decision q-20260709-two-matrix-ownership option a):** run this pass with `action="finalize"` (`guardrail_orchestration.py`). ANY unresolved CONS finding — including warning severity — BLOCKS finalize; there is no next round left to fix it in, so "warn and continue" here is how the exit_preview_records ownership contradiction escaped into a finalized spec (v4, 2026-07). Mid-debate rounds keep warn-and-fix-next-round; only this last checkpoint refuses. A user override requires a written process-failure note, same standard as a pipeline-fence override. When ownership matrices exist for the session (`ownership-baseline.md` / `ownership-live.md` — see `docs/proposals/ownership-matrices-cons.md`), include their A/B diff in the CONS content bundle; an unresolved ownership-diff row counts as a CONS finding.
+- **CONS:** Any unresolved finding, including warning severity, blocks finalize (`GuardrailAggregate.outcome` in `guardrail_orchestration.py`). Include ownership-baseline/live A/B differences when those matrices exist; unresolved ownership differences count. Fix and rerun. An explicit operator override requires a written process-failure note; never silently warn and continue.
+- **SCOPE boundary bundle:** Supply approved requirements, subject project/repository, allowed write roots, authoritative session/card, external dependencies, linked sibling sessions/cards, and out-of-boundary work performed or proposed since the prior round. `SCOPE INPUT GAP` blocks until evidence is supplied, external work is transferred to its linked owner, or an explicit operator override with a process-failure note is recorded.
+- **Test scope and adequacy:** Tests cannot introduce behavior outside approved requirements. Run TCOV on the final tests; weak or missing oracles require correction or explicit user-approved deferral of the uncovered claim. Include every affected user-facing parameter, metric, display label, state and formula.
 
-**TEST guardrails (when `tests_pseudo_path` or `tests_spec_path` exists):** Verify test cases don't exceed requirement boundaries. Tests for behaviors not in any user story or requirement are scope drift — flag via SCOPE. Then run TCOV against the tests: every user-facing parameter, emitted metric, UI label/tooltip, state transition, and formula needs at least one falsifying oracle or an explicit deferral. Field existence, HTTP 200, non-null, and range checks are smoke tests only.
+Fix CANON drift or document an approved migration; restore TRACE coverage or obtain explicit descoping approval; present SCOPE additions for approval/removal. A failed reviewer call is never a pass. CONS failure stops; SCOPE/TRACE unavailability needs explicit user approval; CANON is blocking before execution when owner excerpts exist; TCOV is blocking when test artifacts exist. Retry or switch to an independent current seat as the shared contract permits. Re-run affected checks after later edits.
 
-**[GATE] TodoWrite: Mark all final guardrail items (CONS, SCOPE, TRACE, CANON, TCOV) completed before proceeding to quality verification.**
+## Final Artifacts
 
-| Guardrail | Failure Mode | Action |
-|-----------|-------------|--------|
-| CONS model call fails | Hard stop — consistency check is mandatory, retry or switch models |
-| SCOPE or TRACE model call fails | Soft stop — warn and require explicit user approval to proceed without |
-| CANON model call fails | Soft stop on first draft, hard stop before execution when architecture/code/UI excerpts exist — retry, switch models, or require explicit user override |
-| TCOV model call fails | Hard stop when tests-pseudo/tests-spec exists — retry or switch models; no silent pass for test adequacy |
+Write the complete document to the active spec directory using the appropriate filename: `spec-output.md` or `debug-output.md`. Present its actual path, document type, rounds/cycles, participating reviewers and key refinements. Do not announce finalization success while guardrails remain unresolved.
 
-Then verify:
+Record `spec_path`, `tests_spec_path` when produced, `manifest_path` when a manifest exists, and `gauntlet_concerns_path` when gauntlet ran. Preserve architecture and reviewed-spec evidence links. Keep `current_phase: finalize` with the pending user-review step until accepted; record the finalized-artifact event.
 
-1. **Completeness**: Verify every section from the document structure is present and substantive
-2. **Consistency**: Ensure terminology, formatting, and style are uniform throughout
-3. **Clarity**: Remove any ambiguous language that could be misinterpreted
-4. **Actionability**: Confirm stakeholders can act on this document without asking follow-up questions
+See SKILL.md § [Journey Log](../SKILL.md).
 
-**For Specs (product depth), verify:**
-- Executive summary captures the essence in 2-3 paragraphs
-- User personas have names, roles, goals, and pain points
-- Every user story follows "As a [persona], I want [action] so that [benefit]"
-- Success metrics have specific numeric targets and measurement methods
-- Scope explicitly lists what is OUT as well as what is IN
+See SKILL.md § [Decisions Log](../SKILL.md).
 
-**For Specs (technical/full depth), verify:**
-- Architecture diagram or description shows all components and their interactions
-- Every API endpoint has method, path, request schema, response schema, and error codes
-- Data models include field types, constraints, indexes, and relationships
-- Security section addresses authentication, authorization, encryption, and input validation
-- Performance targets include specific latency, throughput, and availability numbers
-- **Getting Started** section exists with clear bootstrap workflow
-- Test cases exist for all user stories with clear success conditions (if `tests-pseudo.md` was generated)
-- Semantic contracts have falsifying tests: parameter causality, formulas, payload meanings, UI/display labels, active-vs-legacy classifications, and negative/counterfactual paths are covered or explicitly deferred
+## User Review
 
-**For Debug Investigations, verify:**
-- Evidence gathered before hypotheses formed (no guessing without data)
-- Simple explanations ruled out before complex ones
-- Root cause identified with clear evidence chain
-- Proposed fix is proportional to the problem (not over-engineered)
-- Verification plan exists with specific steps to confirm the fix
-- Prevention section identifies tests to add and documentation updates
+Present the actual final artifact path and document type with three choices:
 
-**Promote tests-pseudo → tests-spec (when `tests_pseudo_path` exists):**
+1. **Accept as-is.** Record acceptance; offer Phase 7 execution planning.
+2. **Request changes.** Apply changes, show affected sections, update artifacts and rerun affected checks before presenting again.
+3. **Another review cycle.** Use the current document and Phase 3's tracked rounds; select seats through current-models, track cycle count separately from rounds, then return through final checks and user review.
 
-Before writing the final spec, promote the test pseudocode to formalized acceptance tests:
+If materializable middleware candidates exist, explain that the optional middleware-creator pass follows Phase 7's validated, approved and loaded source task cards. Do not create implementation cards during finalization.
 
-1. Read `tests-pseudo.md` (now refined by debate + gauntlet)
-2. Validate schema refs against actual codebase schemas (read schema files, check field names exist)
-3. Write `tests-spec.md` to the same spec directory — concrete field names, validated schema refs, complete error cases
-4. Coverage completeness check: every user story in the spec maps to ≥1 test in `tests-spec.md`, every test maps to a user story. Flag orphan tests (tests without stories) and uncovered stories (stories without tests).
-5. Semantic oracle check: every canonical formula, parameter-causality claim, payload meaning, UI/display claim, state transition, and negative/counterfactual path has a test that would fail if the implementation used the wrong causality or displayed the wrong meaning. Mark field-presence/HTTP 200/non-null/range-only tests as supplemental smoke tests, not semantic coverage.
-6. `tests-pseudo.md` stays as-is (audit trail — do NOT delete)
-7. Set `tests_spec_path` in session detail file
+Only after acceptance and the user's direction to proceed, follow the active card's legal transition. When advancement is due, call `pipeline_advance(session_id=SESSION_ID, card_id=CARD_ID, agent=AGENT, board_id=BOARD_ID)`. A gate rejection stays blocked; never use `pipeline_patch_state` to bypass it.
 
-**Output the final document:**
+See SKILL.md § [Fizzy Card Comment Convention](../SKILL.md).
 
-1. Print the complete, polished document to terminal
-2. Write it to the appropriate file:
-   - Spec: `spec-output.md`
-   - Debug Investigation: `debug-output.md`
-3. Print a summary:
-   ```
-   === Debate Complete ===
-   Document: [Product Specification | Technical Specification | Full Specification | Debug Investigation]
-   Rounds: N
-   Models: [list of opponent models]
-   Claude's contributions: [summary of what you added/changed]
-
-   Key refinements made:
-   - [bullet points of major changes from initial to final]
-   ```
-4. If Telegram enabled:
-   ```bash
-   python3 ~/.claude/skills/adversarial-spec/scripts/debate.py send-final --models MODEL_LIST --doc-type TYPE --rounds N <<'SPEC_EOF'
-   <final document here>
-   SPEC_EOF
-   ```
-5. Update session with artifact paths (sync both files per Phase Transition Protocol):
-   - Detail file (`sessions/<id>.json`): set `spec_path` to the written file path (`"spec-output.md"` or `"debug-output.md"`)
-   - If gauntlet was run, also set `gauntlet_concerns_path` to the saved concerns JSON (if not already set during gauntlet → finalize transition)
-   - If a spec manifest was created (`specs/<slug>/manifest.json`), set `manifest_path` to its path
-   - If `tests-spec.md` was generated, set `tests_spec_path` to its path
-   - Append to journey log (`sessions/<id>.journey.log`, JSONL): `{"time": "ISO8601", "event": "Spec finalized: <path>", "type": "artifact"}`
-   - Update both files with `current_phase: "finalize"`, `current_step: "Document finalized, awaiting user review"`
-   - Use atomic writes for both files
-6. **Fizzy sync** (if `fizzy_card_id` exists in session detail file):
-   - Use a **haiku subagent** to add a comment: `"## Spec finalized\n\n**Evidence:** <spec_path>; <total rounds> debate rounds reached consensus.\n**Next:** <execution-plan or user-review action>."`
-   - If the card should advance in the pipeline (e.g., out of Evaluated Plans), call `pipeline_advance(card_id, session_id, agent)` via the subagent
-
-### Step 7: User Review Period
-
-**After outputting the finalized document, give the user a review period:**
-
-> "The document is finalized and written to `spec-output.md`. Please review it and let me know if you have any feedback, changes, or concerns.
->
-> Options:
-> 1. **Accept as-is** - Document is complete
-> 2. **Request changes** - Tell me what to modify, and I'll update the spec
-> 3. **Run another review cycle** - Send the updated spec through another adversarial debate"
-
-**If user requests changes:**
-1. Make the requested modifications to the spec
-2. Show the updated sections
-3. Write the updated spec to file
-4. Ask again: "Changes applied. Would you like to accept, make more changes, or run another review cycle?"
-
-**If user wants another review cycle:**
-- Proceed to Step 8 (Additional Review Cycles)
-
-**If user accepts:**
-- Finalization complete. Ask whether to proceed to execution planning (Phase 7). If `middleware-candidates.json` exists with materializable candidates, mention that the optional middleware-creator pass becomes available after Phase 7 loads the source task cards — it now runs between `execution` and `implementation`, not before `execution`.
-
-### Step 8: Additional Review Cycles (Optional)
-
-After the user review period, or if explicitly requested:
-
-> "Would you like to run an additional adversarial review cycle for extra validation?"
-
-**If yes:**
-
-1. Ask if they want to use the same models or different ones:
-   > "Use the same models (MODEL_LIST), or specify different models for this cycle?"
-
-2. Run the adversarial debate again from Step 3 with the current document as input.
-
-3. Track cycle count separately from round count:
-   ```
-   === Cycle 2, Round 1 ===
-   ```
-
-4. When this cycle reaches consensus, return to Step 7 (User Review Period).
-
-5. Update the final summary to reflect total cycles:
-   ```
-   === Debate Complete ===
-   Document: [Product Specification | Technical Specification | Full Specification | Debug Investigation]
-   Cycles: 2
-   Total Rounds: 5 (Cycle 1: 3, Cycle 2: 2)
-   Models: Cycle 1: [models], Cycle 2: [models]
-   Claude's contributions: [summary across all cycles]
-   ```
-
-**Use cases for additional cycles:**
-- First cycle with faster models (gemini-cli/gemini-3-flash-preview), second cycle with stronger models (codex/gpt-5.6-sol, gemini-cli/gemini-3.6-flash-high)
-- First cycle for structure and completeness, second cycle for security or performance focus
-- Fresh perspective after user-requested changes
+See SKILL.md § [Phase Transition Protocol](../SKILL.md).

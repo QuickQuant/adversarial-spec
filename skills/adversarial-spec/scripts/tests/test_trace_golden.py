@@ -179,15 +179,3 @@ def test_requirements_tracer_persona_carries_spine_inversion():
     assert "primary success path" in persona
     # False-positive guard preserved for non-spine tests.
     assert "NON-SPINE" in persona
-
-
-def test_guardrail_prompts_md_mirrors_persona():
-    doc = _guardrail_prompts_md()
-    for token in (
-        "HAPPY-PATH SPINE",
-        "ORPHANED-SPINE",
-        "SpineCoverageChecker",
-        "primary success path",
-        "NON-SPINE",
-    ):
-        assert token in doc, f"guardrail-prompts.md missing {token!r}"

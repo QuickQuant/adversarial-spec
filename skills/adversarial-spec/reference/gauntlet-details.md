@@ -1,153 +1,57 @@
-## Adversarial Gauntlet
+# Gauntlet Runner Map
 
-The gauntlet is a multi-phase stress test that puts your spec through adversarial attack by specialized personas, then evaluates which attacks are valid. It runs as a 16-module package (`gauntlet/`) with `orchestrator.py:run_gauntlet()` as the primary entry point.
+[Phase 5](../phases/05-gauntlet.md) owns human gates, approved context, synthesis and completion evidence. `gauntlet/orchestrator.py::run_gauntlet` runs attacks → synthesis → filter/cluster → evaluation → rebuttals → adjudication → optional Final Boss. These are gauntlet-internal steps, not additional pipeline phases.
 
-### Gauntlet Phases
+## Evaluation Strategy
 
-1. **Phase 1: Adversary Attacks** — Multiple adversary personas attack the spec in parallel across multiple models
-2. **Phase 2: Big Picture Synthesis** — A single model generates a holistic synthesis across all raw attacks
-3. **Phase 3: Filter + Cluster** — Dedup, filter resolved concerns, cluster by theme (FileLock checkpoint)
-4. **Phase 3.5: Checkpoint** — Persist clustered concerns to disk (enables `--gauntlet-resume`)
-5. **Phase 4: Multi-model Evaluation** — Multiple eval models evaluate concerns in batches of 15 (wave-based)
-6. **Phase 5: Adversary Rebuttals** — Dismissed adversaries challenge the evaluation verdicts
-7. **Phase 6: Final Adjudication** — Synthesize evaluations + rebuttals into final verdicts
-8. **Phase 7: Final Boss** (optional) — Opus 4.7 UX Architect reviews the spec holistically
+`power_law_length` is the `run_gauntlet` and standalone argparse default: concern length cutoffs p60/p90, batches 75/30/12. Below `eval_tier_min_concerns=30`, use flat batches of 15. Standalone flags `--eval-tier-strategy flat`, `--eval-flat-batch-size` and `--eval-tier-min-concerns` provide overrides; `debate.py` does not expose these tunables.
 
-### Ground-truth broker (normative)
+## Personas and Seats
 
-Gauntlet seats are read-only reviewers. They file self-contained `GT-REQUEST`
-records when a claim needs observation; they do not execute the system under
-review. A neutral broker de-duplicates, investigates, and returns
-`GT-RESPONSE` records to every seat. `BLOCKED` is a valid response and carries
-the missing fixture plus unblock requirements.
+Canonical `ADVERSARIES` in [adversaries.py](../scripts/adversaries.py): `paranoid_security`, `burned_oncall`, `minimalist`, `pedantic_nitpicker`, `asshole_loner`, `assumption_auditor`, `information_flow_auditor`, `architect`, `traffic_engineer`.
 
-Broker answers are bounded by the fixture and execution surface they actually
-exercise. Mocked app logic does not establish browser, wire, permission, or
-credential behavior. Record unrequested broker observations as `BYCATCH` and
-cross-seat answers as `CROSS_SEAT_RESPONSE`; treat bycatch as the primary
-observed value and cross-seat sharing as a selective secondary benefit. Track
-reach, yield, noise, follow-up requests, and cost separately. A zero-request
-round is not sufficient termination evidence; retain fixture-novelty and
-deliberate-refutation telemetry.
+Separate registries hold `existing_system_compatibility` (pre-gauntlet), `spec_coroner` (SCOUT) and `ux_architect` (Final Boss); these are not fleet CLI names. SCOUT needs the separate reviewer dispatch described in Phase 5. Compatibility aliases `lazy_developer` and `prior_art_scout` map to `minimalist` in the orchestrator, but `debate.py` rejects aliases.
 
-### Adversary Personas
+[current-models.md](current-models.md) owns seats. Runner auto-selection still includes retired routes; explicit attack/evaluation overrides do not replace every internal default. Final Boss calls `select_eval_model()` separately. Verify actual routes before launching.
 
-| Persona | Focus |
-|---------|-------|
-| `paranoid_security` | Auth holes, injection, encryption gaps, trust boundaries |
-| `burned_oncall` | Missing alerts, log gaps, failure modes, debugging at 3am |
-| `lazy_developer` | Complexity that the platform/SDK already handles. Dismissals must prove simpler fails. |
-| `pedantic_nitpicker` | Inconsistencies, spec gaps, undefined edge cases |
-| `asshole_loner` | Aggressive devil's advocate, challenges fundamental assumptions |
-| `prior_art_scout` | Finds existing code, SDKs, legacy implementations that spec ignores |
-| `assumption_auditor` | Challenges domain premises, demands documentation citations |
-| `architect` | Code structure, data flow, component boundaries, shared patterns |
-| `information_flow_auditor` | Audits architecture arrows - every unlabeled flow, every assumed mechanism |
+## Tracked Path and Development Surface
 
-### Usage
-
-**Two CLI entry points exist:**
+Run from the subject project root with approved prompts already in `.adversarial-spec-gauntlet/`:
 
 ```bash
-# ─── Via debate.py (integrates with critique workflow) ───
-
-# Run gauntlet with all adversaries
-cat spec.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet --gauntlet-adversaries all
-
-# Run with specific adversaries and multiple attack models
-cat spec.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet \
-  --gauntlet-adversaries paranoid_security,burned_oncall \
-  --gauntlet-attack-models "codex/gpt-5.6-luna,gemini-cli/gemini-3.6-flash-high"
-
-# Resume from checkpoint (reuse Phase 1-3 concerns)
-cat spec.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet \
-  --gauntlet-adversaries all --gauntlet-resume
-
-# Combine with regular critique (gauntlet runs first)
-cat spec.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
-  --models codex/gpt-5.6-luna --gauntlet --gauntlet-adversaries all
-
-# List available adversaries
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet-adversaries
-
-# View adversary performance stats
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py adversary-stats
-
-# Show run manifest for a gauntlet run
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet --show-manifest [HASH]
-
-# ─── Via standalone CLI (gauntlet-only, different flag names) ───
-
-# Run gauntlet standalone
-cat spec.md | python3 ~/.claude/skills/adversarial-spec/scripts/gauntlet/cli.py --adversaries all
-
-# Standalone with resume + unattended
-python3 ~/.claude/skills/adversarial-spec/scripts/gauntlet/cli.py \
-  --spec-file spec.md --adversaries all --resume --unattended
-
-# List runs and show details
-python3 ~/.claude/skills/adversarial-spec/scripts/gauntlet/cli.py --list-runs
-python3 ~/.claude/skills/adversarial-spec/scripts/gauntlet/cli.py --show-run FILENAME
+uv run python ~/.claude/skills/adversarial-spec/scripts/debate.py gauntlet \
+  --pipeline-card "$CARD_ID" --gauntlet-adversaries "$PERSONAS" \
+  --gauntlet-attack-models "$ATTACK_MODELS" --gauntlet-frontier "$EVAL_MODELS" \
+  < "$SPEC_PATH"
 ```
 
-**Flag name mapping** (debate.py → standalone cli.py):
+Supply canonical persona names (comma-separated or `all`), never a count. The card fence applies before dispatch. CLI success does not establish pipeline completion; Phase 5 calls the MCP verifier with explicit `board_id` and admissible artifacts.
 
-| debate.py | cli.py | Purpose |
-|-----------|--------|---------|
-| `--gauntlet-adversaries` | `--adversaries` | Adversary selection |
-| `--gauntlet-model` | `--adversary-model` | Legacy single attack model |
-| `--gauntlet-attack-models` | `--attack-models` | Multi-model attacks |
-| `--gauntlet-frontier` | `--eval-model` | Evaluation model |
-| `--codex-reasoning` | `--attack-codex-reasoning` | Attack reasoning effort |
-| `--eval-codex-reasoning` | `--eval-codex-reasoning` | Eval reasoning effort |
-| `--gauntlet-resume` | `--resume` | Resume from checkpoint |
-| N/A | `--unattended` | No stdin prompts + auto-checkpoint |
-| N/A | `--spec-file PATH` | Read spec from file |
+`python -m gauntlet` is the secondary/development surface; expose the skill's scripts directory on the Python import path when invoking it from a working directory containing the intended artifacts. It is not a tracked-card gate bypass.
 
-### Final Boss Review
+| `debate.py gauntlet` | `python -m gauntlet` | Purpose |
+|---|---|---|
+| `--gauntlet-adversaries` | `--adversaries` | Persona names |
+| `--gauntlet-model` | `--adversary-model` | Single attack override |
+| `--gauntlet-attack-models` | `--attack-models` | Multiple attack overrides |
+| `--gauntlet-frontier` | `--eval-model` | Comma-separated evaluation list / single evaluation model |
+| `--codex-reasoning` | `--attack-codex-reasoning` | Attack effort; argparse default `low` |
+| `--eval-codex-reasoning` | Same | Evaluation effort; argparse default `xhigh` |
+| `--gauntlet-resume` | `--resume` | Reuse valid checkpoints |
+| `--unattended` | Same | Disable stdin prompts, enable expensive-step checkpointing |
+| stdin | stdin or `--spec-file PATH` | Spec text; both CLIs strip outer whitespace |
+| `--timeout` | Same | Per-call default **1200s** / **1800s**, respectively |
+| `--no-rebuttals` | Same | Omit rebuttals |
+| `--final-boss` | No dedicated flag | Request Final Boss; its timeout is at least 1800s |
 
-After Phase 6 (adjudication) completes, the Final Boss review can run as Phase 7:
+Flag/default authority: `debate.py` argparse and `gauntlet/cli.py::main`. Effort defaults describe execution, not seat policy.
 
-The Final Boss is an Opus 4.7 UX Architect who reviews the spec holistically for:
-- User journey completeness
-- Error state handling
-- Accessibility concerns
-- Overall coherence
+## Resume and Inspection
 
-This is expensive but thorough. Use `--final-boss` to enable it.
+Checkpoints under `.adversarial-spec-gauntlet/` use `_meta` + `data`, with schema, spec/config hashes and payload integrity. Resume reuses compatible completed work; rejected/missing checkpoints can cause fresh calls. Inspect resume warnings before assuming saved cost. Persistence uses file locks and atomic file replacement; avoid concurrent same-spec writers.
 
-### Gauntlet Options (debate.py flags)
+The runner loads `approved-prompts.json` into attack `prompts` overrides; retain that file with the reviewed inputs. `get_spec_hash` returns the full SHA-256 of the supplied string. A changed spec invalidates approved prompts; changed context requires reapproval even when the hash is unchanged. Prompt contents are not part of `get_config_hash`; omit resume when prompts/context changed so old attacks are not reused.
 
-- `--gauntlet, -g` — Enable gauntlet mode (can combine with critique)
-- `--gauntlet-adversaries` — **NAMES only** (comma-separated or `all`). NOT a count!
-  - ✅ `--gauntlet-adversaries all`
-  - ✅ `--gauntlet-adversaries paranoid_security,burned_oncall`
-  - ❌ `--gauntlet-adversaries 5` (WRONG - this is not a count)
-- `--gauntlet-model` — Legacy single model for attacks (default: auto-select free model)
-- `--gauntlet-attack-models` — Comma-separated models for Phase 1 attacks (overrides --gauntlet-model)
-- `--gauntlet-frontier` — Model for evaluation (default: auto-select frontier model)
-- `--codex-reasoning` — Reasoning effort for attack phases (default: low). Choices: minimal, low, medium, high, xhigh
-- `--eval-codex-reasoning` — Reasoning effort for eval/adjudication (default: xhigh)
-- `--no-rebuttals` — Skip Phase 5 rebuttal phase
-- `--final-boss` — Auto-run Phase 7 (skips prompt)
-- `--gauntlet-resume` — Resume from checkpoint (reuse Phase 1-3 concerns, skip re-eval)
-- `--timeout` — Timeout per model call in seconds (default: 600 via debate.py, 300 via standalone)
+Inspect `run-manifest-{hash}-{timestamp}.json`: top-level status/spec hash/reviewed-spec path plus `phases[]` metrics (duration, tokens, models, configuration). `debate.py gauntlet --pipeline-card "$CARD_ID" --show-manifest "$HASH"` displays the matching manifest. Standalone `--list-runs` and `--show-run FILENAME` inspect saved run reports.
 
-### Checkpointing & Resume
-
-The gauntlet saves checkpoints after each phase to `.adversarial-spec-gauntlet/`. Checkpoints use `filelock` for atomic writes and include `spec_hash` + `config_hash` for validation.
-
-On `--gauntlet-resume`:
-1. Load checkpoint file matching current spec hash
-2. Verify `config_hash` matches (attack models, eval models, adversary list)
-3. Skip completed phases, resume from the earliest incomplete phase
-4. If no valid checkpoint exists, start fresh (no error)
-
-The `--unattended` flag (standalone CLI only) enables auto-checkpointing after expensive phases and disables all `input()` calls.
-
-### Run Manifests
-
-Each gauntlet run produces a manifest with per-phase `PhaseMetrics`:
-- Duration, input/output tokens, models used, config snapshot
-- Saved to `.adversarial-spec-gauntlet/run-manifest-{hash}-{timestamp}.json`
-- View via `debate.py gauntlet --show-manifest [HASH]` or `cli.py --list-runs`
+The runner does not emit the altitude manifest required by `pipeline_mark_gauntlet_complete`. Read [Phase 5 completion evidence](../phases/05-gauntlet.md#completion-evidence-and-handoff) before claiming completion; a manifest's existence is insufficient.
