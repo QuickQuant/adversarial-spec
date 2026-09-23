@@ -1,198 +1,181 @@
-## Verification (Phase 9)
+## Phase 8 Verification Subflow
 
-> **FIRST ACTION upon entering this phase:** Create this TodoWrite immediately.
-> Do NOT read further until the TodoWrite is active.
+Verification is the final subflow of implementation. Lifecycle state remains:
 
+```json
+{
+  "current_phase": "implementation",
+  "current_step": "verification"
+}
 ```
-TaskCreate([
-  {subject: "Collect verification inputs (spec, test spec, execution plan, gauntlet concerns, architecture docs, pipeline state)", status: "pending", activeForm: "Collecting verification inputs"},
-  {subject: "Run goal coverage check", status: "pending", activeForm: "Checking goal coverage"},
-  {subject: "Run non-goal audit", status: "pending", activeForm: "Auditing non-goals"},
-  {subject: "Run user story validation", status: "pending", activeForm: "Validating user stories"},
-  {subject: "Run concern mitigation audit", status: "pending", activeForm: "Auditing concern mitigations"},
-  {subject: "Run structural conformance check", status: "pending", activeForm: "Checking structural conformance"},
-  {subject: "Run regression test sweep", status: "pending", activeForm: "Running regression tests"},
-  {subject: "Write verification report", status: "pending", activeForm: "Writing verification report"},
-  {subject: "Execute pipeline sweep or sweep_fail", status: "pending", activeForm: "Sweeping pipeline"},
+
+Never write verification as a phase value.
+
+```text
+TodoWrite([
+  {content: "Check sweep readiness without mutating cards [GATE]", status: "in_progress", activeForm: "Checking sweep readiness"},
+  {content: "Collect the approved artifact chain and implementation evidence", status: "pending", activeForm: "Collecting verification evidence"},
+  {content: "Replay goals, non-goals, stories, Concerns, and structure against the delivered change", status: "pending", activeForm: "Checking whole-change coverage"},
+  {content: "Run final regression commands and reconcile every skip/quarantine [GATE]", status: "pending", activeForm: "Running final regression checks"},
+  {content: "Write the verification report", status: "pending", activeForm: "Writing the verification report"},
+  {content: "Call pipeline_sweep or pipeline_sweep_fail [GATE]", status: "pending", activeForm: "Recording the verification outcome"},
+  {content: "Persist verification-subflow completion", status: "pending", activeForm: "Persisting verification completion"},
 ])
 ```
 
-**[GATE] Task 1 (collect inputs) must be marked `completed` before running any checks (tasks 2-7). Architecture docs are required inputs — not optional.**
+### 1. Check readiness first
 
-After all implementation cards reach Passed Test, the verification phase runs a
-final alignment check before sweeping cards to Completed-Unmapped. This replaces
-the old `pipeline_sweep` as a trivial batch move with a substantive spec
-conformance gate.
+The first board call in this subflow is read-only:
 
-> **Trigger:** All task-pipeline cards for the session are in Passed Test (no cards
-> remain in New Todo, Review, Untested, or Failed Review).
+```text
+pipeline_check_sweep_readiness(
+  session_id=SESSION_ID,
+  board_id=BOARD_ID,
+)
+```
 
----
+If readiness reports a missing parent Session Card, a non-terminal lane,
+incomplete card evidence, or another blocker, stop and resolve that exact issue.
+Do not force a sweep and do not use `pipeline_patch_state` to skip the fence.
 
-### Purpose
+Sweep is the final verification gate: it validates uniform lane state,
+per-card evidence/attestations, final command/summary fields, records a final
+snapshot on the Session Card, and only then moves Passed Test cards.
 
-Implementation can drift from the spec — tasks pass individually but the whole
-doesn't add up. Verification catches:
+### 2. Collect evidence
 
-- **Goal gaps:** A goal from §2 that no task actually delivered
-- **Non-goal leakage:** A non-goal from §3 that was accidentally implemented
-- **User story failures:** A user story whose test case passes in isolation but
-  doesn't work end-to-end
-- **Concern regressions:** A gauntlet concern that was accepted but whose
-  mitigation is missing or incomplete
-- **Structural drift:** Files created that aren't in the execution plan, or
-  planned files that were never created
+Read the active paths rather than searching for similarly named artifacts:
 
----
+- finalized spec: goals, non-goals, stories, Slice North Star;
+- `tests-spec.md` and its maturity/data-strategy records;
+- approved `execution-plan.md`, `fizzy-plan.json`, Architecture Spine, and
+  dependency report;
+- accepted gauntlet Concern artifact and recorded dispositions;
+- target architecture plus only the architecture docs for touched components;
+- implementation diffs, Passed Test card metadata, acceptance/test
+  attestations, test receipts, operator evidence, and final produced artifacts.
 
-### Inputs
+The pre-implementation documents state intent. The diffs, cards, receipts, and
+artifacts prove what was delivered.
 
-Collect these before running verification:
+### 3. Replay whole-change coverage
 
-1. **Spec** — `spec-output.md`: Goals (§2), Non-Goals (§3), User Stories, Milestones (§18)
-2. **Test spec** — `tests-spec.md`: All test cases by milestone
-3. **Execution plan** — `execution-plan.md`: Task list, file structure (Architecture Spine),
-   concern coverage matrix
-4. **Gauntlet concerns** — `gauntlet-concerns-*.json`: Accepted concerns and their mitigations
-5. **Architecture docs** — `.architecture/INDEX.md`, component docs for modules touched
-6. **Pipeline state** — All Passed Test cards with their state blocks and test summaries
+Record pass/fail and concrete evidence for every dimension:
 
----
+| Dimension | Post-implementation question |
+|---|---|
+| Goals | Which committed behavior and passing evidence discharge each goal and the Slice North Star? |
+| Non-goals | Did any diff or artifact implement excluded behavior or widen scope without approval? |
+| User stories | Do the bound tests and a representative end-to-end path prove the story as a workflow, not only isolated units? |
+| Concerns | Does each accepted Concern's mapped task actually implement and prove the recorded mitigation? |
+| Structure | Do actual files and boundaries match the approved Architecture Spine or an approved amendment? |
+| Dependencies | Did the delivered order/evidence satisfy the hash-bound semantic report and live-spine obligations? |
 
-### Verification Checklist
+A green card is necessary, not sufficient, when the combined system fails a goal
+or accepted architecture constraint.
 
-Run each check and record pass/fail with evidence.
+### 4. Final regression and skip reconciliation
 
-#### 1. Goal Coverage
+Run the complete final verification command set against the committed result.
+Capture the exact commands, working directories, collected counts, outcome, and
+artifact/receipt paths. Zero collected tests is not a pass.
 
-For each goal in §2:
-- Which tasks delivered it?
-- Is there test evidence (test case + result) proving it works?
-- **Pass:** Every goal has ≥1 task with passing tests that address it
-- **Fail:** Goal has no corresponding task, or task tests don't cover it
+No **unapproved or undischarged** skip may remain. Reconcile all of these against
+the approved plan and record their final disposition:
 
-#### 2. Non-Goal Audit
+- test-ahead quarantines and todo/skip markers;
+- spike strategies and exempt verification modes;
+- unavailable environment or human-attestation deferrals;
+- intentionally superseded or not-applicable tests.
 
-For each non-goal in §3:
-- Was any code written that implements it (even partially)?
-- **Pass:** No non-goal functionality was implemented
-- **Fail:** Non-goal functionality exists — flag for removal or scope change
+A quarantine that should have become green, or an exemption lacking its required
+approval/evidence, fails verification. Do not impose the false rule that a suite
+can never contain an approved skip.
 
-#### 3. User Story Validation
+### 5. Write the durable report
 
-For each user story referenced in Milestones (§18):
-- Find the test cases from `tests-spec.md`
-- Verify the test cases passed (from card test summaries)
-- Run a representative end-to-end check if possible
-- **Pass:** All user stories have passing test cases
-- **Fail:** Missing or failing test coverage for a user story
+Atomically write:
 
-#### 4. Concern Mitigation Audit
+```text
+.adversarial-spec/specs/<slug>/verification-report.md
+```
 
-For each accepted gauntlet concern:
-- The execution plan's concern coverage matrix maps concerns → tasks
-- Verify those tasks are in Passed Test
-- Spot-check: does the implementation actually address the concern?
-- **Pass:** All accepted concerns have corresponding tasks in Passed Test
-- **Fail:** Concern has no task, or task doesn't address the concern
-
-#### 5. Structural Conformance
-
-Compare the execution plan's Architecture Spine (file list) against actual files:
-- Any files created that aren't in the plan?
-- Any planned files that don't exist?
-- **Pass:** 1:1 match (or documented deviations approved during implementation)
-- **Fail:** Unexplained structural drift
-
-#### 6. Regression Test Sweep
-
-Run the full test suite one final time (not per-card, the whole suite):
-- All tests pass?
-- No test was disabled or skipped during implementation?
-- **Pass:** Full suite green
-- **Fail:** Any failure — card goes back to Failed Review via `pipeline_sweep_fail`
-
----
-
-### Output: Verification Report
-
-Write a verification report to `.adversarial-spec/specs/<slug>/[your llm model]-[session name]-verification-report.md`:
+Use this compact shape:
 
 ```markdown
-# Verification Report: <Session Title>
+# Verification Report: <Session title>
 
 > Session: <session_id>
-> Date: <YYYY-MM-DD>
-> Agent: <verifying agent>
+> Agent: <verifier>
+> Commit/range: <verified bytes>
 
 ## Summary
-- Goals: X/Y covered
-- Non-Goals: X/Y clean (no leakage)
-- User Stories: X/Y passing
-- Concerns: X/Y mitigated
-- Structural: pass/fail
-- Regression: pass/fail
+- Goals: <covered/total>
+- Non-goals: <clean/total>
+- Stories: <passing/total>
+- Concerns: <mitigated/total>
+- Structure/dependencies: <pass/fail>
+- Regression: <pass/fail>
 
-## Goal Coverage
-| Goal | Tasks | Evidence | Status |
-|------|-------|----------|--------|
-| ... | ... | ... | PASS/FAIL |
+## Coverage
+| Dimension / ID | Delivered evidence | Status |
+|---|---|---|
+| ... | commit, card, command, receipt, or artifact | PASS/FAIL |
 
-## Non-Goal Audit
-| Non-Goal | Found? | Details | Status |
-|----------|--------|---------|--------|
-| ... | ... | ... | PASS/FAIL |
+## Structural and Dependency Conformance
+<actual-vs-approved diff, including approved deviations>
 
-## User Story Validation
-| Story | Test Cases | Results | Status |
-|-------|-----------|---------|--------|
-| ... | ... | ... | PASS/FAIL |
+## Regression and Skip Reconciliation
+<commands, counts, results, and every remaining skip disposition>
 
-## Concern Mitigation
-| Concern | Tasks | Evidence | Status |
-|---------|-------|----------|--------|
-| ... | ... | ... | PASS/FAIL |
-
-## Structural Conformance
-<diff or confirmation>
-
-## Regression Suite
-<test output summary>
+## Findings
+<actionable failures mapped to specific card IDs, or "none">
 
 ## Verdict
-PASS — all checks green, ready to sweep to Completed-Unmapped
-FAIL — N issues found, cards returned to Failed Review: [list]
+PASS — ready for the final sweep
+or
+FAIL — failed cards: <ids and reasons>
 ```
 
----
+Set `verification_report_path` in the active detail and pointer without changing
+`current_phase`.
 
-### Pipeline Integration
+### 6. Record the outcome through the pipeline
 
-After the verification report is written:
+On PASS, call the exact sweep contract:
 
-- **All checks pass:** Call `pipeline_sweep(session_id, agent, summary, board_id)`
-  to move all Passed Test cards to Completed-Unmapped. Summary should reference
-  the verification report path.
-- **Any check fails:** Call `pipeline_sweep_fail(session_id, agent, summary,
-  failed_card_ids, board_id)` for the specific cards that failed verification.
-  Those cards return to Failed Review with the verification report as evidence.
-- **Update session state:** Record verification phase completion in the session
-  detail file with the report path.
-
----
-
-### Adversarial-Spec Session Flow (Updated)
-
-```
-Phase 1: Init & Requirements
-Phase 2: Roadmap
-Phase 3: Debate
-Phase 4: Target Architecture
-Phase 5: Gauntlet
-Phase 6: Finalize
-Phase 7: Execution Planning
-Phase 8: Implementation (self-pickup loop)
-Phase 9: Verification (this phase)  ← NEW
+```text
+pipeline_sweep(
+  session_id=SESSION_ID,
+  agent=AGENT,
+  summary="Verification PASS; report: <verification_report_path>",
+  final_verification_commands=["<exact command>", "..."],
+  final_verification_summary="<bounded result summary with counts and report path>",
+  board_id=BOARD_ID,
+)
 ```
 
-After Phase 9 completes with a PASS verdict, the session can be closed.
+Do not pass an empty or paraphrased command list. If sweep rejects after a PASS
+report, treat its structured gate result as new evidence, correct the report or
+underlying state, and rerun readiness before retrying.
+
+On any verification failure, identify the Passed Test cards that own the failed
+behavior and call:
+
+```text
+pipeline_sweep_fail(
+  session_id=SESSION_ID,
+  agent=AGENT,
+  summary="Verification FAIL; report: <verification_report_path>; <reason>",
+  failed_card_ids=["<card_id>", "..."],
+  board_id=BOARD_ID,
+)
+```
+
+This records the failed verification and returns only those cards to Failed
+Review. Do not sweep unaffected cards and do not claim completion.
+
+After a successful sweep, atomically set `current_step` to
+`verification complete`, keep `current_phase: implementation`, and record the
+report and sweep result. Continue through `SKILL.md` § Phase Transition Protocol;
+use § Decisions Log and § Journey Log for their owned records.

@@ -1,640 +1,299 @@
 ## Implementation (Phase 8)
 
-> **FIRST ACTION on entering this phase:** create this TodoWrite. Do NOT read further until it's active.
-
-```
-TaskCreate([
-  {subject: "Identify agent name, session ID, board ID", status:"pending", activeForm:"Identifying agent and session"},
-  {subject: "Load Fizzy cards (pipeline_load or verify existing)", status:"pending", activeForm:"Loading Fizzy cards"},
-  {subject: "Read CLAUDE.md / AGENTS.md", status:"pending", activeForm:"Reading project conventions"},
-  {subject: "Read .architecture/INDEX.md + primer.md", status:"pending", activeForm:"Reading architecture docs"},
-  {subject: "Read matched component docs", status:"pending", activeForm:"Reading component architecture"},
-  {subject: "Read the converged spec", status:"pending", activeForm:"Reading spec"},
-  {subject: "Read the execution plan", status:"pending", activeForm:"Reading execution plan"},
-  {subject: "Enter self-pickup loop", status:"pending", activeForm:"Running self-pickup loop"},
+```text
+TodoWrite([
+  {content: "Resolve the active Session, agent identity, and explicit board ID", status: "in_progress", activeForm: "Resolving implementation identity"},
+  {content: "Load the approved plan, spec, and targeted architecture context [GATE]", status: "pending", activeForm: "Loading implementation context"},
+  {content: "Run required pseudo-to-real promotion preflight", status: "pending", activeForm: "Checking promotion obligations"},
+  {content: "Inspect, claim, and act on the pipeline-returned action", status: "pending", activeForm: "Processing pipeline work"},
+  {content: "Preserve scoped evidence and independent review [GATE]", status: "pending", activeForm: "Recording implementation evidence"},
+  {content: "Resolve operator-owned work without agent self-attestation [GATE]", status: "pending", activeForm: "Resolving operator work"},
+  {content: "Close system-altitude validation when obligated [GATE]", status: "pending", activeForm: "Closing system validation"},
+  {content: "Enter the Phase 8 verification subflow", status: "pending", activeForm: "Entering final verification"},
 ])
 ```
 
-**[GATE]** Items 3-7 must be `completed` before item 8 starts. Skipping arch docs → decisions that contradict existing patterns. Confirmed failure mode.
-
-Multi-agent reminder: once in the loop, keep TodoWrite items phase-scoped (e.g., "Process next review card"). Never hardcode card IDs or commit hashes — the pipeline is authoritative.
-
-After execution plan is generated, ask: *"Execution plan generated with N tasks. Proceed with implementation?"*
-
----
-
-### Phase-8 pseudo-to-real promotion pass
-
-Before closing implementation for a session that contains TMR records, run the
-promotion pass for every active `REAL-DATA` / `REAL-DATA + PROPERTY` row that is
-either a happy-path spine or a critical seam:
-
-1. Emit a typed `promotion_request` from the skill. The request names `tmr_uid`,
-   `test_id`, user story, bound accessors, owner-repo command, cwd, repo, commit,
-   and `negative_oracle_required:true`.
-2. The owner repo authors and binds the test. The skill does not trust an
-   owner-written pass/fail result.
-3. The skill-runner runs the declared command and captures the code-tier
-   `run_evidence` receipt (`runner:"skill-runner"`, exit, env, artifact URI/hash,
-   and `live_or_induced` when applicable).
-4. Close fails if a required REAL-DATA spine/critical-seam row has
-   `run_evidence:null`, an unbound/empty accessor, no negative oracle, an exempt or
-   spike verification strategy, a non-green receipt, or a boundary mock finding.
-5. For critical seams executed in `dev` or `ci`, a pass is not a real pass unless
-   the receipt records a live/induced technique. `env:"live"` may close without a
-   technique when the data strategy is genuinely REAL-DATA.
-
-Use `phase8_promotion.py` as the deterministic contract mirror:
-`build_promotion_requests` emits requests, `capture_run_evidence` owns the trust
-boundary, and `evaluate_phase8_close` returns the blocking close issues. A null
-`run_evidence` path is a negative oracle and must fail.
-
-When closing altitude-aware implementation, append close-time node
-`altitude_fit` records through `altitude_provenance.record_close_altitude_fit`.
-Only `altitude_fit:"right"` counts correct in skill-side meta-analysis; `too_low`
-and `too_high` are precision failures even when the implementation is otherwise
-stable.
-
----
-
-### Agent Identity (REQUIRED)
-
-Cross-agent review enforcement depends on a stable agent name. Pipeline skips Review cards where `last_agent == requester`.
-
-| Agent | Name to pass |
-|-------|--------------|
-| Claude Code | `claude` |
-| Codex | `codex` |
-| Gemini CLI | `gemini` |
-
-Pass your name on every `pipeline_*` call.
-
----
-
-### Setup Checklist (before the self-pickup loop)
-
-```
-[ ] Session ID and Board ID identified
-[ ] Fizzy cards loaded — verify with pipeline_lane_state(pipeline="task")
-[ ] Context loaded (see below)
-```
-
-**Session ID:** if provided at invocation, use it. Else read `.adversarial-spec/session-state.json` → `active_session_id`. No session → stop and report.
-
-**Board ID:** not pinned implicitly. Identify from session / card state / project config, and pass `board_id` explicitly on every board-scoped call. Never rely on `FIZZY_BOARD_ID` as a hidden default.
-
-**Cards not loaded:** convert the execution plan to Fizzy cards via `pipeline_load(plan_path, session_id)` using the `fizzy-plan.json` from Phase 7.
-
----
-
-### Context Loading (before implementing any card)
-
-Load in order. Skipping this → decisions that contradict the spec or codebase patterns.
-
-1. **Project conventions:** `CLAUDE.md` (or `AGENTS.md` for Codex).
-2. **Architecture docs:**
-   - `.architecture/INDEX.md` — navigation only (your reference, don't pass to opponent models).
-   - `.architecture/primer.md` — system summary, contracts, gotchas.
-   - `.architecture/concerns.md` if the session touches known debt.
-   - 2-4 component docs from `.architecture/structured/components/`, matched by parsing the execution plan's file list against the INDEX "Key Files" column.
-3. **Spec:** path from session detail `spec_path`, else `.adversarial-spec/specs/<slug>/spec-output.md`. Pay attention to Goals/Non-Goals, acceptance criteria, accepted gauntlet concerns.
-4. **Execution plan:** path from session detail `execution_plan_path`, else `.adversarial-spec/specs/<slug>/execution-plan.md`. Defines task breakdown, wave ordering, Architecture Spine, validation strategies, dependency graph.
-
-**Context budget:** for large specs/plans, read only the section relevant to your current wave. The card description has the concrete requirements; the spec/plan supply the "why."
-
-**[GATE]** Mark "Read .architecture/INDEX.md + primer.md" and "Read matched component docs" completed before starting the loop. Confirmed failure (2026-04-10): 3 tasks shipped without arch docs, missed pattern conformance during both impl and review.
-
----
-
-### The Self-Pickup Loop
-
-This is the core implementation protocol. All agents (Claude, Codex, Gemini) follow the same loop.
-
-#### Step 1: Inspect, Then Claim Work
-
-Use a read-only call when deciding whether to begin or reporting status:
-
-```
-pipeline_next_actions(session_id, agent, board_id)
-# or pipeline_lane_state(pipeline="task", session_id, agent, board_id)
-```
-
-These calls name an actionable card, human gate, live claim, or unmet
-prerequisite without changing card metadata. Do **not** call
-`pipeline_do_next_task` merely to poll or inspect: it claims work when work is
-available.
-
-If `attention.session_context.kind` is `session_card_missing`, stop. The task
-cards were separated from their parent session (often by an incomplete archive
-move), so no agent may claim, sweep, or archive them until the session is
-restored or reconciled on the board.
-
-When ready to perform the returned action, claim it through:
-
-```
-pipeline_do_next_task(
-  session_id = SESSION_ID,
-  pipeline   = "task",
-  agent      = AGENT_NAME,
-  board_id   = BOARD_ID
-)
-```
-
-The pipeline walks lanes in priority order and returns the next qualifying card:
-
-| Priority | Lane | Selection Rule |
-|----------|------|----------------|
-| 1 | Failed Review | Original implementer while its live rework reservation remains; otherwise first claimable card |
-| 2 | Review | First claimable card where `implementer_agent != requesting agent` |
-| 3 | Untested | First claimable agent-test card; human-attestation cards are surfaced as a human action instead |
-| 4 | New Todo | First claimable card where all `depends_on` are satisfied |
-| 5 | Passed Test | Only when lanes 1-4 are all empty |
-
-**Card Claiming Protocol (built into MCP):**
-For every working lane (Failed Review, Review, Untested, and New Todo), the
-pipeline re-reads the candidate, writes `claim_status=in_progress` with an
-optimistic metadata-version guard, and treats a 409 conflict as a lost claim.
-Native assignee display is cosmetic; the metadata claim is authoritative. Claims
-normally expire after 30 minutes. `pipeline_heartbeat(event="active"|"beat")`
-keeps a matching live claim fresh, but persistence is coalesced (normally every
-five minutes) so status heartbeats do not create a write storm.
-
-Failed Review has a second fence: the recorded implementer receives a temporary
-rework reservation. Do not steal that work during the reservation. Use
-`pipeline_handoff_claim` for a deliberate ownership transfer; it moves the claim
-and reservation in one metadata CAS instead of creating a release-and-reclaim gap.
-
-If you selected a card but cannot begin work, call `pipeline_release_claim` yourself
-with a concise reason. Never leave a diagnostic or abandoned live claim for TTL
-expiry.
-
-An idle result now includes a bounded `attention` block. Read `attention.next_actions`
-and `attention.blocked` before reporting that there is no work; it names the review,
-human gate, live owner, or prerequisite card that is actually holding the queue.
-
-**Visible comments:** follow the Fizzy Card Comment Convention in `SKILL.md`.
-Write a short outcome, only the evidence a human needs, and the next actor. Keep
-machine detail in pipeline metadata and tool results. Never paste JSON, tool
-payloads, transcripts, or checklist dumps into `add_comment`.
-
-#### Step 2: Execute Based on Action
-
-**action = "implement" (from New Todo)**
-
-1. Read the card description: `get_card_description(card_id)`
-2. Read checklists for acceptance criteria: `get_card_checklists(card_id)`
-3. If `.conductor/config.json` exists and conductor is enabled:
-   - Claim files before editing: `bq conductor claim create PATH --workflow SLUG --agent AGENT`
-4. Implement the changes:
-   - Follow structural conformance rules (see below)
-   - Follow validation strategy from `strategy` field (test-first or test-after)
-   - Address all acceptance criteria
-5. Run project tests and lint (commands from CLAUDE.md / AGENTS.md)
-6. Commit with card reference: `[TASK_ID] Short description`.
-   **Commit hygiene (P8-2 — scope to the card; never `git add -A` / `git commit -a`).** Stage ONLY the
-   files in this card's declared scope (`git add <explicit paths>`). Before committing run
-   `git status --porcelain`; if the worktree carries modified files OUTSIDE this card's scope (another
-   card's WIP, an unrelated re-scan, probe/scratch files), do NOT sweep them in — STOP and surface it
-   (they belong to their own card or a separate housekeeping commit). One card = one scoped commit. A
-   flush of the whole worktree under one card breaks the cross-agent review model (the reviewer can no
-   longer see a per-card diff) and mis-attributes other cards' work. (Origin: 2026-06-20 — a
-   `behavior_change:false` bootstrap card's commit was 6340 lines / 61 files because it staged the entire
-   dirty tree, including another card's test and ~600 lines of live runtime logic.)
-7. Complete: `pipeline_complete_task(session_id, card_id, agent, commit_hash, board_id)`
-8. **Append to decisions log** (see SKILL.md "Decisions Log"):
-   ```bash
-   printf '%s [%s] %s — %s\n' "$(date -u +%FT%TZ)" "<card_id>" \
-     "<what landed, incl. commit hash>" "<why it matters>" \
-     >> .adversarial-spec/sessions/<session_id>.decisions.log
-   ```
-   One line. Skip if the commit message already says everything material.
-9. If conductor enabled: release claims
-10. **Return to Step 1**
-
-**action = "fix" (from Failed Review)**
-
-Same as "implement" but:
-1. Read the card's review notes for what failed (in the state block or card comments)
-2. Fix the specific issues raised by the reviewer
-3. Do not rewrite the entire implementation — address the review feedback
-
-**action = "review" (from Review lane, cross-agent enforced)**
-
-1. Read the card description and state block
-2. Identify the `commit_hash` from the state block
-3. **Measure the diff first:** `git show --stat <commit_hash>` — total lines changed across all files.
-4. **Pick review tier by size** (below); don't default to the deepest tier on every card — reading an entire 30-line rename burns context for no gain.
-5. Run the tier's checks.
-6. Submit verdict:
-   ```
-   pipeline_review(session_id, card_id, agent, verdict, board_id, notes)
-   ```
-   - `verdict`: `"approved"` or `"changes_requested"`
-   - `notes`: **REQUIRED** for `"changes_requested"` — explain what needs fixing
-7. **Return to Step 1**
-
-#### Size-Tiered Review Recipe
-
-| Diff size (lines changed) | Tier | Review recipe |
-|---------------------------|------|---------------|
-| ≤ 30 | **Spot** | `git show` once, confirm acceptance criteria satisfied, run tests listed on the card. No architecture doc re-read needed. |
-| 31–200 | **Small** | Read full diff, verify against card acceptance criteria, run tests, spot-check edge cases (null/empty/failure paths). Confirm no new files outside Architecture Spine. |
-| 201–800 | **Medium** | Read full diff, check against spec section (`spec_path`) relevant to this card, verify test coverage of failure modes, confirm no structural drift (file structure matches plan). Run tests + any adjacent integration suites. |
-| > 800 | **Large / push back** | Default to `changes_requested` with note: "Diff exceeds 800 lines — decompose into smaller cards before re-review." Only approve if the card explicitly authorizes a large diff (e.g., codegen, vendored dependency) AND a structured walkthrough comment justifies each file. |
-
-**Anti-patterns:**
-- Approving "looks fine" without running tests on Small+ cards.
-- Reading only the first hunk and generalizing ("rest looks similar").
-- Re-reading the full architecture primer for a Spot-tier rename.
-- Requesting changes on Spot-tier cards for style nits — leave a comment, approve the functional change.
-
-**action = "test" (from Untested)**
-
-1. Read the card description and `commit_hash`
-2. Run the project's test suite
-3. Submit result:
-   ```
-   pipeline_test(session_id, card_id, agent, result, summary, board_id)
-   ```
-   - `result`: `"passed"` or `"failed"`
-   - `summary`: brief test results
-4. **Return to Step 1**
-
-If `pipeline_next_actions` or idle `attention.human_actions` says a card requires
-human attestation, do not claim it and do not call `pipeline_test` for it. Give the
-human a concise brief with the card, evidence to inspect, and requested decision;
-the operator records the result through `pipeline_attest_task`.
-
-**action = "blocked" with `blocker.kind = "human_execution"`**
-
-1. Do **not** claim another card or try to implement the blocked card. The
-   scheduler has deliberately selected operator-owned work.
-2. Surface the card's `operator_procedure`, `evidence_destination`, and its
-   plain-language `HUMAN ACTION:` brief in the same conversation/report. Do not
-   paraphrase it into opaque plan jargon and do not make the operator discover
-   evidence paths unaided.
-3. The operator resolves it through `pipeline_complete_human_task`, supplying
-   literal outcome evidence for **every** acceptance step. Agents may facilitate
-   the call, but must never invent, summarize as firsthand, or self-attest the
-   operator's evidence.
-4. Respect scope. `global` means stop the worker loop until that human task is
-   resolved; `dependency` means the blocked task is unavailable but independent
-   safe work may still be dispatched. Never turn this into a blanket ban on
-   orthogonal implementation or isolated speculative worktrees.
-
-**action = "sweep" (from Passed Test, only when all other lanes empty)**
-
-1. **Do NOT call pipeline_sweep yet.** All cards in Passed Test means implementation
-   is done, but verification hasn't run.
-2. Run `pipeline_check_sweep_readiness(session_id, board_id)`. If it says the
-   session card is missing from the current board, stop and repair that split;
-   do not force a sweep against orphaned task cards.
-3. **Transition to Phase 9: Verification.** Follow `09-verification.md`.
-4. Verification produces a report and either sweeps (all pass) or fails specific cards.
-5. **Stop the self-pickup loop.** Phase 9 takes over from here.
-
-After the session and every task are in `Completed-Unmapped` or
-`Completed-Mapped`, an operator may run `pipeline_archive_completed_session` as
-a dry run. It never closes work by default; applying it requires the exact
-confirmation string returned by the preview.
-
-**action = "idle" (no qualifying cards)**
-
-1. Report status to the user:
-   - Read `attention.next_actions`, `attention.human_actions`, and `attention.blocked`.
-     State the named card and next actor, not only a lane count.
-   - If reason mentions self-review skip: "Cards exist in Review but need a different agent to review them."
-   - A human attestation is actionable only when `attention.human_actions` says it is;
-     a card configured with `tested_by: both` is not awaiting a human while it is
-     still in New Todo or its automated test result is pending.
-   - If all lanes empty: "All cards completed. Implementation done."
-2. **Stop the loop.** Do not continue polling.
-
-#### Step 3: Iterate
-
-After each completed action, immediately return to Step 1. The loop continues
-until the pipeline returns "idle."
-
-#### Human-decision cards (`blocker_type=human_decision`) — HUMAN BRIEF required
-
-When you call `pipeline_block_task` with `blocker_type: "human_decision"`, the card
-is now a question **for the operator**, not for agents. Two obligations, both
-mandatory (origin: card 5966, 2026-07-08 — operator could not act on a block whose
-reason was written entirely in spec/agent jargon):
-
-1. **HUMAN BRIEF on the card.** Update the card description (`update_card`) to
-   include a section starting with the literal marker `HUMAN BRIEF:` — 2-5 plain
-   sentences a non-participant can act on: what is being asked, why the agents
-   can't decide it, and what the answer choices actually mean in product terms.
-   No internal IDs, no AC/TC references, no diagnosis-file paths inside the brief
-   (they belong in the machine `reason`/`evidence` fields, which you still fill
-   with full rigor).
-2. **Auto-surface, don't wait to be asked.** A human-gated card must reach the
-   operator's attention the same session it is blocked: regenerate `recent.html`
-   (html-recent-activity renders `human_decision` blocks as decision widgets from
-   the HUMAN BRIEF) or, if no report rebuild is happening, `telegram-send` the
-   brief directly. A human_decision block that only lives in board state is a
-   silent stall.
-
-When the operator resolves or defers the question, **re-block with the new
-truth**: a deferral is `blocker_type: "external_dependency"` with the deferral
-reason and the unblocking artifact named — never leave the machine state reading
-`human_decision`/awaiting-operator after the operator has already answered.
-
-#### Human-execution cards (`blocker_type=human_execution`) — no agent claim
-
-This is not a question for an agent to answer and not a `tested_by` attestation
-waiting in Untested. It is a plan-declared, pure operator task. `pipeline_load`
-materializes it with a blocked tag, no agent assignee, the procedure/evidence
-destination, and the resolving tool. Its card description must contain the
-`HUMAN ACTION:` brief authored in Phase 7.
-
-When a human-execution task is ready, auto-surface it in the same session:
-regenerate `recent.html` or send its exact brief through Telegram. A global one
-must cause `pipeline_do_next_task` to return `action: "blocked"` for **all**
-workers before claim selection; a dependency-scoped one may coexist with
-unrelated work. Resolve success or rejection only through
-`pipeline_complete_human_task`; it records per-criterion evidence and moves the
-card to the appropriate lane. Do not use `pipeline_attest_task` to retrofit a
-pure human task and do not use `pipeline_test` on it.
-
----
-
-### Validation leg (system altitude)
-
-> **Altitude gate — run this leg ONLY for system-altitude sessions.** Read the
-> session's `session_altitude` from the **card metadata via MCP**
-> (`get_card_metadata` with the explicit `board_id` from `projects.yaml` and the
-> `card_id` from the session detail file), never from local session state alone (US-2).
-> - `session_altitude == "system"` → run the close algorithm below before the
->   Finalization advance.
-> - `session_altitude` is `component`/`feature`, or the v5 obligation is absent →
->   **SKIP this entire section.** Sub-system altitudes carry no validation obligation
->   (NG2); there is no ConOps, no ledger, and no close call to make.
-
-**What this closes.** Phase 7 drafted the validation rows (see `07-execution.md`
-"Validation leg"); this leg *executes the scenarios, gets Jason's judgments, and
-closes the gate*. Fizzy pipeline v5 refuses the Finalization→Completed advance for a
-system node whose ConOps user stories lack a *passing validation row* — a gate
-independent of verification (`system_validation_complete` ≠
-`system_verification_complete`; verification asks "built it right?", validation asks
-"built the right thing?"). The conductor drives the close; the module
-(`~/.claude/skills/adversarial-spec/scripts/validation_emission.py`, prefix every call
-with `uv run python`) validates shapes, stamps every hash, and mechanizes the
-emission — **it never generates prose and never judges**. Every invocation prints one
-JSON envelope on stdout (`{"status","code","issues","data"}`); exit 0 = ok, 2 =
-validation issues/reprompt, 3 = environment/lock/corrupt.
-
-**The MCP close call.** The gate is closed CARD-SIDE (never plan-side — a
-`system_validation` key in a task's verification binding is rejected by fizzy as
-`VV_ABOVE_ALTITUDE`). The single tool is
-`pipeline_mark_system_validation_complete`, called with explicit `board_id`:
-
-```
-pipeline_mark_system_validation_complete(
-  card_id                  = SYSTEM_NODE_CARD_ID,  # the system-altitude TASK node, NOT the session card
-  session_id               = SESSION_ID,
-  board_id                 = BOARD_ID,            # explicit, from projects.yaml
-  validation_artifact_path = "<…>/system_validation.json",   # kind == "system-validation"
-  conops_path              = "<…>/roadmap/conops.md",
-)
-```
-
-> **`card_id` is the system NODE card, not the session card (hard contract, dogfood
-> 2026-06-14).** The gate's first precondition is `_task_belongs_to_session`, which
-> requires `card_type == "task"` AND `parent_session_id == SESSION_ID`. The session
-> card (the `fizzy_card_id` in the session detail file) has `card_type == "session"`,
-> so passing it **always** fails with `SESSION_MISMATCH` — it can never satisfy this
-> check. The correct target is the single task card with `altitude == "system"`
-> (`task_id "SYS"`, the schema-3 root node), discovered from the board, not from the
-> session detail file. Confirm via `get_card_metadata` that the chosen card has
-> `card_type == "task"`, `altitude == "system"`, and `parent_session_id == SESSION_ID`
-> before calling. (`system_validation_complete` lives on this node, and the
-> Finalization→Completed coverage gate reads it from the system node too.)
-
-Read-back the true state with `get_card_metadata` (`system_validation_complete: true`).
-A lost MCP response is resolved by reading metadata, never by re-emitting blindly (FM-8).
-
-**Close algorithm (single normative ordering — gauntlet DD-2; every step
-idempotent, re-entry starts at step 1):**
-
-1. **Preflight** `[conductor]`: read `board_id` (projects.yaml) and `session_id`
-   (session detail file). Resolve the **system node card_id** — the task card with
-   `card_type == "task"` and `altitude == "system"` (`task_id "SYS"`) whose
-   `parent_session_id == session_id` — from the board (NOT the `fizzy_card_id` in the
-   session detail file, which is the session card and is the wrong target — see "The
-   MCP close call" above). `get_card_metadata` on that node → verify `card_type ==
-   task`, `parent_session_id` match, `altitude == system`, pipeline v5+ obligation; if
-   `system_validation_complete` already true → skip to step 9. Verify clean
-   worktree; verify `conops.md` and ledger exist; re-derive ConOps and
-   compare hashes (OQ-3 RESOLVED: always re-derive at close entry) — story
-   mismatch → refresh protocol (§8 above) before proceeding; compare ledger
-   vs `drafted_baseline_hash` and surface any unexplained drift.
-2. All verification obligations discharged; all task cards through review.
-3. Evidence: for each active unjudged row, execute scenario → `record-evidence`
-   (front matter incl. commit hash, clean worktree).
-4. `assemble-digest`. `NOTHING_TO_DIGEST` + no failed rows → step 7.
-   `NOTHING_TO_DIGEST` + failed rows present → remediation loop (step 6) —
-   never emission (gauntlet CB-5).
-5. Send parts (`telegram-send` via stdin, bounded retry) + `record-send` each;
-   all sent → await replies; `parse-reply --update-file` per inbound message;
-   apply confirmations; loop until batch closed. Bridge down → `cancel-batch`,
-   terminal AskUserQuestion fallback for the whole batch (same grammar;
-   detection = telegram-send nonzero exit/timeout — gauntlet US-6).
-6. Any `fail`: if batch partially judged → `cancel-batch` remainder. Create
-   remediation cards (MCP, payload per §4.7); after fixes: verify card
-   resolution (MCP) → `reset-failed` per row → step 3.
-7. `emit-system-validation` → `self-check` (ALWAYS, on the exact emitted file
-   — including on re-entry; record the artifact's sha256).
-8. Re-verify the artifact's sha256 unchanged (TOCTOU guard, gauntlet RC-1),
-   then `mark_system_validation_complete` (explicit `board_id`). Transient
-   MCP error → bounded retry; lost response → `get_card_metadata` to learn
-   the true state (gauntlet FM-8).
-9. `get_card_metadata` read-back confirms `system_validation_complete: true`
-   → commit artifacts → proceed to Finalization advance. Post-close
-   discovery of an erroneous validation: process-failure note + fizzy
-   handoff item (write-once artifacts, OQ-4c).
-
-**Re-entry routing (read these before re-running the close):**
-
-- **Re-entry always restarts at step 1.** Every step is idempotent, so a crashed
-  or interrupted close is recovered by re-running from the top — preflight will
-  short-circuit to step 9 if `system_validation_complete` is already true (DD-2).
-- **`NOTHING_TO_DIGEST` is a fork, not a finish (CB-5).** No unjudged active rows
-  means one of two things: (a) **failed rows present** → go to the step 6
-  remediation loop (fix, `reset-failed`, re-execute) — **never emit**; (b) no failed
-  rows → all rows are judged-pass, proceed to step 7 emission. The conductor must
-  branch on the presence of failed rows, not treat "nothing to digest" as "ready to
-  close."
-- **`self-check` runs before EVERY `mark_system_validation_complete`, on the exact
-  emitted file (INV-5).** This holds on re-entries too — never skip the self-check
-  because "it passed last time." The module re-verifies the artifact's sha256 at call
-  time (RC-1); a file that changed between emission and the close call is rejected.
-
-**Row state machine (R2 codex — normative; revised per gauntlet CB-1/CB-4):**
-
-| # | From | Event | To | Notes |
-|---|------|-------|----|-------|
-| S1 | drafted (`result:null`, no evidence) | scenario executed (`record-evidence`) | evidence-attached | front matter binds row/story/conops hashes + commit |
-| S2 | evidence-attached | `assemble-digest` | digested (batch d-N) | only `result:null` active rows; batch snapshots hashes |
-| S3 | digested | `parse-reply` pass | judged-pass | exits only via S7 |
-| S4 | digested | `parse-reply` fail | judged-fail | justification required; remediation cards |
-| S5 | digested | `parse-reply` na | judged-na | row-level; sole-row N/A warned at parse, blocks close (TC-3.6) |
-| S6 | judged-fail | card resolved + `reset-failed` | needs-reexecution | fail → history (append-only); evidence invalidated (renamed); distinct from drafted — scenario unchanged, evidence required fresh |
-| S6b | needs-reexecution | scenario re-executed (`record-evidence`) | evidence-attached | fresh evidence, fresh hashes |
-| S7 | ANY state | `supersede-row` (human-approved) | superseded | full snapshot retained; excluded from digests/parsing (INV-10); transactional replacement allowed |
-| S8 | digested | `cancel-batch` | evidence-attached | returns to delta pool; audit on batch |
-
-No other transitions exist. `judgment_history` is never rewritten.
-
-#### Error-code playbook
-
-When a close-leg command or the MCP gate rejects, look the code up here and take the
-documented response — do not improvise. The first table is the **eight fizzy gate
-reject classes** (six raised by `pipeline_mark_system_validation_complete` itself,
-two at the Finalization advance); the second is the module's local codes.
-
-**Gate rejects (from the served fizzy contract — six at the close call + two at advance):**
-
-| Gate reject | Conductor response |
+Phase 8 starts only after the approved execution plan has passed
+`pipeline_validate_plan` and its Task Cards have been created by `pipeline_load`.
+Do not ask for a second implementation approval. Missing cards or an unapproved
+plan return control to Phase 7.
+
+### Pseudo-to-real promotion pass
+
+For every active TMR row whose data strategy is `REAL-DATA` or
+`REAL-DATA + PROPERTY` and which is a happy-path spine or critical seam:
+
+1. Use `phase8_promotion.build_promotion_requests` to emit a typed request with
+   the TMR/test/story identity, bound accessors, owner-repo command, cwd, repo,
+   commit, and `negative_oracle_required: true`.
+2. The owner repo authors and binds the test. Do not trust an owner-authored
+   pass/fail claim.
+3. The skill runner executes the declared command and captures trusted
+   `run_evidence`, including result, environment, artifact URI/hash, and the
+   live-or-induced technique when required.
+4. Reject unbound accessors, missing negative oracles, exempt/spike critical
+   rows, non-green or untrusted evidence, and boundary-mock violations according
+   to the deterministic report.
+
+`evaluate_phase8_close` has three cutover modes; state the selected mode in the
+close report:
+
+| Mode | Actual behavior |
 |---|---|
-| `SESSION_MISMATCH` | **Almost always means the close targeted the session card instead of the system node** (`_task_belongs_to_session` requires `card_type == "task"` + `parent_session_id` match; the session card fails both). Retarget to the `altitude == "system"` task node (`task_id "SYS"`) per "The MCP close call". Only if already on the correct task node: re-run preflight; never re-point at another session's card. |
-| `VV_NOT_OBLIGATED_AT_ALTITUDE` | Card isn't system-altitude: investigate triage/altitude drift; do not force. |
-| `VALIDATION_KIND_MISMATCH` | Artifact `kind` wrong — regenerate via `emit-system-validation` (a hand-edited artifact is suspected). |
-| `VALIDATION_ARTIFACTS_INCOMPLETE` | Run `self-check`; fix reported issues (the gate may group several failures under this code — rely on local self-check granularity, not the gate's message). |
-| `VV_LEDGER_HAS_FAILURES` | Should be unreachable (close algorithm blocks on fail rows at step 4/6); if hit, the remediation loop was bypassed — process-failure note + remediate. |
-| `VALIDATION_IS_RELABELED_VERIFICATION` | Rows re-point at verification fixtures — redraft scenarios from ConOps intent; check `test_targets` sets (local INV-11 should have caught it first). |
-| `SYSTEM_VALIDATION_MISSING` (at advance) | `mark_system_validation_complete` was never called for a system node — run the close algorithm. |
-| `UNVALIDATED_USER_STORY` (at advance) | A ConOps US id lacks a passing row — self-check coverage should have caught it; re-run close with the coverage fix. |
+| `legacy` (default) | Reads record-level `run_evidence`; required missing evidence is a blocking `run_evidence_missing` issue. |
+| `warn` | Evaluates target-observation comparison context, but its identity/freshness/terminal gaps are warnings. Core accessor, negative-oracle, exempt-mode, and supplied-evidence checks keep their own severities. |
+| `reject` | The same target-observation gaps are halts. Core checks still apply. |
 
-**Local module codes (gauntlet FM-5):**
+Do not claim that null evidence fails identically in every cutover mode. At
+`warn`, a target-observation gap is transitional warning behavior; record it
+rather than describing it as enforced rejection.
 
-| Local code | Meaning | Response |
-|---|---|---|
-| `LEDGER_BUSY` (exit 3) | Lock held >10s | Check `status`/live processes; retry once after 30s; stale lock → see filelock stale handling. |
-| `LEDGER_CORRUPT` (exit 3) | Unparseable ledger | Corrupt bytes auto-copied aside; restore from git (commit cadence bounds loss); replay from quarantine + Telegram transcript if needed. |
-| `NOTHING_TO_DIGEST` (exit 0) | No unjudged active rows | Step 4 routing: failed rows → remediation (step 6); else → emission (step 7). Never treat as "ready to close" without checking for fail rows (CB-5). |
-| `SENDER_NOT_ALLOWLISTED` (exit 2) | Telegram reply from unknown sender | Security event logged; if Jason's real reply was discarded, fix the registry allowlist and re-feed the update file. |
-| `ALLOWLIST_CONFIG_INVALID` (exit 2) | Registry missing/malformed | Fix the project telegram registry entry; telegram parsing is blocked until valid. |
-| `STALE_DIGEST` / `STALE_ROW_HASH` / `STALE_CONOPS` (exit 2) | Reply references non-active batch or changed content | Re-digest; notify Jason which digest is current. |
-| `REPROMPT_REQUIRED` (exit 2) | Invalid/partial reply blocks | Send the module's re-prompt text (quoted offending span) to the same channel. |
-| `EVIDENCE_MISSING` / `EVIDENCE_MALFORMED` / `EVIDENCE_HASH_MISMATCH` / `EVIDENCE_STALE` (exit 2) | Evidence chain broken | Re-execute the scenario via `record-evidence` for the named row. |
-| `REFRESH_DISALLOWED` (exit 2) | Supersession reason not in enum / approval missing | Get the human decision; use the allowed reason enum. |
-| `ROW_OVER_BUDGET` (exit 2) | Row exceeds digest byte budget | Redraft the row tighter (drafting error). |
-| `SELF_CHECK_FAILED` (exit 2) | Pre-close `self-check` rejected the emitted artifact | Read the issues; fix the row/evidence/coverage problem and re-emit; never call the MCP gate after a failed self-check (INV-5). |
-| `ARTIFACT_SHA_MISMATCH` (exit 2) | Artifact changed between emission and close (TOCTOU) | Re-emit and re-run self-check on the fresh file before the MCP call (RC-1). |
-| `ANTI_RELABELING_UNCHECKED` (warning) | No verification ledger supplied | Supply `--verification-ledger`; do not close on a warning when verification artifacts exist. |
+For altitude-aware work, append close-time `altitude_fit` provenance. Only
+`altitude_fit: right` is a correct fit; `too_low` and `too_high` remain precision
+failures even if the code is stable.
 
-**[GATE] TodoWrite (system-altitude sessions only): Mark the validation-leg close
-complete — all rows judged-pass (or superseded), `emit-system-validation` +
-`self-check` clean, `mark_system_validation_complete` called, and
-`get_card_metadata` read-back confirms `system_validation_complete: true` — before the
-Finalization advance.**
+### Identity and setup
 
----
+Use a stable pipeline agent alias on every call so independent-review checks can
+distinguish implementer and reviewer. Agent aliases are not model transport
+names. See `skills/adversarial-spec/reference/current-models.md` for the current
+seat/transport mapping.
 
-### Cross-Agent Review: The Core Value Proposition
+Before pickup:
 
-The pipeline enforces that the implementer cannot review their own work:
+- Resolve `session_id` from the invocation or active session pointer. Stop if no
+  active Session exists.
+- Resolve `board_id` from project/session configuration and pass it explicitly
+  on every board-scoped call. Never rely on a server default.
+- Confirm the expected Task Cards with
+  `pipeline_lane_state(pipeline="task", session_id=SESSION_ID, board_id=BOARD_ID)`.
+- Read the project instruction file, approved spec, approved execution plan,
+  `.architecture/INDEX.md`, `.architecture/primer.md`, relevant codebase
+  Concerns, and only the component/flow docs referenced by the current card.
 
-1. `pipeline_do_next_task` skips Review cards where `last_agent == requesting agent`
-2. `pipeline_review` rejects the call if `implementer == reviewer`
+Read enough of the spec/plan to understand the current card's purpose and
+constraints. The card carries the bounded work; the artifact chain supplies the
+why.
 
-This means:
-- Agent A implements a card → card moves to Review
-- Agent B (different agent) reviews it
-- If B requests changes → card moves to Failed Review → Agent A or C picks it up
-- Cycle continues until a different agent approves
+### Inspect → claim → act
 
-**Every change gets a genuinely independent review.** This eliminates self-confirming bias
-without requiring human involvement.
+Use a read-only inspection before deciding to work or reporting status:
 
----
+```text
+pipeline_next_actions(session_id=SESSION_ID, agent=AGENT, board_id=BOARD_ID)
+# or
+pipeline_lane_state(pipeline="task", session_id=SESSION_ID, agent=AGENT, board_id=BOARD_ID)
+```
 
-### CRITICAL: Structural Conformance
+If `attention.session_context.kind` is `session_card_missing`, stop. Task Cards
+have lost their parent Session Card; do not claim, sweep, or archive until the
+board relationship is repaired.
 
-**The execution plan's file structure is a contract, not a suggestion.**
+Only when ready to perform whatever the scheduler returns, claim through:
 
-Before creating any file, check it against the Architecture Spine's file structure. If the filename is not listed there, do not create it. This applies to:
-- Source modules
-- Test helper files
-- Utility modules
-- "Temporary" files
+```text
+pipeline_do_next_task(
+  session_id=SESSION_ID,
+  pipeline="task",
+  agent=AGENT,
+  board_id=BOARD_ID,
+)
+```
 
-If you believe a new file is needed that the plan doesn't list, **stop and update the execution plan first** — get user approval, then create the file. The plan must be updated before the code, never after.
+Act on the returned action. The MCP owns claim CAS, leases, assignment display,
+lane priority, rework reservations, and self-review rejection. Do not reproduce
+or bypass those mechanics. Release a claim explicitly if work cannot begin.
 
-**After completing each wave**, run `/checkpoint`. The checkpoint captures structural state and creates a natural review point. This is not optional — it is how structural drift gets caught before it compounds.
+Follow `SKILL.md` § Fizzy Card Comment Convention for operator-visible updates.
+Keep structured payloads and attestations in metadata/tool results.
 
-**Anti-patterns that cause architectural drift:**
-- Creating files not in the plan because a module "feels too big"
-- Renaming concepts during implementation ("discovery_engine" instead of "discovery")
-- Splitting one planned module into multiple files without plan authority
-- Adding code that doesn't exist in the plan's scope (building W2 features during W0)
-- Fixing bugs in wrong files instead of catching that the file shouldn't exist
+#### `implement` or `fix`
 
----
+1. Read the card description, acceptance steps, declared refs, and review notes
+   for a fix.
+2. Modify only the card's declared scope and preserve the Architecture Spine.
+3. Execute its declared verification commands plus required adjacent checks.
+4. Stage explicit paths only. Never sweep unrelated dirty-worktree changes into
+   the card commit.
+5. Commit with the task identity, then call `pipeline_complete_task` with the
+   exact commit and explicit `board_id`.
+6. Record only material landing decisions. See `SKILL.md` § Decisions Log.
 
-### CRITICAL: Process Discipline During Implementation
+Evidence precedes completion claims. A passing command that collected zero
+tests is not evidence.
 
-**DO NOT abandon the structured process when users ask about specific issues.**
+#### `review`
 
-When a user asks "can you check X" or "I want to see Y working":
+The reviewer must differ from the implementer. Read the exact commit and select
+a proportional recipe:
 
-1. **Check scope first** — Is this part of the current session's tasks?
-2. **Track it through the right record** — For an investigation with no new
-   implementation work, add a comment on the relevant Card. For new implementation
-   work, amend the execution plan and its `fizzy-plan.json`, get the required plan
-   approval, then run `pipeline_validate_plan` followed by `pipeline_load`; only then
-   use `pipeline_do_next_task`. That is what **carded** means. Raw `add_card` does not
-   create a Task Card for an active Session, and a comment does not authorize work.
-3. **Targeted queries only** — Don't burn context with ad-hoc debugging
-4. **Identify root cause** — Don't just poke values to make things "look right"
-5. **Propose fix through process** — Update Fizzy card with the fix needed
+| Diff size | Review |
+|---|---|
+| up to 30 changed lines | Inspect the full diff, acceptance criteria, and declared tests. |
+| 31–200 | Add failure-path and new-file checks. |
+| 201–800 | Also check the relevant spec section, coverage, adjacent integrations, and structural conformance. |
+| above 800 | Request decomposition unless the card explicitly authorizes generated/vendor-scale output and supplies a file-by-file walkthrough. |
 
-**Anti-patterns to avoid:**
-- Spending 50+ turns on ad-hoc debugging without tracking the work
-- Manually setting values to make the UI "look right"
-- Multiple restarts and retries without identifying root cause
-- Switching into "fix it now" mode, abandoning the process
-- Treating passing tests as proof that module boundaries are correct
+Submit the verdict through `pipeline_review`; `changes_requested` requires
+actionable notes. Do not approve from a summary or self-review your own card.
 
----
+#### `test`
 
-### Fizzy Context Discipline
+Run the declared commands against the committed implementation and submit the
+literal result through `pipeline_test`. Keep the summary bounded but include the
+commands, counts, and relevant failure.
 
-**Board targeting:** Treat `board_id` as an explicit per-call routing parameter for board-scoped operations. Never assume the active board from server startup state or `FIZZY_BOARD_ID`.
+When inspection reports a human attestation, do not claim or test it. Surface
+the evidence and requested decision; the operator records it through
+`pipeline_attest_task`.
 
-**Subagent rule (Claude only):** Use a subagent with a low-reasoning model (haiku) for bulk Fizzy reads. Fizzy API responses are smaller than Trello's (native metadata, no description-embedded state), but bulk operations still bloat main context. This applies to:
-- Creating cards in bulk
-- Fetching cards from multiple lists
-- Any MCP call that returns unbounded data
+#### Human decisions
 
-For single-card operations (get_card_description, pipeline_do_next_task, pipeline_complete_task), direct calls are fine.
+A `human_decision` block is an operator question. Its card must contain a short
+`HUMAN BRIEF:` explaining the product decision and choices without making the
+operator decode internal IDs. Preserve the rigorous machine reason separately.
+Surface it under the notification rule in `SKILL.md`; a board-only question is a
+silent stall. If the operator defers, update the blocker to the true external
+dependency and name its unblocking artifact.
 
----
+#### Human execution
 
-### Validation Strategy
+For `blocker.kind: human_execution`:
 
-**High-risk tasks** (3+ concerns, or `strategy: "test-first"`) use test-first validation:
-- Write tests based on acceptance criteria before implementation
-- Ensure tests cover failure modes from concerns
-- Implementation must pass all tests
+- Never claim or implement the card.
+- Present its exact `HUMAN ACTION:`, procedure, stop conditions, and evidence
+  destination.
+- Resolve only through `pipeline_complete_human_task`, with literal evidence for
+  every acceptance step. Never invent, summarize as firsthand, or self-attest
+  operator evidence.
+- Respect scope: `global` stops all workers; `dependency` leaves unrelated safe
+  work claimable.
 
-**Test-ahead-of-impl quarantine (P8-1 — keep the suite-wide baseline meaningful).** A test-first card's
-not-yet-passing tests must NOT land in the suite-wide default test glob, or every later card sees a red
-suite and a genuine regression hides among the expected reds. Put them where a whole-suite run does NOT
-auto-collect them — a quarantined directory (e.g. `tests/plan/`, `tests/pending/`) run only by the card's
-own `verify_commands` — OR mark them `test.todo` / `skip` / `it.skip` with an `// unblocks: <CARD_ID>`
-reference, until the implementing card turns them green (then they move into the gated suite). The
-suite-wide baseline must stay usable as a "did I regress anything?" gate throughout the build-out.
-(Origin: 2026-06-20 — test-ahead files were committed into `node --test tests/*.test.mjs`, so the gateway
-suite went 51/524-red and a possibly-real regression couldn't be told apart from the expected reds.)
+Do not substitute `pipeline_attest_task`, `pipeline_test`, or a manual card move.
 
-**Lower-risk tasks** (`strategy: "test-after"`) use test-after validation:
-- Implement the feature
-- Write tests after
-- Still address all acceptance criteria
+#### `idle`
 
-**Spike tasks** (`strategy: "spike"`):
-- No automated tests committed (documentation, config-only, deferred/manual-only changes)
-- Still verify the change works (often via an EXEMPT `verification_mode` + `exemption_reason`)
+Read `attention.next_actions`, `attention.human_actions`, and
+`attention.blocked`. Report the named next actor and blocker, then stop. Do not
+poll by repeatedly calling the claiming tool.
+
+### Structural and scope conformance
+
+The approved plan's file structure and boundaries are a contract. Do not create,
+rename, split, or move implementation files outside it merely because a local
+shape feels cleaner.
+
+If new implementation work is needed, amend the execution plan and
+`fizzy-plan.json`, obtain required approval, run `pipeline_validate_plan`, and
+then `pipeline_load`. A Card comment may record an investigation; it does not
+authorize unplanned delivery. Never raw-create a Task Card for an active Session.
+
+See `SKILL.md` § Journey Log for durable workflow events and § Phase Transition
+Protocol for checkpoint/transition ownership.
+
+### Validation strategy
+
+For test-first work, write the card's acceptance tests before implementation.
+Keep expected-red tests out of the suite-wide default collection until the
+implementing card makes them green. Use a quarantined path invoked only by the
+card's command, or the framework's explicit todo/skip marker with an unblocking
+Card reference. Remove the quarantine when the implementation lands.
+
+For test-after work, implement the bounded behavior and then add tests covering
+all acceptance criteria and Concern failure modes.
+
+For `spike`, commit no promised automated suite, but still discharge the
+declared exempt/manual verification and reason. A live-spine owner cannot be a
+spike or exempt task.
+
+### System-altitude validation leg
+
+Run this leg only when card metadata, read with explicit `board_id`, shows that
+the system node owes the pipeline-v5+ system-validation obligation. Component
+and subsystem nodes skip it.
+
+Phase 7 drafted the ConOps-bound ledger. Phase 8 executes scenarios, obtains the
+operator's judgments, emits the close artifact, and closes the distinct
+validation gate. The scripts mechanize shape and hashes; they do not write the
+scenario prose or make the human judgment.
+
+The close target is the single **system-altitude Task Card**, not the Session
+Card. Confirm `card_type: task`, `altitude: system`, and
+`parent_session_id == SESSION_ID` before calling:
+
+```text
+pipeline_mark_system_validation_complete(
+  card_id=SYSTEM_NODE_CARD_ID,
+  session_id=SESSION_ID,
+  board_id=BOARD_ID,
+  validation_artifact_path="<slug>/system_validation.json",
+  conops_path="<slug>/roadmap/conops.md",
+)
+```
+
+Use this re-entrant ordering:
+
+1. Resolve the system node from the board; read metadata. If already complete,
+   jump to readback. Verify the worktree and Phase 7 artifacts, re-derive ConOps,
+   compare hashes, and surface unexplained baseline drift.
+2. Confirm verification obligations and reviews are discharged.
+3. Execute every active unjudged scenario and attach commit-bound evidence with
+   `record-evidence`.
+4. Run `assemble-digest`. If no rows remain but failures exist, remediate; if no
+   failures exist, proceed to emission.
+5. Route the digest for correlated operator judgment using the notification rule
+   in `SKILL.md`. Parse and apply replies; an uncorrelated message cannot approve
+   a gate.
+6. On failure, cancel any open remainder, create plan-backed remediation work,
+   resolve it, `reset-failed`, and re-execute the scenario.
+7. Run `emit-system-validation`, then `self-check` on the exact file.
+8. Recheck the artifact hash, call the MCP close tool, and resolve a lost response
+   by reading metadata rather than blindly re-emitting.
+9. Confirm `system_validation_complete: true` by metadata readback, then commit
+   the evidence artifacts.
+
+Every re-entry starts at step 1. `NOTHING_TO_DIGEST` is a branch, not proof of
+success. `self-check` and the hash guard run before every close attempt.
+
+#### System-validation error-class playbook
+
+Keep these eight served-code responses current. Do not force or patch around any
+reject.
+
+| Gate reject | Required response |
+|---|---|
+| `SESSION_MISMATCH` | Confirm the target is the system Task Card and belongs to this Session; never retarget another Session's card. |
+| `VV_NOT_OBLIGATED_AT_ALTITUDE` | Stop and reconcile altitude/triage; do not force validation onto a lower node. |
+| `VALIDATION_KIND_MISMATCH` | Regenerate with `emit-system-validation`; do not hand-edit the artifact kind. |
+| `VALIDATION_ARTIFACTS_INCOMPLETE` | Run `self-check`, repair every reported artifact/coverage issue, and re-emit. |
+| `VV_LEDGER_HAS_FAILURES` | Return to the remediation loop; a failed row cannot close. |
+| `VALIDATION_IS_RELABELED_VERIFICATION` | Redraft from ConOps intent and remove verification-only oracles/targets. |
+| `SYSTEM_VALIDATION_MISSING` | Run this close leg for the obligated system node before final advance. |
+| `UNVALIDATED_USER_STORY` | Add or repair a passing row for every uncovered ConOps story, then rerun close. |
+
+Local script routing:
+
+| Code family | Response |
+|---|---|
+| `LEDGER_BUSY` | Check the active owner; bounded retry only. Follow file-lock stale handling when proven stale. |
+| `LEDGER_CORRUPT` | Restore from committed bytes and replay quarantined evidence; never overwrite the corrupt copy silently. |
+| `NOTHING_TO_DIGEST` | Failures present → remediation; otherwise → emission. |
+| sender/allowlist/reply errors | Repair correlation/configuration and re-feed the exact operator response. |
+| stale digest/row/ConOps | Regenerate the digest from current bytes and identify the superseded digest. |
+| evidence missing/malformed/hash/stale | Re-execute the named scenario and record fresh evidence. |
+| `SELF_CHECK_FAILED` | Fix issues and re-emit; do not call the MCP close tool. |
+| `ARTIFACT_SHA_MISMATCH` | Re-emit and self-check the fresh artifact before retrying. |
+| `ANTI_RELABELING_UNCHECKED` | Supply the verification ledger when verification artifacts exist. |
+
+### Enter the verification subflow
+
+When the scheduler returns `action: sweep`, implementation cards have reached
+the sweep boundary; they are not complete yet. Do not sweep from this loop.
+
+Set `current_phase: implementation` and `current_step: verification` in the
+active detail and pointer using the transition protocol, then follow
+`09-verification.md`. Verification performs the whole-change judgment and calls
+either `pipeline_sweep` or `pipeline_sweep_fail`.
+
+Stop the pickup loop while verification owns the flow. Do not use
+`pipeline_patch_state` to bypass verification or a human fence.

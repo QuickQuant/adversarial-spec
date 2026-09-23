@@ -56,7 +56,11 @@ Skip this phase only when:
 - The candidate file exists but contains no materializable candidates.
 - The user explicitly chooses to skip middleware materialization.
 
-When skipped, update session state with `middleware_creator_status: "skipped"` and transition to Phase 7 execution planning.
+When skipped, update session state with `middleware_creator_status: "skipped"`.
+If the approved execution plan and typed source cards are already loaded, continue
+to Phase 8 implementation through `SKILL.md` § Phase Transition Protocol. Return
+to Phase 7 only when that substrate is missing or a candidate needs re-planning;
+never send an otherwise ready skipped pass back to planning.
 
 ---
 
@@ -114,7 +118,15 @@ Do not launch fanouts silently. This phase can multiply work across agents and m
 
 ---
 
-## Step 3: Ensure Execution Substrate Exists [GATE]
+## Step 3: Ensure Execution Substrate Exists [GATE] — classic branch
+
+> **Current v6 blocker:** `Specifying` fanout currently requires the caller's
+> canonical MCP identity to be `claude-opus-4.7`. That seat is retired by
+> `skills/adversarial-spec/reference/current-models.md`, so v6 `Specifying`
+> fanout is blocked pending an MCP fix. Do not spoof the retired identity. Stop
+> and route the source repair.
+> The source-lane and promotion rules below describe the classic
+> post-finalization branch; a full v6 rewrite is deliberately deferred.
 
 `pipeline_create_middleware_fanout` requires a `source_task_card_id` whose card state has `card_type: "task"` and whose lane is `New Todo` or `Failed Review`.
 
@@ -179,7 +191,9 @@ mcp__fizzy__pipeline_create_middleware_fanout(
 )
 ```
 
-Default implementation model set: use the session's configured model pool. If no session-specific pool exists, use the project standard for middleware fanouts and record the chosen model list in the session journey log (`sessions/<id>.journey.log`).
+Select implementation identities from the session configuration and
+`skills/adversarial-spec/reference/current-models.md`, subject to the MCP's
+accepted identities. Record the chosen list per `SKILL.md` § Journey Log.
 
 After each fanout:
 
@@ -223,7 +237,7 @@ After judging:
 
 ---
 
-## Step 6.5: Promote Winners to Canonical Source Tasks [GATE]
+## Step 6.5: Promote Winners to Canonical Source Tasks [GATE] — classic branch
 
 After each judge result, promote the selected implementation into the source task's canonical path before allowing normal Review.
 
@@ -282,26 +296,27 @@ Each JSONL record should include:
 - `test_suite_path`
 - `decision_notes`
 
-Update session state:
+Update the active detail with middleware results:
 
 ```json
 {
-  "current_phase": "execution",
-  "current_step": "Middleware creator complete; selected winners promoted and execution ready for implementation pickup",
   "middleware_creator_status": "complete",
   "middleware_results_path": ".adversarial-spec/specs/<slug>/middleware-results.jsonl"
 }
 ```
 
+Then continue to Phase 8 through `SKILL.md` § Phase Transition Protocol.
+
 If the middleware pass was skipped:
 
 ```json
 {
-  "current_phase": "execution",
-  "current_step": "Middleware creator skipped; continue execution planning",
   "middleware_creator_status": "skipped"
 }
 ```
+
+When the approved plan and typed cards are loaded, transition directly to Phase
+8. Return to Phase 7 only when that substrate is missing or needs amendment.
 
 ---
 
@@ -315,7 +330,7 @@ Hard stops:
 - Final spec path missing.
 - Execution plan missing and user does not approve generating/loading it.
 - Source task card missing or not typed as a pipeline task.
-- Source task not in `New Todo` or `Failed Review`.
+- Classic-branch source task not in `New Todo` or `Failed Review`.
 - Test suite path missing or outside allowed root.
 - Fanout creation partially fails.
 - Judge cannot identify a valid completed implementation.
