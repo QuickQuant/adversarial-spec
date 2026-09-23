@@ -11,9 +11,9 @@ tests verify three things deterministically:
 2. COVERAGE LOGIC (AC-3) — prose-but-no-spine -> ORPHANED and the false-positive
    guard (a US that has a spine is NOT flagged) are both computed through
    SpineCoverageChecker, not a re-implemented count.
-3. PROMPT CONTRACT — both the REQUIREMENTS_TRACER persona and the
-   reference/guardrail-prompts.md TRACE block carry the spine-inversion directive,
-   name SpineCoverageChecker, and preserve the non-spine no-flag guard.
+3. PROMPT CONTRACT — the REQUIREMENTS_TRACER persona in adversaries.py (the only
+   editable prompt source) carries the spine-inversion directive, names
+   SpineCoverageChecker, and preserves the non-spine no-flag guard.
 """
 
 from __future__ import annotations
@@ -155,16 +155,7 @@ def test_tc_6_1_non_spine_missing_edge_test_is_not_flagged_via_checker():
     assert result.passed is True
 
 
-# --- 3. Prompt contract (deliverable: adversaries.py + guardrail-prompts.md) ---
-
-
-def _guardrail_prompts_md() -> str:
-    rel = Path("skills/adversarial-spec/reference/guardrail-prompts.md")
-    for parent in Path(__file__).resolve().parents:
-        candidate = parent / rel
-        if candidate.exists():
-            return candidate.read_text(encoding="utf-8")
-    raise AssertionError("guardrail-prompts.md not found")
+# --- 3. Prompt contract (deliverable: adversaries.py) ---
 
 
 def test_requirements_tracer_persona_carries_spine_inversion():
