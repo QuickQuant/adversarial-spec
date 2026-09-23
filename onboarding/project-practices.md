@@ -1,161 +1,63 @@
-<!-- Base: Brainquarters v1.0 | Project: v1.0 | Last synced: 2026-01-22 -->
-# Project-Specific Practices
+# Project practices
 
-This document contains patterns and rules specific to **adversarial-spec**.
-For universal rules, see `core-practices.md`.
+Repository-specific conventions for `adversarial-spec`. Global safety and
+workflow policy remains in [`AGENTS.md`](../AGENTS.md); adversarial-spec safety
+extensions live in [`core-practices.md`](core-practices.md).
 
----
+## Runtime and checks
 
-## 1. Environment and Tooling (Python 3.10+ / pip)
+The project requires Python 3.14 or newer and uses `uv`.
 
-This project uses Python 3.10+ with standard pip and pyproject.toml.
-
-```json
-{
-  "python_environment": {
-    "python_version": ">=3.10",
-    "dependency_manager": "pip with pyproject.toml",
-    "commands": {
-      "install_deps": "pip install -e .[dev]",
-      "run_script": "python3 skills/adversarial-spec/scripts/debate.py",
-      "tests": "pytest",
-      "lint": "ruff check --fix",
-      "type_check": "mypy"
-    },
-    "notes": [
-      "The skill installs to ~/.claude/skills/adversarial-spec/",
-      "For development, run scripts directly from repo",
-      "litellm is the core dependency for multi-model orchestration"
-    ]
-  }
-}
+```bash
+uv sync --extra dev
+uv run pytest
+uvx ruff check
 ```
 
----
+`pyproject.toml` owns dependencies, console scripts, pytest discovery, and Ruff
+configuration. Do not create a second dependency or tool configuration path.
 
-## 2. Configuration (Environment Variables)
+## Source navigation
 
-API keys are loaded from environment variables. No .env file parsing library is used.
+Read [`.architecture/INDEX.md`](../.architecture/INDEX.md) first, then
+[`primer.md`](../.architecture/primer.md). Treat changed source as authoritative
+when generated architecture documentation is stale.
 
-```json
-{
-  "config_loading": {
-    "pattern": "os.environ.get('API_KEY_NAME')",
-    "api_keys": [
-      "OPENAI_API_KEY",
-      "ANTHROPIC_API_KEY",
-      "GEMINI_API_KEY",
-      "XAI_API_KEY",
-      "MISTRAL_API_KEY",
-      "GROQ_API_KEY",
-      "OPENROUTER_API_KEY",
-      "DEEPSEEK_API_KEY",
-      "ZHIPUAI_API_KEY",
-      "TELEGRAM_BOT_TOKEN",
-      "TELEGRAM_CHAT_ID"
-    ],
-    "user_config_location": "~/.claude/adversarial-spec/config.json",
-    "session_storage": "~/.config/adversarial-spec/sessions/",
-    "rules": [
-      "Never log or print API keys",
-      "Check key presence with bool(), never expose values",
-      "Use the providers.py module for key detection"
-    ]
-  }
-}
-```
+| Change | Start here |
+|---|---|
+| Entry, resume, routing, transitions | [`skills/adversarial-spec/SKILL.md`](../skills/adversarial-spec/SKILL.md) |
+| Phase behavior | [`skills/adversarial-spec/phases/`](../skills/adversarial-spec/phases/) |
+| Shared guidance and protocols | [`skills/adversarial-spec/reference/`](../skills/adversarial-spec/reference/) |
+| Python behavior | [`skills/adversarial-spec/scripts/`](../skills/adversarial-spec/scripts/) |
+| Tests | [`skills/adversarial-spec/scripts/tests/`](../skills/adversarial-spec/scripts/tests/) |
+| Machine-facing spec records | [`contracts/spec-record-contract.md`](../contracts/spec-record-contract.md) |
+| Model assignments | [`reference/current-models.md`](../skills/adversarial-spec/reference/current-models.md) |
 
----
+The root `adversarial_spec` symlink maps the installable package to
+`skills/adversarial-spec/scripts`. Preserve that bridge when changing imports or
+packaging. The declared console scripts are `adversarial-spec` and
+`gauntlet-check`.
 
-## 3. Logging vs CLI Output
+## Naming
 
-CLI tool with user-facing output. No structured logging library.
+Use qualified skill-owned terms and fields. Prefer `data_strategy` and
+`test_strategy` over an ambiguous bare `strategy`; add new domain terms to
+[`CONTEXT.md`](../CONTEXT.md).
 
-```json
-{
-  "logging_and_output": {
-    "cli_output": {
-      "pattern": "print() for user-facing messages",
-      "cost_tracking": "Display token counts and estimated costs after each round"
-    },
-    "prohibited_patterns": [
-      "Logging API keys or full config dicts",
-      "Silent failures during model calls"
-    ]
-  }
-}
-```
+External wire contracts keep the owner's spelling. For example, a Fizzy schema
+field named `strategy` is not ours to rename. Change an external key only through
+a coordinated owner-led migration. See
+[`ADR 0001`](../docs/adr/0001-disambiguate-strategy-vocabulary.md).
 
----
+## Integration boundaries
 
-## 4. Project-Specific Patterns
+- Keep provider, process, filesystem, and external-service details in dedicated
+  integration or adapter modules.
+- Core orchestration consumes normalized internal interfaces; it does not grow
+  provider-specific branches or payload conversions.
+- Entrypoints coordinate services. They do not duplicate integration logic.
+- Search for an existing adapter or shared contract before adding a new one.
 
-> **This section grows over time via SmartCompact.**
-> When you discover a pattern unique to adversarial-spec, add it here.
-
-### Code Organization
-
-```json
-{
-  "code_organization": {
-    "skill_code": "skills/adversarial-spec/scripts/",
-    "skill_definition": "skills/adversarial-spec/SKILL.md",
-    "execution_planner": "execution_planner/",
-    "tests": "tests/ and skills/adversarial-spec/scripts/tests/"
-  }
-}
-```
-
-### Model Integration Pattern
-
-```json
-{
-  "model_integration": {
-    "library": "litellm",
-    "provider_detection": "providers.py handles API key detection",
-    "cli_adapters": [
-      "codex/ prefix routes to Codex CLI",
-      "gemini-cli/ prefix routes to Gemini CLI"
-    ],
-    "enterprise": "AWS Bedrock mode for enterprise compliance"
-  }
-}
-```
-
-### Debate Loop Architecture
-
-```json
-{
-  "debate_architecture": {
-    "flow": [
-      "1. User provides spec or concept",
-      "2. Optional interview mode for requirements",
-      "3. Claude drafts initial document",
-      "4. Opponent models critique in parallel",
-      "5. Claude synthesizes + adds own critique",
-      "6. Revise and repeat until ALL agree",
-      "7. User review period",
-      "8. Final document output"
-    ],
-    "convergence": "All models must agree before exiting loop",
-    "early_agreement_check": "Press models that agree too quickly"
-  }
-}
-```
-
-## 5. Naming Conventions
-
-**No bare single-word identifiers.** Skill-owned fields, labels, and prose terms must
-carry a qualifier so they cannot collide as the vocabulary grows. The motivating case:
-the bare word "Strategy" meant two unrelated things (test-data classification vs
-test-approach), now split into **`data_strategy`** and **`test_strategy`** (see
-`CONTEXT.md` and ADR `0001`).
-
-- **Skill-owned names** (markdown labels, prose terms, internal fields): always qualify
-  (`data_strategy`, not `strategy`).
-- **The ban stops at external contract boundaries.** A wire key fizzy validates (e.g. the
-  `strategy` JSON key in `fizzy-plan.json`) is *fizzy's* schema, not this repo's variable.
-  Do not unilaterally rename it — that reintroduces generator/contract drift (pipeline-seams
-  #11/#12). Rename it only via a coordinated, fizzy-led migration.
-- New terms go in `CONTEXT.md` (glossary) as they are coined; bare collisions get the
-  loser flagged `_Avoid_`.
+Keep changes minimal and source-backed. If a contract producer and consumer live
+in different repositories, name the owner and coordinate the migration instead
+of forking the contract locally.
