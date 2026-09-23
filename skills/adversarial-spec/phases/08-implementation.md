@@ -102,7 +102,15 @@ pipeline_do_next_task(
 
 Act on the returned action. The MCP owns claim CAS, leases, assignment display,
 lane priority, rework reservations, and self-review rejection. Do not reproduce
-or bypass those mechanics. Release a claim explicitly if work cannot begin.
+or bypass those mechanics; use the tool for each situation:
+
+| Situation | Tool (always with explicit `board_id`) |
+|---|---|
+| Long work on a claimed card | `pipeline_heartbeat(agent, event="beat", board_id, card_id)` keeps the lease; `event="idle"` clears presence. |
+| Claimed but cannot begin | `pipeline_release_claim(session_id, card_id, agent, reason, board_id)` |
+| A specific worker should take it next | `pipeline_handoff_claim(session_id, card_id, agent, to_agent, reason, board_id)` — atomic, no pickup gap |
+| Blocked by something outside the card | `pipeline_block_task(session_id, card_id, agent, reason, board_id, blocker_type, evidence)`; `blocker_type` ∈ `known_red_baseline`, `external_dependency`, `environment`, `human_decision`, `human_execution`, `pipeline_bug`, `other` |
+| Blocker resolved | `pipeline_unblock_task(session_id, card_id, agent, reason, board_id)` |
 
 Follow `SKILL.md` § Fizzy Card Comment Convention for operator-visible updates.
 Keep structured payloads and attestations in metadata/tool results.
@@ -134,14 +142,17 @@ a proportional recipe:
 | 201–800 | Also check the relevant spec section, coverage, adjacent integrations, and structural conformance. |
 | above 800 | Request decomposition unless the card explicitly authorizes generated/vendor-scale output and supplies a file-by-file walkthrough. |
 
-Submit the verdict through `pipeline_review`; `changes_requested` requires
+Submit `pipeline_review(session_id, card_id, agent, verdict, board_id, notes)` with
+`verdict` ∈ `approved` | `changes_requested`; `changes_requested` requires
 actionable notes. Do not approve from a summary or self-review your own card.
 
 #### `test`
 
-Run the declared commands against the committed implementation and submit the
-literal result through `pipeline_test`. Keep the summary bounded but include the
-commands, counts, and relevant failure.
+Run the declared commands against the committed implementation and submit
+`pipeline_test(session_id, card_id, agent, result, summary, board_id, ...)` with
+`result` ∈ `pass` | `fail`. Behavior-changing automated cards also require
+`executed_verify_commands` and `verification_evidence_summary`. Keep the summary
+bounded but include the commands, counts, and relevant failure.
 
 When inspection reports a human attestation, do not claim or test it. Surface
 the evidence and requested decision; the operator records it through

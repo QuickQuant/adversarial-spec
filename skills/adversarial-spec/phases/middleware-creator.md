@@ -178,7 +178,7 @@ Only the conductor model may create or cancel fanouts. Workers implement assigne
 Call `pipeline_create_middleware_fanout` once per candidate in topological dependency order:
 
 ```text
-mcp__fizzy__pipeline_create_middleware_fanout(
+pipeline_create_middleware_fanout(
   board_id=<explicit board id>,
   session_id=<session id>,
   agent=<conductor alias>,
@@ -244,7 +244,7 @@ After each judge result, promote the selected implementation into the source tas
 Use `pipeline_do_next_task`; judged source tasks in `awaiting_promotion` should return action `middleware_promote` to the selected implementation agent or conductor. If operating directly, call:
 
 ```text
-mcp__fizzy__pipeline_promote_middleware_winner(
+pipeline_promote_middleware_winner(
   board_id=<explicit board id>,
   session_id=<session id>,
   source_task_card_id=<typed source task card>,
