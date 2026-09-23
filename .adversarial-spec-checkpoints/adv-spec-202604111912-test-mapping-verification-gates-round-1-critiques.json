@@ -1,9 +1,0 @@
-[
-  {
-    "model": "gpt-4o",
-    "agreed": true,
-    "response": "[AGREE]\n[SPEC]\n# Spec\n[/SPEC]",
-    "spec": "# Spec",
-    "error": null
-  }
-]
