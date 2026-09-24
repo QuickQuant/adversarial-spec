@@ -1,18 +1,10 @@
 """
 Integrations Module
 
-External system integrations (git, process execution, knowledge/docs).
+External system integrations (git, process execution).
 """
 
 from .git_cli import GitCli, GitCliError, GitCommandResult
-from .knowledge_service import (
-    DocCacheEntry,
-    DocChunk,
-    EvidenceItem,
-    KnowledgeService,
-    TokenUsageLog,
-    VerificationStatus,
-)
 from .process_runner import (
     CommandValidationError,
     ProcessResult,
@@ -28,13 +20,6 @@ __all__ = [
     "GitCli",
     "GitCliError",
     "GitCommandResult",
-    # Knowledge/Docs
-    "DocCacheEntry",
-    "DocChunk",
-    "EvidenceItem",
-    "KnowledgeService",
-    "TokenUsageLog",
-    "VerificationStatus",
     # Process
     "CommandValidationError",
     "ProcessResult",
