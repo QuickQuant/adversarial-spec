@@ -1,81 +1,63 @@
-# Contributing to Adversarial Spec
+# Contributing to adversarial-spec
 
-## Development Setup
+## Setup
 
-```bash
-# Clone the repository
-git clone <repo-url>
-cd adversarial-spec
-
-# Install dev dependencies
-pip install -r requirements-dev.txt
-
-# Install pre-commit hooks
-pre-commit install
-```
-
-## Code Quality
-
-All code must pass:
+Use Python 3.14 or newer and `uv` from the repository root.
 
 ```bash
-# Lint
-ruff check skills/adversarial-spec/scripts/
-
-# Format
-ruff format skills/adversarial-spec/scripts/
-
-# Type check
-mypy skills/adversarial-spec/scripts/ --ignore-missing-imports
-
-# Tests with coverage
-cd skills/adversarial-spec/scripts
-python -m pytest tests/ -v --cov=. --cov-report=term-missing --cov-fail-under=90
+uv sync --extra dev
 ```
 
-Pre-commit hooks run these automatically on staged files.
+Runtime and development dependencies are declared in `pyproject.toml`. Do not
+add an undocumented parallel requirements file.
 
-## Code Standards
+## Checks
 
-- Type hints on all functions
-- Google-style docstrings with Args, Returns, Raises sections
-- No silent exception handling (log or re-raise)
-- Input validation for security-sensitive operations
-- Test coverage minimum: 90%
-
-## Testing
-
-Tests live in `skills/adversarial-spec/scripts/tests/`. Structure mirrors the source.
+Run the configured test suite and linter before requesting review:
 
 ```bash
-# Run all tests
-python -m pytest tests/ -v
-
-# Run specific test file
-python -m pytest tests/test_models.py -v
-
-# Run with coverage report
-python -m pytest tests/ --cov=. --cov-report=html
+uv run pytest
+uvx ruff check
 ```
 
-## Pull Request Process
+Tests live under `skills/adversarial-spec/scripts/tests/`; pytest discovers that
+path from `pyproject.toml`. Run a focused test during development, then the full
+suite for the final handoff.
 
-1. Create feature branch from main
-2. Write tests for new functionality
-3. Ensure all checks pass locally
-4. Submit PR with clear description
-5. Address review feedback
+The repository does not define a mandatory formatter, type-check, or coverage
+threshold for contributions. Do not claim those gates unless project
+configuration adds them.
 
-## Commit Messages
+## Change discipline
 
-Format: `<type>: <description>`
+- Keep each change focused and preserve unrelated work already in the tree.
+- Add or update tests for behavioral changes. Do not pin incidental prose.
+- Validate required fields at boundaries and fail explicitly; never fabricate a
+  success path from missing state.
+- Keep secrets out of source, fixtures, logs, examples, and commits.
+- Follow [`AGENTS.md`](AGENTS.md) and the active Phase guidance for safety and
+  workflow rules.
 
-Types:
-- `feat`: New feature
-- `fix`: Bug fix
-- `refactor`: Code restructuring
-- `test`: Adding or updating tests
-- `docs`: Documentation changes
-- `chore`: Build, CI, dependency updates
+## Review
 
-Example: `feat: add bedrock integration for enterprise deployments`
+A review should be able to trace the requested behavior to source, tests, and
+any affected specification artifact. Call out:
+
+- behavior or contract changed;
+- relevant checks run and their result;
+- migration or compatibility impact;
+- deferred work and its owner.
+
+The implementer must not approve their own pipeline review.
+
+## Commits and pull requests
+
+Use Conventional Commit subjects, with a scope when it improves routing:
+
+```text
+docs(readme): refresh operator guide
+fix(pipeline): reject missing plan provenance
+```
+
+Keep commits reviewable. Pull requests should summarize the outcome, name the
+evidence used for validation, and avoid unrelated cleanup.

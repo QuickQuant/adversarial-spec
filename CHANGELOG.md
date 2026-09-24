@@ -6,57 +6,35 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- **Adversarial Gauntlet System** (`gauntlet.py`) - Multi-phase adversarial review pipeline
-  - 5 adversary personas: paranoid_security, burned_oncall, lazy_developer, pedantic_nitpicker, asshole_loner
-  - Multi-model consensus evaluation (2-3 models vote, majority wins, ties favor acceptance)
-  - Self-filtering against resolved concerns database (prevents repeated concerns)
-  - Rebuttal phase where adversaries can challenge dismissals
-  - Final Boss UX Architect review (Phase 5) - uses Opus 4.7 for user story validation
-  - Confidence decay model for cached explanations (age decay, spec change penalty, usage boost)
-  - Per-adversary performance tracking (signal score, acceptance rate, dismissal effort)
-  - CLI commands: `gauntlet`, `gauntlet-adversaries`, `adversary-stats`
-
-- **Scope Management System** (`scope.py`) - Detect and manage scope expansion during refinement
-  - ScopeDiscovery dataclass for tracking tangential features and scope expansions
-  - Mini-spec template generation for discovered features
-  - Heuristic keyword detection for scope implications
-  - User checkpoints for scope decisions (stub, expand, defer, reject)
-  - Persistence of scope reports and mini-specs
-
-- **Gemini CLI Integration** - Free Google Gemini access via CLI tool
-  - Models: `gemini-cli/gemini-3-pro-preview`, `gemini-cli/gemini-3-flash-preview`
-  - No API key needed - uses Google account authentication
-  - Install: `npm install -g @google/gemini-cli && gemini auth`
-
-- **Free-First Model Selection** - Prioritizes free CLI tools over paid APIs
-  - Codex CLI (ChatGPT subscription) and Gemini CLI checked first
-  - Falls back to API models only when CLI tools unavailable
-
-- Gauntlet CLI arguments: `--gauntlet`, `--gauntlet-adversaries`, `--gauntlet-model`, `--gauntlet-frontier`, `--no-rebuttals`, `--final-boss`
-- Adversary response protocols with valid/invalid dismissal criteria
-- Cost-weighted signal score metric for adversary effectiveness
-
-### Fixed
-
-- Replaced hardcoded `gpt-4o` default model with dynamic detection based on available API keys
-- Added pre-flight validation to check that models have required API keys before running critique
-- Added clear error messages when API keys are missing, showing which key is needed for each model
-- Fixed model selection to prioritize available providers in order: Bedrock, OpenAI, Anthropic, Google, xAI, etc.
-- Added documentation for resolving Claude Code auth conflicts (claude.ai token vs ANTHROPIC_API_KEY)
-- Updated documentation to include Anthropic provider in supported models table
+- Slice North Star routing from Phase 0 candidate through requirements lock and
+  one roadmap milestone.
+- Version 6 Decomposition guidance for component boundaries, seam evidence, and
+  bounded Debate fan-out before the system gauntlet.
+- Explicit pipeline and uncarded context-transport paths, with context readiness
+  retained for gauntlet revalidation.
 
 ### Changed
 
-- `--models` argument now auto-detects default model from available API keys instead of assuming `gpt-4o`
-- Script now fails fast with helpful error messages if no API keys are configured
-- Profile loading now correctly handles the new dynamic default model selection
+- Defined one eight-Phase lifecycle. Verification is now the Phase 8 subflow,
+  not a separate lifecycle Phase.
+- Consolidated routing, transitions, Card comments, notifications, decisions,
+  and journey records under `SKILL.md`; specialist references now own their
+  respective contracts.
+- Kept model assignments in one canonical reference and converted the root
+  model document into a redirect.
+- Preserved the target-architecture fingerprint consumed by execution
+  reconciliation and reduced it to one named comparison.
+- Reworked repository documentation into a current operator guide, focused
+  contribution instructions, compact project practices, and a mechanism-based
+  process-failure index.
 
-### Added
+### Removed
 
-- New `get_available_providers()` function to detect configured API keys
-- New `get_default_model()` function to select appropriate default based on available keys
-- New `validate_model_credentials()` function to pre-validate model API key requirements
-- Comprehensive test coverage for new validation functions (11 new tests, 297 total)
+- Retired board-system guidance, old phase numbering, duplicate model catalogs,
+  numeric complexity routing, and prose-only workflow machinery from active
+  documentation.
+- Orphaned historical proposals, generated snapshots, and unused integration
+  exports that had no live consumer.
 
 ## [1.0.0] - 2025-01-11
 
