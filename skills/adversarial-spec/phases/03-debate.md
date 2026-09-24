@@ -39,6 +39,12 @@ hash drift or leaf-set drift (re-close D0; never hand-edit the plan to match).
 Optional `--test-target` / `--verify-command` set the provisional per-leaf entry
 point (default `tests/`, `uv run pytest tests/ -q`); the authoritative leaf suite
 is bound at A/B closure (V4).
+The specify handout's must-read list is the leaf description, its
+`architecture_refs`, and its D0 interface records — never the definition document.
+Reading a leaf must do (e.g. sections of a pre-v6 draft) therefore goes in via
+`--context-map <map.json>` (`{"doc": <project-relative .md>, "leaves": {"L1": [8, 7], …}}`,
+`##` section numbers, every D0 leaf listed, operator-approved). Each leaf description
+then ends "Read before specifying: <doc> §N <title>; …".
 
 **V2 — Validate.** `pipeline_validate_plan(plan_path=<absolute path>, session_id, board_id)`
 must return `valid: true`, `issues: []`. Fix inputs (D0 record, architecture docs),
@@ -82,8 +88,9 @@ State: v6, `session_altitude=subsystem`, `d0_closed=true`, card 21605 in Debate,
 
 1. `pipeline_lane_state(pipeline="session", board_id="03fw5h5ymdktifuhsjf47c32r", session_id="adv-spec-202609220555-selective-reversal-state-machine")`
    → `kind: v6_debate_leaf_plan_not_loaded`.
-2. `uv run python ~/.claude/skills/adversarial-spec/scripts/d0_to_load_plan.py /home/jason/PycharmProjects/ETB/.adversarial-spec/specs/selective-reversal-state-machine/decomposition/d0.json --out /home/jason/PycharmProjects/ETB/.adversarial-spec/specs/selective-reversal-state-machine/decomposition/leaf-load-plan.json`
-   → 9 tasks: `SYS-SR` + leaves `L1`…`L8`.
+2. `uv run python ~/.claude/skills/adversarial-spec/scripts/d0_to_load_plan.py /home/jason/PycharmProjects/ETB/.adversarial-spec/specs/selective-reversal-state-machine/decomposition/d0.json --context-map /home/jason/PycharmProjects/adversarial-spec/orchestration/etb-draft-v29-leaf-reading-map.json --out /home/jason/PycharmProjects/ETB/.adversarial-spec/specs/selective-reversal-state-machine/decomposition/leaf-load-plan.json`
+   → 9 tasks: `SYS-SR` + leaves `L1`…`L8`. Definition document stays `requirements-v0.md`
+   (operator decision 2026-09-23); `draft-v29.md` is per-leaf required reading via the map.
 3. `pipeline_validate_plan(plan_path="/home/jason/PycharmProjects/ETB/.adversarial-spec/specs/selective-reversal-state-machine/decomposition/leaf-load-plan.json", session_id=<same>, board_id="03fw5h5ymdktifuhsjf47c32r")`
    → `valid: true`, `issues: []`.
 

@@ -112,6 +112,38 @@ def test_leaf_ids_disagreeing_with_the_tree_fail_closed(tmp_path: Path) -> None:
         _convert(_project(tmp_path, leaf_ids=["A"]))
 
 
+def _context_map(tmp_path: Path, leaves: dict) -> Path:
+    (tmp_path / SPEC_DIR / "draft-v2.md").write_text(
+        "# Draft\n\n## 1. Problem\n\ntext\n\n## 2. Snapshot schema\n\n### 2.1 detail\n"
+    )
+    map_path = tmp_path / "reading-map.json"
+    map_path.write_text(json.dumps({"doc": f"{SPEC_DIR}/draft-v2.md", "leaves": leaves}))
+    return map_path
+
+
+def test_context_map_sections_become_required_reading_in_leaf_descriptions(tmp_path: Path) -> None:
+    d0_path = _project(tmp_path)
+    record, manifest, root = conv.load_d0(d0_path)
+    reading = conv.load_context_map(
+        _context_map(tmp_path, {"A": [2, 1], "B": [1]}), root, record["leaf_ids"],
+    )
+    tasks = {t["task_id"]: t for t in conv.build_plan(record, manifest, root, context_reading=reading)["tasks"]}
+
+    assert tasks["A"]["description"].endswith(
+        f"Read before specifying: {SPEC_DIR}/draft-v2.md §2 Snapshot schema; §1 Problem."
+    )
+    assert "Read before specifying" not in tasks["R"]["description"]
+
+
+@pytest.mark.parametrize("leaves", [{"A": [1]}, {"A": [1], "B": [3]}])
+def test_context_map_missing_leaf_or_unknown_section_fails_closed(tmp_path: Path, leaves: dict) -> None:
+    d0_path = _project(tmp_path)
+    record, _manifest, root = conv.load_d0(d0_path)
+
+    with pytest.raises(conv.ConversionError, match="context map"):
+        conv.load_context_map(_context_map(tmp_path, leaves), root, record["leaf_ids"])
+
+
 def test_cli_output_is_byte_identical_across_runs(tmp_path: Path) -> None:
     d0_path = _project(tmp_path)
     first, second = tmp_path / "p1.json", tmp_path / "p2.json"

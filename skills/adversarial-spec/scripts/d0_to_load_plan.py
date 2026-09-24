@@ -124,6 +124,45 @@ def _architecture_refs(evidence: list[str], project_root: Path) -> list[str]:
     return refs
 
 
+RE_SECTION_HEADING = re.compile(r"^## (\d+)\. (.+?)\s*$")
+
+
+def load_context_map(map_path: Path, project_root: Path, leaf_ids: list[str]) -> dict[str, str]:
+    """Per-leaf "read before specifying" sentences from an operator-approved map.
+
+    fizzy's specify handout makes the agent read ``task.description`` (not the
+    definition artifact), so reading that must happen goes into the description.
+    Map shape: ``{"doc": "<project-relative .md>", "leaves": {"L1": [8, 7], ...}}``
+    with ``##``-level section numbers. Fails closed on an unknown doc, a missing or
+    unknown leaf, or a section number the doc does not have.
+    """
+    blob = _load_json(map_path, "context map")
+    doc_rel = blob.get("doc")
+    if not isinstance(doc_rel, str) or not (project_root / doc_rel).is_file():
+        raise ConversionError(f"context map doc {doc_rel!r} is not a file under {project_root}")
+    titles: dict[int, str] = {}
+    for line in (project_root / doc_rel).read_text(encoding="utf-8").splitlines():
+        if match := RE_SECTION_HEADING.match(line):
+            titles[int(match.group(1))] = match.group(2)
+    leaves = blob.get("leaves")
+    if not isinstance(leaves, dict) or sorted(leaves) != sorted(leaf_ids):
+        raise ConversionError(
+            f"context map must cover exactly the D0 leaves {sorted(leaf_ids)}; "
+            f"got {sorted(leaves) if isinstance(leaves, dict) else leaves!r}"
+        )
+    reading: dict[str, str] = {}
+    for leaf_id in leaf_ids:
+        sections = leaves[leaf_id]
+        missing = [s for s in sections if not isinstance(s, int) or s not in titles]
+        if not sections or missing:
+            raise ConversionError(
+                f"context map leaf {leaf_id}: sections {missing or sections!r} not in {doc_rel}"
+            )
+        cited = "; ".join(f"§{s} {titles[s]}" for s in sections)
+        reading[leaf_id] = f"Read before specifying: {doc_rel} {cited}."
+    return reading
+
+
 def build_plan(
     record: dict[str, Any],
     manifest: dict[str, Any],
@@ -131,6 +170,7 @@ def build_plan(
     *,
     test_target: str = DEFAULT_TEST_TARGET,
     verify_command: str = DEFAULT_VERIFY_COMMAND,
+    context_reading: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Build the plan-schema-3 bounded leaf plan for one closed D0 record."""
     d0 = manifest["d0"]
@@ -224,7 +264,7 @@ def build_plan(
             ]
         else:
             resp_text = "; ".join(
-                f"{rid}: {rows.get(rid, {}).get('output', '').strip()}" for rid in resp_ids
+                f"{rid}: {rows.get(rid, {}).get('output', '').strip().rstrip('.')}" for rid in resp_ids
             ) or "none allocated"
             iface_text = "; ".join(
                 f"{i['edge_id']} {i['producer_node']}->{i['consumer_node']} "
@@ -236,6 +276,8 @@ def build_plan(
                 f"{session_id}). Responsibilities: {resp_text}. CUT-edge interfaces: "
                 f"{iface_text}. Contracts: {manifest_rel} d0.interface_records. {LEAF_SCOPE_NOTE}"
             )
+            if context_reading:
+                description += f" {context_reading[node_id]}"
             acceptance = [
                 "A/B closure recorded: obligations and failing tests in keyed bijection, "
                 "3 clean red runs, both oracle controls",
@@ -298,13 +340,23 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, help="write the plan here (default: stdout)")
     parser.add_argument("--test-target", default=DEFAULT_TEST_TARGET)
     parser.add_argument("--verify-command", default=DEFAULT_VERIFY_COMMAND)
+    parser.add_argument(
+        "--context-map", type=Path,
+        help='JSON {"doc": <project-relative .md>, "leaves": {"L1": [8, 7], ...}}: '
+        "per-leaf sections appended to each leaf description as required reading",
+    )
     args = parser.parse_args(argv)
 
     try:
         record, manifest, root = load_d0(args.d0_json)
+        context_reading = (
+            load_context_map(args.context_map, root, list(record.get("leaf_ids") or []))
+            if args.context_map else None
+        )
         plan = build_plan(
             record, manifest, root,
             test_target=args.test_target, verify_command=args.verify_command,
+            context_reading=context_reading,
         )
     except ConversionError as exc:
         print(f"d0_to_load_plan: {exc}", file=sys.stderr)
