@@ -64,6 +64,10 @@ to pick it. If the blast radius is unknowable, the decision is `underspecified`.
 1. If `.adversarial-spec/` does not exist, create the standard workspace now — never
    before GO. If this route will touch code, create the dedicated session branch now,
    before any code work.
+   The default branch is protected: session work never lands on it directly, and
+   merging is a deliberate operator act. If a repo is already on another session's
+   branch with a dirty worktree, branch from there and **commit only your own
+   files** — never sweep another session's uncommitted work into your commits.
 2. Generate the immutable session id and atomically write
    `.adversarial-spec/sessions/<id>.intake.json`. It contains the selected route,
    problem, goal, non-goal, evidence, unknowns, candidate Slice North Star, altitude
