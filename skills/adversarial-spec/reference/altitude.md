@@ -152,22 +152,17 @@ v4+ session with a declared altitude, the skill MUST:
    `CONCERN_ALTITUDE_NODE_MISMATCH`), so untagged concerns can block the plan
    from loading.
 
-## 7. Complexity ≠ altitude
+## 7. What altitude does not decide
 
-These are orthogonal — keep them decoupled and you stop double-counting:
+Altitude (blast radius) decides *how much rigor* a node earns. It does not decide:
 
-- **Altitude (blast radius)** decides *how much rigor* a node earns (this whole
-  page). Reversibility / consequence is an **altitude** signal.
-- **Complexity** decides *execution shape only* — single agent vs. workstreams,
-  task count (Phase 7 §sizing).
+- **Roadmap mode** — Phase 2 chooses inline, one-debate, or iterative roadmap
+  discovery.
+- **Parallelism** — Phase 7 dependency order decides which cards can start
+  together; Phase 8 is always multi-agent self-pickup with independent review.
 
-**Key complexity off two observable signals: `integrations + unknowns`.** A change
-touching many external SDKs with several open design questions is "complex"
-regardless of how reversible it is — and a high-blast change can still be *simple*
-to execute (one agent, few tasks) while earning *system* rigor. There is no numeric
-score; the `≤4 / 5–9 / ≥10` thresholds are retired (they were never backed by a
-point rubric). Do **not** feed blast radius / consequence into complexity — that is
-altitude's job.
+Do not lower altitude because a change is easy to execute, and do not raise it
+because it has many tasks.
 
 ## 8. Where each invariant is ENFORCED  (doc ↔ code anti-drift map)
 

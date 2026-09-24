@@ -10,9 +10,63 @@ Refine specs through iterative debate with multiple LLMs until all agree.
 
 **Claude is a participant, not just an orchestrator** — critique, challenge, contribute alongside the external models. Say so to the user.
 
-## ZEROTH ACTION — Conductor Registration (before session state)
+## FIRST GATE — Route New Work Before Bootstrap
 
-Every invocation registers with the project conductor and launches a wake listener. Tiny cost; a worker that can't be signaled is pointless.
+Read only enough of `.adversarial-spec/session-state.json` and staged
+`.adversarial-spec/sessions/*.intake.json` receipts to classify the work. This
+inspection creates and mutates nothing.
+
+### Incomplete Phase 0 Handoff Recovery
+
+A staged receipt proves Phase 0 already returned GO. Before normal routing,
+correlate the pointer with those receipts:
+
+- A valid active session (matching pointer and detail) wins unless a same-id
+  receipt is incomplete; an unrelated old receipt must never displace it.
+- A same-id receipt is incomplete when its detail is missing, does not carry the
+  matching `intake` and `intake_path`, either local file remains at
+  `current_phase: evaluated-plans`, its required local `triage → requirements`
+  journey event is absent, or a non-terminal detail lacks a matching pointer. A
+  card remaining in Evaluated Plans while both local files say `requirements` is
+  normal.
+- With no valid active session, recover exactly one incomplete receipt. Prefer
+  the id named by a zombie pointer; without one, recover the sole incomplete
+  receipt. Multiple unmatched receipts are ambiguous: report them and do not
+  mutate local state or create a card.
+
+Receipt recovery continues the already-approved GO; it does not re-enter triage:
+
+1. Reuse the receipt's immutable session id and creation inputs. Call
+   `pipeline_create_session(..., sync_local_session=false)` with that id; it
+   returns the existing card if a prior attempt created one. Atomically persist
+   the returned `card_id` in the receipt.
+2. If `session-state.json` is malformed, empty, or not a JSON object, quarantine
+   it to `.adversarial-spec/.backup/session-state.invalid-<UTC timestamp>.json`
+   only after selecting this receipt. Never overwrite an unproven active pointer.
+   An absent or proven-zombie valid pointer needs no quarantine.
+3. Call `pipeline_sync_local_session(..., mode="repair")`, then atomically merge
+   the receipt into both local files as `intake`, set `current_phase:
+   requirements`, and append `triage → requirements` only when that journey event
+   is absent.
+4. Never re-run triage, mint a new id, or create a second card for that receipt.
+   Continue with the Zeroth Action and Phase 1.
+
+- **Valid active session** — preserve it, run the Zeroth Action, then resume by
+  its `current_phase`. Never re-enter triage. If the user's request changes
+  context, resolve it through the existing context-intent or handoff flow rather
+  than creating a second local session.
+- **Missing, empty, or zombie pointer with no incomplete receipt** — enter
+  `phases/00-triage.md` immediately. Do not register a conductor, launch a
+  listener, create a workspace, session file, or Fizzy card first.
+- **Phase 0 NO-GO** — report the direct-action, deferred, or missing-information
+  outcome. Create no session state.
+- **Phase 0 GO** — Phase 0 creates or reuses the ordinary card, repairs local
+  sync, persists its handoff, then returns here for the Zeroth Action before
+  Phase 1.
+
+## ZEROTH ACTION — Conductor Registration (after first gate)
+
+Run this only for a valid active session or a session Phase 0 has just created.
 
 ### 0a: Role
 Env-var detection: `$CLAUDE_PROJECT_DIR` → **claude** (conductor); `$GEMINI_PROJECT_DIR` → **gemini**; Codex-style env → **codex**. Workers otherwise.
@@ -43,13 +97,14 @@ Workers don't search for the conductor; conductor doesn't handshake. Workers dro
 ### Bootstrap Boundary
 Registration and startup checks are metadata-only. Do NOT start fizzy-mcp, app servers, Docker stacks, or probe by launching services. Inspect existing processes/PIDs/sockets/logs first. Only start a service when the current phase requires it and it isn't already running.
 
-### 0e: Continue to FIRST ACTION.
+### 0e: Continue to resume inspection or Phase 1.
 
 ---
 
-## FIRST ACTION - Read Local Session State
+## RESUME INSPECTION — Read Local Session State
 
-**BEFORE ANYTHING ELSE**, read the pointer:
+After the first gate and Zeroth Action, load the pointer fields required to resume
+the active session. Do not use this section to create a new session.
 
 ```bash
 cat .adversarial-spec/session-state.json 2>/dev/null
@@ -64,7 +119,7 @@ Pointer fields used on resume: `active_session_id`, `context_name`, `current_pha
 **Don't read the whole detail file.** It's 400+ lines and holds phase-scoped artifacts (`context_inventory`, `requirements_summary`) that resume doesn't need. The journey now lives in a sibling JSONL (`sessions/<id>.journey.log`) — read on demand only. Pull resume fields from the detail file via `jq`:
 
 ```bash
-jq -r '{checkpointed_cleanly,current_phase,current_step,fizzy_card_id,spec_path,execution_plan_path,roadmap_path,last_checkpoint,todowrite_snapshot}' \
+jq -r '{checkpointed_cleanly,current_phase,current_step,card_id,fizzy_card_id,spec_path,execution_plan_path,roadmap_path,last_checkpoint,todowrite_snapshot}' \
   .adversarial-spec/sessions/<id>.json
 ```
 
@@ -311,50 +366,16 @@ Next: [next_action]
 [Continue] [Switch recent] [New session] [Archive this] [Branch]
 ```
 
-### If no session-state.json exists:
+### If no valid active session
 
-Check if `.adversarial-spec/` directory exists:
-- If NO: Offer to create workspace (first-run bootstrap)
-- If YES but no state: Show "No active session" with options
+The first gate owns this path. Enter `phases/00-triage.md`; do not offer or create
+a workspace, session file, branch, or Fizzy card from resume inspection.
 
-**Present:**
-```
-No active session.
+### New-session custody
 
-[Start new] [Resume recent] [Continue without tracking]
-```
-
-### Creating a New Session
-
-**Step 0 — BRANCH FIRST (required, 2026-07-22).** Every adversarial-spec session
-that will touch code starts on its own git branch in every repo it modifies:
-
-```bash
-git checkout -b adv-spec/<slug>     # or a plainly named branch for the session
-```
-
-- The default branch is protected: session work — pipeline changes, skill
-  changes, spec-driven implementation — never lands on it directly. Merge is a
-  deliberate operator act at session end, not a side effect of working.
-- If a target repo is already on someone's in-flight branch with a dirty
-  worktree, branch from where you are and **commit only your own files** —
-  never sweep another session's uncommitted work into your commits.
-- Commit as you land verified waves (tests green), not only at checkpoint. An
-  uncommitted live change to a shared server or skill is exactly the mutation
-  class the agy revert-guard exists to catch — don't create it.
-- Rationale: 2026-07-22 bounded-pipeline dogfood — waves 0-2 of live pipeline
-  edits accumulated on `master` uncommitted while the board and MCP server
-  already ran them; operator caught it mid-flight.
-
-Then create BOTH tracking artifacts:
-
-1. Create session file (`sessions/<id>.json`) and update pointer (`session-state.json`) — the local session state
-2. **Call `pipeline_create_session(board_id, session_id, title, plan_path)`** — the Fizzy pipeline card in Evaluated Plans
-3. **Store `fizzy_card_id`** in the session detail file (`sessions/<id>.json`) — the card ID returned by step 2. This is required for all subsequent Fizzy sync operations.
-
-Step 2 is REQUIRED. A session without a Fizzy card is invisible to the pipeline and will advance through phases without any board-level tracking.
-
-Step 3 is REQUIRED. Without the stored card ID, phase transitions and debate rounds cannot sync to the board, and the card becomes stale immediately after creation. (See process failure: "Trello Board Ignored During Entire Spec Session", 2026-03-26.)
+Only a Phase 0 GO may create a workspace, branch, local session state, or Fizzy
+card. `phases/00-triage.md` owns that sequence, including the branch-before-code
+rule and the local-only `triage → requirements` entry.
 
 ### Schema Migration (v1.1 → v1.3)
 
@@ -447,8 +468,10 @@ Based on `current_phase`, read the matching phase file:
 
 | Phase | File to Read |
 |-------|--------------|
-| No session / New work | `~/.claude/skills/adversarial-spec/phases/00-triage.md` (front door — zero machinery; on GO it creates the session with the triaged altitude, then hands to Phase 1) |
+| No session / New work | `~/.claude/skills/adversarial-spec/phases/00-triage.md` (read-only front door; on GO it creates the session, persists its route/handoff, then hands to Phase 1) |
 | triage | `~/.claude/skills/adversarial-spec/phases/00-triage.md` |
+| evaluated-plans + incomplete intake receipt | First Gate's **Incomplete Phase 0 Handoff Recovery**; do not route it as a normal phase |
+| evaluated-plans without an intake receipt | `phases/01-init-and-requirements.md` (legacy entry; do not replay Phase 0) |
 | requirements | `~/.claude/skills/adversarial-spec/phases/01-init-and-requirements.md` |
 | roadmap | `~/.claude/skills/adversarial-spec/phases/02-roadmap.md` |
 | debate | `~/.claude/skills/adversarial-spec/phases/03-debate.md` |
@@ -471,7 +494,7 @@ If `current_phase` is unchanged since the prior checkpoint and you've seen the d
 
 **TodoWrite source priority:**
 1. If `todowrite_snapshot` exists → restore TodoWrite from it (already done during the Clean-Exit step).
-2. Else → create fresh TodoWrite from the phase doc's `TaskCreate([...])` template.
+2. Else → create fresh TodoWrite from the phase doc's `TodoWrite([...])` template.
 
 Either way, the phase doc's instructions and gate rules still apply — the snapshot only replaces TodoWrite init.
 
@@ -525,12 +548,13 @@ Evaluated Plans → Pre-Roadmap →(g1) Decomposition →(d0_closed) Debate → 
   `orchestration/governing/BRAINSTORM-2-lanes-and-flow.md` (§8, §10),
   `orchestration/governing/DECISIONS-brainstorm-2-open.md` (D-1..D-4).
 
-**Triage (Phase 0) is the additive front door.** New work enters triage first; it
-runs with zero session machinery and, on GO, creates the session with the chosen
-`session_altitude` before any conductor/Fizzy/listener bootstrap. It is
-non-destructive to in-flight work: a session that already has a `current_phase`
-routes by its existing row and never re-enters triage. See `phases/00-triage.md`
-(the gate) and `reference/altitude.md` (the model + the doc↔code enforcement map).
+**Triage (Phase 0) is the additive front door.** The first gate routes only
+missing, empty, or zombie local state there. It performs a read-only pointer probe
+before any machinery; after GO, Phase 0 creates the session with the chosen
+`session_altitude`, persists its route and handoff, then starts conductor/listener
+bootstrap. A session that already has a `current_phase` follows its existing row
+and never re-enters triage. See `phases/00-triage.md` (the gate) and
+`reference/altitude.md` (the model + the doc↔code enforcement map).
 
 `middleware-creator?` is optional, slotted between `execution` and `implementation`. It runs iff Phase 4 produced `middleware-candidates.json` AND the user chose to materialize shared middleware before normal pickup. Empty list or user skip → `execution → implementation` directly.
 
@@ -593,6 +617,15 @@ Do NOT run `debate.py critique` when the user wants the gauntlet, and vice versa
 
 ### Phase Transition Protocol (REQUIRED)
 
+**Triage entry exception:** `triage → requirements` is a legal local-only entry.
+After Phase 0 persists the returned `card_id` in its receipt and calls
+`pipeline_sync_local_session(..., mode="repair")`, it must atomically update the
+returned detail and pointer files with the intake handoff and `current_phase:
+requirements`, then append the journey event. This same merge completes an
+incomplete-handoff recovery. It MUST NOT call `pipeline_advance` or move the
+card: the card remains in Evaluated Plans until the ordinary requirements-to-roadmap
+transition. Every later transition follows the protocol below.
+
 **Every phase transition must update BOTH files atomically, in order:**
 
 1. **Detail file** (`sessions/<id>.json`) — first:
@@ -602,7 +635,7 @@ Do NOT run `debate.py critique` when the user wants the gauntlet, and vice versa
 2. **Pointer file** (`session-state.json`) — second:
    - Set `current_phase`, `current_step`, `next_action`, `updated_at`.
 
-3. **Fizzy card** (if `fizzy_card_id` present) — third:
+3. **Fizzy card** (if the detail has `card_id` or legacy `fizzy_card_id`, or the pointer has `pipeline_card_id`) — third:
    - Add a human-readable phase comment using the card-comment convention below.
    - Advance the card with `pipeline_advance` (gate-enforcing) — NEVER `pipeline_patch_state` for a phase transition. `patch_state` is for intra-phase state only (`debate_round`, `last_agent` after debate rounds) or gate-recovery with an on-disk process-failure note; the tool rejects transition misuse.
    - Use a **haiku subagent** to keep MCP payload out of main context.
@@ -687,28 +720,21 @@ A backgrounded sleep that you don't end the turn on is just process theater — 
 
 ---
 
-## First-Run Bootstrap
+## Workspace Bootstrap (Phase 0 GO Only)
 
-If `.adversarial-spec/` directory doesn't exist, offer to create workspace:
+If `.adversarial-spec/` does not exist during an approved Phase 0 GO, create:
 
 ```
-No adversarial-spec workspace found.
-
-Creating standard directories:
-  .adversarial-spec/sessions/
-  .adversarial-spec/checkpoints/
-  .adversarial-spec/specs/
-  .adversarial-spec/issues/
-  .adversarial-spec/retrospectives/
-  .adversarial-spec/.backup/
-
-[Proceed] [Cancel]
+.adversarial-spec/sessions/
+.adversarial-spec/checkpoints/
+.adversarial-spec/specs/
+.adversarial-spec/issues/
+.adversarial-spec/retrospectives/
+.adversarial-spec/.backup/
 ```
 
-On proceed:
-1. Create all directories
-2. Create `session-state.json` with `active_session_id: null`
-3. Display "Workspace ready. Start new session?"
+Then create `session-state.json` as part of the same Phase 0 session-sync sequence.
+Never create this workspace merely to run triage.
 
 ---
 
