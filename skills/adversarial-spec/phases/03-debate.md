@@ -13,6 +13,11 @@ own bounded A→S cycle (`RULESET-bounded-pipeline-v1.md` in fizzy-pipeline-mcp
 `orchestration/governing/`), and leaves Debate only through the Pre-Gauntlet
 fan-in barrier.
 
+Phase-3 obligations still apply to the artifacts under review: roadmap,
+context-readiness, test-sync, and guardrails. v6's D0 owns the Phase 4 skip-mode
+artifact; retain it for the architecture handoff. Never substitute a whole-spec
+round for leaf qualification or the fan-in barrier.
+
 **Resume rule:** the first pipeline call is `pipeline_lane_state(pipeline="session",
 board_id, session_id)`. Its `session_next_action` (= `attention.session_context.reason`)
 is authoritative over any checkpoint or summary. Route on `attention.session_context.kind`:
@@ -99,97 +104,73 @@ leaves in `Specifying`; continue at V4. Never start round N+1.
 
 ## Pre-v6 sessions (`pipeline_version <= 5`) — whole-spec debate loop
 
-> **FIRST ACTION upon entering this phase:** Create this TodoWrite immediately.
-> Do NOT read further until the TodoWrite is active.
-> Every `[GATE]` item must be marked completed before proceeding past it.
+> **FIRST ACTION upon entering this phase:** Restore `todowrite_snapshot` when
+> present. Resolve the live pipeline version before creating a fresh checklist.
+> Every `[GATE]` must complete before proceeding.
+
+### Dispatch Rule
+
+Carded session → pipeline tools only. Uncarded work or an intentional, logged
+override → `debate.py`; satisfy `enforce_pipeline_card_gate`. Uncarded runs and
+intentional overrides require `--pipeline-card IntentionalOverride` plus
+`--override-reason '<at least 50 characters>'`. Rejected pipeline calls do not
+authorize an override. See [script-commands.md](../reference/script-commands.md)
+for CLI invocation; preserve the same context, test-sync, and review obligations.
+Every board-scoped call requires explicit `board_id` from `projects.yaml`.
+
+See SKILL.md § [Decisions Log](../SKILL.md#decisions-log).
+
+### Classic Round Checklist
 
 ```
 TodoWrite([
-  {content: "Verify roadmap exists [GATE]", status: "in_progress", activeForm: "Verifying roadmap exists"},
-  {content: "Load roadmap user stories", status: "pending", activeForm: "Loading roadmap user stories"},
-  {content: "Load or generate initial document", status: "pending", activeForm: "Loading initial document"},
-  {content: "Select opponent models", status: "pending", activeForm: "Selecting opponent models"},
-  {content: "Assemble context files (technical/full)", status: "pending", activeForm: "Assembling context files"},
+  {content: "Verify roadmap and load user stories [GATE]", status: "in_progress", activeForm: "Verifying roadmap"},
+  {content: "Load or generate initial document and confirm coverage", status: "pending", activeForm: "Preparing initial document"},
+  {content: "Select opponent seats for altitude quorum", status: "pending", activeForm: "Selecting opponent seats"},
+  {content: "Assemble context (technical/full)", status: "pending", activeForm: "Assembling context"},
   {content: "Round 1: Run debate + synthesize", status: "pending", activeForm: "Running Round 1 debate"},
-  {content: "Round 1: Update tests-pseudo.md to match spec [GATE]", status: "pending", activeForm: "Updating tests-pseudo.md"},
+  {content: "Round 1: Update tests-pseudo.md to match spec [GATE]", status: "pending", activeForm: "Updating test intent"},
   {content: "Round 1: Run SCOPE + TRACE + CANON + TCOV guardrails [GATE]", status: "pending", activeForm: "Running Round 1 guardrails"},
-  {content: "Context Readiness Audit (technical/full) [GATE]", status: "pending", activeForm: "Running context readiness audit"},
-  {content: "Round 2: Run debate + synthesize", status: "pending", activeForm: "Running Round 2 debate"},
-  {content: "Round 2: Update tests-pseudo.md to match spec [GATE]", status: "pending", activeForm: "Updating tests-pseudo.md"},
-  {content: "Round 2: Run CONS + SCOPE + TRACE + CANON + TCOV guardrails [GATE]", status: "pending", activeForm: "Running Round 2 guardrails"},
+  {content: "Context Readiness Audit (technical/full) [GATE]", status: "pending", activeForm: "Auditing context readiness"},
+  {content: "Record round; finalize only at convergence and altitude floor [GATE]", status: "pending", activeForm: "Closing debate round"},
 ])
 ```
 
-Mark each step `completed` as you finish it. Mark the current step `in_progress`. Skip steps marked "technical/full" for product-depth specs.
-
-**Dynamic rounds:** For each round beyond Round 2, add three TodoWrite items before starting the round:
-- `{content: "Round N: Run debate + synthesize", status: "pending", activeForm: "Running Round N debate"}`
-- `{content: "Round N: Update tests-pseudo.md to match spec [GATE]", status: "pending", activeForm: "Updating tests-pseudo.md"}`
-- `{content: "Round N: Run CONS + SCOPE + TRACE + CANON + TCOV guardrails [GATE]", status: "pending", activeForm: "Running Round N guardrails"}`
+Complete items as evidence lands. Skip technical/full-only items for product-depth
+specs. For each additional round, add debate/synthesis, Test-Spec Sync, all five
+guardrails, and round closure items before starting it. Restore completed gates;
+do not force a second round when the altitude floor and recorded basis allow exit.
 
 ---
 
 ### Step 1: Verify Roadmap Exists (GATE)
 
-**BLOCKING CHECK:** Before ANY debate work, verify that roadmap artifacts from Phase 2 exist.
+Read only the active session's selected roadmap:
+Resolve stored relative artifact paths against their documented workspace root
+before reading them; the example below uses repository-relative paths.
 
 ```bash
-# Check for roadmap artifacts
-ROADMAP_EXISTS=false
-
-# Check 1: roadmap folder with manifest.json (medium/complex projects)
-if [ -f "roadmap/manifest.json" ]; then
-  echo "✓ Found roadmap/manifest.json"
-  ROADMAP_EXISTS=true
-fi
-
-# Check 2: inline roadmap in session file (simple projects)
-if [ -f ".adversarial-spec/session-state.json" ]; then
-  if grep -q '"user_stories"' .adversarial-spec/sessions/*.json 2>/dev/null; then
-    US_COUNT=$(cat .adversarial-spec/sessions/*.json | grep -o 'US-[0-9]*' | sort -u | wc -l)
-    if [ "$US_COUNT" -gt 0 ]; then
-      echo "✓ Found $US_COUNT user stories in session file"
-      ROADMAP_EXISTS=true
-    fi
-  fi
-fi
-
-if [ "$ROADMAP_EXISTS" = false ]; then
-  echo "✗ NO ROADMAP ARTIFACTS FOUND"
-  echo ""
-  echo "You must complete Phase 2 (Roadmap) before entering debate."
-  echo "Run: Read ~/.claude/skills/adversarial-spec/phases/02-roadmap.md"
+SESSION_ID=$(jq -er '.active_session_id | select(type == "string" and length > 0)' .adversarial-spec/session-state.json) || exit 1
+SESSION_DETAIL=".adversarial-spec/sessions/$SESSION_ID.json"
+ROADMAP_PATH=$(jq -er '.roadmap_path | select(type == "string" and length > 0)' "$SESSION_DETAIL") || exit 1
+if [ "$ROADMAP_PATH" = "inline" ]; then
+  jq -e '{roadmap, user_stories, requirements_summary, architecture_impact}' "$SESSION_DETAIL"
+else
+  jq -e '{user_stories, milestones, slice_north_star, architecture_impact}' "$ROADMAP_PATH"
 fi
 ```
 
-**If no roadmap artifacts exist:**
-> ⛔ **STOP.** Do not proceed to debate.
->
-> The roadmap phase (02-roadmap.md) must be completed first, including:
-> - User stories (US-0, US-1, etc.) defined and validated
-> - Roadmap artifacts persisted (Step 6 of 02-roadmap.md)
-> - User confirmation checkpoint passed
->
-> **Action:** Return to `02-roadmap.md` and complete all steps including artifact persistence.
+Require the selected manifest (normally `roadmap/manifest.json`) or
+active inline roadmap to contain approved, non-empty user stories and milestones.
+Verify the Phase 2 user confirmation and referenced test artifact. Missing or
+unreadable inputs block debate: return to [Phase 2](02-roadmap.md), never borrow
+stories from another session.
 
-**[GATE] TodoWrite: Mark "Verify roadmap exists" completed before proceeding to Step 2.**
-
----
+**[GATE] TodoWrite: Complete "Verify roadmap and load user stories" only after this check.**
 
 ### Step 2: Load Roadmap User Stories (REQUIRED)
 
-**CRITICAL:** Before generating any spec draft, load and use the user stories from Phase 1.5/2.
-
-**Load roadmap artifacts:**
-```bash
-# Load from roadmap folder (medium/complex)
-if [ -f "roadmap/manifest.json" ]; then
-  cat roadmap/manifest.json
-fi
-
-# Or load from session file (simple)
-cat .adversarial-spec/sessions/*.json | jq '.roadmap // .user_stories'
-```
+Use the Phase 2 stories selected above before generating a draft.
 
 **Extract user stories:**
 - Parse all `US-X` entries from the roadmap
@@ -208,8 +189,6 @@ cat .adversarial-spec/sessions/*.json | jq '.roadmap // .user_stories'
 | US-1 | As a developer, I want to... | M1: Core | Can query docs, < 500 tokens |
 | US-2 | ... | M1: Core | ... |
 ```
-
-**If no roadmap exists:** This is an error. Return to Phase 1.5/2 (02-roadmap.md) to create one. Do NOT proceed to generate a spec without user stories.
 
 ### Step 2.5: Load or Generate Initial Document
 
@@ -242,13 +221,13 @@ Build the spec draft **anchored to roadmap user stories**:
    - For product depth: Include placeholder metrics that the user can refine
    - For technical/full depth: Include concrete choices that can be debated
 
-   **REQUIRED for technical/full depth:** The spec MUST include a "Getting Started" section addressing US-0 from the roadmap. This section must answer:
+   **For technical/full depth with a declared setup prerequisite:** Include a "Getting Started" section addressing the roadmap's bootstrap story. Answer:
    - What does a new user need before they can use this? (prerequisites)
    - What's the step-by-step first-run experience? (setup workflow)
    - What happens if prerequisites aren't met? (error handling)
    - How long until a user can perform their first real task? (time to value)
 
-   **If US-0 is missing from the roadmap**, return to Phase 2 (02-roadmap.md) to add it before generating the spec.
+   **If setup is required but its story is missing**, return to Phase 2 to add it. Otherwise retain the roadmap's explicit no-bootstrap rationale.
 
 4. **Present the draft with user story mapping** before sending to opponent models:
    - Show the full document
@@ -266,244 +245,71 @@ Output format (whether loaded or generated):
 
 ### Step 2.6: Information Flow Audit (For Technical/Full Depth Specs)
 
-**CRITICAL**: Before finalizing any technical spec with architecture diagrams, audit every information flow.
-
-Every arrow in an architecture diagram represents a mechanism decision. If you don't make that decision explicitly, you'll default to familiar patterns that may not fit the requirements.
-
-**Example Failure:** A spec showed `Worker -> Exchange (order)` and `Exchange -> Worker (result)`. Everyone assumed "result" meant polling. Reality: the exchange provided real-time WebSocket push. The spec required 200ms latency; polling would have 5000ms. 62 adversary concerns were raised about error handling for the polling implementation - all of which would have been avoided with WebSocket.
-
-**For each arrow/flow in your architecture:**
-
-1. **What mechanism?** REST poll? WebSocket push? Webhook callback? Queue?
-
-2. **What does the source system support?** Before assuming, check:
-   - If Context7 MCP tools are available, query the external system's documentation
-   - Look for: WebSocket channels, webhook endpoints, streaming APIs
-   - Don't assume polling is the only option
-
-3. **Does it meet latency requirements?** If a requirement says "<500ms", polling at 5s intervals won't work.
-
-**Add an Information Flow table to technical specs:**
+Before finalizing a technical spec, audit every architecture arrow. Name the
+mechanism (poll, push, webhook, queue), verify what the source supports using
+authoritative docs, and check the chosen mechanism against the latency requirement.
+Do not assume polling is the only option.
 
 ```markdown
 ## Information Flows
 
 | Flow | Source | Destination | Mechanism | Latency | Source Capabilities | Justification |
 |------|--------|-------------|-----------|---------|---------------------|---------------|
-| Order submission | Worker | Exchange | REST POST | ~100ms | REST only | N/A |
-| Fill notification | Exchange | Worker | WebSocket | <50ms | WebSocket USER_CHANNEL, REST poll | Real-time needed for 200ms requirement |
+| Fill notification | Exchange | Worker | WebSocket | <50ms | Verified stream and REST endpoints | Required latency rules out slow polling |
 ```
-
-This prevents the gauntlet from flagging unspecified flows after you've already designed around the wrong mechanism.
 
 ### Step 2.7: External API Interface Verification (For Technical/Full Depth Specs)
 
-**CRITICAL**: When defining TypeScript/Python interfaces for external API responses, DO NOT GUESS.
+Do not guess external field names, types, or response shapes. Check in order:
 
-AI models pattern-match what they think an API "probably" looks like based on training data. This leads to specs with wrong field names, missing fields, and invented fields that don't exist.
+1. Official SDK type definitions for the version in use; verify their API version.
+2. Local API documentation, checking freshness/version.
+3. Official documentation through the project's documentation tools.
+4. Ask the user for an authoritative source if none is available.
 
-**Example Failure (Real Bug):**
-```typescript
-// WHAT 3 FRONTIER MODELS AGREED ON (WRONG):
-interface KalshiOrderResponse {
-  filled_count: number;        // ❌ WRONG - API uses "fill_count"
-  average_fill_price?: number; // ❌ DOESN'T EXIST in API
-}
-```
-
-Three frontier models agreed on this interface. None checked. The implementation failed at runtime.
-
-**Before defining ANY external API interface, check these sources IN ORDER:**
-
-1. **SDK TYPE DEFINITIONS (Best Source)**
-   If an official SDK exists, its `.d.ts` files are authoritative:
-   ```bash
-   # Find exact field names:
-   grep -A 50 "export interface Order" node_modules/kalshi-typescript/dist/models/order.d.ts
-
-   # Search for specific field:
-   grep -rn "fill_count" node_modules/kalshi-typescript/dist/
-   ```
-   SDK types are auto-generated from OpenAPI specs - always correct, always up to date.
-
-2. **LOCAL API DOCUMENTATION**
-   Check `api_documentation/` or `api-reference/` folders for cached docs.
-
-3. **CONTEXT7 (If SDK unavailable)**
-   Use MCP tools: `mcp__context7__resolve-library-id` → `mcp__context7__query-docs`
-
-4. **ASK THE USER**
-   If no SDK and no docs found, ask for a documentation link. DO NOT proceed with guesses.
-
-**In the spec, cite the source:**
-```typescript
-// Source: node_modules/kalshi-typescript/dist/models/order.d.ts
-// Verified: 2026-01-27
-interface KalshiOrder {
-  fill_count: number;  // NOT "filled_count"
-  // ... copy exact fields from SDK
-}
-```
-
-**If no authoritative source exists:**
-Mark as `UNVERIFIED` and flag for user:
-```typescript
-// ⚠️ UNVERIFIED - No SDK or docs found
-// TODO: Verify against actual API before implementation
-interface SomeApiResponse { ... }
-```
+Cite the file/document, version, and verification date alongside the interface.
+Mark unresolved shapes `UNVERIFIED`, name the missing evidence, and stop treating
+them as implementation-ready until verified. Model agreement is not API evidence.
 
 ### Step 3: Select Opponent Models
 
-**Size the dispatch from `session_altitude` FIRST (reference/altitude.md §6).**
-Read `session_altitude` off the session card's `pipeline_metadata` (e.g. via
-`pipeline_lane_state` or `get_card_metadata`). The pipeline freezes
-`ALTITUDE_DEBATE_QUORUM[alt]` into each round at `begin_debate_round` and
-REJECTS convergence/finalize below it — an under-sized dispatch wastes a full
-round (models already paid for, gate fails closed):
+Choose seats with the user from [current-models.md](../reference/current-models.md)
+and use labels accepted by `agents.validate_debate_model`. That reference owns
+model, effort, transport, and reviewer-independence policy. Passing a link does not
+change runner defaults; select seats explicitly.
+
+Read `session_altitude` from the card with explicit `board_id` before dispatch.
+For classic rounds, `ALTITUDE_DEBATE_QUORUM` freezes these minimums into round state;
+see [altitude.md §6](../reference/altitude.md#6-rigor-that-scales--the-consumption-tables).
 
 | session_altitude | min counting critics | min distinct families | min rounds |
 |---|---|---|---|
 | component | 1 | 1 | 1 |
 | subsystem | 2 | 2 | 1 |
-| system | 2 | 2 | **2** (even if round 1 converges) |
+| system | 2 | 2 | 2 |
 
-`None` (grandfathered session) ⇒ legacy 2-critic/2-family default. Pick critics
-across DISTINCT model families (claude / codex / gemini / glm) — same-family
-critics count once toward family quorum.
-
-First, check which API keys are configured:
-
-```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py providers
-```
-
-Then present available models to the user using AskUserQuestion with multiSelect. Build the options list based on which API keys are set:
-
-**If OPENAI_API_KEY is set, include:**
-- `gpt-5.6-sol` - Frontier reasoning for spec development (max effort)
-
-**If ANTHROPIC_API_KEY is set, include:**
-- `claude-sonnet-4-6` - Claude Sonnet 4.6, excellent reasoning
-- `claude-opus-4-7` - Claude Opus 4.7, highest capability
-
-**If GEMINI_API_KEY is set, include (PREFERRED gemini path — litellm API, NOT the OAuth CLI tier):**
-- `gemini/gemini-3.5-flash` - **the working gemini critic** — GA flash, API-only, verified live 2026-07-18. Use this as the default gemini critic.
-- `gemini/gemini-3-pro` - Top LMArena score (1501 Elo)
-
-> **The recurring "gemini is dead" trap:** gemini is NOT dead — it gets *called the wrong way*. The `gemini-cli/…` prefix routes to the retired Google-account OAuth/Code-Assist tier, which fails deterministically (see the Gemini CLI note below). Always prefer the `gemini/…` API path here (key loads from the secrets file) or the `antigravity/…` CLI replacement. `models.py` routes by prefix: `gemini/…` → litellm API; `gemini-cli/…` → dead OAuth CLI; `antigravity/…` → the `agy` replacement.
-
-**If XAI_API_KEY is set, include:**
-- `xai/grok-3` - Alternative perspective
-
-**If MISTRAL_API_KEY is set, include:**
-- `mistral/mistral-large` - European perspective
-
-**If GROQ_API_KEY is set, include:**
-- `groq/llama-3.3-70b-versatile` - Fast open-source
-
-**If DEEPSEEK_API_KEY is set, include:**
-- `deepseek/deepseek-chat` - Cost-effective
-
-**If ZHIPUAI_API_KEY is set, include:**
-- `zhipu/glm-4` - Chinese language model
-- `zhipu/glm-4-plus` - Enhanced GLM model
-
-**If Codex CLI is installed, include:**
-- `codex/gpt-5.6-sol` - OpenAI Codex Sol with max effort
-
-**Gemini CLI (`gemini-cli/…`) — AVOID: retired OAuth/Code-Assist tier.** This is the source of the recurring "gemini died" failure. It fails three ways, all wrong-path (not a dead model):
-- flash names → `ModelNotFoundError 404` (not exposed on this tier — `providers.py:38`)
-- pro names → `429 QUOTA_EXHAUSTED` (shared free CLI quota)
-- fresh headless spawn → `IneligibleTierError` at `_doSetupUser` ("migrate to Antigravity")
-
-Use `gemini/gemini-3.5-flash` (API, above) or the Antigravity replacement `antigravity/gemini-3.5-flash` / `antigravity/gemini-3.6-flash-high`. Only pass a `gemini-cli/…` string if you have separately confirmed that OAuth tier is live for the exact model this run.
-
-Use AskUserQuestion like this:
-```
-question: "Which models should review this spec?"
-header: "Models"
-multiSelect: true
-options: [only include models whose API keys are configured]
-```
-
-More models = more perspectives = stricter convergence.
+Undeclared/grandfathered sessions retain the pipeline's legacy 2-critic/2-family
+quorum and one-round floor. Use registry families; same-family seats do not add
+family diversity.
 
 ### Step 3.5: Assemble Context Files (REQUIRED for technical/full depth)
 
-**Before the first debate round**, assemble context files so opponent models can critique against the actual codebase, not hallucinated patterns.
+Before the first round, assemble substantive context for the spec's blast zone.
+Use [context-addition-protocol.md](../reference/context-addition-protocol.md) for
+selection, extraction, size budget, appendix format, and freshness checks. Persist
+the selected paths in `extended_state.context_files`.
 
-Check each context source: architecture docs, source issues, type definitions, existing routes/endpoints. Validate all context files contain substantive content, then build `--context` flags and store in session.
+**Transport:** Pipeline rounds pass the actual context text (excerpts, test intent,
+lookup resolutions, and directives) as `domain_context` to
+`pipeline_begin_debate_round`; the pipeline writes it into the isolated critic
+workspace. Uncarded/override CLI rounds attach files with `--context`. A list of
+paths or navigation links alone does not deliver their contents.
 
-**Build the --context flags:**
-
-```bash
-CONTEXT_FLAGS=""
-
-# 1. Architecture docs (almost always relevant)
-# WARNING: Do NOT pass INDEX.md as --context. INDEX.md is a navigation page
-# containing links that opponent models cannot follow. It provides zero
-# substantive content. Pass the files it REFERENCES instead:
-if [ -d ".architecture" ]; then
-  # Primer is the default small-context architecture payload
-  [ -f ".architecture/primer.md" ] && CONTEXT_FLAGS="$CONTEXT_FLAGS --context .architecture/primer.md"
-
-  # Include component docs relevant to the spec's blast zone (2-4 files)
-  # Match spec file paths/module names against .architecture/structured/components/
-  # e.g., --context .architecture/structured/components/data-service.md
-
-  # Add overview.md only when the round needs the full system narrative
-  # e.g. later architecture/design rounds or broad multi-component specs:
-  # [ -f ".architecture/overview.md" ] && CONTEXT_FLAGS="$CONTEXT_FLAGS --context .architecture/overview.md"
-
-  # For broad or cross-component specs, flows.md covers data paths across the whole system
-  # [ -f ".architecture/structured/flows.md" ] && CONTEXT_FLAGS="$CONTEXT_FLAGS --context .architecture/structured/flows.md"
-fi
-
-# 2. Source issues/requirements that motivated the spec
-# Check session extended_state for issues_file, or scan issues dir
-for f in .adversarial-spec/issues/*.md; do
-  [ -f "$f" ] && CONTEXT_FLAGS="$CONTEXT_FLAGS --context $f"
-done
-
-# 2b. Visualizer feedback (auto-emitted by spec-visualizer; status-gated)
-# Each file has a `**Status:**` field. Attach only `unprocessed` files. After the
-# round completes, the round-completion handler MUST rewrite that line to
-# `**Status:** processed-in-round-<round-number>` so the same feedback is not
-# re-attached on the next round. Files older than the active spec version may be
-# swept to `.adversarial-spec/visualizer-feedback/archive/` by spec-visualizer.
-for f in .adversarial-spec/visualizer-feedback/*.md; do
-  [ -f "$f" ] || continue
-  grep -q "^\*\*Status:\*\* unprocessed" "$f" && \
-    CONTEXT_FLAGS="$CONTEXT_FLAGS --context $f"
-done
-
-# 3. Key type definitions (limit to 3-5 most relevant files)
-# e.g., --context src/types.ts --context src/api_models.py
-```
-
-**Context File Validation (REQUIRED before passing --context):**
-
-Before passing any file via `--context`, verify it contains substantive content:
-
-1. **Does the file contain actual architecture/code information?** Navigation pages, tables of contents, and link-only documents are useless to opponent models — they can't follow links.
-2. **Can the recipient model use the content without following links?** If the file is mostly `[link text](url)` references, pass the linked files instead.
-3. **Is the file relevant to the spec being critiqued?** Don't pass every architecture doc — select files that cover the spec's blast zone.
-
-**Do NOT pass as --context:**
-- `INDEX.md` or any file that's primarily navigation/links
-- Files over 500 lines without trimming to relevant sections
-- Files unrelated to the spec's scope
-
-**4. Test pseudocode (when available — ALWAYS include if it exists)**
-```bash
-# Include tests-pseudo.md so opponents can critique test coverage.
-# This is not optional — opponents must see tests to catch spec/test drift.
-if [ -n "$TESTS_PSEUDO_PATH" ] && [ -f ".adversarial-spec/$TESTS_PSEUDO_PATH" ]; then
-  CONTEXT_FLAGS="$CONTEXT_FLAGS --context .adversarial-spec/$TESTS_PSEUDO_PATH"
-fi
-```
-When tests-pseudo.md is included as context, opponents must critique both misaligned assertions and inadequate test oracles. If an opponent flags a test/spec mismatch, field-presence-only test, missing parameter-causality test, missing UI/display contract test, or stale test assumption, that is a valid critique — address it in the Test-Spec Sync gate.
+Include `tests-pseudo.md` whenever present (and the authoritative TMR records if
+compiled). Critics must review assertions, causality, UI/display contracts, and
+stale assumptions as well as story coverage. Address corrections in Test-Spec Sync.
+Include active, unprocessed visualizer feedback; after incorporation, mark each
+included file `processed-in-round-<N>` so it is not attached again.
 
 **MOCK falsification directive (REQUIRED in every debate round's prompt preamble).** When `tests-pseudo.md` is in context, append this sentence to the debate prompt so both debaters (and Claude) attack weak mock justifications:
 
@@ -513,45 +319,19 @@ When tests-pseudo.md is included as context, opponents must critique both misali
 
 > *"Attack the tests as well as the spec. Field existence, HTTP 200, non-null, and range checks are not adequate for semantic contracts. For every user-facing parameter, emitted metric, UI label/tooltip, state transition, and formula, ask whether the tests would fail if the implementation had the wrong causality or displayed the wrong meaning."*
 
-These directives add zero new adversary launches. Debaters already see `tests-pseudo.md`; the directives tell them what to attack in it.
-
-**Store assembled context list in session state** (`extended_state.context_files`) for reuse across rounds.
-
-**Do NOT run `debate.py critique` without --context for technical/full specs that reference an existing codebase.** Product-depth specs about new greenfield projects may not need context.
-
-### Step 4: Dispatch Critics via Pipeline Tools
-
-**CRITICAL: Use pipeline tools to run the debate. Do NOT call debate.py directly.**
-
-The pipeline tools handle workspace creation, MCP isolation, subprocess launching, and per-model tracking. This ensures every debate round is tracked on the Fizzy card.
+### Step 4: Dispatch Critics via Pipeline Tools (Classic Rounds)
 
 **CRITICAL: Always pass the COMPLETE spec document from disk. NEVER summarize, condense, or rewrite it from memory.** The spec file on disk is the source of truth. Opponent models must see the exact same document the user approved.
 
 **Before EVERY debate round:**
 
-0. **Lookup Sweep (REQUIRED — resolve before dispatching).** Maintain
-   `.adversarial-spec/specs/<slug>/lookup-log.md`: a running register of every
-   open question, ASSUMPTION-n, and hedge in the current draft that is
-   RESOLVABLE BY LOOKUP rather than by debate — served/source code reads,
-   official docs (Docmaster/WebFetch), web search, config-file inspection,
-   or a one-line question to the user. At the top of every round:
-   - Sweep the draft for hedging language ("the spec is not sure", "may or
-     may not", "assumed", "unverified", "TBD") and OQ/ASSUMPTION entries;
-     add any lookup-resolvable item to the log with its lookup method.
-   - RESOLVE every entry whose lookup costs less than a debate round (most
-     do — reading a served-code extract takes minutes; carrying the hedge
-     through N rounds costs every opponent's attention every round).
-   - Record resolutions in place: `RESOLVED <date> via <method>: <answer>`.
-     Only items that genuinely require human judgment or implementation-time
-     verification may stay open, each with a stated reason why lookup can't
-     answer it.
-   - Pass the log as a `--context` file so opponents stop re-raising
-     resolved items.
-   Rationale (2026-06-11): ASSUMPTION-1 (gate unknown-field tolerance) sat
-   unresolved through 4 debate rounds and the gauntlet, generating dozens of
-   redundant concerns and a dual-artifact contingency design — when the
-   served-code extract on disk already answered it. Hedges that can be
-   looked up are debate pollution, not open questions.
+0. **Lookup Sweep [GATE].** Maintain
+   `.adversarial-spec/specs/<slug>/lookup-log.md`. Sweep OQ/ASSUMPTION entries and
+   hedges (`TBD`, `unverified`, `assumed`) for questions answerable by source,
+   official docs, config, or a short user clarification. Resolve lookup-answerable
+   entries before dispatch and record `RESOLVED <date> via <method>: <answer>`.
+   Keep only judgment or implementation-verification questions open, with reasons.
+   Include this log in the context payload so critics see the evidence.
 
 1. Write the current spec to `.adversarial-spec/specs/<slug>/spec-draft-vN.md`
 2. Verify the file exists and has expected content: `wc -l .adversarial-spec/specs/<slug>/spec-draft-vN.md`
@@ -559,13 +339,14 @@ The pipeline tools handle workspace creation, MCP isolation, subprocess launchin
 
 **4a. Begin the round:**
 ```
-pipeline_begin_debate_round(
+begin_result = pipeline_begin_debate_round(
     session_id=SESSION_ID,
     card_id=FIZZY_CARD_ID,
     round_number=N,
-    models=["codex/gpt-5.6-sol", "gemini/gemini-3.5-flash"],  # gemini/ = API path; NEVER gemini-cli/ (dead OAuth tier)
+    models=SELECTED_REGISTRY_MODELS,
     board_id=BOARD_ID,
-    domain_context="Optional project-specific context"
+    orchestrator_agent=AGENT,
+    domain_context=ASSEMBLED_CONTEXT_TEXT,
 )
 ```
 This creates the isolated workspace, writes critic AGENTS.md, creates per-model checklist items on the card.
@@ -578,33 +359,26 @@ result = pipeline_dispatch_single_agent_debate(
     card_id=FIZZY_CARD_ID,
     round_number=N,
     round_instance_id=begin_result["round_instance_id"],
-    model="codex/gpt-5.6-sol",
-    spec_content=spec_text,  # full spec read from disk
+    model=MODEL,
+    spec_path=SPEC_DRAFT_PATH,  # complete current draft under this worktree
     board_id=BOARD_ID
 )
 ```
 The tool launches the critic subprocess with full isolation (MCP disabled, workspace-only instruction file) and returns when the critic finishes.
 
-**Codex MCP timeout workaround (fire-and-poll):**
+**Ambiguous MCP timeout recovery (fire-and-poll):** If the wrapper times out while
+the critic may still run, do not retry the launch. Inspect the returned
+`results_dir` (or workspace path recorded in pipeline state), under
+`<model-with-slashes-replaced-by-dashes>/`, for `parsed.json`, `raw.txt`, and
+`stderr.txt`. Check at the established 90-second recovery cadence without
+exponential backoff; keep the user informed while waiting.
 
-Codex may time out the MCP tool wrapper after ~120 seconds even when `timeout_seconds` is longer and the underlying critic process continues running. Treat `timed out awaiting tools/call after 120s` as an ambiguous launch state, not as critic failure.
-
-When this happens:
-
-1. Do **not** retry the same dispatch immediately. A retry can duplicate the critic run.
-2. Poll the expected result directory every **90 seconds**. Do not exponential-backoff.
-3. Expected path:
-   ```bash
-   .adversarial-spec/debate-workspaces/<session_id>/round-<round_instance_id>/results/<model-with-slashes-replaced-by-dashes>/
-   ```
-   Example:
-   ```bash
-   .adversarial-spec/debate-workspaces/adv-spec-202604291604-dispatch-cost-tracker-unify/round-1475ef58aad24263/results/claude-cli-claude-opus-4-7/
-   ```
-4. On each poll, check for `parsed.json`, `raw.txt`, and `stderr.txt`.
-5. If `parsed.json` appears with `"status": "completed"`, use its `agreed` and `findings_count`, and use `raw.txt` as the review artifact.
-6. Register the return if a `dispatch_id` was returned or can be recovered from pipeline state. If no `dispatch_id` exists because the MCP response was lost, add a Fizzy comment and process note with the artifact path, then use the documented process-failure path rather than re-running the model.
-7. Only treat the model as failed after the critic-specific timeout window has elapsed and the result directory has no terminal artifact.
+A completed `parsed.json` supplies status, agreement, and findings count; preserve
+`raw.txt` as review evidence. Recover the dispatch ID from pipeline state and
+register the return. If no ID can be recovered, record the artifact path on the
+card using explicit `board_id`, write a process-failure note, and surface the
+blocker. Treat failure as terminal only after the critic timeout and absence of a
+terminal artifact. Never fabricate a return or duplicate a still-running critic.
 
 **4c. Register each model's return:**
 After each dispatch returns:
@@ -614,7 +388,7 @@ pipeline_register_debate_agent_return(
     card_id=FIZZY_CARD_ID,
     round_instance_id=begin_result["round_instance_id"],
     dispatch_id=result["dispatch_id"],
-    model="codex/gpt-5.6-sol",
+    model=MODEL,
     status=result["status"],
     findings_count=result["findings_count"],
     agreed=result["agreed"],
@@ -623,16 +397,16 @@ pipeline_register_debate_agent_return(
 )
 ```
 
-**4d. The conductor can skip models or stop early.**
-If a model is hanging or you have enough critiques, register remaining models as `status="skipped"` and proceed.
+**4d. Finish the round after synthesis and gates.** Complete Step 5, Test-Spec
+Sync, and Checkpoint Guardrails, then run [Round Closure](#round-closure-classic-pipeline).
+An actual skipped/failed critic stays recorded as such; it cannot supply missing
+quorum evidence.
 
-**No fallback.** If `pipeline_begin_debate_round` rejects the round (sequence mismatch, checklist missing, active round conflict), STOP. Do not dispatch standalone `debate.py critique` — there is no "pipeline unavailable" condition in a Fizzy-enabled project; either the card is in a debate-eligible lane or it isn't, and standalone bypass is exactly how tests-pseudo.md drifted across v2→v7 without a single staleness warning. Options when the pipeline rejects:
-
-1. **Sequence mismatch on a mid-session card** — prior rounds ran before pipeline adoption. Treat the current spec version as pipeline-R1 (fresh pipeline-tracked start on the consolidated spec); prior rounds live on disk as historical artifacts. Dispatch from R1 forward via pipeline tools only.
-2. **Active round conflict** — a prior round on this card never advanced. Register the missing model returns with `status="skipped"` and advance, then begin the next round.
-3. **Checklist missing** — the `pipeline_begin_debate_round` call failed partway. Retry with `active_round_policy="reuse"` or `"replace"`.
-
-If none of those resolve it, write a process-failure note (≥200 bytes, describe what broke, which gate was circumvented, what permanent fix is planned) and use `pipeline_patch_state` with `process_failure_path` to move forward. Do not fall back to `debate.py` with a Fizzy card present — the script now enforces `--pipeline-card` and will exit 2.
+**Rejected calls:** Inspect the live card and returned blocker. Resume an existing
+round with `active_round_policy="resume"` when appropriate; reconcile incomplete
+returns/checklists through the owning tools. Do not invent sequence numbers,
+claim skipped work completed, or use `pipeline_patch_state` to skip a fence.
+Unrecoverable state requires a process-failure note and operator resolution.
 
 ### Step 5: Review, Critique, and Iterate
 
@@ -686,11 +460,11 @@ In Round 1, BEFORE reviewing technical details, **confirm** the spec addresses a
    - For each `US-X` in roadmap, confirm the corresponding spec section exists and is substantive
    - **If a user story lacks coverage:** This is a Step 2.5 error. Return to Step 2.5 to address it before continuing debate.
 
-2. **Confirm Getting Started Exists:** For technical/full depth:
+2. **Confirm Getting Started Exists:** For technical/full depth when setup is a declared prerequisite:
    - A "Getting Started" or "Bootstrap" section should already exist (addressing US-0)
    - The bootstrap workflow from the roadmap should be documented
    - New users can understand how to set up the system
-   - **If missing:** Return to Step 2.5 to add it
+   - **If required but missing:** Return to Step 2.5 to add it; otherwise retain the no-bootstrap rationale
 
 3. **Confirm Success Criteria Are Testable:** For each success criterion:
    - Is it specific enough to write a test for?
@@ -709,84 +483,40 @@ In Round 1, BEFORE reviewing technical details, **confirm** the spec addresses a
    >
    > Before Round 2, do any of these conflict with your priorities?"
 
-   Do NOT proceed to Round 2 until user confirms direction.
+   Do NOT proceed to another round or phase handoff until the user confirms direction.
 
 ---
 
-**Context Readiness Audit (GATE — between Round 1 and Round 2, REQUIRED for technical/full depth):**
+### Context Readiness Audit (GATE — technical/full depth)
 
-> **STOP.** Do NOT proceed to Round 2 without completing this audit.
-> This is a GATE, not advisory. The audit produces the `ContextInventoryV1` that:
-> - Builds the `--context` flags for Round 2+ debate invocations
-> - Feeds the Arm Adversaries step before the gauntlet (see 04-gauntlet.md)
-> - Prevents the failure pattern where models critique architecture without seeing the actual codebase
->
-> **If this audit was skipped** (e.g., resumed session), run it NOW before proceeding.
+Run after Round 1 and before Round 2, or before finalizing a one-round debate.
+On resume, a missing inventory requires this audit before continuing. For v6,
+complete it before architecture-focused leaf review. Phase 3 owns the inventory;
+Phase 5 consumes and revalidates it before arming adversaries.
 
-After Round 1 validates requirements and before Round 2 debates architecture, audit what codebase context is available to inform the remaining debate and the eventual gauntlet.
+1. Identify the blast zone from the spec's files, modules, types, tables, functions,
+   and external services.
+2. Check the sources below and classify each as `AVAILABLE`, `PARTIAL`,
+   `NOT_AVAILABLE`, or `NOT_APPLICABLE`.
 
-**Why here:** Round 1 is about user value (no codebase context needed). Round 2 is about architecture (codebase context critical). Gaps discovered now have time to be addressed — tasks can complete while debate proceeds.
+   | Context source | Evidence to inspect |
+   |----------------|---------------------|
+   | Architecture | Manifest freshness, primer, relevant component docs |
+   | Schemas/types | Definitions referenced by the blast zone |
+   | Tests and coverage | Existing tests, coverage config/report, test intent |
+   | Dependencies | `pyproject.toml` / `package.json` |
+   | Recent changes | Git history and working-tree changes in the blast zone |
+   | Build/test health | Latest applicable run evidence; gaps stated explicitly |
+   | Operations | Monitoring/SLIs, error/retry handling, auth/authz patterns |
+   | External APIs | Versioned SDK/docs and verified interface excerpts |
+   | Prior art | Legacy/archive code, similar features, ADRs/design rationale |
 
-**Use TodoWrite** to track each context source check from the table below — mark each as completed with its status (AVAILABLE/PARTIAL/NOT_AVAILABLE/NOT_APPLICABLE).
-
-**Process:**
-
-1. **Identify the blast zone.** Parse the spec for file paths, module names, table names, function names, and external services. These are the files/modules the spec will likely modify.
-
-2. **Check context sources against this checklist:**
-
-   | Context Source | Check Method | Who Benefits |
-   |---------------|-------------|--------------|
-   | Architecture docs | `[ -f .architecture/manifest.json ]` | ALL (base context) |
-   | Schema/type definitions | Grep for table/interface names in blast zone | PEDA, COMP |
-   | Test coverage | Check for pytest-cov config or recent coverage report | PEDA, COMP |
-   | Dependency inventory | Read pyproject.toml / package.json | LAZY, PREV, PARA |
-   | Git recent changes | `git log --oneline -10 -- <blast zone files>` | COMP, PREV |
-   | Build/test status | `uv run pytest --tb=short` (or equivalent) | COMP |
-   | Monitoring/metrics | Check for alerting config, dashboards, SLIs | BURN |
-   | Error handling patterns | Grep for try/except, circuit breaker, retry in blast zone | BURN |
-   | Auth/authz patterns | Grep for auth, permission, token in blast zone | PARA |
-   | External API docs | Check for SDK, cached docs, Context7 availability | AUDT, FLOW |
-   | Legacy/archive dirs | `find . -type d -name "_legacy" -o -name "deprecated"` | PREV |
-   | Design rationale (ADRs) | Check for decision docs, spec history | ASSH |
-   | Existing similar features | Grep for feature keywords across codebase | PREV, LAZY |
-   | Test pseudocode | Check `tests_pseudo_path` in session, verify file exists | PEDA, COMP, BURN |
-
-3. **Classify each source:** `AVAILABLE`, `PARTIAL`, `NOT_AVAILABLE`, or `NOT_APPLICABLE`.
-
-4. **For PARTIAL sources, determine if gap is actionable:**
-   - Can we generate a coverage report now? → Suggest task
-   - Can we fetch API docs via Context7? → Suggest task
-   - Is this a fundamental gap the spec SHOULD address? → Note for Round 2+
-
-5. **Present to user:**
-
-   ```
-   Context Readiness Audit
-   ═══════════════════════════════════════
-   Blast zone: 5 files, 3 modules
-
-   ✓ AVAILABLE (6)
-     Architecture docs, schema definitions, type definitions,
-     dependency inventory, git history, build status
-
-   ⚠ GAPS (2)
-     Test coverage — no pytest-cov configured
-       → Can generate now (spawns 30s task)
-     External API docs — spec references FooAPI, no local docs
-       → Can fetch via Context7 (spawns task)
-
-   ✗ NOT AVAILABLE (1)
-     Monitoring data — no alerting configured
-       → This is a design gap. Round 3 should address it.
-
-   ─ NOT APPLICABLE (1)
-     Incident reports — not relevant for CLI tool
-
-   [Generate available gaps] [Proceed without] [Choose which]
-   ```
-
-6. **Cache inventory in session state** as `ContextInventoryV1`:
+3. Present available sources, actionable gaps, and design gaps to the user. Offer
+   to obtain missing evidence; record any accepted omissions. Do not create raw
+   task cards for context work: use the approved plan-backed path if needed.
+4. Persist the agent-maintained `ContextInventoryV1` in
+   `extended_state.context_inventory`. This is a manual guidance record; no
+   runtime schema validator is implemented.
 
    ```json
    {
@@ -804,38 +534,29 @@ After Round 1 validates requirements and before Round 2 debates architecture, au
        }
      },
      "total_available_tokens": 8500,
-     "gaps_noted": ["description of design gaps for later rounds"]
+     "gaps_noted": ["missing evidence or design gaps"]
    }
    ```
 
-   **Persistence rule (v1.1):** Only persist sources where `status ∈ {available, partial}` AND they carry actionable path/task data. Drop `not_available`, `not_applicable`, and `actionable:false` entries — they're audit-only noise that bloats every resume. Summarize them in `gaps_noted` if they need to survive.
+Persist only available/partial sources with actionable path/task data. Summarize
+unavailable, inapplicable, or non-actionable entries in `gaps_noted` when relevant.
+This entry pruning never deletes the inventory at debate exit.
 
-   **Debate-exit prune:** On phase transition `debate → {gauntlet, finalize}`, delete `extended_state.context_inventory` from the session detail file. It's a debate-round working artifact — adversaries in gauntlet re-derive from the spec. Keep `gaps_noted` if it was promoted into the spec, else discard.
+**Retain and revalidate:** Keep the inventory and selected context paths through
+the architecture handoff and gauntlet. Before reuse, check HEAD, working-tree
+changes, source existence, and blast-zone changes; refresh affected excerpts and
+update timestamps/statuses. Unchanged HEAD alone does not prove fresh context.
+Use [context-addition-protocol.md](../reference/context-addition-protocol.md) for
+extraction and transport; update the payload before the next dispatch.
 
-   This inventory is reused by:
-   - **Context-addition-protocol** — debate round appendices draw from it instead of re-extracting
-   - **Arm Adversaries** — gauntlet briefings are assembled from it (see 04-gauntlet.md)
-
-   **Staleness rule:** If `git rev-parse --short HEAD` differs from `git_hash` in inventory, re-extract only the sources whose files were modified.
-
-**After the audit, update --context flags for Round 2+:**
-
-Build expanded context from the inventory's AVAILABLE sources:
-```bash
-CONTEXT_FLAGS=""
-for source in inventory.sources where status == "available" and path != null:
-  CONTEXT_FLAGS="$CONTEXT_FLAGS --context $source.path"
-```
-
-Update `extended_state.context_files` in session state with the new list. Use these flags for ALL subsequent `debate.py critique` invocations.
-
-**[GATE] TodoWrite: Mark "Context Readiness Audit (technical/full)" completed before proceeding to Round 2.**
+**[GATE] TodoWrite: Complete "Context Readiness Audit (technical/full)" only after
+inventory persistence and gap review.**
 
 ---
 
 **Round 2 Architecture & Design (For Spec documents):**
 
-**PRE-CHECK:** Verify the Context Readiness Audit was completed. If `extended_state.context_inventory` is missing from the session state, STOP and run the audit above before proceeding. Round 2 without codebase context produces hallucinated critiques.
+**PRE-CHECK (technical/full depth):** Verify the Context Readiness Audit was completed. If `extended_state.context_inventory` is missing from the session state, STOP and run the audit above before proceeding.
 
 After Round 1 confirms requirements, Round 2 focuses on system design:
 
@@ -865,79 +586,39 @@ Final rounds focus on polish:
 
 ---
 
-**Handling Early Agreement (Anti-Laziness Check):**
+**Handling Early Agreement:** `[AGREE]` is a response marker, not proof of
+convergence. If early agreement lacks evidence, ask the next round's critics to
+name at least three reviewed sections, explain agreement, and identify remaining
+issues. Add these instructions to the context payload using the selected dispatch
+mode; do not bypass the pipeline for a separate press run.
 
-If any model says `[AGREE]` within the first 2 rounds, be skeptical. Press the model by running another critique round with explicit instructions:
-
-```bash
-cat .adversarial-spec/specs/<slug>/spec-draft-vN.md | \
-  python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
-  --models MODEL_NAME --doc-type TYPE --press
-```
-
-The `--press` flag instructs the model to:
-- Confirm it read the ENTIRE document
-- List at least 3 specific sections it reviewed
-- Explain WHY it agrees (what makes the spec complete)
-- Identify ANY remaining concerns, however minor
-
-If the model truly agrees after being pressed, output to the user:
-```
-Model X confirms agreement after verification:
-- Sections reviewed: [list]
-- Reason for agreement: [explanation]
-- Minor concerns noted: [if any]
-```
-
-If the model was being lazy and now has critiques, continue the debate normally.
-
-**If ALL models (including you) agree:**
-- Proceed to Step 5.5 (Gauntlet Review - Optional)
-
-**If ANY participant (model or you) has critiques:**
-1. List every distinct issue raised across all participants
-2. For each issue, determine if it is valid (addresses a real gap) or subjective (style preference)
-3. **If a critique raises a question that requires user input, ask the user before revising.** Examples:
-   - "Model X suggests adding rate limiting. What are your expected traffic patterns?"
-   - "I noticed the auth mechanism is unspecified. Do you have a preference (OAuth, API keys, etc.)?"
-   - Do not guess on product decisions. Ask.
-4. Address all valid issues in your revision
-5. If you disagree with a critique, explain why in your response
-6. Output the revised document incorporating all accepted feedback
-7. **Write the revised spec to disk** as `spec-draft-v{N+1}.md` (where N is current round):
-   ```bash
-   # Write revised spec to disk BEFORE next round
-   # This is the source of truth for the next debate.py invocation
-   ```
-   Verify the file was written: `wc -l .adversarial-spec/specs/<slug>/spec-draft-v{N+1}.md`
-8. **Update tests-pseudo.md to match the revised spec [GATE]** (see Test-Spec Sync section below)
-9. **Run checkpoint guardrails** (see Checkpoint Guardrails section below)
-10. Go back to Step 4, piping the NEW file from disk: `cat spec-draft-v{N+1}.md | debate.py ...`
-
-**Handling conflicting critiques:**
-- If models suggest contradictory changes, evaluate each on merit
-- If the choice is a product decision (not purely technical), ask the user which approach they prefer
-- Choose the approach that best serves the document's audience
-- Note the tradeoff in your response
-
----
+**Incorporate critiques:**
+1. List distinct issues, including your independent critique; accept valid gaps
+   and explain rejected suggestions.
+2. Ask the user about product decisions or conflicting priorities before revising.
+3. Write the revised complete draft to disk as `spec-draft-v{N+1}.md` and verify it.
+4. Run Test-Spec Sync and Checkpoint Guardrails below, including on an unchanged
+   draft before claiming a clean round.
+5. Record the round through Round Closure. The pipeline's recorded convergence
+   basis plus altitude round floor decides whether to finalize or run another
+   round. Changes needing independent review go into the next round.
 
 ### Test-Spec Sync (GATE — after each round incorporation)
 
 > **This is a GATE, not advisory.** Tests that drift from the spec produce false confidence —
-> the gauntlet and implementation phases trust tests-pseudo.md as ground truth for what the
-> spec actually requires. Stale tests mean stale implementation targets.
+> downstream phases consume this test intent. Before compile, edit `tests-pseudo.md`;
+> after compile, update authoritative `tmr-registry.json` records and regenerate the
+> prose view per the [TMR contract](../reference/document-types.md#happy-path-spine-and-maturity-ladder).
 
-After writing the revised spec to disk (Step 5 item 7) and BEFORE running checkpoint guardrails:
+After writing the current spec to disk and BEFORE running checkpoint guardrails:
 
-**0. Morph gate-in (REQUIRED — `reference/morph-reconciliation.md`).** Before diffing tests,
+**0. Morph gate-in (REQUIRED — [morph-reconciliation.md](../reference/morph-reconciliation.md)).** Before diffing tests,
 scan this round's accepted critiques for a **morph verb** (`delete`/`relocate`/`externalize`/
 `absorb`/`merge`/`split`/`reframe`) applied to a named capability. If any fired, a **user-story
 morph** may have occurred: a US whose center of gravity moved, leaving its spine test pointing
 at deleted behavior (grep-clean but semantically rotten). Run the morph-reconciliation procedure
 (migration ledger → fate classification → artifact reconcile → lineage record → `orphaned_spine`
-verify) for each affected capability before proceeding. The Step-5 `orphaned_spine` oracle below
-is the standing backstop if this gate-in is missed.
+verify) for each affected capability before proceeding. Run the reference's `orphaned_spine` check as the standing backstop.
 
 **1. Diff the spec changes against tests-pseudo.md:**
 - For each spec section that changed in this round, check whether the corresponding test cases still assert the correct behavior
@@ -971,7 +652,7 @@ is the standing backstop if this gate-in is missed.
 - Tests that verify behaviors NOT in any user story = scope drift (flag via SCOPE guardrail)
 - No test asserts behavior that contradicts the current spec draft
 
-**6. Write updated tests-pseudo.md to disk.** The file path is in `session.tests_pseudo_path`.
+**6. Persist updated test intent.** Write `tests-pseudo.md` at `session.tests_pseudo_path`; after compile, apply the TMR contract and regenerate this view.
 
 **[GATE] TodoWrite: Mark "Round N: Update tests-pseudo.md to match spec" completed before proceeding to guardrails.**
 
@@ -979,7 +660,7 @@ is the standing backstop if this gate-in is missed.
 
 ### Checkpoint Guardrails (after each round incorporation)
 
-After incorporating critiques into a new spec version (Step 5 item 8), run checkpoint guardrails before the next debate round. These catch editorial regressions early — contradictions, scope drift, and orphaned requirements compound across rounds.
+After Test-Spec Sync, run checkpoint guardrails before the next debate round. These catch editorial regressions early — contradictions, scope drift, and orphaned requirements compound across rounds.
 
 **Five guardrail adversaries** (defined in `adversaries.py` → `GUARDRAILS` dict):
 
@@ -1013,34 +694,8 @@ After incorporating critiques into a new spec version (Step 5 item 8), run check
 
 **Depth limit (FM-2):** If CONS finds issues, fix them and re-run CONS. If the re-run finds NEW contradictions introduced by the fix, defer to the user after 2 attempts — do not loop indefinitely.
 
-**Workflow after guardrails:**
-
-```
-Guardrail Results (post-Round N incorporation)
-═══════════════════════════════════════
-CONS (consistency_auditor): 2 findings
-  1. §3.2 says "max 5 retries" but §5.1 says "max 3 retries"
-  2. §7.3 and §7.4 both numbered as §7.3
-
-SCOPE (scope_creep_detector): 1 finding
-  1. §4.2 adds "webhook notification system" — not in original
-     requirements. → SCOPE ADDITION (needs approval)
-
-TRACE (requirements_tracer): 0 findings
-
-CANON (canonical_type_auditor): 1 finding
-  1. §5.1 says `adx_center` controls the active score, but owner code
-     classifies it as legacy display-only telemetry.
-     → CANON DRIFT: parameter_causality_drift
-
-TCOV (test_coverage_auditor): 1 finding
-  1. TC-4 only asserts `entry_score` is present and between 0..1.
-     It would still pass if `adx_center` had no effect while the UI
-     tooltip claimed it affected score.
-     → TEST GAP: weak_oracle
-
-[Fix CONS] [Approve/remove SCOPE] [Restore TRACE] [Apply CANON] [Add/fix TCOV tests] [Proceed]
-```
+**Workflow after guardrails:** Persist the aggregate report, show its actionable
+results to the user, and resolve each category:
 
 1. Fix CONS findings before proceeding
 2. Present SCOPE additions for user approval or removal
@@ -1051,57 +706,59 @@ TCOV (test_coverage_auditor): 1 finding
 
 **[GATE] TodoWrite: Mark "Round N: Run CONS + SCOPE + TRACE + CANON + TCOV guardrails" (or "SCOPE + TRACE + CANON + TCOV" for Round 1) completed before proceeding to the next round.**
 
-### Fizzy Sync (after each round — REQUIRED)
+### Round Closure (Classic Pipeline)
 
-**When using pipeline tools (Step 4):** Per-round sync is handled automatically. `pipeline_begin_debate_round`, `pipeline_register_debate_agent_return`, and `pipeline_advance_debate_round` update the Fizzy card with round state, per-model checklist items, and comments. No manual sync needed.
+After every critic return is registered and synthesis, test sync, and guardrails
+have produced their artifacts, record the round:
 
-**Fallback (debate.py without pipeline tools):** If pipeline tools were unavailable and you used standalone `debate.py`, manually sync the Fizzy pipeline card. Read `fizzy_card_id` from the session detail file (`sessions/<id>.json`).
-
-**If `fizzy_card_id` exists:**
-1. Use a **haiku subagent** (to keep MCP payload out of main context) to:
-   - `pipeline_patch_state(card_id, session_id, {"debate_round": N, "last_agent": "claude-opus-4-7"})` where N is the round just completed
-   - `add_comment(card_id, "## Debate round N complete\n\n**Why it matters:** <plain-language synthesis decision>.\n**Evidence:** Spec vN at <path>; <count> concerns accepted.\n**Next:** <guardrail or next-round action>.")`
-2. Board is pinned at Fizzy server startup. The `board_id` parameter is optional and validated.
-
-**If `fizzy_card_id` is missing:** Log a warning but do not block. The card may not have been created (legacy session) or the session predates this sync requirement.
-
-**Why this matters:** Without per-round sync, the Fizzy card becomes stale immediately after creation. The board is the only external visibility into session progress — other agents, the conductor, and the user all depend on it. (See process failure: "Trello Board Ignored During Entire Spec Session", 2026-03-26.)
-
-### Telegram Notification (after each round — REQUIRED)
-
-After Fizzy sync, send a Telegram summary, **launch the 120s pause as a background Bash task, and end the turn**. See SKILL.md "Major Milestone Notifications" for the full mechanism + rationale. Summary:
-
-1. `~/.claude/bin/telegram-send <project> "<message>"` (foreground — confirm the send).
-2. `Bash(command="sleep 120; echo done", run_in_background=true)`.
-3. End the turn. Do NOT chain follow-up tool calls behind the sleep.
-
-If the human replies within 120s, their message arrives first and you respond to them. If no reply lands by the time `sleep` completes, the `task-notification` wakes the next turn and you continue with the protocol's next step (begin R2, etc.). A foreground sleep is process theater — it freezes the turn without giving the human a real interrupt window. The whole point of the pause is "background sleep + turn ends" so the human actually has 120s of decision space.
-
-**After debate round synthesis + guardrails:**
-```bash
-~/.claude/bin/telegram-send <project> "R<N> complete: <count> findings (<critical> critical, <major> major, <minor> minor) applied. Guardrails: SCOPE <pass/fail>, TRACE <pass/fail>, CANON <pass/fail>, TCOV <pass/fail>, CONS <pass/fail>."
-# then: Bash(command="sleep 120; echo done", run_in_background=true) — and END THE TURN
+```
+round_result = pipeline_advance_debate_round(
+    session_id=SESSION_ID,
+    card_id=FIZZY_CARD_ID,
+    agent=AGENT,
+    round_number=N,
+    models_used=SELECTED_REGISTRY_MODELS,
+    findings_count=FINDINGS_COUNT,
+    findings_summary=ROUND_SYNTHESIS,
+    current_spec_draft_path=CURRENT_SPEC_DRAFT_PATH,
+    guardrail_report_path=GUARDRAIL_REPORT_PATH,
+    board_id=BOARD_ID,
+)
 ```
 
-**After convergence declared:**
-```bash
-~/.claude/bin/telegram-send <project> "Convergence after <N> rounds. <severity trend summary>. Proceeding to finalize."
-# then: Bash(command="sleep 120; echo done", run_in_background=true) — and END THE TURN
+Omit `convergence` so the pipeline derives it from registered outcomes. Inspect
+`ok` and the recorded `convergence_basis`; completed counting critics, family
+quorum, and absence of blocking returns determine convergence. An unavailable
+reviewer is unavailable, never a fabricated agreement. A rejected call blocks
+closure. Preserve returned archive paths for critic evidence.
+
+When the recorded round converged, the altitude round floor is satisfied, and no
+revision still needs review, close the debate without inventing another round:
+
+```
+pipeline_finalize_debate_round(
+    session_id=SESSION_ID,
+    card_id=FIZZY_CARD_ID,
+    agent=AGENT,
+    board_id=BOARD_ID,
+)
 ```
 
-**Rules:**
-- Check telegram config first (`has_telegram_config` or `telegram-registry-lookup`). Skip if no config.
-- The 120s pause is mandatory **AND must be backgrounded + turn-ending** — gives the human time to read and Ctrl+C / reply to redirect. A foreground sleep does not provide that affordance.
-- If `telegram-send` fails, log to stderr and continue.
-- This is the human's primary mobile channel for staying oriented during long autonomous runs.
+Require success before handoff. If the basis or floor fails, run another round;
+never patch a convergence flag. Pipeline tools own round state and routine card
+comments.
 
----
+See SKILL.md § [Fizzy Card Comment Convention](../SKILL.md#fizzy-card-comment-convention).
+See SKILL.md § [Phase Transition Protocol](../SKILL.md#phase-transition-protocol) for Telegram/milestone notifications and human interrupt handling.
+See SKILL.md § [Journey Log](../SKILL.md#journey-log).
 
-### Phase Transition: debate → gauntlet
+### Target-Architecture / Decomposition Handoff
 
-When consensus is reached and user opts for gauntlet, sync both session files per the Phase Transition Protocol (SKILL.md):
+Hand off the reviewed spec path, roadmap, current test intent, guardrail report,
+lookup log, and retained `extended_state.context_inventory` to
+[Phase 4](04-target-architecture.md). Classic sessions enter target architecture;
+v6 validates the Phase 4 artifact carried by D0 decomposition and follows the
+router's fan-in handoff. Missing architecture artifacts block further progression,
+even when the selected architecture mode is `skip`.
 
-1. **Detail file** (`sessions/<id>.json`): set `current_phase: "gauntlet"`, `current_step: "Consensus reached, running gauntlet"`, append entry to journey log (`sessions/<id>.journey.log`), and **delete `extended_state.context_inventory`** (debate-round working artifact; gauntlet re-derives from spec)
-2. **Pointer file** (`session-state.json`): set `current_phase: "gauntlet"`, `current_step`, `next_action`, `updated_at`
-
-If user declines gauntlet and proceeds directly to finalize, set `current_phase: "finalize"` instead.
+See SKILL.md § [Phase Transition Protocol](../SKILL.md#phase-transition-protocol).
