@@ -70,6 +70,7 @@ except ImportError:
     )
     sys.exit(1)
 
+import agy_sandbox  # noqa: E402
 import token_tracking  # noqa: E402
 from adversaries import (  # noqa: E402
     FINAL_BOSS,
@@ -112,6 +113,11 @@ from session import (  # noqa: E402
     save_checkpoint,
     save_critique_responses,
 )
+
+# Antigravity safety outcomes (agy_sandbox): machine-distinguishable exit codes.
+EXIT_AGY_STOP = 4  # new critic mutation / boundary failure / tamper — operator review required
+EXIT_AGY_BLOCKED = 5  # a prior uncleared STOP blocks this repository
+EXIT_AGY_REFUSED = 6  # an agy seat cannot run sandboxed; round refused before any dispatch
 
 
 def log_input_stats(text: str, source: str = "stdin") -> None:
@@ -1657,13 +1663,50 @@ def main() -> None:
     # Validate models have required credentials
     validate_models_before_run(models, bedrock_mode)
 
+    try:
+        run_models_with_agy_contract(args, models, context, bedrock_mode, bedrock_region)
+    except agy_sandbox.AgyStop as stop:
+        # Terminal: no retry, no synthesis, no round checkpoint (see agy_sandbox).
+        print(f"\n{stop}", file=sys.stderr)
+        sys.exit(EXIT_AGY_BLOCKED if stop.kind == "blocked" else EXIT_AGY_STOP)
+
+
+def require_agy_seats_ready(models: list[str], cwd: Optional[str]) -> None:
+    """Refuse the round before ANY dispatch when an agy seat cannot run sandboxed or is stopped."""
+    agy_seats = [m for m in models if m.startswith("antigravity/")]
+    if not agy_seats:
+        return
+    reason = agy_sandbox.sandbox_unavailable_reason()
+    if reason is not None:
+        print(
+            f"Error: Antigravity seat(s) {', '.join(agy_seats)} unavailable: {reason}.\n"
+            "Refusing the round before any dispatch. Remove the seat explicitly or fix the sandbox; "
+            "no model is substituted automatically.",
+            file=sys.stderr,
+        )
+        sys.exit(EXIT_AGY_REFUSED)
+    agy_sandbox.check_admission(cwd)
+
+
+def run_models_with_agy_contract(
+    args: argparse.Namespace,
+    models: list[str],
+    context: Optional[str],
+    bedrock_mode: bool,
+    bedrock_region: Optional[str],
+) -> None:
+    """Preflight + critique. Any AgyStop propagates to main() as a terminal outcome."""
+    round_cwd = getattr(args, "cwd", None)
+    if args.action != "send-final":
+        require_agy_seats_ready(models, round_cwd)
+
     # Live preflight: ping every model before the real dispatch. Credential
     # validation can't catch invalid model names (404s) or dead auth — without
     # this, a bad gemini name fails ~10 min later alongside codex's full run.
     if not args.skip_preflight and not bedrock_mode and args.action != "send-final":
         print(f"Preflight: pinging {len(models)} model(s)...", file=sys.stderr)
         preflight_results = preflight_models(
-            models, codex_reasoning=args.codex_reasoning
+            models, codex_reasoning=args.codex_reasoning, cwd=round_cwd
         )
         failed = {m: e for m, e in preflight_results.items() if e is not None}
         if failed:

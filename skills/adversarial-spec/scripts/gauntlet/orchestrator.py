@@ -13,8 +13,10 @@ import time
 from pathlib import Path
 from typing import Any, Optional
 
+import agy_sandbox
 import token_tracking
 from adversaries import ADVERSARIES, resolve_adversary_name
+from agy_sandbox import AgyDispatchRefusedError, AgyStop
 from gauntlet.batch_tiering import (
     pick_eval_batch_arg,
     summarize_tiers,
@@ -292,6 +294,14 @@ def run_gauntlet(
     # ── Step 3: Early model validation (G-6: fail fast) ──
     for m in attack_models + eval_models:
         _validate_model_name(m)
+    agy_seats = sorted({m for m in attack_models + eval_models if m.startswith("antigravity/")})
+    if agy_seats:
+        reason = agy_sandbox.sandbox_unavailable_reason()
+        if reason is not None:
+            raise AgyDispatchRefusedError(
+                f"Antigravity seat(s) {', '.join(agy_seats)} unavailable: {reason}. Refusing the gauntlet "
+                "before any dispatch; remove the seat explicitly (no automatic substitution)."
+            )
 
     # ── Step 4: Unattended enforcement (G-4) ──
     original_input = None
@@ -961,6 +971,14 @@ Technical concerns requiring revision: {len(technical_concerns)}
         update_run_manifest(manifest_path, {"status": "completed"})
 
         return result
+
+    except AgyStop as stop:
+        # Terminal: no later gauntlet-internal phase, no synthesis, no retry.
+        if manifest_path:
+            update_run_manifest(manifest_path, {"status": "agy_stop", "agy_stop_kind": stop.kind,
+                                                "agy_incident": str(stop.incident_dir or "")})
+        print(f"\n{stop}", file=sys.stderr)
+        sys.exit(5 if stop.kind == "blocked" else 4)
 
     except KeyboardInterrupt:
         if manifest_path:

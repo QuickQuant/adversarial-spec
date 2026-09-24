@@ -1,0 +1,8 @@
+Preflight: pinging 2 model(s)...
+Preflight: all models OK
+Input (stdin): 681 lines, sha256:fe27fa4e3527
+Calling 2 model(s) (critiquing): codex/gpt-6-astra, claude-cli/claude-opus-5-5...
+Partial result saved: /home/jason/PycharmProjects/adversarial-spec.worktrees/agy-tripwire-fix/.adversarial-spec-checkpoints/adv-spec-202609240523-agy-tripwire-stop-round-2-claude-cli_claude-opus-5-5.json
+Partial result saved: /home/jason/PycharmProjects/adversarial-spec.worktrees/agy-tripwire-fix/.adversarial-spec-checkpoints/adv-spec-202609240523-agy-tripwire-stop-round-2-codex_gpt-6-astra.json
+Checkpoint saved: /home/jason/PycharmProjects/adversarial-spec.worktrees/agy-tripwire-fix/.adversarial-spec-checkpoints/adv-spec-202609240523-agy-tripwire-stop-round-2.md
+Critique responses saved: /home/jason/PycharmProjects/adversarial-spec.worktrees/agy-tripwire-fix/.adversarial-spec-checkpoints/adv-spec-202609240523-agy-tripwire-stop-round-2-critiques.json

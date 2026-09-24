@@ -1,0 +1,350 @@
+{
+  "schema_version": "3.0",
+  "session_id": "adv-spec-202609240523-agy-tripwire-stop",
+  "slug": "agy-tripwire-stop",
+  "title": "AGY Tripwire Stop \u2014 critic safety contract repair",
+  "created_at": "2026-09-24T05:37:11Z",
+  "doc_type": "spec",
+  "doc_depth": "technical",
+  "root_altitude": "system",
+  "complexity_tier": "complex",
+  "complexity_score": 16,
+  "goals": [
+    "G-1 critic write contained by construction; workspace inspected, captured, discarded; any write beyond read-only inputs = critic mutation STOP",
+    "G-2 shared-tree delta = co-tenant: preserved, recorded, never halts; fail-closed STOP only on boundary-failure evidence",
+    "G-3 critic mutation or boundary failure = terminal STOP in-process and across fresh processes in any worktree of the repo until explicit recorded operator clear",
+    "G-4 sandbox unavailable -> refuse before spawn; never unsandboxed",
+    "G-5 offline suite: real bwrap + scripted fake critic, paired negative oracles",
+    "G-6 snapshot-bound approved integration gate; supervised canary carries U-1/U-10/U-11 live residue"
+  ],
+  "non_goals": [
+    "post-fable session / Brainquarters Jev session changes",
+    "live-source edits, deploy, commit, push without approval",
+    "any Antigravity dispatch before repaired contract + operator clear",
+    "weakening containment, hiding attribution uncertainty, string-match-only stop, broad routing change, secrets/config, global kills",
+    "fizzy-pipeline-mcp agy runner repair (U-6 residue)"
+  ],
+  "kpis": [
+    "0 spawns after STOP on every path (retry, sibling, later phase, preflight, fresh process)",
+    "0 non-critic bytes unlinked/overwritten by the check",
+    "7/7 handoff scenarios with explicit outcome + paired negative oracle",
+    "suite offline, <5 min"
+  ],
+  "user_stories": [
+    {
+      "id": "US-0",
+      "title": "Offline agy-safety suite",
+      "story": "As a maintainer, I want one offline command that runs the agy-safety regression suite against a fake critic so that I can verify the contract without network, credentials, or a live Antigravity dispatch.",
+      "milestone": "M0"
+    },
+    {
+      "id": "US-1",
+      "title": "Debate critique STOP is terminal",
+      "story": "As the operator, I want a STOP raised during a debate critique to end that round with a distinct outcome, no retry and no synthesis, so that no critic dispatch follows a STOP-class event.",
+      "milestone": "M1"
+    },
+    {
+      "id": "US-2",
+      "title": "Gauntlet STOP blocks siblings and later phases",
+      "story": "As the operator, I want a STOP in any gauntlet attack or later gauntlet-internal phase to block every not-yet-started Antigravity spawn in that run and record a stop status, so that parallel siblings cannot keep dispatching.",
+      "milestone": "M1"
+    },
+    {
+      "id": "US-3",
+      "title": "Preflight is a real dispatch",
+      "story": "As the operator, I want the preflight ping treated as a real dispatch \u2014 honouring the round's working directory, obeying the stop latch, and surfacing a STOP as a STOP \u2014 so that the cheap ping cannot bypass the contract.",
+      "milestone": "M1"
+    },
+    {
+      "id": "US-4",
+      "title": "STOP survives the process",
+      "story": "As a co-tenant session owner, I want a fresh process against any worktree of the same repository to refuse Antigravity dispatch (preflight included) before spawning and name the stop record and incident, so that I know why and do not retry blindly.",
+      "milestone": "M2"
+    },
+    {
+      "id": "US-5",
+      "title": "Co-tenant writes untouched, recorded, non-halting",
+      "story": "As an orchestrator agent, I want my, Codex's and the tool's writes into the shared worktree during an agy window left untouched, recorded as co-tenant, and never halting, so that concurrent work survives and nobody blames the critic.",
+      "milestone": "M3"
+    },
+    {
+      "id": "US-6",
+      "title": "Critic write captured, workspace discarded, STOP",
+      "story": "As the operator, I want any critic write inside its workspace captured byte-exact before the workspace is discarded and turned into a STOP labelled critic, including on the timeout path, so that genuine mutations stay visible and stop the run.",
+      "milestone": "M3"
+    },
+    {
+      "id": "US-7",
+      "title": "Boundary failure terminal; no sandbox, no dispatch",
+      "story": "As the operator, I want boundary failure (bwrap setup failure, in-sandbox write probe succeeding, or a critic-only sentinel changing) treated as a terminal STOP and a missing sandbox to refuse dispatch, so that containment never silently degrades.",
+      "milestone": "M3"
+    },
+    {
+      "id": "US-8",
+      "title": "Deliberate integration and supervised canary",
+      "story": "As the operator, I want a reconciliation plan that lands the repair onto the dirty bounded-pipeline-reform tree through a snapshot-bound approval gate and then runs one supervised live canary under its own approval, so that no user change is overwritten and the sandbox is proven live before routine use.",
+      "milestone": "M5"
+    },
+    {
+      "id": "US-9",
+      "title": "Operator inspects evidence",
+      "story": "As the operator, I want the STOP output and incident record to tell me what the critic wrote or which boundary check failed and where the evidence is, so that I can decide without re-running anything.",
+      "milestone": "M4"
+    },
+    {
+      "id": "US-10",
+      "title": "Explicit operator clear",
+      "story": "As the operator, I want an explicit clear act that names the incident being cleared and records who/when/why without deleting evidence, so that dispatch resumes only by my deliberate choice.",
+      "milestone": "M4"
+    },
+    {
+      "id": "US-11",
+      "title": "Inputs read-only from outside every repository",
+      "story": "As the operator, I want the prompt and inputs delivered read-only inside the dispatch workspace from a dispatch root outside every repository, so that oversized prompts never touch a repository and siblings never see each other's scratch.",
+      "milestone": "M3"
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M0",
+      "title": "Getting Started (Bootstrap)",
+      "depends_on": [],
+      "user_stories": [
+        {
+          "id": "US-0",
+          "title": "Offline agy-safety suite",
+          "spine_test": "TC-0.0"
+        }
+      ],
+      "test_cases": [
+        "TC-0.0",
+        "TC-0.1",
+        "TC-0.2"
+      ]
+    },
+    {
+      "id": "M1",
+      "title": "STOP is terminal inside one process",
+      "depends_on": [
+        "M0"
+      ],
+      "user_stories": [
+        {
+          "id": "US-1",
+          "title": "Debate critique STOP is terminal",
+          "spine_test": "TC-1.0"
+        },
+        {
+          "id": "US-2",
+          "title": "Gauntlet STOP blocks siblings and later phases",
+          "spine_test": "TC-2.0"
+        },
+        {
+          "id": "US-3",
+          "title": "Preflight is a real dispatch",
+          "spine_test": "TC-3.0"
+        }
+      ],
+      "test_cases": [
+        "TC-1.0",
+        "TC-1.1",
+        "TC-1.2",
+        "TC-1.3",
+        "TC-1.4",
+        "TC-2.0",
+        "TC-2.1",
+        "TC-2.2",
+        "TC-3.0",
+        "TC-3.1",
+        "TC-3.2",
+        "TC-3.3"
+      ]
+    },
+    {
+      "id": "M2",
+      "title": "STOP survives the process",
+      "depends_on": [
+        "M1"
+      ],
+      "user_stories": [
+        {
+          "id": "US-4",
+          "title": "STOP survives the process",
+          "spine_test": "TC-4.0"
+        }
+      ],
+      "test_cases": [
+        "TC-4.0",
+        "TC-4.1",
+        "TC-4.2",
+        "TC-4.3",
+        "TC-4.4",
+        "TC-4.6",
+        "TC-4.7"
+      ]
+    },
+    {
+      "id": "M3",
+      "title": "Sandbox boundary and truthful attribution",
+      "depends_on": [
+        "M1"
+      ],
+      "user_stories": [
+        {
+          "id": "US-5",
+          "title": "Co-tenant writes untouched, recorded, non-halting",
+          "spine_test": "TC-5.0"
+        },
+        {
+          "id": "US-6",
+          "title": "Critic write captured, workspace discarded, STOP",
+          "spine_test": "TC-6.0"
+        },
+        {
+          "id": "US-7",
+          "title": "Boundary failure terminal; no sandbox, no dispatch",
+          "spine_test": "TC-7.0"
+        },
+        {
+          "id": "US-11",
+          "title": "Inputs read-only from outside every repository",
+          "spine_test": "TC-11.0"
+        }
+      ],
+      "test_cases": [
+        "TC-5.0",
+        "TC-5.1",
+        "TC-5.2",
+        "TC-6.0",
+        "TC-6.1",
+        "TC-6.2",
+        "TC-6.3",
+        "TC-6.4",
+        "TC-7.0",
+        "TC-7.1",
+        "TC-7.2",
+        "TC-7.3",
+        "TC-7.4",
+        "TC-11.0",
+        "TC-11.1",
+        "TC-11.2"
+      ]
+    },
+    {
+      "id": "M4",
+      "title": "Operator recovery",
+      "depends_on": [
+        "M2",
+        "M3"
+      ],
+      "user_stories": [
+        {
+          "id": "US-9",
+          "title": "Operator inspects evidence",
+          "spine_test": "TC-9.0"
+        },
+        {
+          "id": "US-10",
+          "title": "Explicit operator clear",
+          "spine_test": "TC-10.0"
+        }
+      ],
+      "test_cases": [
+        "TC-9.0",
+        "TC-9.1",
+        "TC-10.0",
+        "TC-10.1",
+        "TC-10.2"
+      ]
+    },
+    {
+      "id": "M5",
+      "title": "Deliberate integration and supervised canary",
+      "depends_on": [
+        "M1",
+        "M2",
+        "M3",
+        "M4"
+      ],
+      "user_stories": [
+        {
+          "id": "US-8",
+          "title": "Deliberate integration and supervised canary",
+          "spine_test": "TC-8.0"
+        }
+      ],
+      "test_cases": [
+        "TC-8.0",
+        "TC-8.1",
+        "TC-8.2",
+        "TC-8.3"
+      ]
+    }
+  ],
+  "architecture_impact": {
+    "verdict": "extends_existing",
+    "rationale": "All new contracts live inside the existing models/providers, debate/session and gauntlet components: a typed stop signal and dispatch latch through the model dispatch layer, a per-repo stop record, and incident attribution. No new layer, service, or shared middleware.",
+    "new_components": [
+      {
+        "name": "sandboxed agy dispatch launcher (bwrap profile, dispatch root, workspace inspection, boundary probes)",
+        "kind": "module",
+        "extends": "scripts/ models layer"
+      },
+      {
+        "name": "agy stop state (typed stop, latch, git-common-dir record, admission lock, clear)",
+        "kind": "module",
+        "extends": "scripts/ models layer"
+      }
+    ],
+    "new_middleware": [],
+    "new_vars_into_existing_middleware": [
+      {
+        "variable": "typed STOP signal",
+        "target_middleware": "call_single_model retry loop + debate/gauntlet catch sites",
+        "purpose": "terminal propagation without string matching"
+      },
+      {
+        "variable": "round cwd for preflight",
+        "target_middleware": "debate.py preflight wiring",
+        "purpose": "sandboxed preflight for the round's repo"
+      },
+      {
+        "variable": "incident class (critic|boundary_failure) + co-tenant window_log",
+        "target_middleware": "incident evidence record",
+        "purpose": "truthful attribution"
+      }
+    ],
+    "assessed_at": "2026-09-24T18:53:02Z",
+    "assessed_against": "da3c905"
+  },
+  "tests_pseudo_path": ".adversarial-spec/specs/agy-tripwire-stop/tests-pseudo.md",
+  "roadmap_view": "roadmap.md",
+  "debate_rounds": [
+    {
+      "round": 1,
+      "models": [
+        "codex/gpt-6-astra (xhigh)",
+        "claude-cli/claude-fable-5-1"
+      ],
+      "outcome": "17 findings; 16 accepted, 1 partially (doc depth kept technical); operator rulings U-4 quarantine, U-7 any STOP persists, U-8 git common dir, routine-writer exact-path allowlist",
+      "synthesis": "roadmap/roadmap-debate-r1-synthesis.md",
+      "checkpoint": ".adversarial-spec-checkpoints/adv-spec-202609240523-agy-tripwire-stop-round-1.md"
+    }
+  ],
+  "updated_at": "2026-09-24T18:53:02Z",
+  "personas": [
+    "operator (Jason)",
+    "orchestrator agent",
+    "co-tenant session owner",
+    "maintainer"
+  ],
+  "roadmap_version": 3,
+  "mechanism": "bwrap: / read-only; writable = per-dispatch workspace + ~/.antigravity + ~/.gemini; prompt/inputs bound read-only; no unsandboxed fallback",
+  "open_unknowns": [
+    "U-5 landing order",
+    "U-6 fizzy runner residue",
+    "U-10 out-of-sandbox helper (canary)",
+    "U-11 agy runtime byproducts (canary)",
+    "U-12 config-dir write policy"
+  ]
+}

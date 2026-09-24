@@ -1,0 +1,119 @@
+== no_clearenv rc=1 :: ================== 2 failed, 49 passed, 19 warnings in 34.08s ==================
+   caught by: test_every_launch_is_sandboxed
+   caught by: test_env_is_allowlist
+== no_socket_masks rc=1 :: ================== 1 failed, 50 passed, 19 warnings in 36.22s ==================
+   caught by: test_host_socket_unreachable_in_sandbox[herdr]
+== no_config_throwaway rc=1 :: ================== 43 failed, 8 passed, 29 warnings in 9.91s ===================
+   caught by: test_suite_uses_fake_critic_only
+   caught by: test_debate_critic_write_stops_round
+   caught by: test_nonmutation_failure_still_retried
+   caught by: test_critic_write_is_launched_once
+   caught by: test_stopped_round_quarantines_sibling_output
+   caught by: test_finished_sibling_keeps_partial_checkpoint
+   caught by: test_stop_escapes_generic_except
+   caught by: test_stop_independent_of_message_text
+   caught by: test_latch_blocks_later_dispatch_in_process
+   caught by: test_gauntlet_attack_stop_blocks_queued_siblings
+   caught by: test_running_sibling_finishes_and_is_inspected
+   caught by: test_preflight_uses_round_cwd
+   caught by: test_preflight_without_cwd_uses_process_repo
+   caught by: test_blocked_repo_refuses_with_and_without_preflight[extra0]
+   caught by: test_blocked_repo_refuses_with_and_without_preflight[extra1]
+   caught by: test_fresh_process_blocked_until_clear
+   caught by: test_clear_with_wrong_incident_refused
+   caught by: test_other_repo_not_blocked
+   caught by: test_state_outside_every_worktree_and_linked_worktree_blocked
+   caught by: test_corrupt_record_fails_closed
+   caught by: test_deleted_record_without_clear_is_tamper_stop
+   caught by: test_deleted_record_after_clear_admits
+   caught by: test_cotenant_write_preserved_and_logged
+   caught by: test_partial_checkpoint_is_cotenant
+   caught by: test_workspace_write_captured_and_discarded
+   caught by: test_repo_write_attempt_blocked_and_logged
+   caught by: test_timeout_after_write_is_stop
+   caught by: test_clean_timeout_is_retried
+   caught by: test_clean_dispatch_returns_response
+   caught by: test_evidence_failure_keeps_workspace_and_stops
+   caught by: test_every_launch_is_sandboxed
+   caught by: test_probe_write_success_is_boundary_stop
+   caught by: test_correct_profile_probe_fails_and_critic_starts
+   caught by: test_sentinel_change_is_boundary_stop
+   caught by: test_prompt_bound_readonly_in_workspace
+   caught by: test_oversized_prompt_never_in_repo
+   caught by: test_siblings_cannot_see_each_other
+   caught by: test_leftover_dead_dispatch_roots_cleaned
+   caught by: test_config_dirs_readonly_and_throwaway
+   caught by: test_host_socket_unreachable_in_sandbox[dbus]
+   caught by: test_host_socket_unreachable_in_sandbox[herdr]
+   caught by: test_host_socket_unreachable_in_sandbox[ssh-agent]
+   caught by: test_env_is_allowlist
+== no_base_mask rc=1 :: ================== 1 failed, 50 passed, 19 warnings in 34.07s ==================
+   caught by: test_siblings_cannot_see_each_other
+== no_admission rc=1 :: ================== 4 failed, 47 passed, 19 warnings in 34.94s ==================
+   caught by: test_blocked_repo_refuses_with_and_without_preflight[extra0]
+   caught by: test_blocked_repo_refuses_with_and_without_preflight[extra1]
+   caught by: test_stop_between_prepare_and_launch_blocks
+   caught by: test_deleted_record_without_clear_is_tamper_stop
+== no_latch rc=1 :: ================== 2 failed, 49 passed, 19 warnings in 34.34s ==================
+   caught by: test_latch_blocks_later_dispatch_in_process
+   caught by: test_gauntlet_attack_stop_blocks_queued_siblings
+== no_cotenant_log rc=1 :: ================== 2 failed, 49 passed, 19 warnings in 34.52s ==================
+   caught by: test_cotenant_write_preserved_and_logged
+   caught by: test_repo_write_attempt_blocked_and_logged
+== no_quarantine rc=1 :: ================== 1 failed, 50 passed, 19 warnings in 34.82s ==================
+   caught by: test_stopped_round_quarantines_sibling_output
+== no_workspace_inspection rc=1 :: ================= 23 failed, 28 passed, 19 warnings in 27.46s ==================
+   caught by: test_debate_critic_write_stops_round
+   caught by: test_critic_write_is_launched_once
+   caught by: test_stopped_round_quarantines_sibling_output
+   caught by: test_finished_sibling_keeps_partial_checkpoint
+   caught by: test_stop_escapes_generic_except
+   caught by: test_stop_independent_of_message_text
+   caught by: test_latch_blocks_later_dispatch_in_process
+   caught by: test_gauntlet_attack_stop_blocks_queued_siblings
+   caught by: test_running_sibling_finishes_and_is_inspected
+   caught by: test_preflight_uses_round_cwd
+   caught by: test_preflight_without_cwd_uses_process_repo
+   caught by: test_blocked_repo_refuses_with_and_without_preflight[extra0]
+   caught by: test_blocked_repo_refuses_with_and_without_preflight[extra1]
+   caught by: test_fresh_process_blocked_until_clear
+   caught by: test_clear_with_wrong_incident_refused
+   caught by: test_other_repo_not_blocked
+   caught by: test_state_outside_every_worktree_and_linked_worktree_blocked
+   caught by: test_corrupt_record_fails_closed
+   caught by: test_deleted_record_without_clear_is_tamper_stop
+   caught by: test_deleted_record_after_clear_admits
+   caught by: test_workspace_write_captured_and_discarded
+   caught by: test_timeout_after_write_is_stop
+   caught by: test_evidence_failure_keeps_workspace_and_stops
+== no_boundary_probe rc=1 :: ================== 1 failed, 50 passed, 19 warnings in 35.54s ==================
+   caught by: test_probe_write_success_is_boundary_stop
+== no_cleanup rc=1 :: ================== 1 failed, 50 passed, 19 warnings in 34.90s ==================
+   caught by: test_leftover_dead_dispatch_roots_cleaned
+== stop_is_retryable rc=1 :: ================= 26 failed, 25 passed, 13 warnings in 22.43s ==================
+   caught by: test_debate_critic_write_stops_round
+   caught by: test_critic_write_is_launched_once
+   caught by: test_stopped_round_quarantines_sibling_output
+   caught by: test_finished_sibling_keeps_partial_checkpoint
+   caught by: test_stop_escapes_generic_except
+   caught by: test_stop_independent_of_message_text
+   caught by: test_latch_blocks_later_dispatch_in_process
+   caught by: test_gauntlet_attack_stop_blocks_queued_siblings
+   caught by: test_running_sibling_finishes_and_is_inspected
+   caught by: test_preflight_uses_round_cwd
+   caught by: test_preflight_without_cwd_uses_process_repo
+   caught by: test_blocked_repo_refuses_with_and_without_preflight[extra0]
+   caught by: test_blocked_repo_refuses_with_and_without_preflight[extra1]
+   caught by: test_fresh_process_blocked_until_clear
+   caught by: test_clear_with_wrong_incident_refused
+   caught by: test_other_repo_not_blocked
+   caught by: test_state_outside_every_worktree_and_linked_worktree_blocked
+   caught by: test_corrupt_record_fails_closed
+   caught by: test_stop_between_prepare_and_launch_blocks
+   caught by: test_deleted_record_without_clear_is_tamper_stop
+   caught by: test_deleted_record_after_clear_admits
+   caught by: test_workspace_write_captured_and_discarded
+   caught by: test_timeout_after_write_is_stop
+   caught by: test_evidence_failure_keeps_workspace_and_stops
+   caught by: test_probe_write_success_is_boundary_stop
+   caught by: test_sentinel_change_is_boundary_stop
