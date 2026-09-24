@@ -1,0 +1,69 @@
+{
+  "lane_state_before_load": {
+    "session_next_action": "v6 Debate: the bounded leaf plan has not been loaded (no debate_leaf_inventory, no leaf cards). Next: build the bounded leaf plan from decomposition/d0.json (skills/adversarial-spec/scripts/d0_to_load_plan.py), check it with pipeline_validate_plan, then pipeline_load(plan_path, session_id, board_id) \u2014 one leaf Task Card per D0 leaf lands in Specifying. Session-card debate rounds (begin_debate_round) are not part of v6; see phases/03-debate.md 'v6 bounded-pipeline sessions'.",
+    "kind": "v6_debate_leaf_plan_not_loaded"
+  },
+  "begin_debate_round": {
+    "code": "V6_DEBATE_IS_LEAF_FANOUT",
+    "message": "v6 Debate: the bounded leaf plan has not been loaded (no debate_leaf_inventory, no leaf cards). Next: build the bounded leaf plan from decomposition/d0.json (skills/adversarial-spec/scripts/d0_to_load_plan.py), check it with pipeline_validate_plan, then pipeline_load(plan_path, session_id, board_id) \u2014 one leaf Task Card per D0 leaf lands in Specifying. Session-card debate rounds (begin_debate_round) are not part of v6; see phases/03-debate.md 'v6 bounded-pipeline sessions'."
+  },
+  "validate_plan": {
+    "valid": true,
+    "issues": [],
+    "warnings": [],
+    "plan_task_count": 9,
+    "session_pipeline_version": 6
+  },
+  "leaf_task_ids": [
+    "L1",
+    "L2",
+    "L3",
+    "L4",
+    "L5",
+    "L6",
+    "L7",
+    "L8"
+  ],
+  "binding_lifts_ok": [
+    "L1",
+    "L2",
+    "L3",
+    "L4",
+    "L5",
+    "L6",
+    "L7",
+    "L8",
+    "SYS-SR"
+  ],
+  "load_plan_ok": true,
+  "cards_by_lane": {
+    "Specifying": [
+      "L1",
+      "L2",
+      "L3",
+      "L4",
+      "L5",
+      "L6",
+      "L7",
+      "L8"
+    ],
+    "Decomposed": [
+      "SYS-SR"
+    ]
+  },
+  "debate_leaf_inventory_task_ids": [
+    "L1",
+    "L2",
+    "L3",
+    "L4",
+    "L5",
+    "L6",
+    "L7",
+    "L8"
+  ],
+  "lane_state_after_load": {
+    "session_next_action": "v6 Debate: bounded leaf plan loaded (8 leaves). Run each leaf's A->S cycle in Specifying: pipeline_record_ab_closure -> pipeline_create_middleware_fanout -> pickup/complete impl -> pipeline_middleware_judge -> pipeline_promote_middleware_winner (-> Synthesized), or pipeline_record_leaf_exception for DEFERRED/NO_GO; then pipeline_advance the session card Debate -> Pre-Gauntlet through the fan-in barrier. Session-card debate rounds (begin_debate_round) are not part of v6; see phases/03-debate.md 'v6 bounded-pipeline sessions'.",
+    "kind": "v6_debate_leaf_fanout"
+  }
+}
+DRY RUN: PASS

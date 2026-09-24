@@ -1,0 +1,463 @@
+{
+  "plan_schema_version": 3,
+  "session_id": "adv-spec-202609220555-selective-reversal-state-machine",
+  "title": "Selective Reversal Research System",
+  "tasks": [
+    {
+      "task_id": "SYS-SR",
+      "title": "Selective Reversal Research System",
+      "description": "Selective Reversal Research System. D0 aggregate subsystem node SYS-SR of session adv-spec-202609220555-selective-reversal-state-machine; decomposes into L1, L2, L3, L4, L5, L6, L7, L8. Contracts: .adversarial-spec/specs/selective-reversal-state-machine/manifest.json d0.interface_records. Container only: work happens on the leaves.",
+      "wave": 0,
+      "effort": "M",
+      "strategy": "test-first",
+      "acceptance_criteria": [
+        "every child leaf is Synthesized or carries a legal DEFERRED/NO_GO leaf exception",
+        "every D0 CUT edge is SEAM_CLOSED or carries a recorded seam deferral before the Pre-Gauntlet barrier"
+      ],
+      "architecture_refs": [
+        ".architecture/primer.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "targeted",
+      "tested_by": "llm",
+      "test_targets": [
+        "tests/"
+      ],
+      "verify_commands": [
+        "uv run pytest tests/ -q"
+      ],
+      "depends_on": [],
+      "altitude": "subsystem",
+      "parent": null,
+      "parent_task_id": null,
+      "decomposes_into": [
+        "L1",
+        "L2",
+        "L3",
+        "L4",
+        "L5",
+        "L6",
+        "L7",
+        "L8"
+      ],
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/selective-reversal-state-machine/requirements-v0.md",
+        "definition_hash": "c50db18a3e3e"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "plan_hash": "61e07feeb735",
+          "artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "kind": "verification"
+        },
+        "subsystem_verification": {
+          "plan_artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "plan_hash": "61e07feeb735",
+          "artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "kind": "verification"
+        }
+      },
+      "subsystem_spec_path": ".adversarial-spec/specs/selective-reversal-state-machine/requirements-v0.md",
+      "realizes_refs": [
+        "G1",
+        "G2",
+        "G3",
+        "G4",
+        "G5",
+        "G6"
+      ]
+    },
+    {
+      "task_id": "L1",
+      "title": "Pre-decision evidence contract and snapshot recorder",
+      "description": "Pre-decision evidence contract and snapshot recorder. D0 leaf L1 of SYS-SR (session adv-spec-202609220555-selective-reversal-state-machine). Responsibilities: R01: Immutable DecisionSnapshot with decision, source, and indicator provenance; R02: Exactly one immutable snapshot per decision event with signal/eligibility/fill times distinct. CUT-edge interfaces: E01 L4->L1 (owner L4, TC-SR-E01); E02 L1->L2 (owner L1, TC-SR-E02); E03 L1->L3 (owner L1, TC-SR-E03); E12 L1->L8 (owner L1, TC-SR-E12). Contracts: .adversarial-spec/specs/selective-reversal-state-machine/manifest.json d0.interface_records. A-phase (obligations + failing tests) happens in Specifying; this description is the D0-level scope, not the spec. Read before specifying: .adversarial-spec/specs/selective-reversal-state-machine/draft-v29.md §8 Execution schedule, compatibility receipt, and causal ordering; §7 State, ownership, and host integration; §5 H0 native control, default-path control, and migration guard; §3 Getting started: ordered bootstrap.",
+      "wave": 0,
+      "effort": "M",
+      "strategy": "test-first",
+      "acceptance_criteria": [
+        "A/B closure recorded: obligations and failing tests in keyed bijection, 3 clean red runs, both oracle controls",
+        "TC-SR-E01 (E01 L4->L1, temporal) bound and passing at C conformance",
+        "TC-SR-E02 (E02 L1->L2, data) bound and passing at C conformance",
+        "TC-SR-E03 (E03 L1->L3, data) bound and passing at C conformance",
+        "TC-SR-E12 (E12 L1->L8, data) bound and passing at C conformance"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/flip-host.md",
+        ".architecture/structured/components/flip-stop-policy.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "targeted",
+      "tested_by": "llm",
+      "test_targets": [
+        "tests/"
+      ],
+      "verify_commands": [
+        "uv run pytest tests/ -q"
+      ],
+      "depends_on": [],
+      "altitude": "component",
+      "parent": "SYS-SR",
+      "parent_task_id": "SYS-SR",
+      "decomposes_into": [],
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/selective-reversal-state-machine/requirements-v0.md",
+        "definition_hash": "c50db18a3e3e"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "plan_hash": "61e07feeb735",
+          "artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "kind": "verification"
+        }
+      },
+      "realizes_refs": [
+        "G4"
+      ]
+    },
+    {
+      "task_id": "L2",
+      "title": "Structural candidate and authority reducer",
+      "description": "Structural candidate and authority reducer. D0 leaf L2 of SYS-SR (session adv-spec-202609220555-selective-reversal-state-machine). Responsibilities: R03: Candidate anchor with provenance or explicit no-candidate state; R04: Candidate, authorized, committed, consumed, or withdrawn anchor state with takeover reason. CUT-edge interfaces: E02 L1->L2 (owner L1, TC-SR-E02); E04 L2->L3 (owner L2, TC-SR-E04); E07 L2->L5 (owner L2, TC-SR-E07). Contracts: .adversarial-spec/specs/selective-reversal-state-machine/manifest.json d0.interface_records. A-phase (obligations + failing tests) happens in Specifying; this description is the D0-level scope, not the spec. Read before specifying: .adversarial-spec/specs/selective-reversal-state-machine/draft-v29.md §9 H1 structural authority grammar; §10 Controlled lifecycle arms; §7 State, ownership, and host integration; §6 Grounded source facts and unresolved evidence; §15 Open evidence questions.",
+      "wave": 0,
+      "effort": "M",
+      "strategy": "test-first",
+      "acceptance_criteria": [
+        "A/B closure recorded: obligations and failing tests in keyed bijection, 3 clean red runs, both oracle controls",
+        "TC-SR-E02 (E02 L1->L2, data) bound and passing at C conformance",
+        "TC-SR-E04 (E04 L2->L3, control) bound and passing at C conformance",
+        "TC-SR-E07 (E07 L2->L5, data) bound and passing at C conformance"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/flip-stop-policy.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "targeted",
+      "tested_by": "llm",
+      "test_targets": [
+        "tests/"
+      ],
+      "verify_commands": [
+        "uv run pytest tests/ -q"
+      ],
+      "depends_on": [],
+      "altitude": "component",
+      "parent": "SYS-SR",
+      "parent_task_id": "SYS-SR",
+      "decomposes_into": [],
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/selective-reversal-state-machine/requirements-v0.md",
+        "definition_hash": "c50db18a3e3e"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "plan_hash": "61e07feeb735",
+          "artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "kind": "verification"
+        }
+      },
+      "realizes_refs": [
+        "G1",
+        "G2"
+      ]
+    },
+    {
+      "task_id": "L3",
+      "title": "Reversal lifecycle and authorization policy",
+      "description": "Reversal lifecycle and authorization policy. D0 leaf L3 of SYS-SR (session adv-spec-202609220555-selective-reversal-state-machine). Responsibilities: R05: One named policy response: hold test, flip, flat, hard risk, or no action; R06: Default flip intent or a named pre-existing flat/hard-risk outcome. CUT-edge interfaces: E03 L1->L3 (owner L1, TC-SR-E03); E04 L2->L3 (owner L2, TC-SR-E04); E05 L3->L4 (owner L3, TC-SR-E05); E08 L3->L5 (owner L3, TC-SR-E08). Contracts: .adversarial-spec/specs/selective-reversal-state-machine/manifest.json d0.interface_records. A-phase (obligations + failing tests) happens in Specifying; this description is the D0-level scope, not the spec. Read before specifying: .adversarial-spec/specs/selective-reversal-state-machine/draft-v29.md §10 Controlled lifecycle arms; §8 Execution schedule, compatibility receipt, and causal ordering; §13 Sealing, decision register, claim registry, errors, cohorts, and H5; §6 Grounded source facts and unresolved evidence.",
+      "wave": 0,
+      "effort": "M",
+      "strategy": "test-first",
+      "acceptance_criteria": [
+        "A/B closure recorded: obligations and failing tests in keyed bijection, 3 clean red runs, both oracle controls",
+        "TC-SR-E03 (E03 L1->L3, data) bound and passing at C conformance",
+        "TC-SR-E04 (E04 L2->L3, control) bound and passing at C conformance",
+        "TC-SR-E05 (E05 L3->L4, control) bound and passing at C conformance",
+        "TC-SR-E08 (E08 L3->L5, data) bound and passing at C conformance"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/flip-stop-policy.md",
+        ".architecture/structured/components/flip-host.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "targeted",
+      "tested_by": "llm",
+      "test_targets": [
+        "tests/"
+      ],
+      "verify_commands": [
+        "uv run pytest tests/ -q"
+      ],
+      "depends_on": [],
+      "altitude": "component",
+      "parent": "SYS-SR",
+      "parent_task_id": "SYS-SR",
+      "decomposes_into": [],
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/selective-reversal-state-machine/requirements-v0.md",
+        "definition_hash": "c50db18a3e3e"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "plan_hash": "61e07feeb735",
+          "artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "kind": "verification"
+        }
+      },
+      "realizes_refs": [
+        "G2",
+        "G3"
+      ]
+    },
+    {
+      "task_id": "L4",
+      "title": "Flip host state, execution, snapshot, and event adapter",
+      "description": "Flip host state, execution, snapshot, and event adapter. D0 leaf L4 of SYS-SR (session adv-spec-202609220555-selective-reversal-state-machine). Responsibilities: R07: One authoritative position state, actual fill, MFE/MAE update, and phase-valid event sequence; R08: Actual decision ledger row, FlipRecord/event/telemetry projection, and snapshot continuation state. CUT-edge interfaces: E01 L4->L1 (owner L4, TC-SR-E01); E05 L3->L4 (owner L3, TC-SR-E05); E06 L4->L5 (owner L4, TC-SR-E06); E11 L4->L7 (owner L4, TC-SR-E11). Contracts: .adversarial-spec/specs/selective-reversal-state-machine/manifest.json d0.interface_records. A-phase (obligations + failing tests) happens in Specifying; this description is the D0-level scope, not the spec. Read before specifying: .adversarial-spec/specs/selective-reversal-state-machine/draft-v29.md §8 Execution schedule, compatibility receipt, and causal ordering; §7 State, ownership, and host integration; §5 H0 native control, default-path control, and migration guard; §11 Fixture authority, seeds, and seeded diagnostics.",
+      "wave": 0,
+      "effort": "M",
+      "strategy": "test-first",
+      "acceptance_criteria": [
+        "A/B closure recorded: obligations and failing tests in keyed bijection, 3 clean red runs, both oracle controls",
+        "TC-SR-E01 (E01 L4->L1, temporal) bound and passing at C conformance",
+        "TC-SR-E05 (E05 L3->L4, control) bound and passing at C conformance",
+        "TC-SR-E06 (E06 L4->L5, data) bound and passing at C conformance",
+        "TC-SR-E11 (E11 L4->L7, data) bound and passing at C conformance"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/flip-host.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "targeted",
+      "tested_by": "llm",
+      "test_targets": [
+        "tests/"
+      ],
+      "verify_commands": [
+        "uv run pytest tests/ -q"
+      ],
+      "depends_on": [],
+      "altitude": "component",
+      "parent": "SYS-SR",
+      "parent_task_id": "SYS-SR",
+      "decomposes_into": [],
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/selective-reversal-state-machine/requirements-v0.md",
+        "definition_hash": "c50db18a3e3e"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "plan_hash": "61e07feeb735",
+          "artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "kind": "verification"
+        }
+      },
+      "realizes_refs": [
+        "G2",
+        "G3",
+        "G4"
+      ]
+    },
+    {
+      "task_id": "L5",
+      "title": "Seeded-position and chronological replay diagnostic",
+      "description": "Seeded-position and chronological replay diagnostic. D0 leaf L5 of SYS-SR (session adv-spec-202609220555-selective-reversal-state-machine). Responsibilities: R09: First-exit diagnostic partitioned into source, authorization, lifecycle, execution, or unresolved outcome; R10: Chronological position chain and reason-coded transition trace. CUT-edge interfaces: E06 L4->L5 (owner L4, TC-SR-E06); E07 L2->L5 (owner L2, TC-SR-E07); E08 L3->L5 (owner L3, TC-SR-E08); E09 L5->L6 (owner L5, TC-SR-E09). Contracts: .adversarial-spec/specs/selective-reversal-state-machine/manifest.json d0.interface_records. A-phase (obligations + failing tests) happens in Specifying; this description is the D0-level scope, not the spec. Read before specifying: .adversarial-spec/specs/selective-reversal-state-machine/draft-v29.md §8 Execution schedule, compatibility receipt, and causal ordering; §11 Fixture authority, seeds, and seeded diagnostics; §12 Chronological replay and L6 grading.",
+      "wave": 0,
+      "effort": "M",
+      "strategy": "test-first",
+      "acceptance_criteria": [
+        "A/B closure recorded: obligations and failing tests in keyed bijection, 3 clean red runs, both oracle controls",
+        "TC-SR-E06 (E06 L4->L5, data) bound and passing at C conformance",
+        "TC-SR-E07 (E07 L2->L5, data) bound and passing at C conformance",
+        "TC-SR-E08 (E08 L3->L5, data) bound and passing at C conformance",
+        "TC-SR-E09 (E09 L5->L6, data) bound and passing at C conformance"
+      ],
+      "architecture_refs": [
+        ".architecture/primer.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "targeted",
+      "tested_by": "llm",
+      "test_targets": [
+        "tests/"
+      ],
+      "verify_commands": [
+        "uv run pytest tests/ -q"
+      ],
+      "depends_on": [],
+      "altitude": "component",
+      "parent": "SYS-SR",
+      "parent_task_id": "SYS-SR",
+      "decomposes_into": [],
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/selective-reversal-state-machine/requirements-v0.md",
+        "definition_hash": "c50db18a3e3e"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "plan_hash": "61e07feeb735",
+          "artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "kind": "verification"
+        }
+      },
+      "realizes_refs": [
+        "G1",
+        "G2",
+        "G3",
+        "G5"
+      ]
+    },
+    {
+      "task_id": "L6",
+      "title": "Transition fidelity grader and experiment comparator",
+      "description": "Transition fidelity grader and experiment comparator. D0 leaf L6 of SYS-SR (session adv-spec-202609220555-selective-reversal-state-machine). Responsibilities: R11: One-to-one transition accounting: ordered matches, extras, wrong-side holding, flat gaps, and unresolved rows; R12: Comparable experiment result with explicit failures and no blended threshold rescue. CUT-edge interfaces: E09 L5->L6 (owner L5, TC-SR-E09); E10 L6->L7 (owner L6, TC-SR-E10); E13 L8->L6 (owner L8, TC-SR-E13). Contracts: .adversarial-spec/specs/selective-reversal-state-machine/manifest.json d0.interface_records. A-phase (obligations + failing tests) happens in Specifying; this description is the D0-level scope, not the spec. Read before specifying: .adversarial-spec/specs/selective-reversal-state-machine/draft-v29.md §12 Chronological replay and L6 grading; §14 Research bundle and promotion criteria; §5 H0 native control, default-path control, and migration guard; §7 State, ownership, and host integration.",
+      "wave": 0,
+      "effort": "M",
+      "strategy": "test-first",
+      "acceptance_criteria": [
+        "A/B closure recorded: obligations and failing tests in keyed bijection, 3 clean red runs, both oracle controls",
+        "TC-SR-E09 (E09 L5->L6, data) bound and passing at C conformance",
+        "TC-SR-E10 (E10 L6->L7, data) bound and passing at C conformance",
+        "TC-SR-E13 (E13 L8->L6, data) bound and passing at C conformance"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/flip-grading.md",
+        ".architecture/structured/components/flip-evidence.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "targeted",
+      "tested_by": "llm",
+      "test_targets": [
+        "tests/"
+      ],
+      "verify_commands": [
+        "uv run pytest tests/ -q"
+      ],
+      "depends_on": [],
+      "altitude": "component",
+      "parent": "SYS-SR",
+      "parent_task_id": "SYS-SR",
+      "decomposes_into": [],
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/selective-reversal-state-machine/requirements-v0.md",
+        "definition_hash": "c50db18a3e3e"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "plan_hash": "61e07feeb735",
+          "artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "kind": "verification"
+        }
+      },
+      "realizes_refs": [
+        "G5",
+        "G6"
+      ]
+    },
+    {
+      "task_id": "L7",
+      "title": "Sealed evidence, preregistration, and holdout protocol",
+      "description": "Sealed evidence, preregistration, and holdout protocol. D0 leaf L7 of SYS-SR (session adv-spec-202609220555-selective-reversal-state-machine). Responsibilities: R13: Preregistration and stable artifact inventory; R14: Verified report/catalog suitable for promotion or rejection decision. CUT-edge interfaces: E10 L6->L7 (owner L6, TC-SR-E10); E11 L4->L7 (owner L4, TC-SR-E11). Contracts: .adversarial-spec/specs/selective-reversal-state-machine/manifest.json d0.interface_records. A-phase (obligations + failing tests) happens in Specifying; this description is the D0-level scope, not the spec. Read before specifying: .adversarial-spec/specs/selective-reversal-state-machine/draft-v29.md §13 Sealing, decision register, claim registry, errors, cohorts, and H5; §5 H0 native control, default-path control, and migration guard; §15 Open evidence questions; §3 Getting started: ordered bootstrap.",
+      "wave": 0,
+      "effort": "M",
+      "strategy": "test-first",
+      "acceptance_criteria": [
+        "A/B closure recorded: obligations and failing tests in keyed bijection, 3 clean red runs, both oracle controls",
+        "TC-SR-E10 (E10 L6->L7, data) bound and passing at C conformance",
+        "TC-SR-E11 (E11 L4->L7, data) bound and passing at C conformance"
+      ],
+      "architecture_refs": [
+        ".architecture/structured/components/flip-evidence.md",
+        ".architecture/structured/components/flip-host.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "targeted",
+      "tested_by": "llm",
+      "test_targets": [
+        "tests/"
+      ],
+      "verify_commands": [
+        "uv run pytest tests/ -q"
+      ],
+      "depends_on": [],
+      "altitude": "component",
+      "parent": "SYS-SR",
+      "parent_task_id": "SYS-SR",
+      "decomposes_into": [],
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/selective-reversal-state-machine/requirements-v0.md",
+        "definition_hash": "c50db18a3e3e"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "plan_hash": "61e07feeb735",
+          "artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "kind": "verification"
+        }
+      },
+      "realizes_refs": [
+        "G5"
+      ]
+    },
+    {
+      "task_id": "L8",
+      "title": "Audited shadow discriminator",
+      "description": "Audited shadow discriminator. D0 leaf L8 of SYS-SR (session adv-spec-202609220555-selective-reversal-state-machine). Responsibilities: R15: Auditable Positive-Unlabeled score or case-retrieval explanation; R16: Shadow discrimination report with analogous cases and named reasons. CUT-edge interfaces: E12 L1->L8 (owner L1, TC-SR-E12); E13 L8->L6 (owner L8, TC-SR-E13). Contracts: .adversarial-spec/specs/selective-reversal-state-machine/manifest.json d0.interface_records. A-phase (obligations + failing tests) happens in Specifying; this description is the D0-level scope, not the spec. Read before specifying: .adversarial-spec/specs/selective-reversal-state-machine/draft-v29.md §13 Sealing, decision register, claim registry, errors, cohorts, and H5; §8 Execution schedule, compatibility receipt, and causal ordering; §7 State, ownership, and host integration.",
+      "wave": 0,
+      "effort": "M",
+      "strategy": "test-first",
+      "acceptance_criteria": [
+        "A/B closure recorded: obligations and failing tests in keyed bijection, 3 clean red runs, both oracle controls",
+        "TC-SR-E12 (E12 L1->L8, data) bound and passing at C conformance",
+        "TC-SR-E13 (E13 L8->L6, data) bound and passing at C conformance"
+      ],
+      "architecture_refs": [
+        ".architecture/primer.md"
+      ],
+      "behavior_change": true,
+      "verification_mode": "automated-integration",
+      "verification_scope": "targeted",
+      "tested_by": "llm",
+      "test_targets": [
+        "tests/"
+      ],
+      "verify_commands": [
+        "uv run pytest tests/ -q"
+      ],
+      "depends_on": [],
+      "altitude": "component",
+      "parent": "SYS-SR",
+      "parent_task_id": "SYS-SR",
+      "decomposes_into": [],
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/selective-reversal-state-machine/requirements-v0.md",
+        "definition_hash": "c50db18a3e3e"
+      },
+      "verification_binding": {
+        "component_verification": {
+          "plan_artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "plan_hash": "61e07feeb735",
+          "artifact": ".adversarial-spec/specs/selective-reversal-state-machine/manifest.json",
+          "kind": "verification"
+        }
+      },
+      "realizes_refs": [
+        "G6"
+      ]
+    }
+  ]
+}

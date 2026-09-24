@@ -1,3 +1,104 @@
+## v6 bounded-pipeline sessions (`pipeline_version >= 6`) — read this first
+
+**Which section applies:** read the session card's `pipeline_version` (in
+`pipeline_lane_state` / card metadata). `>= 6` → this section only. `<= 5` → skip
+to "Pre-v6 sessions" below; nothing in this section changes that loop.
+
+**v6 Debate is a leaf fan-out, not a document loop.** There is no whole-spec
+critique round. `pipeline_begin_debate_round` refuses every v6 session card in
+Debate with `V6_DEBATE_IS_LEAF_FANOUT`; its message is the next action. Old
+`debate-round-N-synthesis.md` / `draft-vN.md` files from session-card rounds are
+history, not state. The session card holds in Debate while each D0 leaf runs its
+own bounded A→S cycle (`RULESET-bounded-pipeline-v1.md` in fizzy-pipeline-mcp
+`orchestration/governing/`), and leaves Debate only through the Pre-Gauntlet
+fan-in barrier.
+
+**Resume rule:** the first pipeline call is `pipeline_lane_state(pipeline="session",
+board_id, session_id)`. Its `session_next_action` (= `attention.session_context.reason`)
+is authoritative over any checkpoint or summary. Route on `attention.session_context.kind`:
+
+| `kind` | Meaning | Next |
+|---|---|---|
+| `v6_debate_d0_not_closed` | Card reached Debate without `d0_closed` | `pipeline_backtrack_session` to `Decomposition`, then `pipeline_mark_decomposition_complete(card_id, session_id, board_id, manifest_path)` |
+| `v6_debate_leaf_plan_not_loaded` | D0 closed, no `debate_leaf_inventory`, no leaf cards | Steps V1–V3 |
+| `v6_debate_leaf_inventory_missing` | Task cards exist but no frozen inventory (pre-fix load) | `pipeline_recover_debate_followup_load` (operator), then V4 |
+| `v6_debate_leaf_inventory_invalid` | Stored inventory malformed | Stop; report to operator |
+| `v6_debate_leaf_fanout` | Leaves loaded (`debate_leaf_inventory` frozen) | Steps V4–V6 |
+
+### Procedure
+
+**V1 — Build the bounded leaf plan (deterministic, no board call).**
+```bash
+uv run python ~/.claude/skills/adversarial-spec/scripts/d0_to_load_plan.py \
+  <project>/.adversarial-spec/specs/<slug>/decomposition/d0.json \
+  --out <project>/.adversarial-spec/specs/<slug>/decomposition/leaf-load-plan.json
+```
+Emits plan schema 3: the D0 root as an aggregate container plus one task per
+`d0.json.leaf_ids`, with bindings to the D0 manifest. Fails closed on manifest
+hash drift or leaf-set drift (re-close D0; never hand-edit the plan to match).
+Optional `--test-target` / `--verify-command` set the provisional per-leaf entry
+point (default `tests/`, `uv run pytest tests/ -q`); the authoritative leaf suite
+is bound at A/B closure (V4).
+The specify handout's must-read list is the leaf description, its
+`architecture_refs`, and its D0 interface records — never the definition document.
+Reading a leaf must do (e.g. sections of a pre-v6 draft) therefore goes in via
+`--context-map <map.json>` (`{"doc": <project-relative .md>, "leaves": {"L1": [8, 7], …}}`,
+`##` section numbers, every D0 leaf listed, operator-approved). Each leaf description
+then ends "Read before specifying: <doc> §N <title>; …".
+
+**V2 — Validate.** `pipeline_validate_plan(plan_path=<absolute path>, session_id, board_id)`
+must return `valid: true`, `issues: []`. Fix inputs (D0 record, architecture docs),
+not the validator's verdict.
+
+**V3 — Load.** `pipeline_load(plan_path, session_id, board_id)`. fizzy freezes
+`debate_leaf_inventory` (the barrier's authority), creates the root in `Decomposed`
+and one Task Card per leaf in `Specifying`. A second load with a different leaf set
+is refused (`DEBATE_LEAF_INVENTORY_MISMATCH`); amendments are refused in Debate.
+
+**V4 — Per-leaf A→S cycle** (leaves run in parallel; claim work with
+`pipeline_do_next_task(session_id, pipeline="task", agent, board_id)` → `action: specify`).
+
+| RULESET phase | Tool / artifact |
+|---|---|
+| A regression floor + B happy-path blitz | Write the guarantee-plus-obligation artifact and the failing suite, then `pipeline_record_ab_closure(card_id, session_id, board_id, test_suite_path, obligation_count, test_count, red_run_evidence_path, known_bad_fails, known_good_passes, agent, guarantee_artifact_path)` |
+| C parallel one-shot (2–4 models) | `pipeline_create_middleware_fanout(session_id, source_task_card_id=<leaf card>, middleware_id, middleware_name, purpose, test_suite_path=<A/B-bound suite>, models, agent, board_id)`; each candidate: `pipeline_pickup_middleware_impl(session_id, card_id, agent, board_id)` → `pipeline_complete_middleware_impl(session_id, card_id, agent, impl_path, commit_hash, tests_passed, tests_failed, lines, chars, time_seconds, board_id)` |
+| D/E observe (telemetry, never selection) | Observation matrix file over every candidate; `pipeline_middleware_judge(session_id, judge_card_id, agent, selected_impl_card_id, board_id)` |
+| S synthesis + F gate | `pipeline_promote_middleware_winner(session_id, source_task_card_id, agent, promotion_commit_hash, canonical_impl_path, board_id, observation="complete"\|"blind", observation_matrix_path or next_cycle_receipt_ref, local_challenge={verdict, critic_model, evidence_path, ...}, synthesis_artifact_path, f_gate={decision, rationale})` → leaf moves to `Synthesized` |
+| Leaf cannot close | Operator only: `pipeline_record_leaf_exception(card_id, session_id, board_id, disposition="DEFERRED"\|"NO_GO", operator, reason, evidence_path, affected_interfaces, affected_dependents)` |
+
+**V5 — Seams.** Every D0 CUT edge needs `pipeline_record_seam_closure(card_id=<session card>, session_id, board_id, edge_id, oracle_id, producer_interface_hash, consumer_interface_hash, provider_conformance_evidence_path, consumer_conformance_evidence_path, agent, ...)`,
+or an operator `pipeline_record_seam_deferral(card_id, session_id, board_id, edge_id, operator, reason, evidence_path, agent, risk, forward_pointer)`,
+or must be named in a leaf exception's `affected_interfaces`.
+
+**V6 — Exit through the barrier.** `pipeline_advance(session_id, card_id=<session card>, agent, board_id)`
+moves Debate → Pre-Gauntlet only when every inventory leaf is `Synthesized` (fanout
+children terminal, suite hash = A/B binding, distinct models) or legally excepted,
+and no CUT edge is open (the barrier replaces the pre-v6 convergence check; the G2
+human gate still applies per `operator_review_policy`). A refusal is
+`gate_failed: barrier_not_closed` whose `details` list `missing` / `not_synthesized` /
+`residue` / `seams_open` — work those, never patch state. On pass the closure
+manifest is frozen on the card; Pre-Gauntlet then runs ONE system-altitude gauntlet
+over the grouped result.
+
+### Resume example — v6 session in Debate, D0 closed, nothing loaded
+
+Typical after a pre-v6-style stall: `d0_closed=true`, card in Debate, earlier
+session-card rounds on record (history), no `debate_leaf_inventory`. Spec dir
+`SPEC=<project>/.adversarial-spec/specs/<slug>`. First three calls:
+
+1. `pipeline_lane_state(pipeline="session", board_id, session_id)` → `kind: v6_debate_leaf_plan_not_loaded`.
+2. `uv run python ~/.claude/skills/adversarial-spec/scripts/d0_to_load_plan.py $SPEC/decomposition/d0.json [--context-map $SPEC/decomposition/leaf-reading-map.json] --out $SPEC/decomposition/leaf-load-plan.json`
+   → root + one task per `d0.json.leaf_ids`. The reading map lives with the
+   session, never in the skill repo.
+3. `pipeline_validate_plan(plan_path=<absolute $SPEC/decomposition/leaf-load-plan.json>, session_id, board_id)` → `valid: true`, `issues: []`.
+
+Then `pipeline_load(<same plan_path>, session_id, board_id)` → root in `Decomposed`,
+leaves in `Specifying`; continue at V4. Never start round N+1.
+
+---
+
+## Pre-v6 sessions (`pipeline_version <= 5`) — whole-spec debate loop
+
 > **FIRST ACTION upon entering this phase:** Create this TodoWrite immediately.
 > Do NOT read further until the TodoWrite is active.
 > Every `[GATE]` item must be marked completed before proceeding past it.
