@@ -58,8 +58,9 @@ Receipt recovery continues the already-approved GO; it does not re-enter triage:
 - **Missing, empty, or zombie pointer with no incomplete receipt** — enter
   `phases/00-triage.md` immediately. Do not register a conductor, launch a
   listener, create a workspace, session file, or Fizzy card first.
-- **Phase 0 NO-GO** — report the direct-action, deferred, or missing-information
-  outcome. Create no session state.
+- **Phase 0 NO-GO** — report the direct-action, focused-fix, deferred, or
+  missing-information outcome. Create no session state. A `focused-fix` runs its
+  required procedure from `phases/00-triage.md` without a session or card.
 - **Phase 0 GO** — Phase 0 creates or reuses the ordinary card, repairs local
   sync, persists its handoff, then returns here for the Zeroth Action before
   Phase 1.
