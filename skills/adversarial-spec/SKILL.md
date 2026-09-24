@@ -314,7 +314,19 @@ Ordinary real-data smoke probes do not trigger this obligation.
 
 After D0, v6 loads leaf cards in Debate for bounded A→S cycles, then joins them
 at Pre-Gauntlet for one system gauntlet. Pre-v6 retains its Finalization load path.
-Follow the active phase and MCP results for dispatch; preserve G2/G3 approvals.
+Procedure (D0 → `scripts/d0_to_load_plan.py` → `pipeline_validate_plan` →
+`pipeline_load` → per-leaf A→S → barrier): `phases/03-debate.md`, section "v6
+bounded-pipeline sessions". Follow the active phase and MCP results for dispatch;
+preserve G2/G3 approvals.
+
+**Resume rule (v6, REQUIRED):** after any compaction, resume, or checkpoint pickup,
+the first pipeline call is `pipeline_lane_state(pipeline="session", board_id,
+session_id)`. Its `session_next_action` / `attention.session_context` is
+authoritative over any checkpoint, pointer `next_action`, or summary. A v6 session
+in Debate NEVER calls `pipeline_begin_debate_round` (the MCP refuses it with
+`V6_DEBATE_IS_LEAF_FANOUT`); historical session-card rounds and `draft-vN.md` files
+are not a loop to continue.
+
 Consuming-project governing artifacts:
 `orchestration/governing/RULESET-bounded-pipeline-v1.md`,
 `orchestration/governing/BRAINSTORM-2-lanes-and-flow.md`, and
