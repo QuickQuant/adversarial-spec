@@ -1,72 +1,64 @@
 # Adversarial Spec - Provider Setup
 
-This document covers provider configuration. For usage, see [SKILL.md](SKILL.md).
+For usage, see [SKILL.md](SKILL.md). Select models, reasoning effort, and permitted
+provider paths only from [current-models.md](reference/current-models.md).
 
 ## Requirements
 
-- Python 3.10+ with `litellm` package installed
-- API key for at least one provider, OR CLI tools (codex, gemini) installed
+- Python 3.14+, `uv`, and the project dependencies, including `litellm`.
+- Credentials for the selected provider or an authenticated CLI.
+- Do **not** install the unrelated `llm` package; this skill uses `litellm`.
 
-**IMPORTANT: Do NOT install the `llm` package (Simon Willison's tool).** This skill uses `litellm`.
+## CLI Setup
 
-## Supported Providers
-
-| Provider   | API Key Env Var        | Example Models                              |
-|------------|------------------------|---------------------------------------------|
-| OpenAI     | `OPENAI_API_KEY`       | `gpt-5.6-sol`                               |
-| Anthropic  | `ANTHROPIC_API_KEY`    | `claude-opus-4-7`, `claude-sonnet-4-6`  |
-| Google     | `GEMINI_API_KEY`       | `gemini/gemini-3-pro`, `gemini/gemini-3-flash` |
-| xAI        | `XAI_API_KEY`          | `xai/grok-3`, `xai/grok-beta`               |
-| Mistral    | `MISTRAL_API_KEY`      | `mistral/mistral-large`, `mistral/codestral`|
-| Groq       | `GROQ_API_KEY`         | `groq/llama-3.3-70b-versatile`              |
-| OpenRouter | `OPENROUTER_API_KEY`   | `openrouter/openai/gpt-5.6-sol`, `openrouter/anthropic/claude-sonnet-4-6` |
-| Deepseek   | `DEEPSEEK_API_KEY`     | `deepseek/deepseek-chat`                    |
-| Zhipu      | `ZHIPUAI_API_KEY`      | `zhipu/glm-4`, `zhipu/glm-4-plus`           |
-| Codex CLI  | (ChatGPT subscription) | `codex/gpt-5.6-luna`, `codex/gpt-5.6-terra`, `codex/gpt-5.6-sol` |
-| Gemini CLI | (Google account)       | `gemini-cli/gemini-3.6-flash-high`, `gemini-cli/gemini-3-flash-preview` |
-
-Run `python3 ~/.claude/skills/adversarial-spec/scripts/debate.py providers` to see which keys are set.
-
-## CLI Tool Setup
-
-### Codex CLI
-```bash
-npm install -g @openai/codex && codex login
-```
-- `--codex-reasoning` (minimal, low, medium, high, xhigh)
-- `--codex-search` enables web search
-
-### Gemini CLI
-```bash
-npm install -g @google/gemini-cli && gemini auth
-```
-No API key needed - uses Google account.
-
-## Troubleshooting Auth Conflicts
-
-If you see "Both a token (claude.ai) and an API key (ANTHROPIC_API_KEY) are set":
-
-**To use claude.ai token**: `unset ANTHROPIC_API_KEY`
-
-**To use API key**: `claude /logout`
-
-## AWS Bedrock Support
-
-For enterprise users routing through AWS Bedrock:
+### Codex
 
 ```bash
-# Enable
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py bedrock enable --region us-east-1
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py bedrock add-model claude-3-sonnet
-
-# Check status
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py bedrock status
-
-# Disable
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py bedrock disable
-
-# List model mappings
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py bedrock list-models
+npm install -g @openai/codex
+codex login
 ```
 
-Config stored at `~/.claude/adversarial-spec/config.json`.
+Select a Codex task class and invocation from `reference/current-models.md`.
+
+### Google via Antigravity
+
+Install and authenticate Antigravity's `agy` CLI with the intended account; ensure
+`agy` is on PATH. Use `agy models` to inspect availability and the task-class
+invocation in `reference/current-models.md` to select a seat.
+
+**Runtime drift:** `scripts/providers.py` and `scripts/gauntlet/model_dispatch.py`
+still contain retired provider/model defaults. This setup page does not change
+those defaults; verify the actual selected route before dispatch.
+
+## Provider Credentials
+
+`scripts/providers.py` loads credentials from the environment and the file selected
+by `LLM_PROVIDERS_ENV_FILE` (default `~/.config/secrets/llm-providers`). Keep secrets
+out of the repository. The model authority above determines which routes may run.
+
+| Provider | Credential variable |
+|----------|---------------------|
+| OpenAI | `OPENAI_API_KEY` |
+| Anthropic | `ANTHROPIC_API_KEY` |
+| Google API | `GEMINI_API_KEY` |
+| xAI | `XAI_API_KEY` |
+| Mistral | `MISTRAL_API_KEY` |
+| Groq | `GROQ_API_KEY` |
+| OpenRouter | `OPENROUTER_API_KEY` |
+| DeepSeek | `DEEPSEEK_API_KEY` |
+| Zhipu | `ZHIPUAI_API_KEY` |
+| NVIDIA NIM | `NVIDIA_NIM_API_KEY` |
+
+Inspect detected credentials with
+`python3 ~/.claude/skills/adversarial-spec/scripts/debate.py providers`.
+For conflicting Anthropic token/API-key authentication, select the intended
+credential: unset `ANTHROPIC_API_KEY` for subscription-token use, or log out of the
+Claude CLI subscription before API-key use.
+
+## AWS Bedrock
+
+With AWS credentials and model access configured, use `debate.py bedrock enable
+--region <region>` and `debate.py bedrock add-model <enabled-model-id>`.
+`bedrock status`, `bedrock list-models`, and `bedrock disable` inspect or change
+configuration at `~/.claude/adversarial-spec/config.json`. Select only models
+permitted by `reference/current-models.md`.
