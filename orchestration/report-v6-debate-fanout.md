@@ -38,7 +38,7 @@ Status: all 7 AC have evidence. One follow-up is blocked (E2E pin, see Contradic
 No model or test work runs inside the `create_middleware_fanout` / `pickup` / `complete` / `judge` / `promote` calls; candidates run outside the MCP call. The only subprocess work inside those calls is bounded `git` queries (`_git_query`, 15 s timeout each). They are synchronous `subprocess.run` calls on the event loop, used for worktree and commit verification. `dispatch_single_agent_debate` is the only tool that runs a long subprocess inside the call. So the dispatch_id-loss failure has no analogue here. [INFERENCE: worst-case latency is several 15 s git timeouts in a row; I did not measure it.]
 
 ## Scope NOT done
-- **E2E pin:** blocked, see #5.
+- **E2E pin:** operator approved 2026-09-23. `pipeline_create_test` from this repo's MCP refuses fizzy paths (`INVALID_TEST_PATH`: its root is adversarial-spec). The ready payload is `orchestration/e2e-altitude-pin-create-test.json`: submit it from a session whose fizzy MCP runs in fizzy-pipeline-mcp, then commit that file.
 - **Live E2E and real ETB load:** not run, because the Boundaries forbid board calls.
 - **MCP server:** not reloaded. The operator starts a fresh session.
 - **Research-only leaves:** there is no research-only leaf flow. A leaf like L7 (preregistration protocol) must either go through fan-out with a committed artifact or get an operator `DEFERRED`/`NO_GO` exception. I reported this rather than inventing a flow.
