@@ -1,226 +1,152 @@
 ## Advanced Features
 
-### Critique Focus Modes
+These examples use the primary `debate.py` entrypoint. Choose `MODEL_LIST` from
+`reference/current-models.md`; tracked critique and gauntlet runs require a
+pipeline card. In command templates, `$CARD_ID` and `$MODEL_LIST` are shell
+variables already set to those values.
 
-Direct models to prioritize specific concerns using `--focus`:
+### Critique focus
+
+Use `--focus` to prioritize one concern without changing the document type:
 
 ```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.6-sol --focus security --doc-type tech <<'SPEC_EOF'
-<spec here>
-SPEC_EOF
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
+  --pipeline-card "$CARD_ID" --models "$MODEL_LIST" \
+  --doc-type spec --depth technical --focus security < spec.md
 ```
 
-**Available focus areas:**
-- `security` - Authentication, authorization, input validation, encryption, vulnerabilities
-- `scalability` - Horizontal scaling, sharding, caching, load balancing, capacity planning
-- `performance` - Latency targets, throughput, query optimization, memory usage
-- `ux` - User journeys, error states, accessibility, mobile experience
-- `reliability` - Failure modes, circuit breakers, retries, disaster recovery
-- `cost` - Infrastructure costs, resource efficiency, build vs buy
+Built-in focus values:
 
-Run `python3 ~/.claude/skills/adversarial-spec/scripts/debate.py focus-areas` to see all options.
+- `security` — authentication, authorization, validation, encryption, vulnerabilities
+- `scalability` — horizontal scale, sharding, caching, and capacity
+- `performance` — latency, throughput, queries, and memory
+- `ux` — journeys, error states, accessibility, and mobile behavior
+- `reliability` — failure modes, retries, recovery, and operations
+- `cost` — resource efficiency and build-versus-buy tradeoffs
 
-### Model Personas
+Run `debate.py focus-areas` for the runtime list.
 
-Have models critique from specific professional perspectives using `--persona`:
+### Personas
+
+Use `--persona` for a professional lens:
 
 ```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.6-sol --persona "security-engineer" --doc-type tech <<'SPEC_EOF'
-<spec here>
-SPEC_EOF
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
+  --pipeline-card "$CARD_ID" --models "$MODEL_LIST" \
+  --doc-type spec --depth technical --persona security-engineer < spec.md
 ```
 
-**Available personas:**
-- `security-engineer` - Thinks like an attacker, paranoid about edge cases
-- `oncall-engineer` - Cares about observability, error messages, debugging at 3am
-- `junior-developer` - Flags ambiguity and tribal knowledge assumptions
-- `qa-engineer` - Identifies missing test scenarios and acceptance criteria
-- `site-reliability` - Focuses on deployment, monitoring, incident response
-- `product-manager` - Focuses on user value and success metrics
-- `data-engineer` - Focuses on data models and ETL implications
-- `mobile-developer` - API design from mobile perspective
-- `accessibility-specialist` - WCAG compliance, screen reader support
-- `legal-compliance` - GDPR, CCPA, regulatory requirements
+Built-in examples include `security-engineer`, `oncall-engineer`,
+`junior-developer`, `qa-engineer`, `site-reliability`, `product-manager`,
+`data-engineer`, `mobile-developer`, `accessibility-specialist`, and
+`legal-compliance`. Custom persona text is also accepted. Run
+`debate.py personas` for the runtime list.
 
-Run `python3 ~/.claude/skills/adversarial-spec/scripts/debate.py personas` to see all options.
+### Context files
 
-Custom personas also work: `--persona "fintech compliance officer"`
-
-### Context Injection
-
-Include existing documents as context for the critique using `--context`:
+`--context` is repeatable and sends each selected file in full:
 
 ```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.6-sol --context ./existing-api.md --context ./schema.sql --doc-type tech <<'SPEC_EOF'
-<spec here>
-SPEC_EOF
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
+  --pipeline-card "$CARD_ID" --models "$MODEL_LIST" \
+  --doc-type spec --depth technical \
+  --context ./existing-api.md --context ./schema.sql < spec.md
 ```
 
-Use cases:
-- Include existing API documentation that the new spec must integrate with
-- Include database schemas the spec must work with
-- Include design documents or prior specs for consistency
-- Include compliance requirements documents
+Apply the selection, exclusion, and staleness rules in
+`reference/context-addition-protocol.md`.
 
-### Session Persistence and Resume
-
-Long debates can crash or need to pause. Sessions save state automatically:
+### Persistent sessions and checkpoints
 
 ```bash
-# Start a named session
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.6-sol --session my-feature-spec --doc-type tech <<'SPEC_EOF'
-<spec here>
-SPEC_EOF
+# Start a named debate.
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
+  --pipeline-card "$CARD_ID" --models "$MODEL_LIST" \
+  --doc-type spec --depth technical --session my-feature < spec.md
 
-# Resume where you left off (no stdin needed)
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --resume my-feature-spec
+# Resume without stdin.
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
+  --pipeline-card "$CARD_ID" --resume my-feature
 
-# List all sessions
+# Inspect saved debates.
 python3 ~/.claude/skills/adversarial-spec/scripts/debate.py sessions
 ```
 
-Sessions save:
-- Current spec state
-- Round number
-- All configuration (models, focus, persona, preserve-intent)
-- History of previous rounds
+Session state records the current document, round, configuration, and history
+under `~/.config/adversarial-spec/sessions/`. Named sessions also checkpoint
+round documents under `.adversarial-spec-checkpoints/` in the working tree.
 
-Sessions are stored in `~/.config/adversarial-spec/sessions/`.
+### Retry and response validation
 
-### Auto-Checkpointing
+Model calls make at most three attempts with exponential delays between failed
+attempts. Exhausting one model reports its error while other model results remain
+available. A critique response without `[SPEC]...[/SPEC]` produces a malformed
+response warning rather than silently replacing the document.
 
-When using sessions, each round's spec is saved to `.adversarial-spec-checkpoints/` in the current directory:
+### Preserve intent
 
-```
-.adversarial-spec-checkpoints/
-├── my-feature-spec-round-1.md
-├── my-feature-spec-round-2.md
-└── my-feature-spec-round-3.md
-```
-
-Use these to rollback if a revision makes things worse.
-
-### Retry on API Failure
-
-API calls automatically retry with exponential backoff (1s, 2s, 4s) up to 3 times. If a model times out or rate-limits, you'll see:
-
-```
-Warning: codex/gpt-5.6-sol failed (attempt 1/3): rate limit exceeded. Retrying in 1.0s...
-```
-
-If all retries fail, the error is reported and other models continue.
-
-### Response Validation
-
-If a model provides critique but doesn't include proper `[SPEC]` tags, a warning is displayed:
-
-```
-Warning: codex/gpt-5.6-sol provided critique but no [SPEC] tags found. Response may be malformed.
-```
-
-This catches cases where models forget to format their revised spec correctly.
-
-### Preserve Intent Mode
-
-Convergence can collapse toward lowest-common-denominator interpretations, sanding off novel design choices. The `--preserve-intent` flag makes removals expensive:
+Use `--preserve-intent` when unconventional but deliberate choices must survive
+preference-driven convergence:
 
 ```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.6-sol --preserve-intent --doc-type tech <<'SPEC_EOF'
-<spec here>
-SPEC_EOF
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
+  --pipeline-card "$CARD_ID" --models "$MODEL_LIST" \
+  --doc-type spec --depth technical --preserve-intent < spec.md
 ```
 
-When enabled, models must:
+Critics must quote a proposed removal, name its concrete harm, distinguish an
+error or risk from preference, and ask before removing unusual but functional
+behavior. Combine it with `--focus` or `--persona` when useful.
 
-1. **Quote exactly** what they want to remove or substantially change
-2. **Justify the harm** - not just "unnecessary" but what concrete problem it causes
-3. **Distinguish error from preference**:
-   - ERRORS: Factually wrong, contradictory, or technically broken (remove/fix)
-   - RISKS: Security holes, scalability issues, missing error handling (flag)
-   - PREFERENCES: Different style, structure, or approach (DO NOT remove)
-4. **Ask before removing** unusual but functional choices
+### Cost reporting
 
-This shifts the default from "sand off anything unusual" to "add protective detail while preserving distinctive choices."
+Text-mode cost output is shown only with `--show-cost`. `--json` includes a
+structured `cost` object even without that flag.
 
-**Use when:**
-- Your spec contains intentional unconventional choices
-- You want models to challenge your ideas, not homogenize them
-- Previous rounds removed things you wanted to keep
-- You're refining an existing spec that represents deliberate decisions
-
-Can be combined with other flags: `--preserve-intent --focus security`
-
-### Cost Tracking
-
-Every critique round displays token usage and estimated cost:
-
-```
-=== Cost Summary ===
-Total tokens: 12,543 in / 3,221 out
-Total cost: $0.0847
-
-By model:
-  codex/gpt-5.6-sol: $0.00 (8,234 in / 2,100 out) [subscription]
-  gemini-cli/gemini-3.6-flash-high: $0.00 (4,309 in / 1,121 out) [free tier]
-```
-
-Cost is also included in JSON output and Telegram notifications.
-
-### Saved Profiles
-
-Save frequently used configurations as profiles:
-
-**Create a profile:**
 ```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py save-profile strict-security --models codex/gpt-5.6-sol,gemini-cli/gemini-3.6-flash-high --focus security --doc-type tech
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
+  --pipeline-card "$CARD_ID" --models "$MODEL_LIST" \
+  --doc-type spec --depth technical --show-cost < spec.md
 ```
 
-**Use a profile:**
-```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --profile strict-security <<'SPEC_EOF'
-<spec here>
-SPEC_EOF
-```
+### Profiles
 
-**List profiles:**
 ```bash
+# Save reusable parser settings.
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py save-profile \
+  strict-security --models "$MODEL_LIST" --doc-type spec --depth technical \
+  --focus security
+
+# Use the profile while selecting spec depth explicitly.
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique \
+  --pipeline-card "$CARD_ID" --profile strict-security \
+  --doc-type spec --depth technical < spec.md
+
 python3 ~/.claude/skills/adversarial-spec/scripts/debate.py profiles
 ```
 
-Profiles are stored in `~/.config/adversarial-spec/profiles/`.
+Profiles fill options that remain unset; select depth explicitly because the
+profile writer does not persist `--depth`. Profiles live under
+`~/.config/adversarial-spec/profiles/`.
 
-Profile settings can be overridden by explicit flags.
-
-### Diff Between Rounds
-
-Generate a unified diff between spec versions:
+### Diff between rounds
 
 ```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py diff --previous round1.md --current round2.md
+python3 ~/.claude/skills/adversarial-spec/scripts/debate.py diff \
+  --previous round1.md --current round2.md
 ```
 
-Use this to see exactly what changed between rounds. Helpful for:
-- Understanding what feedback was incorporated
-- Reviewing changes before accepting
-- Documenting the evolution of the spec
+Use the diff to review incorporated feedback and detect accidental removals.
 
-### Export to Task List
+### Standalone gauntlet boundary
 
-Extract actionable tasks from a finalized spec:
+The lower-level `scripts/gauntlet/cli.py` is a separate entrypoint with different
+flags and compatibility document types. Label its invocations explicitly:
 
 ```bash
-cat spec-output.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py export-tasks --models codex/gpt-5.6-sol --doc-type prd
+# Standalone gauntlet CLI only; `tech` is valid here, not in debate.py.
+python3 ~/.claude/skills/adversarial-spec/scripts/gauntlet/cli.py \
+  --spec-file spec.md --doc-type tech --adversaries all
 ```
 
-Output includes:
-- Title
-- Type (user-story, task, spike, bug)
-- Priority (high, medium, low)
-- Description
-- Acceptance criteria
-
-Use `--json` for structured output suitable for importing into issue trackers:
-
-```bash
-cat spec-output.md | python3 ~/.claude/skills/adversarial-spec/scripts/debate.py export-tasks --models codex/gpt-5.6-sol --doc-type prd --json > tasks.json
-```
+See `reference/script-commands.md` for both verified flag surfaces.

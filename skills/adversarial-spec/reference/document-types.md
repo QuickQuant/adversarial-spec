@@ -1,238 +1,167 @@
 ## Document Types
 
-Ask the user which type of document they want to produce:
+### Active `debate.py` types
+
+`debate.py --doc-type` accepts exactly these values:
+
+| Type | Purpose | Additional control |
+|---|---|---|
+| `spec` | Define a product or technical change. | `--depth product|technical|full`; default `technical`. |
+| `debug` | Diagnose an existing failure from evidence and propose a proportional fix. | `--depth` is ignored. |
+| `architecture` | Define shared target patterns, boundaries, and flows. | `--depth` is ignored. |
+
+Select models and seats from `reference/current-models.md`. See
+`reference/script-commands.md` for executable syntax.
+
+The lower-level standalone gauntlet CLI has its own compatibility parser:
+`--doc-type prd|tech|debug` with default `tech`. `prd` and `tech` are
+standalone-gauntlet-only values; they are not accepted by `debate.py`.
 
 ### Spec (Unified Specification)
 
-**Two pathways:** `spec` (for creating new things) and `debug` (for fixing existing things).
-
-The `spec` pathway has three depth levels that control required sections:
-
-| Depth | Focus | When to Use |
-|-------|-------|-------------|
-| `product` | User value, stakeholders, success metrics | Product planning, stakeholder alignment |
+| Depth | Focus | Use for |
+|---|---|---|
+| `product` | User value, stakeholders, success metrics | Product planning and stakeholder alignment |
 | `technical` | Architecture, APIs, data models | Engineering implementation |
-| `full` | All of the above | Complete journey from requirements to implementation |
+| `full` | Product and technical requirements | A complete requirements-to-implementation handoff |
 
-**CLI usage:**
-```bash
-# Product-focused spec (like old PRD)
-adversarial-spec critique --doc-type spec --depth product
+#### Structure by depth
 
-# Technical spec (like old tech spec)
-adversarial-spec critique --doc-type spec --depth technical
+**Product depth:**
 
-# Full spec (both product and technical)
-adversarial-spec critique --doc-type spec --depth full
-```
-
-**Legacy flags (deprecated, will be removed in v2.0):**
-- `--doc-type prd` → `--doc-type spec --depth product`
-- `--doc-type tech` → `--doc-type spec --depth technical`
-
-#### Spec Structure by Depth
-
-**Product depth** (stakeholder-focused):
 - Executive Summary
 - Problem Statement / Opportunity
 - Target Users / Personas
 - User Stories / Use Cases
-- Functional Requirements
-- Non-Functional Requirements
+- Functional and Non-Functional Requirements
 - Success Metrics / KPIs
 - Scope (In/Out)
 - Dependencies
 - Risks and Mitigations
 
-**Technical depth** (engineering-focused):
+**Technical depth:**
+
 - Overview / Context
 - Goals and Non-Goals
-- **Getting Started** (REQUIRED - bootstrap workflow)
-- System Architecture
-- Component Design
-- API Design (endpoints, request/response schemas)
+- **Getting Started** — required bootstrap workflow
+- System Architecture and Component Design
+- API Design, including complete request/response schemas
 - Data Models / Database Schema
-- Infrastructure Requirements
-- Security Considerations
+- Infrastructure and Security Requirements
 - Error Handling Strategy
 - Performance Requirements / SLAs
-- Observability (logging, metrics, alerting)
-- Testing Strategy
-- Deployment Strategy
-- Migration Plan (if applicable)
+- Observability
+- Testing and Deployment Strategy
+- Migration Plan, when applicable
 - Open Questions / Future Considerations
 
-**Full depth**: All sections from both product and technical.
+**Full depth:** all product and technical sections.
 
-#### Happy-Path Spine And Maturity Ladder
+#### Happy-Path Spine and Maturity Ladder
 
-Spec documents that produce roadmap artifacts must preserve the happy-path spine
-model from authoring through implementation:
+Spec documents that produce roadmap artifacts preserve the Happy-Path Spine
+model through implementation:
+
 - Each user story has exactly one happy-path spine designation. The shared
-  `SpineCoverageChecker` is the authoring-lint source of truth for zero or
-  duplicate happy-path spine designations.
-- The happy-path spine record names `spine_steps`; every branch or failure test
-  that hangs off it uses `spine_of` plus `spine_step_ref`. A failure test missing
-  `spine_step_ref` is invalid because it is not anchored to a happy-path
-  obligation.
-- The maturity ladder is `nl -> acceptance -> concrete`. `acceptance` has
-  executable meaning without the facade: inputs, actions, expected observations,
-  and failure conditions are concrete enough to test before the final UI/API
-  surface exists.
-- `nl` tests promote only with `>=1 named accessor`; empty `accessors` blocks
-  promotion until the author names the seam, function, route, actor, or artifact
-  the test will exercise.
+  `SpineCoverageChecker` rejects zero or duplicate designations.
+- The happy-path spine record names `spine_steps`. Each branch or failure test
+  uses `spine_of` plus `spine_step_ref`; a missing `spine_step_ref` leaves the
+  test unanchored to a happy-path obligation.
+- The maturity ladder is `nl -> acceptance -> concrete`.
+- `acceptance has executable meaning without the facade`: inputs, actions,
+  expected observations, and failure conditions are concrete enough to test
+  before the final UI or API exists.
+- An `nl` test promotes only with `>=1 named accessor`. Empty `accessors` block
+  promotion until the seam, function, route, actor, or artifact is named.
 
-`tests-pseudo.md` rows are authoring prose for the extended TMR row. The compile
-step must be able to emit: `tmr_uid`, `test_id`, `title`, `user_story`,
-`maturity`, `data_strategy`, `live_or_induced`, `spine`, `spine_steps`,
-`spine_of`, `spine_step_ref`, `accessors`, `binding_status`, `run_evidence`,
+`tests-pseudo.md` rows are authoring prose for the extended TMR row. Compilation
+must be able to emit `tmr_uid`, `test_id`, `title`, `user_story`, `maturity`,
+`data_strategy`, `live_or_induced`, `spine`, `spine_steps`, `spine_of`,
+`spine_step_ref`, `accessors`, `binding_status`, `run_evidence`,
 `critical_seam`, `criticality_source`, `verification_mode`,
 `verification_scope`, `altitude`, `tested_by`, `status`, `source_spec`,
-`also_covers`, `supersedes`, and tombstone/technical-constraint fields where
+`also_covers`, `supersedes`, and tombstone/technical-constraint fields when
 applicable. Markdown is a view; `tmr-registry.json` is authoritative after
 compile.
 
-#### Critique Criteria by Depth
+#### Critique criteria by depth
 
-**Product depth:**
+**Product:**
+
 1. Clear problem definition with evidence
-2. Well-defined user personas with real pain points
-3. User stories follow proper format (As a... I want... So that...)
+2. Defined personas with real pain points
+3. User stories with value and testable outcomes
 4. Measurable success criteria
 5. Explicit scope boundaries
-6. Realistic risk assessment
+6. Realistic risks and mitigations
 
-**Technical depth:**
-1. **Getting Started section exists** - Clear bootstrap workflow
-2. Clear architectural decisions with rationale
-3. Complete API contracts (not just endpoints, but full schemas)
-4. Data model handles all identified use cases
-5. Security threats identified and mitigated
-6. Error scenarios enumerated with handling strategy
-7. Performance targets are specific and measurable
+**Technical:**
+
+1. **Getting Started** exists and gives a usable bootstrap workflow
+2. Architectural decisions include rationale
+3. API contracts include complete schemas
+4. The data model covers identified use cases
+5. Security threats and mitigations are explicit
+6. Error scenarios and handling are enumerated
+7. Performance targets are measurable
 8. Deployment is repeatable and reversible
-9. No ambiguity an engineer would need to resolve
+9. No implementation-blocking ambiguity remains
 
-**Full depth:** All criteria from both.
+**Full:** all product and technical criteria.
 
-**CRITICAL for Round 1:** Before technical critique, verify:
-- All roadmap user stories have corresponding spec sections
-- "Getting Started" section exists (technical/full depth)
-- Success criteria are testable
+**Round 1 checks:** map every roadmap user story to a spec section, require
+Getting Started for technical/full depth, and make every success criterion
+testable before proceeding.
+
+### Target Architecture
+
+Use `architecture` for the shared patterns every implementation task must
+follow: component boundaries, data flow, authentication, state, caching,
+failure handling, and cross-cutting constraints. Include explicit decisions,
+their rationale, affected requirements, and a dry-run user flow.
+
+Critique it for:
+
+1. Fit to the application's category and scale
+2. Missing framework-native capabilities or required patterns
+3. Composition across routes, pages, and features
+4. Gaps in the dry-run flow
+5. Decisions that merely restate defaults without evaluation
+6. Consistency with the product requirements
 
 ### Debug Investigation
 
-Structured investigation document for diagnosing and fixing bugs in existing systems. Uses adversarial debate to ensure evidence-based diagnosis and proportional fixes.
+A Debug Investigation diagnoses and fixes an existing system from evidence.
+Use it for unclear bugs, performance problems, intermittent failures, and any
+case where the cause must be established before choosing a fix.
 
-**When to use:**
-- Bug reports with unclear root cause
-- Performance issues requiring investigation
-- Intermittent failures needing systematic diagnosis
-- Any situation where you need to understand and fix existing code
+**Contract: Evidence → Hypothesis → Fix.** Fix size must be proportional to the
+demonstrated cause.
 
-**Philosophy: Evidence → Hypothesis → Fix**
+Required fields:
 
-The fix might be 1 line or 100 lines—what matters is that it's proportional to the actual problem and justified by evidence. A 1-line bug deserves a 1-line fix. A systemic issue may genuinely need architectural changes. The debate ensures we don't skip steps.
+- **Symptoms:** user-visible behavior, timing, start point, and blast radius
+- **Expected vs Actual Behavior:** a comparison for each scenario
+- **Evidence Gathered:** timestamped logs, timings, errors, and reproduction
+- **Hypotheses:** ranked by likelihood × ease of verification, with evidence for and against
+- **Diagnostic Plan:** immediate checks, targeted instrumentation, and tests
+- **Root Cause:** file/location, mechanism, and why competing hypotheses failed
+- **Proposed Fix:** files, changes, before/after behavior, and justification
+- **Verification:** confirmation steps, regression checks, and expected evidence
+- **Prevention:** a retained test, documentation update, and similar-risk search
 
-**Structure (Formal Schema):**
-- **Symptoms**: User-visible behavior, timing (always/intermittent/under load), when it started, blast radius
-- **Expected vs Actual Behavior**: Table comparing expected vs actual for each scenario
-- **Evidence Gathered**: Logs with timestamps and interpretation, timings, error messages, reproduction steps
-- **Hypotheses**: Ranked by (likelihood × ease of verification), with evidence for/against each
-- **Diagnostic Plan**: Immediate checks (<5 min), targeted logging to add, tests to run
-- **Root Cause**: File, line, issue description, why it happened, why initial hypotheses were wrong (if applicable)
-- **Proposed Fix**: Changes required (table with file, change, lines), before/after code, justification for approach
-- **Verification**: Steps to confirm fix, regression checks, log confirmation
-- **Prevention**: Test case to add, documentation updates, similar bugs to check
+Critique criteria:
 
-**Critique Criteria:**
-1. Evidence before hypothesis - no guessing without data
-2. Simple explanations ruled out first - check basics before redesigning
-3. Targeted diagnostics - each log answers a specific question
-4. Proportional fix - justified by evidence, not by habit
-5. Root cause identified - not just symptom masking
-6. Verification plan - specific steps to confirm fix
+1. Evidence precedes hypotheses.
+2. Simple explanations are ruled out before redesign.
+3. Each diagnostic answers a named question.
+4. The fix is proportional and causally tied to the evidence.
+5. Root cause is identified rather than symptoms masked.
+6. Verification is specific and reproducible.
 
-**Anti-patterns flagged:**
-- Premature Architecture - proposing abstractions before ruling out simple bugs
-- Shotgun Debugging - logging everywhere without hypotheses
-- Untested Assumptions - claiming cause without measurement
-- Disproportionate Fix - complexity doesn't match evidence
-- Scope Creep - "while we're here" improvements
+Flag premature architecture, shotgun debugging, untested assumptions,
+disproportionate fixes, and unrelated scope expansion.
 
-**Security Warning:**
-Debug investigations often contain sensitive data. Before submission:
-- Scrub logs of PII, API keys, passwords, and credentials
-- Remove internal hostnames, IP addresses, and network topology
-- Redact customer data
-- Follow your organization's data handling policies
-
-Content is sent to LLM providers (OpenAI, Google, etc.). Do not include data that violates corporate policies or regulatory requirements.
-
-**Context Window Guidance:**
-Large log files may exceed model context limits. Best practices:
-- Include targeted log snippets, not full files
-- Focus on logs around the time of the error
-- Summarize repetitive patterns rather than including all instances
-- Use `grep` or similar to extract relevant lines before inclusion
-
-**Example Debate Flow:**
-
-Round 1 - Initial Investigation:
-> User submits: "Orders page takes 60+ seconds to load, sometimes blank"
->
-> Model A (codex/gpt-5.6-sol) suggests: "We need a caching layer with TTL and circuit breaker pattern"
->
-> Model B (claude) challenges: "Before designing infrastructure, what do the logs show? Have we measured where the 60 seconds is spent?"
->
-> Model C (gemini) adds: "The blank page suggests a different issue than slowness. Are these the same bug or two bugs?"
-
-Round 2 - Evidence Gathering:
-> Investigation adds: Log shows ORDERS_CB_COMPLETE took 67234ms, breakdown shows AADriver call: 64 seconds
->
-> Model A revises: "The 64 seconds is retry overhead. We should add a circuit breaker for AADriver."
->
-> Model B challenges: "A full circuit breaker registry is overkill. A simple timestamp check would work. What's the minimal fix?"
->
-> Model C adds: "Why is AADriver failing? Is it actually down, or is there a configuration issue?"
-
-Round 3 - Proportional Fix:
-> Investigation finds: urllib3 default retry policy causes 3 retries × 10+ seconds = 30+ seconds
->
-> Consensus: Proportional fix - disable retries for AADriver (fail fast), add simple timestamp-based skip. ~10 lines total.
-
-**Example invocation:**
-```bash
-python3 ~/.claude/skills/adversarial-spec/scripts/debate.py critique --models codex/gpt-5.6-sol,gemini-cli/gemini-3.6-flash-high --doc-type debug <<'SPEC_EOF'
-# Debug Investigation: Orders Page 60s Load Time
-
-## Symptoms
-- Orders page takes 60+ seconds to load
-- Sometimes blank entirely
-- Started after recent deploy
-- Affects all users
-
-## Expected vs Actual Behavior
-| Scenario | Expected | Actual |
-|----------|----------|--------|
-| Load orders page | <2s load time | 60+ seconds |
-| Display orders list | Shows all orders | Sometimes blank |
-
-## Evidence Gathered
-### Logs
-- [10:23:45] ORDERS_CB_COMPLETE took 67234ms
-- [10:23:45] "Max retries exceeded connecting to AADriver"
-
-### Timings
-- Exchange API calls: 3 seconds total
-- AADriver call: 64 seconds (timeout + retries)
-
-## Hypotheses
-| # | Hypothesis | Evidence For | Evidence Against | Verification | Effort |
-|---|------------|--------------|------------------|--------------|--------|
-| 1 | AADriver retry storm | Log shows 64s, retry message | None | Check retry config | 5 min |
-| 2 | Database slow | General slowness | Logs show DB queries fast | Query timing | 15 min |
-...
-SPEC_EOF
-```
+Before submission, remove credentials, PII, customer data, internal network
+details, and any material barred by organizational policy. Prefer targeted log
+windows and summarized repetition over full log files.
