@@ -365,7 +365,7 @@ def list_providers():
     claude_cli_status = "[installed]" if CLAUDE_CLI_AVAILABLE else "[not installed]"
     print(f"  {'Claude CLI':12} {'(Anthropic subscription)':24} {claude_cli_status}")
     print(
-        "             Example models: claude-cli/claude-fable-5 (medium effort)"
+        "             Example models: claude-cli/claude-opus-5-5 (high effort)"
     )
     print("             Install: npm install -g @anthropic-ai/claude-code && claude setup-token")
     print()
