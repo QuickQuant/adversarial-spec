@@ -1,0 +1,158 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.0, pytest-8.4.2, pluggy-1.6.0
+rootdir: /home/jason/PycharmProjects/adversarial-spec
+configfile: pyproject.toml
+testpaths: skills/adversarial-spec/scripts/tests
+plugins: anyio-4.12.1, cov-7.0.0
+collected 1053 items
+
+skills/adversarial-spec/scripts/tests/test_adversaries.py ............   [  1%]
+skills/adversarial-spec/scripts/tests/test_altitude_provenance.py ...    [  1%]
+skills/adversarial-spec/scripts/tests/test_authoring_lint.py ......      [  1%]
+skills/adversarial-spec/scripts/tests/test_c_census.py ..........        [  2%]
+skills/adversarial-spec/scripts/tests/test_c_golden_harness.py ...       [  3%]
+skills/adversarial-spec/scripts/tests/test_cli.py ...................... [  5%]
+................                                                         [  6%]
+skills/adversarial-spec/scripts/tests/test_conflict_disposition_store.py . [  6%]
+........                                                                 [  7%]
+skills/adversarial-spec/scripts/tests/test_contract_version_resolver.py . [  7%]
+..........                                                               [  8%]
+skills/adversarial-spec/scripts/tests/test_criticality_classifier.py ... [  9%]
+                                                                         [  9%]
+skills/adversarial-spec/scripts/tests/test_d0_to_load_plan.py ....       [  9%]
+skills/adversarial-spec/scripts/tests/test_dependency_semantics.py ..... [  9%]
+.............                                                            [ 11%]
+skills/adversarial-spec/scripts/tests/test_dogfood_fprime.py ...         [ 11%]
+skills/adversarial-spec/scripts/tests/test_fprime_gate_integration.py .. [ 11%]
+.                                                                        [ 11%]
+skills/adversarial-spec/scripts/tests/test_gate_result.py .......        [ 12%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_batch_tiering.py ... [ 12%]
+...........................                                              [ 15%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_check_cli.py ....... [ 15%]
+                                                                         [ 15%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_cli.py .             [ 15%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_clustering.py ...... [ 16%]
+.................                                                        [ 18%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_core_types.py ...    [ 18%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_error_guards.py .... [ 18%]
+..........                                                               [ 19%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_model_dispatch.py .. [ 19%]
+....................                                                     [ 21%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_orchestrator.py .... [ 22%]
+..............                                                           [ 23%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_package.py .         [ 23%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_persistence.py ..... [ 24%]
+......                                                                   [ 24%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_phase_1_attacks.py . [ 24%]
+.................................                                        [ 27%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_phase_4_tier_dispatch.py . [ 28%]
+....                                                                     [ 28%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_phase_config.py .... [ 28%]
+.                                                                        [ 28%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_reporting_grouped.py . [ 28%]
+.......                                                                  [ 29%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_synthesis_extract.py . [ 29%]
+..                                                                       [ 29%]
+skills/adversarial-spec/scripts/tests/test_getting_started_doclint.py .. [ 30%]
+.                                                                        [ 30%]
+skills/adversarial-spec/scripts/tests/test_glossary_doclint.py ....      [ 30%]
+skills/adversarial-spec/scripts/tests/test_guardrail_orchestration.py .. [ 30%]
+......                                                                   [ 31%]
+skills/adversarial-spec/scripts/tests/test_hardening_package.py ........ [ 32%]
+.................                                                        [ 33%]
+skills/adversarial-spec/scripts/tests/test_mini_spec_emission.py ....... [ 34%]
+...................                                                      [ 36%]
+skills/adversarial-spec/scripts/tests/test_mock_falsification.py ....... [ 36%]
+.....                                                                    [ 37%]
+skills/adversarial-spec/scripts/tests/test_model_calls.py .............  [ 38%]
+skills/adversarial-spec/scripts/tests/test_model_registry_drift.py .     [ 38%]
+skills/adversarial-spec/scripts/tests/test_models.py ................... [ 40%]
+........................................................................ [ 47%]
+............................                                             [ 49%]
+skills/adversarial-spec/scripts/tests/test_phase8_promotion.py .......   [ 50%]
+skills/adversarial-spec/scripts/tests/test_phase8_subflow_migration.py . [ 50%]
+..................................                                       [ 53%]
+skills/adversarial-spec/scripts/tests/test_phase8_tmr_composition.py ... [ 54%]
+.....                                                                    [ 54%]
+skills/adversarial-spec/scripts/tests/test_prompts.py .................. [ 56%]
+...................................                                      [ 59%]
+skills/adversarial-spec/scripts/tests/test_provenance_journal.py ....... [ 60%]
+.                                                                        [ 60%]
+skills/adversarial-spec/scripts/tests/test_providers.py ................ [ 62%]
+...............................................                          [ 66%]
+skills/adversarial-spec/scripts/tests/test_session.py .................  [ 68%]
+skills/adversarial-spec/scripts/tests/test_spine_coverage_checker.py ... [ 68%]
+.                                                                        [ 68%]
+skills/adversarial-spec/scripts/tests/test_tcov_liveness.py ......       [ 69%]
+skills/adversarial-spec/scripts/tests/test_telegram_bot.py ............. [ 70%]
+....................................                                     [ 73%]
+skills/adversarial-spec/scripts/tests/test_tmr_compile_step.py .......   [ 74%]
+skills/adversarial-spec/scripts/tests/test_tmr_obligation_fields.py ...F [ 74%]
+.......................................                                  [ 78%]
+skills/adversarial-spec/scripts/tests/test_tmr_parser.py ....            [ 78%]
+skills/adversarial-spec/scripts/tests/test_tmr_schema_contract.py ...... [ 79%]
+.....                                                                    [ 79%]
+skills/adversarial-spec/scripts/tests/test_trace_golden.py .....         [ 80%]
+skills/adversarial-spec/scripts/tests/test_validation_emission.py ...... [ 80%]
+........................................................................ [ 87%]
+........................................................................ [ 94%]
+......................................................                   [ 99%]
+skills/adversarial-spec/scripts/tests/test_verification_tier_lint.py ... [100%]
+
+=================================== FAILURES ===================================
+______________ test_keystone_file_pin_matches_the_mirror_constant ______________
+
+    def test_keystone_file_pin_matches_the_mirror_constant() -> None:
+        """Cross-repo half: the keystone's own pinned line agrees with our constant."""
+        keystone = keystone_path()
+        if keystone is None or not keystone.is_file():
+            pytest.skip("keystone repo not checked out beside this one")
+>       assert_keystone_mirror_current()
+
+skills/adversarial-spec/scripts/tests/test_tmr_obligation_fields.py:190: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def assert_keystone_mirror_current() -> None:
+        """Fail when the keystone's pinned hash and this mirror have diverged.
+    
+        Divergence of this contract is the exact failure the keystone exists to
+        prevent, so it is surfaced as an error naming both values -- never repaired
+        automatically, and never in the keystone's direction.
+        """
+    
+        path = keystone_path()
+        if path is None:
+            raise SchemaValidationError(
+                "keystone", "keystone contract not found; set TMR_KEYSTONE_PATH"
+            )
+        pinned = schema_snapshot_hash(path.read_text(encoding="utf-8"))
+        if pinned != KEYSTONE_SCHEMA_SHA256:
+>           raise SchemaSnapshotDriftError(KEYSTONE_SCHEMA_SHA256, pinned)
+E           tmr_schema.SchemaSnapshotDriftError: schema_sha256 snapshot drift: expected sha256:824449bb26c8f9ace09966cf366a50afc0f8eed9deaf2881bb8791c7bc17e361, found sha256:0f65d8de7d707247760df61b428bbffa99aae8b6a160ad77c3838774e0bffddb
+
+skills/adversarial-spec/scripts/tmr_schema.py:687: SchemaSnapshotDriftError
+=============================== warnings summary ===============================
+skills/adversarial-spec/scripts/tmr_schema.py:339
+  /home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/tmr_schema.py:339: PytestCollectionWarning: cannot collect test class 'TestMaturityRecord' because it has a __init__ constructor (from: skills/adversarial-spec/scripts/tests/test_authoring_lint.py)
+    class TestMaturityRecord(StrictSchemaModel):
+
+skills/adversarial-spec/scripts/tmr_schema.py:339
+  /home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/tmr_schema.py:339: PytestCollectionWarning: cannot collect test class 'TestMaturityRecord' because it has a __init__ constructor (from: skills/adversarial-spec/scripts/tests/test_criticality_classifier.py)
+    class TestMaturityRecord(StrictSchemaModel):
+
+.venv/lib/python3.14/site-packages/litellm/litellm_core_utils/logging_utils.py:273: 15 warnings
+  /home/jason/PycharmProjects/adversarial-spec/.venv/lib/python3.14/site-packages/litellm/litellm_core_utils/logging_utils.py:273: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+skills/adversarial-spec/scripts/tmr_schema.py:339
+  /home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/tmr_schema.py:339: PytestCollectionWarning: cannot collect test class 'TestMaturityRecord' because it has a __init__ constructor (from: skills/adversarial-spec/scripts/tests/test_tcov_liveness.py)
+    class TestMaturityRecord(StrictSchemaModel):
+
+skills/adversarial-spec/scripts/tests/test_gauntlet_persistence.py: 15 warnings
+  /home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/gauntlet/persistence.py:66: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED skills/adversarial-spec/scripts/tests/test_tmr_obligation_fields.py::test_keystone_file_pin_matches_the_mirror_constant - tmr_schema.SchemaSnapshotDriftError: schema_sha256 snapshot drift: expected sha256:824449bb26c8f9ace09966cf366a50afc0f8eed9deaf2881bb8791c7bc17e361, found sha256:0f65d8de7d707247760df61b428bbffa99aae8b6a160ad77c3838774e0bffddb
+================= 1 failed, 1052 passed, 33 warnings in 25.15s =================
