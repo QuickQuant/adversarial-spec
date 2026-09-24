@@ -13,13 +13,15 @@ fragments; `phases/00-triage.md` applies it.
 |---|---|---|
 | **component** | a leaf with a *local* failure surface — a mistake is caught and contained at the unit boundary | unit / component verification |
 | **subsystem** | a cohesive unit several components depend on; the contract is expensive to reverse | component + **integration / conformance** |
-| **system** | crosses a process/repo boundary, **or** a mistake has **irreversible external consequences a code revert can't undo** | component + subsystem + **end-to-end** + consequence-safety guardrails + manual go-live gate |
+| **system** | a mistake escapes a code revert: **irreversible external consequences**, or a contract other repos/processes consume that **cannot change in one coordinated release** | component + subsystem + **end-to-end** + consequence-safety guardrails + manual go-live gate |
 
 **What makes something `system` is irreversibility/blast, not a domain.** Production
 data loss, destructive or one-way operations, irreversible outbound effects on
 third parties or users (sent comms, external state mutations) all qualify. *Moving
 real money is one instance, not the definition* — most changes that touch nothing
-irreversible and stay inside one repo are **not** system.
+irreversible and stay inside one repo are **not** system. Launching a subprocess or
+being used by several repositories is not, by itself, a system boundary: the test is
+whether a mistake survives a revert of this repository.
 
 ## 2. The forcing rule (state this WHERE you pick the root)
 

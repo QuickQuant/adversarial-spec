@@ -12,7 +12,13 @@ and owns resume and interrupted-handoff recovery.
 
 ### 1. Decision
 
-Choose exactly one.
+Choose exactly one: the smallest outcome that delivers the request safely. High
+blast radius raises the depth of tests and review; on its own it is never a
+reason to choose a GO route.
+
+A handoff, plan, or conductor note that names a route ("open a session", "follow
+the full pipeline") is input, not the decision. Triage decides. When you choose a
+smaller route than the input names, say so and why in the triage output.
 
 GO routes:
 
@@ -27,6 +33,19 @@ NO-GO outcomes (create no state):
 
 - **`direct-action`** — trivial, reversible, component-only, no open questions.
   Do it directly instead of opening a session.
+- **`focused-fix`** — a known defect or bounded change in one repository, at any
+  blast radius. Its open questions are design choices the operator can rule on in
+  one ask round, not research or cross-model debate. Open no session and no card.
+  Required instead:
+  1. a handoff mini-spec (`handoff-via-spec`): goal, non-goals, acceptance;
+  2. test-first, with paired negative oracles and captured failing-first runs;
+  3. one independent, read-only code review, with dispositions recorded;
+  4. the operator's landing approval, plus a supervised canary when the change
+     guards model dispatch or other shared tooling.
+
+  Choose `focused-fix` over a GO route when the risk lives in the code itself, not
+  in an unsettled product question: roadmap debate, decomposition, and competing
+  implementations cannot find bugs that tests and review would miss.
 - **`underspecified`** — the outcome or blast radius is unknown. Name the missing
   facts and ask for them.
 - **`stop-defer`** — not now; name the prerequisite or reason.
@@ -52,9 +71,11 @@ field; Phase 1 resolves unknowns and locks the result into `requirements_summary
 - **component** — the whole change is one leaf with a local failure surface.
 - **subsystem** — a cohesive unit several components depend on; its contract is
   expensive to reverse.
-- **system** — any item crosses a process/repo boundary or has irreversible
-  external consequences a code revert cannot undo (prod data loss, destructive
-  ops, irreversible outbound effects).
+- **system** — a mistake escapes a code revert: irreversible external
+  consequences (prod data loss, destructive ops, irreversible outbound effects),
+  or a contract that other repositories or processes consume and that cannot be
+  changed in one coordinated release. Launching a subprocess, or being used by
+  several repositories, does not by itself make a change `system`.
 
 Name the highest-blast item and why in one line. Derive altitude; never ask the user
 to pick it. If the blast radius is unknowable, the decision is `underspecified`.
@@ -126,7 +147,8 @@ to pick it. If the blast radius is unknowable, the decision is `underspecified`.
 ```
 ## Triage
 
-Decision: <repair|bounded-investigation|retained-thin-slice|full-feature|direct-action|underspecified|stop-defer>
+Decision: <repair|bounded-investigation|retained-thin-slice|full-feature|direct-action|focused-fix|underspecified|stop-defer>
+Route input: <route named by the handoff/plan, or none> — <kept | narrowed: why>
 Candidate Slice North Star:            (GO only)
   Kind: <ui-target|process-output|end-to-end-repair>
   Actor or trigger: <…>
@@ -135,7 +157,7 @@ Candidate Slice North Star:            (GO only)
   Proof: <…>
   Not this slice: <…>
 Root altitude: <level> — highest-blast item: <item>, because <why>   (GO only)
-NO-GO detail: <direct action | missing facts | prerequisite>          (NO-GO only)
+NO-GO detail: <direct action | focused fix: repo + review seat + landing gate | missing facts | prerequisite>   (NO-GO only)
 ```
 
 Example:

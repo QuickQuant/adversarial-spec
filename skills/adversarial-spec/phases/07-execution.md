@@ -145,8 +145,8 @@ Use `skills/adversarial-spec/reference/altitude.md` as the altitude authority.
 
 - Lock one Slice North Star outcome.
 - The highest-blast item sets the root altitude.
-- An irreversible external consequence or process/repository boundary forces a
-  `system` root.
+- An irreversible external consequence, or a cross-repository contract that cannot
+  change in one coordinated release, forces a `system` root.
 - Group work by how far a mistake propagates: component work under subsystem
   work under the single system root where those altitudes exist.
 - Explain each node's altitude in plain language.
