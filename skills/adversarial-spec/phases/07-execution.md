@@ -271,6 +271,14 @@ Choose `global` scope only when all work must stop; otherwise use `dependency`.
 Start the card description with a plain-language `HUMAN ACTION:` brief covering
 the action, reason, evidence, completion condition, and forbidden disclosures.
 
+#### User-verified tasks
+
+Every `tested_by: user` or `both` task description states the operator's
+verification procedure: actor; preconditions; ordered actions; evidence location;
+pass condition; stop conditions; escalation path. A `manual-ux` exemption alone is
+not an action specification. Pure operator work uses `human_execution` above
+instead. Never claim a board assignment or pin exists unless the board created it.
+
 #### Test scheduling
 
 Use test-first for risky business rules, security boundaries, external
