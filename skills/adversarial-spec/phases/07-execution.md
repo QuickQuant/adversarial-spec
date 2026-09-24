@@ -1,301 +1,255 @@
-> **FIRST ACTION upon entering this phase:** Alert the user that this is a context heavy process and that a fresh context window is strongly recommended. Execution card generation is a critical process that must be supervised by the user. Do not attempt this in an overnight session unless EXPLICITLY told to by the user. 
-> After this, the next step is to create this TodoWrite immediately.
-> Do NOT read further until the TodoWrite is active.
-> Every `[GATE]` item must be marked completed before proceeding past it.
+> Phase 7 is context-heavy and requires active supervision. Recommend a fresh
+> context window before planning. Do not run it unattended unless the user
+> explicitly requests that mode.
 
-```
+```text
 TodoWrite([
-  {content: "Load finalized spec and gauntlet concerns", status: "in_progress", activeForm: "Loading finalized spec and gauntlet concerns"},
-  {content: "Load codebase architecture docs [GATE] — read ALL .architecture/ files (INDEX, primer, overview, concerns, access-guide, patterns, flows, and every structured/components/*.md) before decomposition or architecture_refs assignment", status: "pending", activeForm: "Loading codebase architecture docs"},
-  {content: "Load target architecture and build Architecture Spine (if exists)", status: "pending", activeForm: "Building architecture spine"},
-  {content: "Decompose into tasks with gauntlet concern linkage", status: "pending", activeForm: "Decomposing spec into tasks"},
-  {content: "Assign architecture_refs per task [GATE] — grounded in actual doc content, no filename guessing", status: "pending", activeForm: "Assigning architecture_refs per task"},
-  {content: "Ground implementation_status per task [GATE] — greenfield/partial/already-built with file:line evidence; already-built ⇒ verify/port not build", status: "pending", activeForm: "Grounding implementation status per task"},
-  {content: "Classify behavior_change and verification_mode for every task [GATE]", status: "pending", activeForm: "Classifying verification modes"},
-  {content: "Assign test strategies (test-first/test-after)", status: "pending", activeForm: "Assigning test strategies"},
-  {content: "Attach test_refs, test_files, or exemption_reason for every task [GATE]", status: "pending", activeForm: "Completing verification mapping"},
-  {content: "Over-decomposition guard check", status: "pending", activeForm: "Checking for over-decomposition"},
-  {content: "Prove dependency semantics: edge ledger, fanout, scope closure, and safety order [GATE]", status: "pending", activeForm: "Proving dependency semantics"},
-  {content: "Persist decomposition draft to execution-plan.md + record execution_plan_path [GATE] — pre-approval, checkpoint-safe (Step 3.5)", status: "pending", activeForm: "Persisting decomposition draft to disk"},
-  {content: "Present plan to user for approval [GATE]", status: "pending", activeForm: "Presenting execution plan for approval"},
-  {content: "Review verification coverage report before pipeline_load [GATE]", status: "pending", activeForm: "Reviewing verification coverage"},
-  {content: "Review every exemption with the user [GATE]", status: "pending", activeForm: "Reviewing verification exemptions"},
-  {content: "Write execution plan to disk [GATE]", status: "pending", activeForm: "Writing execution plan to disk"},
-  {content: "Verify plan file exists and update session state", status: "pending", activeForm: "Verifying plan persistence"},
-  {content: "Generate fizzy-plan.json and load into pipeline [GATE]", status: "pending", activeForm: "Loading execution plan into Fizzy pipeline"},
-  {content: "Add concern context comments to all cards [GATE]", status: "pending", activeForm: "Adding concern context comments to Fizzy cards"},
+  {content: "Load the finalized artifact chain and targeted architecture context", status: "in_progress", activeForm: "Loading planning inputs"},
+  {content: "Resolve and reconcile the active target architecture [GATE]", status: "pending", activeForm: "Reconciling target architecture"},
+  {content: "Decompose by readiness and blast radius with concern traceability", status: "pending", activeForm: "Decomposing implementation work"},
+  {content: "Classify verification and human-execution obligations [GATE]", status: "pending", activeForm: "Classifying verification obligations"},
+  {content: "Persist the checkpoint-safe plan draft [GATE]", status: "pending", activeForm: "Persisting the plan draft"},
+  {content: "Prove draft dependency semantics [GATE]", status: "pending", activeForm: "Checking dependency semantics"},
+  {content: "Obtain plan, coverage, and exception approval [GATE]", status: "pending", activeForm: "Obtaining plan approval"},
+  {content: "Emit, validate, and load the approved Fizzy plan [GATE]", status: "pending", activeForm: "Loading the approved plan"},
+  {content: "Verify the card handoff and transition to implementation", status: "pending", activeForm: "Verifying the implementation handoff"},
 ])
 ```
 
-Mark each step `completed` as you finish it. Mark the current step `in_progress`.
-Do not reorder the new verification `[GATE]` items; they are sequenced to match the Phase 07 steps below.
-
----
-
 ## Execution Planning (Phase 7)
 
-After the spec is finalized and the gauntlet has been run, offer to generate an execution plan.
+Turn the finalized spec, test intent, target architecture, and accepted Concerns
+into an approved, dependency-safe execution plan and plan-backed Task Cards.
+Draft the plan directly; no extra debate or model pipeline is required. The Fizzy
+board pipeline is still required to validate the wire plan and materialize cards.
 
-**Skipping the gauntlet is highly discouraged.** Anything that needs an execution plan should also need the thoroughness of a gauntlet review — the gauntlet generates the concrete failure-mode concerns that become acceptance criteria in the execution plan. Without it, acceptance criteria are vague and implementation bugs slip through to code review (or worse, production). At minimum, run a limited gauntlet if context is running short.
+Never create session work with raw `add_card`. A later scope change is a plan
+amendment: update the approved artifacts, run `pipeline_validate_plan`, then
+`pipeline_load` again.
 
-> "Spec is finalized. Would you like me to generate an execution plan for implementation?"
+### 1. Load the active artifact chain
 
-**Update Tasks:** Use `TaskUpdate` to mark Phase 6 tasks as `in_progress`/`completed` as you progress. Set owner to `adv-spec:planner`.
+Resolve the active detail file from `.adversarial-spec/session-state.json`. Read
+paths from that detail file rather than selecting the first filename match:
 
----
+- finalized spec from `spec_path`;
+- roadmap/manifest from `roadmap_path` or `manifest_path`;
+- tests from the session's `tests-spec.md` path;
+- accepted Concern artifact from `gauntlet_concerns_path`;
+- execution/decomposition artifacts already recorded for this Session;
+- `phase_artifacts.target_architecture_path`, with legacy
+  `target_architecture_path` as a compatibility fallback.
 
-### Step 1: Load Inputs
+Stop on a missing required path. Do not substitute an artifact from another
+Session or context.
 
-You (Claude) create the execution plan directly from the spec and gauntlet output. No external pipeline needed.
+#### Targeted architecture reads
 
-**Load the finalized spec:**
-- Read the spec file from the session's `spec_path` or the most recent `[SPEC]...[/SPEC]` output
+When `.architecture/manifest.json` exists:
 
-**Load gauntlet concerns (if gauntlet was run):**
-```bash
-# Find the most recent gauntlet concerns JSON
-ls -t .adversarial-spec/specs/*/gauntlet-concerns-*.json 2>/dev/null | head -1
+1. Read `.architecture/INDEX.md`, then `.architecture/primer.md`.
+2. Use the declared file scope and cross-component flows to select the smallest
+   useful set of component/flow documents. Two to four matched component docs is
+   typical, not a quota.
+3. Read `.architecture/concerns.md` only when the scope intersects recorded
+   codebase Concerns.
+4. Attach repo-relative `architecture_refs` only when the referenced content
+   actually describes the task's files, contracts, or flows. Never infer a ref
+   from a similar filename.
+
+If architecture docs are absent, tell the user that `/mapcodebase` is the normal
+grounding path. If the user proceeds, inspect the exact code paths in scope and
+record the architecture-ref exemption in the plan review.
+
+For each proposed task, ground implementation status in current source and
+history:
+
+| Status | Planning action |
+|---|---|
+| `greenfield` | Build; cite the searched scope and absence of an implementer. |
+| `partial` | Complete the existing path; cite the stub, TODO, or incomplete symbol. |
+| `already-built` | Verify or port against the approved acceptance criteria; do not describe a new build. |
+
+Record `implementation_status` and concise `implementation_evidence` in the
+human plan. Prefer `path:symbol` and commit anchors over brittle source line
+numbers.
+
+### 2. Reconcile the active target architecture
+
+Read the target architecture from the active detail's artifact path. Never use a
+repository-wide `target-architecture.md` glob or first-match lookup.
+
+Run exactly one named comparison: **`Phase4FingerprintComparison`**. Use the
+algorithm and inputs in `04-target-architecture.md` § Fingerprints; do not invent
+another hash meaning:
+
+```text
+input_fingerprint = sha256(
+  stripped_spec_bytes + NUL + roadmap_bytes + NUL +
+  canonical_json({phase_mode, context_mode})
+)
+
+architecture_fingerprint = sha256(
+  input_fingerprint + NUL + canonical_json(framework_profile) + NUL +
+  canonical_json(execution_surfaces) + NUL +
+  canonical_json(active_invariants) + NUL +
+  canonical_json(research_findings)
+)
 ```
 
-If found, read the JSON. Each concern has:
-- `adversary`: Which adversary raised it
-- `severity`: critical / high / medium / low
-- `section_refs`: Which spec sections it targets
-- `failure_mode`: What could go wrong
-- `detection`: How to detect the failure
-- `blast_radius`: Impact scope
+Apply Phase 4's volatile-metadata stripping and canonical JSON rules exactly.
+The comparison is fresh only when the recomputed input fingerprint matches
+`phase_artifacts.spec_fingerprint` and the recomputed architecture fingerprint
+matches `phase4_bootstrap.architecture_fingerprint` plus the published artifact
+headers. In `phase_mode: skip`, the architecture fingerprint is intentionally
+null and the stub remains the consumed artifact.
 
----
+If the comparison is stale:
 
-### Step 2.5: Load Codebase Architecture (REQUIRED before decomposition)
+1. Reconcile in place when finalization changed requirements but not component
+   boundaries: patch the target architecture, active invariants, middleware
+   candidates, framework profile, and dry-run evidence; then rerun the one named
+   comparison.
+2. Rerun Phase 4 only when boundaries, surfaces, or the invariant set changed;
+   obtain user approval first.
+3. Proceed with acknowledged drift only as a last resort. Put the warning in the
+   execution plan and record the human decision.
 
-**Do NOT decompose into tasks, launch Explore agents, or glob/grep the codebase until you have read EVERY architecture doc.** The architecture docs tell you what components exist, what contracts matter, and what gotchas to avoid. Pattern-matching filenames to card titles is not reading the architecture. The whole point of the `.architecture/` folder is to ground implementation work in the system's real design — that only happens if every file is actually read before task decomposition and before `architecture_refs` assignment.
+Write the reconciled artifact set with Phase 4's same-directory staging and
+atomic-renames protocol. Record the prior values and reason in the bootstrap
+reconciliation block. See `SKILL.md` § Decisions Log and § Journey Log for the
+durable records.
 
-**Load project architecture docs:**
-```bash
-# Check for architecture docs
-[ -f .architecture/manifest.json ] && echo "exists" || echo "missing"
-```
+When the active architecture directory contains `middleware-candidates.json`,
+surface every retained candidate and map it to exactly one source task plus an
+executable test-suite path. Phase 7 prepares that substrate; the optional
+middleware-creator phase owns fanout.
 
-If `.architecture/manifest.json` exists, read **all** of the following. Do not cherry-pick based on filename or title — read the content:
-
-1. `.architecture/INDEX.md` (navigation + component table)
-2. `.architecture/primer.md` (system summary, contracts, gotchas)
-3. `.architecture/overview.md` (full system narrative)
-4. `.architecture/concerns.md` (known debt, CON-xxx items)
-5. `.architecture/access-guide.md` (guided reading paths)
-6. `.architecture/patterns.md` (cross-cutting conventions)
-7. `.architecture/filesystem-map.md` (if present)
-8. `.architecture/findings.md` (if present)
-9. `.architecture/action-plan.md` (if present)
-10. `.architecture/structured/flows.md` (if present — cross-component flow docs)
-11. **Every file under `.architecture/structured/components/`** — no skipping based on hunch
-
-**Context discipline:** If reading all of this would blow your context budget, use a fresh subagent whose entire job is to read them all, the final spec, and the task list, then emit per-task `architecture_refs` with rationale. Do not skip reading — delegate reading. Filename-based guessing is a process failure.
-
-**After reading — per-task architecture_refs assignment (REQUIRED):**
-
-For every task you will decompose in Step 3, record `architecture_refs[]` — the set of architecture docs whose content actually describes something the task touches. Ground the assignment in:
-- The task's declared file scope (`context_map.modify/create/read`)
-- Component responsibilities as claimed in the component doc itself
-- Cross-component flows the task crosses
-
-Rules:
-- **No filename-guessing.** A ref must exist because the component doc's content overlaps the task's scope — not because the filename resembles the task title.
-- **2–4 refs per task is typical.** 6+ is usually over-inclusion; 0 is a gate failure.
-- **Use full repo-relative paths** rooted at `.architecture/` — e.g., `.architecture/structured/components/gateway.md`, not just `gateway.md`.
-
-If `.architecture/` does NOT exist:
-- Warn the user: "No architecture docs found. Consider running `/mapcodebase` first."
-- If proceeding without: use targeted file reads (not broad Explore agents) to understand the blast zone. `architecture_refs` may be empty on tasks in this case, recorded in the validation trail as an acknowledged exemption.
-
-**After reading — per-task implementation-status grounding (REQUIRED):**
-
-For every task you will decompose in Step 3, classify `implementation_status` against the *existing* codebase and the finalized spec **before** writing it as a build task. This is the gate that stops phantom-hole work: a "hole" that is already implemented or already specified must become a verify/port task, not a from-scratch build. (pipeline-seams #6: two false holes in a prior session were already built/specified and would have collapsed here if grounded.)
-
-For each task, determine one of:
-- `greenfield` — not yet built; no existing code or spec covers it.
-- `partial` — partially implemented or stubbed; needs completion.
-- `already-built` — complete and working; the task is verification/port only.
-
-Ground each classification in **file:line (or commit) evidence**, gathered the same way as `architecture_refs` — by reading the code, not guessing:
-- `git log --oneline -- <file>` and `git show <hash>:<file>` for history
-- `grep -rn "<symbol>" <scope>` and direct reads for current state
-- For `partial`, quote the stub / `TODO` / `NotImplementedError` you found
-- For `already-built`, cite the working implementation (`path:line` range)
-- For `greenfield`, the evidence is the *absence* — note "no implementer found in `<scope>`"
-
-Rules (same rigor as `architecture_refs`):
-- **No guessing.** A status must be backed by evidence you actually looked at.
-- **One sentence of rationale** per task, plus the `file:line`/commit it rests on.
-- **`already-built` ⇒ verify/port, not build.** Frame the task as verification against the spec's acceptance criteria using an EXISTING `verification_mode` (e.g. an `automated-*` verify or `static-check`). Do NOT invent a new `verification_mode` value or card type — that drifts fizzy's plan contract. The field is additive: the skill requires and consumes it; fizzy may ignore it.
-
-Recorded per task as `implementation_status` + `implementation_evidence` (see Verification Schema below) and checked at Gate V2.
-
-**Then load target architecture (from Phase 4, if it exists):**
-```bash
-# Check for target architecture from Phase 4
-ls .adversarial-spec/specs/*/target-architecture.md 2>/dev/null | head -1
-```
-
-**Staleness check (REQUIRED when target architecture exists):**
-
-Phase 4 records a `phase_artifacts` block in the session detail file with `spec_fingerprint` (SHA256 of the spec file at the time Phase 4 published) and `architecture_fingerprint`. Before consuming the target architecture, Phase 7 MUST verify that the spec has not drifted:
-
-1. Read `phase_artifacts.spec_fingerprint` (or `phase4_bootstrap.input_fingerprint`) from the session detail file
-2. Compute the current spec's fingerprint using Phase 4's exact formula (`input_fingerprint = sha256(spec_bytes + b"\x00" + roadmap_bytes + b"\x00" + canonical_json({phase_mode, context_mode}))` — see `04-target-architecture.md` Fingerprints) and compare
-3. **If fingerprints match:** target architecture is fresh — proceed with consumption
-4. **If fingerprints do NOT match:** target architecture is stale. **This is the EXPECTED state in any session where the gauntlet found real concerns** — Phase 4 runs before the gauntlet, and accepted concerns revise the spec (v_N → v_N+1 → FINAL). Stale-at-Phase-7 is not an anomaly; it is the normal consequence of the canonical phase order. Three handling paths, in order of preference:
-
-   **(a) Reconcile in place (DEFAULT — choose this unless the architecture itself changed):**
-   1. Diff the Phase 4-era spec (the draft whose bytes produced the old `input_fingerprint`) against the current spec. Focus on architecture-relevant sections: system architecture, component design, phase wiring, invariants, security.
-   2. Apply the deltas directly to `target-architecture.md` and `architecture-invariants.json` (and `middleware-candidates.json` if candidates changed) — update concern decisions, surface tables, INV-A* rules, and the framework profile to state what the FINAL spec states. Add a dated `## Reconciliation` note to `target-architecture.md` listing the material deltas applied.
-   3. Sync `phase4_bootstrap.framework_profile` with any profile fields the reconcile changed (it feeds the fingerprint chain).
-   4. Re-trace the dry-run archetypes against the reconciled content; update `dry-run-results.json` evidence (mark "Re-traced <date>").
-   5. Recompute BOTH fingerprints with Phase 4's exact formulas (reproduce the OLD values first from the old inputs to prove the algorithm before computing new ones) and stamp them into: `phase4_bootstrap` (with a `reconciliation` block recording the previous values + reason), the `target-architecture.md` header, `architecture-invariants.json`, `middleware-candidates.json`, and `dry-run-results.json`.
-   6. Log the reconciliation to the journey log (`type: maintenance`) and decisions log, then re-run the staleness check — it must now pass.
-
-   This is the cross-phase application of Phase 4's own post-freeze rule ("if any fingerprint input changes after freeze, the fingerprint must be recomputed"). The reconcile is performed by the Phase 7 agent; it is a content patch, not a Phase 4 rerun — no model dispatch. (Origin: validation-leg-process session, 2026-06-11 — Jason ruled rerun-vs-acknowledge a false dichotomy.)
-
-   **(b) Rerun Phase 4:** only when the spec revisions changed the architecture itself (component boundaries, new surfaces, invariant set no longer derivable by patching). Full multi-model cost; requires user approval.
-
-   **(c) Acknowledge drift and proceed (LAST RESORT):** log the acknowledgement to the journey log and carry a warning banner in the execution plan. This leaves a stale doc as a Phase 7/8 input — prefer (a), which costs minutes and leaves the artifact chain consistent.
-
-5. Normative source for the fingerprint contract: [`04-target-architecture.md` §7 (Required Headers)](./04-target-architecture.md) and [`04-target-architecture.md` §15 (Session Mutation Contract)](./04-target-architecture.md). Phase 7 MUST NOT silently mutate `architecture_fingerprint` or `spec_fingerprint` — outside path (a)'s explicit reconcile procedure (which records previous values in a `reconciliation` block), those fields are Phase 4-owned and read-only here.
-
-**Coordinate middleware candidates with middleware-creator (when present):**
-
-If Phase 4 identified shared middleware (cross-cutting code surfaces that multiple tasks would otherwise duplicate), it publishes `middleware-candidates.json` alongside the target architecture:
-
-```bash
-ls .adversarial-spec/specs/*/middleware-candidates.json 2>/dev/null | head -1
-```
-
-The normative fanout consumer is the middleware-creator phase, not Phase 7. Phase 7's responsibility is to create a clean execution substrate for that phase:
-
-- Surface every candidate in the plan so the user can see what Phase 4 identified.
-- Ensure each materializable candidate maps to exactly one typed Fizzy task card after `pipeline_load`.
-- Include the candidate ID in the task title, description, or metadata so middleware-creator can map source cards deterministically.
-- Ensure the plan names or creates an existing `test_suite_path` for each candidate; `pipeline_create_middleware_fanout` will reject missing paths.
-- Do not call middleware fanout tools from Phase 7 unless the active phase is explicitly `middleware-creator`.
-
-If `middleware-candidates.json` is missing entirely (Phase 4 found no shared surfaces), skip this step — not every project needs middleware.
-
-If found, extract cross-cutting patterns and add an Architecture Spine section to the execution plan:
+Extract cross-cutting decisions into an **Architecture Spine** in the plan:
 
 ```markdown
 ## Architecture Spine
-Cross-cutting patterns from the Target Architecture. All tasks must follow.
 
-### [Pattern Name]
-- **Pattern:** [one-line description]
-- **Rule:** [what implementers must / must not do]
-- **Reference:** Target Architecture §[N], Task W0-[N]
+### <decision or pattern>
+- Constraint: <what every affected task must preserve>
+- Owner task: <task_id>
+- Reference: <target-architecture section or architecture ref>
 ```
 
-**Wave 0: Architecture Foundation**
+Foundation work must precede consumers through real `depends_on` edges, not a
+prose-only wave label.
 
-Create tasks establishing shared infrastructure BEFORE feature tasks:
-- One task per pattern in the Target Architecture
-- Wave 0 tasks block all feature tasks depending on the pattern
-- Typical: 4-8 tasks, S-M effort
+### 3. Shape the plan by blast radius
 
-Example:
-```
-Wave 0 Tasks
-───────────────────────────────────────
-W0-1  Establish data fetching pattern     S   Blocks: Tasks 3, 5, 8
-W0-2  Implement auth middleware           M   Blocks: Tasks 4, 6, 7
-W0-3  Set up shared error handling        S   Blocks: All feature tasks
-W0-4  Create component boundary template  S   Blocks: Tasks 3, 4, 5
-```
+Use `skills/adversarial-spec/reference/altitude.md` as the altitude authority.
 
-**If no target architecture exists:** Skip Architecture Spine and Wave 0. Proceed directly to Task Decomposition.
+- Lock one Slice North Star outcome.
+- The highest-blast item sets the root altitude.
+- An irreversible external consequence or process/repository boundary forces a
+  `system` root.
+- Group work by how far a mistake propagates: component work under subsystem
+  work under the single system root where those altitudes exist.
+- Explain each node's altitude in plain language.
 
----
+Apply the proportional verification ladder:
 
-### Verification Schema (v2) — Reference
+| Altitude | Verification floor |
+|---|---|
+| component | Unit or component verification; never zero. |
+| subsystem | Integration verification plus contract conformance for consumers. |
+| system | End-to-end verification, consequence-safety controls, and a manual go-live gate where consequences require one. |
 
-**This section defines the verification contract every task in `fizzy-plan.json` must satisfy.** It is read once before decomposition (Step 3) and referenced by Gates V1-V4 and Step 9. The schema is LLM-enforced via TodoWrite gates, not runtime-validated by fizzy-pipeline-mcp; the gates work by structuring the LLM's workflow, not by programmatic enforcement.
+Use safe environments only where the approved plan permits them. A live
+money-path acceptance condition requires authorized live evidence; a stand-in is
+not a substitute.
 
-**Plan-level version marker** — add to the root of `fizzy-plan.json`:
+#### Split at readiness boundaries
 
-```json
-{
-  "plan_schema_version": 2,
-  "session_id": "adv-spec-...",
-  "tasks": [...]
-}
-```
+Split work when its earliest safe start differs from its production-integration
+gate. A contract-bound adapter may start before the later live integration that
+consumes it. Keep a dependency when safety or evidence truly requires it.
 
-- Version 2: requires the verification block below per task.
-- Version 1 (legacy): loads with warnings during the migration window. Missing fields are flagged per-task but do not block `pipeline_load`.
+Merge proposed cards that cannot be distinguished by owner, dependency,
+acceptance evidence, or review boundary. Do not use task-count or spec-page
+thresholds as a decomposition rule.
 
-**Per-task verification block** — add these fields to each task object:
+Every accepted gauntlet Concern must be resolved by a task, explicitly deferred
+with an owner, or listed as uncovered for user decision. Put `concern_refs` on
+the task; the loader carries them into card metadata.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `behavior_change` | boolean | always | Whether this task modifies runtime behavior. Determines gate enforcement strictness. |
-| `verification_mode` | string enum | always | How this task will be verified. Determines which other fields are required. |
-| `verification_scope` | string enum | always | Whether verification targets this task specifically or runs the full suite. |
-| `architecture_refs` | string[] | always | Repo-relative paths to `.architecture/` docs whose content overlaps this task's scope. Populated from Step 2.5's per-task assignment. Must be non-empty when `.architecture/` exists; empty only when acknowledged as exempt (no architecture docs in repo). |
-| `implementation_status` | string enum | always | One of `greenfield` / `partial` / `already-built`, from the Step 2.5 implementation-status grounding. `already-built` ⇒ the task is verify/port, framed with an existing `verification_mode` (no new mode). Additive field: skill-required and skill-consumed; fizzy may ignore it. |
-| `implementation_evidence` | string | always | The `file:line` (or commit hash) plus a short quoted excerpt justifying `implementation_status`. For `greenfield`, the absence note (e.g. "no implementer in `src/api/`"). Same evidence rigor as `architecture_refs`. |
-| `test_refs` | string[] | conditional | Test case IDs from `tests-spec.md` or roadmap. Required when `verification_mode` starts with `automated-`. |
-| `test_files` | string[] | conditional | Repo-relative test file paths expected to cover this task. Required for `automated-*` and `test-producer`. |
-| `verify_commands` | string[] | conditional | Shell command strings the tester runs. Required for `automated-*` and `test-producer`. |
-| `verification_notes` | string\|null | optional | Free-text notes about constraints, edge cases, or special considerations. |
-| `exemption_reason` | string\|null | conditional | Why this task does not require automated test evidence. Required for `artifact-sync`, `static-check`, `manual-ux`. |
-| `human_execution` | object | conditional | Required when a task is performed exclusively by the operator and agents must never claim it. Object keys: `scope` (`global` or `dependency`), `reason`, `procedure`, `evidence_destination`. This is ownership/dispatch metadata, not a substitute for `tested_by`. |
+Map target-architecture invariants through acceptance criteria and the dependency
+sidecar's `safety_implements` / `safety_consumes` fields. Do not claim
+`invariant_refs` or `surface_scope` as Fizzy wire fields without a live consumer.
 
-**`verification_mode` enum values:**
+### 4. Task and verification contract
 
-| Mode | Meaning | Required fields (beyond always-required) |
-|------|---------|------------------------------------------|
-| `automated-unit` | Verified by unit tests | `test_refs`, `test_files`, `verify_commands` |
-| `automated-integration` | Verified by integration tests | `test_refs`, `test_files`, `verify_commands` |
-| `automated-contract` | Verified by API contract tests | `test_refs`, `test_files`, `verify_commands` |
-| `automated-component` | Verified by component tests (render, interaction) | `test_refs`, `test_files`, `verify_commands` |
-| `static-check` | Verified by linter, type checker, or static analysis | `exemption_reason` (`verify_commands` optional if a validator exists) |
-| `manual-ux` | Requires human visual/UX verification | `exemption_reason` |
-| `artifact-sync` | Docs, manifests, config sync — no behavioral change | `exemption_reason` |
-| `test-producer` | This task writes/expands the test suite itself | `test_files`, `verify_commands` (NOT exempt) |
+Each task needs the following plan data:
 
-**Important:** `test-producer` is NOT exempt. A task whose job is "write the tests" still requires concrete `test_files` and `verify_commands` proving the produced suite runs. It never gets an `exemption_reason`.
+| Data | Obligation |
+|---|---|
+| Identity | `task_id`, title, description, effort, and optional workstream. |
+| Traceability | spec refs, `concern_refs`, and content-grounded `architecture_refs`. |
+| Acceptance | At least one testable `acceptance_criteria` entry. |
+| Order | `depends_on` edges whose reasons exist in the dependency sidecar. |
+| Scheduling | `strategy`: `test-first`, `test-after`, `spike`, or `refactor`. Never emit `skip`. |
+| Tester | `tested_by`: `llm`, `user`, or `both`; this does not assign implementation ownership. |
+| Verification | `behavior_change`, `verification_mode`, `verification_scope`, and conditional evidence. |
+| Existing state | `implementation_status` plus human-readable `implementation_evidence`. |
 
-**`verification_scope` enum values:**
+Fizzy's `_validate_plan`, `_validate_v2_task`, architecture-ref validation,
+semantic-report gate, and altitude validators own machine enforcement. They
+validate structure, enums, conditional evidence, reference/path shapes,
+dependencies, and altitude shape. Phase 7 owns semantic judgment: correct task
+boundaries, meaningful acceptance criteria, accurate refs, Concern/invariant
+coverage, evidence adequacy, exceptions, and human approval.
 
-| Scope | Meaning |
-|-------|---------|
-| `targeted` | Run only the tests declared in `verify_commands` for this task |
-| `full-suite` | Run the entire test suite (e.g., `uv run pytest`) |
-| `static` | No runtime tests — static analysis or manual review |
-| `manual` | Human verification only |
+#### Gate V1: Verification classification
 
-**Mode-to-scope compatibility matrix:**
+Before scheduling tests, every task must have a deliberate `behavior_change`,
+`verification_mode`, and compatible `verification_scope`. Surface uncertainty;
+do not choose a fallback merely to complete the table.
 
-| `verification_mode` | Valid `verification_scope` values |
-|---------------------|----------------------------------|
-| `automated-unit` | `targeted`, `full-suite` |
-| `automated-integration` | `targeted`, `full-suite` |
-| `automated-contract` | `targeted`, `full-suite` |
-| `automated-component` | `targeted`, `full-suite` |
-| `static-check` | `static` |
-| `manual-ux` | `manual` |
-| `artifact-sync` | `static` |
-| `test-producer` | `targeted`, `full-suite` |
+#### Verification modes
 
-Invalid combinations (e.g., `automated-unit` + `manual`, or `static-check` + `targeted`) are rejected at Gate V2.
+| Mode | Scope | Conditional evidence |
+|---|---|---|
+| `automated-unit` | `targeted` or `full-suite` | accepted test-target alias plus `verify_commands` |
+| `automated-integration` | `targeted` or `full-suite` | accepted test-target alias plus `verify_commands` |
+| `automated-contract` | `targeted` or `full-suite` | accepted test-target alias plus `verify_commands` |
+| `automated-component` | `targeted` or `full-suite` | accepted test-target alias plus `verify_commands` |
+| `test-producer` | `targeted` or `full-suite` | `test_files` plus `verify_commands`; never exempt |
+| `static-check` | `static` | `exemption_reason`; command when a validator exists |
+| `artifact-sync` | `static` | `exemption_reason` |
+| `manual-ux` | `manual` | `exemption_reason` |
+| `system-validation` | `end-to-end` | the ConOps-bound validation leg, not relabeled test evidence |
 
-### Pure human-execution contract
+The accepted test-target aliases are `test_targets`, `test_refs`, and
+`test_files`; the validator normalizes them. Do not require a literal
+`test_refs` key. Paths are repo-relative, non-empty, and cannot traverse `..`.
+Verification commands are literal, runnable shell commands with the correct
+working directory and test path.
 
-Use `human_execution` only for work the operator, rather than an agent, must
-perform: a production-console observation, an approval immediately before a
-money action, or a terminal observation that cannot be automated. Do **not**
-infer this from `tested_by: user`: `tested_by` says who may verify a task, while
-`human_execution` says agents may not claim or implement it.
+The evidence rule is conditional:
 
-For every pure human-execution task, emit all of the following together:
+- `behavior_change: true`: missing required automated targets/commands or an
+  exempt mode without a reason is a validation error.
+- `behavior_change: false`: the same missing evidence is a validator warning,
+  not a hard failure. Phase 7 still reviews the warning and may require evidence.
+
+Use the structured `issues` and `warnings` from `pipeline_validate_plan` as the
+error authority. Do not maintain a copied error-code table here.
+
+#### Gate V2: Mapping completeness
+
+Before dependency analysis, confirm every task has its required evidence or
+exemption, content-grounded architecture refs, implementation status/evidence,
+and a valid human-execution block when applicable. This is the semantic review
+that precedes the authoritative validator; it does not replace that validator.
+
+#### Pure human execution
+
+Use `human_execution` only when an operator must perform the work itself. It is
+different from `tested_by: user`, which only says who verifies agent work.
 
 ```json
 {
@@ -306,383 +260,69 @@ For every pure human-execution task, emit all of the following together:
   "tested_by": "user",
   "human_execution": {
     "scope": "dependency",
-    "reason": "Why an operator, rather than an agent, must perform this action.",
-    "procedure": "Plain-language ordered action, safe stop condition, and no-secret rule.",
-    "evidence_destination": "Where pipeline_complete_human_task records each acceptance-evidence statement."
+    "reason": "Why an operator must perform this action.",
+    "procedure": "Ordered action, safe stop condition, and no-secret rule.",
+    "evidence_destination": "Where literal outcome evidence is recorded."
   }
 }
 ```
 
-Choose scope deliberately, never by default:
+Choose `global` scope only when all work must stop; otherwise use `dependency`.
+Start the card description with a plain-language `HUMAN ACTION:` brief covering
+the action, reason, evidence, completion condition, and forbidden disclosures.
 
-- `dependency`: the human task blocks only tasks that depend on it. Use it for
-  external configuration observations and final attestation; unrelated safe or
-  speculative work remains schedulable.
-- `global`: once the task's own dependencies are satisfied, every worker must
-  receive `action: "blocked"` from `pipeline_do_next_task` before it can claim
-  another card. Use it only when further work must stop, such as the explicit
-  authorization immediately before a real-money attempt.
+#### Test scheduling
 
-The task description must start a plain-language `HUMAN ACTION:` section: what
-to do, why it matters, what evidence to record, what "done" means, and what not
-to paste or change. It must be intelligible without plan IDs, artifacts, or
-agent jargon. Human work with unmet ordinary dependencies stays hidden from the
-operator until it becomes actionable; it is not an early attention item.
+Use test-first for risky business rules, security boundaries, external
+integrations, high-severity Concerns, or architecture-safety owners. Use
+test-after for bounded low-risk implementation. Use `spike` only where the plan
+commits to no automated test; its independent verification mode still applies.
 
-**Path and command validation rules:**
+A REAL-DATA happy-path spine or critical seam may not use `spike` or an exempt
+verification mode. Bind its accessors, owner-repo command, and negative oracle so
+Phase 8 can produce trusted `run_evidence`.
 
-- `test_files` must be repo-relative paths rooted at the git repository root. No absolute paths, no `..` traversal. Example: `tests/test_api.py`, not `/home/user/project/tests/test_api.py`.
-- `verify_commands` are shell command strings (`string[]`). Each entry is a single command to be executed in a shell. They must be literal — no template interpolation (`${VAR}`), no environment variable expansion. Phase 07 stores commands; Phase 08-09 execute them.
-- **Exact-command rule (P7-3 — no vague baselines).** A `verify_command` must name the exact runner, path, and working directory needed to actually collect+run the test from a clean checkout — e.g. `cd gateway && npx vitest run tests/plan/c-apr-mapper.test.mjs`, never a bare `npx vitest run`, and never an acceptance criterion like "confirm a green tsc and vitest baseline." A repo can have MORE THAN ONE runner (e.g. repo-root `vitest` + a package's `node --test`); emit the command for the runner that actually owns that test's directory, and for a baseline-confirmation task enumerate one exact command per suite that gates (each with its own `cd <pkg>`). Vague "green baseline" wording is the defect that lets one card read green under one runner and red under another. Every `verify_command` emitted here is smoke-tested before load (Step 9, "Smoke the verify-command harness").
-- Empty strings and whitespace-only strings are invalid for all required fields. `test_refs: [""]` or `exemption_reason: "  "` fail validation.
+### 5. Persist one checkpoint-safe plan
 
-**Typed validation error codes** (used in Gate V2 and coverage report):
+Use one persistence model. Atomically write the first complete decomposition to:
 
-| Error code | Meaning |
-|------------|---------|
-| `missing_verification_mode` | Task has no `verification_mode` |
-| `missing_verification_scope` | Task has no `verification_scope` |
-| `missing_behavior_change` | Task has no `behavior_change` classification |
-| `missing_architecture_refs` | `.architecture/` exists in repo but task's `architecture_refs` is empty and no exemption was acknowledged |
-| `missing_required_test_refs` | `automated-*` task with empty `test_refs` |
-| `missing_required_test_files` | `automated-*` or `test-producer` task with empty `test_files` |
-| `missing_required_verify_commands` | `automated-*` or `test-producer` task with empty `verify_commands` |
-| `missing_exemption_reason` | Exempt mode with no `exemption_reason` |
-| `invalid_scope_for_mode` | `verification_scope` not in the valid set for `verification_mode` |
-| `invalid_test_file_path` | Path is absolute or contains `..` traversal |
-| `invalid_architecture_ref_path` | `architecture_refs` entry is not a repo-relative path rooted at `.architecture/` |
-| `empty_or_whitespace_value` | A required field contains an empty or whitespace-only string |
-
-Each error identifies the affected `task_id`.
-
-**Behavior-change classification criteria:**
-
-A task is `behavior_change: true` if it modifies any of:
-- Runtime logic or control flow
-- Public interfaces, APIs, or contracts
-- Data persistence semantics or migrations
-- Validation or authorization behavior
-- Rendering behavior or user-visible state
-- Test-enforced behavior (changes that would break existing tests)
-
-A task is `behavior_change: false` only for:
-- Documentation-only changes (README, inline comments, `docs/`)
-- Manifest or config-file sync with no runtime effect
-- Formatting-only changes (whitespace, linting fixes)
-- Pure metadata maintenance (labels, descriptions)
-
-This classification is a best-effort LLM judgment. Edge cases (config with conditional runtime effects, refactors that preserve behavior) are inherently subjective. **Gate V4 (Exception Review) is the explicit human correction point** where the user can override any classification the LLM got wrong.
-
-**Contract with fizzy-pipeline-mcp:** fizzy consumes these fields with a `declared_` prefix to distinguish plan-time declarations from execution-time evidence. `test_refs` and `test_files` stay distinct in the plan, but fizzy may persist them as one declared target bundle. Field mapping:
-
-| adversarial-spec field | fizzy metadata field |
-|------------------------|----------------------|
-| `behavior_change` | `behavior_change` |
-| `verification_mode` | `verification_mode` |
-| `test_refs`, `test_files` | `declared_test_targets` |
-| `verify_commands` | `declared_verify_commands` |
-| `exemption_reason` | `declared_exemption_reason` |
-| `verification_scope` | `verification_scope` |
-| `architecture_refs` | `architecture_refs` |
-
----
-
-### Step 3: Task Decomposition
-
-Create implementation tasks from the spec. For each major spec section or feature:
-
-**Decomposition guidelines:**
-- Target **1-4 hours of work per task**
-- Each task should be independently testable
-- Group related work (e.g., all error codes in one task, not 20 separate tasks)
-- Include setup/infrastructure tasks (project scaffold, dependencies, config)
-
-**For each task, specify:**
-- **Title**: Short, action-oriented (e.g., "Implement order placement endpoint")
-- **Description**: What to build, referencing specific spec sections
-- **Spec references**: Which sections this task implements
-- **Acceptance criteria**: Derived from spec requirements AND gauntlet concerns
-- **Test strategy**: test-first or test-after (see Step 4)
-- **Dependencies**: Which tasks must complete before this one
-- **Effort estimate**: S (< 1hr), M (1-4hr), L (4-8hr)
-
-**Decompose at readiness boundaries:** Split a proposed task whenever its earliest safe start differs from its production-integration acceptance gate. A build-only decoder or adapter that consumes a frozen public contract is a separate task from the production integration that also consumes the EventStore, confidence model, or another later implementation. Do not delete a legitimate integration dependency merely to make a graph look more parallel; create the narrower producer card so that interface-ready work can start when its contract is ready.
-
-**Link gauntlet concerns to tasks:**
-For each concern in the gauntlet JSON, match its `section_refs` to your tasks. When a concern maps to a task:
-- Add the concern's `failure_mode` as an acceptance criterion
-- Add the concern's `detection` strategy as a test case
-- Note the concern severity - critical/high concerns make the task higher risk
-
-**Link target-architecture invariants and surfaces to tasks (when Phase 4 ran):**
-
-Each task's metadata MUST reference the invariant IDs and surface scope it touches. Read [`04-target-architecture.md` §8 (invariants)](./04-target-architecture.md) and §6 (concern x surface matrix), then for every task add:
-- `invariant_refs`: list of invariant IDs (e.g. `INV-7`, `INV-12`) whose protection the task's code paths must preserve. An invariant applies to a task when any of its enforcing surfaces, data flows, or guarded modules intersect the task's declared file scope.
-- `surface_scope`: list of surface IDs from §6 canonical enums (`cli_command`, `public_api`, `data_stream`, etc.) that the task exposes or mutates.
-
-Surface the linkage in the task entry so reviewers can audit coverage:
-```markdown
-- **Invariants touched:** INV-3, INV-7, INV-12
-- **Surfaces:** public_api, data_stream
+```text
+.adversarial-spec/specs/<slug>/execution-plan.md
 ```
 
-**Invariant coverage check:** After decomposition, every invariant listed in §8 MUST be referenced by at least one task. If an invariant has no task, either it is out of scope (document why in the "Uncovered Concerns" section) or you missed a task — revisit decomposition.
-
----
-
-### Step 3.5: Persist the decomposition to disk NOW (REQUIRED — pre-approval)
-
-**The moment the decomposition exists, write it to `execution-plan.md` — before the approval gate, before Gates V1–V4, before emission.** Do not hold the node table, per-node classifications, concern/invariant/architecture mappings, or grounding evidence in conversation only. The decomposition is the single most expensive artifact in this phase (it consumes the full Step 2.5 architecture read + the spec + the gauntlet concerns); a context switch, compaction, or crash between decomposition and Step 8 destroys it and forces a full redo.
-
-Write the draft now with a clear status banner:
+Start it with:
 
 ```markdown
-> **STATUS: DRAFT — pending user approval (Phase 7 Gate, "Present plan to user").**
-> Not yet emitted to fizzy-plan.json; not yet pipeline_load-ed.
-> On resume: re-present for approval, then proceed to Step 9 / 9b.
+> STATUS: DRAFT — pending Phase 7 plan, coverage, and exception approval.
+> Not emitted to fizzy-plan.json and not loaded.
 ```
 
-Then record `execution_plan_path` in the session detail file and pointer **immediately** (same atomic-write discipline as Step 8). This is additive to Step 8, not a replacement — Step 8 re-persists the *approved* plan (drop the DRAFT banner, fold in any approval-time edits). Writing twice is intentional:
+Record `execution_plan_path` in the active detail and pointer with atomic
+detail-then-pointer writes. After approval, atomically replace the same file with
+the approved content and an `APPROVED` status. Version control records the delta;
+do not claim that a separate draft/final pair exists.
 
-- **Checkpoint-safety:** the user can `/checkpoint` and resume in fresh context at the approval gate without re-reading ~200KB of inputs or re-deriving the tree.
-- **History:** the draft-then-final pair is an auditable record of what was proposed vs. what was approved. Keep it — do not overwrite the draft silently; let Step 8's update show the delta.
+The plan must include the Slice North Star, root altitude and tree, Architecture
+Spine, tasks, verification ladder, dependency graph, dependency semantics
+summary, Concern coverage, exceptions, and uncovered obligations.
 
-**Do NOT** emit `fizzy-plan.json` or `pipeline_load` at this step — those stay gated on user approval (Step 7 → Gate V3/V4 → Step 9). Step 3.5 persists *text*, which is always safe and reversible.
+### 6. Prove dependency semantics
 
-(Origin: validation-leg-process session, 2026-06-11 — Jason: "persist this by writing the decomp to disk; this also gives us a history that we want to have." The prior failure class is the same one MEMORY.md records for execution plans and gauntlet concerns: conversation-only output lost on context switch.)
-
----
-
-### Gate V1: Verification Classification
-
-**Position:** After Step 3 (Task Decomposition), before Step 4 (Test Scheduling Assignment).
-
-**TodoWrite item:**
-```
-{content: "Classify behavior_change and verification_mode for every task [GATE]", status: "pending", activeForm: "Classifying verification modes"}
-```
-
-**Rule:** Do not proceed until every task in your decomposition has:
-- `behavior_change` (boolean, per the classification criteria in the Verification Schema reference)
-- `verification_mode` (one of the 8 enum values)
-- `verification_scope` (must be valid for the chosen mode per the compatibility matrix)
-
-Assign these **during decomposition**, not as a deferred second pass. If you cannot confidently classify a task, surface it explicitly rather than picking a fallback mode.
-
-**Nature of this gate:** This is an LLM-enforced process gate that structures your workflow. It is not a runtime validator — no code checks the output. The enforcement mechanism is the TodoWrite checklist: mark V1 `completed` only when every task in your internal list has all three fields assigned. Gate V4 is the human correction point for any classification that turns out to be wrong.
-
-**[GATE] TodoWrite: Mark "Classify behavior_change and verification_mode for every task" completed before proceeding to Step 4.**
-
----
-
-### Step 4: Test Scheduling Assignment
-
-> **Note:** This assigns the task's **Test Strategy** (`test_strategy`) — *when/whether* tests are written relative to implementation (test-first vs test-after vs `spike` = no automated-test commitment). It is distinct from the Phase 2 **Data Strategy** (`data_strategy`) label on individual test cases (REAL-DATA / SYNTHETIC / MOCK / FRONTEND / STATIC), which classifies *what data* a test uses. Both were once bare "Strategy"; now disambiguated (see `CONTEXT.md` / ADR `0001`).
-
-**Phase-8 promotion obligations:** Any TMR that is `REAL-DATA`/`REAL-DATA + PROPERTY`
-and is either a happy-path spine or a critical seam must be schedulable as a real
-run in Phase 8. Do not assign these rows to `spike`, `artifact-sync`,
-`static-check`, or `manual-ux`; the close pass requires a typed
-`promotion_request`, bound accessors, a negative oracle, and later a skill-runner
-`run_evidence` receipt. If owner-repo code still has to author or bind the test,
-record the command target and accessor binding gap explicitly so Phase 8 can halt
-with `unbound_accessor_halt` instead of silently closing.
-
-Assign test-first or test-after to each task based on risk:
-
-**Use test-first when:**
-- Task has 3+ gauntlet concerns linked to it
-- Any linked concern is critical or high severity
-- **Task has 3+ `invariant_refs` from `04-target-architecture.md` §8** — high-invariant-density tasks are inherently high-risk and MUST be test-first regardless of concern count
-- Task involves security-sensitive logic
-- Task implements complex business rules
-- Task has external API integrations
-- Task is large effort (L/XL) regardless of concern count — larger tasks have more surface area for bugs
-- Acceptance criteria contain vague terms ("good performance", "fast", "better UX") — vagueness needs test anchoring
-
-**Use test-after when:**
-- Task is low-risk (0-2 low/medium concerns)
-- Task is primarily CRUD or boilerplate
-- Task is infrastructure/setup
-
-**Use `spike` (no automated-test commitment) when:**
-- Task is pure documentation (README, docs, comments)
-- Task is configuration-only (env vars, deploy config, CI setup)
-- Task is a rename/move with no logic changes
-
-`spike` is fizzy's valid value for "ship without committing automated tests" — do
-NOT emit `strategy:"skip"` (not in fizzy's `VALID_STRATEGIES`; rejected at
-`pipeline_load`). These tasks still pass verification independently via an EXEMPT
-`verification_mode` (`static-check` / `manual-ux` / `artifact-sync`) plus
-`exemption_reason`; `strategy` is decoupled from the verification gate.
-
-Present as a table:
-```
-Test Scheduling
-───────────────────────────────────────
-Task                          | Scheduling  | Reason
-Implement auth middleware     | test-first  | 3 concerns (1 critical)
-Create DB schema             | test-after  | 0 concerns, standard CRUD
-Implement order placement    | test-first  | 5 concerns (2 high)
-Add error response codes     | test-after  | 1 low concern
-```
-
----
-
-### Gate V2: Mapping Completeness
-
-**Position:** After Step 4 (Test Scheduling Assignment), before Step 5 (Over-Decomposition Guard).
-
-**TodoWrite item:**
-```
-{content: "Attach test_refs, test_files, or exemption_reason for every task [GATE]", status: "pending", activeForm: "Completing verification mapping"}
-```
-
-**Rules** (must all hold for every task):
-
-- If `verification_mode` starts with `automated-`: require non-empty `test_refs`, non-empty `test_files`, and non-empty `verify_commands`.
-- If `verification_mode` is `test-producer`: require non-empty `test_files` and non-empty `verify_commands`. (`test-producer` is NOT exempt.)
-- If `verification_mode` is `artifact-sync`, `static-check`, or `manual-ux`: require non-empty `exemption_reason`.
-- If `human_execution` is present: require `strategy: spike`, `behavior_change: false`, `verification_mode: manual-ux`, `verification_scope: manual`, `tested_by: user`, and non-empty `scope`, `reason`, `procedure`, and `evidence_destination`. Decide and record its scope in the dependency graph; do not add it merely because a task has a human test at the end.
-- Mode-to-scope compatibility must hold per the Verification Schema matrix.
-- `test_files` paths must be repo-relative (no absolute paths, no `..` traversal).
-- `verify_commands` must be literal shell strings (no template interpolation).
-- No required field may be empty or whitespace-only. Array entries such as `test_refs: ["  "]` still fail this gate.
-- **`architecture_refs` must be non-empty** if `.architecture/` exists in the repo. Every entry must be a repo-relative path rooted at `.architecture/` (e.g., `.architecture/structured/components/gateway.md`). Filename-based guesses where the referenced doc's content does not overlap the task's scope fail this gate in spirit; if you cannot articulate in one sentence why each ref belongs, remove it.
-- **`implementation_status` must be set** (`greenfield` / `partial` / `already-built`) with non-empty `implementation_evidence` (a `file:line`/commit + excerpt). An `already-built` task must use a verify-oriented existing `verification_mode` — not a build framing. A task whose evidence shows it is already built or already specified but is still written as a from-scratch build fails this gate (phantom-hole, pipeline-seams #6).
-
-**Typed validation errors** (surface these by `task_id` when they fire):
-
-Refer to the "Typed validation error codes" table in the Verification Schema reference. The 10 codes are:
-`missing_verification_mode`, `missing_verification_scope`, `missing_behavior_change`, `missing_required_test_refs`, `missing_required_test_files`, `missing_required_verify_commands`, `missing_exemption_reason`, `invalid_scope_for_mode`, `invalid_test_file_path`, `empty_or_whitespace_value`.
-
-**Nature of this gate:** LLM-enforced process gate. Mark V2 `completed` only when every task satisfies all rules above. If any task fails a rule, either fix the task's verification block or surface the failure explicitly and loop back to Step 3/4 to reclassify.
-
-**[GATE] TodoWrite: Mark "Attach test_refs, test_files, or exemption_reason for every task" completed before proceeding to Step 5.**
-
----
-
-### Step 5: Over-Decomposition Guard
-
-Before presenting the plan, check for over-decomposition:
-
-**Warning thresholds:**
-- If task count > **2x the number of spec sections**, you may be over-decomposing
-- If task count > **15 for a simple spec** (< 3 pages), consolidate
-- If multiple tasks target the **same spec section** with S effort, merge them
-
-**If threshold exceeded:**
-```
-⚠️ Over-Decomposition Warning
-───────────────────────────────────────
-Tasks: 28 (threshold: ~16 based on 8 spec sections)
-
-Suggested consolidations:
-• "Create User model" + "Add User validation" + "Add User serialization"
-  → "Implement User model with validation"
-• "Add GET /users" + "Add POST /users" + "Add DELETE /users"
-  → "Implement /users CRUD endpoints"
-
-Apply consolidations? [Y/n/customize]
-```
-
----
-
-### Step 6: Parallelization Analysis
-
-Identify independent workstreams and their earliest safe start. Phase 8 agents claim any ready card, so parallelism comes only from dependency order. A workstream is not parallel merely because its cards have different titles: its first runnable card must be ready after the contract gate the spec promises.
-
-**Present the Contract/Fanout Matrix for every statement such as “workstreams fan out after X”:**
-
-| Workstream | First runnable task | Required artifacts | Direct dependencies | Ready after X? |
-| --- | --- | --- | --- | --- |
-| SWC | M2-SWC-decode | `TableEventProposal v1` | W0-contract | Yes |
-| Bovada | M2-Bovada-decode | `TableEventProposal v1` | W0-contract | Yes |
-
-Every additional dependency after the named contract gate needs a concrete edge-ledger reason. If all first runnable tasks wait on a later unrelated implementation, report a plan contradiction and return to Step 3; do not claim fanout.
-
-Also identify merge points where workstreams must synchronize and order them by risk (merge the highest-risk stream first for early feedback).
-
-**Record these plan-visible semantic fields in an unloaded `dependency-semantics-draft.json` beside the execution-plan draft.** It contains the proposed task objects and semantic block. After approval, preserve that block in `dependency-semantics.json` beside the final `fizzy-plan.json`; do not add an undocumented field to the Fizzy wire payload.
-
-```json
-{
-  "dependency_semantics": {
-    "edge_ledger": [
-      {
-        "dependent": "M2-SWC-decode",
-        "prerequisite": "W0-contract",
-        "kind": "interface_ready",
-        "reason": "Decoder emits the frozen TableEventProposal contract.",
-        "source_ref": "target-architecture.md §7.2"
-      }
-    ],
-    "fanout_contracts": [
-      {
-        "gate_task_id": "W0-contract",
-        "workstreams": [
-          {
-            "name": "SWC",
-            "first_runnable_task": "M2-SWC-decode",
-            "required_artifacts": ["TableEventProposal v1"]
-          }
-        ]
-      }
-    ],
-    "scope_closure": {
-      "active": ["SWC", "Bovada"],
-      "deferred": ["TP", "P2"],
-      "excluded": [],
-      "operator_approved_exceptions": []
-    }
-  }
-}
-```
-
-For each task, record `workstream`; use `scope_refs` plus `active_path:true` for active-path work. For every target-architecture safety invariant, put its implementing card's IDs in `safety_implements` and every consuming task's IDs in `safety_consumes`. The plan analyzer verifies that an implementer precedes each consumer.
-
-**Present workstreams:**
-```
-Parallelization Plan
-───────────────────────────────────────
-Stream A (Backend): Tasks 1, 3, 5, 7
-Stream B (Frontend): Tasks 2, 4, 6
-Stream C (Infra): Tasks 8, 9
-
-Merge points:
-• After Task 5 + Task 9: Backend needs infra (medium risk)
-• After Task 7 + Task 6: Integration testing (high risk)
-
-Branch pattern: feature/<stream>-<task> → develop → main
-```
-
----
-
-### Gate D1: Dependency Semantics
-
-**Position:** After Step 6, before Step 7 approval and before `fizzy-plan.json` emission.
-
-Build `depends_on` from the reviewed edge ledger. A milestone label such as “M2 depends on M1” is never an acceptable edge reason by itself. Every non-empty `depends_on` requires exactly one ledger record with `kind` (`interface_ready`, `integration_ready`, `safety_ready`, or `data_ready`), a concrete reason, and a source reference.
-
-Run the repository-owned, non-mutating report against the unloaded draft:
+Keep graph semantics in sidecars, not in undocumented Fizzy task fields. Before
+approval, write `dependency-semantics-draft.json` with the proposed task objects
+and semantic block, then run the repository-owned analyzer:
 
 ```bash
 uv run python skills/adversarial-spec/scripts/dependency_semantics.py \
   --plan .adversarial-spec/specs/<slug>/dependency-semantics-draft.json
 ```
 
-Do not approve or load a plan until the report is clean. Review its edge-ledger coverage, ready nodes after every declared contract gate, critical path, and maximum immediate concurrency. It rejects:
+It must prove the reviewed edge reasons, fanout readiness, active/deferred
+scope, safety owners/consumers, and evidence receipts needed by the active
+decomposition. Present that result with the plan.
 
-- an unexplained edge or a ledger entry that does not correspond to `depends_on`;
-- a declared fanout whose first cards share a later dependency instead of becoming ready after its gate;
-- an active-path card transitively depending on deferred or excluded scope without a named, operator-approved exception;
-- a safety consumer that does not transitively depend on an implementing card;
-- a `data_ready` edge that does not name an existing evidence receipt, a receipt whose producer is not the edge prerequisite or transitively upstream of it, a listed consumer with no matching `data_ready` reachability path, or a declared wave that contradicts the derived dependency order;
-- with `--decomposition`: a D0 `acceptance_oracle` with no `acceptance_obligations[]` record, an obligation with no D1 closure by `obligation_id`, or a closure missing one of the obligation's `missing_evidence_classes`.
-
-**Evidence receipts (acceptance-spine hardening).** When any test is `REAL-DATA` **and** LIVE **and** the sole discharge of a goal-level requirement, D0 must carry a topology-free `acceptance_obligations[]` record (`obligation_id`, `root_goal`, `discharge_test`, `route_prose`, `missing_evidence_classes[]`, `downstream_owner_phase`) — an `acceptance-only` scope ruling narrows code responsibility but never deletes a triggered obligation. D1 closes it: the sidecar gains an `evidence_receipts` register (`receipt_id`, `spine`, `class` — e.g. `no_order_readiness` vs `post_order_fill` —, `producer_task`, `location_accessor`, `pass_condition`, `consumers[]`, `binding.hash_or_freshness`) plus `acceptance_obligation_closures` mapping each `obligation_id` to its `receipt_ids`. Each receipt has exactly one real producing task — a multi-card "role" is not a valid `data_ready` target. Every `data_ready` edge carries `receipt_id`. Fixtures/live claims: a fixture proves fixture-scoped assertions only; no card may claim hosted/required-auth/real-profile/live behavior until its stated receipt producer exists.
-
-**Semantic-report binding (load contract).** Emit the hash-bound report and declare it in the plan so `pipeline_load` can verify it:
+After approval, preserve the semantic block in `dependency-semantics.json` and
+run the analyzer again on the exact emitted plan and sidecar:
 
 ```bash
 uv run python skills/adversarial-spec/scripts/dependency_semantics.py \
@@ -692,763 +332,227 @@ uv run python skills/adversarial-spec/scripts/dependency_semantics.py \
   --emit-report .adversarial-spec/specs/<slug>/dependency-semantics-report.json
 ```
 
-The plan gains two versioned ROOT fields (never task fields): `"semantic_contract_version": 1` and `"semantic_report_path": "dependency-semantics-report.json"` (resolved relative to the plan file). `pipeline_load` then rejects only: a missing/red/hash-mismatched report, an `analyzer_version` below the loader's documented floor, or a task the report names in `live_spine_owners` that carries an exempt/manual verification mode. Staleness is hash mismatch only — no clocks. Everything else stays in this gate, where diagnostics are richer.
-
-**Operator-procedure template (required for every `tested_by: user|both` task).** The task description must state: `actor; preconditions; ordered actions; evidence location; pass condition; stop conditions; escalation path`. A `manual-ux` exemption alone is not an action specification. If the task is pure operator work, use the `human_execution` schema above; it materializes a blocked card rather than an agent-claimable one and carries the `HUMAN ACTION:` brief into the operator surface. Do not claim that a board assignment/pin exists unless the board has actually created one.
-
-The analyzer is a semantic preflight only. Run `pipeline_validate_plan` afterwards: Fizzy remains authoritative for wire-schema, ID, and cycle validation.
-
-**[GATE] TodoWrite: Mark “Prove dependency semantics: edge ledger, fanout, scope closure, and safety order” completed only after a clean report.**
-
----
-
-### Step 7: Present Final Plan
-
-Output the execution plan in this format:
-
-```markdown
-# Execution Plan: [Project Name]
-
-## Summary
-- Tasks: N (S: X, M: Y, L: Z)
-- Workstreams: W
-- Gauntlet concerns addressed: C of T
-- Estimated effort: [range]
-
-## Tasks
-
-### [Workstream A]
-
-#### Task 1: [Title]
-- **Effort:** M
-- **Test Strategy:** test-first
-- **Spec refs:** Section 3.1, 3.2
-- **Concerns:** PARA-abc (critical), BURN-def (high)
-- **Acceptance criteria:**
-  - [ ] [From spec: requirement]
-  - [ ] [From concern PARA-abc: failure mode addressed]
-- **Dependencies:** None
-- **Test cases:**
-  - [From concern detection strategy]
-
-#### Task 2: [Title]
-...
-
-## Dependency Graph
-Task 1 → Task 3 → Task 5
-Task 2 → Task 4
-Task 8 → Task 5 (merge point)
-
-## Dependency Semantics
-- Edge ledger: N of N `depends_on` edges explained
-- Contract/Fanout Matrix: [show every declared fanout]
-- Scope closure: active [..]; deferred [..]; excluded [..]; exceptions [none / approved ref]
-- Safety-predecessor proof: [invariant → implementing task → consuming tasks]
-- Readiness profile: critical path [..]; maximum immediate concurrency N
-
-## Uncovered Concerns
-[List any gauntlet concerns that don't map to tasks - these need attention]
-```
-
-**After presenting:**
-> "Execution plan ready with N tasks across W workstreams. M gauntlet concerns linked.
-> Any concerns not covered? Want to adjust task granularity or workstream assignments?"
-
-Wait for user approval before proceeding to Step 8.
-
-**[GATE] TodoWrite: Mark "Present plan to user for approval" completed before proceeding to Gate V3.**
-
----
-
-### Gate V3: Coverage Report
-
-**Position:** After Step 7 (Present Final Plan), before Step 8 (Persist Execution Plan). The user must see coverage before approving the plan for persistence.
-
-**TodoWrite item:**
-```
-{content: "Review verification coverage report before pipeline_load [GATE]", status: "pending", activeForm: "Reviewing verification coverage"}
-```
-
-**Rule:** Emit both a human-readable summary AND a machine-readable JSON block. Write the JSON to `.adversarial-spec/specs/<slug>/verification-coverage.json` alongside the execution plan.
-
-**Human-readable format:**
-
-```
-Verification Coverage Report
-───────────────────────────────────────
-Total tasks:              38
-Behavior-changing:        23
-Non-behavior-changing:    15
-
-By mode:
-  automated-unit:          8
-  automated-integration:   5
-  automated-contract:      4
-  automated-component:     3
-  static-check:            2
-  artifact-sync:           6
-  test-producer:           3
-  manual-ux:               4
-  UNMAPPED:                3  ← BLOCKING
-
-Unmapped behavior-changing tasks:
-  T12: "Update config loader" — has AC mentioning tests
-  T15: "Add retry logic" — behavior-changing, no verification
-  T22: "Frontend polish" — needs at least manual-ux classification
-```
-
-**Machine-readable JSON** (persist to `.adversarial-spec/specs/<slug>/verification-coverage.json`):
+Omit `--decomposition` only when the active route has no D0 artifact. Put these
+root fields in the plan:
 
 ```json
 {
-  "report_schema_version": 1,
-  "total_tasks": 38,
-  "behavior_changing_count": 23,
-  "non_behavior_changing_count": 15,
-  "counts_by_mode": {
-    "automated-unit": 8,
-    "automated-integration": 5,
-    "automated-contract": 4,
-    "automated-component": 3,
-    "static-check": 2,
-    "artifact-sync": 6,
-    "test-producer": 3,
-    "manual-ux": 4
-  },
-  "exempt_tasks": [
-    {"task_id": "T5", "mode": "artifact-sync", "reason": "Roadmap/manifest sync"},
-    {"task_id": "T9", "mode": "static-check", "reason": "Config schema validated by ruff"}
-  ],
-  "unmapped_behavior_tasks": ["T12", "T15", "T22"],
-  "unmapped_non_behavior_tasks": [],
-  "validation_errors": []
+  "semantic_contract_version": 1,
+  "semantic_report_path": "dependency-semantics-report.json"
 }
 ```
 
-**Blocking rule:** Refuse `pipeline_load` if `unmapped_behavior_tasks` is non-empty. Non-behavior-changing tasks with no mapping produce a warning, not a block. `validation_errors` must be empty or Gate V2 was skipped in error — loop back to V2.
+The final report must be green and bind the exact plan and ledger hashes. Fizzy's
+`_check_semantic_report` verifies those hashes and analyzer floor at load. It
+also rejects every reported live-spine owner whose mode is exempt/manual or
+whose strategy is `spike`. Fix the plan and regenerate the report; never edit a
+report to make it green.
 
-**Nature of this gate:** LLM-enforced process gate. Mark V3 `completed` only after the JSON file exists on disk at the declared path AND the human-readable summary has been shown to the user.
+### 7. Human approval, coverage, and exceptions
 
-**[GATE] TodoWrite: Mark "Review verification coverage report before pipeline_load" completed before proceeding to Gate V4.**
+Present the complete plan, dependency summary, uncovered Concerns, and the V3/V4
+reviews below. Obtain one explicit user approval only after those reviews and
+before emission or load.
 
----
+#### Gate V3: Coverage report
 
-### Gate V4: Exception Review
+Write `.adversarial-spec/specs/<slug>/verification-coverage.json` and show its
+summary. It must count tasks by behavior flag and mode, list every exemption,
+and identify unmapped behavior-changing work. This file is an **agent-owned
+safety gate and review artifact**; `pipeline_load` does not consume it.
 
-**Position:** After Gate V3, before Step 8 (Persist Execution Plan). Must happen in the same user-approval flow as V3.
+- Do not load while any behavior-changing task is unmapped.
+- Review validator warnings for non-behavior tasks rather than upgrading them to
+  an invented machine failure.
 
-**TodoWrite item:**
-```
-{content: "Review every exemption with the user [GATE]", status: "pending", activeForm: "Reviewing verification exemptions"}
-```
+#### Gate V4: Exception review
 
-**Rule:** Surface all exempt tasks explicitly to the user. Exempt modes are `artifact-sync`, `static-check`, and `manual-ux`. **`test-producer` tasks are NOT exempt** and do not appear in this review — they require `test_files` and `verify_commands` like automated modes.
+- Present every `artifact-sync`, `static-check`, and `manual-ux` exemption for
+  acknowledgement. `test-producer` is not exempt.
+- When the user changes a classification, update the task, regenerate coverage
+  and dependency artifacts, and re-present the affected decision.
 
-**Presentation format:**
+Record approval and exception decisions per `SKILL.md` § Decisions Log. Human
+approval is not replaced by a clean validator result.
 
-```
-Exempt Tasks (require user acknowledgement)
-───────────────────────────────────────
-  T5  artifact-sync   "Roadmap/manifest sync — no behavioral change"
-  T9  static-check    "Config schema validated by ruff type check"
-  T14 manual-ux       "Visual heatmap quality — cannot assert programmatically"
-  T18 artifact-sync   "README update — docs only"
+### 8. System-altitude validation draft
 
-Acknowledge exemptions? [Y/n/modify]
-```
+Run this section only when card metadata, read with explicit `board_id`, says the
+system node owes the pipeline-v5+ system-validation obligation. Component and
+subsystem nodes do not draft this ledger.
 
-**User response handling:**
+Phase 7 defines operational intent before implementation. Phase 8 executes the
+scenarios and obtains human judgments. Verification asks whether the system was
+built right; validation asks whether the right system was built.
 
-- `Y` — proceed to Step 8.
-- `n` — loop back to Step 3 to reclassify one or more tasks.
-- `modify` — for each task the user corrects:
-  1. Update the affected task's fields (mode, scope, test_refs, exemption_reason, or `behavior_change`)
-  2. Re-validate that single task against Gate V2 rules
-  3. Regenerate `verification-coverage.json` (Gate V3)
-  4. Re-present only the changed tasks for confirmation
-
-**Nature of this gate:** This is the human correction point for any classification the LLM got wrong at Gate V1 or V2. The gate is LLM-enforced only in the sense that the LLM must ask; the *answer* is a human decision. Record the user's acknowledgement in the session journey log.
-
-**[GATE] TodoWrite: Mark "Review every exemption with the user" completed before proceeding to Step 8.**
-
----
-
-### Step 8: Persist Execution Plan
-
-**This step is REQUIRED before checkpoint or phase transition.** The plan must be on disk, not just in conversation output. A fresh agent (new conversation, Codex, or any other tool) cannot recover inline-only plans.
-
-**Write the execution plan to:**
-```
-.adversarial-spec/specs/<slug>/execution-plan.md
-```
-
-Where `<slug>` is the context name slugified (same as the manifest directory).
-
-**Use atomic write** (temp file + rename) to prevent corruption.
-
-**Update session detail file:**
-```json
-{
-  "execution_plan_path": ".adversarial-spec/specs/<slug>/execution-plan.md"
-}
-```
-
-**Update pointer file** (`session-state.json`) to include the same `execution_plan_path` for consistency.
-
-**Verify before proceeding:**
-- File exists on disk
-- File is non-empty
-- Path recorded in session detail file
-
-**[GATE] TodoWrite: Mark "Write execution plan to disk" completed before proceeding to Step 9.**
-
----
-
-### Validation leg (system altitude)
-
-> **Altitude gate — run this leg ONLY for system-altitude sessions.** Before doing
-> anything below, read the session's `session_altitude` from the **card metadata via
-> MCP** (`get_card_metadata` with the explicit `board_id` from `projects.yaml` and the
-> `card_id` from the session detail file), not from local session state alone (US-2).
-> - `session_altitude == "system"` → run this leg now (between plan persistence and
->   `pipeline_load`), so the drafted rows commit alongside the execution plan.
-> - `session_altitude` is `component` or `feature` (or the obligation is absent) →
->   **SKIP this entire section** and go straight to Step 9. Sub-system altitudes carry
->   no validation obligation (NG2); do not draft rows, do not derive a ConOps.
-
-**Why this exists.** Fizzy pipeline v5 refuses to close a system-altitude session
-whose ConOps user stories lack passing *validation* rows — a separate gate from
-verification (`system_validation_complete` vs `system_verification_complete`).
-Verification asks "did we build it right?"; validation asks "did we build the right
-thing?" The skill must *produce* the gate's inputs. This Phase 7 leg drafts those
-inputs; Phase 8 executes and closes them (see `08-implementation.md` "Validation leg").
-
-**Anti-hindsight (the reason this is in Phase 7, not Phase 8).** Validation rows are
-drafted **now, before implementation** — so they describe operational intent and cannot
-be reverse-engineered from whatever happened to get built. The committed Phase 7 ledger
-hash is recorded as `drafted_baseline_hash`; the Phase 8 close compares against it and
-surfaces any unexplained drift. Exposing the drafted rows to implementation agents is an
-accepted tradeoff (ACK-7) — the anti-hindsight value is in the *timestamped, hash-bound
-commit ordering*, not in secrecy.
-
-**The CLI.** All commands below are subcommands of one module
-(`~/.claude/skills/adversarial-spec/scripts/validation_emission.py`; the deployed path
-is a symlink to the repo source). It is not executable on its own — prefix with
-`uv run python`. Every invocation prints exactly one JSON envelope on stdout
-(`{"status": "ok|issues|reprompt|error", "code": ..., "issues": [...], "data": {...}}`);
-exit 0 = ok, 2 = validation issues, 3 = environment/lock/corrupt. The conductor writes
-the scenario/oracle/summary prose; **the module stamps every hash — the conductor never
-writes hex by hand** (CB-7).
-
-#### Command order: derive-conops → draft rows → normalize-rows → check-rows
-
-Run these from the project root, against this session's `<slug>` directory.
-
-**1. Derive the ConOps** deterministically from the roadmap manifest. This is the
-intent register the gate measures coverage against; it is templated from manifest
-stories only (never free-generated):
+Use `skills/adversarial-spec/scripts/validation_emission.py`. Every command emits
+one JSON envelope; the script owns hashes and the planner owns prose.
 
 ```bash
-uv run python ~/.claude/skills/adversarial-spec/scripts/validation_emission.py \
+uv run python skills/adversarial-spec/scripts/validation_emission.py \
   derive-conops .adversarial-spec/specs/<slug>/roadmap/manifest.json
-```
 
-Output: `.adversarial-spec/specs/<slug>/roadmap/conops.md` plus, in the envelope `data`,
-the full `conops_hash`, its 12-hex prefix, and a per-story `story_hashes` map. (Re-deriving
-over a ConOps an existing ledger references needs `--force`.)
-
-**2. Draft the rows** (conductor prose) into
-`.adversarial-spec/specs/<slug>/validation-rows.json` as a `{"rows": [...]}` object —
-at least one row per `US-n`. Hold each row to the §3 minimal-row standard below.
-
-**3. Normalize** — the hash producer. `normalize-rows` is what stamps `row_hash` /
-`story_hash` and the ledger header onto the drafted rows; it must run before `check-rows`
-can pass (an un-normalized row fails `check-rows` with `ROW_HASH_MISSING`). It is also a
-mutating subcommand (writes the ledger under its lock):
-
-```bash
-uv run python ~/.claude/skills/adversarial-spec/scripts/validation_emission.py \
+uv run python skills/adversarial-spec/scripts/validation_emission.py \
   normalize-rows .adversarial-spec/specs/<slug>/validation-rows.json \
   --conops .adversarial-spec/specs/<slug>/roadmap/conops.md
-```
 
-**4. Check** until the envelope reports `"status": "ok"` with zero issues. `check-rows`
-is structural only (syntax, coverage, oracle lint) — semantic intent stays human-owned.
-`--conops` is required (it enforces that every `US-n` has ≥1 active row):
-
-```bash
-uv run python ~/.claude/skills/adversarial-spec/scripts/validation_emission.py \
+uv run python skills/adversarial-spec/scripts/validation_emission.py \
   check-rows .adversarial-spec/specs/<slug>/validation-rows.json \
   --conops .adversarial-spec/specs/<slug>/roadmap/conops.md
 ```
 
-Loop draft → normalize → check until clean. (Use `--draft` on `check-rows` while a story
-is still uncovered — it relaxes coverage to advisory so incremental drafting isn't noisy.)
+Draft at least one active row per ConOps story. Each row needs a unique
+`r-US<n>-<k>` ID, one matching `conops_ref`, an actor/trigger/action/outcome
+scenario, a human-judged oracle containing both `iff` and the story ID, a valid
+evidence type, and an evidence rationale. Test/CI success is not a validation
+oracle. Loop normalize/check until the envelope is clean.
 
-#### §3 minimal valid row standard
+Commit `conops.md`, `validation-rows.json`, and the approved execution plan
+together. Preserve the script-stamped `drafted_baseline_hash`; Phase 8 uses it to
+surface hindsight drift.
 
-Every row MUST satisfy (the module enforces all of these at `normalize-rows`/`check-rows`):
+### 9. Emit the wire plan
 
-- **`conops_ref`** — exactly one active US id matching `^US-\d+$`. Packed refs like
-  `"US-1, US-2"` are rejected (CB-10).
-- **`row_id`** — format `r-US<n>-<k>`, globally unique across active *and* superseded
-  rows, with the `<n>` prefix matching `conops_ref` (e.g. `r-US1-1` requires `conops_ref: US-1`).
-- **`scenario`** — a user workflow: actor, trigger, action path, expected operational endpoint.
-- **`oracle`** — the canonical form:
-  `Jason passes this row iff <observable user outcome> demonstrates <named intent from US-n>.`
-  The literal `iff` and the `US-n` token are both required. The lint **rejects**
-  verification-success language ("tests pass", "code merged", "CI green", "gate passed",
-  and synonyms) and bare vague terminals ("works", "looks good", "done", "successful")
-  unless the same sentence also names a concrete observable (artifact, output, file,
-  rendered UI, etc.).
-- **`evidence_type`** — one of `agent-walkthrough-transcript` | `artifact-demo` |
-  `narrative`, with a non-empty **`evidence_rationale`** (one line: why this type fits).
-- **`test_targets`** — omit unless the row genuinely needs them; never identical to,
-  a subset of, or overlapping verification targets without rationale (INV-11).
-- Scenario + oracle + digest furniture ≤ 3000 UTF-8 bytes per row (a row that can't fit a
-  digest part is a drafting error, not a runtime failure).
+Inspect the active session/card metadata before choosing a schema. The current
+MCP source declares:
 
-#### Good row (passes normalize-rows + check-rows clean)
-
-```json
-{
-  "row_id": "r-US1-1",
-  "conops_ref": "US-1",
-  "scenario": "A fresh conductor opens 07-execution.md, runs derive-conops on the session manifest, drafts one row per story, and runs check-rows until the envelope reports status ok.",
-  "oracle": "Jason passes this row iff the check-rows envelope prints status ok with zero issues demonstrates the clean-draft intent from US-1.",
-  "evidence_type": "agent-walkthrough-transcript",
-  "evidence_rationale": "the bootstrap is a CLI workflow; a transcript shows the real commands and their envelopes"
-}
+```text
+CURRENT_PIPELINE_VERSION = 6
 ```
 
-`normalize-rows` then stamps `row_hash` and `story_hash`, and `check-rows` returns
-`{"status": "ok", "code": null, "issues": [], "data": {}}`.
+Pipeline version and plan schema are separate. Existing flat schema-1/2 sessions
+remain grandfathered; do not migrate or delete that route merely because new
+cards use version 6.
 
-#### Rejected row (and why)
+#### Flat schema-2 compatibility branch
 
-```json
-{
-  "row_id": "r-US1-1",
-  "conops_ref": "US-1",
-  "scenario": "A conductor runs the bootstrap.",
-  "oracle": "Jason passes this row iff all tests pass for US-1.",
-  "evidence_type": "agent-walkthrough-transcript",
-  "evidence_rationale": "transcript shows the run"
-}
-```
-
-The oracle re-points validation at the test suite — exactly the relabeling the gate
-forbids (NG5). `check-rows` returns `"status": "issues"` with:
-
-```json
-{"code": "BANNED_ORACLE_PHRASE", "row_id": "r-US1-1", "detail": "oracle contains banned phrase: 'tests pass'"}
-```
-
-Fix it by rewriting the oracle to a concrete user-visible observable
-("…iff the digest is judgeable from a phone without opening a laptop demonstrates the
-one-sitting intent from US-1."), not a CI signal. (Other common rejects: `ORACLE_MISSING_IFF`
-when the literal `iff` is absent, `ORACLE_MISSING_STORY_REF` when the `US-n` token is
-missing, `VAGUE_ORACLE` for a bare "works"/"success", `INCOMPLETE_COVERAGE` when a story
-has no row.)
-
-#### Record the baseline and commit
-
-Once `check-rows` is clean: the `validation-rows.json` ledger header already carries
-`drafted_baseline_hash` (the sha256 of the ledger as committed at Phase 7) — this is the
-anti-hindsight drift baseline the Phase 8 close checks. Commit `conops.md` and
-`validation-rows.json` **alongside the execution plan**, in the same commit, so the
-drafted-before-implementation ordering is provable from git history.
-
-> **Time budget (dogfood acceptance — TC-0.1):** a fresh conductor, with only these docs
-> and the session manifest, should reach a `check-rows`-clean draft in **under 30
-> minutes**. If you are reaching for fizzy source or guessing flag shapes, stop — the four
-> commands above are the whole drafting loop.
-
-**[GATE] TodoWrite (system-altitude sessions only): Mark the validation-leg draft
-complete — `conops.md` derived, rows `check-rows`-clean, `drafted_baseline_hash` recorded,
-artifacts committed with the execution plan — before proceeding to Step 9.**
-
----
-
-### Step 9: Load into Fizzy Pipeline
-
-**This step connects the execution plan to the self-pickup loop.** Without it, cards are just text on disk — no agent can pick them up via `pipeline_do_next_task`.
-
-**Prerequisites:** Gates D1 (Dependency Semantics), V3 (Coverage Report), and V4 (Exception Review) must be completed. Do not invoke `pipeline_load` while `unmapped_behavior_tasks` in `verification-coverage.json` is non-empty.
-
-**Generate `fizzy-plan.json`:**
-
-Write a JSON file alongside the execution plan:
-```
-.adversarial-spec/specs/<slug>/fizzy-plan.json
-```
-
-The JSON must follow the v2 pipeline schema. The root includes `plan_schema_version: 2` and every task carries the verification block defined in the Verification Schema (v2) reference:
+Retain this branch for classic/legacy flat execution plans:
 
 ```json
 {
   "plan_schema_version": 2,
-  "session_id": "<active_session_id from session-state.json>",
+  "session_id": "adv-spec-...",
+  "semantic_contract_version": 1,
+  "semantic_report_path": "dependency-semantics-report.json",
   "tasks": [
     {
       "task_id": "T1",
-      "title": "Implement trade telemetry API",
-      "description": "Full task description (why the task exists, approach constraints)",
-      "acceptance_criteria": [
-        "GET /telemetry/trades returns 200 with schema-valid payload for an active session",
-        "Older payloads without trade_telemetry keys still parse (keys optional)"
-      ],
-      "wave": 0,
+      "title": "Implement the bounded behavior",
+      "description": "Why this task exists and its implementation constraints.",
+      "acceptance_criteria": ["The named behavior is proven at its boundary."],
       "effort": "M",
       "strategy": "test-first",
       "tested_by": "llm",
       "depends_on": [],
-      "concern_refs": ["PARA-abc", "BURN-def"],
-      "invariant_refs": ["INV-3", "INV-7"],
-      "surface_scope": ["public_api", "data_stream"],
-
+      "concern_refs": ["CB-1"],
+      "architecture_refs": [".architecture/structured/components/example.md"],
       "behavior_change": true,
       "verification_mode": "automated-contract",
       "verification_scope": "targeted",
-      "architecture_refs": [
-        ".architecture/structured/components/telemetry-api.md",
-        ".architecture/structured/flows.md"
-      ],
-      "implementation_status": "greenfield",
-      "implementation_evidence": "no implementer in src/api/telemetry/ (grep 'trade_telemetry' -> 0 hits)",
-      "test_refs": ["TC-5.2", "TC-5.4"],
-      "test_files": ["tests/test_t5_api_contracts.py"],
-      "verify_commands": ["uv run pytest tests/test_t5_api_contracts.py -q"],
-      "verification_notes": "Trade telemetry keys must remain optional for older payloads.",
-      "exemption_reason": null
-    },
-    {
-      "task_id": "T2",
-      "title": "Update roadmap manifest",
-      "description": "Sync roadmap.json with Wave 1 task IDs",
-      "acceptance_criteria": [
-        "roadmap.json lists every Wave 1 task_id emitted in this plan"
-      ],
-      "wave": 1,
-      "effort": "S",
-      "strategy": "test-after",
-      "tested_by": "llm",
-      "depends_on": ["T1"],
-      "concern_refs": [],
-      "invariant_refs": [],
-      "surface_scope": [],
-
-      "behavior_change": false,
-      "verification_mode": "artifact-sync",
-      "verification_scope": "static",
-      "architecture_refs": [".architecture/INDEX.md"],
-      "implementation_status": "greenfield",
-      "implementation_evidence": "roadmap.json lacks Wave 1 task IDs (roadmap.json:12 lists Wave 0 only)",
-      "test_refs": [],
-      "test_files": [],
-      "verify_commands": [],
-      "verification_notes": null,
-      "exemption_reason": "Roadmap/manifest sync — no runtime effect"
+      "test_targets": ["TC-1"],
+      "test_files": ["tests/test_example.py"],
+      "verify_commands": ["uv run pytest tests/test_example.py -q"]
     }
   ]
 }
 ```
 
-**Field mapping from execution plan:**
+`plan_schema_version` is always a bare JSON integer.
 
-Core fields (unchanged from v1):
-- `task_id`: Task numbering from the plan (T1, T2, ... or W0-1, W1-1, etc.)
-- `title`: Task title
-- `description`: Full description (why + approach). Do NOT fold acceptance criteria in here — they go in the dedicated array below
-- `acceptance_criteria`: array of testable criteria, **≥1 per task** — copied from the task's "Acceptance criteria" section in the execution plan. fizzy hard-requires this (`_validate_plan`, `pipeline.py:5403-5407`) and builds each card's acceptance checklist from it; criteria folded into `description` prose do NOT satisfy the validator (#11)
-- `wave`: Wave number from the plan
-- `effort`: S / M / L
-- `strategy` (the **Test Strategy** field on the wire — the JSON key stays `strategy` per ADR `0001`): the generator emits test-first / test-after / spike. fizzy's full enum is `VALID_STRATEGIES = {test-first, test-after, spike, refactor}` (`pipeline.py:164`) — `refactor` is valid to fizzy but Step 4 never assigns it. Use `spike` for deferred / doc-only / config-only / manual-only tasks that commit to **no automated tests** — never emit `"skip"` (not in the enum; fizzy rejects it at load: `PLAN_INVALID "invalid strategy"`). `strategy` is decoupled from the v2 verification gate (`_validate_v2_task` never reads it), so these tasks still verify independently via an EXEMPT `verification_mode` + `exemption_reason`.
-- `tested_by` (**REQUIRED per task on v2+ sessions** — fizzy `VALID_TESTED_BY = {llm, user, both}`, PR 4d): declares who is qualified to verify the task. `llm` for fully automated tests (pytest / golden-corpus / doc-lint / system-validation runs the agent can execute and judge) — the default, and correct for almost every task here. `user` when only the human can verify (manual UX sign-off with no automatable oracle). `both` when an automated pass AND a human attestation are both required before the card leaves Untested. **`tested_by` does not make a task operator-owned.** Use `human_execution` when agents must never claim it. **`load_plan` hard-rejects a v2+ plan missing this field** (`MISSING_OR_INVALID_TESTED_BY`) even though the field has a card-runtime default of `llm` — so always emit it explicitly.
-- `depends_on`: List of task_ids this task depends on (from dependency graph)
-- `concern_refs`: List of gauntlet concern IDs linked to this task
-- `invariant_refs`, `surface_scope`: Populated when Phase 4 ran (see Step 3)
+#### Altitude schema-3 branch
 
-Verification block fields (v2, see Verification Schema reference above for full semantics):
-- `behavior_change`, `verification_mode`, `verification_scope`: always required
-- `architecture_refs`: always required when `.architecture/` exists (populated from Step 2.5's per-task assignment)
-- `implementation_status`, `implementation_evidence`: always required (from Step 2.5's implementation-status grounding); `already-built` ⇒ verify/port framing
-- `test_refs`, `test_files`, `verify_commands`: required per mode
-- `exemption_reason`: required for exempt modes (`artifact-sync`, `static-check`, `manual-ux`)
-- `verification_notes`: optional free-text
-- `human_execution`: only for pure operator work; use the contract above and add the same plain-language `HUMAN ACTION:` brief to the description.
+An altitude plan is a single rooted tree. Each node carries `altitude`, `parent`,
+`decomposes_into`, definition refs/hashes, and exactly the verification bindings
+earned by its altitude:
 
-**Plan-level version marker:** include `plan_schema_version: 2` at the root. fizzy-pipeline-mcp uses this to select the strict validation path at `pipeline_load`. Plans missing this marker (or with version `1`) load with warnings during the migration window. The value is a bare JSON integer (`2`), never a string (`"2"`) or a boolean: a present non-integer is rejected by fizzy-pipeline-mcp as `PLAN_SCHEMA_VERSION_TYPE_INVALID` (Fizzy card 21533). Before that gate it silently downgraded to legacy v1 validation (hardening packet 2026-09-13, Defect B).
+| Node | Required verification bindings | Shape |
+|---|---|---|
+| component | component | leaf; non-null parent unless it is the root |
+| subsystem | component + subsystem | non-null parent; decomposes into children |
+| system | component + subsystem + system | single root; null parent |
 
-**Emit verification-coverage.json:** If Gate V3 did not already write it, write the coverage report to `.adversarial-spec/specs/<slug>/verification-coverage.json` now using the `report_schema_version: 1` shape documented in Gate V3. Keep it alongside `fizzy-plan.json` so reviewers can inspect both artifacts from the same session directory.
-
-**Re-run Dependency Semantics on the exact emitted file:** The draft report proves the proposed graph; this second read-only pass proves approval-time edits survived into `fizzy-plan.json`. Write the reviewed semantic block to `dependency-semantics.json` beside the plan, then run:
-
-```bash
-uv run python skills/adversarial-spec/scripts/dependency_semantics.py \
-  --plan .adversarial-spec/specs/<slug>/fizzy-plan.json \
-  --semantics .adversarial-spec/specs/<slug>/dependency-semantics.json
+```json
+{
+  "plan_schema_version": 3,
+  "session_id": "adv-spec-...",
+  "tasks": [
+    {
+      "task_id": "SYS",
+      "altitude": "system",
+      "parent": null,
+      "decomposes_into": ["SS-1"],
+      "system_spec_path": ".adversarial-spec/specs/<slug>/SYS/system-spec.md",
+      "spec_refs": {
+        "definition_artifact": ".adversarial-spec/specs/<slug>/SYS/system-spec.md",
+        "definition_hash": "<sha256 prefix>"
+      },
+      "verification_binding": {
+        "component_verification": {"plan_artifact": "<path>", "plan_hash": "<hash>", "kind": "verification"},
+        "subsystem_verification": {"plan_artifact": "<path>", "plan_hash": "<hash>", "kind": "verification"},
+        "system_verification": {"plan_artifact": "<path>", "plan_hash": "<hash>", "kind": "verification"}
+      }
+    }
+  ]
+}
 ```
 
-Do not continue if it reports an issue. This does not replace the authoritative Fizzy validation below.
+This is an altitude-field excerpt, not a standalone loadable task. Every node
+also carries all common task/verification fields from §4, and the omitted child
+nodes complete every `decomposes_into` reference. Prefer the emitter over
+hand-authoring this shape.
 
-**Validate before loading (authoritative pre-load gate):** Run the **real** fizzy
-validator and loop until clean — do NOT call `pipeline_load` on an unvalidated
-plan. `validate_plan` re-runs the same `_validate_plan` shape checks plus the v2
-architecture-refs and (as of the parity fix) the v2 `tested_by` gate that
-`load_plan` enforces, so the dry-run rejects what the load would reject, at zero
-cost and with structured issues you can fix. This is the #11/#12 lesson: **call the
-authoritative gate, never reimplement it locally** — a local revalidation once
-"passed" while the real validator rejected the plan. **Caveat (verified 2026-06-17):**
-a clean `validate_plan` is necessary, not a categorical guarantee — the `tested_by`
-gate originally lived in `load_plan` only and the dry-run missed it (fixed in
-fizzy's `validate_plan`). If a future `load_plan` rejects a plan the dry-run passed,
-that is a fizzy validate/load divergence to file, not a plan-content problem to
-guess around.
+Write each definition and verification-plan artifact before emission; Fizzy
+re-derives the hashes from disk. Keep structural `parent` / `decomposes_into`
+separate from execution-order `depends_on`. Every reviewed order constraint must
+be a real edge so later-wave work cannot become ready early.
 
-```
-loop:
-  result = pipeline_validate_plan(
-    plan_path  = ".adversarial-spec/specs/<slug>/fizzy-plan.json",
-    session_id = "<active_session_id>",
-    board_id   = BOARD_ID
-  )
-  if result.valid: break
-  fix the structured issues and re-emit fizzy-plan.json, e.g.:
-    PLAN_INVALID "invalid strategy"            → map deferred / manual-only tasks
-                                                  to `spike`, never `"skip"` (#12)
-    "at least 1 acceptance criterion required" → emit acceptance_criteria (#11)
-    missing_tested_by / invalid_tested_by      → emit `tested_by` per task
-                                                  (llm | user | both; default llm)
-```
+Use `mini_spec_emission.py` to emit and self-check schema 3, including requirement
+metadata and the component ⊂ subsystem ⊂ system obligation chain. Then run the
+live validator; the local self-check is a preflight, not permission to load
+against an MCP that rejects the schema.
 
-`_validate_plan` raises on the **first** failing task, so one fix can unmask the
-next (#11 masked #12 this way). Loop until `valid:true` — a single clean pass, not
-a single fix.
+### 10. Validate, smoke, and load
 
-**Smoke the verify-command harness (P7-2 — REQUIRED before `pipeline_load`).** `pipeline_validate_plan`
-checks the plan's *shape*; it does NOT prove the `verify_commands` actually run. Before loading, execute
-each **distinct** `verify_command` shape once against a trivial throwaway fixture placed in the target
-test directory, and confirm the runner actually **collected and ran** it (output shows test count > 0 and
-the named file appears) — not merely that the process exited 0. This catches a wrong runner, a wrong
-`cwd`, and a config `include`/glob that doesn't cover the test path — e.g. a repo-root `vitest.config`
-whose `include: ["tests/plan/**"]` silently matches *zero* files when the tests live at
-`gateway/tests/plan/**`, so a suite-wide `vitest run` gates nothing. If any shape fails to collect its
-fixture, fix the command (or the runner config) and re-emit before loading. Record the smoke result
-(commands tried + collected counts) in the session decisions log, and delete the throwaway fixtures.
-(Origin: 2026-06-20 — verify commands and a "green baseline" AC were both accepted without ever being
-run, so a broken vitest `include` and a node:test/vitest API mismatch reached Phase 8 undetected.)
+Run dependency analysis on the exact emitted bytes, then call the authoritative
+validator with explicit routing:
 
-**Load into pipeline:**
-```
-pipeline_load(
-  plan_path = ".adversarial-spec/specs/<slug>/fizzy-plan.json",
-  session_id = "<active_session_id>",
-  board_id = BOARD_ID
+```text
+result = pipeline_validate_plan(
+  plan_path=".adversarial-spec/specs/<slug>/fizzy-plan.json",
+  session_id=SESSION_ID,
+  board_id=BOARD_ID,
 )
 ```
 
-This creates cards in the **New Todo** lane with proper state blocks. `pipeline_do_next_task` can now walk these cards, check dependencies, and assign them to agents.
+If invalid, inspect its structured issues, fix the source plan, re-emit, and run
+again until clean. Do not copy validator codes into this document and do not use
+`pipeline_load` as a speculative validator.
 
-**Verify:**
-```
-pipeline_lane_state(pipeline="task", board_id=BOARD_ID)
-```
+Before load, execute every distinct `verify_commands` shape against a disposable
+fixture in the owning test directory. Confirm the runner collected and ran the
+named file; exit zero with zero collected tests is failure. Remove the fixture
+and record command/count evidence per `SKILL.md` § Decisions Log.
 
-Confirm cards appear in New Todo with correct count.
+Then load the already-approved plan:
 
-**[GATE] TodoWrite: Mark "Generate fizzy-plan.json and load into pipeline" completed before proceeding to Step 10.**
-
----
-
-### Step 9b: V4 altitude emission (`plan_schema_version: 3`)
-
-> **When to use:** the session is a v4 (altitude-aware) session
-> (`pipeline_version >= 4` on the session card) AND the change was triaged with a
-> blast-radius altitude in Phase 1. v3/v2 sessions keep the `plan_schema_version: 2`
-> emission above unchanged — they are grandfathered forever. v4 plans are
-> `plan_schema_version: 3` (the altitude schema; the card pipeline version is 4,
-> the plan schema number is 3 — the two knobs are deliberately decoupled).
-> Both are bare JSON integers. `"3"`, `true`, or `3.0` is
-> `PLAN_SCHEMA_VERSION_TYPE_INVALID` at `pipeline_load` (Fizzy card 21533) and
-> `self_check_plan` rejects it locally before submission (Defect B).
->
-> **v4 is VERIFICATION-ONLY.** Do NOT emit `validation-ledger.json`, do NOT emit a
-> `system_validation` binding, and do NOT add a force/override/bypass field.
-> System validation is a future, separately-approved migration.
-
-A v4 plan is a **tree**, not a flat task list. Each node carries an `altitude`,
-a `parent` (null for the single root), `decomposes_into` (direct children), and a
-`verification_binding` whose KEYS exactly equal the obligation set for its
-altitude. The emitter helper `mini_spec_emission.py`
-(`skills/adversarial-spec/scripts/`) builds this shape and self-checks it.
-
-#### Per-altitude mini-spec shapes (strict superset chain `component ⊂ subsystem ⊂ system`)
-
-| field | component | subsystem | system |
-|---|---|---|---|
-| `task_id`, `title`, `description`, `effort`, `strategy` | ✓ | ✓ | ✓ |
-| `acceptance_criteria` (own level, ≥1) | ✓ | ✓ | ✓ |
-| `behavior_change` / `verification_mode` / `verification_scope` | ✓ | ✓ | ✓ |
-| `architecture_refs` | ✓ | ✓ | ✓ |
-| `spec_refs.definition_artifact` + `definition_hash` | ✓ | ✓ | ✓ |
-| `verification_binding.component_verification` | **req** | req | req |
-| `verification_binding.subsystem_verification` | forbidden | **req** | req |
-| `verification_binding.system_verification` | forbidden | forbidden | **req** |
-| `subsystem_spec_path` | forbidden | **req** | (system_spec_path) |
-| `system_spec_path` / `conops_refs` / `user_story_refs` | forbidden | forbidden | **req** |
-| `realizes_refs` (subset of ancestor stories) | req (non-root) | req (non-root) | n/a (root owns) |
-| `decomposes_into` | forbidden (leaf) | ≥2 children | ≥1 child |
-| `parent` | non-null | non-null | null (root) |
-
-Lower altitude = strictly fewer mandatory left-arm fields, but each retains its
-C1 floor obligation (never zero — NASA tailoring S3.11). Emit one per-altitude
-spec doc per node: `normative.md` (component), `subsystem-spec.md` (subsystem),
-`system-spec.md` (system).
-
-#### Per-node v3 shape (worked example)
-
-```jsonc
-{
-  "plan_schema_version": 3,
-  "session_id": "<active_session_id>",
-  "tasks": [
-    {
-      "task_id": "SYS", "altitude": "system", "parent": null,
-      "decomposes_into": ["SS-1"],
-      "conops_refs": ["US-1", "US-2"], "user_story_refs": ["US-1", "US-2"],
-      "system_spec_path": ".adversarial-spec/specs/<slug>/SYS/system-spec.md",
-      "spec_refs": { "definition_artifact": ".../SYS/system-spec.md", "definition_hash": "a1b2c3d4e5f6" },
-      "verification_binding": {
-        "component_verification": { "plan_artifact": ".../component-verification-procedure.md", "plan_hash": "...", "artifact": "tests/test_sys.py", "kind": "verification", "verify_commands": ["..."] },
-        "subsystem_verification": { "plan_artifact": ".../subsystem-verification-plan.md", "plan_hash": "...", "kind": "verification", ... },
-        "system_verification":    { "plan_artifact": ".../system-verification-plan.md",    "plan_hash": "...", "kind": "verification", ... }
-      },
-      "requirement_metadata": { "requirement_id": "SYS-1", "rationale": "...", "traced_from": null, "owner": "...", "verification_method": "test", "verification_level": "system" }
-    },
-    {
-      "task_id": "C-1", "altitude": "component", "parent": "SS-1",
-      "decomposes_into": [], "realizes_refs": ["US-1"],
-      "spec_refs": { "definition_artifact": ".../C-1/normative.md", "definition_hash": "..." },
-      "verification_binding": { "component_verification": { "plan_artifact": ".../component-verification-procedure.md", "plan_hash": "...", "kind": "verification", ... } },
-      "requirement_metadata": { "requirement_id": "C-1", ... }
-    }
-  ]
-}
+```text
+pipeline_load(
+  plan_path=".adversarial-spec/specs/<slug>/fizzy-plan.json",
+  session_id=SESSION_ID,
+  board_id=BOARD_ID,
+)
 ```
 
-#### Dotted-line verification plan/procedure artifacts (NASA dotted lines)
+Read `pipeline_lane_state(pipeline="task", session_id=SESSION_ID,
+board_id=BOARD_ID)` and confirm card count, dependencies, and expected lane.
+Never use `pipeline_patch_state` to skip a load or transition fence.
 
-Every required `verification_binding[kind]` carries a readable `plan_artifact`
-(Component Verification Procedure / Subsystem Verification Plan / System
-Verification Plan) plus a `plan_hash` — the 12-char sha256 prefix of the file,
-the SAME primitive the fizzy-pipeline-mcp gate uses. Write these artifacts to
-disk before emission; `load_plan` re-derives `definition_hash` and each
-`plan_hash` from the real files, so emit-time and load-time agree before any
-edits. A missing/unreadable plan artifact is rejected
-(`MISSING_VV_PLAN_ARTIFACT` / `BINDING_ARTIFACT_NOT_FOUND`).
+`concern_refs` and architecture context already travel in card metadata and the
+dispatch result. Per-card Concern comments are not a load gate. Add a bounded
+operator-facing comment only when it provides information metadata cannot, and
+follow `SKILL.md` § Fizzy Card Comment Convention.
 
-#### Requirement metadata (NASA Table 4.2-2) and the requirement-id convention
-
-Each node carries a `requirement_metadata` record:
-`requirement_id` (matching `^[A-Z]+-R?\d+`), `rationale`, `traced_from`
-(parent id), `owner`, `verification_method ∈ {analysis, demonstration,
-inspection, test}`, `verification_level` (= the node's altitude). Run the Appx C
-good-requirement lint (`mini_spec_emission.lint_requirement_text`) on each
-`shall`-level statement before emission — only `shall`-form, WHAT-not-HOW,
-verifiable statements become ledger requirements.
-
-#### Appx S ConOps outline (future-validation input, NOT a v4 requirement)
-
-Optionally emit `conops-outline.md` shaped to the NASA Appx S annotated outline
-as a clean source of truth for a future validation migration. v4 does NOT
-require it, does NOT bind a `conops_hash`, and does NOT emit
-`validation-ledger.json`.
-
-#### Execution-order dependencies (wave spine → `depends_on`) — P7-4
-
-The tree fields (`parent` / `decomposes_into` / `realizes_refs`) encode **structural** decomposition,
-NOT **execution order**. A schema-3 plan with a wave/dependency spine (e.g. "M1+M2 block M5/M6/M7; no
-live-execution change until the pure middleware + lease hardening close") MUST also carry explicit
-`depends_on` edges on the affected nodes — the same `depends_on` the v2 flat schema uses — so the
-pipeline actually blocks premature pickup. Without them every node loads `ready_now` and
-`pipeline_do_next_task` will hand out a late-wave node (e.g. a live-execution routing/cancel component)
-before its foundations exist, silently bypassing the spec's own ordering gate.
-
-Rules:
-- Translate every reviewed edge-ledger record into node `depends_on` (a node depends on the foundational
-  node whose output it consumes — typically a prior-wave subsystem/component, not merely its tree parent).
-  Reject both a missing execution-order edge and an unexplained extra edge; a milestone label is not an
-  edge reason.
-- After emission, before `pipeline_load`, assert the readiness profile MATCHES the wave structure: a
-  multi-wave plan whose `pipeline_validate_plan`/`pipeline_lane_state` shows **every** node `ready_now`
-  with `blocked: 0` is a red flag that the spine wasn't encoded — fix `depends_on` and re-emit. Do not
-  load a multi-wave plan that reports zero blocked nodes.
-- If the served pipeline genuinely cannot express cross-subtree `depends_on` for a schema-3 node, record
-  it as a blocker and have Phase 8 enforce wave order by judgment (block premature live-path cards) — but
-  encode it first; the default failure mode is silently shipping the plan un-ordered.
-
-(Origin: 2026-06-20 — a 31-node schema-3 plan loaded with all nodes `wave:0`/`ready_now`; the M0→M7 spine
-lived only in plan prose, so the pipeline offered a live-execution M6 card before M1/M2 existed.)
-
-#### Producer self-check loop (the dry-run/load symmetry)
-
-Before `pipeline_load`, the producer MUST loop on the dry-run until clean — the
-same symmetry v2 already has (`validate_plan` ↔ `load_plan` both call
-`_validate_plan`):
-
-```
-loop:
-  result = pipeline_validate_plan(plan_path=".../fizzy-plan.json",
-                                  session_id=<active>, board_id=BOARD_ID)
-  if result.valid: break
-  fix the structured issues (MISSING_LEVEL_VV / VV_ABOVE_ALTITUDE /
-    ORPHAN_REALIZATION / UNDECOMPOSED_REQUIREMENT / MISSING_VV_PLAN_ARTIFACT /
-    ALTITUDE_INVERSION / ROOT_NOT_SYSTEM …) and re-emit
-```
-
-Depth-triage Stage 1 SHIPPED (fizzy serves schema-3 at `CURRENT_PIPELINE_VERSION = 5`;
-verified against served code 2026-06-10): `pipeline_validate_plan` enforces the
-altitude branch live, so the dry-run loop above IS the gate. The emitter's local
-`self_check_plan()` (same altitude reject codes) remains useful as a fast offline
-pre-flight before the live dry-run. If a deployment ever rejects a schema-3 plan as
-`unsupported_schema_version` (older MCP), fall back to `self_check_plan()` as the
-stand-in gate and record the live dry-run as a blocker. **Do not `pipeline_load` a
-schema-3 plan against an MCP that rejects it.**
-
-For each emitted node, also write the skill-side node-altitude journal record via
-`altitude_provenance.record_depth_triage_node`: `subject_type:"node"`,
-`event_type:"created"`, field `altitude`, driver `depth_triage`, and the triage
-rationale. Fizzy owns enforcement; the skill owns this provenance emission and
-later meta-analysis queries.
-
----
-
-### Step 10: Add Concern Context Comments to Cards
-
-**This step makes each card self-contained for human readers.** Without it, a person opening a single Fizzy card sees acceptance criteria but has no idea WHY the task exists, what production problem it prevents, or which gauntlet concerns shaped the approach. They'd have to read the full spec to orient — defeating the purpose of card-level task breakdown.
-
-**For each card created in Step 9, add one short, structured context comment:**
-
-```markdown
-## Why this card exists
-
-**Problem:** <plain-language failure or downstream need>
-**Decision:** <what this card changes and the constraint that shaped it>
-**Evidence:** <concern IDs, spec refs, or one concrete dependency>
-**Next:** <what becomes possible when this card closes>
-```
-
-**Guidelines:**
-- Write for a human who will read ONE card, not the full spec
-- Include gauntlet concern IDs (e.g., RC-1, FM-2) so they can trace back to the gauntlet concerns doc
-- For prerequisite/audit tasks (no concern), explain what downstream tasks need from this one
-- Keep each comment under 180 words — enough to orient, not a spec restatement
-- Do not paste plan JSON, checklist payloads, model output, or raw metadata. Those
-  remain in the card description, checklists, and pipeline metadata for agents.
-
-**Efficiency:** All card comments are independent — make all `add_comment` calls in parallel.
-
-**[GATE] TodoWrite: Mark "Add concern context comments to cards" completed before proceeding to Phase 8 (Implementation).**
-
-Only after concern context comments: proceed to Phase 8 (Implementation).
+When the load/readback is correct, enter middleware-creator if the approved plan
+requires it; otherwise transition to implementation. See `SKILL.md` § Phase
+Transition Protocol. The transition, notification, Decisions Log, and Journey
+Log contracts live there and are not restated here.
