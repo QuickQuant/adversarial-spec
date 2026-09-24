@@ -80,22 +80,20 @@ human gate still applies per `operator_review_policy`). A refusal is
 manifest is frozen on the card; Pre-Gauntlet then runs ONE system-altitude gauntlet
 over the grouped result.
 
-### Resume example — ETB `adv-spec-202609220555-selective-reversal-state-machine`
+### Resume example — v6 session in Debate, D0 closed, nothing loaded
 
-State: v6, `session_altitude=subsystem`, `d0_closed=true`, card 21605 in Debate,
-`last_completed_round=28` (all session-card rounds, now history), no
-`debate_leaf_inventory`, leaves L1–L8 in `decomposition/d0.json`. First three calls:
+Typical after a pre-v6-style stall: `d0_closed=true`, card in Debate, earlier
+session-card rounds on record (history), no `debate_leaf_inventory`. Spec dir
+`SPEC=<project>/.adversarial-spec/specs/<slug>`. First three calls:
 
-1. `pipeline_lane_state(pipeline="session", board_id="03fw5h5ymdktifuhsjf47c32r", session_id="adv-spec-202609220555-selective-reversal-state-machine")`
-   → `kind: v6_debate_leaf_plan_not_loaded`.
-2. `uv run python ~/.claude/skills/adversarial-spec/scripts/d0_to_load_plan.py /home/jason/PycharmProjects/ETB/.adversarial-spec/specs/selective-reversal-state-machine/decomposition/d0.json --context-map /home/jason/PycharmProjects/adversarial-spec/orchestration/etb-draft-v29-leaf-reading-map.json --out /home/jason/PycharmProjects/ETB/.adversarial-spec/specs/selective-reversal-state-machine/decomposition/leaf-load-plan.json`
-   → 9 tasks: `SYS-SR` + leaves `L1`…`L8`. Definition document stays `requirements-v0.md`
-   (operator decision 2026-09-23); `draft-v29.md` is per-leaf required reading via the map.
-3. `pipeline_validate_plan(plan_path="/home/jason/PycharmProjects/ETB/.adversarial-spec/specs/selective-reversal-state-machine/decomposition/leaf-load-plan.json", session_id=<same>, board_id="03fw5h5ymdktifuhsjf47c32r")`
-   → `valid: true`, `issues: []`.
+1. `pipeline_lane_state(pipeline="session", board_id, session_id)` → `kind: v6_debate_leaf_plan_not_loaded`.
+2. `uv run python ~/.claude/skills/adversarial-spec/scripts/d0_to_load_plan.py $SPEC/decomposition/d0.json [--context-map $SPEC/decomposition/leaf-reading-map.json] --out $SPEC/decomposition/leaf-load-plan.json`
+   → root + one task per `d0.json.leaf_ids`. The reading map lives with the
+   session, never in the skill repo.
+3. `pipeline_validate_plan(plan_path=<absolute $SPEC/decomposition/leaf-load-plan.json>, session_id, board_id)` → `valid: true`, `issues: []`.
 
-Then `pipeline_load(<same plan_path>, <session_id>, <board_id>)` → `SYS-SR` in
-`Decomposed`, L1–L8 in `Specifying`; continue at V4. Do NOT start round 29.
+Then `pipeline_load(<same plan_path>, session_id, board_id)` → root in `Decomposed`,
+leaves in `Specifying`; continue at V4. Never start round N+1.
 
 ---
 
