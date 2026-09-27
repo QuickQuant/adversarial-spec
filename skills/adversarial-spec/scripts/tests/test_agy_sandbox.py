@@ -5,11 +5,13 @@ Contract: .adversarial-spec/specs/agy-tripwire-stop/tests-pseudo.md (v4). Test n
 Harness: real git repos under ~/.cache (never /tmp, which the sandbox masks), the real bwrap sandbox,
 and the real dispatch/debate/gauntlet code. Only the critic is replaced: a scripted fake `agy` first on
 PATH performs its side effects inside the sandbox, so every write is judged by the real kernel boundary.
-Launches are counted by wrapping `subprocess.run` (the only spawn primitive the dispatch path uses).
+Launches are counted by wrapping `subprocess.Popen` (every spawn primitive, `subprocess.run` included,
+goes through it), with a monotonic launch time per agy launch.
 """
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import io
 import json
@@ -94,6 +96,9 @@ for step in plan.get("steps", []):
         p = step["path"]
         out.append("listdir=" + json.dumps(sorted(os.listdir(p)) if os.path.isdir(p) else None))
 print("\n".join(out + [plan.get("stdout", "fake critique [AGREE]")]))
+sys.stdout.flush()
+if plan.get("stderr"):
+    sys.stderr.write(plan["stderr"] + "\n")
 sys.exit(plan.get("exit", 0))
 """
 
@@ -138,6 +143,7 @@ class Harness:
         self.repo = _init_repo(root / "repo")
         self.base = root / "dispatch"
         self.launches: list[list[str]] = []
+        self.launch_times: list[float] = []
         self.behave()
         agy = self.bin / "agy"
         agy.write_text(FAKE_AGY.replace("BEHAVIOR_PATH", repr(str(self.behavior_path))))
@@ -175,13 +181,19 @@ def _is_agy_launch(argv) -> bool:
     return "--prompt" in argv and any(os.path.basename(str(a)) == "agy" for a in argv)
 
 
+def _assert_fake_agy(harness: Harness) -> None:
+    """TC-0.1 guard: every launch must resolve `agy` to the harness fake, never a real install."""
+    found = shutil.which("agy")
+    assert found == str(harness.bin / "agy"), f"fake-critic guard: agy resolves to {found}, not the fake"
+
+
 @pytest.fixture
 def h(monkeypatch):
     root = FIXTURE_BASE / uuid.uuid4().hex[:12]
     harness = Harness(root)
     monkeypatch.setenv("PATH", f"{harness.bin}{os.pathsep}{os.environ['PATH']}")
     monkeypatch.setenv("ADVSPEC_AGY_DISPATCH_BASE", str(harness.base))
-    assert shutil.which("agy") == str(harness.bin / "agy"), "fake-critic guard: agy must resolve to the fake"
+    _assert_fake_agy(harness)
     import models
 
     monkeypatch.setattr(models, "ANTIGRAVITY_AVAILABLE", True)
@@ -194,18 +206,24 @@ def h(monkeypatch):
     if agy_sandbox is not None:
         agy_sandbox._reset_process_state_for_tests()
 
-    real_run = subprocess.run
+    real_popen = subprocess.Popen
 
-    def counting_run(*args, **kwargs):
-        argv = args[0] if args else kwargs.get("args")
-        if _is_agy_launch(argv):
-            harness.launches.append(list(argv))
-        return real_run(*args, **kwargs)
+    class CountingPopen(real_popen):
+        def __init__(self, *args, **kwargs):
+            argv = args[0] if args else kwargs.get("args")
+            if _is_agy_launch(argv):
+                harness.launches.append(list(argv))
+                harness.launch_times.append(time.monotonic())
+            super().__init__(*args, **kwargs)
 
-    monkeypatch.setattr(subprocess, "run", counting_run)
+    monkeypatch.setattr(subprocess, "Popen", CountingPopen)
     yield harness
     if agy_sandbox is not None:
         agy_sandbox._reset_process_state_for_tests()
+    for dirpath, dirnames, _ in os.walk(root):  # R3 cases leave mode-000 dirs behind
+        for name in dirnames:
+            with contextlib.suppress(OSError):
+                os.chmod(os.path.join(dirpath, name), 0o700)
     shutil.rmtree(root, ignore_errors=True)
 
 
@@ -258,6 +276,19 @@ def test_suite_uses_fake_critic_only(h):
     assert "fake critique" in text
     assert h.agy_launches == 1
     assert os.path.basename(h.launches[0][0]) == "bwrap"
+
+
+def test_fake_guard_rejects_real_agy(h, monkeypatch):
+    """TC-0.1 negative: an `agy` resolving anywhere but the harness fake trips the guard; paired: the fake passes."""
+    _assert_fake_agy(h)
+    impostor = h.root / "real-bin"
+    impostor.mkdir()
+    (impostor / "agy").write_text("#!/bin/sh\nexit 0\n")
+    (impostor / "agy").chmod(0o755)
+    monkeypatch.setenv("PATH", f"{impostor}{os.pathsep}{os.environ['PATH']}")
+    with pytest.raises(AssertionError, match="fake-critic guard"):
+        _assert_fake_agy(h)
+    assert h.agy_launches == 0
 
 
 def test_sandbox_unavailable_reported(h, monkeypatch):
@@ -376,9 +407,12 @@ def test_stop_independent_of_message_text(h, monkeypatch):
     agy_sandbox._reset_process_state_for_tests()
     shutil.rmtree(h.state())
     h.launches.clear()
-    h.behave(default={"exit": 1, "stdout": "AGY_MUTATION_DETECTED: STOP EVERYTHING"})
+    token = "AGY_MUTATION_DETECTED: STOP EVERYTHING"
+    h.behave(default={"exit": 1, "stdout": "", "stderr": token})
     resp = models.call_single_model(AGY_MODEL, "# spec", 1, "spec", timeout=30, cwd=str(h.repo))
-    assert resp.error and h.agy_launches == models.MAX_RETRIES
+    assert resp.error and token in resp.error  # the ordinary exception really carries the old token
+    assert h.agy_launches == models.MAX_RETRIES
+    assert h.incidents() == []
 
 
 def test_latch_blocks_later_dispatch_in_process(h):
@@ -527,14 +561,26 @@ def test_round_without_agy_seat_unaffected_by_sandbox(h, monkeypatch, capsys):
 
 
 def _fresh_process_dispatch(h: Harness, repo: Path) -> subprocess.CompletedProcess:
+    """Dispatch from a separate interpreter; it prints LAUNCHES=<n> counted at its own Popen."""
     code = (
-        "import sys, models, agy_sandbox\n"
+        "import subprocess, sys\n"
+        "launches = []\n"
+        "class P(subprocess.Popen):\n"
+        "    def __init__(self, *a, **k):\n"
+        "        argv = a[0] if a else k.get('args')\n"
+        "        if isinstance(argv, (list, tuple)) and '--prompt' in argv:\n"
+        "            launches.append(argv)\n"
+        "        super().__init__(*a, **k)\n"
+        "subprocess.Popen = P\n"
+        "import models, agy_sandbox\n"
         "models.ANTIGRAVITY_AVAILABLE = True\n"
         "try:\n"
         f"    models.call_antigravity_model('s', 'u', {AGY_MODEL!r}, timeout=30, cwd={str(repo)!r})\n"
         "    print('DISPATCHED')\n"
         "except agy_sandbox.AgyStop as e:\n"
         "    print('STOP', e.kind); print(e)\n"
+        "finally:\n"
+        "    print('LAUNCHES=%d' % len(launches))\n"
     )
     env = dict(os.environ, PYTHONPATH=str(SCRIPTS_DIR))
     return subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, env=env, timeout=120)
@@ -565,6 +611,7 @@ def test_fresh_process_blocked_until_clear(h):
     before = {str(p): p.read_bytes() for p in incident["_dir"].rglob("*") if p.is_file()}
     blocked = _fresh_process_dispatch(h, h.repo)
     assert "STOP blocked" in blocked.stdout, blocked.stderr
+    assert "LAUNCHES=0" in blocked.stdout
     assert "stop.json" in blocked.stdout and incident["id"] in blocked.stdout
     cleared = _clear(h.repo, [incident["id"]])
     assert cleared.returncode == 0, cleared.stderr
@@ -573,7 +620,8 @@ def test_fresh_process_blocked_until_clear(h):
     assert not (h.state() / "stop.json").exists()
     after = {str(p): p.read_bytes() for p in incident["_dir"].rglob("*") if p.is_file()}
     assert before == after
-    assert "DISPATCHED" in _fresh_process_dispatch(h, h.repo).stdout
+    admitted = _fresh_process_dispatch(h, h.repo).stdout
+    assert "DISPATCHED" in admitted and "LAUNCHES=1" in admitted
 
 
 def test_clear_with_wrong_incident_refused(h):
@@ -590,7 +638,9 @@ def test_other_repo_not_blocked(h):
     """TC-4.1: a stop in repo A does not block repo B."""
     _trip(h)
     repo_b = _init_repo(h.root / "repo-b")
-    assert "DISPATCHED" in _fresh_process_dispatch(h, repo_b).stdout
+    out = _fresh_process_dispatch(h, repo_b).stdout
+    assert "DISPATCHED" in out and "LAUNCHES=1" in out
+    assert "STOP blocked" in _fresh_process_dispatch(h, h.repo).stdout
 
 
 def test_state_outside_every_worktree_and_linked_worktree_blocked(h):
@@ -601,7 +651,8 @@ def test_state_outside_every_worktree_and_linked_worktree_blocked(h):
     assert h.state().is_relative_to(_common_dir(h.repo))
     for tree in (h.repo, w2):
         assert STATE_DIRNAME not in _git(tree, "status", "--porcelain", "--untracked-files=all")
-    assert "STOP blocked" in _fresh_process_dispatch(h, w2).stdout
+    out = _fresh_process_dispatch(h, w2).stdout
+    assert "STOP blocked" in out and "LAUNCHES=0" in out
 
 
 def test_corrupt_record_fails_closed(h):
@@ -609,7 +660,7 @@ def test_corrupt_record_fails_closed(h):
     _trip(h)
     (h.state() / "stop.json").write_text("{not json")
     out = _fresh_process_dispatch(h, h.repo).stdout
-    assert "STOP blocked" in out and "stop.json" in out
+    assert "STOP blocked" in out and "stop.json" in out and "LAUNCHES=0" in out
 
 
 def test_stop_between_prepare_and_launch_blocks(h, monkeypatch):
@@ -784,6 +835,7 @@ def test_evidence_failure_keeps_workspace_and_stops(h, monkeypatch):
     assert "evidence incomplete" in str(info.value)
     kept = list(h.base.glob("agy-dispatch-*"))
     assert len(kept) == 1 and (kept[0] / "ws" / "notes.md").read_text() == "critic wrote this"
+    assert json.loads((kept[0] / "retained.json").read_text())["reason"]
 
 
 # -- US-7 boundary failure vs refusal -----------------------------------------------------------
@@ -812,8 +864,8 @@ def test_bwrap_setup_failure_is_refusal_only(h, monkeypatch):
         return argv[:1] + ["--ro-bind", str(h.root / "does-not-exist"), "/nonexistent-mount"] + argv[1:]
 
     monkeypatch.setattr(agy_sandbox, "build_bwrap_argv", broken)
-    resp = models.call_single_model(AGY_MODEL, "# spec", 1, "spec", timeout=30, cwd=str(h.repo))
-    assert resp.error and "sandbox setup failed" in resp.error
+    with pytest.raises(agy_sandbox.AgyDispatchRefusedError, match="sandbox setup failed"):
+        models.call_single_model(AGY_MODEL, "# spec", 1, "spec", timeout=30, cwd=str(h.repo))
     assert h.agy_launches == 1
     assert h.incidents() == [] and not (h.state() / "stop.json").exists()
 
@@ -931,24 +983,31 @@ def test_leftover_dead_dispatch_roots_cleaned(h):
     assert not dead.exists() and live.exists()
 
 
+# Operator ruling R2-1, spelled out literally so a path dropped from the module constants fails here.
+REQUIRED_THROWAWAY_DIRS = ("brain", "conversations", "log", "cache", "scratch", "presence", "crashes",
+                           "annotations", "implicit", "knowledge")
+REQUIRED_THROWAWAY_FILES = ("history.jsonl", "conversation_summaries.db")
+
+
 def test_config_dirs_readonly_and_throwaway(h, monkeypatch):
     """TC-11.3: config files read-only, named antigravity-cli paths throwaway, browser profile hidden."""
     home = h.root / "home"
     cli = home / ".gemini" / "antigravity-cli"
     profile = home / ".gemini" / "antigravity-browser-profile"
-    for d in (cli / "brain", cli / "knowledge", cli / "conversations", profile):
+    for d in [cli / name for name in REQUIRED_THROWAWAY_DIRS] + [profile]:
         d.mkdir(parents=True)
     (home / ".gemini" / "antigravity-browser-profile" / "Cookies").write_text("secret")
-    for name, data in (("settings.json", "{}"), ("antigravity-oauth-token", "tok"), ("history.jsonl", "h\n"),
-                       ("mcp_config.json", "{}")):
+    for name, data in (("settings.json", "{}"), ("antigravity-oauth-token", "tok"), ("mcp_config.json", "{}")):
         (cli / name).write_text(data)
+    for name in REQUIRED_THROWAWAY_FILES:
+        (cli / name).write_text("h\n")
     (home / ".gemini" / "settings.json").write_text("{}")
     (home / ".antigravity").mkdir()
     (home / ".antigravity" / "argv.json").write_text("{}")
     monkeypatch.setenv("HOME", str(home))
     ro = [cli / "settings.json", cli / "antigravity-oauth-token", cli / "mcp_config.json",
           home / ".gemini" / "settings.json", home / ".antigravity" / "argv.json"]
-    tw = [cli / "brain" / "x", cli / "knowledge" / "planted", cli / "history.jsonl"]
+    tw = [cli / name / "planted" for name in REQUIRED_THROWAWAY_DIRS] + [cli / n for n in REQUIRED_THROWAWAY_FILES]
     steps = [{"op": "write", "path": str(p), "data": "w"} for p in ro + tw]
     steps.append({"op": "listdir", "path": str(home / ".gemini" / "antigravity-browser-profile")})
     h.behave(default={"steps": steps})
@@ -958,7 +1017,10 @@ def test_config_dirs_readonly_and_throwaway(h, monkeypatch):
     for p in tw:
         assert f"wrote {p}" in text
     assert "listdir=[]" in text
-    assert not (cli / "knowledge" / "planted").exists() and (cli / "history.jsonl").read_text() == "h\n"
+    for name in REQUIRED_THROWAWAY_DIRS:
+        assert not (cli / name / "planted").exists(), name
+    for name in REQUIRED_THROWAWAY_FILES:
+        assert (cli / name).read_text() == "h\n", name
     assert h.incidents() == []
 
 
@@ -1007,3 +1069,237 @@ def test_env_is_allowlist(h, monkeypatch):
     leaked = [n for n in names if n in {"SSH_AUTH_SOCK", "DBUS_SESSION_BUS_ADDRESS", "XDG_RUNTIME_DIR"}
               or n.startswith("HERDR_")]
     assert leaked == []
+
+
+# -- Review of 85da68f: regressions R1-R9 (orchestration/review-codex-85da68f.md) ------------------------
+
+
+def _custom_agy(h: Harness, body: str) -> None:
+    """Replace the fake critic with a one-off script (still the harness fake: same path, still sandboxed)."""
+    agy = h.bin / "agy"
+    agy.write_text("#!/usr/bin/env python3\n" + body)
+    agy.chmod(0o755)
+    _assert_fake_agy(h)
+
+
+@pytest.mark.parametrize("failure", ["incident_dir", "incident_meta", "all_state_writes"])
+def test_evidence_persistence_failure_is_terminal(h, monkeypatch, failure):
+    """R1: incident-dir creation / initial metadata / every state write failing after a critic write -> AgyStop
+    (never the generic retry), one launch, workspace kept with a retention marker, and a fresh process is still
+    blocked. Paired: TC-6.3, a clean dispatch leaves no root and no stop state."""
+    import agy_sandbox
+    import models
+
+    if failure == "incident_dir":
+        h.state().mkdir(parents=True, exist_ok=True)
+        (h.state() / "incidents").write_text("not a directory")
+    else:
+        real_write = agy_sandbox._write_json
+
+        def failing_write(path, data):
+            if failure == "all_state_writes" or path.name == "incident.json":
+                raise OSError("evidence disk full")
+            return real_write(path, data)
+
+        monkeypatch.setattr(agy_sandbox, "_write_json", failing_write)
+    h.behave(default={"steps": [_write_ws()]})
+    with pytest.raises(agy_sandbox.AgyStop) as info:
+        models.call_single_model(AGY_MODEL, "# spec", 1, "spec", timeout=30, cwd=str(h.repo))
+    assert info.value.kind == "critic"
+    assert h.agy_launches == 1
+    [kept] = list(h.base.glob("agy-dispatch-*"))
+    assert (kept / "ws" / "notes.md").read_text() == "critic wrote this"
+    assert json.loads((kept / "retained.json").read_text())["reason"]
+    blocked = _fresh_process_dispatch(h, h.repo).stdout
+    assert "STOP blocked" in blocked and "LAUNCHES=0" in blocked
+
+
+def test_undecodable_output_still_inspected(h):
+    """R2: invalid UTF-8 on stdout/stderr never skips inspection: with a workspace write -> one-launch STOP whose
+    evidence keeps the raw bytes; paired: the same undecodable output without a write returns normally."""
+    import agy_sandbox
+    import models
+
+    emit = ('import sys\n'
+            'sys.stdout.buffer.write(b"critique \\xff\\xfe [AGREE]\\n")\n'
+            'sys.stderr.buffer.write(b"\\xc3\\x28 bad stderr\\n")\n')
+    _custom_agy(h, emit)
+    text, _, _ = _dispatch(h)
+    assert "critique" in text and "[AGREE]" in text
+    assert h.incidents() == []
+    _custom_agy(h, 'open("notes.md", "w").write("critic wrote this")\n' + emit)
+    with pytest.raises(agy_sandbox.AgyStop) as info:
+        models.call_single_model(AGY_MODEL, "# spec", 1, "spec", timeout=30, cwd=str(h.repo))
+    assert info.value.kind == "critic"
+    assert h.agy_launches == 2
+    [incident] = h.incidents()
+    assert b"\xff\xfe" in (incident["_dir"] / "agy-stdout.txt").read_bytes()
+    assert (incident["_dir"] / "workspace" / "notes.md").read_text() == "critic wrote this"
+
+
+def test_uninspectable_workspace_is_terminal(h):
+    """R3: a critic that writes then makes its workspace root unreadable -> STOP (never an empty delta), root kept
+    with a retention marker; paired: a read-only critic in the same harness returns normally."""
+    import agy_sandbox
+
+    _custom_agy(h, 'print("only read [AGREE]")\n')
+    text, _, _ = _dispatch(h)
+    assert "only read" in text and h.incidents() == []
+    _custom_agy(h, 'import os\nopen("notes.md", "w").write("hidden")\nos.chmod(".", 0)\nprint("done [AGREE]")\n')
+    with pytest.raises(agy_sandbox.AgyStop) as info:
+        _dispatch(h)
+    assert info.value.kind == "critic"
+    [kept] = list(h.base.glob("agy-dispatch-*"))
+    assert json.loads((kept / "retained.json").read_text())["reason"]
+    (kept / "ws").chmod(0o700)
+    assert (kept / "ws" / "notes.md").read_text() == "hidden"
+
+
+def test_stop_published_at_final_admission_cannot_precede_launch(h, monkeypatch):
+    """R4: a STOP published by another writer right after the final admission check lands AFTER this launch
+    started (admission and spawn are serialized against publication); paired: TC-4.7, a STOP published before the
+    final check yields zero launches."""
+    import agy_sandbox
+
+    real_admit = agy_sandbox._admit
+    calls: list[int] = []
+    published: dict = {}
+
+    def admit_then_race(*args, **kwargs):
+        real_admit(*args, **kwargs)
+        calls.append(1)
+        if len(calls) == 2:  # the final pre-launch admission
+            def publish():
+                agy_sandbox.record_incident(h.repo, kind="critic", model="sibling", stdout="", stderr="")
+                published["t"] = time.monotonic()
+
+            thread = threading.Thread(target=publish)
+            thread.start()
+            published["thread"] = thread
+            time.sleep(0.5)
+
+    monkeypatch.setattr(agy_sandbox, "_admit", admit_then_race)
+    _dispatch(h)
+    published["thread"].join(timeout=30)
+    assert h.agy_launches == 1
+    assert "t" in published
+    assert h.launch_times[0] < published["t"]
+
+
+def test_gauntlet_prior_stop_refused_before_any_progress(h, monkeypatch):
+    """R5: a stopped repo + an agy seat anywhere in the roster -> exit 5 before prompt loading, gauntlet dir
+    creation, or any launch; paired: the same stopped repo with no agy seat proceeds past readiness."""
+    from gauntlet import orchestrator
+
+    _trip(h)
+    h.launches.clear()
+    monkeypatch.chdir(h.repo)
+    reached: list[int] = []
+
+    def sentinel(*_a, **_k):
+        reached.append(1)
+        raise RuntimeError("REACHED_PROMPT_LOADING")
+
+    monkeypatch.setattr(orchestrator, "_load_approved_prompts", sentinel)
+    with pytest.raises(SystemExit) as info:
+        orchestrator.run_gauntlet("# Spec\n\nsmall spec", adversaries=["minimalist"],
+                                  attack_models=["claude-cli/claude-opus-5-5"], eval_models=[AGY_MODEL],
+                                  unattended=False, timeout=30)
+    assert info.value.code == 5
+    assert reached == [] and h.agy_launches == 0
+    assert not (h.repo / ".adversarial-spec-gauntlet").exists()
+    with pytest.raises(RuntimeError, match="REACHED_PROMPT_LOADING"):
+        orchestrator.run_gauntlet("# Spec\n\nsmall spec", adversaries=["minimalist"],
+                                  attack_models=["claude-cli/claude-opus-5-5"],
+                                  eval_models=["claude-cli/claude-opus-5-5"], unattended=False, timeout=30)
+    assert reached == [1]
+
+
+def test_symlinked_mask_targets_are_masked(h, monkeypatch):
+    """R6: herdr dir, browser profile, knowledge dir and history file reached through symlinks are masked /
+    throwaway exactly like regular paths (by alias and by target); paired: an unmasked symlinked dir stays
+    readable, so the empty listings prove masking rather than broken symlinks."""
+    home = h.root / "home"
+    cli = home / ".gemini" / "antigravity-cli"
+    cli.mkdir(parents=True)
+    (home / ".config").mkdir()
+    targets = {}
+    for name, content in (("real-herdr", "herdr.sock.marker"), ("real-profile", "Cookies"),
+                          ("real-knowledge", None), ("real-notes", "note.txt")):
+        d = home / name
+        d.mkdir()
+        if content:
+            (d / content).write_text("x")
+        targets[name] = d
+    (home / ".config" / "herdr").symlink_to(targets["real-herdr"])
+    (home / ".gemini" / "antigravity-browser-profile").symlink_to(targets["real-profile"])
+    (cli / "knowledge").symlink_to(targets["real-knowledge"])
+    real_history = home / "real-history.jsonl"
+    real_history.write_text("h\n")
+    (cli / "history.jsonl").symlink_to(real_history)
+    (home / "linked-notes").symlink_to(targets["real-notes"])
+    monkeypatch.setenv("HOME", str(home))
+    listed = [home / ".config" / "herdr", targets["real-herdr"], home / ".gemini" / "antigravity-browser-profile",
+              targets["real-profile"], home / "linked-notes"]
+    steps = [{"op": "listdir", "path": str(p)} for p in listed]
+    steps += [{"op": "write", "path": str(cli / "knowledge" / "planted"), "data": "w"},
+              {"op": "write", "path": str(cli / "history.jsonl"), "data": "w"}]
+    h.behave(default={"steps": steps})
+    text, _, _ = _dispatch(h)
+    listings = [x for x in text.splitlines() if x.startswith("listdir=")]
+    assert listings == ["listdir=[]"] * 4 + ['listdir=["note.txt"]']
+    assert f"wrote {cli / 'knowledge' / 'planted'}" in text and f"wrote {cli / 'history.jsonl'}" in text
+    assert not (targets["real-knowledge"] / "planted").exists()
+    assert real_history.read_text() == "h\n"
+    assert h.incidents() == []
+
+
+def test_retained_evidence_root_survives_cleanup(h):
+    """R7: a dead-owner dispatch root carrying a retention marker is not reclaimed by stale cleanup; paired: a
+    dead-owner root without the marker is."""
+    retained = h.base / "agy-dispatch-retained"
+    plain = h.base / "agy-dispatch-plain"
+    for root in (retained, plain):
+        (root / "ws").mkdir(parents=True)
+        (root / "owner.pid").write_text("999999999")
+    (retained / "retained.json").write_text(json.dumps({"reason": "evidence incomplete"}))
+    _dispatch(h)
+    assert retained.exists() and (retained / "retained.json").exists()
+    assert not plain.exists()
+
+
+def test_dispatch_time_refusal_refuses_round(h, monkeypatch, capsys):
+    """R8: with preflight skipped, a sandbox refusal at dispatch time refuses the round (exit 6): no round
+    checkpoint, no STOP state; paired: the same roster with a working sandbox completes the round."""
+    import agy_sandbox
+
+    real_build = agy_sandbox.build_bwrap_argv
+
+    def broken(*args, **kwargs):
+        argv = real_build(*args, **kwargs)
+        return argv[:1] + ["--ro-bind", str(h.root / "does-not-exist"), "/nonexistent-mount"] + argv[1:]
+
+    monkeypatch.setattr(agy_sandbox, "build_bwrap_argv", broken)
+    roster = f"{AGY_MODEL},claude-cli/claude-opus-5-5"
+    code, err = _run_debate(h, monkeypatch, capsys, ["--skip-preflight"], models_arg=roster)
+    assert code == 6
+    assert "sandbox setup failed" in err
+    assert not list((h.repo / ".adversarial-spec-checkpoints").glob("*round-*.md"))
+    assert h.incidents() == [] and not (h.state() / "stop.json").exists()
+    monkeypatch.setattr(agy_sandbox, "build_bwrap_argv", real_build)
+    code, _ = _run_debate(h, monkeypatch, capsys, ["--skip-preflight"], models_arg=roster)
+    assert code == 0
+    assert list((h.repo / ".adversarial-spec-checkpoints").glob("*round-*.md"))
+
+
+def test_setup_timeout_before_ready_is_refusal(h, monkeypatch):
+    """Review item 4: a sandbox that never reaches READY before the timeout is a refusal (one launch, no retry, no
+    STOP); paired: TC-6.2 negative, a ready critic that hangs is an ordinary retried timeout."""
+    import agy_sandbox
+    import models
+
+    monkeypatch.setattr(agy_sandbox, "_LAUNCHER", "sleep 30\n" + agy_sandbox._LAUNCHER)
+    with pytest.raises(agy_sandbox.AgyDispatchRefusedError, match="sandbox setup"):
+        models.call_single_model(AGY_MODEL, "# spec", 1, "spec", timeout=2, cwd=str(h.repo))
+    assert h.agy_launches == 1
+    assert h.incidents() == [] and not (h.state() / "stop.json").exists()

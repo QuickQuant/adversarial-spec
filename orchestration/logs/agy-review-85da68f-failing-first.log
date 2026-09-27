@@ -1,0 +1,501 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.0, pytest-8.4.2, pluggy-1.6.0
+rootdir: /home/jason/PycharmProjects/adversarial-spec
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0
+collected 65 items
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py .............. [ 21%]
+.......................F.F..............FFFFFFFFFFF                      [100%]
+
+=================================== FAILURES ===================================
+_______________ test_evidence_failure_keeps_workspace_and_stops ________________
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f7a93dc2e70>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7a99428600>
+
+    def test_evidence_failure_keeps_workspace_and_stops(h, monkeypatch):
+        """TC-6.4: incident evidence unwritable -> STOP still raised ('evidence incomplete'), workspace kept."""
+        import agy_sandbox
+    
+        def failing_capture(*_a, **_k):
+            raise OSError("evidence disk full")
+    
+        monkeypatch.setattr(agy_sandbox, "_capture_workspace", failing_capture)
+        h.behave(default={"steps": [_write_ws()]})
+        with pytest.raises(agy_sandbox.AgyStop) as info:
+            _dispatch(h)
+        assert "evidence incomplete" in str(info.value)
+        kept = list(h.base.glob("agy-dispatch-*"))
+        assert len(kept) == 1 and (kept[0] / "ws" / "notes.md").read_text() == "critic wrote this"
+>       assert json.loads((kept[0] / "retained.json").read_text())["reason"]
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:838: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/pathlib/__init__.py:792: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/home/jason/.cache/advspec-agy-tests/fee76c065af5/dispatch/agy-dispatch-xex77jae/retained.json')
+mode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/home/jason/.cache/advspec-agy-tests/fee76c065af5/dispatch/agy-dispatch-xex77jae/retained.json'
+
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/pathlib/__init__.py:776: FileNotFoundError
+___________________ test_bwrap_setup_failure_is_refusal_only ___________________
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f7a924c34a0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7a93e68c20>
+
+    def test_bwrap_setup_failure_is_refusal_only(h, monkeypatch):
+        """TC-7.1: a bind source that does not exist -> refusal, no incident, no record, no retry."""
+        import agy_sandbox
+        import models
+    
+        real_build = agy_sandbox.build_bwrap_argv
+    
+        def broken(*args, **kwargs):
+            argv = real_build(*args, **kwargs)
+            return argv[:1] + ["--ro-bind", str(h.root / "does-not-exist"), "/nonexistent-mount"] + argv[1:]
+    
+        monkeypatch.setattr(agy_sandbox, "build_bwrap_argv", broken)
+>       with pytest.raises(agy_sandbox.AgyDispatchRefusedError, match="sandbox setup failed"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:867: Failed
+----------------------------- Captured stderr call -----------------------------
+Error: antigravity/gemini-3.8-flash-high refused: agy dispatch refused: sandbox setup failed (rc=1): bwrap: Can't find source path /home/jason/.cache/advspec-agy-tests/6e384d0d675a/does-not-exist: No such file or directory
+_________ test_evidence_persistence_failure_is_terminal[incident_dir] __________
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f7a924c3530>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7a99429400>
+failure = 'incident_dir'
+
+    @pytest.mark.parametrize("failure", ["incident_dir", "incident_meta", "all_state_writes"])
+    def test_evidence_persistence_failure_is_terminal(h, monkeypatch, failure):
+        """R1: incident-dir creation / initial metadata / every state write failing after a critic write -> AgyStop
+        (never the generic retry), one launch, workspace kept with a retention marker, and a fresh process is still
+        blocked. Paired: TC-6.3, a clean dispatch leaves no root and no stop state."""
+        import agy_sandbox
+        import models
+    
+        if failure == "incident_dir":
+            h.state().mkdir(parents=True, exist_ok=True)
+            (h.state() / "incidents").write_text("not a directory")
+        else:
+            real_write = agy_sandbox._write_json
+    
+            def failing_write(path, data):
+                if failure == "all_state_writes" or path.name == "incident.json":
+                    raise OSError("evidence disk full")
+                return real_write(path, data)
+    
+            monkeypatch.setattr(agy_sandbox, "_write_json", failing_write)
+        h.behave(default={"steps": [_write_ws()]})
+>       with pytest.raises(agy_sandbox.AgyStop) as info:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'agy_sandbox.AgyStop'>
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1106: Failed
+----------------------------- Captured stderr call -----------------------------
+Warning: antigravity/gemini-3.8-flash-high failed (attempt 1/3): [Errno 20] Not a directory: '/home/jason/.cache/advspec-agy-tests/b4a809c36bc8/repo/.git/adversarial-spec-agy/incidents/20260927T190706Z-critic-c4f9c6'. Retrying in 0.0s...
+Warning: antigravity/gemini-3.8-flash-high failed (attempt 2/3): [Errno 20] Not a directory: '/home/jason/.cache/advspec-agy-tests/b4a809c36bc8/repo/.git/adversarial-spec-agy/incidents/20260927T190706Z-critic-add480'. Retrying in 0.0s...
+Error: antigravity/gemini-3.8-flash-high failed after 3 attempts: [Errno 20] Not a directory: '/home/jason/.cache/advspec-agy-tests/b4a809c36bc8/repo/.git/adversarial-spec-agy/incidents/20260927T190706Z-critic-a41ded'
+_________ test_evidence_persistence_failure_is_terminal[incident_meta] _________
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f7a92507f50>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7a92571780>
+failure = 'incident_meta'
+
+    @pytest.mark.parametrize("failure", ["incident_dir", "incident_meta", "all_state_writes"])
+    def test_evidence_persistence_failure_is_terminal(h, monkeypatch, failure):
+        """R1: incident-dir creation / initial metadata / every state write failing after a critic write -> AgyStop
+        (never the generic retry), one launch, workspace kept with a retention marker, and a fresh process is still
+        blocked. Paired: TC-6.3, a clean dispatch leaves no root and no stop state."""
+        import agy_sandbox
+        import models
+    
+        if failure == "incident_dir":
+            h.state().mkdir(parents=True, exist_ok=True)
+            (h.state() / "incidents").write_text("not a directory")
+        else:
+            real_write = agy_sandbox._write_json
+    
+            def failing_write(path, data):
+                if failure == "all_state_writes" or path.name == "incident.json":
+                    raise OSError("evidence disk full")
+                return real_write(path, data)
+    
+            monkeypatch.setattr(agy_sandbox, "_write_json", failing_write)
+        h.behave(default={"steps": [_write_ws()]})
+>       with pytest.raises(agy_sandbox.AgyStop) as info:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'agy_sandbox.AgyStop'>
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1106: Failed
+----------------------------- Captured stderr call -----------------------------
+Warning: antigravity/gemini-3.8-flash-high failed (attempt 1/3): evidence disk full. Retrying in 0.0s...
+Warning: antigravity/gemini-3.8-flash-high failed (attempt 2/3): evidence disk full. Retrying in 0.0s...
+Error: antigravity/gemini-3.8-flash-high failed after 3 attempts: evidence disk full
+_______ test_evidence_persistence_failure_is_terminal[all_state_writes] ________
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f7a92507ec0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7a92571be0>
+failure = 'all_state_writes'
+
+    @pytest.mark.parametrize("failure", ["incident_dir", "incident_meta", "all_state_writes"])
+    def test_evidence_persistence_failure_is_terminal(h, monkeypatch, failure):
+        """R1: incident-dir creation / initial metadata / every state write failing after a critic write -> AgyStop
+        (never the generic retry), one launch, workspace kept with a retention marker, and a fresh process is still
+        blocked. Paired: TC-6.3, a clean dispatch leaves no root and no stop state."""
+        import agy_sandbox
+        import models
+    
+        if failure == "incident_dir":
+            h.state().mkdir(parents=True, exist_ok=True)
+            (h.state() / "incidents").write_text("not a directory")
+        else:
+            real_write = agy_sandbox._write_json
+    
+            def failing_write(path, data):
+                if failure == "all_state_writes" or path.name == "incident.json":
+                    raise OSError("evidence disk full")
+                return real_write(path, data)
+    
+            monkeypatch.setattr(agy_sandbox, "_write_json", failing_write)
+        h.behave(default={"steps": [_write_ws()]})
+>       with pytest.raises(agy_sandbox.AgyStop) as info:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'agy_sandbox.AgyStop'>
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1106: Failed
+----------------------------- Captured stderr call -----------------------------
+Warning: antigravity/gemini-3.8-flash-high failed (attempt 1/3): evidence disk full. Retrying in 0.0s...
+Warning: antigravity/gemini-3.8-flash-high failed (attempt 2/3): evidence disk full. Retrying in 0.0s...
+Error: antigravity/gemini-3.8-flash-high failed after 3 attempts: evidence disk full
+___________________ test_undecodable_output_still_inspected ____________________
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f7a92504e60>
+
+    def test_undecodable_output_still_inspected(h):
+        """R2: invalid UTF-8 on stdout/stderr never skips inspection: with a workspace write -> one-launch STOP whose
+        evidence keeps the raw bytes; paired: the same undecodable output without a write returns normally."""
+        import agy_sandbox
+        import models
+    
+        emit = ('import sys\n'
+                'sys.stdout.buffer.write(b"critique \\xff\\xfe [AGREE]\\n")\n'
+                'sys.stderr.buffer.write(b"\\xc3\\x28 bad stderr\\n")\n')
+        _custom_agy(h, emit)
+>       text, _, _ = _dispatch(h)
+                     ^^^^^^^^^^^^
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1127: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:233: in _dispatch
+    return models.call_antigravity_model(
+skills/adversarial-spec/scripts/models.py:753: in call_antigravity_model
+    result = agy_sandbox.run_agy_dispatch(
+skills/adversarial-spec/scripts/agy_sandbox.py:637: in run_agy_dispatch
+    result = subprocess.run(argv, capture_output=True, text=True, timeout=timeout)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:556: in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:1220: in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:2167: in _communicate
+    stdout = self._translate_newlines(stdout,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <CountingPopen: returncode: 0 args: ['bwrap', '--ro-bind', '/', '/', '--dev'...>
+data = b'critique \xff\xfe [AGREE]\n', encoding = 'UTF-8', errors = 'strict'
+
+    def _translate_newlines(self, data, encoding, errors):
+>       data = data.decode(encoding, errors)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 9: invalid start byte
+
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/subprocess.py:1098: UnicodeDecodeError
+___________________ test_uninspectable_workspace_is_terminal ___________________
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f7a92504830>
+
+    def test_uninspectable_workspace_is_terminal(h):
+        """R3: a critic that writes then makes its workspace root unreadable -> STOP (never an empty delta), root kept
+        with a retention marker; paired: a read-only critic in the same harness returns normally."""
+        import agy_sandbox
+    
+        _custom_agy(h, 'print("only read [AGREE]")\n')
+        text, _, _ = _dispatch(h)
+        assert "only read" in text and h.incidents() == []
+        _custom_agy(h, 'import os\nopen("notes.md", "w").write("hidden")\nos.chmod(".", 0)\nprint("done [AGREE]")\n')
+>       with pytest.raises(agy_sandbox.AgyStop) as info:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'agy_sandbox.AgyStop'>
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1149: Failed
+_________ test_stop_published_at_final_admission_cannot_precede_launch _________
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f7a92507410>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7a93e697f0>
+
+    def test_stop_published_at_final_admission_cannot_precede_launch(h, monkeypatch):
+        """R4: a STOP published by another writer right after the final admission check lands AFTER this launch
+        started (admission and spawn are serialized against publication); paired: TC-4.7, a STOP published before the
+        final check yields zero launches."""
+        import agy_sandbox
+    
+        real_admit = agy_sandbox._admit
+        calls: list[int] = []
+        published: dict = {}
+    
+        def admit_then_race(*args, **kwargs):
+            real_admit(*args, **kwargs)
+            calls.append(1)
+            if len(calls) == 2:  # the final pre-launch admission
+                def publish():
+                    agy_sandbox.record_incident(h.repo, kind="critic", model="sibling", stdout="", stderr="")
+                    published["t"] = time.monotonic()
+    
+                thread = threading.Thread(target=publish)
+                thread.start()
+                published["thread"] = thread
+                time.sleep(0.5)
+    
+        monkeypatch.setattr(agy_sandbox, "_admit", admit_then_race)
+        _dispatch(h)
+        published["thread"].join(timeout=30)
+        assert h.agy_launches == 1
+        assert "t" in published
+>       assert h.launch_times[0] < published["t"]
+E       assert 1217267.575890872 < 1217267.075688128
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1186: AssertionError
+_____________ test_gauntlet_prior_stop_refused_before_any_progress _____________
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f7a92507380>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7a993aba80>
+
+    def test_gauntlet_prior_stop_refused_before_any_progress(h, monkeypatch):
+        """R5: a stopped repo + an agy seat anywhere in the roster -> exit 5 before prompt loading, gauntlet dir
+        creation, or any launch; paired: the same stopped repo with no agy seat proceeds past readiness."""
+        from gauntlet import orchestrator
+    
+        _trip(h)
+        h.launches.clear()
+        monkeypatch.chdir(h.repo)
+        reached: list[int] = []
+    
+        def sentinel(*_a, **_k):
+            reached.append(1)
+            raise RuntimeError("REACHED_PROMPT_LOADING")
+    
+        monkeypatch.setattr(orchestrator, "_load_approved_prompts", sentinel)
+        with pytest.raises(SystemExit) as info:
+>           orchestrator.run_gauntlet("# Spec\n\nsmall spec", adversaries=["minimalist"],
+                                      attack_models=["claude-cli/claude-opus-5-5"], eval_models=[AGY_MODEL],
+                                      unattended=False, timeout=30)
+
+/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1205: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/gauntlet/orchestrator.py:322: in run_gauntlet
+    approved_prompts = _load_approved_prompts(gauntlet_dir, spec_hash)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_a = (PosixPath('.adversarial-spec-gauntlet'), 'c92fd664e6a1339b5d737708acf61fca98923bdcfb971f269accedb265fb5278')
+_k = {}
+
+    def sentinel(*_a, **_k):
+        reached.append(1)
+>       raise RuntimeError("REACHED_PROMPT_LOADING")
+E       RuntimeError: REACHED_PROMPT_LOADING
+
+/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1201: RuntimeError
+____________________ test_symlinked_mask_targets_are_masked ____________________
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f7a93dc3140>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7a925174d0>
+
+    def test_symlinked_mask_targets_are_masked(h, monkeypatch):
+        """R6: herdr dir, browser profile, knowledge dir and history file reached through symlinks are masked /
+        throwaway exactly like regular paths (by alias and by target); paired: an unmasked symlinked dir stays
+        readable, so the empty listings prove masking rather than broken symlinks."""
+        home = h.root / "home"
+        cli = home / ".gemini" / "antigravity-cli"
+        cli.mkdir(parents=True)
+        (home / ".config").mkdir()
+        targets = {}
+        for name, content in (("real-herdr", "herdr.sock.marker"), ("real-profile", "Cookies"),
+                              ("real-knowledge", None), ("real-notes", "note.txt")):
+            d = home / name
+            d.mkdir()
+            if content:
+                (d / content).write_text("x")
+            targets[name] = d
+        (home / ".config" / "herdr").symlink_to(targets["real-herdr"])
+        (home / ".gemini" / "antigravity-browser-profile").symlink_to(targets["real-profile"])
+        (cli / "knowledge").symlink_to(targets["real-knowledge"])
+        real_history = home / "real-history.jsonl"
+        real_history.write_text("h\n")
+        (cli / "history.jsonl").symlink_to(real_history)
+        (home / "linked-notes").symlink_to(targets["real-notes"])
+        monkeypatch.setenv("HOME", str(home))
+        listed = [home / ".config" / "herdr", targets["real-herdr"], home / ".gemini" / "antigravity-browser-profile",
+                  targets["real-profile"], home / "linked-notes"]
+        steps = [{"op": "listdir", "path": str(p)} for p in listed]
+        steps += [{"op": "write", "path": str(cli / "knowledge" / "planted"), "data": "w"},
+                  {"op": "write", "path": str(cli / "history.jsonl"), "data": "w"}]
+        h.behave(default={"steps": steps})
+        text, _, _ = _dispatch(h)
+        listings = [x for x in text.splitlines() if x.startswith("listdir=")]
+>       assert listings == ["listdir=[]"] * 4 + ['listdir=["note.txt"]']
+E       assert ['listdir=["h...["note.txt"]'] == ['listdir=[]'...["note.txt"]']
+E         
+E         At index 0 diff: 'listdir=["herdr.sock.marker"]' != 'listdir=[]'
+E         
+E         Full diff:
+E           [
+E         +     'listdir=["herdr.sock.marker"]',
+E         +     'listdir=["herdr.sock.marker"]',
+E         -     'listdir=[]',
+E         +     'listdir=["Cookies"]',
+E         ?               +++++++++
+E         -     'listdir=[]',
+E         +     'listdir=["Cookies"]',
+E         ?               +++++++++
+E         -     'listdir=[]',
+E         -     'listdir=[]',
+E               'listdir=["note.txt"]',
+E           ]
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1250: AssertionError
+----------------------------- Captured stderr call -----------------------------
+Warning: antigravity/gemini-3.8-flash-high attempted 2 blocked write(s); logged in /home/jason/.cache/advspec-agy-tests/891c46e8d031/repo/.git/adversarial-spec-agy/windows.jsonl
+_________________ test_retained_evidence_root_survives_cleanup _________________
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f7a924c3770>
+
+    def test_retained_evidence_root_survives_cleanup(h):
+        """R7: a dead-owner dispatch root carrying a retention marker is not reclaimed by stale cleanup; paired: a
+        dead-owner root without the marker is."""
+        retained = h.base / "agy-dispatch-retained"
+        plain = h.base / "agy-dispatch-plain"
+        for root in (retained, plain):
+            (root / "ws").mkdir(parents=True)
+            (root / "owner.pid").write_text("999999999")
+        (retained / "retained.json").write_text(json.dumps({"reason": "evidence incomplete"}))
+        _dispatch(h)
+>       assert retained.exists() and (retained / "retained.json").exists()
+E       AssertionError: assert (False)
+E        +  where False = exists()
+E        +    where exists = PosixPath('/home/jason/.cache/advspec-agy-tests/c417391f2c08/dispatch/agy-dispatch-retained').exists
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1267: AssertionError
+___________________ test_dispatch_time_refusal_refuses_round ___________________
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f7a93dc23c0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7a9253c6e0>
+capsys = <_pytest.capture.CaptureFixture object at 0x7f7a92521130>
+
+    def test_dispatch_time_refusal_refuses_round(h, monkeypatch, capsys):
+        """R8: with preflight skipped, a sandbox refusal at dispatch time refuses the round (exit 6): no round
+        checkpoint, no STOP state; paired: the same roster with a working sandbox completes the round."""
+        import agy_sandbox
+    
+        real_build = agy_sandbox.build_bwrap_argv
+    
+        def broken(*args, **kwargs):
+            argv = real_build(*args, **kwargs)
+            return argv[:1] + ["--ro-bind", str(h.root / "does-not-exist"), "/nonexistent-mount"] + argv[1:]
+    
+        monkeypatch.setattr(agy_sandbox, "build_bwrap_argv", broken)
+        roster = f"{AGY_MODEL},claude-cli/claude-opus-5-5"
+        code, err = _run_debate(h, monkeypatch, capsys, ["--skip-preflight"], models_arg=roster)
+>       assert code == 6
+E       assert 0 == 6
+
+/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1285: AssertionError
+__________________ test_setup_timeout_before_ready_is_refusal __________________
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f7a9254fe30>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7a9253f380>
+
+    def test_setup_timeout_before_ready_is_refusal(h, monkeypatch):
+        """Review item 4: a sandbox that never reaches READY before the timeout is a refusal (one launch, no retry, no
+        STOP); paired: TC-6.2 negative, a ready critic that hangs is an ordinary retried timeout."""
+        import agy_sandbox
+        import models
+    
+        monkeypatch.setattr(agy_sandbox, "_LAUNCHER", "sleep 30\n" + agy_sandbox._LAUNCHER)
+>       with pytest.raises(agy_sandbox.AgyDispatchRefusedError, match="sandbox setup"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1302: Failed
+----------------------------- Captured stderr call -----------------------------
+Warning: antigravity/gemini-3.8-flash-high failed (attempt 1/3): Antigravity CLI timed out after 2s. Retrying in 0.0s...
+Warning: antigravity/gemini-3.8-flash-high failed (attempt 2/3): Antigravity CLI timed out after 2s. Retrying in 0.0s...
+Error: antigravity/gemini-3.8-flash-high failed after 3 attempts: Antigravity CLI timed out after 2s
+=============================== warnings summary ===============================
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py: 15 warnings
+  /home/jason/PycharmProjects/adversarial-spec/.venv/lib/python3.14/site-packages/litellm/litellm_core_utils/logging_utils.py:273: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_gauntlet_attack_stop_blocks_queued_siblings
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_gauntlet_attack_stop_blocks_queued_siblings
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_gauntlet_attack_stop_blocks_queued_siblings
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_gauntlet_attack_stop_blocks_queued_siblings
+  /home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/gauntlet/persistence.py:66: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_evidence_failure_keeps_workspace_and_stops - FileNotFoundError: [Errno 2] No such file or directory: '/home/jason/.cache/advspec-agy-tests/fee76c065af5/dispatch/agy-dispatch-xex77jae/retained.json'
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_bwrap_setup_failure_is_refusal_only - Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_evidence_persistence_failure_is_terminal[incident_dir] - Failed: DID NOT RAISE <class 'agy_sandbox.AgyStop'>
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_evidence_persistence_failure_is_terminal[incident_meta] - Failed: DID NOT RAISE <class 'agy_sandbox.AgyStop'>
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_evidence_persistence_failure_is_terminal[all_state_writes] - Failed: DID NOT RAISE <class 'agy_sandbox.AgyStop'>
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_undecodable_output_still_inspected - UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 9: invalid start byte
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_uninspectable_workspace_is_terminal - Failed: DID NOT RAISE <class 'agy_sandbox.AgyStop'>
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_stop_published_at_final_admission_cannot_precede_launch - assert 1217267.575890872 < 1217267.075688128
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_gauntlet_prior_stop_refused_before_any_progress - RuntimeError: REACHED_PROMPT_LOADING
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_symlinked_mask_targets_are_masked - assert ['listdir=["h...["note.txt"]'] == ['listdir=[]'...["note.txt"]']
+  
+  At index 0 diff: 'listdir=["herdr.sock.marker"]' != 'listdir=[]'
+  
+  Full diff:
+    [
+  +     'listdir=["herdr.sock.marker"]',
+  +     'listdir=["herdr.sock.marker"]',
+  -     'listdir=[]',
+  +     'listdir=["Cookies"]',
+  ?               +++++++++
+  -     'listdir=[]',
+  +     'listdir=["Cookies"]',
+  ?               +++++++++
+  -     'listdir=[]',
+  -     'listdir=[]',
+        'listdir=["note.txt"]',
+    ]
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_retained_evidence_root_survives_cleanup - AssertionError: assert (False)
+ +  where False = exists()
+ +    where exists = PosixPath('/home/jason/.cache/advspec-agy-tests/c417391f2c08/dispatch/agy-dispatch-retained').exists
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_dispatch_time_refusal_refuses_round - assert 0 == 6
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_setup_timeout_before_ready_is_refusal - Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+================= 13 failed, 52 passed, 19 warnings in 42.15s ==================
