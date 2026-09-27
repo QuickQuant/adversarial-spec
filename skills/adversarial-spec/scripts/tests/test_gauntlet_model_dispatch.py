@@ -48,7 +48,7 @@ def test_validate_model_name_rejects_forbidden_patterns(model_name: str):
 
 def test_select_eval_model_prefers_codex_sol(monkeypatch):
     monkeypatch.setattr(MODULE, "CODEX_AVAILABLE", True)
-    monkeypatch.setattr(MODULE, "GEMINI_CLI_AVAILABLE", True)
+    monkeypatch.setattr(MODULE, "ANTIGRAVITY_AVAILABLE", True)
     monkeypatch.delenv("ADVERSARIAL_SPEC_UNAVAILABLE_MODELS", raising=False)
 
     assert select_eval_model() == "codex/gpt-5.6-sol"
@@ -56,7 +56,7 @@ def test_select_eval_model_prefers_codex_sol(monkeypatch):
 
 def test_select_eval_model_warns_before_falling_back_to_terra(monkeypatch, capsys):
     monkeypatch.setattr(MODULE, "CODEX_AVAILABLE", True)
-    monkeypatch.setattr(MODULE, "GEMINI_CLI_AVAILABLE", True)
+    monkeypatch.setattr(MODULE, "ANTIGRAVITY_AVAILABLE", True)
     monkeypatch.setenv("ADVERSARIAL_SPEC_UNAVAILABLE_MODELS", "codex/gpt-5.6-sol")
 
     assert select_eval_model() == "codex/gpt-5.6-terra"
@@ -65,12 +65,12 @@ def test_select_eval_model_warns_before_falling_back_to_terra(monkeypatch, capsy
 
 def test_get_available_eval_models_prefers_codex_sol(monkeypatch):
     monkeypatch.setattr(MODULE, "CODEX_AVAILABLE", True)
-    monkeypatch.setattr(MODULE, "GEMINI_CLI_AVAILABLE", True)
+    monkeypatch.setattr(MODULE, "ANTIGRAVITY_AVAILABLE", True)
     monkeypatch.delenv("ADVERSARIAL_SPEC_UNAVAILABLE_MODELS", raising=False)
 
     assert get_available_eval_models()[:2] == [
         "codex/gpt-5.6-sol",
-        "gemini-cli/gemini-3.6-flash-high",
+        "antigravity/gemini-3.8-flash-high",
     ]
 
 
@@ -138,7 +138,7 @@ def test_call_model_records_litellm_usage_once(monkeypatch):
 def test_select_eval_model_never_routes_to_retired_opus(monkeypatch):
     """CON-001: ambient ANTHROPIC_API_KEY must not route eval to retired Opus."""
     monkeypatch.setattr(MODULE, "CODEX_AVAILABLE", False)
-    monkeypatch.setattr(MODULE, "GEMINI_CLI_AVAILABLE", False)
+    monkeypatch.setattr(MODULE, "ANTIGRAVITY_AVAILABLE", False)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.delenv("ADVERSARIAL_SPEC_UNAVAILABLE_MODELS", raising=False)
@@ -149,7 +149,7 @@ def test_select_eval_model_never_routes_to_retired_opus(monkeypatch):
 
 def test_get_available_eval_models_excludes_retired_opus(monkeypatch):
     monkeypatch.setattr(MODULE, "CODEX_AVAILABLE", False)
-    monkeypatch.setattr(MODULE, "GEMINI_CLI_AVAILABLE", False)
+    monkeypatch.setattr(MODULE, "ANTIGRAVITY_AVAILABLE", False)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
 

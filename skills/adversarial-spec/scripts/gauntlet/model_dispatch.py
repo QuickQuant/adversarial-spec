@@ -18,10 +18,10 @@ from models import (
     call_gemini_cli_model,
 )
 from providers import (
+    ANTIGRAVITY_AVAILABLE,
+    ANTIGRAVITY_GEMINI_38_FLASH_HIGH,
     CODEX_AVAILABLE,
     DEFAULT_CODEX_REASONING,
-    GEMINI_CLI_36_FLASH_HIGH,
-    GEMINI_CLI_AVAILABLE,
     GPT_56_SOL,
     GPT_56_TERRA,
 )
@@ -196,11 +196,11 @@ def _select_codex_eval_model() -> str | None:
 def select_adversary_model() -> str:
     """Select model for adversary attacks (Phase 1 & 3).
 
-    Priority: FREE first (Gemini CLI), then cheapest API.
+    Priority: FREE first (Antigravity gemini), then cheapest API.
     Adversaries don't need to be smart - they need to be aggressive.
     """
-    if GEMINI_CLI_AVAILABLE:
-        return GEMINI_CLI_36_FLASH_HIGH
+    if ANTIGRAVITY_AVAILABLE:
+        return ANTIGRAVITY_GEMINI_38_FLASH_HIGH
 
     import os
 
@@ -212,7 +212,7 @@ def select_adversary_model() -> str:
         return "gemini/gemini-3-flash"
 
     raise RuntimeError(
-        "No model available for adversaries. Install Gemini CLI (free) or set an API key."
+        "No model available for adversaries. Install Antigravity CLI (agy) or set an API key."
     )
 
 
@@ -226,11 +226,11 @@ def select_eval_model() -> str:
     if codex_model:
         return codex_model
 
-    if GEMINI_CLI_AVAILABLE:
-        return GEMINI_CLI_36_FLASH_HIGH
+    if ANTIGRAVITY_AVAILABLE:
+        return ANTIGRAVITY_GEMINI_38_FLASH_HIGH
 
     raise RuntimeError(
-        "No model available for evaluation. Install Codex CLI (free) or Gemini CLI."
+        "No model available for evaluation. Install Codex CLI (free) or Antigravity CLI (agy)."
     )
 
 
@@ -260,8 +260,8 @@ def get_available_eval_models() -> list[str]:
     codex_model = _select_codex_eval_model()
     if codex_model:
         models.append(codex_model)
-    if GEMINI_CLI_AVAILABLE:
-        models.append(GEMINI_CLI_36_FLASH_HIGH)
+    if ANTIGRAVITY_AVAILABLE:
+        models.append(ANTIGRAVITY_GEMINI_38_FLASH_HIGH)
 
     return models
 

@@ -753,7 +753,7 @@ class TestGetAvailableProviders:
                         assert "Antigravity" in provider_names
                         for name, key, model in available:
                             if name == "Antigravity":
-                                assert model == "antigravity/gemini-3.7-flash-high"
+                                assert model == "antigravity/gemini-3.8-flash-high"
                                 assert key is None  # No API key required
 
 

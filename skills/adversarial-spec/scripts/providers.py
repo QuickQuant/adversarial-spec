@@ -52,7 +52,6 @@ MODEL_COSTS = {
     "codex/gpt-5.6-terra": {"input": 0.0, "output": 0.0},
     "codex/gpt-5.6-sol": {"input": 0.0, "output": 0.0},
     # Gemini CLI models (uses Google account, no per-token cost)
-    "gemini-cli/gemini-3.6-flash-high": {"input": 0.0, "output": 0.0},
     "gemini-cli/gemini-3-flash-preview": {"input": 0.0, "output": 0.0},
     # Claude CLI models (uses Anthropic subscription via claude command, no per-token cost)
     "claude-cli/claude-sonnet-4-6": {"input": 0.0, "output": 0.0},
@@ -61,8 +60,7 @@ MODEL_COSTS = {
     # Replaces the retired standalone Gemini CLI (Google migrated Code Assist for
     # individuals into the Antigravity suite ~2026-06; the old `gemini` binary now
     # fails auth/tier). This is the current subscription path for the Google family.
-    "antigravity/gemini-3.7-flash-high": {"input": 0.0, "output": 0.0},
-    "antigravity/gemini-3.6-flash-high": {"input": 0.0, "output": 0.0},
+    "antigravity/gemini-3.8-flash-high": {"input": 0.0, "output": 0.0},
     "antigravity/gemini-3.5-flash": {"input": 0.0, "output": 0.0},
 }
 
@@ -89,9 +87,9 @@ DEFAULT_CODEX_REASONING = "xhigh"
 GPT_56_LUNA = "codex/gpt-5.6-luna"
 GPT_56_TERRA = "codex/gpt-5.6-terra"
 GPT_56_SOL = "codex/gpt-5.6-sol"
-GEMINI_36_FLASH_HIGH = "gemini-3.6-flash-high"
-GEMINI_CLI_36_FLASH_HIGH = f"gemini-cli/{GEMINI_36_FLASH_HIGH}"
-ANTIGRAVITY_GEMINI_36_FLASH_HIGH = f"antigravity/{GEMINI_36_FLASH_HIGH}"
+# Google-family default (all gemini roles): gemini-3.8-flash @ high via `agy`.
+GEMINI_38_FLASH_HIGH = "gemini-3.8-flash-high"
+ANTIGRAVITY_GEMINI_38_FLASH_HIGH = f"antigravity/{GEMINI_38_FLASH_HIGH}"
 
 # Bedrock model mapping: friendly names -> Bedrock model IDs
 BEDROCK_MODEL_MAP = {
@@ -374,7 +372,7 @@ def list_providers():
     antigravity_status = "[installed]" if ANTIGRAVITY_AVAILABLE else "[not installed]"
     print(f"  {'Antigravity':12} {'(Antigravity subscription)':24} {antigravity_status}")
     print(
-        "             Example models: antigravity/gemini-3.7-flash-high"
+        f"             Example models: {ANTIGRAVITY_GEMINI_38_FLASH_HIGH}"
     )
     print("             Replaces the retired standalone Gemini CLI (agy models to list).")
     print()
@@ -447,7 +445,7 @@ def get_available_providers() -> list[tuple[str, Optional[str], str]]:
 
     # Add Antigravity CLI if available (Google-family subscription path)
     if ANTIGRAVITY_AVAILABLE:
-        available.append(("Antigravity", None, "antigravity/gemini-3.7-flash-high"))
+        available.append(("Antigravity", None, ANTIGRAVITY_GEMINI_38_FLASH_HIGH))
 
     return available
 

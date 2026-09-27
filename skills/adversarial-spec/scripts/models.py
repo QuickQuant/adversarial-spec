@@ -42,7 +42,7 @@ from providers import (
     CLAUDE_CLI_AVAILABLE,
     CODEX_AVAILABLE,
     DEFAULT_CODEX_REASONING,
-    GEMINI_36_FLASH_HIGH,
+    GEMINI_38_FLASH_HIGH,
     GEMINI_CLI_AVAILABLE,
 )
 
@@ -590,16 +590,12 @@ USER REQUEST:
 # `agy models` lists human-readable names with spaces/parens; the debate model
 # string uses a slug. Keep this in sync with `agy models`.
 ANTIGRAVITY_MODEL_MAP = {
-    GEMINI_36_FLASH_HIGH: "Gemini 3.6 Flash (High)",
     "gemini-3.5-flash": "Gemini 3.5 Flash (High)",
     "gemini-3.5-flash-medium": "Gemini 3.5 Flash (Medium)",
     "gemini-3.5-flash-low": "Gemini 3.5 Flash (Low)",
     # Synced with `agy models` 2026-08-23 (gemini-cli retired → antigravity).
-    "gemini-3.1-pro-high": "Gemini 3.1 Pro (High)",
-    "gemini-3.1-pro-low": "Gemini 3.1 Pro (Low)",
-    "gemini-3.7-flash-high": "Gemini 3.7 Flash (High)",
     # Synced with `agy models` 2026-09-04 (Jason: "gemini is actually 3.8 now").
-    "gemini-3.8-flash-high": "Gemini 3.8 Flash (High)",
+    GEMINI_38_FLASH_HIGH: "Gemini 3.8 Flash (High)",
     "gemini-3.8-flash-medium": "Gemini 3.8 Flash (Medium)",
     "gemini-3.8-flash-low": "Gemini 3.8 Flash (Low)",
 }
