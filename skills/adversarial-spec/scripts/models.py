@@ -905,11 +905,11 @@ def call_single_model(
                     output_tokens=output_tokens,
                     cost=cost,
                 )
-            except agy_sandbox.AgyDispatchRefusedError as e:
-                # Nothing ran; retrying cannot help. (AgyStop is a BaseException and
-                # deliberately escapes this loop: a STOP is never retried.)
-                print(f"Error: {model} refused: {e}", file=sys.stderr)
-                return ModelResponse(model=model, response="", agreed=False, spec=None, error=str(e))
+            except agy_sandbox.AgyDispatchRefusedError:
+                # Nothing ran; retrying cannot help, and the round must be refused rather than
+                # completed without this seat: propagate the typed refusal to the command boundary.
+                # (AgyStop is a BaseException and escapes this loop too: a STOP is never retried.)
+                raise
             except Exception as e:
                 last_error = str(e)
                 if attempt < MAX_RETRIES - 1:
@@ -1119,10 +1119,13 @@ def call_models_parallel(
     An Antigravity STOP is terminal: sibling critics that are already running
     finish, but results arriving after the STOP are quarantined into the
     incident directory (never saved as partial results, never synthesized),
-    and the STOP is re-raised once every worker has returned.
+    and the STOP is re-raised once every worker has returned. A dispatch-time
+    ``AgyDispatchRefusedError`` is re-raised the same way (after siblings return),
+    so the round is refused instead of completing without that seat.
     """
     results = []
     stop: agy_sandbox.AgyStop | None = None
+    refusal: agy_sandbox.AgyDispatchRefusedError | None = None
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(models)) as executor:
         future_to_model = {
             executor.submit(
@@ -1152,6 +1155,9 @@ def call_models_parallel(
             except agy_sandbox.AgyStop as exc:
                 stop = stop or exc
                 continue
+            except agy_sandbox.AgyDispatchRefusedError as exc:
+                refusal = refusal or exc
+                continue
             if stop is not None:
                 agy_sandbox.quarantine_result(stop, f"round-{round_num}-{result.model}", {
                     "model": result.model, "agreed": result.agreed, "response": result.response,
@@ -1162,6 +1168,8 @@ def call_models_parallel(
             _save_partial_result(result, round_num, session_id)
     if stop is not None:
         raise stop
+    if refusal is not None:
+        raise refusal
     return results
 
 

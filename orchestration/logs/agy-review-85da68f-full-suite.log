@@ -1,0 +1,127 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.0, pytest-8.4.2, pluggy-1.6.0
+rootdir: /home/jason/PycharmProjects/adversarial-spec.worktrees/agy-tripwire-fix
+configfile: pyproject.toml
+testpaths: skills/adversarial-spec/scripts/tests
+plugins: anyio-4.12.1, cov-7.0.0
+collected 1120 items
+
+skills/adversarial-spec/scripts/tests/test_adversaries.py ............   [  1%]
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py .............. [  2%]
+...................................................                      [  6%]
+skills/adversarial-spec/scripts/tests/test_altitude_provenance.py ...    [  7%]
+skills/adversarial-spec/scripts/tests/test_authoring_lint.py .......     [  7%]
+skills/adversarial-spec/scripts/tests/test_c_census.py ..........        [  8%]
+skills/adversarial-spec/scripts/tests/test_c_golden_harness.py ...       [  8%]
+skills/adversarial-spec/scripts/tests/test_cli.py ...................... [ 10%]
+................                                                         [ 12%]
+skills/adversarial-spec/scripts/tests/test_conflict_disposition_store.py . [ 12%]
+........                                                                 [ 13%]
+skills/adversarial-spec/scripts/tests/test_contract_version_resolver.py . [ 13%]
+..........                                                               [ 14%]
+skills/adversarial-spec/scripts/tests/test_criticality_classifier.py ... [ 14%]
+                                                                         [ 14%]
+skills/adversarial-spec/scripts/tests/test_d0_to_load_plan.py .......    [ 15%]
+skills/adversarial-spec/scripts/tests/test_dependency_semantics.py ..... [ 15%]
+.............                                                            [ 16%]
+skills/adversarial-spec/scripts/tests/test_dogfood_fprime.py ...         [ 16%]
+skills/adversarial-spec/scripts/tests/test_fprime_gate_integration.py .. [ 17%]
+.                                                                        [ 17%]
+skills/adversarial-spec/scripts/tests/test_gate_result.py .......        [ 17%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_batch_tiering.py ... [ 18%]
+...........................                                              [ 20%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_check_cli.py ....... [ 21%]
+                                                                         [ 21%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_cli.py .             [ 21%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_clustering.py ...... [ 21%]
+.................                                                        [ 23%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_core_types.py ...    [ 23%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_error_guards.py .... [ 23%]
+..........                                                               [ 24%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_model_dispatch.py .. [ 24%]
+....................                                                     [ 26%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_orchestrator.py .... [ 27%]
+..............                                                           [ 28%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_package.py .         [ 28%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_persistence.py ..... [ 28%]
+......                                                                   [ 29%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_phase_1_attacks.py . [ 29%]
+.................................                                        [ 32%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_phase_4_tier_dispatch.py . [ 32%]
+....                                                                     [ 32%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_phase_config.py .... [ 33%]
+.                                                                        [ 33%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_reporting_grouped.py . [ 33%]
+.......                                                                  [ 34%]
+skills/adversarial-spec/scripts/tests/test_gauntlet_synthesis_extract.py . [ 34%]
+..                                                                       [ 34%]
+skills/adversarial-spec/scripts/tests/test_getting_started_doclint.py .. [ 34%]
+.                                                                        [ 34%]
+skills/adversarial-spec/scripts/tests/test_glossary_doclint.py ....      [ 34%]
+skills/adversarial-spec/scripts/tests/test_guardrail_orchestration.py .. [ 35%]
+......                                                                   [ 35%]
+skills/adversarial-spec/scripts/tests/test_hardening_package.py ........ [ 36%]
+.................                                                        [ 37%]
+skills/adversarial-spec/scripts/tests/test_mini_spec_emission.py ....... [ 38%]
+...................                                                      [ 40%]
+skills/adversarial-spec/scripts/tests/test_mock_falsification.py ....... [ 40%]
+.....                                                                    [ 41%]
+skills/adversarial-spec/scripts/tests/test_model_calls.py .............  [ 42%]
+skills/adversarial-spec/scripts/tests/test_model_registry_drift.py ..    [ 42%]
+skills/adversarial-spec/scripts/tests/test_models.py ................... [ 44%]
+........................................................................ [ 50%]
+..........................                                               [ 53%]
+skills/adversarial-spec/scripts/tests/test_phase8_promotion.py .......   [ 53%]
+skills/adversarial-spec/scripts/tests/test_phase8_subflow_migration.py . [ 53%]
+..................................                                       [ 56%]
+skills/adversarial-spec/scripts/tests/test_phase8_tmr_composition.py ... [ 57%]
+.....                                                                    [ 57%]
+skills/adversarial-spec/scripts/tests/test_prompts.py .................. [ 59%]
+...................................                                      [ 62%]
+skills/adversarial-spec/scripts/tests/test_provenance_journal.py ....... [ 62%]
+.                                                                        [ 62%]
+skills/adversarial-spec/scripts/tests/test_providers.py ................ [ 64%]
+...............................................                          [ 68%]
+skills/adversarial-spec/scripts/tests/test_session.py .................  [ 70%]
+skills/adversarial-spec/scripts/tests/test_spine_coverage_checker.py ... [ 70%]
+.                                                                        [ 70%]
+skills/adversarial-spec/scripts/tests/test_tcov_liveness.py ......       [ 70%]
+skills/adversarial-spec/scripts/tests/test_telegram_bot.py ............. [ 72%]
+....................................                                     [ 75%]
+skills/adversarial-spec/scripts/tests/test_tmr_compile_step.py .......   [ 75%]
+skills/adversarial-spec/scripts/tests/test_tmr_obligation_fields.py .s.s [ 76%]
+.......................................                                  [ 79%]
+skills/adversarial-spec/scripts/tests/test_tmr_parser.py ....            [ 80%]
+skills/adversarial-spec/scripts/tests/test_tmr_schema_contract.py ...... [ 80%]
+.....                                                                    [ 81%]
+skills/adversarial-spec/scripts/tests/test_trace_golden.py ....          [ 81%]
+skills/adversarial-spec/scripts/tests/test_validation_emission.py ...... [ 82%]
+........................................................................ [ 88%]
+........................................................................ [ 94%]
+......................................................                   [ 99%]
+skills/adversarial-spec/scripts/tests/test_verification_tier_lint.py ... [100%]
+
+=============================== warnings summary ===============================
+skills/adversarial-spec/scripts/tmr_schema.py:339
+  /home/jason/PycharmProjects/adversarial-spec.worktrees/agy-tripwire-fix/skills/adversarial-spec/scripts/tmr_schema.py:339: PytestCollectionWarning: cannot collect test class 'TestMaturityRecord' because it has a __init__ constructor (from: skills/adversarial-spec/scripts/tests/test_authoring_lint.py)
+    class TestMaturityRecord(StrictSchemaModel):
+
+skills/adversarial-spec/scripts/tmr_schema.py:339
+  /home/jason/PycharmProjects/adversarial-spec.worktrees/agy-tripwire-fix/skills/adversarial-spec/scripts/tmr_schema.py:339: PytestCollectionWarning: cannot collect test class 'TestMaturityRecord' because it has a __init__ constructor (from: skills/adversarial-spec/scripts/tests/test_criticality_classifier.py)
+    class TestMaturityRecord(StrictSchemaModel):
+
+.venv/lib/python3.14/site-packages/litellm/litellm_core_utils/logging_utils.py:273: 15 warnings
+  /home/jason/PycharmProjects/adversarial-spec.worktrees/agy-tripwire-fix/.venv/lib/python3.14/site-packages/litellm/litellm_core_utils/logging_utils.py:273: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+skills/adversarial-spec/scripts/tmr_schema.py:339
+  /home/jason/PycharmProjects/adversarial-spec.worktrees/agy-tripwire-fix/skills/adversarial-spec/scripts/tmr_schema.py:339: PytestCollectionWarning: cannot collect test class 'TestMaturityRecord' because it has a __init__ constructor (from: skills/adversarial-spec/scripts/tests/test_tcov_liveness.py)
+    class TestMaturityRecord(StrictSchemaModel):
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py: 4 warnings
+skills/adversarial-spec/scripts/tests/test_gauntlet_persistence.py: 15 warnings
+  /home/jason/PycharmProjects/adversarial-spec.worktrees/agy-tripwire-fix/skills/adversarial-spec/scripts/gauntlet/persistence.py:66: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========== 1118 passed, 2 skipped, 37 warnings in 64.52s (0:01:04) ============

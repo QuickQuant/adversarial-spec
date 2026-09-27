@@ -1669,6 +1669,10 @@ def main() -> None:
         # Terminal: no retry, no synthesis, no round checkpoint (see agy_sandbox).
         print(f"\n{stop}", file=sys.stderr)
         sys.exit(EXIT_AGY_BLOCKED if stop.kind == "blocked" else EXIT_AGY_STOP)
+    except agy_sandbox.AgyDispatchRefusedError as refusal:
+        # Nothing ran for that seat; the round is refused (no checkpoint, no durable STOP).
+        print(f"\nError: {refusal}\nRefusing the round; no model is substituted automatically.", file=sys.stderr)
+        sys.exit(EXIT_AGY_REFUSED)
 
 
 def require_agy_seats_ready(models: list[str], cwd: Optional[str]) -> None:

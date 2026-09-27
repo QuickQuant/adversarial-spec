@@ -23,6 +23,12 @@ directories are the authority: a missing ``stop.json`` with an uncleared inciden
 
 Refusals (``AgyDispatchRefusedError``: sandbox unavailable, bwrap setup failure, no git repository) launch
 no critic and write no durable record. Operator rulings: orchestration/redirect-focused-fix-2026-09-24.md.
+
+Evidence is never lost to a persistence failure: the process latches before any evidence I/O, a dispatch root
+whose evidence or stop record could not be written is kept with a ``retained.json`` marker (stale cleanup skips
+it), and a marker with ``stop_recorded: false`` blocks admission for its repository until an operator
+``release``. The final admission check and the critic spawn run under the same lock that publishes a STOP, so
+no critic starts after a STOP is published. Review dispositions: orchestration/review-codex-85da68f-dispositions.md.
 """
 
 from __future__ import annotations
@@ -35,6 +41,7 @@ import os
 import re
 import secrets
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -47,6 +54,7 @@ from typing import Iterator, Optional
 STATE_DIRNAME = "adversarial-spec-agy"
 DISPATCH_BASE_ENV = "ADVSPEC_AGY_DISPATCH_BASE"
 DISPATCH_PREFIX = "agy-dispatch-"
+RETAINED_MARKER = "retained.json"
 INLINE_PROMPT_MAX = 100_000  # argv headroom under Linux MAX_ARG_STRLEN (131072) for one string
 BOUNDARY_PROBE_ENABLED = True
 READY_MARKER = "ADVSPEC_SANDBOX_READY"
@@ -166,10 +174,10 @@ def _reset_process_state_for_tests() -> None:
         _AVAILABILITY.clear()
 
 
-def _set_latch(stop: AgyStop) -> None:
+def _set_latch(stop: AgyStop, *, replace: bool = False) -> None:
     global _LATCH
     with _PROCESS_LOCK:
-        if _LATCH is None:
+        if _LATCH is None or replace:
             _LATCH = stop
 
 
@@ -293,12 +301,40 @@ def _write_json(path: Path, data: dict) -> None:
     os.replace(tmp, path)
 
 
-def _admit(repo_root: Path, common_dir: Path) -> None:
-    """Refuse (``AgyStop``) while the repository has an uncleared STOP; detect record tampering."""
+def _unrecorded_stop_roots(common_dir: Path) -> list[Path]:
+    """Retained dispatch roots whose STOP could not be written to the stop state of ``common_dir``."""
+    base = _dispatch_base()
+    if not base.is_dir():
+        return []
+    found = []
+    for root in sorted(base.glob(f"{DISPATCH_PREFIX}*")):
+        try:
+            marker = json.loads((root / RETAINED_MARKER).read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        if isinstance(marker, dict) and marker.get("stop_recorded") is False and \
+                marker.get("common_dir") == str(common_dir):
+            found.append(root)
+    return found
+
+
+def _admit(repo_root: Path, common_dir: Path, *, held: bool = False) -> None:
+    """Refuse (``AgyStop``) while the repository has an uncleared STOP; detect record tampering.
+
+    ``held``: the caller already holds the stop-state lock (final pre-launch check).
+    """
     state = common_dir / STATE_DIRNAME
+    unrecorded = _unrecorded_stop_roots(common_dir)
+    if unrecorded:
+        roots = ", ".join(str(r) for r in unrecorded)
+        summary = (f"a prior STOP could not be written to the stop state; its evidence is retained at {roots}. "
+                   f"After review release it: python3 {Path(__file__).resolve()} release --root <root> "
+                   "--operator <name> --reason '<what you reviewed>'")
+        raise AgyStop("blocked", _stop_message("blocked", summary, repo_root, state, unrecorded[0], []),
+                      repo_root=repo_root, record=unrecorded[0] / RETAINED_MARKER)
     if not state.exists():
         return
-    with _locked(state):
+    with contextlib.nullcontext() if held else _locked(state):
         record = state / "stop.json"
         uncleared = _uncleared(state)
         if record.exists():
@@ -344,50 +380,85 @@ def _capture_workspace(ws: Path, dest: Path, paths: list[str]) -> None:
             target.mkdir(exist_ok=True)
 
 
+@dataclass
+class IncidentRecord:
+    incident_id: str
+    incident_dir: Optional[Path]
+    complete: bool
+    errors: list[str]
+    stop_recorded: bool
+
+
+def _write_stream(path: Path, data) -> None:
+    if isinstance(data, bytes):
+        path.write_bytes(data)
+    else:
+        path.write_text(data or "")
+
+
 def record_incident(
     cwd: str | Path,
     *,
     kind: str,
     model: str,
-    stdout: str,
-    stderr: str,
+    stdout,
+    stderr,
     workspace: Optional[Path] = None,
     paths: Optional[list[str]] = None,
     note: str = "",
-) -> tuple[str, Path, bool, list[str]]:
-    """Persist an incident plus the stop record. Returns (id, dir, evidence_complete, errors)."""
+) -> IncidentRecord:
+    """Persist an incident plus the stop record; never raises ``OSError`` (failures land in ``errors``).
+
+    ``stdout``/``stderr`` may be raw bytes (kept byte-exact) or text. ``incident_dir`` is ``None`` when the
+    incident directory could not be created; ``stop_recorded`` is False when ``stop.json`` was not written.
+    """
     repo_root, common = _git_paths(cwd)
     state = common / STATE_DIRNAME
     paths = sorted(paths or [])
     errors: list[str] = []
-    with _locked(state):
-        incident_id = f"{time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())}-{kind}-{secrets.token_hex(3)}"
-        incident_dir = state / "incidents" / incident_id
-        incident_dir.mkdir(parents=True)
+    incident_id = f"{time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())}-{kind}-{secrets.token_hex(3)}"
+    incident_dir: Optional[Path] = state / "incidents" / incident_id
+    stop_recorded = False
+    with contextlib.ExitStack() as stack:
+        try:
+            stack.enter_context(_locked(state))
+        except OSError as exc:
+            errors.append(f"stop-state lock unavailable: {exc}")
         meta = {"id": incident_id, "kind": kind, "model": model, "time": _now(), "repo_root": str(repo_root),
                 "paths": paths, "note": note, "evidence": "pending"}
-        _write_json(incident_dir / "incident.json", meta)
         try:
-            (incident_dir / "agy-stdout.txt").write_text(stdout or "")
-            (incident_dir / "agy-stderr.txt").write_text(stderr or "")
-            if workspace is not None and paths:
-                _capture_workspace(workspace, incident_dir / "workspace", paths)
-            meta["evidence"] = "complete"
-        except OSError as exc:
-            errors.append(f"evidence incomplete: {exc}")
-            meta["evidence"] = f"incomplete: {exc}"
-        with contextlib.suppress(OSError):
+            incident_dir.mkdir(parents=True)
             _write_json(incident_dir / "incident.json", meta)
+        except OSError as exc:
+            errors.append(f"incident not recorded: {exc}")
+            incident_dir = None
+        if incident_dir is not None:
+            try:
+                _write_stream(incident_dir / "agy-stdout.txt", stdout)
+                _write_stream(incident_dir / "agy-stderr.txt", stderr)
+                if workspace is not None and paths:
+                    _capture_workspace(workspace, incident_dir / "workspace", paths)
+                meta["evidence"] = "complete"
+            except OSError as exc:
+                errors.append(f"evidence incomplete: {exc}")
+                meta["evidence"] = f"incomplete: {exc}"
+            try:
+                _write_json(incident_dir / "incident.json", meta)
+            except OSError as exc:
+                errors.append(f"incident metadata not finalized: {exc}")
         try:
             record = state / "stop.json"
             existing: list[str] = []
             with contextlib.suppress(OSError, json.JSONDecodeError, AttributeError):
                 existing = list(json.loads(record.read_text()).get("incidents", []))
-            _write_json(record, {"incidents": sorted(set(existing) | {incident_id}), "latest": incident_id,
-                                 "kind": kind, "updated_at": _now()})
+            listed = {incident_id} if incident_dir is not None else set()
+            _write_json(record, {"incidents": sorted(set(existing) | listed), "latest": incident_id,
+                                 "kind": kind, "updated_at": _now(),
+                                 **({} if incident_dir is not None else {"unrecorded_incident": incident_id})})
+            stop_recorded = True
         except OSError as exc:
             errors.append(f"stop record not written: {exc}")
-    return incident_id, incident_dir, not errors, errors
+    return IncidentRecord(incident_id, incident_dir, not errors, errors, stop_recorded)
 
 
 def quarantine_result(stop: AgyStop, name: str, payload: dict) -> None:
@@ -440,6 +511,8 @@ def _cleanup_stale_roots(base: Path) -> None:
     if not base.is_dir():
         return
     for root in base.glob(f"{DISPATCH_PREFIX}*"):
+        if (root / RETAINED_MARKER).exists():
+            continue  # incident evidence kept for the operator; only an explicit release frees it
         try:
             pid = int((root / "owner.pid").read_text().strip())
         except (OSError, ValueError):
@@ -470,6 +543,26 @@ def _prepare_dispatch_root(base: Path, full_prompt: str) -> DispatchLayout:
                           throwaway=throwaway, nonce=secrets.token_hex(8))
 
 
+def _mask_target(path: Path, *, want_dir: bool) -> Optional[Path]:
+    """Resolve a mask path through symlinks; ``None`` when nothing is reachable there.
+
+    A symlinked mask is applied to its resolved target, which hides it under every alias. A target of the wrong
+    type cannot be masked safely, so the dispatch is refused rather than launched with the path exposed.
+    """
+    if not os.path.lexists(path):
+        return None
+    resolved = path.resolve()
+    if not resolved.exists():
+        return None  # dangling symlink: nothing behind it to expose
+    if resolved.is_dir() if want_dir else resolved.is_file():
+        return resolved
+    kind = "directory" if want_dir else "regular file"
+    raise AgyDispatchRefusedError(
+        f"agy dispatch refused: masked path {path} resolves to {resolved}, which is not a {kind}; "
+        "it cannot be masked safely"
+    )
+
+
 def build_bwrap_argv(layout: DispatchLayout, repo_root: Path) -> list[str]:
     """bwrap options (without the command). Everything read-only except the dispatch workspace."""
     home = Path.home()
@@ -484,11 +577,12 @@ def build_bwrap_argv(layout: DispatchLayout, repo_root: Path) -> list[str]:
     cli = home / ".gemini" / "antigravity-cli"
     masks += [cli / d for d in GEMINI_CLI_THROWAWAY_DIRS]
     for path in masks:
-        if path.is_dir() and not path.is_symlink():
-            argv += ["--tmpfs", str(path)]
+        target = _mask_target(path, want_dir=True)
+        if target is not None:
+            argv += ["--tmpfs", str(target)]
     for name in GEMINI_CLI_THROWAWAY_FILES:
-        target = cli / name
-        if target.is_file() and not target.is_symlink():
+        target = _mask_target(cli / name, want_dir=False)
+        if target is not None:
             scratch = layout.throwaway / name
             scratch.write_bytes(b"")
             argv += ["--bind", str(scratch), str(target)]
@@ -500,9 +594,18 @@ def build_bwrap_argv(layout: DispatchLayout, repo_root: Path) -> list[str]:
     return argv
 
 
-def _workspace_delta(layout: DispatchLayout) -> list[str]:
+def _workspace_delta(layout: DispatchLayout) -> tuple[list[str], list[str]]:
+    """Paths the critic left in its workspace, plus inspection failures (each one is terminal)."""
     delta: list[str] = []
-    for dirpath, dirnames, filenames in os.walk(layout.ws, followlinks=False):
+    errors: list[str] = []
+    try:
+        st = os.lstat(layout.ws)
+        if not stat.S_ISDIR(st.st_mode) or stat.S_IMODE(st.st_mode) != 0o700:
+            errors.append(f"workspace root metadata changed (mode {oct(st.st_mode)})")
+    except OSError as exc:
+        errors.append(f"workspace root unreadable: {exc}")
+    for dirpath, dirnames, filenames in os.walk(layout.ws, followlinks=False,
+                                                 onerror=lambda exc: errors.append(f"walk failed: {exc}")):
         current = Path(dirpath)
         rel_dir = current.relative_to(layout.ws)
         for name in filenames:
@@ -510,15 +613,19 @@ def _workspace_delta(layout: DispatchLayout) -> list[str]:
         for name in list(dirnames):
             full = current / name
             rel = full.relative_to(layout.ws)
-            if full.is_symlink():
-                delta.append(str(rel))
-                dirnames.remove(name)
-            elif full == layout.ws_inputs:
-                if any(full.iterdir()):
+            try:
+                if full.is_symlink():
                     delta.append(str(rel))
-            elif not any(full.iterdir()):
+                    dirnames.remove(name)
+                elif full == layout.ws_inputs:
+                    if any(full.iterdir()):
+                        delta.append(str(rel))
+                elif not any(full.iterdir()):
+                    delta.append(str(rel))
+            except OSError as exc:
+                errors.append(f"cannot inspect {rel}: {exc}")
                 delta.append(str(rel))
-    return sorted(delta)
+    return sorted(delta), errors
 
 
 def _porcelain_state(repo_root: Path) -> dict[str, Optional[tuple[int, int]]]:
@@ -570,14 +677,6 @@ def _latched_stop(original: AgyStop) -> AgyStop:
                    repo_root=original.repo_root, record=original.record)
 
 
-def _decode(stream) -> str:
-    if stream is None:
-        return ""
-    if isinstance(stream, bytes):
-        return stream.decode(errors="replace")
-    return stream
-
-
 def _strip_markers(stderr: str) -> str:
     return "\n".join(
         line for line in stderr.splitlines() if not line.startswith((READY_MARKER, PROBE_MARKER))
@@ -615,7 +714,10 @@ def run_agy_dispatch(
         raise
     _cleanup_stale_roots(base)
     layout = _prepare_dispatch_root(base, full_prompt)
-    keep_root = False
+    keep_reason: Optional[str] = None
+    stop_recorded = True
+    incident_id: Optional[str] = None
+    state = common / STATE_DIRNAME
     try:
         if len(full_prompt.encode("utf-8")) > INLINE_PROMPT_MAX:
             prompt_arg = POINTER_PROMPT_TMPL.format(prompt_path=layout.prompt_file)
@@ -626,19 +728,41 @@ def run_agy_dispatch(
         launcher = ["/bin/sh", "-c", _LAUNCHER, "advspec-agy-launcher", str(layout.sentinel), str(repo_root),
                     layout.nonce, "1" if BOUNDARY_PROBE_ENABLED else "0"]
         argv = build_bwrap_argv(layout, repo_root) + launcher + agy_args
-        try:  # re-check immediately before launch: a STOP made durable meanwhile blocks this launch
-            _admit(repo_root, common)
-        except AgyStop as stop:
-            _set_latch(stop)
-            raise
         before = _porcelain_state(repo_root)
-        timed_out = False
+        # The final admission check and the spawn hold the lock that publishes a STOP: a STOP published by a
+        # sibling or another process either precedes this check (no launch) or follows the spawn.
         try:
-            result = subprocess.run(argv, capture_output=True, text=True, timeout=timeout)
-            stdout, raw_stderr, rc = result.stdout or "", result.stderr or "", result.returncode
-        except subprocess.TimeoutExpired as exc:
+            with _locked(state):
+                try:
+                    _admit(repo_root, common, held=True)
+                except AgyStop as stop:
+                    _set_latch(stop)
+                    raise
+                try:
+                    proc = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                except OSError as exc:
+                    raise AgyDispatchRefusedError(f"agy dispatch refused: sandbox launcher did not start: {exc}")
+        except OSError as exc:
+            raise AgyDispatchRefusedError(f"agy dispatch refused: stop state {state} is unusable: {exc}")
+        timed_out = False
+        interrupted: Optional[BaseException] = None
+        try:
+            out_b, err_b = proc.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
             timed_out = True
-            stdout, raw_stderr, rc = _decode(exc.stdout), _decode(exc.stderr), -9
+            proc.kill()
+            out_b, err_b = proc.communicate()
+        except BaseException as exc:  # inspection must still run before this propagates
+            interrupted = exc
+            proc.kill()
+            try:
+                out_b, err_b = proc.communicate(timeout=10)
+            except BaseException:
+                out_b, err_b = b"", b""
+        rc = -9 if timed_out else proc.returncode
+        out_b, err_b = out_b or b"", err_b or b""
+        stdout = out_b.decode("utf-8", errors="replace")
+        raw_stderr = err_b.decode("utf-8", errors="replace")
         after = _porcelain_state(repo_root)
         stderr = _strip_markers(raw_stderr)
         ready = f"{READY_MARKER} {layout.nonce}" in raw_stderr
@@ -647,29 +771,41 @@ def run_agy_dispatch(
             sentinel_changed = layout.sentinel.read_bytes() != layout.sentinel_bytes
         except OSError:
             sentinel_changed = True
-        delta = _workspace_delta(layout)
+        delta, inspect_errors = _workspace_delta(layout)
 
         kind = None
         if probe_failed or sentinel_changed:
             kind = "boundary_failure"
             note = "in-sandbox write probe succeeded" if probe_failed else "read-only sentinel changed"
-        elif delta:
+        elif delta or inspect_errors:
             kind = "critic"
             note = "critic wrote into its dispatch workspace"
+            if inspect_errors:
+                note += " (workspace not fully inspectable: " + "; ".join(inspect_errors) + ")"
         if kind is not None:
-            incident_id, incident_dir, complete, errors = record_incident(
-                repo_root, kind=kind, model=model, stdout=stdout, stderr=raw_stderr,
-                workspace=layout.ws, paths=delta, note=note,
-            )
-            keep_root = not complete
+            # Latch and retain BEFORE any evidence I/O: a persistence failure can never reach a retry or
+            # delete the only copy of the evidence.
+            keep_reason = "incident evidence being recorded"
+            _set_latch(AgyStop(kind, f"AGY_STOP [{kind}]: {note}; evidence being recorded at {layout.root}",
+                               repo_root=repo_root))
+            try:
+                rec = record_incident(repo_root, kind=kind, model=model, stdout=out_b, stderr=err_b,
+                                      workspace=layout.ws, paths=delta, note=note)
+                incident_id, incident_dir, errors, stop_recorded = (rec.incident_id, rec.incident_dir,
+                                                                     rec.errors, rec.stop_recorded)
+            except Exception as exc:  # noqa: BLE001 - any failure here must still end in the STOP below
+                incident_dir, errors, stop_recorded = None, [f"incident not recorded: {exc}"], False
+            if inspect_errors:
+                errors = errors + ["workspace uninspectable: evidence left in place"]
+            keep_reason = "; ".join(errors) if errors else None
             summary = f"{note}; {len(delta)} workspace path(s)"
             if errors:
                 summary += "; " + "; ".join(errors) + f"; workspace kept at {layout.ws}"
-            state = common / STATE_DIRNAME
-            stop = AgyStop(kind, _stop_message(kind, summary, repo_root, state, incident_dir, [incident_id]),
+            ids = [incident_id] if incident_dir is not None and incident_id else []
+            stop = AgyStop(kind, _stop_message(kind, summary, repo_root, state, incident_dir or layout.root, ids),
                            incident_id=incident_id, incident_dir=incident_dir, repo_root=repo_root,
                            record=state / "stop.json")
-            _set_latch(stop)
+            _set_latch(stop, replace=True)
             raise stop
 
         blocked = [line for line in stderr.splitlines() if _BLOCKED_WRITE_RE.search(line)]
@@ -680,16 +816,51 @@ def run_agy_dispatch(
             if blocked:
                 print(f"Warning: {model} attempted {len(blocked)} blocked write(s); logged in "
                       f"{common / STATE_DIRNAME / 'windows.jsonl'}", file=sys.stderr)
+        if interrupted is not None:
+            raise interrupted
+        if not ready:
+            detail = " (timed out before the sandbox was ready)" if timed_out else ""
+            raise AgyDispatchRefusedError(
+                f"agy dispatch refused: sandbox setup failed{detail} (rc={rc}): {stderr.strip()[:500]}"
+            )
         if timed_out:
             raise RuntimeError(f"Antigravity CLI timed out after {timeout}s")
-        if not ready:
-            raise AgyDispatchRefusedError(
-                f"agy dispatch refused: sandbox setup failed (rc={rc}): {stderr.strip()[:500]}"
-            )
         return subprocess.CompletedProcess(argv, rc, stdout, stderr)
     finally:
-        if not keep_root:
+        if keep_reason is None:
             shutil.rmtree(layout.root, ignore_errors=True)
+        else:
+            _retain(layout, keep_reason, common=common, stop_recorded=stop_recorded, incident_id=incident_id)
+
+
+def _retain(layout: DispatchLayout, reason: str, *, common: Path, stop_recorded: bool,
+            incident_id: Optional[str]) -> None:
+    """Mark a dispatch root as operator evidence: stale cleanup skips it; an unrecorded STOP blocks admission."""
+    marker = {"reason": reason, "time": _now(), "common_dir": str(common), "stop_recorded": stop_recorded,
+              "incident_id": incident_id, "owner_pid": os.getpid()}
+    try:
+        (layout.root / RETAINED_MARKER).write_text(json.dumps(marker, indent=2) + "\n")
+    except OSError as exc:
+        print(f"Warning: could not mark retained evidence at {layout.root}: {exc}", file=sys.stderr)
+
+
+def release_retained(root: str | Path, operator: str, reason: str) -> dict:
+    """Operator release of a retained dispatch root: its marker is removed and the release is logged in it."""
+    root = Path(root)
+    if not operator.strip() or not reason.strip():
+        raise ClearRefusedError("release requires --operator and a non-empty --reason")
+    marker_path = root / RETAINED_MARKER
+    if not root.name.startswith(DISPATCH_PREFIX) or not marker_path.is_file():
+        raise ClearRefusedError(f"{root} is not a retained agy dispatch root")
+    marker = json.loads(marker_path.read_text())
+    entry = {"time": _now(), "operator": operator.strip(), "reason": reason.strip(), "marker": marker}
+    (root / "released.json").write_text(json.dumps(entry, indent=2) + "\n")
+    marker_path.unlink()
+    with contextlib.suppress(OSError, KeyError):
+        state = Path(marker["common_dir"]) / STATE_DIRNAME
+        with _locked(state), open(state / "clears.jsonl", "a") as fh:
+            fh.write(json.dumps({**entry, "incidents": [], "released_root": str(root)}) + "\n")
+    return entry
 
 
 # ── operator CLI ───────────────────────────────────────────────────────────────────────────────
@@ -705,6 +876,10 @@ def _main(argv: Optional[list[str]] = None) -> int:
     clear.add_argument("--incident", action="append", default=[], help="repeat for every uncleared incident")
     clear.add_argument("--operator", required=True)
     clear.add_argument("--reason", required=True)
+    release = sub.add_parser("release", help="release a retained dispatch root after reviewing its evidence")
+    release.add_argument("--root", required=True)
+    release.add_argument("--operator", required=True)
+    release.add_argument("--reason", required=True)
     args = parser.parse_args(argv)
     try:
         if args.action == "status":
@@ -713,7 +888,10 @@ def _main(argv: Optional[list[str]] = None) -> int:
             print(json.dumps({"state_dir": str(state), "stop_record_present": record.exists(),
                               "uncleared": _uncleared(state) if state.exists() else []}, indent=2))
             return 0
-        entry = clear_stop(args.repo, args.incident, args.operator, args.reason)
+        if args.action == "release":
+            entry = release_retained(args.root, args.operator, args.reason)
+        else:
+            entry = clear_stop(args.repo, args.incident, args.operator, args.reason)
         print(json.dumps(entry, indent=2))
         return 0
     except (ClearRefusedError, AgyDispatchRefusedError) as exc:

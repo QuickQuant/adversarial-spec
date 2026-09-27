@@ -302,6 +302,12 @@ def run_gauntlet(
                 f"Antigravity seat(s) {', '.join(agy_seats)} unavailable: {reason}. Refusing the gauntlet "
                 "before any dispatch; remove the seat explicitly (no automatic substitution)."
             )
+        # A prior STOP blocks the whole run, before resume loading, checkpoints, or any provider's dispatch.
+        try:
+            agy_sandbox.check_admission(None)
+        except AgyStop as stop:
+            print(f"\n{stop}", file=sys.stderr)
+            sys.exit(5 if stop.kind == "blocked" else 4)
 
     # ── Step 4: Unattended enforcement (G-4) ──
     original_input = None
