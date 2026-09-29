@@ -13,7 +13,7 @@ import time
 
 from adversaries import ADVERSARIES
 from gauntlet.batch_tiering import BatchTier
-from gauntlet.core_types import PROGRAMMING_BUGS, Concern, Evaluation, GauntletConfig
+from gauntlet.core_types import NEVER_ABSORBED, Concern, Evaluation, GauntletConfig
 from gauntlet.model_dispatch import (
     call_model,
     get_rate_limit_config,
@@ -104,7 +104,7 @@ Evaluate each concern according to the response protocols. Output valid JSON."""
     except json.JSONDecodeError as e:
         print(f"Warning: Failed to parse evaluation JSON: {e}", file=sys.stderr)
     except Exception as e:
-        if isinstance(e, PROGRAMMING_BUGS):
+        if isinstance(e, NEVER_ABSORBED):
             raise
         print(f"Warning: Evaluation failed: {e}", file=sys.stderr)
 
@@ -231,7 +231,7 @@ def evaluate_concerns_multi_model(
                         file=sys.stderr,
                     )
                 except Exception as e:
-                    if isinstance(e, PROGRAMMING_BUGS):
+                    if isinstance(e, NEVER_ABSORBED):
                         raise
                     print(
                         f"  Warning: {model} batch {batch_idx + 1} failed: {e}",
@@ -254,7 +254,7 @@ def evaluate_concerns_multi_model(
                 total_evals = sum(len(v) for v in model_all_results[model].values())
                 print(f"  {model}: all batches complete ({total_evals} evals)", file=sys.stderr)
             except Exception as e:
-                if isinstance(e, PROGRAMMING_BUGS):
+                if isinstance(e, NEVER_ABSORBED):
                     raise
                 print(f"  Warning: {model} failed entirely: {e}", file=sys.stderr)
                 model_all_results[model] = {}

@@ -9,7 +9,7 @@ from __future__ import annotations
 import sys
 
 from gauntlet.core_types import (
-    PROGRAMMING_BUGS,
+    NEVER_ABSORBED,
     BigPictureSynthesis,
     Concern,
     GauntletConfig,
@@ -101,7 +101,7 @@ def generate_big_picture_synthesis(
         )
 
     except Exception as e:
-        if isinstance(e, PROGRAMMING_BUGS):
+        if isinstance(e, NEVER_ABSORBED):
             raise
         print(f"Warning: Big picture synthesis failed: {e}", file=sys.stderr)
         return BigPictureSynthesis(

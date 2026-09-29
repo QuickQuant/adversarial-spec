@@ -298,10 +298,12 @@ def run_gauntlet(
     if agy_seats:
         reason = agy_sandbox.sandbox_unavailable_reason()
         if reason is not None:
-            raise AgyDispatchRefusedError(
-                f"Antigravity seat(s) {', '.join(agy_seats)} unavailable: {reason}. Refusing the gauntlet "
-                "before any dispatch; remove the seat explicitly (no automatic substitution)."
+            print(
+                f"Error: Antigravity seat(s) {', '.join(agy_seats)} unavailable: {reason}. Refusing the gauntlet "
+                "before any dispatch; remove the seat explicitly (no automatic substitution).",
+                file=sys.stderr,
             )
+            sys.exit(6)
         # A prior STOP blocks the whole run, before resume loading, checkpoints, or any provider's dispatch.
         try:
             agy_sandbox.check_admission(None)
@@ -978,13 +980,22 @@ Technical concerns requiring revision: {len(technical_concerns)}
 
         return result
 
-    except AgyStop as stop:
+    except AgyStop as raised:
         # Terminal: no later gauntlet-internal phase, no synthesis, no retry.
+        stop = agy_sandbox.resolve_stop(raised)
         if manifest_path:
             update_run_manifest(manifest_path, {"status": "agy_stop", "agy_stop_kind": stop.kind,
                                                 "agy_incident": str(stop.incident_dir or "")})
         print(f"\n{stop}", file=sys.stderr)
         sys.exit(5 if stop.kind == "blocked" else 4)
+
+    except AgyDispatchRefusedError as refusal:
+        # An agy seat could not run sandboxed mid-run: refuse the run; nothing is checkpointed or completed.
+        if manifest_path:
+            update_run_manifest(manifest_path, {"status": "agy_refused", "agy_refusal": str(refusal)[:500]})
+        print(f"\nError: {refusal}\nRefusing the gauntlet run; no model is substituted automatically.",
+              file=sys.stderr)
+        sys.exit(6)
 
     except KeyboardInterrupt:
         if manifest_path:

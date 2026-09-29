@@ -10,6 +10,7 @@ import re
 import sys
 
 from adversaries import FINAL_BOSS
+from agy_sandbox import AgyDispatchRefusedError
 from gauntlet.core_types import (
     Concern,
     DismissalReviewStats,
@@ -232,6 +233,8 @@ def run_final_boss_review(
         )
 
     except Exception as e:
+        if isinstance(e, AgyDispatchRefusedError):
+            raise  # a refused seat refuses the run; it never degrades to an operational-failure verdict
         print(f"  Warning: Final boss review failed: {e}", file=sys.stderr)
         # Operational failure must not satisfy the decision gate (CON-001):
         # REFINE blocks silent promotion until the review is retried or overridden.

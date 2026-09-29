@@ -11,7 +11,7 @@ import sys
 from typing import Optional
 
 from adversaries import ADVERSARIES
-from gauntlet.core_types import PROGRAMMING_BUGS, Evaluation, GauntletConfig, Rebuttal
+from gauntlet.core_types import NEVER_ABSORBED, Evaluation, GauntletConfig, Rebuttal
 from gauntlet.model_dispatch import call_model, get_rate_limit_config
 from gauntlet.prompts import REBUTTAL_SYSTEM_TEMPLATE, REBUTTAL_USER_TEMPLATE
 
@@ -66,7 +66,7 @@ def run_rebuttals(
             )
 
         except Exception as e:
-            if isinstance(e, PROGRAMMING_BUGS):
+            if isinstance(e, NEVER_ABSORBED):
                 raise
             print(f"Warning: Rebuttal failed for {adversary_key}: {e}", file=sys.stderr)
             return None

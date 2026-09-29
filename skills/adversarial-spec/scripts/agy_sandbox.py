@@ -55,6 +55,8 @@ STATE_DIRNAME = "adversarial-spec-agy"
 DISPATCH_BASE_ENV = "ADVSPEC_AGY_DISPATCH_BASE"
 DISPATCH_PREFIX = "agy-dispatch-"
 RETAINED_MARKER = "retained.json"
+RELEASED_MARKER = "released.json"
+DISPATCH_INFO = "dispatch.json"
 INLINE_PROMPT_MAX = 100_000  # argv headroom under Linux MAX_ARG_STRLEN (131072) for one string
 BOUNDARY_PROBE_ENABLED = True
 READY_MARKER = "ADVSPEC_SANDBOX_READY"
@@ -127,6 +129,8 @@ class AgyStop(BaseException):
         incident_dir: Optional[Path] = None,
         repo_root: Optional[Path] = None,
         record: Optional[Path] = None,
+        evidence_root: Optional[Path] = None,
+        provisional: bool = False,
     ) -> None:
         super().__init__(message)
         self.kind = kind
@@ -134,6 +138,8 @@ class AgyStop(BaseException):
         self.incident_dir = incident_dir
         self.repo_root = repo_root
         self.record = record
+        self.evidence_root = evidence_root  # retained dispatch root when the evidence lives there
+        self.provisional = provisional  # latched before the incident was recorded; see resolve_stop()
 
     def __str__(self) -> str:
         return str(self.args[0]) if self.args else self.kind
@@ -184,6 +190,13 @@ def _set_latch(stop: AgyStop, *, replace: bool = False) -> None:
 def _latched() -> Optional[AgyStop]:
     with _PROCESS_LOCK:
         return _LATCH
+
+
+def resolve_stop(stop: AgyStop) -> AgyStop:
+    """The canonical STOP for this process: the latch, once recording finished, supersedes a ``latched`` copy,
+    a provisional STOP, or a sibling's ``blocked`` refusal raised while another critic's incident was pending."""
+    latch = _latched()
+    return latch if latch is not None and not latch.provisional else stop
 
 
 # ── environment and repository discovery ───────────────────────────────────────────────────────
@@ -301,20 +314,54 @@ def _write_json(path: Path, data: dict) -> None:
     os.replace(tmp, path)
 
 
-def _unrecorded_stop_roots(common_dir: Path) -> list[Path]:
-    """Retained dispatch roots whose STOP could not be written to the stop state of ``common_dir``."""
+def _root_common_dir(root: Path) -> Optional[str]:
+    """The repository (git common dir) a dispatch root belongs to, or ``None`` when unknown/unreadable."""
+    try:
+        info = json.loads((root / DISPATCH_INFO).read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+    value = info.get("common_dir") if isinstance(info, dict) else None
+    return value if isinstance(value, str) else None
+
+
+def _root_holds_evidence(root: Path) -> bool:
+    """True when a dispatch root's workspace holds anything a critic could have left (or cannot be inspected)."""
+    ws = root / "ws"
+    if not os.path.lexists(ws):
+        return False
+    delta, errors = _workspace_delta(ws, check_mode=(root / DISPATCH_INFO).exists())
+    return bool(delta or errors)
+
+
+def _evidence_roots(common_dir: Path) -> list[Path]:
+    """Dispatch roots holding critic evidence with no durable STOP for ``common_dir`` (fail closed on doubt).
+
+    Blocking: a retention marker with ``stop_recorded`` not true (or unreadable), and any unreleased root whose
+    workspace holds evidence but carries no marker at all (the marker itself could not be written). A root that
+    cannot be attributed to a repository blocks every repository.
+    """
     base = _dispatch_base()
     if not base.is_dir():
         return []
     found = []
     for root in sorted(base.glob(f"{DISPATCH_PREFIX}*")):
-        try:
-            marker = json.loads((root / RETAINED_MARKER).read_text())
-        except (OSError, json.JSONDecodeError):
+        if (root / RELEASED_MARKER).exists():
             continue
-        if isinstance(marker, dict) and marker.get("stop_recorded") is False and \
-                marker.get("common_dir") == str(common_dir):
-            found.append(root)
+        marker_path = root / RETAINED_MARKER
+        if marker_path.exists():
+            try:
+                marker = json.loads(marker_path.read_text())
+            except (OSError, json.JSONDecodeError):
+                found.append(root)
+                continue
+            if not isinstance(marker, dict) or (marker.get("stop_recorded") is False and
+                                                marker.get("common_dir") in (None, str(common_dir))):
+                found.append(root)
+            continue
+        if _root_holds_evidence(root):
+            owner = _root_common_dir(root)
+            if owner is None or owner == str(common_dir):
+                found.append(root)
     return found
 
 
@@ -324,14 +371,14 @@ def _admit(repo_root: Path, common_dir: Path, *, held: bool = False) -> None:
     ``held``: the caller already holds the stop-state lock (final pre-launch check).
     """
     state = common_dir / STATE_DIRNAME
-    unrecorded = _unrecorded_stop_roots(common_dir)
+    unrecorded = _evidence_roots(common_dir)
     if unrecorded:
         roots = ", ".join(str(r) for r in unrecorded)
-        summary = (f"a prior STOP could not be written to the stop state; its evidence is retained at {roots}. "
-                   f"After review release it: python3 {Path(__file__).resolve()} release --root <root> "
+        summary = (f"critic evidence without a durable STOP record is retained at {roots}. After review release "
+                   f"each root: python3 {Path(__file__).resolve()} release --root <root> "
                    "--operator <name> --reason '<what you reviewed>'")
         raise AgyStop("blocked", _stop_message("blocked", summary, repo_root, state, unrecorded[0], []),
-                      repo_root=repo_root, record=unrecorded[0] / RETAINED_MARKER)
+                      repo_root=repo_root, record=unrecorded[0] / RETAINED_MARKER, evidence_root=unrecorded[0])
     if not state.exists():
         return
     with contextlib.nullcontext() if held else _locked(state):
@@ -463,14 +510,17 @@ def record_incident(
 
 def quarantine_result(stop: AgyStop, name: str, payload: dict) -> None:
     """Keep a sibling result that finished after a STOP as evidence; it is never synthesized."""
-    base = stop.incident_dir
-    if base is None:
-        return
-    target = Path(base) / "quarantine"
-    with contextlib.suppress(OSError):
+    base = stop.incident_dir or stop.evidence_root
+    safe = re.sub(r"[^A-Za-z0-9_.-]", "_", name)
+    try:
+        if base is None:
+            raise OSError("no evidence destination for this STOP")
+        target = Path(base) / "quarantine"
         target.mkdir(parents=True, exist_ok=True)
-        safe = re.sub(r"[^A-Za-z0-9_.-]", "_", name)
         (target / f"{safe}.json").write_text(json.dumps(payload, indent=2))
+    except OSError as exc:  # never drop it silently: the operator transcript is the last resort
+        print(f"Warning: could not quarantine {name} ({exc}); payload follows:\n{json.dumps(payload)}",
+              file=sys.stderr)
 
 
 def clear_stop(cwd: str | Path, incident_ids: list[str], operator: str, reason: str) -> dict:
@@ -511,8 +561,11 @@ def _cleanup_stale_roots(base: Path) -> None:
     if not base.is_dir():
         return
     for root in base.glob(f"{DISPATCH_PREFIX}*"):
-        if (root / RETAINED_MARKER).exists():
-            continue  # incident evidence kept for the operator; only an explicit release frees it
+        if not (root / RELEASED_MARKER).exists():
+            # Evidence is never reclaimed until an operator release: a retained root, or any root whose workspace
+            # holds something a critic left (its STOP may not have persisted).
+            if (root / RETAINED_MARKER).exists() or _root_holds_evidence(root):
+                continue
         try:
             pid = int((root / "owner.pid").read_text().strip())
         except (OSError, ValueError):
@@ -523,10 +576,13 @@ def _cleanup_stale_roots(base: Path) -> None:
             shutil.rmtree(root, ignore_errors=True)
 
 
-def _prepare_dispatch_root(base: Path, full_prompt: str) -> DispatchLayout:
+def _prepare_dispatch_root(base: Path, full_prompt: str, common: Optional[Path] = None) -> DispatchLayout:
     base.mkdir(parents=True, exist_ok=True, mode=0o700)
     root = Path(tempfile.mkdtemp(prefix=DISPATCH_PREFIX, dir=base))
     (root / "owner.pid").write_text(str(os.getpid()))
+    # Written before launch, so a root always names its repository even if nothing can be written at STOP time.
+    (root / DISPATCH_INFO).write_text(json.dumps({"common_dir": str(common) if common else None,
+                                                  "owner_pid": os.getpid(), "created": _now()}))
     ws = root / "ws"
     inputs = root / "inputs"
     ws_inputs = ws / "inputs"
@@ -594,30 +650,34 @@ def build_bwrap_argv(layout: DispatchLayout, repo_root: Path) -> list[str]:
     return argv
 
 
-def _workspace_delta(layout: DispatchLayout) -> tuple[list[str], list[str]]:
-    """Paths the critic left in its workspace, plus inspection failures (each one is terminal)."""
+def _workspace_delta(ws: Path, *, check_mode: bool = True) -> tuple[list[str], list[str]]:
+    """Paths a critic left in workspace ``ws``, plus inspection failures (each one is terminal).
+
+    ``check_mode``: the root was created by this module (mode 0700), so any other mode is a critic change.
+    """
+    ws_inputs = ws / "inputs"
     delta: list[str] = []
     errors: list[str] = []
     try:
-        st = os.lstat(layout.ws)
-        if not stat.S_ISDIR(st.st_mode) or stat.S_IMODE(st.st_mode) != 0o700:
+        st = os.lstat(ws)
+        if not stat.S_ISDIR(st.st_mode) or (check_mode and stat.S_IMODE(st.st_mode) != 0o700):
             errors.append(f"workspace root metadata changed (mode {oct(st.st_mode)})")
     except OSError as exc:
         errors.append(f"workspace root unreadable: {exc}")
-    for dirpath, dirnames, filenames in os.walk(layout.ws, followlinks=False,
+    for dirpath, dirnames, filenames in os.walk(ws, followlinks=False,
                                                  onerror=lambda exc: errors.append(f"walk failed: {exc}")):
         current = Path(dirpath)
-        rel_dir = current.relative_to(layout.ws)
+        rel_dir = current.relative_to(ws)
         for name in filenames:
             delta.append(str(rel_dir / name) if str(rel_dir) != "." else name)
         for name in list(dirnames):
             full = current / name
-            rel = full.relative_to(layout.ws)
+            rel = full.relative_to(ws)
             try:
                 if full.is_symlink():
                     delta.append(str(rel))
                     dirnames.remove(name)
-                elif full == layout.ws_inputs:
+                elif full == ws_inputs:
                     if any(full.iterdir()):
                         delta.append(str(rel))
                 elif not any(full.iterdir()):
@@ -674,7 +734,8 @@ def _latched_stop(original: AgyStop) -> AgyStop:
     message = (f"AGY_STOP [latched]: this process already stopped ({original.kind}); no further Antigravity "
                f"dispatch will start in it.\n{original}")
     return AgyStop("latched", message, incident_id=original.incident_id, incident_dir=original.incident_dir,
-                   repo_root=original.repo_root, record=original.record)
+                   repo_root=original.repo_root, record=original.record, evidence_root=original.evidence_root,
+                   provisional=original.provisional)
 
 
 def _strip_markers(stderr: str) -> str:
@@ -713,7 +774,10 @@ def run_agy_dispatch(
         _set_latch(stop)
         raise
     _cleanup_stale_roots(base)
-    layout = _prepare_dispatch_root(base, full_prompt)
+    try:
+        layout = _prepare_dispatch_root(base, full_prompt, common)
+    except OSError as exc:
+        raise AgyDispatchRefusedError(f"agy dispatch refused: dispatch root could not be prepared: {exc}")
     keep_reason: Optional[str] = None
     stop_recorded = True
     incident_id: Optional[str] = None
@@ -771,7 +835,7 @@ def run_agy_dispatch(
             sentinel_changed = layout.sentinel.read_bytes() != layout.sentinel_bytes
         except OSError:
             sentinel_changed = True
-        delta, inspect_errors = _workspace_delta(layout)
+        delta, inspect_errors = _workspace_delta(layout.ws)
 
         kind = None
         if probe_failed or sentinel_changed:
@@ -787,7 +851,7 @@ def run_agy_dispatch(
             # delete the only copy of the evidence.
             keep_reason = "incident evidence being recorded"
             _set_latch(AgyStop(kind, f"AGY_STOP [{kind}]: {note}; evidence being recorded at {layout.root}",
-                               repo_root=repo_root))
+                               repo_root=repo_root, evidence_root=layout.root, provisional=True))
             try:
                 rec = record_incident(repo_root, kind=kind, model=model, stdout=out_b, stderr=err_b,
                                       workspace=layout.ws, paths=delta, note=note)
@@ -804,7 +868,7 @@ def run_agy_dispatch(
             ids = [incident_id] if incident_dir is not None and incident_id else []
             stop = AgyStop(kind, _stop_message(kind, summary, repo_root, state, incident_dir or layout.root, ids),
                            incident_id=incident_id, incident_dir=incident_dir, repo_root=repo_root,
-                           record=state / "stop.json")
+                           record=state / "stop.json", evidence_root=layout.root if keep_reason else None)
             _set_latch(stop, replace=True)
             raise stop
 
@@ -845,21 +909,29 @@ def _retain(layout: DispatchLayout, reason: str, *, common: Path, stop_recorded:
 
 
 def release_retained(root: str | Path, operator: str, reason: str) -> dict:
-    """Operator release of a retained dispatch root: its marker is removed and the release is logged in it."""
+    """Operator release of a retained dispatch root (marker or bare evidence): logged, then reclaimable."""
     root = Path(root)
     if not operator.strip() or not reason.strip():
         raise ClearRefusedError("release requires --operator and a non-empty --reason")
+    if not root.name.startswith(DISPATCH_PREFIX) or not root.is_dir():
+        raise ClearRefusedError(f"{root} is not an agy dispatch root")
     marker_path = root / RETAINED_MARKER
-    if not root.name.startswith(DISPATCH_PREFIX) or not marker_path.is_file():
-        raise ClearRefusedError(f"{root} is not a retained agy dispatch root")
-    marker = json.loads(marker_path.read_text())
-    entry = {"time": _now(), "operator": operator.strip(), "reason": reason.strip(), "marker": marker}
-    (root / "released.json").write_text(json.dumps(entry, indent=2) + "\n")
-    marker_path.unlink()
-    with contextlib.suppress(OSError, KeyError):
-        state = Path(marker["common_dir"]) / STATE_DIRNAME
-        with _locked(state), open(state / "clears.jsonl", "a") as fh:
-            fh.write(json.dumps({**entry, "incidents": [], "released_root": str(root)}) + "\n")
+    marker: object = None
+    if marker_path.exists():
+        try:
+            marker = json.loads(marker_path.read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            marker = f"unreadable: {exc}"
+    common = marker.get("common_dir") if isinstance(marker, dict) else _root_common_dir(root)
+    entry = {"time": _now(), "operator": operator.strip(), "reason": reason.strip(), "marker": marker,
+             "released_root": str(root)}
+    (root / RELEASED_MARKER).write_text(json.dumps(entry, indent=2) + "\n")
+    marker_path.unlink(missing_ok=True)
+    if common:
+        with contextlib.suppress(OSError):
+            state = Path(common) / STATE_DIRNAME
+            with _locked(state), open(state / "clears.jsonl", "a") as fh:
+                fh.write(json.dumps({**entry, "incidents": []}) + "\n")
     return entry
 
 

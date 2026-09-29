@@ -1124,6 +1124,7 @@ def call_models_parallel(
     so the round is refused instead of completing without that seat.
     """
     results = []
+    late: list[ModelResponse] = []
     stop: agy_sandbox.AgyStop | None = None
     refusal: agy_sandbox.AgyDispatchRefusedError | None = None
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(models)) as executor:
@@ -1159,14 +1160,19 @@ def call_models_parallel(
                 refusal = refusal or exc
                 continue
             if stop is not None:
-                agy_sandbox.quarantine_result(stop, f"round-{round_num}-{result.model}", {
-                    "model": result.model, "agreed": result.agreed, "response": result.response,
-                    "spec": result.spec, "error": result.error,
-                })
+                late.append(result)  # quarantined once the STOP's evidence destination is final
                 continue
             results.append(result)
             _save_partial_result(result, round_num, session_id)
     if stop is not None:
+        # The first STOP to arrive may be a sibling's latched copy of a STOP whose incident was still being
+        # recorded; once every worker has returned, the process latch names the recorded incident.
+        stop = agy_sandbox.resolve_stop(stop)
+        for result in late:
+            agy_sandbox.quarantine_result(stop, f"round-{round_num}-{result.model}", {
+                "model": result.model, "agreed": result.agreed, "response": result.response,
+                "spec": result.spec, "error": result.error,
+            })
         raise stop
     if refusal is not None:
         raise refusal

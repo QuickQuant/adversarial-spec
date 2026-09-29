@@ -12,6 +12,7 @@ from enum import Enum
 from typing import Optional
 
 from adversaries import ADVERSARIES, generate_concern_id
+from agy_sandbox import AgyDispatchRefusedError
 
 # =============================================================================
 # ERROR CLASSIFICATION
@@ -21,6 +22,10 @@ from adversaries import ADVERSARIES, generate_concern_id
 # These indicate real code defects, not transient operational failures.
 # Excludes ValueError and KeyError — those often come from malformed API responses.
 PROGRAMMING_BUGS = (TypeError, NameError, AttributeError, ImportError, SyntaxError, AssertionError)
+
+# Everything a gauntlet model caller must re-raise instead of degrading to a fallback result: programming bugs,
+# plus a typed Antigravity refusal (the seat could not run sandboxed; the run is refused, never "completed").
+NEVER_ABSORBED = PROGRAMMING_BUGS + (AgyDispatchRefusedError,)
 
 # =============================================================================
 # SYNTHESIS TAXONOMY

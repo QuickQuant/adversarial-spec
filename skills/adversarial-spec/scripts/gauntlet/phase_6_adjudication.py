@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import sys
 
-from gauntlet.core_types import PROGRAMMING_BUGS, Concern, GauntletConfig, Rebuttal
+from gauntlet.core_types import NEVER_ABSORBED, Concern, GauntletConfig, Rebuttal
 from gauntlet.model_dispatch import call_model
 from gauntlet.prompts import ADJUDICATION_SYSTEM_PROMPT
 
@@ -75,7 +75,7 @@ Make your final decisions. Output valid JSON."""
             return surviving
 
     except Exception as e:
-        if isinstance(e, PROGRAMMING_BUGS):
+        if isinstance(e, NEVER_ABSORBED):
             raise
         print(f"Warning: Final adjudication failed: {e}", file=sys.stderr)
 

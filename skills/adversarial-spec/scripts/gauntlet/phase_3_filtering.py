@@ -13,7 +13,7 @@ import sys
 from typing import Optional
 
 from gauntlet.core_types import (
-    PROGRAMMING_BUGS,
+    NEVER_ABSORBED,
     Concern,
     Evaluation,
     ExplanationMatch,
@@ -121,7 +121,7 @@ Does any existing explanation FULLY address this concern?"""
                         )
 
     except Exception as e:
-        if isinstance(e, PROGRAMMING_BUGS):
+        if isinstance(e, NEVER_ABSORBED):
             raise
 
     return None

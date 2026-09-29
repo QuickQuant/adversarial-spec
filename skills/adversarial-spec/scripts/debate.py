@@ -1665,8 +1665,9 @@ def main() -> None:
 
     try:
         run_models_with_agy_contract(args, models, context, bedrock_mode, bedrock_region)
-    except agy_sandbox.AgyStop as stop:
+    except agy_sandbox.AgyStop as raised:
         # Terminal: no retry, no synthesis, no round checkpoint (see agy_sandbox).
+        stop = agy_sandbox.resolve_stop(raised)
         print(f"\n{stop}", file=sys.stderr)
         sys.exit(EXIT_AGY_BLOCKED if stop.kind == "blocked" else EXIT_AGY_STOP)
     except agy_sandbox.AgyDispatchRefusedError as refusal:

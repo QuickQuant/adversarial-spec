@@ -14,7 +14,7 @@ import time
 from collections import defaultdict
 
 from adversaries import ADVERSARIES, resolve_adversary_name
-from gauntlet.core_types import PROGRAMMING_BUGS, Concern, GauntletConfig
+from gauntlet.core_types import NEVER_ABSORBED, Concern, GauntletConfig
 from gauntlet.model_dispatch import (
     _get_model_provider,
     call_model,
@@ -319,7 +319,7 @@ def generate_attacks(
             return local_concerns, elapsed, response
 
         except Exception as e:
-            if isinstance(e, PROGRAMMING_BUGS):
+            if isinstance(e, NEVER_ABSORBED):
                 raise
             print(
                 f"Warning: Adversary {adversary_key} failed: {e}",
