@@ -1719,3 +1719,32 @@ def test_root_caught_mid_cleanup_is_not_evidence(h, monkeypatch, sibling):
     text, _, _ = _dispatch(h)
     assert "fake critique" in text and h.agy_launches == 2
     assert agy_sandbox._latched() is None and h.incidents() == []
+
+
+# -- Narrow review of ae12e32: N5 (orchestration/review-codex-ae12e32.md) -------------------------------
+
+
+def test_leftover_sweep_reclaims_only_generated_names(h):
+    """N5: the leftover sweep deletes only directories named exactly like a generated reclaim target
+    ('.reclaim-agy-dispatch-<mkdtemp chars>-<positive pid>') whose pid is dead; unrelated '.reclaim-*' data,
+    malformed or non-positive pid suffixes, and live-pid leftovers are left alone. Paired: a genuine dead-pid
+    leftover is still reclaimed."""
+    import agy_sandbox
+
+    h.base.mkdir(parents=True, exist_ok=True)
+    kept = {
+        name: h.base / name
+        for name in (".reclaim-unrelated-backup", ".reclaim-unrelated-999999999",
+                     ".reclaim-agy-dispatch-k3x9q2ab-0", ".reclaim-agy-dispatch-k3x9q2ab--5",
+                     ".reclaim-agy-dispatch-k3x9q2ab-12x", ".reclaim-agy-dispatch--999999999",
+                     f".reclaim-agy-dispatch-k3x9q2ab-{os.getpid()}")
+    }
+    for path in kept.values():
+        path.mkdir()
+        (path / "valuable.txt").write_text("keep me")
+    genuine = h.base / ".reclaim-agy-dispatch-k3x9_q2a-999999999"
+    (genuine / "ws").mkdir(parents=True)
+    agy_sandbox._cleanup_stale_roots(h.base)
+    for name, path in kept.items():
+        assert (path / "valuable.txt").read_text() == "keep me", name
+    assert not genuine.exists()

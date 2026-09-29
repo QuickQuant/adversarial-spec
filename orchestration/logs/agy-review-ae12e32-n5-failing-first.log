@@ -1,0 +1,71 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.0, pytest-8.4.2, pluggy-1.6.0
+rootdir: /home/jason/PycharmProjects/adversarial-spec
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0
+collected 85 items / 84 deselected / 1 selected
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py F              [100%]
+
+=================================== FAILURES ===================================
+______________ test_leftover_sweep_reclaims_only_generated_names _______________
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7ff9162fef90>
+
+    def test_leftover_sweep_reclaims_only_generated_names(h):
+        """N5: the leftover sweep deletes only directories named exactly like a generated reclaim target
+        ('.reclaim-agy-dispatch-<mkdtemp chars>-<positive pid>') whose pid is dead; unrelated '.reclaim-*' data,
+        malformed or non-positive pid suffixes, and live-pid leftovers are left alone. Paired: a genuine dead-pid
+        leftover is still reclaimed."""
+        import agy_sandbox
+    
+        h.base.mkdir(parents=True, exist_ok=True)
+        kept = {
+            name: h.base / name
+            for name in (".reclaim-unrelated-backup", ".reclaim-unrelated-999999999",
+                         ".reclaim-agy-dispatch-k3x9q2ab-0", ".reclaim-agy-dispatch-k3x9q2ab--5",
+                         ".reclaim-agy-dispatch-k3x9q2ab-12x", ".reclaim-agy-dispatch--999999999",
+                         f".reclaim-agy-dispatch-k3x9q2ab-{os.getpid()}")
+        }
+        for path in kept.values():
+            path.mkdir()
+            (path / "valuable.txt").write_text("keep me")
+        genuine = h.base / ".reclaim-agy-dispatch-k3x9_q2a-999999999"
+        (genuine / "ws").mkdir(parents=True)
+        agy_sandbox._cleanup_stale_roots(h.base)
+        for name, path in kept.items():
+>           assert (path / "valuable.txt").read_text() == "keep me", name
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1749: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/pathlib/__init__.py:792: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/home/jason/.cache/advspec-agy-tests/8ad6124ac9ee/dispatch/.reclaim-unrelated-backup/valuable.txt')
+mode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/home/jason/.cache/advspec-agy-tests/8ad6124ac9ee/dispatch/.reclaim-unrelated-backup/valuable.txt'
+
+../../.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/pathlib/__init__.py:776: FileNotFoundError
+=============================== warnings summary ===============================
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py: 15 warnings
+  /home/jason/PycharmProjects/adversarial-spec/.venv/lib/python3.14/site-packages/litellm/litellm_core_utils/logging_utils.py:273: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_leftover_sweep_reclaims_only_generated_names - FileNotFoundError: [Errno 2] No such file or directory: '/home/jason/.cache/advspec-agy-tests/8ad6124ac9ee/dispatch/.reclaim-unrelated-backup/valuable.txt'
+================ 1 failed, 84 deselected, 15 warnings in 2.16s =================
