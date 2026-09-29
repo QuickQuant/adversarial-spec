@@ -30,7 +30,8 @@ case uses the offline harness: real bwrap, real git, real dispatch code, and a s
 ## Review summary items not in R1-R9
 - **3, isolation (network):** not addressed. agy needs network access to its API, so `--unshare-net` would break
   every dispatch. Host Unix sockets that matter (herdr, `/run/user/<uid>`, SSH agent, DBus) are masked and tested
-  (TC-12). Other abstract or TCP endpoints remain reachable. Carried as residue for the canary review.
+  (TC-12). Other abstract or TCP endpoints remain reachable. **ACCEPTED RISK** (Jason, 2026-09-29): see the
+  re-review section below.
 - **4, setup timeouts:** fixed under R8 (see above).
 - **Gauntlet dispatch-time refusal:** watchlisted at 4c1e099. Superseded: ruled blocking and fixed (see the
   re-review section below).
@@ -59,6 +60,14 @@ R9 were confirmed FIXED with load-bearing tests. Owner: adv-spec-lead, 2026-09-2
 | N2 | **Accepted, fixed** | The provisional latch is flagged `provisional` and carries `evidence_root`. `agy_sandbox.resolve_stop()` returns the final latch once recording finishes. `call_models_parallel` buffers late sibling results, resolves the STOP after every worker returns, and then quarantines into the recorded incident. The fallback destination is the retained root; if both are missing, the payload goes to stderr rather than being dropped silently. Debate and gauntlet handlers report the resolved STOP. | `test_provisional_stop_resolves_to_incident_and_keeps_late_sibling_output`: the reviewer's interleaving, where the raised STOP is `critic` with the recorded `incident_dir` and the late Claude output is quarantined. Pair: TC-1.2 unchanged. |
 
 ## Not touched (per coordinator)
-- The network-namespace residue is a user design decision. The re-review rates it BLOCKING for canary readiness.
+- **Network-namespace residue: ACCEPTED RISK** (Jason ruling 2026-09-29, relayed by coordinator w1P:p1).
+  - What remains: host networking is retained with no endpoint policy. Unmasked TCP and abstract-socket
+    endpoints stay reachable from the critic. The re-review had rated this BLOCKING for canary readiness.
+  - Evidence for accepting it:
+    - 0 writes across 40 guarded agy dispatches (2026-07-20 to 2026-09-22).
+    - The only real AGY incident, PaddleBlaster on 2026-07-19, was a filesystem one, and the sandbox covers it.
+  - Mitigation in place: the herdr, `/run/user/<uid>`, SSH-agent and DBus sockets are masked and tested (TC-12),
+    and the environment is an allowlist.
+  - No network work is planned.
 - The `history.jsonl -> /dev/null` alias still refuses the dispatch (fail closed). The re-review judged this an
   intentional compatibility limit.
