@@ -97,3 +97,12 @@ adv-spec-lead, 2026-09-29. No agy dispatch was made.
 | ID | Disposition | Fix | Regression test (paired case) |
 |---|---|---|---|
 | N4, mid-rmtree | **Accepted, fixed; structural** (coordinator-specified) | Every clean-root deletion goes through `_reclaim_root`. That covers stale cleanup and the dispatch `finally`. `_reclaim_root` first `os.rename()`s the root, atomically within the dispatch base, to `.reclaim-<name>-<pid>`, which is outside the scanned `agy-dispatch-*` glob, and then rmtrees the renamed path. If the rename fails, the root stays in place whole; it is never partially deleted. Stale cleanup also removes leftover `.reclaim-*` directories whose pid is dead, and it tolerates a root reclaimed by another process mid-loop. Evidence and retained roots are untouched by this path. | `test_root_caught_mid_cleanup_is_not_evidence[clean_mid_cleanup]` reproduces codex's interleaving through the module's real stale cleanup: rmtree is paused just after it removes `ws/inputs`, while the scan inspects that directory. The dispatch launches, nothing latches, and the next dispatch launches too. Pair `[real_evidence]`: unreleased critic output still gives a `blocked` STOP with zero launches. Test-first: lease `auth-1d990fe08e36` (red on `da8229d`: 1 failed, 1 passed); commit `89e7422`. |
+
+# Dispositions: narrow codex review of ae12e32 (N4 FIXED; N5 new)
+
+Review: `orchestration/review-codex-ae12e32.md` (copied from the `agy-rereview-ae12e32` worktree). Owner:
+adv-spec-lead, 2026-09-29. No agy dispatch was made.
+
+| ID | Disposition | Fix | Regression test (paired case) |
+|---|---|---|---|
+| N5 (blocking; unrelated data deletion) | **Accepted, fixed; minimal** | The leftover sweep only reclaims a directory whose name fully matches `re.fullmatch(r"\.reclaim-agy-dispatch-[a-z0-9_]+-([1-9][0-9]*)")`. The name part uses the characters `tempfile.mkdtemp` generates, and the pid must be strictly positive. The directory must be a real directory, not a symlink, and its pid must be dead. Anything else in the dispatch base is left alone, including names the old sweep deleted as "unparseable". | `test_leftover_sweep_reclaims_only_generated_names`: `.reclaim-unrelated-backup`, `.reclaim-unrelated-999999999`, pid `0`, `-5` and `12x`, an empty name part, and a live-pid leftover are all preserved with their `valuable.txt`. Pair: a genuine dead-pid leftover (`.reclaim-agy-dispatch-k3x9_q2a-999999999`) is still reclaimed. Test-first: lease `auth-15cd681f9043` (red on `ae12e32`); commit `24306fb`. |

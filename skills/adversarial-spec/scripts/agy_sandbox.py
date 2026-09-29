@@ -59,6 +59,7 @@ RELEASED_MARKER = "released.json"
 # A clean root is renamed to this prefix (outside the scanned DISPATCH_PREFIX glob) before it is deleted, so no
 # scan ever sees a half-deleted root.
 RECLAIM_PREFIX = ".reclaim-"
+_RECLAIM_NAME_RE = re.compile(re.escape(RECLAIM_PREFIX + DISPATCH_PREFIX) + r"[a-z0-9_]+-([1-9][0-9]*)")
 DISPATCH_INFO = "dispatch.json"
 # DISPATCH_INFO renamed in place when a STOP could not be persisted: a rename allocates no data, so this flag
 # survives the storage failure that lost stop.json and retained.json.
@@ -610,13 +611,13 @@ def _cleanup_stale_roots(base: Path) -> None:
             pid = -1
         if pid <= 0 or not _pid_alive(pid):
             _reclaim_root(root)
-    # Renamed roots whose deleting process died mid-rmtree (the name ends with that process's pid).
+    # Renamed roots whose deleting process died mid-rmtree. Only names exactly as _reclaim_root generates them
+    # (mkdtemp name chars, strictly positive pid) are ours; anything else in the base is left alone.
     for leftover in base.glob(f"{RECLAIM_PREFIX}*"):
-        try:
-            owner = int(leftover.name.rsplit("-", 1)[1])
-        except (IndexError, ValueError):
-            owner = -1
-        if owner <= 0 or not _pid_alive(owner):
+        match = _RECLAIM_NAME_RE.fullmatch(leftover.name)
+        if match is None or leftover.is_symlink() or not leftover.is_dir():
+            continue
+        if not _pid_alive(int(match.group(1))):
             shutil.rmtree(leftover, ignore_errors=True)
 
 
