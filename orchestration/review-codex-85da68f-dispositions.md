@@ -71,3 +71,14 @@ R9 were confirmed FIXED with load-bearing tests. Owner: adv-spec-lead, 2026-09-2
   - No network work is planned.
 - The `history.jsonl -> /dev/null` alias still refuses the dispatch (fail closed). The re-review judged this an
   intentional compatibility limit.
+
+# Dispositions: final codex review of 9757be3 (REJECT)
+
+Review: `orchestration/review-codex-9757be3.md` (copied from the `agy-rereview-9757be3` worktree). Owner:
+adv-spec-lead, 2026-09-29. No agy dispatch was made.
+
+| ID | Disposition | Fix | Regression test (paired case) |
+|---|---|---|---|
+| N4 (blocking; a live regression from 9757be3) | **Accepted, fixed; minimal, no new mechanism** | The foreign-root scan now treats a vanished root as holding no evidence. `_root_holds_evidence` requires the workspace to still exist after inspection. `_evidence_roots` requires the root to still exist before unknown ownership broadens the block, and when a marker read fails. Evidence roots are never deleted: cleanup skips them and only an operator release frees them. So a root that vanishes mid-scan was a clean sibling's own cleanup. The dispatch's inspection of its own workspace is unchanged. | `test_vanishing_clean_sibling_root_is_not_evidence[_workspace_delta, _root_common_dir]`: the root vanishes before inspection, or before attribution. The dispatch launches and nothing latches. Pair: a real unreleased critic write in a sibling root that does not vanish still gives a `blocked` STOP with zero launches. Test-first: `pipeline_create_test` lease `auth-4a2f8b91936c` (red, 2 failed); commit `277a31d`. |
+| N3 | **HOLD** (coordinator, pending Jason's scope decision) | — | — |
+| N1 boundary-probe variant | **HOLD** (coordinator, pending Jason's scope decision) | — | — |

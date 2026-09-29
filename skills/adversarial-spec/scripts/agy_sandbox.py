@@ -330,7 +330,9 @@ def _root_holds_evidence(root: Path) -> bool:
     if not os.path.lexists(ws):
         return False
     delta, errors = _workspace_delta(ws, check_mode=(root / DISPATCH_INFO).exists())
-    return bool(delta or errors)
+    # A clean sibling may delete its own root while this scan runs; a workspace that vanished held nothing.
+    # (Evidence roots are never deleted: cleanup skips them and only an operator release frees them.)
+    return bool(delta or errors) and os.path.lexists(ws)
 
 
 def _evidence_roots(common_dir: Path) -> list[Path]:
@@ -352,7 +354,8 @@ def _evidence_roots(common_dir: Path) -> list[Path]:
             try:
                 marker = json.loads(marker_path.read_text())
             except (OSError, json.JSONDecodeError):
-                found.append(root)
+                if os.path.lexists(root):  # a root released and reclaimed mid-scan is not evidence
+                    found.append(root)
                 continue
             if not isinstance(marker, dict) or (marker.get("stop_recorded") is False and
                                                 marker.get("common_dir") in (None, str(common_dir))):
@@ -360,7 +363,8 @@ def _evidence_roots(common_dir: Path) -> list[Path]:
             continue
         if _root_holds_evidence(root):
             owner = _root_common_dir(root)
-            if owner is None or owner == str(common_dir):
+            # Unknown ownership blocks every repository, but only for a root that still exists.
+            if (owner is None or owner == str(common_dir)) and os.path.lexists(root):
                 found.append(root)
     return found
 
