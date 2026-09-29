@@ -14,6 +14,7 @@ import time
 from collections import defaultdict
 
 from adversaries import ADVERSARIES, resolve_adversary_name
+from agy_sandbox import AgyDispatchRefusedError, AgyStop, resolve_stop
 from gauntlet.core_types import NEVER_ABSORBED, Concern, GauntletConfig
 from gauntlet.model_dispatch import (
     _get_model_provider,
@@ -361,9 +362,21 @@ def generate_attacks(
                     future = executor.submit(run_adversary_with_model, adv, model)
                     all_futures[future] = (adv, model)
 
+        # Drain every sibling before raising: a refusal seen first must not hide a sibling's real STOP.
+        stop: AgyStop | None = None
+        refusal: AgyDispatchRefusedError | None = None
         for future in concurrent.futures.as_completed(all_futures):
             adv_key, model = all_futures[future]
-            collect_result(future, adv_key, model)
+            try:
+                collect_result(future, adv_key, model)
+            except AgyStop as exc:
+                stop = stop or exc
+            except AgyDispatchRefusedError as exc:
+                refusal = refusal or exc
+        if stop is not None:
+            raise resolve_stop(stop)
+        if refusal is not None:
+            raise refusal
 
     if timing:
         sorted_timing = sorted(timing.items(), key=lambda x: x[1], reverse=True)

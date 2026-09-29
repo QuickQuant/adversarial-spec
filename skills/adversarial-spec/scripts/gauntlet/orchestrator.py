@@ -980,16 +980,18 @@ Technical concerns requiring revision: {len(technical_concerns)}
 
         return result
 
-    except AgyStop as raised:
-        # Terminal: no later gauntlet-internal phase, no synthesis, no retry.
-        stop = agy_sandbox.resolve_stop(raised)
-        if manifest_path:
-            update_run_manifest(manifest_path, {"status": "agy_stop", "agy_stop_kind": stop.kind,
-                                                "agy_incident": str(stop.incident_dir or "")})
-        print(f"\n{stop}", file=sys.stderr)
-        sys.exit(5 if stop.kind == "blocked" else 4)
-
-    except AgyDispatchRefusedError as refusal:
+    except (AgyStop, AgyDispatchRefusedError) as raised:
+        # A real STOP (raised, or latched by a sibling while this refusal unwound) takes precedence.
+        latch = agy_sandbox._latched()
+        if isinstance(raised, AgyStop) or latch is not None:
+            # Terminal: no later gauntlet-internal phase, no synthesis, no retry.
+            stop = agy_sandbox.resolve_stop(raised if isinstance(raised, AgyStop) else latch)
+            if manifest_path:
+                update_run_manifest(manifest_path, {"status": "agy_stop", "agy_stop_kind": stop.kind,
+                                                    "agy_incident": str(stop.incident_dir or "")})
+            print(f"\n{stop}", file=sys.stderr)
+            sys.exit(5 if stop.kind == "blocked" else 4)
+        refusal = raised
         # An agy seat could not run sandboxed mid-run: refuse the run; nothing is checkpointed or completed.
         if manifest_path:
             update_run_manifest(manifest_path, {"status": "agy_refused", "agy_refusal": str(refusal)[:500]})

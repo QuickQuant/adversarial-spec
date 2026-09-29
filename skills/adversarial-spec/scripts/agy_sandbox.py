@@ -57,6 +57,9 @@ DISPATCH_PREFIX = "agy-dispatch-"
 RETAINED_MARKER = "retained.json"
 RELEASED_MARKER = "released.json"
 DISPATCH_INFO = "dispatch.json"
+# DISPATCH_INFO renamed in place when a STOP could not be persisted: a rename allocates no data, so this flag
+# survives the storage failure that lost stop.json and retained.json.
+UNRECORDED_MARKER = "unrecorded-stop.json"
 INLINE_PROMPT_MAX = 100_000  # argv headroom under Linux MAX_ARG_STRLEN (131072) for one string
 BOUNDARY_PROBE_ENABLED = True
 READY_MARKER = "ADVSPEC_SANDBOX_READY"
@@ -316,10 +319,13 @@ def _write_json(path: Path, data: dict) -> None:
 
 def _root_common_dir(root: Path) -> Optional[str]:
     """The repository (git common dir) a dispatch root belongs to, or ``None`` when unknown/unreadable."""
-    try:
-        info = json.loads((root / DISPATCH_INFO).read_text())
-    except (OSError, json.JSONDecodeError):
-        return None
+    info = None
+    for name in (DISPATCH_INFO, UNRECORDED_MARKER):
+        try:
+            info = json.loads((root / name).read_text())
+            break
+        except (OSError, json.JSONDecodeError):
+            continue
     value = info.get("common_dir") if isinstance(info, dict) else None
     return value if isinstance(value, str) else None
 
@@ -348,6 +354,11 @@ def _evidence_roots(common_dir: Path) -> list[Path]:
     found = []
     for root in sorted(base.glob(f"{DISPATCH_PREFIX}*")):
         if (root / RELEASED_MARKER).exists():
+            continue
+        if (root / UNRECORDED_MARKER).exists():
+            owner = _root_common_dir(root)
+            if (owner is None or owner == str(common_dir)) and os.path.lexists(root):
+                found.append(root)
             continue
         marker_path = root / RETAINED_MARKER
         if marker_path.exists():
@@ -568,7 +579,8 @@ def _cleanup_stale_roots(base: Path) -> None:
         if not (root / RELEASED_MARKER).exists():
             # Evidence is never reclaimed until an operator release: a retained root, or any root whose workspace
             # holds something a critic left (its STOP may not have persisted).
-            if (root / RETAINED_MARKER).exists() or _root_holds_evidence(root):
+            if ((root / RETAINED_MARKER).exists() or (root / UNRECORDED_MARKER).exists()
+                    or _root_holds_evidence(root)):
                 continue
         try:
             pid = int((root / "owner.pid").read_text().strip())
@@ -904,6 +916,9 @@ def run_agy_dispatch(
 def _retain(layout: DispatchLayout, reason: str, *, common: Path, stop_recorded: bool,
             incident_id: Optional[str]) -> None:
     """Mark a dispatch root as operator evidence: stale cleanup skips it; an unrecorded STOP blocks admission."""
+    if not stop_recorded:
+        with contextlib.suppress(OSError):  # first: the allocation-free flag that blocks and retains this root
+            os.replace(layout.root / DISPATCH_INFO, layout.root / UNRECORDED_MARKER)
     marker = {"reason": reason, "time": _now(), "common_dir": str(common), "stop_recorded": stop_recorded,
               "incident_id": incident_id, "owner_pid": os.getpid()}
     try:

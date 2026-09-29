@@ -1,0 +1,21 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.0, pytest-8.4.2, pluggy-1.6.0
+rootdir: /home/jason/PycharmProjects/adversarial-spec.worktrees/agy-tripwire-fix
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0
+collected 82 items
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py .............. [ 17%]
+....................................................................     [100%]
+
+=============================== warnings summary ===============================
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py: 15 warnings
+  /home/jason/PycharmProjects/adversarial-spec.worktrees/agy-tripwire-fix/.venv/lib/python3.14/site-packages/litellm/litellm_core_utils/logging_utils.py:273: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py: 15 warnings
+  /home/jason/PycharmProjects/adversarial-spec.worktrees/agy-tripwire-fix/skills/adversarial-spec/scripts/gauntlet/persistence.py:66: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 82 passed, 30 warnings in 50.94s =======================
