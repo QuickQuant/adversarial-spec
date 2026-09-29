@@ -1303,3 +1303,185 @@ def test_setup_timeout_before_ready_is_refusal(h, monkeypatch):
         models.call_single_model(AGY_MODEL, "# spec", 1, "spec", timeout=2, cwd=str(h.repo))
     assert h.agy_launches == 1
     assert h.incidents() == [] and not (h.state() / "stop.json").exists()
+
+
+# -- Re-review of 4c1e099: N1, N2, gauntlet refusal (orchestration/review-codex-4c1e099.md) ------------
+
+
+def test_unpersisted_stop_blocks_and_evidence_is_never_reclaimed(h, monkeypatch):
+    """N1: STOP state AND retention marker both unwritable after a critic write -> STOP, workspace kept, a fresh
+    process is refused with zero launches, and stale cleanup never reclaims that evidence even once its owner is
+    dead. Paired: a dead-owner root with an empty workspace in the same base is reclaimed."""
+    import agy_sandbox
+
+    real_write_text = Path.write_text
+
+    def fail_state(*_a, **_k):
+        raise OSError("induced ENOSPC in STOP state")
+
+    def fail_marker(path, *args, **kwargs):
+        if path.name == agy_sandbox.RETAINED_MARKER:
+            raise OSError("induced ENOSPC in retention marker")
+        return real_write_text(path, *args, **kwargs)
+
+    h.behave(default={"steps": [_write_ws()]})
+    with monkeypatch.context() as m:
+        m.setattr(agy_sandbox, "_write_json", fail_state)
+        m.setattr(Path, "write_text", fail_marker)
+        with pytest.raises(agy_sandbox.AgyStop) as info:
+            _dispatch(h)
+    assert info.value.kind == "critic"
+    [root] = list(h.base.glob("agy-dispatch-*"))
+    assert (root / "ws" / "notes.md").read_text() == "critic wrote this"
+    assert not (root / agy_sandbox.RETAINED_MARKER).exists()
+    blocked = _fresh_process_dispatch(h, h.repo).stdout
+    assert "STOP blocked" in blocked and "LAUNCHES=0" in blocked
+    (root / "owner.pid").write_text("999999999")
+    empty = h.base / "agy-dispatch-empty-dead"
+    (empty / "ws").mkdir(parents=True)
+    (empty / "owner.pid").write_text("999999999")
+    agy_sandbox._cleanup_stale_roots(h.base)
+    assert (root / "ws" / "notes.md").read_text() == "critic wrote this"
+    assert not empty.exists()
+
+
+def test_provisional_stop_resolves_to_incident_and_keeps_late_sibling_output(h, monkeypatch):
+    """N2: a queued agy seat that hits the provisional latch while the writer's incident is still being recorded
+    must not become the round's STOP: the raised STOP names the recorded incident and a late sibling's output is
+    quarantined there, never dropped. Paired: TC-1.2 (no race) quarantines as before."""
+    import agy_sandbox
+    import models
+
+    recording = threading.Event()
+    second_stopped = threading.Event()
+    real_record = agy_sandbox.record_incident
+    real_call = models.call_single_model
+
+    def slow_record(*args, **kwargs):
+        recording.set()
+        assert second_stopped.wait(10)
+        time.sleep(0.2)
+        return real_record(*args, **kwargs)
+
+    def ordered_call(model, *args, **kwargs):
+        if model == AGY_MODEL_B:
+            assert recording.wait(10)
+            try:
+                return real_call(model, *args, **kwargs)
+            finally:
+                second_stopped.set()
+        return real_call(model, *args, **kwargs)
+
+    monkeypatch.setattr(agy_sandbox, "record_incident", slow_record)
+    monkeypatch.setattr(models, "call_single_model", ordered_call)
+    h.behave(default={"steps": [_write_ws()]})
+    h.claude_delay.write_text("1")
+    with pytest.raises(agy_sandbox.AgyStop) as info:
+        models.call_models_parallel([AGY_MODEL, AGY_MODEL_B, "claude-cli/claude-opus-5-5"],
+                                    "# spec", 1, "spec", timeout=30, cwd=str(h.repo))
+    [incident] = h.incidents()
+    assert info.value.kind == "critic"
+    assert info.value.incident_dir == incident["_dir"]
+    quarantined = list((incident["_dir"] / "quarantine").glob("*.json"))
+    assert len(quarantined) == 1 and "fake claude critique" in quarantined[0].read_text()
+    assert h.agy_launches == 1
+
+
+def _gauntlet_callers():
+    from gauntlet import phase_1_attacks as p1
+    from gauntlet import phase_2_synthesis as p2
+    from gauntlet import phase_3_filtering as p3
+    from gauntlet import phase_4_evaluation as p4
+    from gauntlet import phase_5_rebuttals as p5
+    from gauntlet import phase_6_adjudication as p6
+    from gauntlet import phase_7_final_boss as p7
+    from gauntlet.core_types import Concern, Evaluation, GauntletConfig, Rebuttal
+
+    cfg = GauntletConfig(timeout=30)
+    concern = Concern(adversary="minimalist", text="The spec never bounds the retry budget of the critic dispatch.")
+    dismissed = Evaluation(concern=concern, verdict="dismissed", reasoning="covered in section 4")
+    sustained = Rebuttal(evaluation=dismissed, response="CHALLENGED: section 4 does not bound it", sustained=True)
+    return {
+        "phase_1_attacks": (p1, lambda: p1.generate_attacks("# spec", ["minimalist"], [AGY_MODEL], cfg)),
+        "phase_2_synthesis": (p2, lambda: p2.generate_big_picture_synthesis([concern], AGY_MODEL, cfg)),
+        "phase_3_filtering": (p3, lambda: p3.find_matching_explanation(concern.text, "minimalist", AGY_MODEL,
+                                                                        None, cfg)),
+        "phase_4_evaluation": (p4, lambda: p4.evaluate_concerns("# spec", [concern], AGY_MODEL, cfg)),
+        "phase_4_multi_model": (p4, lambda: p4.evaluate_concerns_multi_model("# spec", [concern],
+                                                                              [AGY_MODEL, AGY_MODEL_B], cfg)),
+        "phase_5_rebuttals": (p5, lambda: p5.run_rebuttals([dismissed], AGY_MODEL, cfg)),
+        "phase_6_adjudication": (p6, lambda: p6.final_adjudication("# spec", [sustained], AGY_MODEL, cfg)),
+        "phase_7_final_boss": (p7, lambda: p7.run_final_boss_review("# spec", "summary", [concern], [dismissed],
+                                                                     cfg)),
+    }
+
+
+@pytest.mark.parametrize("caller", ["phase_1_attacks", "phase_2_synthesis", "phase_3_filtering",
+                                    "phase_4_evaluation", "phase_4_multi_model", "phase_5_rebuttals",
+                                    "phase_6_adjudication", "phase_7_final_boss"])
+def test_every_gauntlet_caller_propagates_refusal(monkeypatch, caller):
+    """Gauntlet refusal residue: a typed agy refusal escapes every gauntlet model caller (it is never converted
+    into an empty or fallback result); paired: an ordinary transient failure is still absorbed by that caller."""
+    import agy_sandbox
+
+    module, invoke = _gauntlet_callers()[caller]
+    if caller == "phase_3_filtering":
+        monkeypatch.setattr(module, "load_resolved_concerns", lambda: {"concerns": [
+            {"adversary": "minimalist", "pattern": "retry budget", "explanation": "bounded in section 4"}]})
+        monkeypatch.setattr(module, "calculate_explanation_confidence", lambda *_a, **_k: (1.0, "offline"))
+    if caller == "phase_7_final_boss":
+        monkeypatch.setattr(module, "select_eval_model", lambda: AGY_MODEL)
+
+    def refuse(*_a, **_k):
+        raise agy_sandbox.AgyDispatchRefusedError("agy dispatch refused: sandbox setup failed (rc=1): induced")
+
+    def ordinary(*_a, **_k):
+        raise RuntimeError("ordinary transient failure")
+
+    monkeypatch.setattr(module, "call_model", refuse)
+    with pytest.raises(agy_sandbox.AgyDispatchRefusedError):
+        invoke()
+    monkeypatch.setattr(module, "call_model", ordinary)
+    invoke()
+
+
+def test_gauntlet_dispatch_refusal_refuses_run(h, monkeypatch):
+    """Gauntlet refusal residue, end to end: a sandbox refusal at attack dispatch exits 6 with the manifest marked
+    agy_refused, before the phase-1 checkpoint, with one launch and no STOP state; paired: the same run with a
+    working sandbox reaches the phase-1 checkpoint."""
+    import agy_sandbox
+    from gauntlet import orchestrator, persistence
+
+    monkeypatch.chdir(h.repo)
+    for name, rel in (("STATS_DIR", "stats"), ("STATS_FILE", "stats/adversary_stats.json"),
+                      ("RUNS_DIR", "stats/runs"), ("MEDALS_DIR", "stats/medals"),
+                      ("RESOLVED_CONCERNS_FILE", "stats/resolved_concerns.json")):
+        monkeypatch.setattr(persistence, name, h.root / rel)
+    reached: list[str] = []
+
+    def checkpoint_sentinel(*args, **_kwargs):
+        reached.append(str(args[1]) if len(args) > 1 else "?")
+        raise RuntimeError("REACHED_PHASE_1_CHECKPOINT")
+
+    monkeypatch.setattr(orchestrator, "save_checkpoint", checkpoint_sentinel)
+    real_build = agy_sandbox.build_bwrap_argv
+
+    def broken(*args, **kwargs):
+        argv = real_build(*args, **kwargs)
+        return argv[:1] + ["--ro-bind", str(h.root / "does-not-exist"), "/nonexistent-mount"] + argv[1:]
+
+    monkeypatch.setattr(agy_sandbox, "build_bwrap_argv", broken)
+    run = dict(adversaries=["minimalist"], attack_models=[AGY_MODEL], eval_models=[AGY_MODEL], unattended=True,
+               timeout=30)
+    with pytest.raises(SystemExit) as info:
+        orchestrator.run_gauntlet("# Spec\n\nsmall spec", **run)
+    assert info.value.code == 6
+    assert reached == [] and h.agy_launches == 1
+    manifests = list((h.repo / ".adversarial-spec-gauntlet").glob("run-manifest-*.json"))
+    assert [json.loads(m.read_text()).get("status") for m in manifests] == ["agy_refused"]
+    assert h.incidents() == [] and not (h.state() / "stop.json").exists()
+    monkeypatch.setattr(agy_sandbox, "build_bwrap_argv", real_build)
+    h.behave(default={"stdout": "[]"})
+    with pytest.raises(RuntimeError, match="REACHED_PHASE_1_CHECKPOINT"):
+        orchestrator.run_gauntlet("# Spec\n\nsmall spec", **run)
+    assert reached == ["phase_1"]

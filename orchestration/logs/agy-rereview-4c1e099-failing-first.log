@@ -1,0 +1,479 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.0, pytest-8.4.2, pluggy-1.6.0
+rootdir: /home/jason/PycharmProjects/adversarial-spec
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0
+collected 76 items
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py .............. [ 18%]
+...................................................FFFFFFFFFFF           [100%]
+
+=================================== FAILURES ===================================
+_________ test_unpersisted_stop_blocks_and_evidence_is_never_reclaimed _________
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f9e2dc9fbf0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f9e2dcf4a60>
+
+    def test_unpersisted_stop_blocks_and_evidence_is_never_reclaimed(h, monkeypatch):
+        """N1: STOP state AND retention marker both unwritable after a critic write -> STOP, workspace kept, a fresh
+        process is refused with zero launches, and stale cleanup never reclaims that evidence even once its owner is
+        dead. Paired: a dead-owner root with an empty workspace in the same base is reclaimed."""
+        import agy_sandbox
+    
+        real_write_text = Path.write_text
+    
+        def fail_state(*_a, **_k):
+            raise OSError("induced ENOSPC in STOP state")
+    
+        def fail_marker(path, *args, **kwargs):
+            if path.name == agy_sandbox.RETAINED_MARKER:
+                raise OSError("induced ENOSPC in retention marker")
+            return real_write_text(path, *args, **kwargs)
+    
+        h.behave(default={"steps": [_write_ws()]})
+        with monkeypatch.context() as m:
+            m.setattr(agy_sandbox, "_write_json", fail_state)
+            m.setattr(Path, "write_text", fail_marker)
+            with pytest.raises(agy_sandbox.AgyStop) as info:
+                _dispatch(h)
+        assert info.value.kind == "critic"
+        [root] = list(h.base.glob("agy-dispatch-*"))
+        assert (root / "ws" / "notes.md").read_text() == "critic wrote this"
+        assert not (root / agy_sandbox.RETAINED_MARKER).exists()
+        blocked = _fresh_process_dispatch(h, h.repo).stdout
+>       assert "STOP blocked" in blocked and "LAUNCHES=0" in blocked
+E       assert ('STOP blocked' in "STOP critic\nAGY_STOP [critic]: critic wrote into its dispatch workspace; 1 workspace path(s)\n  Evidence: /home/jaso...u reviewed>'\n  Do not retry, re-run the round, or substitute another critic. Report this STOP and halt.\nLAUNCHES=1\n")
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1338: AssertionError
+----------------------------- Captured stderr call -----------------------------
+Warning: could not mark retained evidence at /home/jason/.cache/advspec-agy-tests/e6024e8a3191/dispatch/agy-dispatch-b3rilbax: induced ENOSPC in retention marker
+___ test_provisional_stop_resolves_to_incident_and_keeps_late_sibling_output ___
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f9e2c3fb380>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f9e2dd3d320>
+
+    def test_provisional_stop_resolves_to_incident_and_keeps_late_sibling_output(h, monkeypatch):
+        """N2: a queued agy seat that hits the provisional latch while the writer's incident is still being recorded
+        must not become the round's STOP: the raised STOP names the recorded incident and a late sibling's output is
+        quarantined there, never dropped. Paired: TC-1.2 (no race) quarantines as before."""
+        import agy_sandbox
+        import models
+    
+        recording = threading.Event()
+        second_stopped = threading.Event()
+        real_record = agy_sandbox.record_incident
+        real_call = models.call_single_model
+    
+        def slow_record(*args, **kwargs):
+            recording.set()
+            assert second_stopped.wait(10)
+            time.sleep(0.2)
+            return real_record(*args, **kwargs)
+    
+        def ordered_call(model, *args, **kwargs):
+            if model == AGY_MODEL_B:
+                assert recording.wait(10)
+                try:
+                    return real_call(model, *args, **kwargs)
+                finally:
+                    second_stopped.set()
+            return real_call(model, *args, **kwargs)
+    
+        monkeypatch.setattr(agy_sandbox, "record_incident", slow_record)
+        monkeypatch.setattr(models, "call_single_model", ordered_call)
+        h.behave(default={"steps": [_write_ws()]})
+        h.claude_delay.write_text("1")
+        with pytest.raises(agy_sandbox.AgyStop) as info:
+            models.call_models_parallel([AGY_MODEL, AGY_MODEL_B, "claude-cli/claude-opus-5-5"],
+                                        "# spec", 1, "spec", timeout=30, cwd=str(h.repo))
+        [incident] = h.incidents()
+>       assert info.value.kind == "critic"
+E       AssertionError: assert 'latched' == 'critic'
+E         
+E         - critic
+E         + latched
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1383: AssertionError
+________ test_every_gauntlet_caller_propagates_refusal[phase_1_attacks] ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f9e332c5010>
+caller = 'phase_1_attacks'
+
+    @pytest.mark.parametrize("caller", ["phase_1_attacks", "phase_2_synthesis", "phase_3_filtering",
+                                        "phase_4_evaluation", "phase_4_multi_model", "phase_5_rebuttals",
+                                        "phase_6_adjudication", "phase_7_final_boss"])
+    def test_every_gauntlet_caller_propagates_refusal(monkeypatch, caller):
+        """Gauntlet refusal residue: a typed agy refusal escapes every gauntlet model caller (it is never converted
+        into an empty or fallback result); paired: an ordinary transient failure is still absorbed by that caller."""
+        import agy_sandbox
+    
+        module, invoke = _gauntlet_callers()[caller]
+        if caller == "phase_3_filtering":
+            monkeypatch.setattr(module, "load_resolved_concerns", lambda: {"concerns": [
+                {"adversary": "minimalist", "pattern": "retry budget", "explanation": "bounded in section 4"}]})
+            monkeypatch.setattr(module, "calculate_explanation_confidence", lambda *_a, **_k: (1.0, "offline"))
+        if caller == "phase_7_final_boss":
+            monkeypatch.setattr(module, "select_eval_model", lambda: AGY_MODEL)
+    
+        def refuse(*_a, **_k):
+            raise agy_sandbox.AgyDispatchRefusedError("agy dispatch refused: sandbox setup failed (rc=1): induced")
+    
+        def ordinary(*_a, **_k):
+            raise RuntimeError("ordinary transient failure")
+    
+        monkeypatch.setattr(module, "call_model", refuse)
+>       with pytest.raises(agy_sandbox.AgyDispatchRefusedError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1442: Failed
+----------------------------- Captured stderr call -----------------------------
+Warning: Adversary minimalist failed: agy dispatch refused: sandbox setup failed (rc=1): induced
+  Adversary timing (adversary@model):
+    minimalist@antigravity/gemini-3.8-flash-high: 0.0s (0 concerns)
+_______ test_every_gauntlet_caller_propagates_refusal[phase_2_synthesis] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f9e2dcf4050>
+caller = 'phase_2_synthesis'
+
+    @pytest.mark.parametrize("caller", ["phase_1_attacks", "phase_2_synthesis", "phase_3_filtering",
+                                        "phase_4_evaluation", "phase_4_multi_model", "phase_5_rebuttals",
+                                        "phase_6_adjudication", "phase_7_final_boss"])
+    def test_every_gauntlet_caller_propagates_refusal(monkeypatch, caller):
+        """Gauntlet refusal residue: a typed agy refusal escapes every gauntlet model caller (it is never converted
+        into an empty or fallback result); paired: an ordinary transient failure is still absorbed by that caller."""
+        import agy_sandbox
+    
+        module, invoke = _gauntlet_callers()[caller]
+        if caller == "phase_3_filtering":
+            monkeypatch.setattr(module, "load_resolved_concerns", lambda: {"concerns": [
+                {"adversary": "minimalist", "pattern": "retry budget", "explanation": "bounded in section 4"}]})
+            monkeypatch.setattr(module, "calculate_explanation_confidence", lambda *_a, **_k: (1.0, "offline"))
+        if caller == "phase_7_final_boss":
+            monkeypatch.setattr(module, "select_eval_model", lambda: AGY_MODEL)
+    
+        def refuse(*_a, **_k):
+            raise agy_sandbox.AgyDispatchRefusedError("agy dispatch refused: sandbox setup failed (rc=1): induced")
+    
+        def ordinary(*_a, **_k):
+            raise RuntimeError("ordinary transient failure")
+    
+        monkeypatch.setattr(module, "call_model", refuse)
+>       with pytest.raises(agy_sandbox.AgyDispatchRefusedError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1442: Failed
+----------------------------- Captured stderr call -----------------------------
+Warning: Big picture synthesis failed: agy dispatch refused: sandbox setup failed (rc=1): induced
+_______ test_every_gauntlet_caller_propagates_refusal[phase_3_filtering] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f9e2dcf7ee0>
+caller = 'phase_3_filtering'
+
+    @pytest.mark.parametrize("caller", ["phase_1_attacks", "phase_2_synthesis", "phase_3_filtering",
+                                        "phase_4_evaluation", "phase_4_multi_model", "phase_5_rebuttals",
+                                        "phase_6_adjudication", "phase_7_final_boss"])
+    def test_every_gauntlet_caller_propagates_refusal(monkeypatch, caller):
+        """Gauntlet refusal residue: a typed agy refusal escapes every gauntlet model caller (it is never converted
+        into an empty or fallback result); paired: an ordinary transient failure is still absorbed by that caller."""
+        import agy_sandbox
+    
+        module, invoke = _gauntlet_callers()[caller]
+        if caller == "phase_3_filtering":
+            monkeypatch.setattr(module, "load_resolved_concerns", lambda: {"concerns": [
+                {"adversary": "minimalist", "pattern": "retry budget", "explanation": "bounded in section 4"}]})
+            monkeypatch.setattr(module, "calculate_explanation_confidence", lambda *_a, **_k: (1.0, "offline"))
+        if caller == "phase_7_final_boss":
+            monkeypatch.setattr(module, "select_eval_model", lambda: AGY_MODEL)
+    
+        def refuse(*_a, **_k):
+            raise agy_sandbox.AgyDispatchRefusedError("agy dispatch refused: sandbox setup failed (rc=1): induced")
+    
+        def ordinary(*_a, **_k):
+            raise RuntimeError("ordinary transient failure")
+    
+        monkeypatch.setattr(module, "call_model", refuse)
+>       with pytest.raises(agy_sandbox.AgyDispatchRefusedError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1442: Failed
+______ test_every_gauntlet_caller_propagates_refusal[phase_4_evaluation] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f9e2dcf47c0>
+caller = 'phase_4_evaluation'
+
+    @pytest.mark.parametrize("caller", ["phase_1_attacks", "phase_2_synthesis", "phase_3_filtering",
+                                        "phase_4_evaluation", "phase_4_multi_model", "phase_5_rebuttals",
+                                        "phase_6_adjudication", "phase_7_final_boss"])
+    def test_every_gauntlet_caller_propagates_refusal(monkeypatch, caller):
+        """Gauntlet refusal residue: a typed agy refusal escapes every gauntlet model caller (it is never converted
+        into an empty or fallback result); paired: an ordinary transient failure is still absorbed by that caller."""
+        import agy_sandbox
+    
+        module, invoke = _gauntlet_callers()[caller]
+        if caller == "phase_3_filtering":
+            monkeypatch.setattr(module, "load_resolved_concerns", lambda: {"concerns": [
+                {"adversary": "minimalist", "pattern": "retry budget", "explanation": "bounded in section 4"}]})
+            monkeypatch.setattr(module, "calculate_explanation_confidence", lambda *_a, **_k: (1.0, "offline"))
+        if caller == "phase_7_final_boss":
+            monkeypatch.setattr(module, "select_eval_model", lambda: AGY_MODEL)
+    
+        def refuse(*_a, **_k):
+            raise agy_sandbox.AgyDispatchRefusedError("agy dispatch refused: sandbox setup failed (rc=1): induced")
+    
+        def ordinary(*_a, **_k):
+            raise RuntimeError("ordinary transient failure")
+    
+        monkeypatch.setattr(module, "call_model", refuse)
+>       with pytest.raises(agy_sandbox.AgyDispatchRefusedError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1442: Failed
+----------------------------- Captured stderr call -----------------------------
+Warning: Evaluation failed: agy dispatch refused: sandbox setup failed (rc=1): induced
+______ test_every_gauntlet_caller_propagates_refusal[phase_4_multi_model] ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f9e2dcf5470>
+caller = 'phase_4_multi_model'
+
+    @pytest.mark.parametrize("caller", ["phase_1_attacks", "phase_2_synthesis", "phase_3_filtering",
+                                        "phase_4_evaluation", "phase_4_multi_model", "phase_5_rebuttals",
+                                        "phase_6_adjudication", "phase_7_final_boss"])
+    def test_every_gauntlet_caller_propagates_refusal(monkeypatch, caller):
+        """Gauntlet refusal residue: a typed agy refusal escapes every gauntlet model caller (it is never converted
+        into an empty or fallback result); paired: an ordinary transient failure is still absorbed by that caller."""
+        import agy_sandbox
+    
+        module, invoke = _gauntlet_callers()[caller]
+        if caller == "phase_3_filtering":
+            monkeypatch.setattr(module, "load_resolved_concerns", lambda: {"concerns": [
+                {"adversary": "minimalist", "pattern": "retry budget", "explanation": "bounded in section 4"}]})
+            monkeypatch.setattr(module, "calculate_explanation_confidence", lambda *_a, **_k: (1.0, "offline"))
+        if caller == "phase_7_final_boss":
+            monkeypatch.setattr(module, "select_eval_model", lambda: AGY_MODEL)
+    
+        def refuse(*_a, **_k):
+            raise agy_sandbox.AgyDispatchRefusedError("agy dispatch refused: sandbox setup failed (rc=1): induced")
+    
+        def ordinary(*_a, **_k):
+            raise RuntimeError("ordinary transient failure")
+    
+        monkeypatch.setattr(module, "call_model", refuse)
+>       with pytest.raises(agy_sandbox.AgyDispatchRefusedError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1442: Failed
+----------------------------- Captured stderr call -----------------------------
+  Using 2 models: antigravity/gemini-3.8-flash-high, antigravity/gemini-3.8-flash-medium
+  Processing 1 concerns in 1 batches
+Warning: Evaluation failed: agy dispatch refused: sandbox setup failed (rc=1): induced
+  antigravity/gemini-3.8-flash-medium: batch 1/1 done (1 evals)
+Warning: Evaluation failed: agy dispatch refused: sandbox setup failed (rc=1): induced
+  antigravity/gemini-3.8-flash-medium: all batches complete (1 evals)  antigravity/gemini-3.8-flash-high: batch 1/1 done (1 evals)
+
+  antigravity/gemini-3.8-flash-high: all batches complete (1 evals)
+_______ test_every_gauntlet_caller_propagates_refusal[phase_5_rebuttals] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f9e2dcf7f50>
+caller = 'phase_5_rebuttals'
+
+    @pytest.mark.parametrize("caller", ["phase_1_attacks", "phase_2_synthesis", "phase_3_filtering",
+                                        "phase_4_evaluation", "phase_4_multi_model", "phase_5_rebuttals",
+                                        "phase_6_adjudication", "phase_7_final_boss"])
+    def test_every_gauntlet_caller_propagates_refusal(monkeypatch, caller):
+        """Gauntlet refusal residue: a typed agy refusal escapes every gauntlet model caller (it is never converted
+        into an empty or fallback result); paired: an ordinary transient failure is still absorbed by that caller."""
+        import agy_sandbox
+    
+        module, invoke = _gauntlet_callers()[caller]
+        if caller == "phase_3_filtering":
+            monkeypatch.setattr(module, "load_resolved_concerns", lambda: {"concerns": [
+                {"adversary": "minimalist", "pattern": "retry budget", "explanation": "bounded in section 4"}]})
+            monkeypatch.setattr(module, "calculate_explanation_confidence", lambda *_a, **_k: (1.0, "offline"))
+        if caller == "phase_7_final_boss":
+            monkeypatch.setattr(module, "select_eval_model", lambda: AGY_MODEL)
+    
+        def refuse(*_a, **_k):
+            raise agy_sandbox.AgyDispatchRefusedError("agy dispatch refused: sandbox setup failed (rc=1): induced")
+    
+        def ordinary(*_a, **_k):
+            raise RuntimeError("ordinary transient failure")
+    
+        monkeypatch.setattr(module, "call_model", refuse)
+>       with pytest.raises(agy_sandbox.AgyDispatchRefusedError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1442: Failed
+----------------------------- Captured stderr call -----------------------------
+Warning: Rebuttal failed for minimalist: agy dispatch refused: sandbox setup failed (rc=1): induced
+_____ test_every_gauntlet_caller_propagates_refusal[phase_6_adjudication] ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f9e2dcf4c20>
+caller = 'phase_6_adjudication'
+
+    @pytest.mark.parametrize("caller", ["phase_1_attacks", "phase_2_synthesis", "phase_3_filtering",
+                                        "phase_4_evaluation", "phase_4_multi_model", "phase_5_rebuttals",
+                                        "phase_6_adjudication", "phase_7_final_boss"])
+    def test_every_gauntlet_caller_propagates_refusal(monkeypatch, caller):
+        """Gauntlet refusal residue: a typed agy refusal escapes every gauntlet model caller (it is never converted
+        into an empty or fallback result); paired: an ordinary transient failure is still absorbed by that caller."""
+        import agy_sandbox
+    
+        module, invoke = _gauntlet_callers()[caller]
+        if caller == "phase_3_filtering":
+            monkeypatch.setattr(module, "load_resolved_concerns", lambda: {"concerns": [
+                {"adversary": "minimalist", "pattern": "retry budget", "explanation": "bounded in section 4"}]})
+            monkeypatch.setattr(module, "calculate_explanation_confidence", lambda *_a, **_k: (1.0, "offline"))
+        if caller == "phase_7_final_boss":
+            monkeypatch.setattr(module, "select_eval_model", lambda: AGY_MODEL)
+    
+        def refuse(*_a, **_k):
+            raise agy_sandbox.AgyDispatchRefusedError("agy dispatch refused: sandbox setup failed (rc=1): induced")
+    
+        def ordinary(*_a, **_k):
+            raise RuntimeError("ordinary transient failure")
+    
+        monkeypatch.setattr(module, "call_model", refuse)
+>       with pytest.raises(agy_sandbox.AgyDispatchRefusedError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1442: Failed
+----------------------------- Captured stderr call -----------------------------
+Warning: Final adjudication failed: agy dispatch refused: sandbox setup failed (rc=1): induced
+______ test_every_gauntlet_caller_propagates_refusal[phase_7_final_boss] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f9e2dcf4130>
+caller = 'phase_7_final_boss'
+
+    @pytest.mark.parametrize("caller", ["phase_1_attacks", "phase_2_synthesis", "phase_3_filtering",
+                                        "phase_4_evaluation", "phase_4_multi_model", "phase_5_rebuttals",
+                                        "phase_6_adjudication", "phase_7_final_boss"])
+    def test_every_gauntlet_caller_propagates_refusal(monkeypatch, caller):
+        """Gauntlet refusal residue: a typed agy refusal escapes every gauntlet model caller (it is never converted
+        into an empty or fallback result); paired: an ordinary transient failure is still absorbed by that caller."""
+        import agy_sandbox
+    
+        module, invoke = _gauntlet_callers()[caller]
+        if caller == "phase_3_filtering":
+            monkeypatch.setattr(module, "load_resolved_concerns", lambda: {"concerns": [
+                {"adversary": "minimalist", "pattern": "retry budget", "explanation": "bounded in section 4"}]})
+            monkeypatch.setattr(module, "calculate_explanation_confidence", lambda *_a, **_k: (1.0, "offline"))
+        if caller == "phase_7_final_boss":
+            monkeypatch.setattr(module, "select_eval_model", lambda: AGY_MODEL)
+    
+        def refuse(*_a, **_k):
+            raise agy_sandbox.AgyDispatchRefusedError("agy dispatch refused: sandbox setup failed (rc=1): induced")
+    
+        def ordinary(*_a, **_k):
+            raise RuntimeError("ordinary transient failure")
+    
+        monkeypatch.setattr(module, "call_model", refuse)
+>       with pytest.raises(agy_sandbox.AgyDispatchRefusedError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1442: Failed
+----------------------------- Captured stderr call -----------------------------
+  Warning: Final boss review failed: agy dispatch refused: sandbox setup failed (rc=1): induced
+__________________ test_gauntlet_dispatch_refusal_refuses_run __________________
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f9e2c415520>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f9e2dcf6f20>
+
+    def test_gauntlet_dispatch_refusal_refuses_run(h, monkeypatch):
+        """Gauntlet refusal residue, end to end: a sandbox refusal at attack dispatch exits 6 with the manifest marked
+        agy_refused, before the phase-1 checkpoint, with one launch and no STOP state; paired: the same run with a
+        working sandbox reaches the phase-1 checkpoint."""
+        import agy_sandbox
+        from gauntlet import orchestrator, persistence
+    
+        monkeypatch.chdir(h.repo)
+        for name, rel in (("STATS_DIR", "stats"), ("STATS_FILE", "stats/adversary_stats.json"),
+                          ("RUNS_DIR", "stats/runs"), ("MEDALS_DIR", "stats/medals"),
+                          ("RESOLVED_CONCERNS_FILE", "stats/resolved_concerns.json")):
+            monkeypatch.setattr(persistence, name, h.root / rel)
+        reached: list[str] = []
+    
+        def checkpoint_sentinel(*args, **_kwargs):
+            reached.append(str(args[1]) if len(args) > 1 else "?")
+            raise RuntimeError("REACHED_PHASE_1_CHECKPOINT")
+    
+        monkeypatch.setattr(orchestrator, "save_checkpoint", checkpoint_sentinel)
+        real_build = agy_sandbox.build_bwrap_argv
+    
+        def broken(*args, **kwargs):
+            argv = real_build(*args, **kwargs)
+            return argv[:1] + ["--ro-bind", str(h.root / "does-not-exist"), "/nonexistent-mount"] + argv[1:]
+    
+        monkeypatch.setattr(agy_sandbox, "build_bwrap_argv", broken)
+        run = dict(adversaries=["minimalist"], attack_models=[AGY_MODEL], eval_models=[AGY_MODEL], unattended=True,
+                   timeout=30)
+        with pytest.raises(SystemExit) as info:
+>           orchestrator.run_gauntlet("# Spec\n\nsmall spec", **run)
+
+/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1477: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/gauntlet/orchestrator.py:430: in run_gauntlet
+    save_checkpoint(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = ('concerns', 'phase_1', [], 'c92fd664e6a1339b5d737708acf61fca98923bdcfb971f269accedb265fb5278', 'd9d68a3710101437a94eebae151d553a055df3c4120180c8c0fd55a0da2d2b6d')
+_kwargs = {}
+
+    def checkpoint_sentinel(*args, **_kwargs):
+        reached.append(str(args[1]) if len(args) > 1 else "?")
+>       raise RuntimeError("REACHED_PHASE_1_CHECKPOINT")
+E       RuntimeError: REACHED_PHASE_1_CHECKPOINT
+
+/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1464: RuntimeError
+----------------------------- Captured stderr call -----------------------------
+Dynamic prompts: none (using static personas)
+=== Adversarial Gauntlet ===
+Adversaries: minimalist
+Attack models: antigravity/gemini-3.8-flash-high
+Eval models: antigravity/gemini-3.8-flash-high
+Unattended: enabled (auto-checkpoint on)
+
+Phase 1: Generating attacks...
+Warning: Adversary minimalist failed: agy dispatch refused: sandbox setup failed (rc=1): bwrap: Can't find source path /home/jason/.cache/advspec-agy-tests/37fe2a3593bd/does-not-exist: No such file or directory
+  Adversary timing (adversary@model):
+    minimalist@antigravity/gemini-3.8-flash-high: 0.0s (0 concerns)
+  Generated 0 raw concerns
+=============================== warnings summary ===============================
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py: 15 warnings
+  /home/jason/PycharmProjects/adversarial-spec/.venv/lib/python3.14/site-packages/litellm/litellm_core_utils/logging_utils.py:273: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_gauntlet_attack_stop_blocks_queued_siblings
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_gauntlet_attack_stop_blocks_queued_siblings
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_gauntlet_attack_stop_blocks_queued_siblings
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_gauntlet_attack_stop_blocks_queued_siblings
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_gauntlet_dispatch_refusal_refuses_run
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_gauntlet_dispatch_refusal_refuses_run
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_gauntlet_dispatch_refusal_refuses_run
+  /home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/gauntlet/persistence.py:66: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_unpersisted_stop_blocks_and_evidence_is_never_reclaimed - assert ('STOP blocked' in "STOP critic\nAGY_STOP [critic]: critic wrote into its dispatch workspace; 1 workspace path(s)\n  Evidence: /home/jaso...u reviewed>'\n  Do not retry, re-run the round, or substitute another critic. Report this STOP and halt.\nLAUNCHES=1\n")
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_provisional_stop_resolves_to_incident_and_keeps_late_sibling_output - AssertionError: assert 'latched' == 'critic'
+  
+  - critic
+  + latched
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_every_gauntlet_caller_propagates_refusal[phase_1_attacks] - Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_every_gauntlet_caller_propagates_refusal[phase_2_synthesis] - Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_every_gauntlet_caller_propagates_refusal[phase_3_filtering] - Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_every_gauntlet_caller_propagates_refusal[phase_4_evaluation] - Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_every_gauntlet_caller_propagates_refusal[phase_4_multi_model] - Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_every_gauntlet_caller_propagates_refusal[phase_5_rebuttals] - Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_every_gauntlet_caller_propagates_refusal[phase_6_adjudication] - Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_every_gauntlet_caller_propagates_refusal[phase_7_final_boss] - Failed: DID NOT RAISE <class 'agy_sandbox.AgyDispatchRefusedError'>
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_gauntlet_dispatch_refusal_refuses_run - RuntimeError: REACHED_PHASE_1_CHECKPOINT
+================= 11 failed, 65 passed, 22 warnings in 47.58s ==================
