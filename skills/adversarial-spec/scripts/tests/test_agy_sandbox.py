@@ -1485,3 +1485,45 @@ def test_gauntlet_dispatch_refusal_refuses_run(h, monkeypatch):
     with pytest.raises(RuntimeError, match="REACHED_PHASE_1_CHECKPOINT"):
         orchestrator.run_gauntlet("# Spec\n\nsmall spec", **run)
     assert reached == ["phase_1"]
+
+
+# -- Final review of 9757be3: N4 (orchestration/review-codex-9757be3.md) -------------------------------
+
+
+@pytest.mark.parametrize("vanish_at", ["_workspace_delta", "_root_common_dir"])
+def test_vanishing_clean_sibling_root_is_not_evidence(h, monkeypatch, vanish_at):
+    """N4: a clean sibling's root removed by its own cleanup between the scan's existence check and inspection
+    (or attribution) is not evidence: the dispatch launches and nothing latches. Paired: a real unreleased
+    critic write left in a sibling root that does NOT vanish still blocks with zero launches."""
+    import agy_sandbox
+
+    other = h.base / "agy-dispatch-clean-sibling"
+    (other / "ws" / "inputs").mkdir(parents=True)
+    (other / "ws").chmod(0o700)
+    if vanish_at == "_root_common_dir":
+        (other / "ws" / "partial.tmp").write_text("x")  # inspection sees content, then the root vanishes
+    (other / "dispatch.json").write_text(json.dumps({"common_dir": "/unrelated/repo/.git"}))
+    real = getattr(agy_sandbox, vanish_at)
+    vanished: list[int] = []
+
+    def vanish_then_call(target, *args, **kwargs):
+        if not vanished and other in (Path(target), Path(target).parent):
+            vanished.append(1)
+            shutil.rmtree(other)
+        return real(target, *args, **kwargs)
+
+    monkeypatch.setattr(agy_sandbox, vanish_at, vanish_then_call)
+    text, _, _ = _dispatch(h)
+    assert vanished == [1]
+    assert "fake critique" in text and h.agy_launches == 1
+    assert agy_sandbox._latched() is None
+    monkeypatch.setattr(agy_sandbox, vanish_at, real)
+    evidence = h.base / "agy-dispatch-real-evidence"
+    (evidence / "ws").mkdir(parents=True)
+    (evidence / "ws").chmod(0o700)
+    (evidence / "ws" / "notes.md").write_text("critic wrote this")
+    (evidence / "dispatch.json").write_text(json.dumps({"common_dir": str(_common_dir(h.repo))}))
+    with pytest.raises(agy_sandbox.AgyStop) as info:
+        _dispatch(h)
+    assert info.value.kind == "blocked"
+    assert h.agy_launches == 1
