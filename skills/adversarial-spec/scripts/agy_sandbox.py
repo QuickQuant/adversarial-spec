@@ -56,6 +56,9 @@ DISPATCH_BASE_ENV = "ADVSPEC_AGY_DISPATCH_BASE"
 DISPATCH_PREFIX = "agy-dispatch-"
 RETAINED_MARKER = "retained.json"
 RELEASED_MARKER = "released.json"
+# A clean root is renamed to this prefix (outside the scanned DISPATCH_PREFIX glob) before it is deleted, so no
+# scan ever sees a half-deleted root.
+RECLAIM_PREFIX = ".reclaim-"
 DISPATCH_INFO = "dispatch.json"
 # DISPATCH_INFO renamed in place when a STOP could not be persisted: a rename allocates no data, so this flag
 # survives the storage failure that lost stop.json and retained.json.
@@ -571,6 +574,20 @@ def _pid_alive(pid: int) -> bool:
     return True
 
 
+def _reclaim_root(root: Path) -> None:
+    """Delete a clean dispatch root without ever exposing it half-deleted to a scan.
+
+    The root is first renamed atomically, within the dispatch base, out of the ``agy-dispatch-*`` glob. If the
+    rename fails, the root stays in place whole (the next stale cleanup retries); it is never partially deleted.
+    """
+    target = root.with_name(f"{RECLAIM_PREFIX}{root.name}-{os.getpid()}")
+    try:
+        os.rename(root, target)
+    except OSError:
+        return
+    shutil.rmtree(target, ignore_errors=True)
+
+
 def _cleanup_stale_roots(base: Path) -> None:
     """Remove dispatch roots left by dead processes (operator ruling R2-4: best effort)."""
     if not base.is_dir():
@@ -585,11 +602,22 @@ def _cleanup_stale_roots(base: Path) -> None:
         try:
             pid = int((root / "owner.pid").read_text().strip())
         except (OSError, ValueError):
-            if time.time() - root.stat().st_mtime < 86400:
-                continue
+            try:
+                if time.time() - root.stat().st_mtime < 86400:
+                    continue
+            except OSError:
+                continue  # reclaimed by another process meanwhile
             pid = -1
         if pid <= 0 or not _pid_alive(pid):
-            shutil.rmtree(root, ignore_errors=True)
+            _reclaim_root(root)
+    # Renamed roots whose deleting process died mid-rmtree (the name ends with that process's pid).
+    for leftover in base.glob(f"{RECLAIM_PREFIX}*"):
+        try:
+            owner = int(leftover.name.rsplit("-", 1)[1])
+        except (IndexError, ValueError):
+            owner = -1
+        if owner <= 0 or not _pid_alive(owner):
+            shutil.rmtree(leftover, ignore_errors=True)
 
 
 def _prepare_dispatch_root(base: Path, full_prompt: str, common: Optional[Path] = None) -> DispatchLayout:
@@ -908,7 +936,7 @@ def run_agy_dispatch(
         return subprocess.CompletedProcess(argv, rc, stdout, stderr)
     finally:
         if keep_reason is None:
-            shutil.rmtree(layout.root, ignore_errors=True)
+            _reclaim_root(layout.root)
         else:
             _retain(layout, keep_reason, common=common, stop_recorded=stop_recorded, incident_id=incident_id)
 

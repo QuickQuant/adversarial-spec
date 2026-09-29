@@ -88,3 +88,12 @@ Test-first for N3 and N1-boundary: `pipeline_create_test` lease `auth-a08eb657dc
 (`orchestration/logs/agy-review-9757be3-n3-n1b-failing-first.log`). Before committing, every regression from all
 three review rounds (R1–R9, N1, N2, gauntlet refusal, N3, N4, N1-boundary) was rerun: they all live in
 `tests/test_agy_sandbox.py` (`orchestration/logs/agy-review-9757be3-final-*`).
+
+# Dispositions: final codex review of da8229d (N1 and N3 FIXED; N4 PARTIAL)
+
+Review: `orchestration/review-codex-da8229d.md` (copied from the `agy-rereview-da8229d` worktree). Owner:
+adv-spec-lead, 2026-09-29. No agy dispatch was made.
+
+| ID | Disposition | Fix | Regression test (paired case) |
+|---|---|---|---|
+| N4, mid-rmtree | **Accepted, fixed; structural** (coordinator-specified) | Every clean-root deletion goes through `_reclaim_root`. That covers stale cleanup and the dispatch `finally`. `_reclaim_root` first `os.rename()`s the root, atomically within the dispatch base, to `.reclaim-<name>-<pid>`, which is outside the scanned `agy-dispatch-*` glob, and then rmtrees the renamed path. If the rename fails, the root stays in place whole; it is never partially deleted. Stale cleanup also removes leftover `.reclaim-*` directories whose pid is dead, and it tolerates a root reclaimed by another process mid-loop. Evidence and retained roots are untouched by this path. | `test_root_caught_mid_cleanup_is_not_evidence[clean_mid_cleanup]` reproduces codex's interleaving through the module's real stale cleanup: rmtree is paused just after it removes `ws/inputs`, while the scan inspects that directory. The dispatch launches, nothing latches, and the next dispatch launches too. Pair `[real_evidence]`: unreleased critic output still gives a `blocked` STOP with zero launches. Test-first: lease `auth-1d990fe08e36` (red on `da8229d`: 1 failed, 1 passed); commit `89e7422`. |
