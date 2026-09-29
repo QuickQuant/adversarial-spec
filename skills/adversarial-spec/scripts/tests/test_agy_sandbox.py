@@ -1649,3 +1649,73 @@ def test_gauntlet_real_stop_takes_precedence_over_refusal(h, monkeypatch):
     assert checkpoints == []
     [incident] = h.incidents()
     assert incident["kind"] == "critic"
+
+
+# -- Final review of da8229d: N4 mid-rmtree (orchestration/review-codex-da8229d.md) --------------------
+
+
+@pytest.mark.parametrize("sibling", ["clean_mid_cleanup", "real_evidence"])
+def test_root_caught_mid_cleanup_is_not_evidence(h, monkeypatch, sibling):
+    """N4 (mid-rmtree): a clean dead sibling root that stale cleanup is deleting while this dispatch's scan
+    inspects it (ws/inputs already removed, root and ws still present) is not evidence: the dispatch launches and
+    nothing latches, now or on the next dispatch. Paired: a sibling root holding real unreleased critic output
+    still blocks with zero launches."""
+    import agy_sandbox
+
+    other = h.base / "agy-dispatch-sibling"
+    ws = other / "ws"
+    (ws / "inputs").mkdir(parents=True)
+    ws.chmod(0o700)
+    (other / "owner.pid").write_text("999999999")
+    (other / "dispatch.json").write_text(json.dumps({"common_dir": str(_common_dir(h.repo))}))
+    if sibling == "real_evidence":
+        (ws / "notes.md").write_text("critic wrote this")
+        with pytest.raises(agy_sandbox.AgyStop) as info:
+            _dispatch(h)
+        assert info.value.kind == "blocked" and h.agy_launches == 0
+        return
+
+    inputs_removed, resume = threading.Event(), threading.Event()
+    real_rmdir, real_iterdir = os.rmdir, Path.iterdir
+    cleaners: list[threading.Thread] = []
+    errors: list[BaseException] = []
+
+    def rmdir_then_pause(path, *args, **kwargs):
+        target = Path(path)
+        if kwargs.get("dir_fd") is not None:
+            target = Path(os.readlink(f"/proc/self/fd/{kwargs['dir_fd']}")) / target
+        result = real_rmdir(path, *args, **kwargs)
+        if target.name == "inputs" and target.parent.name == "ws" and not inputs_removed.is_set():
+            inputs_removed.set()
+            assert resume.wait(15), "test never resumed the sibling cleanup"
+        return result
+
+    def cleanup():
+        try:
+            agy_sandbox._cleanup_stale_roots(h.base)
+        except BaseException as exc:  # noqa: BLE001 - surfaced by the assertion below
+            errors.append(exc)
+
+    def iterdir_during_cleanup(path):
+        if Path(path) == ws / "inputs" and not cleaners:
+            thread = threading.Thread(target=cleanup)
+            cleaners.append(thread)
+            thread.start()
+            assert inputs_removed.wait(10), "stale cleanup never removed the sibling's ws/inputs"
+        return real_iterdir(path)
+
+    monkeypatch.setattr(os, "rmdir", rmdir_then_pause)
+    monkeypatch.setattr(Path, "iterdir", iterdir_during_cleanup)
+    try:
+        text, _, _ = _dispatch(h)
+    finally:
+        resume.set()
+        for thread in cleaners:
+            thread.join(15)
+    assert cleaners and inputs_removed.is_set()
+    assert errors == []
+    assert "fake critique" in text
+    assert not other.exists()
+    text, _, _ = _dispatch(h)
+    assert "fake critique" in text and h.agy_launches == 2
+    assert agy_sandbox._latched() is None and h.incidents() == []

@@ -1,0 +1,123 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.0, pytest-8.4.2, pluggy-1.6.0
+rootdir: /home/jason/PycharmProjects/adversarial-spec
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0
+collected 84 items / 82 deselected / 2 selected
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py F.             [100%]
+
+=================================== FAILURES ===================================
+_______ test_root_caught_mid_cleanup_is_not_evidence[clean_mid_cleanup] ________
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f5e270b1160>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f5e270a28b0>
+sibling = 'clean_mid_cleanup'
+
+    @pytest.mark.parametrize("sibling", ["clean_mid_cleanup", "real_evidence"])
+    def test_root_caught_mid_cleanup_is_not_evidence(h, monkeypatch, sibling):
+        """N4 (mid-rmtree): a clean dead sibling root that stale cleanup is deleting while this dispatch's scan
+        inspects it (ws/inputs already removed, root and ws still present) is not evidence: the dispatch launches and
+        nothing latches, now or on the next dispatch. Paired: a sibling root holding real unreleased critic output
+        still blocks with zero launches."""
+        import agy_sandbox
+    
+        other = h.base / "agy-dispatch-sibling"
+        ws = other / "ws"
+        (ws / "inputs").mkdir(parents=True)
+        ws.chmod(0o700)
+        (other / "owner.pid").write_text("999999999")
+        (other / "dispatch.json").write_text(json.dumps({"common_dir": str(_common_dir(h.repo))}))
+        if sibling == "real_evidence":
+            (ws / "notes.md").write_text("critic wrote this")
+            with pytest.raises(agy_sandbox.AgyStop) as info:
+                _dispatch(h)
+            assert info.value.kind == "blocked" and h.agy_launches == 0
+            return
+    
+        inputs_removed, resume = threading.Event(), threading.Event()
+        real_rmdir, real_iterdir = os.rmdir, Path.iterdir
+        cleaners: list[threading.Thread] = []
+        errors: list[BaseException] = []
+    
+        def rmdir_then_pause(path, *args, **kwargs):
+            target = Path(path)
+            if kwargs.get("dir_fd") is not None:
+                target = Path(os.readlink(f"/proc/self/fd/{kwargs['dir_fd']}")) / target
+            result = real_rmdir(path, *args, **kwargs)
+            if target.name == "inputs" and target.parent.name == "ws" and not inputs_removed.is_set():
+                inputs_removed.set()
+                assert resume.wait(15), "test never resumed the sibling cleanup"
+            return result
+    
+        def cleanup():
+            try:
+                agy_sandbox._cleanup_stale_roots(h.base)
+            except BaseException as exc:  # noqa: BLE001 - surfaced by the assertion below
+                errors.append(exc)
+    
+        def iterdir_during_cleanup(path):
+            if Path(path) == ws / "inputs" and not cleaners:
+                thread = threading.Thread(target=cleanup)
+                cleaners.append(thread)
+                thread.start()
+                assert inputs_removed.wait(10), "stale cleanup never removed the sibling's ws/inputs"
+            return real_iterdir(path)
+    
+        monkeypatch.setattr(os, "rmdir", rmdir_then_pause)
+        monkeypatch.setattr(Path, "iterdir", iterdir_during_cleanup)
+        try:
+>           text, _, _ = _dispatch(h)
+                         ^^^^^^^^^^^^
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1710: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:233: in _dispatch
+    return models.call_antigravity_model(
+skills/adversarial-spec/scripts/models.py:753: in call_antigravity_model
+    result = agy_sandbox.run_agy_dispatch(
+skills/adversarial-spec/scripts/agy_sandbox.py:788: in run_agy_dispatch
+    _admit(repo_root, common)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+repo_root = PosixPath('/home/jason/.cache/advspec-agy-tests/bbc1752aaaa0/repo')
+common_dir = PosixPath('/home/jason/.cache/advspec-agy-tests/bbc1752aaaa0/repo/.git')
+
+    def _admit(repo_root: Path, common_dir: Path, *, held: bool = False) -> None:
+        """Refuse (``AgyStop``) while the repository has an uncleared STOP; detect record tampering.
+    
+        ``held``: the caller already holds the stop-state lock (final pre-launch check).
+        """
+        state = common_dir / STATE_DIRNAME
+        unrecorded = _evidence_roots(common_dir)
+        if unrecorded:
+            roots = ", ".join(str(r) for r in unrecorded)
+            summary = (f"critic evidence without a durable STOP record is retained at {roots}. After review release "
+                       f"each root: python3 {Path(__file__).resolve()} release --root <root> "
+                       "--operator <name> --reason '<what you reviewed>'")
+>           raise AgyStop("blocked", _stop_message("blocked", summary, repo_root, state, unrecorded[0], []),
+                          repo_root=repo_root, record=unrecorded[0] / RETAINED_MARKER, evidence_root=unrecorded[0])
+E           agy_sandbox.AgyStop: AGY_STOP [blocked]: critic evidence without a durable STOP record is retained at /home/jason/.cache/advspec-agy-tests/bbc1752aaaa0/dispatch/agy-dispatch-sibling. After review release each root: python3 /home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/agy_sandbox.py release --root <root> --operator <name> --reason '<what you reviewed>'
+E             Evidence: /home/jason/.cache/advspec-agy-tests/bbc1752aaaa0/dispatch/agy-dispatch-sibling
+E             Stop record: /home/jason/.cache/advspec-agy-tests/bbc1752aaaa0/repo/.git/adversarial-spec-agy/stop.json
+E             No Antigravity dispatch will run in this repository (any worktree, any process) until the operator
+E             reviews the evidence and clears it:
+E               python3 /home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/agy_sandbox.py clear --repo /home/jason/.cache/advspec-agy-tests/bbc1752aaaa0/repo --incident <id> --operator <name> --reason '<what you reviewed>'
+E             Do not retry, re-run the round, or substitute another critic. Report this STOP and halt.
+
+skills/adversarial-spec/scripts/agy_sandbox.py:395: AgyStop
+=============================== warnings summary ===============================
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py: 15 warnings
+  /home/jason/PycharmProjects/adversarial-spec/.venv/lib/python3.14/site-packages/litellm/litellm_core_utils/logging_utils.py:273: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_root_caught_mid_cleanup_is_not_evidence[clean_mid_cleanup] - agy_sandbox.AgyStop: AGY_STOP [blocked]: critic evidence without a durable STOP record is retained at /home/jason/.cache/advspec-agy-tests/bbc1752aaaa0/dispatch/agy-dispatch-sibling. After review release each root: python3 /home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/agy_sandbox.py release --root <root> --operator <name> --reason '<what you reviewed>'
+  Evidence: /home/jason/.cache/advspec-agy-tests/bbc1752aaaa0/dispatch/agy-dispatch-sibling
+  Stop record: /home/jason/.cache/advspec-agy-tests/bbc1752aaaa0/repo/.git/adversarial-spec-agy/stop.json
+  No Antigravity dispatch will run in this repository (any worktree, any process) until the operator
+  reviews the evidence and clears it:
+    python3 /home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/agy_sandbox.py clear --repo /home/jason/.cache/advspec-agy-tests/bbc1752aaaa0/repo --incident <id> --operator <name> --reason '<what you reviewed>'
+  Do not retry, re-run the round, or substitute another critic. Report this STOP and halt.
+=========== 1 failed, 1 passed, 82 deselected, 15 warnings in 2.14s ============
