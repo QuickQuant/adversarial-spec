@@ -1527,3 +1527,125 @@ def test_vanishing_clean_sibling_root_is_not_evidence(h, monkeypatch, vanish_at)
         _dispatch(h)
     assert info.value.kind == "blocked"
     assert h.agy_launches == 1
+
+
+# -- Final review of 9757be3: N1 boundary-probe variant, N3 (Jason ruling 2026-09-29: fix them all) -----
+
+
+def test_unpersisted_boundary_stop_with_empty_workspace_blocks_and_is_kept(h, monkeypatch):
+    """N1 boundary variant: a boundary-probe STOP (empty workspace) whose STOP state AND retention marker both
+    fail to persist still blocks a fresh process with zero launches, and stale cleanup never reclaims its root once
+    the owner is dead. Paired: a dead-owner root with an empty workspace and no STOP is reclaimed."""
+    import agy_sandbox
+
+    real_build = agy_sandbox.build_bwrap_argv
+    real_write_text = Path.write_text
+
+    def repo_writable(*args, **kwargs):
+        argv = real_build(*args, **kwargs)
+        i = argv.index("--ro-bind")
+        return argv[:i + 3] + ["--bind", str(h.repo), str(h.repo)] + argv[i + 3:]
+
+    def fail_state(*_a, **_k):
+        raise OSError("induced ENOSPC in STOP state")
+
+    def fail_marker(path, *args, **kwargs):
+        if path.name == agy_sandbox.RETAINED_MARKER:
+            raise OSError("induced ENOSPC in retention marker")
+        return real_write_text(path, *args, **kwargs)
+
+    with monkeypatch.context() as m:
+        m.setattr(agy_sandbox, "build_bwrap_argv", repo_writable)
+        m.setattr(agy_sandbox, "_write_json", fail_state)
+        m.setattr(Path, "write_text", fail_marker)
+        with pytest.raises(agy_sandbox.AgyStop) as info:
+            _dispatch(h)
+    assert info.value.kind == "boundary_failure"
+    [root] = list(h.base.glob("agy-dispatch-*"))
+    assert not (root / agy_sandbox.RETAINED_MARKER).exists()
+    blocked = _fresh_process_dispatch(h, h.repo).stdout
+    assert "STOP blocked" in blocked and "LAUNCHES=0" in blocked
+    (root / "owner.pid").write_text("999999999")
+    empty = h.base / "agy-dispatch-empty-dead"
+    (empty / "ws").mkdir(parents=True)
+    (empty / "owner.pid").write_text("999999999")
+    agy_sandbox._cleanup_stale_roots(h.base)
+    assert root.exists()
+    assert not empty.exists()
+
+
+def _refusal_first_then(monkeypatch, module):
+    """AGY_MODEL is refused at once; AGY_MODEL_B dispatches only after the collector has seen that refusal."""
+    import concurrent.futures
+
+    import agy_sandbox
+
+    observed = threading.Event()
+    real_result = concurrent.futures.Future.result
+    real_call = module.call_model
+
+    def observe_result(future, *args, **kwargs):
+        try:
+            return real_result(future, *args, **kwargs)
+        finally:
+            observed.set()
+
+    def mixed_call(*args, **kwargs):
+        model = kwargs.get("model", args[0] if args else None)
+        if model == AGY_MODEL:
+            raise agy_sandbox.AgyDispatchRefusedError("agy dispatch refused: induced first-seat refusal")
+        assert observed.wait(10), "collector never observed the first refusal"
+        return real_call(*args, **kwargs)
+
+    monkeypatch.setattr(concurrent.futures.Future, "result", observe_result)
+    monkeypatch.setattr(module, "call_model", mixed_call)
+
+
+@pytest.mark.parametrize("sibling", ["stops", "clean"])
+def test_attack_collection_drains_siblings_and_stop_beats_refusal(h, monkeypatch, sibling):
+    """N3 (phase 1): after one seat's refusal the collector still drains every sibling; a sibling's real STOP
+    is raised instead of the refusal. Paired: a clean sibling is still collected and the refusal is raised."""
+    import agy_sandbox
+    from gauntlet import phase_1_attacks
+    from gauntlet.core_types import GauntletConfig
+
+    monkeypatch.chdir(h.repo)
+    monkeypatch.setattr(phase_1_attacks, "get_rate_limit_config", lambda _m: (10, 0))
+    _refusal_first_then(monkeypatch, phase_1_attacks)
+    h.behave(default={"steps": [_write_ws()] if sibling == "stops" else [], "stdout": "[]"})
+    expected = agy_sandbox.AgyStop if sibling == "stops" else agy_sandbox.AgyDispatchRefusedError
+    with pytest.raises(expected) as info:
+        phase_1_attacks.generate_attacks("# spec", ["minimalist"], [AGY_MODEL, AGY_MODEL_B],
+                                         GauntletConfig(timeout=30))
+    assert h.agy_launches == 1
+    if sibling == "stops":
+        assert info.value.kind == "critic" and len(h.incidents()) == 1
+    else:
+        assert h.incidents() == [] and agy_sandbox._latched() is None
+
+
+def test_gauntlet_real_stop_takes_precedence_over_refusal(h, monkeypatch):
+    """N3 (orchestrator): a refusal observed first must not hide a sibling's real STOP: exit 4, manifest agy_stop,
+    no checkpoint. Paired: test_gauntlet_dispatch_refusal_refuses_run (refusal only -> exit 6, agy_refused)."""
+    from gauntlet import orchestrator, persistence, phase_1_attacks
+
+    monkeypatch.chdir(h.repo)
+    for name, rel in (("STATS_DIR", "stats"), ("STATS_FILE", "stats/adversary_stats.json"),
+                      ("RUNS_DIR", "stats/runs"), ("MEDALS_DIR", "stats/medals"),
+                      ("RESOLVED_CONCERNS_FILE", "stats/resolved_concerns.json")):
+        monkeypatch.setattr(persistence, name, h.root / rel)
+    checkpoints: list = []
+    monkeypatch.setattr(orchestrator, "save_checkpoint", lambda *a, **_k: checkpoints.append(a))
+    monkeypatch.setattr(phase_1_attacks, "get_rate_limit_config", lambda _m: (10, 0))
+    _refusal_first_then(monkeypatch, phase_1_attacks)
+    h.behave(default={"steps": [_write_ws()]})
+    with pytest.raises(SystemExit) as info:
+        orchestrator.run_gauntlet("# Spec\n\nsmall spec", adversaries=["minimalist"],
+                                  attack_models=[AGY_MODEL, AGY_MODEL_B], eval_models=[AGY_MODEL],
+                                  unattended=True, timeout=30)
+    assert info.value.code == 4
+    manifests = list((h.repo / ".adversarial-spec-gauntlet").glob("run-manifest-*.json"))
+    assert [json.loads(m.read_text()).get("status") for m in manifests] == ["agy_stop"]
+    assert checkpoints == []
+    [incident] = h.incidents()
+    assert incident["kind"] == "critic"

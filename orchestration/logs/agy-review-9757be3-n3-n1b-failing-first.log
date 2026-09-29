@@ -1,0 +1,172 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.0, pytest-8.4.2, pluggy-1.6.0
+rootdir: /home/jason/PycharmProjects/adversarial-spec
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0
+collected 82 items
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py .............. [ 17%]
+................................................................FF.F     [100%]
+
+=================================== FAILURES ===================================
+____ test_unpersisted_boundary_stop_with_empty_workspace_blocks_and_is_kept ____
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f4f95bcb140>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f4f9a37dc50>
+
+    def test_unpersisted_boundary_stop_with_empty_workspace_blocks_and_is_kept(h, monkeypatch):
+        """N1 boundary variant: a boundary-probe STOP (empty workspace) whose STOP state AND retention marker both
+        fail to persist still blocks a fresh process with zero launches, and stale cleanup never reclaims its root once
+        the owner is dead. Paired: a dead-owner root with an empty workspace and no STOP is reclaimed."""
+        import agy_sandbox
+    
+        real_build = agy_sandbox.build_bwrap_argv
+        real_write_text = Path.write_text
+    
+        def repo_writable(*args, **kwargs):
+            argv = real_build(*args, **kwargs)
+            i = argv.index("--ro-bind")
+            return argv[:i + 3] + ["--bind", str(h.repo), str(h.repo)] + argv[i + 3:]
+    
+        def fail_state(*_a, **_k):
+            raise OSError("induced ENOSPC in STOP state")
+    
+        def fail_marker(path, *args, **kwargs):
+            if path.name == agy_sandbox.RETAINED_MARKER:
+                raise OSError("induced ENOSPC in retention marker")
+            return real_write_text(path, *args, **kwargs)
+    
+        with monkeypatch.context() as m:
+            m.setattr(agy_sandbox, "build_bwrap_argv", repo_writable)
+            m.setattr(agy_sandbox, "_write_json", fail_state)
+            m.setattr(Path, "write_text", fail_marker)
+            with pytest.raises(agy_sandbox.AgyStop) as info:
+                _dispatch(h)
+        assert info.value.kind == "boundary_failure"
+        [root] = list(h.base.glob("agy-dispatch-*"))
+        assert not (root / agy_sandbox.RETAINED_MARKER).exists()
+        blocked = _fresh_process_dispatch(h, h.repo).stdout
+>       assert "STOP blocked" in blocked and "LAUNCHES=0" in blocked
+E       AssertionError: assert ('STOP blocked' in 'DISPATCHED\nLAUNCHES=1\n')
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1567: AssertionError
+----------------------------- Captured stderr call -----------------------------
+Warning: could not mark retained evidence at /home/jason/.cache/advspec-agy-tests/0e79db54d367/dispatch/agy-dispatch-_qbi1t_b: induced ENOSPC in retention marker
+_____ test_attack_collection_drains_siblings_and_stop_beats_refusal[stops] _____
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f4f94114950>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f4f95a14590>
+sibling = 'stops'
+
+    @pytest.mark.parametrize("sibling", ["stops", "clean"])
+    def test_attack_collection_drains_siblings_and_stop_beats_refusal(h, monkeypatch, sibling):
+        """N3 (phase 1): after one seat's refusal the collector still drains every sibling; a sibling's real STOP
+        is raised instead of the refusal. Paired: a clean sibling is still collected and the refusal is raised."""
+        import agy_sandbox
+        from gauntlet import phase_1_attacks
+        from gauntlet.core_types import GauntletConfig
+    
+        monkeypatch.chdir(h.repo)
+        monkeypatch.setattr(phase_1_attacks, "get_rate_limit_config", lambda _m: (10, 0))
+        _refusal_first_then(monkeypatch, phase_1_attacks)
+        h.behave(default={"steps": [_write_ws()] if sibling == "stops" else [], "stdout": "[]"})
+        expected = agy_sandbox.AgyStop if sibling == "stops" else agy_sandbox.AgyDispatchRefusedError
+        with pytest.raises(expected) as info:
+>           phase_1_attacks.generate_attacks("# spec", ["minimalist"], [AGY_MODEL, AGY_MODEL_B],
+                                             GauntletConfig(timeout=30))
+
+/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1618: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/gauntlet/phase_1_attacks.py:366: in generate_attacks
+    collect_result(future, adv_key, model)
+/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/gauntlet/phase_1_attacks.py:338: in collect_result
+    adv_concerns, elapsed, raw_response = future.result()
+                                          ^^^^^^^^^^^^^^^
+/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1589: in observe_result
+    return real_result(future, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/home/jason/.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/concurrent/futures/_base.py:443: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/home/jason/.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/concurrent/futures/_base.py:395: in __get_result
+    raise self._exception
+/home/jason/.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/concurrent/futures/thread.py:86: in run
+    result = ctx.run(self.task)
+             ^^^^^^^^^^^^^^^^^^
+/home/jason/.local/share/uv/python/cpython-3.14.0-linux-x86_64-gnu/lib/python3.14/concurrent/futures/thread.py:73: in run
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/gauntlet/phase_1_attacks.py:287: in run_adversary_with_model
+    response, in_tokens, out_tokens = call_model(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = ()
+kwargs = {'codex_reasoning': 'low', 'json_mode': True, 'model': 'antigravity/gemini-3.8-flash-high', 'system_prompt': "You are ...cern should be a potential problem\nyou've identified. Don't hold back - even if you're not 100% sure, raise it.", ...}
+model = 'antigravity/gemini-3.8-flash-high'
+
+    def mixed_call(*args, **kwargs):
+        model = kwargs.get("model", args[0] if args else None)
+        if model == AGY_MODEL:
+>           raise agy_sandbox.AgyDispatchRefusedError("agy dispatch refused: induced first-seat refusal")
+E           agy_sandbox.AgyDispatchRefusedError: agy dispatch refused: induced first-seat refusal
+
+/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1596: AgyDispatchRefusedError
+____________ test_gauntlet_real_stop_takes_precedence_over_refusal _____________
+
+h = <scripts.tests.test_agy_sandbox.Harness object at 0x7f4f94114cb0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f4f9a37e9e0>
+
+    def test_gauntlet_real_stop_takes_precedence_over_refusal(h, monkeypatch):
+        """N3 (orchestrator): a refusal observed first must not hide a sibling's real STOP: exit 4, manifest agy_stop,
+        no checkpoint. Paired: test_gauntlet_dispatch_refusal_refuses_run (refusal only -> exit 6, agy_refused)."""
+        from gauntlet import orchestrator, persistence, phase_1_attacks
+    
+        monkeypatch.chdir(h.repo)
+        for name, rel in (("STATS_DIR", "stats"), ("STATS_FILE", "stats/adversary_stats.json"),
+                          ("RUNS_DIR", "stats/runs"), ("MEDALS_DIR", "stats/medals"),
+                          ("RESOLVED_CONCERNS_FILE", "stats/resolved_concerns.json")):
+            monkeypatch.setattr(persistence, name, h.root / rel)
+        checkpoints: list = []
+        monkeypatch.setattr(orchestrator, "save_checkpoint", lambda *a, **_k: checkpoints.append(a))
+        monkeypatch.setattr(phase_1_attacks, "get_rate_limit_config", lambda _m: (10, 0))
+        _refusal_first_then(monkeypatch, phase_1_attacks)
+        h.behave(default={"steps": [_write_ws()]})
+        with pytest.raises(SystemExit) as info:
+            orchestrator.run_gauntlet("# Spec\n\nsmall spec", adversaries=["minimalist"],
+                                      attack_models=[AGY_MODEL, AGY_MODEL_B], eval_models=[AGY_MODEL],
+                                      unattended=True, timeout=30)
+>       assert info.value.code == 4
+E       assert 6 == 4
+E        +  where 6 = SystemExit(6).code
+E        +    where SystemExit(6) = <ExceptionInfo SystemExit(6) tblen=2>.value
+
+/home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/tests/test_agy_sandbox.py:1646: AssertionError
+----------------------------- Captured stderr call -----------------------------
+Dynamic prompts: none (using static personas)
+=== Adversarial Gauntlet ===
+Adversaries: minimalist
+Attack models: antigravity/gemini-3.8-flash-high, antigravity/gemini-3.8-flash-medium
+Eval models: antigravity/gemini-3.8-flash-high
+Unattended: enabled (auto-checkpoint on)
+
+Phase 1: Generating attacks...
+
+Error: agy dispatch refused: induced first-seat refusal
+Refusing the gauntlet run; no model is substituted automatically.
+=============================== warnings summary ===============================
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py: 15 warnings
+  /home/jason/PycharmProjects/adversarial-spec/.venv/lib/python3.14/site-packages/litellm/litellm_core_utils/logging_utils.py:273: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+skills/adversarial-spec/scripts/tests/test_agy_sandbox.py: 15 warnings
+  /home/jason/PycharmProjects/adversarial-spec/skills/adversarial-spec/scripts/gauntlet/persistence.py:66: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_unpersisted_boundary_stop_with_empty_workspace_blocks_and_is_kept - AssertionError: assert ('STOP blocked' in 'DISPATCHED\nLAUNCHES=1\n')
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_attack_collection_drains_siblings_and_stop_beats_refusal[stops] - agy_sandbox.AgyDispatchRefusedError: agy dispatch refused: induced first-seat refusal
+FAILED skills/adversarial-spec/scripts/tests/test_agy_sandbox.py::test_gauntlet_real_stop_takes_precedence_over_refusal - assert 6 == 4
+ +  where 6 = SystemExit(6).code
+ +    where SystemExit(6) = <ExceptionInfo SystemExit(6) tblen=2>.value
+================== 3 failed, 79 passed, 30 warnings in 52.91s ==================
