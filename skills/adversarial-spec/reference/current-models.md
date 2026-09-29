@@ -63,6 +63,7 @@ finds the member), `Gemini`, `DeepSeek`, `Claude Code`.
 | `claude-cli/claude-opus-4-7`, `opus-5 @ xhigh` subagents | `claude-opus-5-5` seats above | 2026-09-10 |
 | haiku / sonnet subagents as the mechanical / verbatim tier | `gpt-5.6-luna @ high` | 2026-09-11 |
 | Retired pre-5.6 Codex / OpenAI API tokens | role-specific GPT-5.6 / GPT-6 seat | 2026-07-09 |
+| `gpt-5.5xhigh`, `gpt-5.5`, `gpt-5.4` (bare `codex` alias target) | role-specific GPT-5.6 / GPT-6 seat | 2026-09-29 |
 
 ## Keeping Defaults in Sync
 
